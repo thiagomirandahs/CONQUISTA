@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Cores oficiais do clube Filhos da Conquista */
+@theme {
+  --color-azul: #1e3a8a;
+  --color-azul-claro: #1d4ed8;
+  --color-dourado: #f5c518;
+  --color-amarelo: #facc15;
+  --color-prata: #9ca3af;
+}
+
+html, body, #root { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  color: #0f172a;
+}
+
+/* Esconde a barra de rolagem (usado nos filtros horizontais) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
