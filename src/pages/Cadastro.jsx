@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
-import { CARGOS } from '../lib/cargos.js'
+import { CARGOS, precisaUnidade } from '../lib/cargos.js'
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
@@ -31,7 +31,7 @@ export default function Cadastro() {
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.senha,
-      options: { data: { nome: form.nome, nascimento: form.nascimento, unidade_id: form.unidade_id, cargo: form.cargo } },
+      options: { data: { nome: form.nome, nascimento: form.nascimento, cargo: form.cargo, unidade_id: precisaUnidade(form.cargo) ? form.unidade_id : '' } },
     })
 
     if (error) {
@@ -81,18 +81,20 @@ export default function Cadastro() {
           <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
           <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-            <select required className={inputClass} value={form.unidade_id} onChange={(e) => set('unidade_id', e.target.value)}>
-              <option value="" disabled>{unidades.length ? 'Escolha sua unidade' : 'Carregando unidades...'}</option>
-              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-            </select>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Função no clube</label>
             <select required className={inputClass} value={form.cargo} onChange={(e) => set('cargo', e.target.value)}>
               {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          {precisaUnidade(form.cargo) && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
+              <select required className={inputClass} value={form.unidade_id} onChange={(e) => set('unidade_id', e.target.value)}>
+                <option value="" disabled>{unidades.length ? 'Escolha sua unidade' : 'Carregando unidades...'}</option>
+                {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+              </select>
+            </div>
+          )}
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3">
             ⚠️ Seu cadastro passará pela <strong>aprovação da diretoria</strong> antes de liberar o acesso.
