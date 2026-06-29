@@ -188,9 +188,19 @@ create policy "corrigir entrega" on public.entregas for update to authenticated
 -- Pontos: todos leem (ranking); liderança lança
 drop policy if exists "ler pontos" on public.pontos;
 create policy "ler pontos" on public.pontos for select to authenticated using (true);
+-- Conselheiro pode lançar/apagar pontos dos desbravadores da SUA unidade (+ liderança)
+create or replace function public.pode_apontar(alvo uuid)
+returns boolean language sql security definer set search_path = public as $$
+  select public.pode_gerir() or exists (
+    select 1 from public.profiles eu
+    join public.profiles d on d.unidade_id = eu.unidade_id
+    where eu.id = auth.uid() and eu.papel = 'conselheiro' and eu.status = 'ativo' and d.id = alvo
+  );
+$$;
 drop policy if exists "lancar pontos" on public.pontos;
-create policy "lancar pontos" on public.pontos for insert to authenticated
-  with check (public.pode_gerir());
+create policy "lancar pontos" on public.pontos for insert to authenticated with check (public.pode_apontar(usuario_id));
+drop policy if exists "apagar pontos" on public.pontos;
+create policy "apagar pontos" on public.pontos for delete to authenticated using (public.pode_apontar(usuario_id));
 
 -- Fotos: todos leem; autenticado posta a sua
 drop policy if exists "ler fotos" on public.fotos;

@@ -12,6 +12,7 @@ const Atividades = lazy(() => import('./pages/Atividades.jsx'))
 const Unidades = lazy(() => import('./pages/Unidades.jsx'))
 const Mural = lazy(() => import('./pages/Mural.jsx'))
 const Aprovacoes = lazy(() => import('./pages/Aprovacoes.jsx'))
+const Apontamentos = lazy(() => import('./pages/Apontamentos.jsx'))
 
 function Carregando() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/unidades" element={<Unidades />} />
           <Route path="/mural" element={<Mural />} />
           <Route path="/aprovacoes" element={<Aprovacoes />} />
+          <Route path="/apontamentos" element={<Apontamentos />} />
         </Route>
       </Routes>
     </Suspense>

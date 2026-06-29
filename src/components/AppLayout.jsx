@@ -10,13 +10,19 @@ const abasBase = [
   { to: '/mural', label: 'Mural', icon: '📸' },
 ]
 const PODE_APROVAR = ['diretoria', 'instrutor']
+const PODE_APONTAR = ['conselheiro', 'instrutor', 'diretoria']
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
   const ehAdmin = PODE_APROVAR.includes(profile?.papel)
-  const abas = ehAdmin ? [...abasBase, { to: '/aprovacoes', label: 'Aprovar', icon: '✅' }] : abasBase
+  const podeApontar = PODE_APONTAR.includes(profile?.papel)
+  const abas = [
+    ...abasBase,
+    ...(podeApontar ? [{ to: '/apontamentos', label: 'Apontar', icon: '✍️' }] : []),
+    ...(ehAdmin ? [{ to: '/aprovacoes', label: 'Aprovar', icon: '✅' }] : []),
+  ]
 
   return (
     <div className="min-h-full lg:flex">
