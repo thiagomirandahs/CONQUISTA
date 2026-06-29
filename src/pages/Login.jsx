@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
-import CarrosselFundo from '../components/CarrosselFundo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
 
@@ -41,9 +40,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-full relative flex flex-col items-center justify-center p-6 overflow-hidden">
-      <CarrosselFundo />
-      <div className="absolute inset-0 bg-gradient-to-b from-azul/60 via-azul/45 to-azul/75" />
+    <div className="min-h-full relative flex flex-col items-center justify-center p-6 overflow-hidden bg-gradient-to-br from-azul via-azul-claro to-azul">
+      {/* Brilho suave decorativo (CSS puro, sem imagens — leve e rápido) */}
+      <div className="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-dourado/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 26, scale: 0.97 }}

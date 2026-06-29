@@ -15,7 +15,7 @@ acompanhamento de atividades, pontuação, ranking e gestão das unidades.
 - 📋 **Atividades** — a liderança cria, o desbravador entrega, a liderança aprova → vira pontos
 - ✍️ **Apontamentos** — o conselheiro lança pontos da reunião (presença, uniforme, Bíblia, igreja…)
 - 🏠 **Unidades** com emblema (imagem), lista de membros e média de pontos
-- 📸 **Mural de fotos** e carrossel de fotos na entrada
+- 📸 **Mural de fotos** por categorias — entrar no álbum e adicionar fotos
 - 📱 **PWA** — instalável no celular, responsivo (mobile e desktop)
 
 ## 🛠️ Tecnologias
@@ -50,7 +50,7 @@ no **SQL Editor** e execute.
 
 ```
 src/
-  components/   Layout, Avatar, Logo, Carrossel, Contador…
+  components/   Layout, Avatar, Logo, Contador…
   context/      Autenticação (sessão + perfil)
   lib/          Cliente Supabase, carregamento de dados, helpers
   pages/        Login, Cadastro, Ranking, Atividades, Unidades,
