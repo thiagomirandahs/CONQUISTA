@@ -12,6 +12,7 @@ const inputClass =
 export default function Cadastro() {
   const [unidades, setUnidades] = useState([])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '', cargo: 'Desbravador' })
+  const [foto, setFoto] = useState(null)
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [enviado, setEnviado] = useState(false)
@@ -28,7 +29,7 @@ export default function Cadastro() {
     setErro('')
     setCarregando(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.senha,
       options: { data: { nome: form.nome, nascimento: form.nascimento, cargo: form.cargo, unidade_id: precisaUnidade(form.cargo) ? form.unidade_id : '' } },
@@ -39,6 +40,26 @@ export default function Cadastro() {
       setCarregando(false)
       return
     }
+
+    // Foto de perfil (opcional): só dá para enviar se o cadastro já criou sessão
+    // (confirmação de e-mail desligada). Se falhar, o cadastro segue sem foto.
+    try {
+      if (foto && data?.session?.user) {
+        const uid = data.session.user.id
+        const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `perfis/${uid}-${Date.now()}.${ext}`
+        const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
+        if (!upErr) {
+          const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+          await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', uid)
+        }
+      }
+    } catch {
+      /* foto é opcional: ignora qualquer erro de upload */
+    }
+
+    // Cadastro fica pendente de aprovação — não deixa o usuário logado.
+    await supabase.auth.signOut()
     setEnviado(true)
   }
 
@@ -74,8 +95,10 @@ export default function Cadastro() {
           <Campo label="Nome completo" type="text" value={form.nome} onChange={(v) => set('nome', v)} placeholder="Seu nome" />
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Foto de perfil</label>
-            <input type="file" accept="image/*" className="text-sm w-full text-slate-600" />
-            <p className="text-[11px] text-slate-400 mt-1">Ajuda líderes e colegas a te reconhecerem 😊 (envio em breve)</p>
+            <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files?.[0] || null)} className="text-sm w-full text-slate-600" />
+            <p className="text-[11px] text-slate-400 mt-1">
+              {foto ? `Selecionada: ${foto.name}` : 'Ajuda líderes e colegas a te reconhecerem 😊 (opcional)'}
+            </p>
           </div>
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
           <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />

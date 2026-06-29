@@ -14,14 +14,17 @@ export async function carregarRanking() {
   const corUni = Object.fromEntries((us || []).map((u) => [u.id, u.cor || '#1e3a8a']))
   const nomeUni = Object.fromEntries((us || []).map((u) => [u.id, u.nome]))
 
-  const unidades = (us || []).map((u) => {
-    const membros = (ps || [])
-      .filter((p) => p.unidade_id === u.id && p.papel === 'desbravador')
-      .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: total[p.id] || 0 }))
-      .sort((a, b) => b.pts - a.pts)
-    const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
-    return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media }
-  })
+  const unidades = (us || [])
+    .map((u) => {
+      const membros = (ps || [])
+        .filter((p) => p.unidade_id === u.id && p.papel === 'desbravador')
+        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: total[p.id] || 0 }))
+        .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
+      const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
+      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media }
+    })
+    // Ranking de unidades: maior média primeiro (desempate por nome) → 1º, 2º, 3º...
+    .sort((a, b) => b.media - a.media || a.nome.localeCompare(b.nome, 'pt-BR'))
 
   const individual = (ps || [])
     .map((p) => ({
@@ -29,7 +32,8 @@ export async function carregarRanking() {
       unidade: nomeUni[p.unidade_id] || '', cor: corUni[p.unidade_id] || '#1e3a8a',
       pts: total[p.id] || 0,
     }))
-    .sort((a, b) => b.pts - a.pts)
+    // Ranking individual: maior pontuação primeiro (desempate por nome)
+    .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
 
   return { unidades, individual }
 }

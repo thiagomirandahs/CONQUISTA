@@ -222,7 +222,8 @@ returns boolean language sql security definer set search_path = public as $$
   select public.pode_gerir() or exists (
     select 1 from public.profiles eu
     join public.profiles d on d.unidade_id = eu.unidade_id
-    where eu.id = auth.uid() and eu.papel = 'conselheiro' and eu.status = 'ativo' and d.id = alvo
+    where eu.id = auth.uid() and eu.papel = 'conselheiro' and eu.status = 'ativo'
+      and d.id = alvo and d.papel = 'desbravador'  -- só desbravadores: conselheiro não pontua a si mesmo nem a outros líderes
   );
 $$;
 drop policy if exists "lancar pontos" on public.pontos;
@@ -268,12 +269,21 @@ create policy "subir imagens" on storage.objects for insert to authenticated wit
 drop policy if exists "atualizar imagens" on storage.objects;
 create policy "atualizar imagens" on storage.objects for update to authenticated using (bucket_id = 'imagens');
 
--- ---------- PERMISSÕES de acesso da API (anon/authenticated/service_role) ----------
+-- ---------- PERMISSÕES de acesso da API ----------
 grant usage on schema public to anon, authenticated, service_role;
-grant all on all tables in schema public to anon, authenticated, service_role;
-grant all on all sequences in schema public to anon, authenticated, service_role;
-grant all on all routines in schema public to anon, authenticated, service_role;
-alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+
+-- authenticated e service_role: privilégios completos (o RLS filtra linha a linha)
+grant all on all tables in schema public to authenticated, service_role;
+grant all on all sequences in schema public to authenticated, service_role;
+grant all on all routines in schema public to authenticated, service_role;
+alter default privileges in schema public grant all on tables to authenticated, service_role;
+
+-- anon (visitante deslogado): remove qualquer privilégio amplo e mantém apenas a
+-- LEITURA das unidades, necessária na tela de cadastro (ainda sem login).
+revoke all on all tables in schema public from anon;
+revoke all on all sequences in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
+grant select on public.unidades to anon;
 
 -- Atualiza a lista de tabelas da API
 notify pgrst, 'reload schema';
