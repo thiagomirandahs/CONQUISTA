@@ -55,7 +55,8 @@ alter table public.profiles enable row level security;
 
 -- Qualquer usuário logado pode LER unidades e perfis
 drop policy if exists "ler unidades" on public.unidades;
-create policy "ler unidades" on public.unidades for select to authenticated using (true);
+drop policy if exists "ler unidades publico" on public.unidades;
+create policy "ler unidades publico" on public.unidades for select using (true);
 
 drop policy if exists "ler perfis" on public.profiles;
 create policy "ler perfis" on public.profiles for select to authenticated using (true);

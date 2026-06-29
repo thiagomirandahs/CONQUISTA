@@ -1,31 +1,68 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
+import { supabase } from '../lib/supabase.js'
+import { traduzErro } from '../lib/erros.js'
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
-// Unidades de exemplo — depois virão do banco de dados (as que a diretoria criar)
-const unidadesExemplo = ['Águia', 'Falcão', 'Leão', 'Pantera']
-
 export default function Cadastro() {
-  const navigate = useNavigate()
+  const [unidades, setUnidades] = useState([])
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '' })
+  const [erro, setErro] = useState('')
+  const [carregando, setCarregando] = useState(false)
+  const [enviado, setEnviado] = useState(false)
 
-  function cadastrar(e) {
+  const set = (campo, v) => setForm((f) => ({ ...f, [campo]: v }))
+
+  // Carrega as unidades do banco para o desbravador escolher
+  useEffect(() => {
+    supabase.from('unidades').select('id,nome').order('nome').then(({ data }) => setUnidades(data || []))
+  }, [])
+
+  async function cadastrar(e) {
     e.preventDefault()
-    // TODO: salvar no Supabase com status "pendente" (próximo passo)
-    alert('Cadastro enviado! Ele passará pela aprovação da diretoria. ✅')
-    navigate('/login')
+    setErro('')
+    setCarregando(true)
+
+    const { error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.senha,
+      options: { data: { nome: form.nome, nascimento: form.nascimento, unidade_id: form.unidade_id } },
+    })
+
+    if (error) {
+      setErro(traduzErro(error.message))
+      setCarregando(false)
+      return
+    }
+    setEnviado(true)
+  }
+
+  // Tela de sucesso
+  if (enviado) {
+    return (
+      <div className="min-h-full bg-slate-100 flex flex-col items-center justify-center py-8 px-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-7 text-center">
+          <div className="text-5xl mb-3">✅</div>
+          <h1 className="text-azul text-lg font-extrabold mb-2">Cadastro enviado!</h1>
+          <p className="text-slate-600 text-sm mb-5">
+            Seu cadastro foi recebido e está <strong>aguardando a aprovação da diretoria</strong>.
+            Assim que aprovado, você já poderá entrar. 🎉
+          </p>
+          <Link to="/login" className="block w-full rounded-lg bg-azul text-white font-semibold py-2.5">Voltar para o login</Link>
+        </motion.div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-full bg-slate-100 flex flex-col items-center py-8 px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-7"
-      >
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-7">
         <div className="flex flex-col items-center mb-5">
           <Logo className="w-16 h-16 mb-2" />
           <h1 className="text-azul text-lg font-extrabold">Criar cadastro</h1>
@@ -33,22 +70,20 @@ export default function Cadastro() {
         </div>
 
         <form onSubmit={cadastrar} className="space-y-3.5">
-          <Campo label="Nome completo" type="text" placeholder="Seu nome" />
+          <Campo label="Nome completo" type="text" value={form.nome} onChange={(v) => set('nome', v)} placeholder="Seu nome" />
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Foto de perfil</label>
             <input type="file" accept="image/*" className="text-sm w-full text-slate-600" />
-            <p className="text-[11px] text-slate-400 mt-1">Ajuda líderes e colegas a te reconhecerem 😊</p>
+            <p className="text-[11px] text-slate-400 mt-1">Ajuda líderes e colegas a te reconhecerem 😊 (envio em breve)</p>
           </div>
-          <Campo label="E-mail" type="email" placeholder="voce@email.com" />
-          <Campo label="Senha" type="password" placeholder="••••••••" />
-          <Campo label="Data de nascimento" type="date" />
+          <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
+          <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
+          <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-            <select required className={inputClass} defaultValue="">
-              <option value="" disabled>Escolha sua unidade</option>
-              {unidadesExemplo.map((u) => (
-                <option key={u} value={u}>{u}</option>
-              ))}
+            <select required className={inputClass} value={form.unidade_id} onChange={(e) => set('unidade_id', e.target.value)}>
+              <option value="" disabled>{unidades.length ? 'Escolha sua unidade' : 'Carregando unidades...'}</option>
+              {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
             </select>
           </div>
 
@@ -56,9 +91,11 @@ export default function Cadastro() {
             ⚠️ Seu cadastro passará pela <strong>aprovação da diretoria</strong> antes de liberar o acesso.
           </div>
 
-          <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            className="w-full rounded-lg bg-azul text-white font-semibold py-2.5 shadow-md">
-            Enviar cadastro
+          {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
+
+          <motion.button type="submit" disabled={carregando} whileHover={{ scale: carregando ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
+            className="w-full rounded-lg bg-azul text-white font-semibold py-2.5 shadow-md disabled:opacity-60">
+            {carregando ? 'Enviando...' : 'Enviar cadastro'}
           </motion.button>
         </form>
 
@@ -71,11 +108,11 @@ export default function Cadastro() {
   )
 }
 
-function Campo({ label, ...props }) {
+function Campo({ label, value, onChange, ...props }) {
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-      <input {...props} required className={inputClass} />
+      <input {...props} required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
     </div>
   )
 }

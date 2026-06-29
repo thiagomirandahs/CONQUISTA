@@ -1,6 +1,7 @@
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
+import { useAuth } from '../context/Auth.jsx'
 
 const abas = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
@@ -11,8 +12,8 @@ const abas = [
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
-  const navigate = useNavigate()
   const location = useLocation()
+  const { sair, profile } = useAuth()
 
   return (
     <div className="min-h-full lg:flex">
@@ -50,7 +51,8 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="p-3">
-          <button onClick={() => navigate('/login')}
+          {profile?.nome && <p className="px-4 pb-2 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+          <button onClick={sair}
             className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3 text-left transition-colors">
             🚪 Sair
           </button>
@@ -67,7 +69,7 @@ export default function AppLayout() {
               <h1 className="font-extrabold text-base">Filhos da Conquista</h1>
               <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
             </div>
-            <button onClick={() => navigate('/login')}
+            <button onClick={sair}
               className="text-xs bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 transition-colors">
               Sair
             </button>

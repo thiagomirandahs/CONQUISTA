@@ -1,25 +1,48 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import CarrosselFundo from '../components/CarrosselFundo.jsx'
+import { supabase } from '../lib/supabase.js'
+import { traduzErro } from '../lib/erros.js'
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState('')
+  const [carregando, setCarregando] = useState(false)
 
-  function entrar(e) {
+  async function entrar(e) {
     e.preventDefault()
-    // TODO: autenticar de verdade com o Supabase (próximo passo)
+    setErro('')
+    setCarregando(true)
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+    if (error) {
+      setErro(traduzErro(error.message))
+      setCarregando(false)
+      return
+    }
+
+    // Verifica se o cadastro já foi aprovado pela diretoria
+    const { data: perfil } = await supabase.from('profiles').select('status').eq('id', data.user.id).single()
+    if (!perfil || perfil.status !== 'ativo') {
+      await supabase.auth.signOut()
+      setErro('Seu cadastro ainda está aguardando aprovação da diretoria. ⏳')
+      setCarregando(false)
+      return
+    }
+
     navigate('/ranking')
   }
 
   return (
     <div className="min-h-full relative flex flex-col items-center justify-center p-6 overflow-hidden">
-      {/* Carrossel de fotos das atividades ao fundo */}
       <CarrosselFundo />
-      {/* Camada azul para dar contraste e legibilidade */}
       <div className="absolute inset-0 bg-gradient-to-b from-azul/85 via-azul/75 to-azul/90" />
 
       <motion.div
@@ -40,15 +63,22 @@ export default function Login() {
         <form onSubmit={entrar} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
-            <input type="email" required placeholder="voce@email.com" className={inputClass} />
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@email.com" className={inputClass} />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-            <input type="password" required placeholder="••••••••" className={inputClass} />
+            <input type="password" required value={senha} onChange={(e) => setSenha(e.target.value)}
+              placeholder="••••••••" className={inputClass} />
           </div>
-          <motion.button type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            className="w-full rounded-lg bg-azul text-white font-semibold py-2.5 shadow-md">
-            Entrar
+
+          {erro && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>
+          )}
+
+          <motion.button type="submit" disabled={carregando} whileHover={{ scale: carregando ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
+            className="w-full rounded-lg bg-azul text-white font-semibold py-2.5 shadow-md disabled:opacity-60">
+            {carregando ? 'Entrando...' : 'Entrar'}
           </motion.button>
         </form>
 
