@@ -73,3 +73,19 @@ insert into public.unidades (nome, cor) values
   ('Falcão', '#0ea5e9'),
   ('Leão', '#f59e0b')
 on conflict do nothing;
+
+-- ---------- APROVAÇÕES: diretoria e instrutor podem aprovar cadastros ----------
+create or replace function public.pode_aprovar()
+returns boolean
+language sql
+security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and status = 'ativo' and papel in ('diretoria','instrutor')
+  );
+$$;
+
+drop policy if exists "admin atualiza perfis" on public.profiles;
+create policy "admin atualiza perfis" on public.profiles
+  for update to authenticated using (public.pode_aprovar());

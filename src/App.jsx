@@ -8,6 +8,7 @@ import Ranking from './pages/Ranking.jsx'
 import Atividades from './pages/Atividades.jsx'
 import Unidades from './pages/Unidades.jsx'
 import Mural from './pages/Mural.jsx'
+import Aprovacoes from './pages/Aprovacoes.jsx'
 
 // Tela de carregamento enquanto verifica o login
 function Carregando() {
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/atividades" element={<Atividades />} />
         <Route path="/unidades" element={<Unidades />} />
         <Route path="/mural" element={<Mural />} />
+        <Route path="/aprovacoes" element={<Aprovacoes />} />
       </Route>
     </Routes>
   )

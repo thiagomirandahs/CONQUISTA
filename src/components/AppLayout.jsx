@@ -3,17 +3,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
 import { useAuth } from '../context/Auth.jsx'
 
-const abas = [
+const abasBase = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },
   { to: '/mural', label: 'Mural', icon: '📸' },
 ]
+const PODE_APROVAR = ['diretoria', 'instrutor']
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
+  const ehAdmin = PODE_APROVAR.includes(profile?.papel)
+  const abas = ehAdmin ? [...abasBase, { to: '/aprovacoes', label: 'Aprovar', icon: '✅' }] : abasBase
 
   return (
     <div className="min-h-full lg:flex">
@@ -93,7 +96,7 @@ export default function AppLayout() {
 
       {/* ===== Menu inferior (celular) ===== */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 z-20">
-        <div className="grid grid-cols-4">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${abas.length}, minmax(0, 1fr))` }}>
           {abas.map((aba) => (
             <NavLink
               key={aba.to}
