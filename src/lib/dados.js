@@ -37,3 +37,42 @@ export async function carregarRanking() {
 
   return { unidades, individual }
 }
+
+// =====================================================================
+//  MURAL DE FOTOS — fotos reais do banco, agrupadas por categoria (evento)
+// =====================================================================
+
+// Carrega todas as fotos do mural, da mais nova para a mais antiga.
+export async function carregarFotos() {
+  const { data } = await supabase
+    .from('fotos')
+    .select('id,url,legenda,evento,autor_id,created_at')
+    .order('created_at', { ascending: false })
+  return data || []
+}
+
+// Envia o arquivo ao Storage e cria o registro da foto na categoria escolhida.
+export async function adicionarFoto({ file, evento, legenda, autorId }) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `mural/${autorId}-${Date.now()}.${ext}`
+
+  const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
+  if (upErr) throw upErr
+
+  const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+  const { data, error } = await supabase
+    .from('fotos')
+    .insert({ url: pub.publicUrl, evento, legenda: legenda || null, autor_id: autorId })
+    .select('id,url,legenda,evento,autor_id,created_at')
+    .single()
+  if (error) throw error
+  return data
+}
+
+// Exclui uma foto. O RLS só deixa o autor (ou a liderança) apagar; se nada
+// for apagado, sinaliza falta de permissão (ex.: policy de exclusão ainda não aplicada).
+export async function excluirFoto(id) {
+  const { data, error } = await supabase.from('fotos').delete().eq('id', id).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error('SEM_PERMISSAO')
+}

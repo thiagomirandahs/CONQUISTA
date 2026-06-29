@@ -237,6 +237,10 @@ create policy "ler fotos" on public.fotos for select to authenticated using (tru
 drop policy if exists "postar foto" on public.fotos;
 create policy "postar foto" on public.fotos for insert to authenticated
   with check (autor_id = auth.uid());
+-- Autor (ou liderança) pode apagar a própria foto do mural
+drop policy if exists "apagar foto" on public.fotos;
+create policy "apagar foto" on public.fotos for delete to authenticated
+  using (autor_id = auth.uid() or public.pode_gerir());
 
 -- ---------- MENSALIDADES (tesoureiro controla; diretoria acompanha) ----------
 create table if not exists public.mensalidades (
