@@ -32,13 +32,25 @@ returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  v_cargo text := new.raw_user_meta_data->>'cargo';
+  v_papel text;
 begin
-  insert into public.profiles (id, nome, nascimento, unidade_id)
+  v_papel := case
+    when v_cargo in ('Conselheiro','Conselheira') then 'conselheiro'
+    when v_cargo in ('Instrutor','Instrutora','Capelão') then 'instrutor'
+    when v_cargo = 'Tesoureiro' then 'tesoureiro'
+    when v_cargo in ('Diretor','Diretora','Diretor Associado','Diretora Associada','Secretário','Secretária') then 'diretoria'
+    else 'desbravador'
+  end;
+  insert into public.profiles (id, nome, nascimento, unidade_id, cargo, papel)
   values (
     new.id,
     new.raw_user_meta_data->>'nome',
     (nullif(new.raw_user_meta_data->>'nascimento',''))::date,
-    (nullif(new.raw_user_meta_data->>'unidade_id',''))::uuid
+    (nullif(new.raw_user_meta_data->>'unidade_id',''))::uuid,
+    v_cargo,
+    v_papel
   );
   return new;
 end;

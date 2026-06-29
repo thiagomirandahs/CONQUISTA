@@ -4,13 +4,14 @@ import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
+import { CARGOS } from '../lib/cargos.js'
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
 export default function Cadastro() {
   const [unidades, setUnidades] = useState([])
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '' })
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '', cargo: 'Desbravador' })
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [enviado, setEnviado] = useState(false)
@@ -30,7 +31,7 @@ export default function Cadastro() {
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.senha,
-      options: { data: { nome: form.nome, nascimento: form.nascimento, unidade_id: form.unidade_id } },
+      options: { data: { nome: form.nome, nascimento: form.nascimento, unidade_id: form.unidade_id, cargo: form.cargo } },
     })
 
     if (error) {
@@ -84,6 +85,12 @@ export default function Cadastro() {
             <select required className={inputClass} value={form.unidade_id} onChange={(e) => set('unidade_id', e.target.value)}>
               <option value="" disabled>{unidades.length ? 'Escolha sua unidade' : 'Carregando unidades...'}</option>
               {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Função no clube</label>
+            <select required className={inputClass} value={form.cargo} onChange={(e) => set('cargo', e.target.value)}>
+              {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 

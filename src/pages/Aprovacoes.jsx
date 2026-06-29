@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { CARGOS_LIDERANCA } from '../lib/cargos.js'
 
 const ADMIN = ['diretoria', 'instrutor']
 const fmtData = (iso) => (iso ? iso.split('-').reverse().join('/') : '—')
+const ehLideranca = (cargo) => CARGOS_LIDERANCA.includes(cargo)
 
 export default function Aprovacoes() {
   const { profile } = useAuth()
@@ -16,7 +18,7 @@ export default function Aprovacoes() {
     setCarregando(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id,nome,nascimento,unidade_id,unidades(nome)')
+      .select('id,nome,nascimento,unidade_id,cargo,unidades(nome)')
       .eq('status', 'pendente')
       .order('created_at', { ascending: true })
     setPendentes(data || [])
@@ -73,6 +75,11 @@ export default function Aprovacoes() {
                   <div className="text-xs text-slate-400">
                     {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
                   </div>
+                  {p.cargo && (
+                    <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
+                    </span>
+                  )}
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => decidir(p.id, 'rejeitado')}
                   className="text-xs rounded-lg px-3 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 shrink-0">Recusar</motion.button>
