@@ -43,7 +43,7 @@ export default function Login() {
   return (
     <div className="min-h-full relative flex flex-col items-center justify-center p-6 overflow-hidden">
       <CarrosselFundo />
-      <div className="absolute inset-0 bg-gradient-to-b from-azul/85 via-azul/75 to-azul/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-azul/60 via-azul/45 to-azul/75" />
 
       <motion.div
         initial={{ opacity: 0, y: 26, scale: 0.97 }}

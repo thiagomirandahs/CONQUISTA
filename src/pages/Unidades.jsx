@@ -30,6 +30,16 @@ export default function Unidades() {
     else carregar()
   }
 
+  async function excluirUnidade(u) {
+    if (!window.confirm(`Excluir a unidade "${u.nome}"? Os membros dela ficarão sem unidade.`)) return
+    // tira os membros da unidade antes de apagar (evita erro de vínculo)
+    await supabase.from('profiles').update({ unidade_id: null }).eq('unidade_id', u.id)
+    const { error } = await supabase.from('unidades').delete().eq('id', u.id)
+    if (error) { alert('Não foi possível excluir: ' + error.message); return }
+    setSel(null)
+    carregar()
+  }
+
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
@@ -115,6 +125,14 @@ export default function Unidades() {
                   </div>
                 ))}
               </div>
+              {ehAdmin && (
+                <div className="p-3 border-t border-slate-100">
+                  <button onClick={() => excluirUnidade(sel)}
+                    className="w-full text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
+                    🗑️ Excluir unidade
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
