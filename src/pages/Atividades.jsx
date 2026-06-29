@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from '../lib/supabase.js'
+import { useAuth } from '../context/Auth.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -10,21 +12,15 @@ const categorias = [
   { icon: '✅', nome: 'Presença' },
 ]
 const iconeCat = { Espiritual: '🙏', Especialidades: '🎖️', Serviço: '🤝', Eventos: '🏕️', Presença: '✅' }
-const unidadesAlvo = ['Todas as unidades', 'Águia', 'Falcão', 'Leão', 'Pantera']
-
+const unidadesAlvo = ['Todas as unidades']
+const PODE_GERIR = ['instrutor', 'diretoria']
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
-const atividadesIniciais = [
-  { id: 1, categoria: 'Espiritual', titulo: 'Ler o livro de João', descricao: 'Leia 1 capítulo por dia e escreva o que aprendeu.', prazo: '2026-07-05', pts: 50, alvo: 'Todas as unidades', criterios: { foto: false, texto: true, arquivo: false }, status: 'pendente' },
-  { id: 2, categoria: 'Eventos', titulo: 'Acampamento de Julho', descricao: 'Participe do acampamento e traga uma foto da sua unidade montando a barraca.', prazo: '2026-07-20', pts: 100, alvo: 'Todas as unidades', criterios: { foto: true, texto: false, arquivo: false }, status: 'pendente' },
-  { id: 3, categoria: 'Serviço', titulo: 'Visita ao asilo (prazo já passou)', descricao: 'Visite o asilo e relate a experiência + envie uma foto.', prazo: '2026-06-20', pts: 70, alvo: 'Águia', criterios: { foto: true, texto: true, arquivo: false }, status: 'pendente' },
-]
-
-const fmtData = (iso) => (iso ? iso.split('-').reverse().join('/') : 'sem prazo')
+const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'sem prazo')
 const hojeISO = new Date().toISOString().slice(0, 10)
-const prazoEncerrado = (iso) => iso && iso < hojeISO
-function badgesCriterio(c) {
+const prazoEncerrado = (iso) => iso && String(iso).slice(0, 10) < hojeISO
+function badgesCriterio(c = {}) {
   const arr = []
   if (c.foto) arr.push('📷 Foto')
   if (c.texto) arr.push('✍️ Texto')
@@ -33,19 +29,59 @@ function badgesCriterio(c) {
 }
 
 export default function Atividades() {
-  const [atividades, setAtividades] = useState(atividadesIniciais)
+  const { profile } = useAuth()
+  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const [atividades, setAtividades] = useState([])
+  const [entregues, setEntregues] = useState({})
+  const [carregando, setCarregando] = useState(true)
+  const [erroBanco, setErroBanco] = useState('')
   const [filtro, setFiltro] = useState('Todas')
   const [criando, setCriando] = useState(false)
   const [entregando, setEntregando] = useState(null)
 
+  async function carregar() {
+    const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
+    if (error) setErroBanco(error.message)
+    else setErroBanco('')
+    setAtividades(ats || [])
+    if (profile?.id) {
+      const { data: ents } = await supabase.from('entregas').select('atividade_id,status').eq('usuario_id', profile.id)
+      const map = {}
+      ;(ents || []).forEach((e) => { map[e.atividade_id] = e.status })
+      setEntregues(map)
+    }
+    setCarregando(false)
+  }
+  useEffect(() => { carregar() }, [profile?.id]) // eslint-disable-line
+
   const lista = filtro === 'Todas' ? atividades : atividades.filter((a) => a.categoria === filtro)
 
-  function salvarNova(nova) {
-    setAtividades((prev) => [nova, ...prev])
+  async function salvarNova(nova) {
+    const { error } = await supabase.from('atividades').insert({
+      titulo: nova.titulo, descricao: nova.descricao, categoria: nova.categoria,
+      pontos: nova.pts, prazo: nova.prazo || null, alvo: nova.alvo, criterios: nova.criterios,
+      criado_por: profile?.id,
+    })
+    if (error) { alert('Não foi possível salvar: ' + error.message); return }
+    setCriando(false)
+    carregar()
   }
-  function confirmarEntrega(id) {
-    setAtividades((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'entregue' } : a)))
+
+  async function excluirAtividade(a) {
+    if (!window.confirm(`Excluir a atividade "${a.titulo}"?`)) return
+    const { error } = await supabase.from('atividades').delete().eq('id', a.id)
+    if (error) { alert('Não foi possível excluir: ' + error.message); return }
+    carregar()
+  }
+
+  async function confirmarEntrega(atividade, dados) {
+    const { error } = await supabase.from('entregas').insert({
+      atividade_id: atividade.id, usuario_id: profile?.id,
+      texto: dados.texto || null, foto_url: dados.foto || null, status: 'pendente',
+    })
+    if (error) { alert('Não foi possível entregar: ' + error.message); return }
     setEntregando(null)
+    carregar()
   }
 
   return (
@@ -55,13 +91,20 @@ export default function Atividades() {
           <h2 className="text-2xl font-extrabold text-slate-800">Atividades</h2>
           <p className="text-sm text-slate-500">Entregue e ganhe pontos · líderes cadastram aqui</p>
         </div>
-        <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setCriando(true)}
-          className="shrink-0 text-sm bg-azul text-white rounded-xl px-4 py-2 font-semibold shadow-sm">
-          + Nova atividade
-        </motion.button>
+        {ehAdmin && (
+          <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setCriando(true)}
+            className="shrink-0 text-sm bg-azul text-white rounded-xl px-4 py-2 font-semibold shadow-sm">
+            + Nova atividade
+          </motion.button>
+        )}
       </div>
 
-      {/* Filtros por categoria */}
+      {erroBanco && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3 mb-4">
+          ⚠️ As atividades ainda não estão conectadas ao banco. Falta o comando de reload da API (avisei no chat).
+        </div>
+      )}
+
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5 no-scrollbar">
         {categorias.map((c) => {
           const ativo = filtro === c.nome
@@ -75,55 +118,69 @@ export default function Atividades() {
         })}
       </div>
 
-      {/* Lista de atividades */}
-      <motion.div layout className="grid sm:grid-cols-2 gap-3">
-        <AnimatePresence mode="popLayout">
-          {lista.map((a) => (
-            <motion.div key={a.id} layout
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-2">
-              <div className="flex items-start gap-3">
-                <div className="text-3xl">{iconeCat[a.categoria] || '📋'}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-semibold text-azul-claro">{a.categoria} · {a.alvo}</div>
-                  <div className="font-bold text-slate-800 leading-tight">{a.titulo}</div>
-                  <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{a.descricao}</div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-dourado font-extrabold leading-none">+{a.pts}</div>
-                  <div className="text-[10px] text-slate-400">pontos</div>
-                </div>
-              </div>
+      {carregando ? (
+        <p className="text-slate-400 text-sm">Carregando...</p>
+      ) : lista.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+          <div className="text-4xl mb-2">📋</div>
+          <p className="font-semibold text-slate-700">Nenhuma atividade ainda</p>
+          <p className="text-sm text-slate-400">{ehAdmin ? 'Toque em "+ Nova atividade" para criar a primeira.' : 'A liderança ainda vai cadastrar as atividades.'}</p>
+        </div>
+      ) : (
+        <motion.div layout className="grid sm:grid-cols-2 gap-3">
+          <AnimatePresence mode="popLayout">
+            {lista.map((a) => {
+              const status = entregues[a.id]
+              const encerrado = prazoEncerrado(a.prazo)
+              return (
+                <motion.div key={a.id} layout
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                  className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">{iconeCat[a.categoria] || '📋'}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-semibold text-azul-claro">{a.categoria} · {a.alvo}</div>
+                      <div className="font-bold text-slate-800 leading-tight">{a.titulo}</div>
+                      <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{a.descricao}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-dourado font-extrabold leading-none">+{a.pontos}</div>
+                      <div className="text-[10px] text-slate-400">pontos</div>
+                    </div>
+                  </div>
 
-              {/* Critérios exigidos */}
-              <div className="flex flex-wrap gap-1.5">
-                {badgesCriterio(a.criterios).map((b) => (
-                  <span key={b} className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{b}</span>
-                ))}
-              </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {badgesCriterio(a.criterios).map((b) => (
+                      <span key={b} className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{b}</span>
+                    ))}
+                  </div>
 
-              <div className="flex items-center justify-between mt-1">
-                <span className={`text-xs ${prazoEncerrado(a.prazo) ? 'text-red-400 font-medium' : 'text-slate-400'}`}>📅 {fmtData(a.prazo)}</span>
-                {a.status === 'entregue' ? (
-                  <span className="text-xs font-semibold text-green-600">✅ Entregue (aguardando correção)</span>
-                ) : prazoEncerrado(a.prazo) ? (
-                  <span className="text-xs font-semibold text-red-400">⏰ Prazo encerrado</span>
-                ) : (
-                  <motion.button whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.05 }} onClick={() => setEntregando(a)}
-                    className="text-xs bg-azul text-white rounded-lg px-3 py-1.5 font-medium">
-                    Entregar
-                  </motion.button>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
-
-      <p className="text-center text-xs text-slate-400 mt-6">
-        🚧 Demonstração — as atividades criadas somem ao recarregar até ligarmos o banco de dados.
-      </p>
+                  <div className="flex items-center justify-between mt-1 gap-2">
+                    <span className={`text-xs ${encerrado ? 'text-red-400 font-medium' : 'text-slate-400'}`}>📅 {fmtData(a.prazo)}</span>
+                    <div className="flex items-center gap-2">
+                      {ehAdmin && (
+                        <button onClick={() => excluirAtividade(a)} title="Excluir"
+                          className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1.5">🗑️</button>
+                      )}
+                      {status ? (
+                        <span className="text-xs font-semibold text-green-600">
+                          {status === 'aprovada' ? '✅ Aprovada' : status === 'reprovada' ? '↺ Reprovada' : '✅ Entregue'}
+                        </span>
+                      ) : encerrado ? (
+                        <span className="text-xs font-semibold text-red-400">⏰ Prazo encerrado</span>
+                      ) : (
+                        <motion.button whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.05 }} onClick={() => setEntregando(a)}
+                          className="text-xs bg-azul text-white rounded-lg px-3 py-1.5 font-medium">Entregar</motion.button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {criando && <NovaAtividadeModal key="nova" onFechar={() => setCriando(false)} onSalvar={salvarNova} />}
@@ -135,19 +192,21 @@ export default function Atividades() {
   )
 }
 
-/* ---------- Modal: criar nova atividade (liderança) ---------- */
+/* ---------- Modal: criar nova atividade ---------- */
 function NovaAtividadeModal({ onFechar, onSalvar }) {
   const [form, setForm] = useState({
     titulo: '', categoria: 'Espiritual', descricao: '', pts: 50, prazo: '', alvo: 'Todas as unidades',
     criterios: { foto: false, texto: true, arquivo: false },
   })
+  const [salvando, setSalvando] = useState(false)
   const set = (campo, v) => setForm((f) => ({ ...f, [campo]: v }))
   const toggle = (c) => setForm((f) => ({ ...f, criterios: { ...f.criterios, [c]: !f.criterios[c] } }))
 
-  function salvar(e) {
+  async function salvar(e) {
     e.preventDefault()
-    onSalvar({ ...form, id: Date.now(), pts: Number(form.pts) || 0, status: 'pendente' })
-    onFechar()
+    setSalvando(true)
+    await onSalvar({ ...form, pts: Number(form.pts) || 0 })
+    setSalvando(false)
   }
 
   return (
@@ -180,7 +239,6 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
               </select>
             </Campo>
           </div>
-
           <Campo label="O que precisa entregar? (critérios)">
             <div className="flex gap-2">
               <Toggle ativo={form.criterios.foto} onClick={() => toggle('foto')}>📷 Foto</Toggle>
@@ -188,10 +246,9 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
               <Toggle ativo={form.criterios.arquivo} onClick={() => toggle('arquivo')}>📎 Arquivo</Toggle>
             </div>
           </Campo>
-
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button type="submit" className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow">Salvar atividade</button>
+            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{salvando ? 'Salvando...' : 'Salvar atividade'}</button>
           </div>
         </form>
       </Painel>
@@ -199,11 +256,18 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
   )
 }
 
-/* ---------- Modal: entregar atividade (desbravador) ---------- */
+/* ---------- Modal: entregar atividade ---------- */
 function EntregarModal({ atividade, onFechar, onConfirmar }) {
+  const c = atividade.criterios || {}
   const [texto, setTexto] = useState('')
   const [foto, setFoto] = useState('')
-  const [arquivo, setArquivo] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
+  async function confirmar() {
+    setEnviando(true)
+    await onConfirmar(atividade, { texto, foto })
+    setEnviando(false)
+  }
 
   return (
     <Overlay onFechar={onFechar}>
@@ -212,33 +276,23 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
           <div className="bg-slate-50 rounded-xl p-3">
             <div className="font-bold text-slate-800">{atividade.titulo}</div>
             <div className="text-xs text-slate-500">{atividade.descricao}</div>
-            <div className="text-xs text-dourado font-bold mt-1">Vale +{atividade.pts} pontos</div>
+            <div className="text-xs text-dourado font-bold mt-1">Vale +{atividade.pontos} pontos</div>
           </div>
-
-          {atividade.criterios.texto && (
+          {c.texto && (
             <Campo label="✍️ Sua resposta">
               <textarea rows="3" className={inputClass} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva aqui..." />
             </Campo>
           )}
-          {atividade.criterios.foto && (
-            <Campo label="📷 Foto de comprovação">
-              <input type="file" accept="image/*" className="text-sm" onChange={(e) => setFoto(e.target.files[0]?.name || '')} />
+          {(c.foto || c.arquivo) && (
+            <Campo label={c.foto ? '📷 Foto de comprovação' : '📎 Arquivo'}>
+              <input type="file" accept={c.foto ? 'image/*' : undefined} className="text-sm" onChange={(e) => setFoto(e.target.files[0]?.name || '')} />
               {foto && <p className="text-xs text-green-600 mt-1">Anexado: {foto}</p>}
+              <p className="text-[11px] text-slate-400 mt-1">(o envio do arquivo em si entra num próximo passo)</p>
             </Campo>
           )}
-          {atividade.criterios.arquivo && (
-            <Campo label="📎 Arquivo">
-              <input type="file" className="text-sm" onChange={(e) => setArquivo(e.target.files[0]?.name || '')} />
-              {arquivo && <p className="text-xs text-green-600 mt-1">Anexado: {arquivo}</p>}
-            </Campo>
-          )}
-          {!atividade.criterios.texto && !atividade.criterios.foto && !atividade.criterios.arquivo && (
-            <p className="text-sm text-slate-500">Esta atividade não exige comprovação — é só confirmar a entrega. 😉</p>
-          )}
-
           <div className="flex gap-2 pt-2">
             <button onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button onClick={() => onConfirmar(atividade.id)} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow">Confirmar entrega</button>
+            <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
           </div>
         </div>
       </Painel>
