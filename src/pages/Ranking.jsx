@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
+import CardAniversariantes from '../components/CardAniversariantes.jsx'
 import { carregarRanking } from '../lib/dados.js'
 
 const medalhas = ['🥇', '🥈', '🥉']
@@ -55,6 +56,8 @@ export default function Ranking() {
         <motion.button whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.05 }} onClick={festa}
           className="bg-dourado text-azul font-bold rounded-full px-4 py-2 text-sm shadow">🎉 Comemorar</motion.button>
       </div>
+
+      <CardAniversariantes />
 
       <div className="relative bg-white rounded-xl p-1 flex shadow-sm mb-5 max-w-sm">
         {[['unidades', '🛡️ Unidades'], ['individual', '🧒 Individual']].map(([key, label]) => (

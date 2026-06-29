@@ -113,3 +113,13 @@ export async function carregarNotificacoes() {
 export async function marcarNotificacoesVistas(userId) {
   await supabase.from('profiles').update({ notif_visto_em: new Date().toISOString() }).eq('id', userId)
 }
+
+// Membros ativos que têm data de nascimento (pro card de aniversariantes).
+export async function carregarAniversariantes() {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id,nome,foto,nascimento')
+    .eq('status', 'ativo')
+    .not('nascimento', 'is', null)
+  return data || []
+}
