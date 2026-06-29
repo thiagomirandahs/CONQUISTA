@@ -4,7 +4,7 @@ import { supabase } from './supabase.js'
 export async function carregarRanking() {
   const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    supabase.from('profiles').select('id,nome,foto,unidade_id').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
+    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
     supabase.from('pontos').select('usuario_id,pontos'),
   ])
 
@@ -16,7 +16,7 @@ export async function carregarRanking() {
 
   const unidades = (us || []).map((u) => {
     const membros = (ps || [])
-      .filter((p) => p.unidade_id === u.id)
+      .filter((p) => p.unidade_id === u.id && p.papel === 'desbravador')
       .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: total[p.id] || 0 }))
       .sort((a, b) => b.pts - a.pts)
     const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0

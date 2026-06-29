@@ -1,6 +1,18 @@
 -- =====================================================================
---  Filhos da Conquista — Banco de dados (Passo 1: unidades + usuários)
---  Cole TUDO isto no Supabase → SQL Editor → New query → Run
+--  Filhos da Conquista — MIGRAÇÃO COMPLETA do banco de dados
+--  (tabelas, funções, segurança RLS, storage e permissões)
+--
+--  COMO MUDAR DE SERVIDOR (novo projeto Supabase):
+--    1) Crie um novo projeto no Supabase.
+--    2) SQL Editor -> New query -> cole TODO este arquivo -> Run.
+--    3) Authentication -> Providers -> Email -> DESLIGUE "Confirm email".
+--    4) No Vercel, troque VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+--       pelas chaves do novo projeto e faça um novo deploy.
+--    5) Crie o 1o diretor: cadastre-se no app e rode:
+--       update public.profiles set status='ativo', papel='diretoria'
+--       where id = (select id from auth.users where email='SEU-EMAIL');
+--
+--  Idempotente: pode rodar quantas vezes quiser, sem duplicar nada.
 -- =====================================================================
 
 -- ---------- UNIDADES ----------
@@ -246,6 +258,22 @@ drop policy if exists "ler mensalidades" on public.mensalidades;
 create policy "ler mensalidades" on public.mensalidades for select to authenticated using (desbravador_id = auth.uid() or public.eh_financeiro());
 drop policy if exists "gerir mensalidades" on public.mensalidades;
 create policy "gerir mensalidades" on public.mensalidades for all to authenticated using (public.eh_financeiro()) with check (public.eh_financeiro());
+
+-- ---------- STORAGE: bucket de imagens (emblemas das unidades, fotos) ----------
+insert into storage.buckets (id, name, public) values ('imagens','imagens',true) on conflict (id) do nothing;
+drop policy if exists "ler imagens publico" on storage.objects;
+create policy "ler imagens publico" on storage.objects for select using (bucket_id = 'imagens');
+drop policy if exists "subir imagens" on storage.objects;
+create policy "subir imagens" on storage.objects for insert to authenticated with check (bucket_id = 'imagens');
+drop policy if exists "atualizar imagens" on storage.objects;
+create policy "atualizar imagens" on storage.objects for update to authenticated using (bucket_id = 'imagens');
+
+-- ---------- PERMISSÕES de acesso da API (anon/authenticated/service_role) ----------
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 
 -- Atualiza a lista de tabelas da API
 notify pgrst, 'reload schema';
