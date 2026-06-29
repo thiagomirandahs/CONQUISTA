@@ -101,3 +101,102 @@ $$;
 drop policy if exists "admin atualiza perfis" on public.profiles;
 create policy "admin atualiza perfis" on public.profiles
   for update to authenticated using (public.pode_aprovar());
+
+-- =====================================================================
+--  PASSO 2: Atividades, Entregas, Pontos e Fotos (deixar tudo real)
+-- =====================================================================
+
+-- Quem pode gerir atividades / lançar pontos (instrutor ou diretoria)
+create or replace function public.pode_gerir()
+returns boolean language sql security definer set search_path = public as $$
+  select exists (select 1 from public.profiles
+    where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria'));
+$$;
+
+create table if not exists public.atividades (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  descricao text,
+  categoria text,
+  pontos int not null default 0,
+  prazo date,
+  alvo text default 'Todas as unidades',
+  criterios jsonb default '{"foto":false,"texto":true,"arquivo":false}',
+  criado_por uuid references public.profiles(id),
+  created_at timestamptz default now()
+);
+
+create table if not exists public.entregas (
+  id uuid primary key default gen_random_uuid(),
+  atividade_id uuid references public.atividades(id) on delete cascade,
+  usuario_id uuid references public.profiles(id) on delete cascade,
+  texto text,
+  foto_url text,
+  status text not null default 'pendente',  -- pendente|aprovada|reprovada
+  pontos_dados int default 0,
+  avaliado_por uuid references public.profiles(id),
+  created_at timestamptz default now(),
+  unique (atividade_id, usuario_id)
+);
+
+create table if not exists public.pontos (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid references public.profiles(id) on delete cascade,
+  origem text,
+  pontos int not null default 0,
+  motivo text,
+  data timestamptz default now(),
+  lancado_por uuid references public.profiles(id)
+);
+
+create table if not exists public.fotos (
+  id uuid primary key default gen_random_uuid(),
+  url text not null,
+  legenda text,
+  evento text,
+  autor_id uuid references public.profiles(id),
+  aprovada boolean default true,
+  created_at timestamptz default now()
+);
+
+alter table public.atividades enable row level security;
+alter table public.entregas enable row level security;
+alter table public.pontos enable row level security;
+alter table public.fotos enable row level security;
+
+-- Unidades: liderança pode criar/editar
+drop policy if exists "gerir unidades" on public.unidades;
+create policy "gerir unidades" on public.unidades for all to authenticated
+  using (public.pode_gerir()) with check (public.pode_gerir());
+
+-- Atividades: todos leem; liderança gere
+drop policy if exists "ler atividades" on public.atividades;
+create policy "ler atividades" on public.atividades for select to authenticated using (true);
+drop policy if exists "gerir atividades" on public.atividades;
+create policy "gerir atividades" on public.atividades for all to authenticated
+  using (public.pode_gerir()) with check (public.pode_gerir());
+
+-- Entregas: dono vê/cria a sua; liderança vê/corrige todas
+drop policy if exists "ler entregas" on public.entregas;
+create policy "ler entregas" on public.entregas for select to authenticated
+  using (usuario_id = auth.uid() or public.pode_gerir());
+drop policy if exists "criar entrega" on public.entregas;
+create policy "criar entrega" on public.entregas for insert to authenticated
+  with check (usuario_id = auth.uid());
+drop policy if exists "corrigir entrega" on public.entregas;
+create policy "corrigir entrega" on public.entregas for update to authenticated
+  using (public.pode_gerir());
+
+-- Pontos: todos leem (ranking); liderança lança
+drop policy if exists "ler pontos" on public.pontos;
+create policy "ler pontos" on public.pontos for select to authenticated using (true);
+drop policy if exists "lancar pontos" on public.pontos;
+create policy "lancar pontos" on public.pontos for insert to authenticated
+  with check (public.pode_gerir());
+
+-- Fotos: todos leem; autenticado posta a sua
+drop policy if exists "ler fotos" on public.fotos;
+create policy "ler fotos" on public.fotos for select to authenticated using (true);
+drop policy if exists "postar foto" on public.fotos;
+create policy "postar foto" on public.fotos for insert to authenticated
+  with check (autor_id = auth.uid());
