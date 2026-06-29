@@ -14,6 +14,8 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
+        // Carrega o handler de push (public/push-sw.js) dentro do service worker
+        importScripts: ['/push-sw.js'],
       },
       manifest: {
         name: 'Filhos da Conquista',

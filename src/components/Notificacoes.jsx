@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'
+import { pushSuportado, pushAtivo, ativarPush } from '../lib/push.js'
 
-const iconePorTipo = { pontos: '🏆', atividade: '📋', cadastro: '👤', foto: '📸', geral: '📣' }
+const iconePorTipo = { pontos: '🏆', atividade: '📋', cadastro: '👤', foto: '📸', aniversario: '🎂', geral: '📣' }
 
 function tempoRel(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
@@ -20,12 +21,33 @@ export default function Notificacoes() {
   const [aberto, setAberto] = useState(false)
   const [lista, setLista] = useState([])
   const [vistoEm, setVistoEm] = useState(null)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushMsg, setPushMsg] = useState('')
+  const suportaPush = pushSuportado()
 
   useEffect(() => {
     if (!profile?.id) return
     setVistoEm(profile.notif_visto_em || null)
     carregarNotificacoes().then(setLista)
   }, [profile?.id, profile?.notif_visto_em])
+
+  useEffect(() => { pushAtivo().then(setPushOn) }, [])
+
+  async function alternarPush() {
+    setPushMsg('')
+    try {
+      await ativarPush(profile?.id)
+      setPushOn(true)
+      setPushMsg('✅ Pronto! Este aparelho vai receber os avisos.')
+    } catch (e) {
+      const msgs = {
+        SEM_SUPORTE: 'Este aparelho não suporta. No iPhone, instale o app na tela inicial primeiro.',
+        SEM_VAPID: 'Push ainda não configurado pela diretoria (veja PUSH-SETUP.md).',
+        PERMISSAO_NEGADA: 'Notificações bloqueadas. Libere nas configurações do navegador.',
+      }
+      setPushMsg(msgs[e?.message] || ('Erro: ' + (e?.message || e)))
+    }
+  }
 
   const naoLidas = lista.filter((n) => !vistoEm || n.created_at > vistoEm).length
 
@@ -88,6 +110,21 @@ export default function Notificacoes() {
                     </button>
                   )
                 })}
+              </div>
+
+              {/* Ativar push neste aparelho */}
+              <div className="p-3 border-t border-slate-100 shrink-0">
+                {!suportaPush ? (
+                  <p className="text-[11px] text-slate-400 text-center">Avisos no celular não disponíveis neste aparelho.</p>
+                ) : pushOn ? (
+                  <p className="text-xs text-green-600 text-center font-semibold">📲 Avisos no celular ativados ✓</p>
+                ) : (
+                  <button onClick={alternarPush}
+                    className="w-full text-sm bg-azul/10 text-azul rounded-xl py-2.5 font-semibold hover:bg-azul/20">
+                    📲 Ativar avisos no celular
+                  </button>
+                )}
+                {pushMsg && <p className="text-[11px] text-slate-500 mt-2 text-center">{pushMsg}</p>}
               </div>
             </motion.div>
           </motion.div>
