@@ -79,12 +79,10 @@ create policy "editar proprio perfil" on public.profiles for update to authentic
 
 -- (As permissões por cargo — aprovar cadastros, criar unidades, etc. — entram no próximo passo.)
 
--- ---------- Unidades de exemplo (edite/adicione as suas depois) ----------
-insert into public.unidades (nome, cor) values
-  ('Águia', '#1d4ed8'),
-  ('Falcão', '#0ea5e9'),
-  ('Leão', '#f59e0b')
-on conflict do nothing;
+-- ---------- Limpa unidades de exemplo (se existirem) ----------
+update public.profiles set unidade_id = null
+where unidade_id in (select id from public.unidades where nome in ('Águia','Falcão','Leão'));
+delete from public.unidades where nome in ('Águia','Falcão','Leão');
 
 -- ---------- APROVAÇÕES: diretoria e instrutor podem aprovar cadastros ----------
 create or replace function public.pode_aprovar()
@@ -200,3 +198,6 @@ create policy "ler fotos" on public.fotos for select to authenticated using (tru
 drop policy if exists "postar foto" on public.fotos;
 create policy "postar foto" on public.fotos for insert to authenticated
   with check (autor_id = auth.uid());
+
+-- Atualiza a lista de tabelas da API
+notify pgrst, 'reload schema';

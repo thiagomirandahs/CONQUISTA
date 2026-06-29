@@ -1,16 +1,18 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
-import Login from './pages/Login.jsx'
-import Cadastro from './pages/Cadastro.jsx'
-import Ranking from './pages/Ranking.jsx'
-import Atividades from './pages/Atividades.jsx'
-import Unidades from './pages/Unidades.jsx'
-import Mural from './pages/Mural.jsx'
-import Aprovacoes from './pages/Aprovacoes.jsx'
 
-// Tela de carregamento enquanto verifica o login
+// Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
+const Login = lazy(() => import('./pages/Login.jsx'))
+const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
+const Ranking = lazy(() => import('./pages/Ranking.jsx'))
+const Atividades = lazy(() => import('./pages/Atividades.jsx'))
+const Unidades = lazy(() => import('./pages/Unidades.jsx'))
+const Mural = lazy(() => import('./pages/Mural.jsx'))
+const Aprovacoes = lazy(() => import('./pages/Aprovacoes.jsx'))
+
 function Carregando() {
   return (
     <div className="min-h-full grid place-items-center bg-azul text-white">
@@ -22,7 +24,6 @@ function Carregando() {
   )
 }
 
-// Só deixa entrar quem está logado
 function Protegido({ children }) {
   const { session, carregando } = useAuth()
   if (carregando) return <Carregando />
@@ -32,20 +33,20 @@ function Protegido({ children }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Telas de entrada */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/cadastro" element={<Cadastro />} />
+    <Suspense fallback={<Carregando />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
 
-      {/* Telas internas (exigem login) */}
-      <Route element={<Protegido><AppLayout /></Protegido>}>
-        <Route path="/" element={<Navigate to="/ranking" replace />} />
-        <Route path="/ranking" element={<Ranking />} />
-        <Route path="/atividades" element={<Atividades />} />
-        <Route path="/unidades" element={<Unidades />} />
-        <Route path="/mural" element={<Mural />} />
-        <Route path="/aprovacoes" element={<Aprovacoes />} />
-      </Route>
-    </Routes>
+        <Route element={<Protegido><AppLayout /></Protegido>}>
+          <Route path="/" element={<Navigate to="/ranking" replace />} />
+          <Route path="/ranking" element={<Ranking />} />
+          <Route path="/atividades" element={<Atividades />} />
+          <Route path="/unidades" element={<Unidades />} />
+          <Route path="/mural" element={<Mural />} />
+          <Route path="/aprovacoes" element={<Aprovacoes />} />
+        </Route>
+      </Routes>
+    </Suspense>
   )
 }
