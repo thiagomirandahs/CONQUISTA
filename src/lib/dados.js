@@ -4,7 +4,7 @@ import { supabase } from './supabase.js'
 export async function carregarRanking() {
   const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    supabase.from('profiles').select('id,nome,foto,unidade_id').eq('status', 'ativo'),
+    supabase.from('profiles').select('id,nome,foto,unidade_id').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
     supabase.from('pontos').select('usuario_id,pontos'),
   ])
 

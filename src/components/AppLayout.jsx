@@ -9,20 +9,14 @@ const abasBase = [
   { to: '/unidades', label: 'Unidades', icon: '🏠' },
   { to: '/mural', label: 'Mural', icon: '📸' },
 ]
-const PODE_APROVAR = ['diretoria', 'instrutor']
-const PODE_APONTAR = ['conselheiro', 'instrutor', 'diretoria']
+const TEM_GESTAO = ['conselheiro', 'instrutor', 'diretoria', 'tesoureiro']
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
-  const ehAdmin = PODE_APROVAR.includes(profile?.papel)
-  const podeApontar = PODE_APONTAR.includes(profile?.papel)
-  const abas = [
-    ...abasBase,
-    ...(podeApontar ? [{ to: '/apontamentos', label: 'Apontar', icon: '✍️' }] : []),
-    ...(ehAdmin ? [{ to: '/aprovacoes', label: 'Aprovar', icon: '✅' }] : []),
-  ]
+  const temGestao = TEM_GESTAO.includes(profile?.papel)
+  const abas = temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
 
   return (
     <div className="min-h-full lg:flex">

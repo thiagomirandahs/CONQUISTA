@@ -225,5 +225,27 @@ drop policy if exists "postar foto" on public.fotos;
 create policy "postar foto" on public.fotos for insert to authenticated
   with check (autor_id = auth.uid());
 
+-- ---------- MENSALIDADES (tesoureiro controla; diretoria acompanha) ----------
+create table if not exists public.mensalidades (
+  id uuid primary key default gen_random_uuid(),
+  desbravador_id uuid references public.profiles(id) on delete cascade,
+  mes int not null, ano int not null,
+  valor numeric default 0,
+  status text not null default 'pendente',  -- pago | pendente
+  data_pagamento date,
+  registrado_por uuid references public.profiles(id),
+  created_at timestamptz default now(),
+  unique (desbravador_id, mes, ano)
+);
+create or replace function public.eh_financeiro()
+returns boolean language sql security definer set search_path = public as $f$
+  select exists(select 1 from public.profiles where id = auth.uid() and status='ativo' and papel in ('tesoureiro','diretoria'));
+$f$;
+alter table public.mensalidades enable row level security;
+drop policy if exists "ler mensalidades" on public.mensalidades;
+create policy "ler mensalidades" on public.mensalidades for select to authenticated using (desbravador_id = auth.uid() or public.eh_financeiro());
+drop policy if exists "gerir mensalidades" on public.mensalidades;
+create policy "gerir mensalidades" on public.mensalidades for all to authenticated using (public.eh_financeiro()) with check (public.eh_financeiro());
+
 -- Atualiza a lista de tabelas da API
 notify pgrst, 'reload schema';

@@ -40,7 +40,7 @@ export default function Apontamentos() {
   useEffect(() => {
     if (!unidadeId) { setDesbravadores([]); return }
     setCarregando(true)
-    supabase.from('profiles').select('id,nome,foto').eq('unidade_id', unidadeId).eq('status', 'ativo').order('nome')
+    supabase.from('profiles').select('id,nome,foto').eq('unidade_id', unidadeId).eq('status', 'ativo').eq('papel', 'desbravador').order('nome')
       .then(({ data }) => {
         setDesbravadores(data || [])
         const m = {}
