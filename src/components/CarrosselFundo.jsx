@@ -18,6 +18,8 @@ export default function CarrosselFundo() {
   const usandoFotos = fotosReais.length > 0
   const total = usandoFotos ? fotosReais.length : gradientes.length
   const [i, setI] = useState(0)
+  // Carrega só a foto atual e a próxima (mais leve no primeiro acesso)
+  const [carregadas, setCarregadas] = useState(() => new Set([0, total > 1 ? 1 : 0]))
 
   useEffect(() => {
     if (total <= 1) return
@@ -25,13 +27,17 @@ export default function CarrosselFundo() {
     return () => clearInterval(timer)
   }, [total])
 
+  useEffect(() => {
+    setCarregadas((prev) => new Set(prev).add(i).add((i + 1) % total))
+  }, [i, total])
+
   return (
     <div className="absolute inset-0 overflow-hidden">
       {usandoFotos
         ? fotosReais.map((src, k) => (
             <motion.div key={k}
               className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${src})`, zIndex: k === i ? 1 : 0 }}
+              style={{ backgroundImage: carregadas.has(k) ? `url(${src})` : 'none', zIndex: k === i ? 1 : 0 }}
               initial={false}
               animate={{ opacity: k === i ? 1 : 0, scale: k === i ? 1 : 1.08 }}
               transition={{ duration: 1.2, ease: 'easeInOut' }}
