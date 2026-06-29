@@ -95,3 +95,21 @@ export async function excluirFoto(id) {
   if (error) throw error
   if (!data || data.length === 0) throw new Error('SEM_PERMISSAO')
 }
+
+// =====================================================================
+//  NOTIFICAÇÕES (sininho) — o RLS já filtra o que cada cargo pode ver
+// =====================================================================
+
+export async function carregarNotificacoes() {
+  const { data } = await supabase
+    .from('notificacoes')
+    .select('id,titulo,corpo,tipo,link,created_at')
+    .order('created_at', { ascending: false })
+    .limit(30)
+  return data || []
+}
+
+// Marca no perfil que a pessoa viu as notificações agora (zera o contador).
+export async function marcarNotificacoesVistas(userId) {
+  await supabase.from('profiles').update({ notif_visto_em: new Date().toISOString() }).eq('id', userId)
+}

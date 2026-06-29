@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
+import Notificacoes from './Notificacoes.jsx'
 import { useAuth } from '../context/Auth.jsx'
 
 const abasBase = [
@@ -24,10 +25,11 @@ export default function AppLayout() {
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-azul text-white z-30">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
           <Logo className="w-11 h-11 rounded-lg" />
-          <div className="leading-tight">
-            <h1 className="font-extrabold">Filhos da Conquista</h1>
+          <div className="leading-tight flex-1 min-w-0">
+            <h1 className="font-extrabold truncate">Filhos da Conquista</h1>
             <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
           </div>
+          <div className="shrink-0 text-white"><Notificacoes /></div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {abas.map((aba) => (
@@ -68,10 +70,11 @@ export default function AppLayout() {
         <header className="lg:hidden bg-azul text-white shadow-md sticky top-0 z-20">
           <div className="px-4 py-3 flex items-center gap-3">
             <Logo className="w-10 h-10 rounded-lg" />
-            <div className="leading-tight flex-1">
-              <h1 className="font-extrabold text-base">Filhos da Conquista</h1>
+            <div className="leading-tight flex-1 min-w-0">
+              <h1 className="font-extrabold text-base truncate">Filhos da Conquista</h1>
               <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
             </div>
+            <div className="text-white"><Notificacoes /></div>
             <button onClick={sair}
               className="text-xs bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 transition-colors">
               Sair
