@@ -30,7 +30,7 @@ export default function Ranking() {
 
   const ehUnidade = aba === 'unidades'
   const lista = ehUnidade ? dados.unidades : dados.individual
-  const valor = (i) => (ehUnidade ? i.media : i.pts)
+  const valor = (i) => (ehUnidade ? i.pontos : i.pts)
   const max = Math.max(1, ...lista.map(valor))
   const top3 = lista.slice(0, 3)
   const pedestal = [top3[1], top3[0], top3[2]]

@@ -174,6 +174,9 @@ create table if not exists public.pontos (
   data timestamptz default now(),
   lancado_por uuid references public.profiles(id)
 );
+-- Pontos avulsos podem ir direto para uma UNIDADE (time), não só para uma pessoa.
+-- Um lançamento tem OU usuario_id (individual) OU unidade_id (time).
+alter table public.pontos add column if not exists unidade_id uuid references public.unidades(id) on delete cascade;
 
 create table if not exists public.fotos (
   id uuid primary key default gen_random_uuid(),
@@ -227,9 +230,15 @@ returns boolean language sql security definer set search_path = public as $$
   );
 $$;
 drop policy if exists "lancar pontos" on public.pontos;
-create policy "lancar pontos" on public.pontos for insert to authenticated with check (public.pode_apontar(usuario_id));
+create policy "lancar pontos" on public.pontos for insert to authenticated with check (
+  case when unidade_id is not null then public.pode_gerir()   -- pontos de time: só liderança (instrutor/diretoria)
+       else public.pode_apontar(usuario_id) end               -- pontos individuais: regra de sempre
+);
 drop policy if exists "apagar pontos" on public.pontos;
-create policy "apagar pontos" on public.pontos for delete to authenticated using (public.pode_apontar(usuario_id));
+create policy "apagar pontos" on public.pontos for delete to authenticated using (
+  case when unidade_id is not null then public.pode_gerir()
+       else public.pode_apontar(usuario_id) end
+);
 
 -- Fotos: todos leem; autenticado posta a sua
 drop policy if exists "ler fotos" on public.fotos;

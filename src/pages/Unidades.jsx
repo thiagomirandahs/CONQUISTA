@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
-import { carregarRanking } from '../lib/dados.js'
+import { carregarRanking, lancarPontosUnidade } from '../lib/dados.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 
@@ -14,6 +14,7 @@ export default function Unidades() {
   const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [sel, setSel] = useState(null)
+  const [pontosPara, setPontosPara] = useState(null) // unidade que vai receber pontos de time
 
   async function carregar() {
     const { unidades } = await carregarRanking()
@@ -97,14 +98,15 @@ export default function Unidades() {
                 <div className="font-bold text-slate-800">{u.nome}</div>
                 <div className="text-xs text-slate-400 mb-3">{u.membros.length} membros</div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-400">Média</span>
-                  <span className="text-dourado font-extrabold">{u.media} pts</span>
+                  <span className="text-slate-400">Pontos</span>
+                  <span className="text-dourado font-extrabold">{u.pontos} pts</span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                   <motion.div className="h-full rounded-full" style={{ backgroundColor: u.cor }}
-                    initial={{ width: 0 }} animate={{ width: `${Math.min(u.media, 100)}%` }}
+                    initial={{ width: 0 }} animate={{ width: `${Math.min(u.pontos, 100)}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} />
                 </div>
+                <div className="text-[10px] text-slate-400 mt-1">time {u.avulsos} + média {u.media}</div>
               </div>
             </motion.button>
           ))}
@@ -129,8 +131,9 @@ export default function Unidades() {
                 <h3 className="text-2xl font-extrabold">{sel.nome}</h3>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span>👥 {sel.membros.length} membros</span>
-                  <span>⭐ {sel.media} pts (média)</span>
+                  <span>⭐ {sel.pontos} pts</span>
                 </div>
+                <div className="text-xs text-white/80 mt-1">time {sel.avulsos} + média dos membros {sel.media}</div>
               </div>
               <div className="p-3 overflow-y-auto">
                 <p className="text-xs font-semibold text-slate-400 px-2 mb-1">MEMBROS</p>
@@ -146,21 +149,101 @@ export default function Unidades() {
                 ))}
               </div>
               {ehAdmin && (
-                <div className="p-3 border-t border-slate-100 flex gap-2">
-                  <label className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
-                    📷 Imagem
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
-                  </label>
-                  <button onClick={() => excluirUnidade(sel)}
-                    className="flex-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
-                    🗑️ Excluir
+                <div className="p-3 border-t border-slate-100 space-y-2">
+                  <button onClick={() => setPontosPara(sel)}
+                    className="w-full text-sm text-white bg-azul hover:bg-azul-claro rounded-xl py-2.5 font-semibold">
+                    🏆 Lançar pontos pra unidade
                   </button>
+                  <div className="flex gap-2">
+                    <label className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
+                      📷 Imagem
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
+                    </label>
+                    <button onClick={() => excluirUnidade(sel)}
+                      className="flex-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
+                      🗑️ Excluir
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal: lançar pontos avulsos pra unidade (só liderança) */}
+      <AnimatePresence>
+        {pontosPara && (
+          <PontosUnidade
+            unidade={pontosPara}
+            onFechar={() => setPontosPara(null)}
+            onLancar={async (valor, motivo) => {
+              await lancarPontosUnidade({ unidadeId: pontosPara.id, pontos: valor, motivo, lancadoPor: profile?.id })
+              setPontosPara(null)
+              setSel(null)
+              carregar()
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  )
+}
+
+function PontosUnidade({ unidade, onLancar, onFechar }) {
+  const [valor, setValor] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function enviar(e) {
+    e.preventDefault()
+    const n = parseInt(valor, 10)
+    if (!n) { setErro('Digite uma quantidade de pontos (ex.: 50).'); return }
+    setSalvando(true)
+    setErro('')
+    try {
+      await onLancar(n, motivo.trim())
+    } catch (err) {
+      setErro('Não foi possível lançar: ' + (err?.message || err))
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onFechar}>
+      <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🏆 Pontos pra unidade</h3>
+        <p className="text-sm text-slate-500 mb-4">Pontos de time para <strong>{unidade.nome}</strong> (entram no ranking da unidade).</p>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Pontos</label>
+        <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="ex.: 50"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-2" />
+        <div className="flex gap-1.5 mb-3">
+          {[10, 20, 50, 100].map((q) => (
+            <button type="button" key={q} onClick={() => setValor(String(q))}
+              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">+{q}</button>
+          ))}
+        </div>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Motivo (opcional)</label>
+        <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={120} placeholder="ex.: Venceu a gincana"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+
+        {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
+
+        <div className="flex gap-2">
+          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+          <motion.button type="submit" disabled={salvando} whileTap={{ scale: 0.97 }}
+            className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+            {salvando ? 'Lançando...' : 'Lançar'}
+          </motion.button>
+        </div>
+      </motion.form>
+    </motion.div>
   )
 }

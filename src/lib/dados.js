@@ -5,11 +5,18 @@ export async function carregarRanking() {
   const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
     supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
-    supabase.from('pontos').select('usuario_id,pontos'),
+    // select('*') de propósito: se a coluna unidade_id ainda não existir (migração
+    // não rodada), a leitura não quebra — apenas ignora os pontos de time.
+    supabase.from('pontos').select('*'),
   ])
 
-  const total = {}
-  ;(pts || []).forEach((p) => { total[p.usuario_id] = (total[p.usuario_id] || 0) + (p.pontos || 0) })
+  // Pontos individuais (por pessoa) e pontos avulsos de time (por unidade)
+  const totalPessoa = {}
+  const totalTime = {}
+  ;(pts || []).forEach((p) => {
+    if (p.usuario_id) totalPessoa[p.usuario_id] = (totalPessoa[p.usuario_id] || 0) + (p.pontos || 0)
+    else if (p.unidade_id) totalTime[p.unidade_id] = (totalTime[p.unidade_id] || 0) + (p.pontos || 0)
+  })
 
   const corUni = Object.fromEntries((us || []).map((u) => [u.id, u.cor || '#1e3a8a']))
   const nomeUni = Object.fromEntries((us || []).map((u) => [u.id, u.nome]))
@@ -18,24 +25,36 @@ export async function carregarRanking() {
     .map((u) => {
       const membros = (ps || [])
         .filter((p) => p.unidade_id === u.id && p.papel === 'desbravador')
-        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: total[p.id] || 0 }))
+        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
         .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
-      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media }
+      const avulsos = totalTime[u.id] || 0
+      // Método escolhido: pontos avulsos do time + média dos desbravadores (ambos justos com o tamanho)
+      const pontos = avulsos + media
+      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media, avulsos, pontos }
     })
-    // Ranking de unidades: maior média primeiro (desempate por nome) → 1º, 2º, 3º...
-    .sort((a, b) => b.media - a.media || a.nome.localeCompare(b.nome, 'pt-BR'))
+    // Ranking de unidades: maior pontuação total primeiro (desempate por nome) → 1º, 2º, 3º...
+    .sort((a, b) => b.pontos - a.pontos || a.nome.localeCompare(b.nome, 'pt-BR'))
 
   const individual = (ps || [])
     .map((p) => ({
       id: p.id, nome: p.nome, foto: p.foto,
       unidade: nomeUni[p.unidade_id] || '', cor: corUni[p.unidade_id] || '#1e3a8a',
-      pts: total[p.id] || 0,
+      pts: totalPessoa[p.id] || 0,
     }))
     // Ranking individual: maior pontuação primeiro (desempate por nome)
     .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
 
   return { unidades, individual }
+}
+
+// Lança pontos avulsos de time direto para uma unidade (sem atividade nem pessoa).
+// O RLS só deixa a liderança (instrutor/diretoria) fazer isso.
+export async function lancarPontosUnidade({ unidadeId, pontos, motivo, lancadoPor }) {
+  const { error } = await supabase.from('pontos').insert({
+    unidade_id: unidadeId, pontos, motivo: motivo || null, origem: 'unidade', lancado_por: lancadoPor,
+  })
+  if (error) throw error
 }
 
 // =====================================================================
