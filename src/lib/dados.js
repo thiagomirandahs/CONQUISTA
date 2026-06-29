@@ -3,7 +3,7 @@ import { supabase } from './supabase.js'
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
 export async function carregarRanking() {
   const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
-    supabase.from('unidades').select('id,nome,cor').order('nome'),
+    supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
     supabase.from('profiles').select('id,nome,foto,unidade_id').eq('status', 'ativo'),
     supabase.from('pontos').select('usuario_id,pontos'),
   ])
@@ -20,7 +20,7 @@ export async function carregarRanking() {
       .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: total[p.id] || 0 }))
       .sort((a, b) => b.pts - a.pts)
     const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
-    return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', membros, media }
+    return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media }
   })
 
   const individual = (ps || [])

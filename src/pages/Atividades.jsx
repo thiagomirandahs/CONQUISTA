@@ -38,6 +38,8 @@ export default function Atividades() {
   const [filtro, setFiltro] = useState('Todas')
   const [criando, setCriando] = useState(false)
   const [entregando, setEntregando] = useState(null)
+  const [aba, setAba] = useState('atividades')
+  const [pendentes, setPendentes] = useState([])
 
   async function carregar() {
     const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
@@ -49,6 +51,12 @@ export default function Atividades() {
       const map = {}
       ;(ents || []).forEach((e) => { map[e.atividade_id] = e.status })
       setEntregues(map)
+    }
+    if (ehAdmin) {
+      const { data: pend } = await supabase.from('entregas')
+        .select('id, usuario_id, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+        .eq('status', 'pendente').order('created_at', { ascending: true })
+      setPendentes(pend || [])
     }
     setCarregando(false)
   }
@@ -84,6 +92,18 @@ export default function Atividades() {
     carregar()
   }
 
+  async function aprovarEntrega(e) {
+    const pts = e.atividade?.pontos || 0
+    const u1 = await supabase.from('entregas').update({ status: 'aprovada', pontos_dados: pts, avaliado_por: profile?.id }).eq('id', e.id)
+    if (u1.error) { alert('Erro ao aprovar: ' + u1.error.message); return }
+    await supabase.from('pontos').insert({ usuario_id: e.usuario_id, origem: 'atividade', pontos: pts, motivo: `Atividade: ${e.atividade?.titulo || ''}`, lancado_por: profile?.id })
+    carregar()
+  }
+  async function reprovarEntrega(e) {
+    await supabase.from('entregas').update({ status: 'reprovada', avaliado_por: profile?.id }).eq('id', e.id)
+    carregar()
+  }
+
   return (
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
@@ -105,6 +125,19 @@ export default function Atividades() {
         </div>
       )}
 
+      {ehAdmin && (
+        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+          {[['atividades', '📋 Atividades'], ['corrigir', `✅ Corrigir${pendentes.length ? ` (${pendentes.length})` : ''}`]].map(([k, lbl]) => (
+            <button key={k} onClick={() => setAba(k)}
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+          ))}
+        </div>
+      )}
+
+      {aba === 'corrigir' ? (
+        <CorrigirView pendentes={pendentes} onAprovar={aprovarEntrega} onReprovar={reprovarEntrega} />
+      ) : (
+      <>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5 no-scrollbar">
         {categorias.map((c) => {
           const ativo = filtro === c.nome
@@ -181,6 +214,8 @@ export default function Atividades() {
           </AnimatePresence>
         </motion.div>
       )}
+      </>
+      )}
 
       <AnimatePresence>
         {criando && <NovaAtividadeModal key="nova" onFechar={() => setCriando(false)} onSalvar={salvarNova} />}
@@ -188,6 +223,40 @@ export default function Atividades() {
       <AnimatePresence>
         {entregando && <EntregarModal key="entrega" atividade={entregando} onFechar={() => setEntregando(null)} onConfirmar={confirmarEntrega} />}
       </AnimatePresence>
+    </div>
+  )
+}
+
+/* ---------- Aba de correção das entregas (liderança) ---------- */
+function CorrigirView({ pendentes, onAprovar, onReprovar }) {
+  if (!pendentes.length) {
+    return (
+      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="text-4xl mb-2">🎉</div>
+        <p className="font-semibold text-slate-700">Nada para corrigir!</p>
+        <p className="text-sm text-slate-400">Todas as entregas já foram avaliadas.</p>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-3">
+      {pendentes.map((e) => (
+        <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-bold text-slate-800">{e.autor?.nome || 'Desbravador'}</div>
+              <div className="text-xs text-azul-claro font-semibold">{e.atividade?.titulo}</div>
+            </div>
+            <div className="text-dourado font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
+          </div>
+          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
+          {e.foto_url && <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>}
+          <div className="flex gap-2 mt-3">
+            <button onClick={() => onReprovar(e)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Reprovar</button>
+            <button onClick={() => onAprovar(e)} className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold">✅ Aprovar (+{e.atividade?.pontos || 0})</button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

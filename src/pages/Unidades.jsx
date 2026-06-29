@@ -40,6 +40,18 @@ export default function Unidades() {
     carregar()
   }
 
+  async function trocarImagem(u, file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `unidades/${u.id}-${Date.now()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
+    if (upErr) { alert('Erro no upload: ' + upErr.message); return }
+    const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+    const { error } = await supabase.from('unidades').update({ emblema: pub.publicUrl }).eq('id', u.id)
+    if (error) { alert('Erro ao salvar: ' + error.message); return }
+    setSel((s) => (s ? { ...s, emblema: pub.publicUrl } : s))
+    carregar()
+  }
+
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
@@ -74,10 +86,14 @@ export default function Unidades() {
               className="bg-white rounded-2xl shadow-sm overflow-hidden text-left">
               <div className="h-2" style={{ backgroundColor: u.cor }} />
               <div className="p-4">
-                <div className="w-11 h-11 rounded-full grid place-items-center text-white font-bold text-lg mb-2 shadow"
-                  style={{ backgroundColor: u.cor }}>
-                  {u.nome?.[0]?.toUpperCase()}
-                </div>
+                {u.emblema ? (
+                  <img src={u.emblema} alt={u.nome} className="w-11 h-11 rounded-full object-cover mb-2 shadow" />
+                ) : (
+                  <div className="w-11 h-11 rounded-full grid place-items-center text-white font-bold text-lg mb-2 shadow"
+                    style={{ backgroundColor: u.cor }}>
+                    {u.nome?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <div className="font-bold text-slate-800">{u.nome}</div>
                 <div className="text-xs text-slate-400 mb-3">{u.membros.length} membros</div>
                 <div className="flex justify-between text-xs mb-1">
@@ -105,7 +121,11 @@ export default function Unidades() {
               className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               <div className="p-5 text-white relative" style={{ backgroundColor: sel.cor }}>
                 <button onClick={() => setSel(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
-                <div className="w-14 h-14 rounded-full bg-white/20 grid place-items-center text-2xl font-extrabold mb-2">{sel.nome?.[0]?.toUpperCase()}</div>
+                {sel.emblema ? (
+                  <img src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-white/20 grid place-items-center text-2xl font-extrabold mb-2">{sel.nome?.[0]?.toUpperCase()}</div>
+                )}
                 <h3 className="text-2xl font-extrabold">{sel.nome}</h3>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span>👥 {sel.membros.length} membros</span>
@@ -126,10 +146,14 @@ export default function Unidades() {
                 ))}
               </div>
               {ehAdmin && (
-                <div className="p-3 border-t border-slate-100">
+                <div className="p-3 border-t border-slate-100 flex gap-2">
+                  <label className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
+                    📷 Imagem
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
+                  </label>
                   <button onClick={() => excluirUnidade(sel)}
-                    className="w-full text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
-                    🗑️ Excluir unidade
+                    className="flex-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
+                    🗑️ Excluir
                   </button>
                 </div>
               )}
