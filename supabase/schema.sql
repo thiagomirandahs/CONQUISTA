@@ -100,6 +100,22 @@ drop policy if exists "admin atualiza perfis" on public.profiles;
 create policy "admin atualiza perfis" on public.profiles
   for update to authenticated using (public.pode_aprovar());
 
+-- SEGURANÇA: usuário comum não pode mudar o próprio papel/cargo/status/unidade
+create or replace function public.protege_campos_perfil()
+returns trigger language plpgsql set search_path = public as $func$
+begin
+  if current_user not in ('authenticated','anon') then return new; end if;
+  if not public.pode_aprovar() then
+    new.papel := old.papel; new.cargo := old.cargo;
+    new.status := old.status; new.unidade_id := old.unidade_id;
+  end if;
+  return new;
+end;
+$func$;
+drop trigger if exists trg_protege_perfil on public.profiles;
+create trigger trg_protege_perfil before update on public.profiles
+  for each row execute function public.protege_campos_perfil();
+
 -- =====================================================================
 --  PASSO 2: Atividades, Entregas, Pontos e Fotos (deixar tudo real)
 -- =====================================================================
@@ -180,7 +196,7 @@ create policy "ler entregas" on public.entregas for select to authenticated
   using (usuario_id = auth.uid() or public.pode_gerir());
 drop policy if exists "criar entrega" on public.entregas;
 create policy "criar entrega" on public.entregas for insert to authenticated
-  with check (usuario_id = auth.uid());
+  with check (usuario_id = auth.uid() and status = 'pendente');
 drop policy if exists "corrigir entrega" on public.entregas;
 create policy "corrigir entrega" on public.entregas for update to authenticated
   using (public.pode_gerir());
