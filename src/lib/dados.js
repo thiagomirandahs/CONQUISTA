@@ -133,6 +133,39 @@ export async function resetarSenha(userId, novaSenha) {
   return { ok: true }
 }
 
+// =====================================================================
+//  DEVOCIONAL DIÁRIO — versículo do dia + quiz + foto + sequência
+// =====================================================================
+
+export async function carregarDevocional() {
+  const [{ data: vers }, { data: resumo }] = await Promise.all([
+    supabase.rpc('versiculo_do_dia'),
+    supabase.rpc('meu_resumo_devocional'),
+  ])
+  const versiculo = Array.isArray(vers) ? vers[0] : vers
+  return {
+    versiculo: versiculo || null,
+    resumo: resumo || { feito: false, sequencia: 0, foto: null },
+  }
+}
+
+// Envia a foto pro Storage e registra o devocional do dia (pontua na hora).
+// resposta = índice da opção escolhida no quiz (ou null).
+export async function enviarDevocional({ foto, resposta, userId }) {
+  let fotoUrl = null
+  if (foto) {
+    const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `devocional/${userId}-${Date.now()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
+    if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
+    const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+    fotoUrl = pub.publicUrl
+  }
+  const { data, error } = await supabase.rpc('registrar_devocional', { p_foto_url: fotoUrl, p_resposta: resposta ?? null })
+  if (error) throw new Error(error.message)
+  return data // { acertou, pontos }
+}
+
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {
   const { data } = await supabase
