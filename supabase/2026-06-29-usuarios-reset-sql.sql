@@ -14,18 +14,15 @@ create extension if not exists pgcrypto with schema extensions;
 --    Só liderança ativa pode chamar; os demais recebem erro.
 create or replace function public.listar_usuarios()
 returns table (id uuid, nome text, foto text, papel text, status text, unidade_id uuid, email text)
-language plpgsql security definer set search_path = '' as $$
-begin
-  if not exists (select 1 from public.profiles eu
-                 where eu.id = auth.uid() and eu.status = 'ativo' and eu.papel in ('instrutor','diretoria')) then
-    raise exception 'Sem permissão (apenas diretoria/instrutor).';
-  end if;
-  return query
-    select p.id, p.nome, p.foto, p.papel, p.status, p.unidade_id, u.email::text
-    from public.profiles p
-    left join auth.users u on u.id = p.id
-    order by p.nome;
-end;
+language sql security definer set search_path = '' as $$
+  select p.id, p.nome, p.foto, p.papel, p.status, p.unidade_id, u.email::text
+  from public.profiles p
+  left join auth.users u on u.id = p.id
+  where exists (
+    select 1 from public.profiles eu
+    where eu.id = auth.uid() and eu.status = 'ativo' and eu.papel in ('instrutor','diretoria')
+  )
+  order by p.nome;
 $$;
 grant execute on function public.listar_usuarios() to authenticated;
 
