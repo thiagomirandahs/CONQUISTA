@@ -24,8 +24,8 @@ export async function carregarRanking() {
   const unidades = (us || [])
     .map((u) => {
       const membros = (ps || [])
-        .filter((p) => p.unidade_id === u.id && p.papel === 'desbravador')
-        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
+        .filter((p) => p.unidade_id === u.id) // desbravadores + conselheiros da unidade entram na média
+        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
         .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
       const avulsos = totalTime[u.id] || 0
