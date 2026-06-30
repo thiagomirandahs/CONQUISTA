@@ -19,6 +19,15 @@ export default function AppLayout() {
   const temGestao = TEM_GESTAO.includes(profile?.papel)
   const abas = temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
 
+  // Força buscar a versão mais nova e recarregar (reforço da auto-atualização)
+  async function atualizarApp() {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration?.()
+      if (reg) await reg.update()
+    } catch { /* ignora */ }
+    window.location.reload()
+  }
+
   return (
     <div className="min-h-full lg:flex">
       {/* ===== Menu lateral (PC) ===== */}
@@ -55,10 +64,14 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3">
-          {profile?.nome && <p className="px-4 pb-2 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+        <div className="p-3 space-y-1">
+          {profile?.nome && <p className="px-4 pb-1 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+          <button onClick={atualizarApp}
+            className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
+            🔄 Atualizar app
+          </button>
           <button onClick={sair}
-            className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-3 text-left transition-colors">
+            className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
             🚪 Sair
           </button>
         </div>
@@ -75,6 +88,7 @@ export default function AppLayout() {
               <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
             </div>
             <div className="text-white"><Notificacoes /></div>
+            <button onClick={atualizarApp} aria-label="Atualizar app" className="text-white text-lg leading-none px-1">🔄</button>
             <button onClick={sair}
               className="text-xs bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 transition-colors">
               Sair
