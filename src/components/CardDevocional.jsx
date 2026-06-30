@@ -40,7 +40,9 @@ export default function CardDevocional() {
         </div>
 
         <p className="text-[15px] leading-snug relative">"{versiculo.texto}"</p>
-        <p className="text-xs text-blue-100 mt-1 relative">— {versiculo.referencia}</p>
+        {feito
+          ? <p className="text-xs text-blue-100 mt-1 relative">— {versiculo.referencia}</p>
+          : <p className="text-xs text-blue-100/70 mt-1 relative">📖 De qual livro será? Descubra no quiz!</p>}
 
         <div className="mt-3 relative">
           {feito ? (
@@ -115,7 +117,7 @@ function ModalDevocional({ versiculo, userId, onFechar, onConcluido }) {
         <div className="p-5 space-y-4 overflow-y-auto">
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-sm text-slate-700 leading-snug">"{versiculo.texto}"</p>
-            <p className="text-xs text-slate-400 mt-1">— {versiculo.referencia}</p>
+            <p className="text-[11px] text-slate-400 mt-1">📖 Leia com atenção e responda de qual livro é 👇</p>
           </div>
 
           {opcoes.length > 0 && (
