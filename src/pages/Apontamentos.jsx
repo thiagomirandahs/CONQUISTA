@@ -42,8 +42,15 @@ export default function Apontamentos() {
     let vivo = true
     setCarregando(true)
     const motivo = `Reunião ${fmtData(data)}`
+    // Admin (instrutor/diretoria) também vê os conselheiros da unidade pra marcar presença;
+    // conselheiro comum continua só com desbravadores (o RLS não o deixaria pontuar conselheiros).
+    const qPessoas = supabase.from('profiles').select('id,nome,foto,papel')
+      .eq('unidade_id', unidadeId).eq('status', 'ativo')
+    if (ehAdmin) qPessoas.in('papel', ['desbravador', 'conselheiro'])
+    else qPessoas.eq('papel', 'desbravador')
+    qPessoas.order('papel', { ascending: false }).order('nome')
     Promise.all([
-      supabase.from('profiles').select('id,nome,foto').eq('unidade_id', unidadeId).eq('status', 'ativo').eq('papel', 'desbravador').order('nome'),
+      qPessoas,
       // já lançado nesta data? traz o que foi marcado de cada um pra pré-preencher
       supabase.from('pontos').select('usuario_id,marca').eq('origem', 'apontamento').eq('motivo', motivo),
     ]).then(([{ data: desb }, { data: existentes }]) => {
@@ -127,7 +134,10 @@ export default function Apontamentos() {
             return (
               <div key={d.id} className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-800">{d.nome}</span>
+                  <span className="font-bold text-slate-800">
+                    {d.nome}
+                    {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                  </span>
                   <span className="text-azul font-extrabold">{calcTotal(m)} pts</span>
                 </div>
                 <div className="flex gap-1.5 mb-2">

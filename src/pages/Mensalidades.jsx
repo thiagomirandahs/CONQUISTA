@@ -19,7 +19,7 @@ export default function Mensalidades() {
 
   async function carregar() {
     setCarregando(true)
-    const { data: ds } = await supabase.from('profiles').select('id,nome,foto').eq('status', 'ativo').eq('papel', 'desbravador').order('nome')
+    const { data: ds } = await supabase.from('profiles').select('id,nome,foto,papel').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
     setDesbravadores(ds || [])
     const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
     const map = {}
@@ -59,7 +59,7 @@ export default function Mensalidades() {
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">💰 Mensalidades</h2>
-        <p className="text-sm text-slate-500">Controle de pagamentos por desbravador</p>
+        <p className="text-sm text-slate-500">Controle de pagamentos (desbravadores e conselheiros)</p>
       </div>
 
       <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 grid grid-cols-3 gap-3">
@@ -90,7 +90,7 @@ export default function Mensalidades() {
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : desbravadores.length === 0 ? (
-        <p className="text-slate-400 text-sm">Nenhum desbravador cadastrado ainda.</p>
+        <p className="text-slate-400 text-sm">Ninguém cadastrado ainda.</p>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
           {desbravadores.map((d) => {
@@ -98,7 +98,10 @@ export default function Mensalidades() {
             return (
               <div key={d.id} className="flex items-center gap-3 px-4 py-3">
                 <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
-                <span className="flex-1 font-medium text-slate-800 truncate">{d.nome}</span>
+                <span className="flex-1 min-w-0 font-medium text-slate-800 truncate">
+                  {d.nome}
+                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                </span>
                 <button onClick={() => alternar(d)}
                   className={`text-xs font-bold rounded-lg px-3 py-1.5 transition-colors ${pago ? 'bg-green-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
                   {pago ? '✅ Pago' : '⏳ Pendente'}
