@@ -39,16 +39,25 @@ export default function Apontamentos() {
 
   useEffect(() => {
     if (!unidadeId) { setDesbravadores([]); return }
+    let vivo = true
     setCarregando(true)
-    supabase.from('profiles').select('id,nome,foto').eq('unidade_id', unidadeId).eq('status', 'ativo').eq('papel', 'desbravador').order('nome')
-      .then(({ data }) => {
-        setDesbravadores(data || [])
-        const m = {}
-        ;(data || []).forEach((d) => { m[d.id] = marcaInicial() })
-        setMarcas(m)
-        setCarregando(false)
-      })
-  }, [unidadeId])
+    const motivo = `Reunião ${fmtData(data)}`
+    Promise.all([
+      supabase.from('profiles').select('id,nome,foto').eq('unidade_id', unidadeId).eq('status', 'ativo').eq('papel', 'desbravador').order('nome'),
+      // já lançado nesta data? traz o que foi marcado de cada um pra pré-preencher
+      supabase.from('pontos').select('usuario_id,marca').eq('origem', 'apontamento').eq('motivo', motivo),
+    ]).then(([{ data: desb }, { data: existentes }]) => {
+      if (!vivo) return
+      setDesbravadores(desb || [])
+      const salvos = {}
+      ;(existentes || []).forEach((p) => { if (p.marca) salvos[p.usuario_id] = p.marca })
+      const m = {}
+      ;(desb || []).forEach((d) => { m[d.id] = salvos[d.id] || marcaInicial() })
+      setMarcas(m)
+      setCarregando(false)
+    })
+    return () => { vivo = false }
+  }, [unidadeId, data])
 
   const setMarca = (id, campo, v) => setMarcas((prev) => ({ ...prev, [id]: { ...prev[id], [campo]: v } }))
 
@@ -56,11 +65,12 @@ export default function Apontamentos() {
     setSalvando(true)
     const motivo = `Reunião ${fmtData(data)}`
     for (const d of desbravadores) {
-      const total = calcTotal(marcas[d.id])
+      const m = marcas[d.id] || marcaInicial()
+      const total = calcTotal(m)
+      // regrava só a linha desta pessoa nesta data (não toca em outras datas/pessoas)
       await supabase.from('pontos').delete().eq('usuario_id', d.id).eq('origem', 'apontamento').eq('motivo', motivo)
-      if (total > 0) {
-        await supabase.from('pontos').insert({ usuario_id: d.id, origem: 'apontamento', pontos: total, motivo, data, lancado_por: profile?.id })
-      }
+      // grava sempre (inclusive 0/faltou) com o que foi marcado, pra recarregar certinho depois
+      await supabase.from('pontos').insert({ usuario_id: d.id, origem: 'apontamento', pontos: total, motivo, data, lancado_por: profile?.id, marca: m })
     }
     setSalvando(false)
     alert('Apontamentos salvos! ✅ Os pontos já entram no ranking.')

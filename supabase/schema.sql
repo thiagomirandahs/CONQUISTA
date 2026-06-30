@@ -177,6 +177,8 @@ create table if not exists public.pontos (
 -- Pontos avulsos podem ir direto para uma UNIDADE (time), não só para uma pessoa.
 -- Um lançamento tem OU usuario_id (individual) OU unidade_id (time).
 alter table public.pontos add column if not exists unidade_id uuid references public.unidades(id) on delete cascade;
+-- Apontamentos: guarda o que foi marcado (presença/bíblia/uniforme/...) pra a tela pré-carregar.
+alter table public.pontos add column if not exists marca jsonb;
 
 create table if not exists public.fotos (
   id uuid primary key default gen_random_uuid(),
