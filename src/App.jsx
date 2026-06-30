@@ -15,6 +15,7 @@ const Aprovacoes = lazy(() => import('./pages/Aprovacoes.jsx'))
 const Apontamentos = lazy(() => import('./pages/Apontamentos.jsx'))
 const Gestao = lazy(() => import('./pages/Gestao.jsx'))
 const Mensalidades = lazy(() => import('./pages/Mensalidades.jsx'))
+const Usuarios = lazy(() => import('./pages/Usuarios.jsx'))
 
 function Carregando() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/aprovacoes" element={<Aprovacoes />} />
           <Route path="/apontamentos" element={<Apontamentos />} />
           <Route path="/mensalidades" element={<Mensalidades />} />
+          <Route path="/usuarios" element={<Usuarios />} />
         </Route>
       </Routes>
     </Suspense>

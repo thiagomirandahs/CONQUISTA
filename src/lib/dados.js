@@ -114,6 +114,31 @@ export async function marcarNotificacoesVistas(userId) {
   await supabase.from('profiles').update({ notif_visto_em: new Date().toISOString() }).eq('id', userId)
 }
 
+// =====================================================================
+//  USUÁRIOS (gestão da liderança) — listar e resetar senha
+// =====================================================================
+
+export async function carregarUsuarios() {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id,nome,foto,papel,status,unidade_id')
+    .order('nome')
+  return data || []
+}
+
+// Define uma nova senha para um usuário (via Edge Function admin-reset-senha).
+// Só funciona se quem chama for liderança (a função valida isso no servidor).
+export async function resetarSenha(userId, novaSenha) {
+  const { data, error } = await supabase.functions.invoke('admin-reset-senha', { body: { userId, novaSenha } })
+  if (error) {
+    let msg = error.message || 'Erro na função'
+    try { const corpo = await error.context.json(); if (corpo?.error) msg = corpo.error } catch { /* ignora */ }
+    throw new Error(msg)
+  }
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {
   const { data } = await supabase
