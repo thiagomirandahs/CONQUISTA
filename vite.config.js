@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import legacy from '@vitejs/plugin-legacy'
 
 // Configuração do projeto: React + Tailwind + PWA (instalável no celular)
 export default defineConfig({
@@ -30,7 +31,11 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
         ]
       }
-    })
+    }),
+    // Modo de compatibilidade: faz o app rodar em celulares/navegadores antigos
+    legacy({
+      targets: ['defaults', 'Android >= 6', 'Chrome >= 61', 'not dead'],
+    }),
   ],
   server: {
     open: true, // abre o navegador automaticamente ao rodar "npm run dev"
