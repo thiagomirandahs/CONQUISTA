@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { carregarRanking, lancarPontosUnidade } from '../lib/dados.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
+import CardAniversariantes from '../components/CardAniversariantes.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -67,6 +68,8 @@ export default function Unidades() {
           </motion.button>
         )}
       </div>
+
+      <CardAniversariantes />
 
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>

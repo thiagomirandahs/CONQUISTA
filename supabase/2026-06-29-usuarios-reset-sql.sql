@@ -16,8 +16,8 @@ create or replace function public.listar_usuarios()
 returns table (id uuid, nome text, foto text, papel text, status text, unidade_id uuid, email text)
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not exists (select 1 from public.profiles
-                 where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria')) then
+  if not exists (select 1 from public.profiles eu
+                 where eu.id = auth.uid() and eu.status = 'ativo' and eu.papel in ('instrutor','diretoria')) then
     raise exception 'Sem permissão (apenas diretoria/instrutor).';
   end if;
   return query
@@ -35,8 +35,8 @@ create or replace function public.resetar_senha_membro(alvo uuid, nova_senha tex
 returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not exists (select 1 from public.profiles
-                 where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria')) then
+  if not exists (select 1 from public.profiles eu
+                 where eu.id = auth.uid() and eu.status = 'ativo' and eu.papel in ('instrutor','diretoria')) then
     raise exception 'Sem permissão (apenas diretoria/instrutor).';
   end if;
   if nova_senha is null or length(nova_senha) < 6 then
