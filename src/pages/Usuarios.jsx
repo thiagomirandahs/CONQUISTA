@@ -62,8 +62,8 @@ export default function Usuarios() {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar os usuários</p>
           <p className="text-xs mb-2">{erroCarregar}</p>
-          <p className="text-xs">Se a página é nova, falta publicar a função no Supabase:
-            <code className="bg-amber-100 rounded px-1 ml-1">supabase functions deploy admin-reset-senha</code></p>
+          <p className="text-xs">Se a página é nova, falta rodar o SQL no Supabase (SQL Editor):
+            <code className="bg-amber-100 rounded px-1 ml-1">supabase/2026-06-29-usuarios-reset-sql.sql</code></p>
         </div>
       ) : lista.length === 0 ? (
         <p className="text-slate-400 text-sm">Nenhum usuário encontrado.</p>

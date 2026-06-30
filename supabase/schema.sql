@@ -381,6 +381,45 @@ exception when others then null;
 end $$;
 select cron.schedule('aniversariantes-do-dia', '0 12 * * *', $$ select public.notif_aniversariantes_hoje(); $$);
 
+-- ---------- USUÁRIOS: listar com e-mail + resetar senha (só liderança) ----------
+create extension if not exists pgcrypto with schema extensions;
+
+create or replace function public.listar_usuarios()
+returns table (id uuid, nome text, foto text, papel text, status text, unidade_id uuid, email text)
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not exists (select 1 from public.profiles
+                 where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria')) then
+    raise exception 'Sem permissão (apenas diretoria/instrutor).';
+  end if;
+  return query
+    select p.id, p.nome, p.foto, p.papel, p.status, p.unidade_id, u.email::text
+    from public.profiles p
+    left join auth.users u on u.id = p.id
+    order by p.nome;
+end;
+$$;
+grant execute on function public.listar_usuarios() to authenticated;
+
+create or replace function public.resetar_senha_membro(alvo uuid, nova_senha text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if not exists (select 1 from public.profiles
+                 where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria')) then
+    raise exception 'Sem permissão (apenas diretoria/instrutor).';
+  end if;
+  if nova_senha is null or length(nova_senha) < 6 then
+    raise exception 'A senha precisa ter pelo menos 6 caracteres.';
+  end if;
+  update auth.users
+     set encrypted_password = extensions.crypt(nova_senha, extensions.gen_salt('bf')),
+         updated_at = now()
+   where id = alvo;
+  if not found then raise exception 'Usuário não encontrado.'; end if;
+end;
+$$;
+grant execute on function public.resetar_senha_membro(uuid, text) to authenticated;
+
 -- ---------- STORAGE: bucket de imagens (emblemas das unidades, fotos) ----------
 insert into storage.buckets (id, name, public) values ('imagens','imagens',true) on conflict (id) do nothing;
 drop policy if exists "ler imagens publico" on storage.objects;
