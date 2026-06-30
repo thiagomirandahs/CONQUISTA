@@ -83,11 +83,21 @@ export default function Atividades() {
   }
 
   async function confirmarEntrega(atividade, dados) {
+    let fotoUrl = null
+    // Envia a foto de comprovação de verdade para o Storage (bucket imagens)
+    if (dados.foto) {
+      const ext = (dados.foto.name.split('.').pop() || 'jpg').toLowerCase()
+      const path = `atividades/${atividade.id}-${profile?.id}-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('imagens').upload(path, dados.foto, { upsert: true })
+      if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
+      const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+      fotoUrl = pub.publicUrl
+    }
     const { error } = await supabase.from('entregas').insert({
       atividade_id: atividade.id, usuario_id: profile?.id,
-      texto: dados.texto || null, foto_url: dados.foto || null, status: 'pendente',
+      texto: dados.texto || null, foto_url: fotoUrl, status: 'pendente',
     })
-    if (error) { alert('Não foi possível entregar: ' + error.message); return }
+    if (error) throw new Error(error.message)
     setEntregando(null)
     carregar()
   }
@@ -229,6 +239,7 @@ export default function Atividades() {
 
 /* ---------- Aba de correção das entregas (liderança) ---------- */
 function CorrigirView({ pendentes, onAprovar, onReprovar }) {
+  const [ampliar, setAmpliar] = useState(null)
   if (!pendentes.length) {
     return (
       <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -250,13 +261,29 @@ function CorrigirView({ pendentes, onAprovar, onReprovar }) {
             <div className="text-dourado font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
           </div>
           {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
-          {e.foto_url && <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>}
+          {e.foto_url && (e.foto_url.startsWith('http') ? (
+            <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
+              <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-56 object-cover rounded-lg" />
+              <span className="text-[11px] text-slate-400">toque para ampliar 🔍</span>
+            </button>
+          ) : (
+            <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>
+          ))}
           <div className="flex gap-2 mt-3">
             <button onClick={() => onReprovar(e)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Reprovar</button>
             <button onClick={() => onAprovar(e)} className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold">✅ Aprovar (+{e.atividade?.pontos || 0})</button>
           </div>
         </div>
       ))}
+
+      <AnimatePresence>
+        {ampliar && (
+          <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAmpliar(null)}>
+            <img src={ampliar} alt="comprovação" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -329,13 +356,27 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
 function EntregarModal({ atividade, onFechar, onConfirmar }) {
   const c = atividade.criterios || {}
   const [texto, setTexto] = useState('')
-  const [foto, setFoto] = useState('')
+  const [foto, setFoto] = useState(null)
+  const [previa, setPrevia] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  function escolherFoto(f) {
+    setErro('')
+    setFoto(f || null)
+    setPrevia(f ? URL.createObjectURL(f) : null)
+  }
 
   async function confirmar() {
+    if (c.foto && !foto) { setErro('Anexe a foto de comprovação.'); return }
     setEnviando(true)
-    await onConfirmar(atividade, { texto, foto })
-    setEnviando(false)
+    setErro('')
+    try {
+      await onConfirmar(atividade, { texto, foto })
+    } catch (e) {
+      setErro(e?.message || String(e))
+      setEnviando(false)
+    }
   }
 
   return (
@@ -354,11 +395,12 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
           )}
           {(c.foto || c.arquivo) && (
             <Campo label={c.foto ? '📷 Foto de comprovação' : '📎 Arquivo'}>
-              <input type="file" accept={c.foto ? 'image/*' : undefined} className="text-sm" onChange={(e) => setFoto(e.target.files[0]?.name || '')} />
-              {foto && <p className="text-xs text-green-600 mt-1">Anexado: {foto}</p>}
-              <p className="text-[11px] text-slate-400 mt-1">(o envio do arquivo em si entra num próximo passo)</p>
+              <input type="file" accept={c.foto ? 'image/*' : undefined} className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
+              {previa && <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />}
+              {foto && !previa && <p className="text-xs text-green-600 mt-1">Anexado: {foto.name}</p>}
             </Campo>
           )}
+          {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
           <div className="flex gap-2 pt-2">
             <button onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
             <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
