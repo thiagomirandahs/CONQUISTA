@@ -118,18 +118,9 @@ export async function marcarNotificacoesVistas(userId) {
 //  USUÁRIOS (gestão da liderança) — listar e resetar senha
 // =====================================================================
 
-export async function carregarUsuarios() {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id,nome,foto,papel,status,unidade_id')
-    .order('nome')
-  return data || []
-}
-
-// Define uma nova senha para um usuário (via Edge Function admin-reset-senha).
-// Só funciona se quem chama for liderança (a função valida isso no servidor).
-export async function resetarSenha(userId, novaSenha) {
-  const { data, error } = await supabase.functions.invoke('admin-reset-senha', { body: { userId, novaSenha } })
+// Chama a Edge Function de gestão de usuários (validação de liderança no servidor).
+async function chamarAdminUsuarios(body) {
+  const { data, error } = await supabase.functions.invoke('admin-reset-senha', { body })
   if (error) {
     let msg = error.message || 'Erro na função'
     try { const corpo = await error.context.json(); if (corpo?.error) msg = corpo.error } catch { /* ignora */ }
@@ -137,6 +128,17 @@ export async function resetarSenha(userId, novaSenha) {
   }
   if (data?.error) throw new Error(data.error)
   return data
+}
+
+// Lista os usuários COM o e-mail do cadastro (só liderança; e-mail vem do servidor).
+export async function carregarUsuarios() {
+  const d = await chamarAdminUsuarios({ acao: 'listar' })
+  return d?.usuarios || []
+}
+
+// Define uma nova senha para um usuário.
+export async function resetarSenha(userId, novaSenha) {
+  return chamarAdminUsuarios({ acao: 'resetar', userId, novaSenha })
 }
 
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
