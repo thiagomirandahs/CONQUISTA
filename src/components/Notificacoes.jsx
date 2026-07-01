@@ -21,6 +21,7 @@ export default function Notificacoes() {
   const [aberto, setAberto] = useState(false)
   const [lista, setLista] = useState([])
   const [vistoEm, setVistoEm] = useState(null)
+  const [baseline, setBaseline] = useState(null) // congela as não-lidas no momento de abrir
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState('')
   const suportaPush = pushSuportado()
@@ -50,10 +51,14 @@ export default function Notificacoes() {
   }
 
   const naoLidas = lista.filter((n) => !vistoEm || n.created_at > vistoEm).length
+  // No painel, mostra só o que estava NÃO-LIDO quando você abriu (congelado em baseline);
+  // as já vistas somem na próxima vez que abrir o sino.
+  const mostradas = lista.filter((n) => !baseline || n.created_at > baseline)
 
   async function abrir() {
     const fresh = await carregarNotificacoes()
     setLista(fresh)
+    setBaseline(vistoEm) // congela as não-lidas de agora
     setAberto(true)
     if (profile?.id && fresh.some((n) => !vistoEm || n.created_at > vistoEm)) {
       await marcarNotificacoesVistas(profile.id)
@@ -90,26 +95,22 @@ export default function Notificacoes() {
                 <button onClick={() => setAberto(false)} className="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-sm">✕</button>
               </div>
               <div className="overflow-y-auto">
-                {lista.length === 0 ? (
+                {mostradas.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-sm">
-                    <div className="text-3xl mb-2">🔕</div>
-                    Nenhuma notificação ainda.
+                    <div className="text-3xl mb-2">✅</div>
+                    Você está em dia! Nada novo por aqui.
                   </div>
-                ) : lista.map((n) => {
-                  const nova = !vistoEm || n.created_at > vistoEm
-                  return (
-                    <button key={n.id} onClick={() => abrirItem(n)}
-                      className={`w-full flex gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 hover:bg-slate-50 ${nova ? 'bg-azul/5' : ''}`}>
-                      <span className="text-xl shrink-0">{iconePorTipo[n.tipo] || '🔔'}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-800 text-sm">{n.titulo}</div>
-                        {n.corpo && <div className="text-xs text-slate-500 line-clamp-2">{n.corpo}</div>}
-                        <div className="text-[10px] text-slate-400 mt-0.5">{tempoRel(n.created_at)}</div>
-                      </div>
-                      {nova && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1.5" />}
-                    </button>
-                  )
-                })}
+                ) : mostradas.map((n) => (
+                  <button key={n.id} onClick={() => abrirItem(n)}
+                    className="w-full flex gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 hover:bg-slate-50 bg-azul/5">
+                    <span className="text-xl shrink-0">{iconePorTipo[n.tipo] || '🔔'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-slate-800 text-sm">{n.titulo}</div>
+                      {n.corpo && <div className="text-xs text-slate-500 line-clamp-2">{n.corpo}</div>}
+                      <div className="text-[10px] text-slate-400 mt-0.5">{tempoRel(n.created_at)}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
 
               {/* Ativar push neste aparelho */}
