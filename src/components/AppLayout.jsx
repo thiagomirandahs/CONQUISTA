@@ -2,6 +2,7 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
+import DevocionalPopup from './DevocionalPopup.jsx'
 import { useAuth } from '../context/Auth.jsx'
 
 const abasBase = [
@@ -31,6 +32,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-full lg:flex">
+      <DevocionalPopup />
       {/* ===== Menu lateral (PC) ===== */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-azul text-white z-30">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">

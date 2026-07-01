@@ -182,10 +182,27 @@ export function classeDoUsuario(nascimento) {
 export async function carregarMissao() {
   const [{ data: m }, { data: resumo }] = await Promise.all([
     supabase.rpc('missao_do_dia'),
-    supabase.rpc('meu_resumo_devocional'),
+    supabase.rpc('meu_resumo_missoes'),
   ])
   const missao = Array.isArray(m) ? m[0] : m
   return { missao: missao || null, resumo: resumo || { feito: false, sequencia: 0, foto: null } }
+}
+
+// Devocional (popup diário): já fez hoje? + o versículo do dia (sem a resposta).
+export async function carregarDevocionalPopup() {
+  const [{ data: feito }, { data: v }] = await Promise.all([
+    supabase.rpc('devocional_feito_hoje'),
+    supabase.rpc('versiculo_do_dia'),
+  ])
+  const versiculo = Array.isArray(v) ? v[0] : v
+  return { feito: !!feito, versiculo: versiculo || null }
+}
+
+// Registra o devocional do popup (ler + quiz) e ganha 5 pontos, 1x/dia.
+export async function fazerDevocional(resposta) {
+  const { data, error } = await supabase.rpc('registrar_devocional', { p_resposta: resposta ?? null })
+  if (error) throw new Error(error.message)
+  return data
 }
 
 // Envia a foto (se a missão pedir) e registra a missão do dia (pontua na hora).
