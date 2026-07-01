@@ -50,8 +50,8 @@ export default function Missoes() {
     setEnviando(true)
     setErro('')
     try {
-      await enviarMissao({ foto, resposta, userId: profile.id })
-      festa()
+      const r = await enviarMissao({ foto, resposta, userId: profile.id })
+      if (r?.status !== 'pendente') festa() // foto que vai pra aprovação não solta confete ainda
       await recarregar()
     } catch (e) {
       setErro(e?.message || String(e))
@@ -92,9 +92,25 @@ export default function Missoes() {
         </div>
       ) : resumo.feito ? (
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <div className="text-5xl mb-2">✅</div>
-          <p className="font-bold text-slate-800">Missão de hoje concluída!</p>
-          <p className="text-sm text-slate-400">Volte amanhã pra uma nova missão 🙂</p>
+          {resumo.status === 'pendente' ? (
+            <>
+              <div className="text-5xl mb-2">⏳</div>
+              <p className="font-bold text-slate-800">Missão enviada!</p>
+              <p className="text-sm text-slate-400">Aguardando a liderança aprovar a foto pra valer os pontos.</p>
+            </>
+          ) : resumo.status === 'reprovada' ? (
+            <>
+              <div className="text-5xl mb-2">↺</div>
+              <p className="font-bold text-slate-800">Missão de hoje não foi aprovada</p>
+              <p className="text-sm text-slate-400">Capriche mais na próxima 🙂</p>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-2">✅</div>
+              <p className="font-bold text-slate-800">Missão de hoje concluída!</p>
+              <p className="text-sm text-slate-400">Volte amanhã pra uma nova missão 🙂</p>
+            </>
+          )}
           {resumo.foto && <img src={resumo.foto} alt="sua foto" className="mt-3 mx-auto w-32 h-32 object-cover rounded-xl" />}
         </div>
       ) : (

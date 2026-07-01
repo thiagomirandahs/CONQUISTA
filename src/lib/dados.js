@@ -204,6 +204,19 @@ export async function enviarMissao({ foto, resposta, userId }) {
   return data
 }
 
+// Missões de foto aguardando aprovação (só liderança).
+export async function carregarMissoesPendentes() {
+  const { data, error } = await supabase.rpc('missoes_pendentes')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+// Aprovar (vira pontos) ou reprovar (0) uma missão de foto.
+export async function avaliarMissao(id, aprovar) {
+  const { error } = await supabase.rpc('avaliar_missao', { p_id: id, p_aprovar: aprovar })
+  if (error) throw new Error(error.message)
+}
+
 // Envia a foto pro Storage e registra o devocional do dia (pontua na hora).
 // resposta = índice da opção escolhida no quiz (ou null).
 export async function enviarDevocional({ foto, resposta, userId }) {
