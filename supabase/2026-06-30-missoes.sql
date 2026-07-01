@@ -152,9 +152,9 @@ begin
       {"tema":"Lema","pergunta":"Qual é o Lema do Desbravador?","opcoes":["O amor de Cristo me motiva","A mensagem do advento a todo o mundo na minha geração","Serei puro, bondoso e leal","Ir aonde Deus mandar"],"correta":0,"classe":null,"pede_foto":false},
       {"tema":"Nós","pergunta":"Qual nó serve para unir as pontas de duas cordas de mesma espessura?","opcoes":["Nó direito","Nó de escota","Lais de guia","Nó cego"],"correta":0,"classe":null,"pede_foto":false},
       {"tema":"Nós","pergunta":"Qual nó forma uma laçada que NÃO aperta e é usado para salvamento de pessoas?","opcoes":["Lais de guia","Nó direito","Nó de escota","Nó de pescador"],"correta":0,"classe":null,"pede_foto":false},
-      {"tema":"Nós","pergunta":"Missão prática: faça um nó direito com um pedaço de corda e tire uma foto!","opcoes":["Foto do nó direito feito","Não fazer nada","Desenhar uma corda","Cantar uma música"],"correta":0,"classe":null,"pede_foto":true},
+      {"tema":"Nós","pergunta":"Missão prática: faça um nó direito com um pedaço de corda e tire uma foto mostrando o nó!","opcoes":[],"correta":0,"classe":null,"pede_foto":true},
       {"tema":"Natureza","pergunta":"Qual instrumento aponta sempre para o Norte e ajuda o Desbravador a se orientar?","opcoes":["Bússola","Relógio","Lanterna","Régua"],"correta":0,"classe":null,"pede_foto":false},
-      {"tema":"Natureza","pergunta":"Missão: encontre uma planta ou árvore perto de você e tire uma foto dela!","opcoes":["Foto de uma planta","Ficar dentro de casa","Apagar a luz","Dormir"],"correta":0,"classe":"Amigo","pede_foto":true},
+      {"tema":"Natureza","pergunta":"Missão: encontre uma planta ou árvore perto de você e tire uma foto dela!","opcoes":[],"correta":0,"classe":"Amigo","pede_foto":true},
       {"tema":"Clube","pergunta":"Os Desbravadores são um clube ligado a qual igreja?","opcoes":["Igreja Adventista do Sétimo Dia","Igreja Católica","Igreja Batista","Nenhuma igreja"],"correta":0,"classe":null,"pede_foto":false},
       {"tema":"Clube","pergunta":"O que os Desbravadores usam no pescoço como parte do uniforme?","opcoes":["Lenço","Gravata","Cachecol de lã","Colar"],"correta":0,"classe":null,"pede_foto":false}
     ]$json$::jsonb) as d(tema text, pergunta text, opcoes jsonb, correta int, classe text, pede_foto boolean);
