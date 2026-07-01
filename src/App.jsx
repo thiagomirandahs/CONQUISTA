@@ -17,6 +17,7 @@ const Gestao = lazy(() => import('./pages/Gestao.jsx'))
 const Mensalidades = lazy(() => import('./pages/Mensalidades.jsx'))
 const Usuarios = lazy(() => import('./pages/Usuarios.jsx'))
 const RemoverPontos = lazy(() => import('./pages/RemoverPontos.jsx'))
+const Missoes = lazy(() => import('./pages/Missoes.jsx'))
 
 function Carregando() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<Navigate to="/ranking" replace />} />
           <Route path="/ranking" element={<Ranking />} />
+          <Route path="/missoes" element={<Missoes />} />
           <Route path="/atividades" element={<Atividades />} />
           <Route path="/unidades" element={<Unidades />} />
           <Route path="/mural" element={<Mural />} />

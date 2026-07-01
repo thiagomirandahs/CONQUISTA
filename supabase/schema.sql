@@ -524,6 +524,103 @@ end;
 $$;
 grant execute on function public.meu_resumo_devocional() to authenticated;
 
+-- ---------- MISSÕES (devocional + desafios do clube, por classe/idade) ----------
+create or replace function public.classe_por_nascimento(nasc date)
+returns text language sql stable set search_path = '' as $$
+  select case
+    when nasc is null then null
+    when extract(year from age(nasc))::int <= 10 then 'Amigo'
+    when extract(year from age(nasc))::int = 11 then 'Companheiro'
+    when extract(year from age(nasc))::int = 12 then 'Pesquisador'
+    when extract(year from age(nasc))::int = 13 then 'Pioneiro'
+    when extract(year from age(nasc))::int = 14 then 'Excursionista'
+    else 'Guia'
+  end;
+$$;
+
+create table if not exists public.desafios (
+  id uuid primary key default gen_random_uuid(),
+  tema text, texto text, pergunta text not null,
+  opcoes jsonb not null default '[]', correta int not null default 0,
+  classe text, pede_foto boolean not null default false,
+  ativo boolean default true, created_at timestamptz default now()
+);
+alter table public.desafios enable row level security;
+drop policy if exists "ler desafios" on public.desafios;
+create policy "ler desafios" on public.desafios for select to authenticated using (public.pode_gerir());
+drop policy if exists "gerir desafios" on public.desafios;
+create policy "gerir desafios" on public.desafios for all to authenticated
+  using (public.pode_gerir()) with check (public.pode_gerir());
+
+create or replace function public.missao_do_dia()
+returns table (tipo text, texto text, referencia text, tema text, pergunta text, opcoes jsonb, pede_foto boolean, classe text)
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  v_idx int := (v_hoje - date '2026-01-01');
+  v_classe text;
+begin
+  select public.classe_por_nascimento(nascimento) into v_classe from public.profiles where id = auth.uid();
+  if v_idx % 2 = 1 then
+    return query
+    with d as (
+      select ds.texto, ds.tema, ds.pergunta, ds.opcoes, ds.pede_foto,
+             row_number() over (order by ds.created_at, ds.id) - 1 as i
+      from public.desafios ds where ds.ativo and (ds.classe = v_classe or ds.classe is null)
+    ), n as (select count(*) c from d)
+    select 'desafio'::text, d.texto, null::text, d.tema, d.pergunta, d.opcoes, d.pede_foto, v_classe
+    from d cross join n where n.c > 0 and d.i = (v_idx % nullif(n.c, 0));
+    if found then return; end if;
+  end if;
+  return query
+  with v as (
+    select vs.texto, vs.referencia, vs.pergunta, vs.opcoes,
+           row_number() over (order by vs.created_at, vs.id) - 1 as i
+    from public.versiculos vs where vs.ativo
+  ), n as (select count(*) c from v)
+  select 'devocional'::text, v.texto, v.referencia, 'Devocional'::text, v.pergunta, v.opcoes, true, v_classe
+  from v cross join n where n.c > 0 and v.i = (v_idx % nullif(n.c, 0));
+end;
+$$;
+grant execute on function public.missao_do_dia() to authenticated;
+
+create or replace function public.registrar_missao(p_foto_url text, p_resposta int)
+returns json language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  v_idx int := (v_hoje - date '2026-01-01');
+  v_classe text; v_tipo text := 'devocional'; v_correta int; v_acertou boolean := false; v_pontos int;
+begin
+  if v_uid is null then raise exception 'Não autenticado.'; end if;
+  select public.classe_por_nascimento(nascimento) into v_classe from public.profiles where id = v_uid;
+  if v_idx % 2 = 1 then
+    with d as (
+      select ds.correta, row_number() over (order by ds.created_at, ds.id) - 1 as i
+      from public.desafios ds where ds.ativo and (ds.classe = v_classe or ds.classe is null)
+    ), n as (select count(*) c from d)
+    select d.correta into v_correta from d cross join n where n.c > 0 and d.i = (v_idx % nullif(n.c, 0));
+    if found then v_tipo := 'desafio'; end if;
+  end if;
+  if v_tipo = 'devocional' then
+    with v as (
+      select vs.correta, row_number() over (order by vs.created_at, vs.id) - 1 as i
+      from public.versiculos vs where vs.ativo
+    ), n as (select count(*) c from v)
+    select v.correta into v_correta from v cross join n where n.c > 0 and v.i = (v_idx % nullif(n.c, 0));
+  end if;
+  v_acertou := (p_resposta is not null and v_correta is not null and p_resposta = v_correta);
+  v_pontos := 10 + (case when v_acertou then 5 else 0 end);
+  insert into public.devocional (usuario_id, data, foto_url, acertou_quiz) values (v_uid, v_hoje, p_foto_url, v_acertou);
+  insert into public.pontos (usuario_id, origem, pontos, motivo)
+  values (v_uid, 'missao', v_pontos, 'Missão ' || to_char(v_hoje, 'DD/MM') || case when v_acertou then ' (quiz ✓)' else '' end);
+  return json_build_object('acertou', v_acertou, 'pontos', v_pontos, 'tipo', v_tipo);
+exception when unique_violation then raise exception 'Você já fez a missão de hoje! Volte amanhã. 🙂';
+end;
+$$;
+grant execute on function public.registrar_missao(text, int) to authenticated;
+-- (Os desafios iniciais são semeados por supabase/2026-06-30-missoes.sql.)
+
 -- ---------- STORAGE: bucket de imagens (emblemas das unidades, fotos) ----------
 insert into storage.buckets (id, name, public) values ('imagens','imagens',true) on conflict (id) do nothing;
 drop policy if exists "ler imagens publico" on storage.objects;

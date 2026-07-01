@@ -166,6 +166,44 @@ export async function carregarDevocional() {
   }
 }
 
+// Classe do desbravador pela idade (padrão Desbravadores).
+export function classeDoUsuario(nascimento) {
+  if (!nascimento) return null
+  const [a, m, d] = String(nascimento).split('-').map(Number)
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - a
+  const jaFez = hoje.getMonth() + 1 > m || (hoje.getMonth() + 1 === m && hoje.getDate() >= d)
+  if (!jaFez) idade--
+  const mapa = { 10: 'Amigo', 11: 'Companheiro', 12: 'Pesquisador', 13: 'Pioneiro', 14: 'Excursionista', 15: 'Guia' }
+  return mapa[idade] || (idade < 10 ? 'Amigo' : 'Guia')
+}
+
+// Missão do dia (devocional OU desafio da classe) + resumo (feito/sequência).
+export async function carregarMissao() {
+  const [{ data: m }, { data: resumo }] = await Promise.all([
+    supabase.rpc('missao_do_dia'),
+    supabase.rpc('meu_resumo_devocional'),
+  ])
+  const missao = Array.isArray(m) ? m[0] : m
+  return { missao: missao || null, resumo: resumo || { feito: false, sequencia: 0, foto: null } }
+}
+
+// Envia a foto (se a missão pedir) e registra a missão do dia (pontua na hora).
+export async function enviarMissao({ foto, resposta, userId }) {
+  let fotoUrl = null
+  if (foto) {
+    const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `missoes/${userId}-${Date.now()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
+    if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
+    const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+    fotoUrl = pub.publicUrl
+  }
+  const { data, error } = await supabase.rpc('registrar_missao', { p_foto_url: fotoUrl, p_resposta: resposta ?? null })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Envia a foto pro Storage e registra o devocional do dia (pontua na hora).
 // resposta = índice da opção escolhida no quiz (ou null).
 export async function enviarDevocional({ foto, resposta, userId }) {
