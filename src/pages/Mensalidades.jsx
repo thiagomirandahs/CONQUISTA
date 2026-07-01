@@ -14,7 +14,7 @@ export default function Mensalidades() {
   const [pagamentos, setPagamentos] = useState({})
   const [mes, setMes] = useState(agora.getMonth() + 1)
   const [ano, setAno] = useState(agora.getFullYear())
-  const [valor, setValor] = useState(20)
+  const [valor, setValor] = useState(30)
   const [carregando, setCarregando] = useState(true)
 
   async function carregar() {

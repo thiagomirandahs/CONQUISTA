@@ -217,6 +217,10 @@ create policy "criar entrega" on public.entregas for insert to authenticated
 drop policy if exists "corrigir entrega" on public.entregas;
 create policy "corrigir entrega" on public.entregas for update to authenticated
   using (public.pode_gerir());
+-- Liderança pode APAGAR entregas (limpar envios errados/duplicados)
+drop policy if exists "apagar entrega" on public.entregas;
+create policy "apagar entrega" on public.entregas for delete to authenticated
+  using (public.pode_gerir());
 
 -- Pontos: todos leem (ranking); liderança lança
 drop policy if exists "ler pontos" on public.pontos;

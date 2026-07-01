@@ -40,6 +40,7 @@ export default function Atividades() {
   const [entregando, setEntregando] = useState(null)
   const [aba, setAba] = useState('atividades')
   const [pendentes, setPendentes] = useState([])
+  const [entregas, setEntregas] = useState([])
 
   async function carregar() {
     const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
@@ -57,6 +58,10 @@ export default function Atividades() {
         .select('id, usuario_id, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
         .eq('status', 'pendente').order('created_at', { ascending: true })
       setPendentes(pend || [])
+      const { data: todas } = await supabase.from('entregas')
+        .select('id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+        .order('created_at', { ascending: false })
+      setEntregas(todas || [])
     }
     setCarregando(false)
   }
@@ -113,6 +118,20 @@ export default function Atividades() {
     await supabase.from('entregas').update({ status: 'reprovada', avaliado_por: profile?.id }).eq('id', e.id)
     carregar()
   }
+  async function excluirEntrega(e) {
+    if (!window.confirm(`Apagar a entrega de ${e.autor?.nome || 'desbravador'} em "${e.atividade?.titulo || ''}"?`)) return
+    // apaga a entrega PRIMEIRO; só mexe nos pontos se ela foi mesmo apagada
+    const { error } = await supabase.from('entregas').delete().eq('id', e.id)
+    if (error) { alert('Não foi possível apagar: ' + error.message); return }
+    // se estava aprovada, remove também os pontos que ela gerou
+    if (e.status === 'aprovada') {
+      const { error: ep } = await supabase.from('pontos').delete()
+        .eq('usuario_id', e.usuario_id).eq('origem', 'atividade')
+        .eq('motivo', `Atividade: ${e.atividade?.titulo || ''}`)
+      if (ep) alert('Entrega apagada, mas houve erro ao remover os pontos: ' + ep.message)
+    }
+    carregar()
+  }
 
   return (
     <div>
@@ -136,8 +155,8 @@ export default function Atividades() {
       )}
 
       {ehAdmin && (
-        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
-          {[['atividades', '📋 Atividades'], ['corrigir', `✅ Corrigir${pendentes.length ? ` (${pendentes.length})` : ''}`]].map(([k, lbl]) => (
+        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-md">
+          {[['atividades', '📋 Atividades'], ['corrigir', `✅ Corrigir${pendentes.length ? ` (${pendentes.length})` : ''}`], ['entregas', '📦 Entregas']].map(([k, lbl]) => (
             <button key={k} onClick={() => setAba(k)}
               className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
           ))}
@@ -146,6 +165,8 @@ export default function Atividades() {
 
       {aba === 'corrigir' ? (
         <CorrigirView pendentes={pendentes} onAprovar={aprovarEntrega} onReprovar={reprovarEntrega} />
+      ) : aba === 'entregas' ? (
+        <EntregasView entregas={entregas} onExcluir={excluirEntrega} />
       ) : (
       <>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5 no-scrollbar">
@@ -276,6 +297,55 @@ function CorrigirView({ pendentes, onAprovar, onReprovar }) {
         </div>
       ))}
 
+      <AnimatePresence>
+        {ampliar && (
+          <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAmpliar(null)}>
+            <img src={ampliar} alt="comprovação" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/* ---------- Aba de todas as entregas (liderança) — ver e apagar ---------- */
+function EntregasView({ entregas, onExcluir }) {
+  const [ampliar, setAmpliar] = useState(null)
+  if (!entregas.length) {
+    return (
+      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="text-4xl mb-2">📦</div>
+        <p className="font-semibold text-slate-700">Nenhuma entrega ainda</p>
+        <p className="text-sm text-slate-400">As entregas dos desbravadores aparecem aqui.</p>
+      </div>
+    )
+  }
+  const badge = (s) => (s === 'aprovada' ? 'bg-green-100 text-green-700' : s === 'reprovada' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700')
+  const rotulo = (s) => (s === 'aprovada' ? '✅ Aprovada' : s === 'reprovada' ? '↺ Reprovada' : '⏳ Pendente')
+  return (
+    <div className="space-y-3">
+      {entregas.map((e) => (
+        <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-bold text-slate-800">{e.autor?.nome || 'Desbravador'}</div>
+              <div className="text-xs text-azul-claro font-semibold">{e.atividade?.titulo}</div>
+            </div>
+            <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
+          </div>
+          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
+          {e.foto_url && e.foto_url.startsWith('http') && (
+            <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
+              <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-48 object-cover rounded-lg" />
+            </button>
+          )}
+          <button onClick={() => onExcluir(e)}
+            className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 py-2 text-sm font-semibold">
+            🗑️ Apagar entrega{e.status === 'aprovada' ? ' (e os pontos)' : ''}
+          </button>
+        </div>
+      ))}
       <AnimatePresence>
         {ampliar && (
           <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"

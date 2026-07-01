@@ -57,6 +57,23 @@ export async function lancarPontosUnidade({ unidadeId, pontos, motivo, lancadoPo
   if (error) throw error
 }
 
+// Lançamentos de pontos recentes (individual e de unidade) para a liderança remover.
+export async function carregarLancamentos() {
+  const { data } = await supabase
+    .from('pontos')
+    .select('id,pontos,origem,motivo,data,usuario_id,unidade_id,pessoa:profiles!usuario_id(nome),unidade:unidades!unidade_id(nome)')
+    .order('data', { ascending: false })
+    .limit(200)
+  return data || []
+}
+
+// Remove um lançamento de pontos (o RLS só deixa a liderança). Ranking se ajusta sozinho.
+export async function removerLancamento(id) {
+  const { data, error } = await supabase.from('pontos').delete().eq('id', id).select('id')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Não foi possível remover (sem permissão).')
+}
+
 // =====================================================================
 //  MURAL DE FOTOS — fotos reais do banco, agrupadas por categoria (evento)
 // =====================================================================
