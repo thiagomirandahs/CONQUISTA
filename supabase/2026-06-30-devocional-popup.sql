@@ -166,8 +166,9 @@ begin
   ), n as (select count(*) c from v)
   select v.correta into v_correta from v cross join n where n.c > 0 and v.i = (v_idx % nullif(n.c, 0));
   v_acertou := (p_resposta is not null and v_correta is not null and p_resposta = v_correta);
-  insert into public.devocional (usuario_id, data, acertou_quiz, status, pontos_dados)
-  values (v_uid, v_hoje, v_acertou, 'aprovada', 5);
+  -- o popup do devocional é simples (não usa status/pontos_dados)
+  insert into public.devocional (usuario_id, data, acertou_quiz)
+  values (v_uid, v_hoje, v_acertou);
   insert into public.pontos (usuario_id, origem, pontos, motivo)
   values (v_uid, 'devocional', 5, 'Devocional ' || to_char(v_hoje, 'DD/MM'));
   return json_build_object('acertou', v_acertou, 'pontos', 5);
