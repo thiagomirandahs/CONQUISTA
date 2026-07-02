@@ -19,6 +19,7 @@ const Usuarios = lazy(() => import('./pages/Usuarios.jsx'))
 const RemoverPontos = lazy(() => import('./pages/RemoverPontos.jsx'))
 const Missoes = lazy(() => import('./pages/Missoes.jsx'))
 const AprovarMissoes = lazy(() => import('./pages/AprovarMissoes.jsx'))
+const Trilha = lazy(() => import('./pages/Trilha.jsx'))
 
 function Carregando() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/ranking" replace />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/missoes" element={<Missoes />} />
+          <Route path="/trilha" element={<Trilha />} />
           <Route path="/aprovar-missoes" element={<AprovarMissoes />} />
           <Route path="/atividades" element={<Atividades />} />
           <Route path="/unidades" element={<Unidades />} />

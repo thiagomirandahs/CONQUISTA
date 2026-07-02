@@ -8,6 +8,7 @@ import { useAuth } from '../context/Auth.jsx'
 const abasBase = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
   { to: '/missoes', label: 'Missões', icon: '🎯' },
+  { to: '/trilha', label: 'Trilha', icon: '🗺️' },
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },
   { to: '/mural', label: 'Mural', icon: '📸' },

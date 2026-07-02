@@ -190,6 +190,18 @@ export async function carregarMissao() {
   return { missao: missao || null, resumo: resumo || { feito: false, sequencia: 0, foto: null } }
 }
 
+// Trilha do Acampamento — meu progresso (jogou hoje? passos) e registrar o jogo.
+export async function carregarTrilha() {
+  const { data, error } = await supabase.rpc('meu_progresso_trilha')
+  if (error) throw new Error(error.message)
+  return data || { feito: false, passos: 0 }
+}
+export async function registrarJogo(tipo, estrelas) {
+  const { data, error } = await supabase.rpc('registrar_jogo', { p_tipo: tipo, p_estrelas: estrelas })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Devocional (popup diário): já fez hoje? + o versículo do dia (sem a resposta).
 export async function carregarDevocionalPopup() {
   const [{ data: feito }, { data: v }] = await Promise.all([

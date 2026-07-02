@@ -3,7 +3,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { carregarLancamentos, removerLancamento } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
-const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯' }
+const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯', trilha: '🗺️' }
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
 
 export default function RemoverPontos() {
