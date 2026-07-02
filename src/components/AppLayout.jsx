@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
@@ -21,6 +22,7 @@ export default function AppLayout() {
   const { sair, profile } = useAuth()
   const temGestao = TEM_GESTAO.includes(profile?.papel)
   const abas = temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
+  const [menuAberto, setMenuAberto] = useState(false)
 
   // Força buscar a versão mais nova e recarregar (reforço da auto-atualização)
   async function atualizarApp() {
@@ -86,21 +88,17 @@ export default function AppLayout() {
         {/* Cabeçalho (celular) */}
         <header className="lg:hidden bg-azul text-white shadow-md sticky top-0 z-20">
           <div className="px-4 py-3 flex items-center gap-3">
+            <button onClick={() => setMenuAberto(true)} aria-label="Menu" className="text-2xl leading-none px-1 -ml-1">☰</button>
             <Logo className="w-10 h-10 rounded-lg" />
             <div className="leading-tight flex-1 min-w-0">
               <h1 className="font-extrabold text-base truncate">Filhos da Conquista</h1>
               <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
             </div>
             <div className="text-white"><Notificacoes /></div>
-            <button onClick={atualizarApp} aria-label="Atualizar app" className="text-white text-lg leading-none px-1">🔄</button>
-            <button onClick={sair}
-              className="text-xs bg-white/10 hover:bg-white/20 rounded-lg px-3 py-1.5 transition-colors">
-              Sair
-            </button>
           </div>
         </header>
 
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-28 lg:pb-10">
+        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -115,37 +113,51 @@ export default function AppLayout() {
         </main>
       </div>
 
-      {/* ===== Menu inferior (celular) ===== */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 z-20">
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${abas.length}, minmax(0, 1fr))` }}>
-          {abas.map((aba) => (
-            <NavLink
-              key={aba.to}
-              to={aba.to}
-              className={({ isActive }) =>
-                `relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors ${
-                  isActive ? 'text-azul' : 'text-slate-400'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <motion.span layoutId="inferior-ativo"
-                      className="absolute -top-px h-1 w-8 rounded-full bg-dourado" />
-                  )}
-                  <motion.span className="text-xl"
-                    animate={{ scale: isActive ? 1.18 : 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
-                    {aba.icon}
-                  </motion.span>
-                  <span>{aba.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      {/* ===== Menu deslizante (celular) — abre no ☰ ===== */}
+      <AnimatePresence>
+        {menuAberto && (
+          <div className="lg:hidden">
+            <motion.div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMenuAberto(false)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.aside className="fixed inset-y-0 left-0 w-72 max-w-[82vw] bg-azul text-white z-50 flex flex-col shadow-2xl"
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 34 }}>
+              <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+                <Logo className="w-11 h-11 rounded-lg" />
+                <div className="leading-tight flex-1 min-w-0">
+                  <h1 className="font-extrabold truncate">Filhos da Conquista</h1>
+                  <p className="text-[11px] text-blue-200">Desbravadores · 1994</p>
+                </div>
+                <button onClick={() => setMenuAberto(false)} aria-label="Fechar" className="w-8 h-8 rounded-full bg-white/15 grid place-items-center shrink-0">✕</button>
+              </div>
+              <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+                {abas.map((aba) => (
+                  <NavLink key={aba.to} to={aba.to} onClick={() => setMenuAberto(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors ${
+                        isActive ? 'text-azul bg-white' : 'text-blue-100 hover:bg-white/10'
+                      }`
+                    }>
+                    <span className="text-xl">{aba.icon}</span>
+                    <span>{aba.label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+              <div className="p-3 space-y-1 border-t border-white/10">
+                {profile?.nome && <p className="px-4 pb-1 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+                <button onClick={atualizarApp}
+                  className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
+                  🔄 Atualizar app
+                </button>
+                <button onClick={sair}
+                  className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
+                  🚪 Sair
+                </button>
+              </div>
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
