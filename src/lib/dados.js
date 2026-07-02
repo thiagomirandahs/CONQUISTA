@@ -4,7 +4,9 @@ import { supabase } from './supabase.js'
 export async function carregarRanking() {
   const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
+    // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
+    // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
+    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
     // select('*') de propósito: se a coluna unidade_id ainda não existir (migração
     // não rodada), a leitura não quebra — apenas ignora os pontos de time.
     supabase.from('pontos').select('*'),
