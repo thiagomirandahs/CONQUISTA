@@ -5,7 +5,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'
 import { pushSuportado, pushAtivo, ativarPush } from '../lib/push.js'
 
-const iconePorTipo = { pontos: '🏆', atividade: '📋', cadastro: '👤', foto: '📸', aniversario: '🎂', geral: '📣' }
+const iconePorTipo = { pontos: '🏆', atividade: '📋', missao: '🎯', cadastro: '👤', foto: '📸', aniversario: '🎂', geral: '📣' }
 
 function tempoRel(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
@@ -34,6 +34,19 @@ export default function Notificacoes() {
 
   useEffect(() => { pushAtivo().then(setPushOn) }, [])
 
+  // Atualiza a contagem ao voltar pro app (antes só no login/refresh)
+  useEffect(() => {
+    function atualizar() {
+      if (document.visibilityState === 'visible') carregarNotificacoes().then(setLista)
+    }
+    document.addEventListener('visibilitychange', atualizar)
+    window.addEventListener('focus', atualizar)
+    return () => {
+      document.removeEventListener('visibilitychange', atualizar)
+      window.removeEventListener('focus', atualizar)
+    }
+  }, [])
+
   async function alternarPush() {
     setPushMsg('')
     try {
@@ -51,9 +64,9 @@ export default function Notificacoes() {
   }
 
   const naoLidas = lista.filter((n) => !vistoEm || n.created_at > vistoEm).length
-  // No painel, mostra só o que estava NÃO-LIDO quando você abriu (congelado em baseline);
-  // as já vistas somem na próxima vez que abrir o sino.
-  const mostradas = lista.filter((n) => !baseline || n.created_at > baseline)
+  // Mostra o HISTÓRICO (últimas 30) e destaca as que estavam não-lidas ao abrir.
+  const mostradas = lista
+  const naoLidaNoPainel = (n) => baseline && n.created_at > baseline
 
   async function abrir() {
     const fresh = await carregarNotificacoes()
@@ -98,11 +111,11 @@ export default function Notificacoes() {
                 {mostradas.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-sm">
                     <div className="text-3xl mb-2">✅</div>
-                    Você está em dia! Nada novo por aqui.
+                    Nada por aqui ainda.
                   </div>
                 ) : mostradas.map((n) => (
                   <button key={n.id} onClick={() => abrirItem(n)}
-                    className="w-full flex gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 hover:bg-slate-50 bg-azul/5">
+                    className={`w-full flex gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 hover:bg-slate-50 ${naoLidaNoPainel(n) ? 'bg-azul/5' : ''}`}>
                     <span className="text-xl shrink-0">{iconePorTipo[n.tipo] || '🔔'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-slate-800 text-sm">{n.titulo}</div>

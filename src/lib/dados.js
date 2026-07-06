@@ -96,6 +96,7 @@ export async function carregarFotos() {
     .from('fotos')
     .select('id,url,legenda,evento,autor_id,created_at')
     .order('created_at', { ascending: false })
+    .limit(300)
   return data || []
 }
 
@@ -230,22 +231,6 @@ export async function atualizarFotoPerfil({ userId, file }) {
   return pub.publicUrl
 }
 
-// =====================================================================
-//  DEVOCIONAL DIÁRIO — versículo do dia + quiz + foto + sequência
-// =====================================================================
-
-export async function carregarDevocional() {
-  const [{ data: vers }, { data: resumo }] = await Promise.all([
-    supabase.rpc('versiculo_do_dia'),
-    supabase.rpc('meu_resumo_devocional'),
-  ])
-  const versiculo = Array.isArray(vers) ? vers[0] : vers
-  return {
-    versiculo: versiculo || null,
-    resumo: resumo || { feito: false, sequencia: 0, foto: null },
-  }
-}
-
 // Classe do desbravador pela idade (padrão Desbravadores).
 export function classeDoUsuario(nascimento) {
   if (!nascimento) return null
@@ -325,24 +310,6 @@ export async function carregarMissoesPendentes() {
 export async function avaliarMissao(id, aprovar) {
   const { error } = await supabase.rpc('avaliar_missao', { p_id: id, p_aprovar: aprovar })
   if (error) throw new Error(error.message)
-}
-
-// Envia a foto pro Storage e registra o devocional do dia (pontua na hora).
-// resposta = índice da opção escolhida no quiz (ou null).
-export async function enviarDevocional({ foto, resposta, userId }) {
-  let fotoUrl = null
-  if (foto) {
-    foto = await comprimirImagem(foto)
-    const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
-    const path = `devocional/${userId}-${Date.now()}.${ext}`
-    const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
-    if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
-    const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
-    fotoUrl = pub.publicUrl
-  }
-  const { data, error } = await supabase.rpc('registrar_devocional', { p_foto_url: fotoUrl, p_resposta: resposta ?? null })
-  if (error) throw new Error(error.message)
-  return data // { acertou, pontos }
 }
 
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).

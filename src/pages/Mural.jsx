@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarFotos, adicionarFoto, excluirFoto } from '../lib/dados.js'
 
 // Categorias (álbuns) do mural. O nome é gravado na coluna "evento" de cada foto.
@@ -44,6 +45,7 @@ export default function Mural() {
 
   return (
     <div>
+      <AvisoOffline />
       <AnimatePresence mode="wait">
         {categoria ? (
           <motion.div key="album" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>

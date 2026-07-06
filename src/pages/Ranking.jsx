@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
+import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarRanking } from '../lib/dados.js'
 
 const medalhas = ['🥇', '🥈', '🥉']
@@ -49,6 +50,7 @@ export default function Ranking() {
 
   return (
     <div>
+      <AvisoOffline />
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-800">🏆 Ranking</h2>

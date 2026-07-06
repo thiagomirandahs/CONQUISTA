@@ -17,21 +17,55 @@ export default function Mensalidades() {
   const [ano, setAno] = useState(agora.getFullYear())
   const [valor, setValor] = useState(30)
   const [carregando, setCarregando] = useState(true)
+  const [aba, setAba] = useState('mes') // mes | ano
+  const [anual, setAnual] = useState({}) // { desbravador_id: { mes: status } }
+  const [carregandoAnual, setCarregandoAnual] = useState(false)
 
-  async function carregar() {
+  // Carrega os pagamentos do MÊS (com flag 'vivo' pra resposta atrasada não sobrescrever)
+  useEffect(() => {
+    if (!podeVer) { setCarregando(false); return }
+    let vivo = true
     setCarregando(true)
-    const { data: ds } = await supabase.from('profiles').select('id,nome,foto,papel').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
-    setDesbravadores(ds || [])
+    ;(async () => {
+      const { data: ds } = await supabase.from('profiles').select('id,nome,foto,papel')
+        .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
+      const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
+      if (!vivo) return
+      setDesbravadores(ds || [])
+      const map = {}
+      ;(ms || []).forEach((m) => { map[m.desbravador_id] = m })
+      setPagamentos(map)
+      setCarregando(false)
+    })()
+    return () => { vivo = false }
+  }, [mes, ano, podeVer]) // eslint-disable-line
+
+  // Carrega o ANO inteiro (grade membro x 12 meses) quando a aba "Ano" abre
+  useEffect(() => {
+    if (!podeVer || aba !== 'ano') return
+    let vivo = true
+    setCarregandoAnual(true)
+    ;(async () => {
+      const { data } = await supabase.from('mensalidades').select('desbravador_id,mes,status').eq('ano', ano)
+      if (!vivo) return
+      const map = {}
+      ;(data || []).forEach((m) => { (map[m.desbravador_id] ||= {})[m.mes] = m.status })
+      setAnual(map)
+      setCarregandoAnual(false)
+    })()
+    return () => { vivo = false }
+  }, [aba, ano, podeVer])
+
+  async function recarregarMes() {
     const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
     const map = {}
     ;(ms || []).forEach((m) => { map[m.desbravador_id] = m })
     setPagamentos(map)
-    setCarregando(false)
   }
-  useEffect(() => { if (podeVer) carregar(); else setCarregando(false) }, [mes, ano, podeVer]) // eslint-disable-line
 
   async function alternar(d) {
     const pago = pagamentos[d.id]?.status === 'pago'
+    if (pago && !window.confirm(`Desmarcar o pagamento de ${(d.nome || 'membro').split(' ')[0]}? A data registrada será perdida.`)) return
     const novo = pago ? 'pendente' : 'pago'
     setPagamentos((p) => ({ ...p, [d.id]: { status: novo, valor } }))
     const { error } = await supabase.from('mensalidades').upsert({
@@ -39,7 +73,7 @@ export default function Mensalidades() {
       data_pagamento: novo === 'pago' ? hojeLocalISO() : null,
       registrado_por: profile?.id,
     }, { onConflict: 'desbravador_id,mes,ano' })
-    if (error) { alert('Erro: ' + error.message); carregar() }
+    if (error) { alert('Erro: ' + error.message); recarregarMes() }
   }
 
   if (!podeVer) {
@@ -63,6 +97,17 @@ export default function Mensalidades() {
         <p className="text-sm text-slate-500">Controle de pagamentos (desbravadores e conselheiros)</p>
       </div>
 
+      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+        {[['mes', '📅 Por mês'], ['ano', '🗓️ Ano inteiro']].map(([k, lbl]) => (
+          <button key={k} onClick={() => setAba(k)}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+        ))}
+      </div>
+
+      {aba === 'ano' ? (
+        <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} meses={meses} />
+      ) : (
+      <>
       <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 grid grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-semibold text-slate-500 mb-1">Mês</label>
@@ -110,6 +155,54 @@ export default function Mensalidades() {
               </div>
             )
           })}
+        </div>
+      )}
+      </>
+      )}
+    </div>
+  )
+}
+
+function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses }) {
+  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
+  return (
+    <div>
+      <div className="mb-3 max-w-[140px]">
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Ano</label>
+        <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
+          {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
+      {desbravadores.length === 0 ? (
+        <p className="text-slate-400 text-sm">Ninguém cadastrado ainda.</p>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm p-2 overflow-x-auto">
+          <table className="text-xs w-full border-collapse">
+            <thead>
+              <tr className="text-slate-400">
+                <th className="text-left font-semibold px-2 py-1.5 sticky left-0 bg-white">Membro</th>
+                {meses.map((m, i) => <th key={i} className="px-1 py-1.5 font-semibold" title={m}>{m[0]}</th>)}
+                <th className="px-1.5 py-1.5 font-semibold">Pgs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {desbravadores.map((d) => {
+                const linha = anual[d.id] || {}
+                const pagos = Object.values(linha).filter((s) => s === 'pago').length
+                return (
+                  <tr key={d.id} className="border-t border-slate-100">
+                    <td className="text-left px-2 py-1.5 font-medium text-slate-700 truncate max-w-[110px] sticky left-0 bg-white">{d.nome}</td>
+                    {meses.map((_, i) => {
+                      const s = linha[i + 1]
+                      return <td key={i} className="px-1 py-1.5 text-center">{s === 'pago' ? '✅' : <span className="text-slate-300">·</span>}</td>
+                    })}
+                    <td className="px-1.5 py-1.5 text-center font-bold text-azul">{pagos}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          <p className="text-[11px] text-slate-400 mt-2 px-1">✅ pago · <span className="text-slate-300">·</span> em aberto — deslize pra ver todos os meses.</p>
         </div>
       )}
     </div>

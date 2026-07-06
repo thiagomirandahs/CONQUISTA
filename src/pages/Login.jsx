@@ -31,7 +31,9 @@ export default function Login() {
     const { data: perfil } = await supabase.from('profiles').select('status').eq('id', data.user.id).single()
     if (!perfil || perfil.status !== 'ativo') {
       await supabase.auth.signOut()
-      setErro('Seu cadastro ainda está aguardando aprovação da diretoria. ⏳')
+      setErro(perfil?.status === 'rejeitado'
+        ? 'Seu cadastro não foi aprovado. Fale com um líder do clube. 🙏'
+        : 'Seu cadastro ainda está aguardando aprovação da diretoria. ⏳')
       setCarregando(false)
       return
     }
@@ -85,6 +87,9 @@ export default function Login() {
         <p className="text-center text-sm mt-5 text-slate-600">
           Ainda não tem conta?{' '}
           <Link to="/cadastro" className="text-azul-claro font-semibold hover:underline">Cadastre-se</Link>
+        </p>
+        <p className="text-center text-xs mt-2 text-slate-400">
+          Esqueceu a senha? Fale com um líder do clube — ele cria uma nova pra você.
         </p>
       </motion.div>
       <p className="text-white/80 text-xs mt-6 relative z-10">⭐ Desde 1994</p>

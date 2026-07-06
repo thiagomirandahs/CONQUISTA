@@ -70,6 +70,7 @@ export default function Atividades() {
       const { data: todas } = await supabase.from('entregas')
         .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
         .order('created_at', { ascending: false })
+        .limit(200)
       setEntregas(todas || [])
       // quem PODE entregar (pra calcular quem ainda não entregou)
       const { data: mem } = await supabase.from('profiles').select('id,nome')
@@ -181,7 +182,7 @@ export default function Atividades() {
 
       {erroBanco && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3 mb-4">
-          ⚠️ As atividades ainda não estão conectadas ao banco. Falta o comando de reload da API (avisei no chat).
+          ⚠️ Não consegui carregar as atividades agora. Verifique a internet e toque em 🔄 Atualizar app. Se persistir, avise a diretoria.
         </div>
       )}
 

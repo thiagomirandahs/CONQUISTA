@@ -5,6 +5,7 @@ import { carregarRanking, lancarPontosUnidade } from '../lib/dados.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
+import AvisoOffline from '../components/AvisoOffline.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
@@ -61,6 +62,7 @@ export default function Unidades() {
 
   return (
     <div>
+      <AvisoOffline />
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-800">Unidades</h2>
