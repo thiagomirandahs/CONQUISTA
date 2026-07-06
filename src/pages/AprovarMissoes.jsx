@@ -53,7 +53,7 @@ export default function AprovarMissoes() {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar</p>
           <p className="text-xs mb-1">{erro}</p>
-          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-06-30-missoes-aprovacao.sql</code> no Supabase.</p>
+          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-06-30-devocional-popup.sql</code> no Supabase (é ele que cria a tabela missoes_feitas e a função de aprovação).</p>
         </div>
       ) : lista.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
