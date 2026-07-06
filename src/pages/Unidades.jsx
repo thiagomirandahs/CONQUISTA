@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { carregarRanking, lancarPontosUnidade } from '../lib/dados.js'
+import { comprimirImagem } from '../lib/imagem.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
@@ -43,6 +44,7 @@ export default function Unidades() {
   }
 
   async function trocarImagem(u, file) {
+    file = await comprimirImagem(file, { maxLado: 512 })
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
     const path = `unidades/${u.id}-${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { comprimirImagem } from '../lib/imagem.js'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -44,6 +45,7 @@ export default function Atividades() {
   const [aba, setAba] = useState('atividades')
   const [pendentes, setPendentes] = useState([])
   const [entregas, setEntregas] = useState([])
+  const [avaliando, setAvaliando] = useState(null) // id da entrega sendo aprovada/reprovada
 
   async function carregar() {
     const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
@@ -92,11 +94,13 @@ export default function Atividades() {
 
   async function confirmarEntrega(atividade, dados) {
     let fotoUrl = null
-    // Envia a foto de comprovação de verdade para o Storage (bucket imagens)
+    // Envia a comprovação de verdade para o Storage (bucket imagens).
+    // Foto é comprimida; vídeo passa direto (comprimirImagem só mexe em imagem).
     if (dados.foto) {
-      const ext = (dados.foto.name.split('.').pop() || 'jpg').toLowerCase()
+      const arquivo = await comprimirImagem(dados.foto)
+      const ext = (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
       const path = `atividades/${atividade.id}-${profile?.id}-${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage.from('imagens').upload(path, dados.foto, { upsert: true })
+      const { error: upErr } = await supabase.storage.from('imagens').upload(path, arquivo, { upsert: true })
       if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
       const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
       fotoUrl = pub.publicUrl
@@ -111,14 +115,24 @@ export default function Atividades() {
   }
 
   async function aprovarEntrega(e) {
-    const pts = e.atividade?.pontos || 0
-    const u1 = await supabase.from('entregas').update({ status: 'aprovada', pontos_dados: pts, avaliado_por: profile?.id }).eq('id', e.id)
-    if (u1.error) { alert('Erro ao aprovar: ' + u1.error.message); return }
-    await supabase.from('pontos').insert({ usuario_id: e.usuario_id, origem: 'atividade', pontos: pts, motivo: `Atividade: ${e.atividade?.titulo || ''}`, lancado_por: profile?.id })
+    if (avaliando) return
+    setAvaliando(e.id)
+    // RPC atômica e idempotente: só credita os pontos se a entrega ainda estava
+    // 'pendente' — nunca dobra (duplo toque) nem fica "aprovada sem pontos".
+    const { data, error } = await supabase.rpc('aprovar_entrega', { p_entrega_id: e.id })
+    setAvaliando(null)
+    if (error) { alert('Não consegui aprovar: ' + (error.message || error)); return }
+    if (data && data.ok === false) { alert('Essa entrega já tinha sido avaliada — atualizei a lista.') }
     carregar()
   }
   async function reprovarEntrega(e) {
-    await supabase.from('entregas').update({ status: 'reprovada', avaliado_por: profile?.id }).eq('id', e.id)
+    if (avaliando) return
+    setAvaliando(e.id)
+    const { error } = await supabase.from('entregas')
+      .update({ status: 'reprovada', avaliado_por: profile?.id })
+      .eq('id', e.id).eq('status', 'pendente')
+    setAvaliando(null)
+    if (error) { alert('Não consegui reprovar: ' + (error.message || error)); return }
     carregar()
   }
   async function excluirEntrega(e) {
@@ -167,7 +181,7 @@ export default function Atividades() {
       )}
 
       {aba === 'corrigir' ? (
-        <CorrigirView pendentes={pendentes} onAprovar={aprovarEntrega} onReprovar={reprovarEntrega} />
+        <CorrigirView pendentes={pendentes} onAprovar={aprovarEntrega} onReprovar={reprovarEntrega} avaliando={avaliando} />
       ) : aba === 'entregas' ? (
         <EntregasView entregas={entregas} onExcluir={excluirEntrega} />
       ) : (
@@ -262,7 +276,7 @@ export default function Atividades() {
 }
 
 /* ---------- Aba de correção das entregas (liderança) ---------- */
-function CorrigirView({ pendentes, onAprovar, onReprovar }) {
+function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
   const [ampliar, setAmpliar] = useState(null)
   if (!pendentes.length) {
     return (
@@ -298,8 +312,10 @@ function CorrigirView({ pendentes, onAprovar, onReprovar }) {
             <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>
           ))}
           <div className="flex gap-2 mt-3">
-            <button onClick={() => onReprovar(e)} className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Reprovar</button>
-            <button onClick={() => onAprovar(e)} className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold">✅ Aprovar (+{e.atividade?.pontos || 0})</button>
+            <button onClick={() => onReprovar(e)} disabled={!!avaliando}
+              className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Reprovar</button>
+            <button onClick={() => onAprovar(e)} disabled={!!avaliando}
+              className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">{avaliando === e.id ? '...' : `✅ Aprovar (+${e.atividade?.pontos || 0})`}</button>
           </div>
         </div>
       ))}

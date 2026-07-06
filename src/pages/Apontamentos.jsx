@@ -71,15 +71,18 @@ export default function Apontamentos() {
   async function salvar() {
     setSalvando(true)
     const motivo = `Reunião ${fmtData(data)}`
-    for (const d of desbravadores) {
+    // Uma chamada só: o banco apaga+regrava a reunião inteira numa transação.
+    // Se algo falhar, NADA é alterado (não perde ponto pela metade).
+    const itens = desbravadores.map((d) => {
       const m = marcas[d.id] || marcaInicial()
-      const total = calcTotal(m)
-      // regrava só a linha desta pessoa nesta data (não toca em outras datas/pessoas)
-      await supabase.from('pontos').delete().eq('usuario_id', d.id).eq('origem', 'apontamento').eq('motivo', motivo)
-      // grava sempre (inclusive 0/faltou) com o que foi marcado, pra recarregar certinho depois
-      await supabase.from('pontos').insert({ usuario_id: d.id, origem: 'apontamento', pontos: total, motivo, data, lancado_por: profile?.id, marca: m })
-    }
+      return { usuario_id: d.id, pontos: calcTotal(m), marca: m }
+    })
+    const { error } = await supabase.rpc('salvar_reuniao', { p_data: data, p_motivo: motivo, p_itens: itens })
     setSalvando(false)
+    if (error) {
+      alert('❌ Não consegui salvar os apontamentos.\n' + (error.message || error) + '\n\nNenhum ponto foi alterado — confira a internet e tente de novo.')
+      return
+    }
     alert('Apontamentos salvos! ✅ Os pontos já entram no ranking.')
   }
 

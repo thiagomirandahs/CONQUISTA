@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
+import { comprimirImagem } from '../lib/imagem.js'
 import { CARGOS, precisaUnidade } from '../lib/cargos.js'
 
 const inputClass =
@@ -46,9 +47,10 @@ export default function Cadastro() {
     try {
       if (foto && data?.session?.user) {
         const uid = data.session.user.id
-        const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
+        const arquivo = await comprimirImagem(foto, { maxLado: 640 })
+        const ext = (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `perfis/${uid}-${Date.now()}.${ext}`
-        const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
+        const { error: upErr } = await supabase.storage.from('imagens').upload(path, arquivo, { upsert: true })
         if (!upErr) {
           const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
           await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', uid)

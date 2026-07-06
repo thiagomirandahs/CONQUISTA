@@ -1,24 +1,31 @@
 import { supabase } from './supabase.js'
+import { comprimirImagem } from './imagem.js'
 
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
 export async function carregarRanking() {
-  const [{ data: us }, { data: ps }, { data: pts }] = await Promise.all([
+  const [{ data: us }, { data: ps }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
     // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
     // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
     supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
-    // select('*') de propósito: se a coluna unidade_id ainda não existir (migração
-    // não rodada), a leitura não quebra — apenas ignora os pontos de time.
-    supabase.from('pontos').select('*'),
   ])
 
   // Pontos individuais (por pessoa) e pontos avulsos de time (por unidade)
   const totalPessoa = {}
   const totalTime = {}
-  ;(pts || []).forEach((p) => {
-    if (p.usuario_id) totalPessoa[p.usuario_id] = (totalPessoa[p.usuario_id] || 0) + (p.pontos || 0)
-    else if (p.unidade_id) totalTime[p.unidade_id] = (totalTime[p.unidade_id] || 0) + (p.pontos || 0)
-  })
+  // Soma no BANCO (RPC) pra não esbarrar no limite silencioso de 1000 linhas do Supabase.
+  const { data: tot, error: totErr } = await supabase.rpc('ranking_totais')
+  if (!totErr && tot) {
+    ;(tot.pessoas || []).forEach((r) => { totalPessoa[r.id] = r.total || 0 })
+    ;(tot.times || []).forEach((r) => { totalTime[r.id] = r.total || 0 })
+  } else {
+    // Plano B (enquanto o SQL novo ranking_totais não foi aplicado): soma no cliente.
+    const { data: pts } = await supabase.from('pontos').select('usuario_id,unidade_id,pontos')
+    ;(pts || []).forEach((p) => {
+      if (p.usuario_id) totalPessoa[p.usuario_id] = (totalPessoa[p.usuario_id] || 0) + (p.pontos || 0)
+      else if (p.unidade_id) totalTime[p.unidade_id] = (totalTime[p.unidade_id] || 0) + (p.pontos || 0)
+    })
+  }
 
   const corUni = Object.fromEntries((us || []).map((u) => [u.id, u.cor || '#1e3a8a']))
   const nomeUni = Object.fromEntries((us || []).map((u) => [u.id, u.nome]))
@@ -94,6 +101,7 @@ export async function carregarFotos() {
 
 // Envia o arquivo ao Storage e cria o registro da foto na categoria escolhida.
 export async function adicionarFoto({ file, evento, legenda, autorId }) {
+  file = await comprimirImagem(file)
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `mural/${autorId}-${Date.now()}.${ext}`
 
@@ -190,6 +198,7 @@ export async function lancarPontosIndividual({ userId, pontos, motivo, lancadoPo
 
 // Envia/troca a foto de perfil do próprio usuário — o RLS deixa cada um editar seu perfil.
 export async function atualizarFotoPerfil({ userId, file }) {
+  file = await comprimirImagem(file, { maxLado: 640 })
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `perfis/${userId}-${Date.now()}.${ext}`
   const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
@@ -271,6 +280,7 @@ export async function fazerDevocional(resposta) {
 export async function enviarMissao({ foto, resposta, userId }) {
   let fotoUrl = null
   if (foto) {
+    foto = await comprimirImagem(foto)
     const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
     const path = `missoes/${userId}-${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
@@ -301,6 +311,7 @@ export async function avaliarMissao(id, aprovar) {
 export async function enviarDevocional({ foto, resposta, userId }) {
   let fotoUrl = null
   if (foto) {
+    foto = await comprimirImagem(foto)
     const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase()
     const path = `devocional/${userId}-${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('imagens').upload(path, foto, { upsert: true })
