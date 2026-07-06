@@ -45,7 +45,7 @@ export default function CardAniversariantes() {
       {hojeAniversariantes.length > 0 && (
         <div className="bg-dourado/15 border border-dourado/40 rounded-xl p-3 mb-3">
           <p className="text-sm font-bold text-amber-700">
-            🎉 Hoje é aniversário de {hojeAniversariantes.map((p) => p.nome.split(' ')[0]).join(', ')}!
+            🎉 Hoje é aniversário de {hojeAniversariantes.map((p) => (p.nome || 'alguém').split(' ')[0]).join(', ')}!
           </p>
           <p className="text-xs text-amber-600">Mande os parabéns 🥳</p>
         </div>

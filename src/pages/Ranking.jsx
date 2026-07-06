@@ -25,7 +25,9 @@ export default function Ranking() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    carregarRanking().then((d) => { setDados(d); setCarregando(false) })
+    carregarRanking()
+      .then((d) => { setDados(d); setCarregando(false) })
+      .catch(() => setCarregando(false)) // não trava em "Carregando..." se a busca falhar
   }, [])
 
   const ehUnidade = aba === 'unidades'

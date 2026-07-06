@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { hojeLocalISO } from '../lib/data.js'
 import Avatar from '../components/Avatar.jsx'
 
 const FINANCEIRO = ['tesoureiro', 'diretoria']
@@ -35,7 +36,7 @@ export default function Mensalidades() {
     setPagamentos((p) => ({ ...p, [d.id]: { status: novo, valor } }))
     const { error } = await supabase.from('mensalidades').upsert({
       desbravador_id: d.id, mes, ano, valor: Number(valor) || 0, status: novo,
-      data_pagamento: novo === 'pago' ? new Date().toISOString().slice(0, 10) : null,
+      data_pagamento: novo === 'pago' ? hojeLocalISO() : null,
       registrado_por: profile?.id,
     }, { onConflict: 'desbravador_id,mes,ano' })
     if (error) { alert('Erro: ' + error.message); carregar() }

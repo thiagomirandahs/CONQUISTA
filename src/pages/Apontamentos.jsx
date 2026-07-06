@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { hojeLocalISO } from '../lib/data.js'
 
 // Valores dos pontos (fácil de ajustar aqui)
 const PT = { naHora: 10, atrasado: 5, faltou: 0, biblia: 20, uniforme: 10, igreja: 10, atividade: 10 }
@@ -29,7 +30,7 @@ export default function Apontamentos() {
   const [unidadeId, setUnidadeId] = useState(ehConselheiro ? profile?.unidade_id || '' : '')
   const [desbravadores, setDesbravadores] = useState([])
   const [marcas, setMarcas] = useState({})
-  const [data, setData] = useState(new Date().toISOString().slice(0, 10))
+  const [data, setData] = useState(hojeLocalISO())
   const [carregando, setCarregando] = useState(false)
   const [salvando, setSalvando] = useState(false)
 

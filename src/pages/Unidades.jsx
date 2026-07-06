@@ -19,9 +19,12 @@ export default function Unidades() {
   const [pontosPara, setPontosPara] = useState(null) // unidade que vai receber pontos de time
 
   async function carregar() {
-    const { unidades } = await carregarRanking()
-    setUnidades(unidades)
-    setCarregando(false)
+    try {
+      const { unidades } = await carregarRanking()
+      setUnidades(unidades)
+    } finally {
+      setCarregando(false) // nunca deixa preso em "Carregando..."
+    }
   }
   useEffect(() => { carregar() }, [])
 

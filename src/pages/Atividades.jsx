@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
 import { comprimirImagem } from '../lib/imagem.js'
+import { hojeLocalISO } from '../lib/data.js'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -19,8 +20,8 @@ const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'sem prazo')
-const hojeISO = new Date().toISOString().slice(0, 10)
-const prazoEncerrado = (iso) => iso && String(iso).slice(0, 10) < hojeISO
+// Compara no fuso de Brasília e recalcula a cada render (não "trava" o dia)
+const prazoEncerrado = (iso) => iso && String(iso).slice(0, 10) < hojeLocalISO()
 // Detecta se a comprovação enviada é um vídeo (pela extensão do arquivo no Storage)
 const ehVideo = (url = '') => /\.(mp4|mov|m4v|webm|ogg|3gp|3gpp|avi|mkv|qt)(\?|$)/i.test(url)
 const MAX_MB = 50 // limite amigável pra vídeo não estourar o upload
@@ -46,6 +47,8 @@ export default function Atividades() {
   const [pendentes, setPendentes] = useState([])
   const [entregas, setEntregas] = useState([])
   const [avaliando, setAvaliando] = useState(null) // id da entrega sendo aprovada/reprovada
+  const [membros, setMembros] = useState([]) // desbravadores/conselheiros ativos (pra ver quem falta)
+  const [abertoFaltam, setAbertoFaltam] = useState(null) // atividade com a lista de pendentes aberta
 
   async function carregar() {
     const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
@@ -64,9 +67,13 @@ export default function Atividades() {
         .eq('status', 'pendente').order('created_at', { ascending: true })
       setPendentes(pend || [])
       const { data: todas } = await supabase.from('entregas')
-        .select('id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+        .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
         .order('created_at', { ascending: false })
       setEntregas(todas || [])
+      // quem PODE entregar (pra calcular quem ainda não entregou)
+      const { data: mem } = await supabase.from('profiles').select('id,nome')
+        .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
+      setMembros(mem || [])
     }
     setCarregando(false)
   }
@@ -213,6 +220,8 @@ export default function Atividades() {
             {lista.map((a) => {
               const status = entregues[a.id]
               const encerrado = prazoEncerrado(a.prazo)
+              const entreguesSet = ehAdmin ? new Set(entregas.filter((e) => e.atividade_id === a.id).map((e) => e.usuario_id)) : null
+              const faltam = ehAdmin ? membros.filter((m) => !entreguesSet.has(m.id)) : []
               return (
                 <motion.div key={a.id} layout
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
@@ -236,6 +245,20 @@ export default function Atividades() {
                       <span key={b} className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{b}</span>
                     ))}
                   </div>
+
+                  {ehAdmin && membros.length > 0 && (
+                    <div className="text-[11px]">
+                      <button type="button" onClick={() => setAbertoFaltam(abertoFaltam === a.id ? null : a.id)}
+                        className="font-semibold text-slate-500 hover:text-azul">
+                        ✅ {entreguesSet.size}/{membros.length} entregaram{faltam.length ? ` · ${faltam.length} faltando ▾` : ' 🎉'}
+                      </button>
+                      {abertoFaltam === a.id && faltam.length > 0 && (
+                        <div className="mt-1 text-slate-500 bg-slate-50 rounded-lg p-2 leading-relaxed">
+                          <span className="font-semibold">Faltam entregar:</span> {faltam.map((m) => m.nome || '—').join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between mt-1 gap-2">
                     <span className={`text-xs ${encerrado ? 'text-red-400 font-medium' : 'text-slate-400'}`}>📅 {fmtData(a.prazo)}</span>

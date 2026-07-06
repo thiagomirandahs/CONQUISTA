@@ -25,7 +25,7 @@ export default function Avatar({ foto, nome = '?', emoji, cor = '#1e3a8a', size 
   return (
     <div className={`${size} ${textSize} rounded-full grid place-items-center text-white font-extrabold shadow ring-2 ring-white`}
       style={{ backgroundColor: cor }}>
-      {nome[0]?.toUpperCase()}
+      {(nome || '?')[0]?.toUpperCase()}
     </div>
   )
 }

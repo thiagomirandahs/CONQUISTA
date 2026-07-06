@@ -38,7 +38,7 @@ export async function carregarRanking() {
         // antiga NÃO puxa mais a média pra baixo.
         .filter((p) => p.unidade_id === u.id && (p.papel === 'desbravador' || p.papel === 'conselheiro'))
         .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
-        .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
+        .sort((a, b) => b.pts - a.pts || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
       const avulsos = totalTime[u.id] || 0
       // Método escolhido: pontos avulsos do time + média dos desbravadores (ambos justos com o tamanho)
@@ -46,7 +46,7 @@ export async function carregarRanking() {
       return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media, avulsos, pontos }
     })
     // Ranking de unidades: maior pontuação total primeiro (desempate por nome) → 1º, 2º, 3º...
-    .sort((a, b) => b.pontos - a.pontos || a.nome.localeCompare(b.nome, 'pt-BR'))
+    .sort((a, b) => b.pontos - a.pontos || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
 
   const individual = (ps || [])
     .map((p) => ({
@@ -55,7 +55,7 @@ export async function carregarRanking() {
       pts: totalPessoa[p.id] || 0,
     }))
     // Ranking individual: maior pontuação primeiro (desempate por nome)
-    .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
+    .sort((a, b) => b.pts - a.pts || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
 
   return { unidades, individual }
 }
@@ -181,6 +181,15 @@ export async function mudarUnidade(userId, unidadeId) {
   if (error) throw new Error(error.message)
 }
 
+// Envia um aviso geral (aparece no sino de todos, ou só da liderança).
+// O RLS "criar notificacao" já exige liderança; o push sai sozinho se ativado.
+export async function enviarAviso({ titulo, corpo, para, criadoPor }) {
+  const { error } = await supabase.from('notificacoes').insert({
+    titulo, corpo: corpo || null, tipo: 'geral', link: '/', para: para || 'todos', criado_por: criadoPor,
+  })
+  if (error) throw new Error(error.message)
+}
+
 // Lista as unidades (id, nome, cor) pra escolher no gerenciamento de usuários.
 export async function listarUnidades() {
   const { data, error } = await supabase.from('unidades').select('id,nome,cor').order('nome')
@@ -194,6 +203,18 @@ export async function lancarPontosIndividual({ userId, pontos, motivo, lancadoPo
     usuario_id: userId, origem: 'manual', pontos, motivo: motivo || 'Ajuste manual', lancado_por: lancadoPor,
   })
   if (error) throw new Error(error.message)
+}
+
+// Extrato dos pontos de um usuário (os últimos lançamentos) — todos podem ver os
+// próprios (RLS "ler pontos" é liberado). Mostra de onde veio cada ponto.
+export async function carregarMeuExtrato(userId) {
+  const { data } = await supabase
+    .from('pontos')
+    .select('id,origem,pontos,motivo,data')
+    .eq('usuario_id', userId)
+    .order('data', { ascending: false })
+    .limit(100)
+  return data || []
 }
 
 // Envia/troca a foto de perfil do próprio usuário — o RLS deixa cada um editar seu perfil.
