@@ -31,8 +31,15 @@ export default function Aprovacoes() {
   }, [ehAdmin])
 
   async function decidir(id, novoStatus) {
+    const alvo = pendentes.find((x) => x.id === id)
     setPendentes((p) => p.filter((x) => x.id !== id)) // some da lista na hora
-    await supabase.from('profiles').update({ status: novoStatus }).eq('id', id)
+    // Aprovar libera como DESBRAVADOR (nunca liderança pelo cadastro). Se for
+    // líder, a diretoria promove depois em Usuários — decisão deliberada.
+    const { data, error } = await supabase.from('profiles').update({ status: novoStatus }).eq('id', id).select('id')
+    if (error || !data || data.length === 0) {
+      alert('Não consegui salvar — recarregue a página e tente de novo.')
+      if (alvo) setPendentes((p) => [alvo, ...p]) // devolve o card que tinha sumido
+    }
   }
 
   if (!ehAdmin) {
@@ -79,6 +86,9 @@ export default function Aprovacoes() {
                     <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
                       {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
                     </span>
+                  )}
+                  {ehLideranca(p.cargo) && (
+                    <div className="text-[10px] text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
                   )}
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => decidir(p.id, 'rejeitado')}

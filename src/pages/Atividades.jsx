@@ -42,6 +42,7 @@ export default function Atividades() {
   const [erroBanco, setErroBanco] = useState('')
   const [filtro, setFiltro] = useState('Todas')
   const [criando, setCriando] = useState(false)
+  const [editando, setEditando] = useState(null) // atividade sendo editada
   const [entregando, setEntregando] = useState(null)
   const [aba, setAba] = useState('atividades')
   const [pendentes, setPendentes] = useState([])
@@ -56,9 +57,9 @@ export default function Atividades() {
     else setErroBanco('')
     setAtividades(ats || [])
     if (profile?.id) {
-      const { data: ents } = await supabase.from('entregas').select('atividade_id,status').eq('usuario_id', profile.id)
+      const { data: ents } = await supabase.from('entregas').select('atividade_id,status,feedback').eq('usuario_id', profile.id)
       const map = {}
-      ;(ents || []).forEach((e) => { map[e.atividade_id] = e.status })
+      ;(ents || []).forEach((e) => { map[e.atividade_id] = { status: e.status, feedback: e.feedback } })
       setEntregues(map)
     }
     if (ehAdmin) {
@@ -81,14 +82,17 @@ export default function Atividades() {
 
   const lista = filtro === 'Todas' ? atividades : atividades.filter((a) => a.categoria === filtro)
 
-  async function salvarNova(nova) {
-    const { error } = await supabase.from('atividades').insert({
+  async function salvarAtividade(nova, id) {
+    const dados = {
       titulo: nova.titulo, descricao: nova.descricao, categoria: nova.categoria,
       pontos: nova.pts, prazo: nova.prazo || null, alvo: nova.alvo, criterios: nova.criterios,
-      criado_por: profile?.id,
-    })
-    if (error) { alert('Não foi possível salvar: ' + error.message); return }
+    }
+    const resp = id
+      ? await supabase.from('atividades').update(dados).eq('id', id)
+      : await supabase.from('atividades').insert({ ...dados, criado_por: profile?.id })
+    if (resp.error) { alert('Não foi possível salvar: ' + resp.error.message); return }
     setCriando(false)
+    setEditando(null)
     carregar()
   }
 
@@ -112,10 +116,11 @@ export default function Atividades() {
       const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
       fotoUrl = pub.publicUrl
     }
-    const { error } = await supabase.from('entregas').insert({
+    // upsert: primeira entrega = insere; reenvio (após reprovar) = volta pra 'pendente'
+    const { error } = await supabase.from('entregas').upsert({
       atividade_id: atividade.id, usuario_id: profile?.id,
-      texto: dados.texto || null, foto_url: fotoUrl, status: 'pendente',
-    })
+      texto: dados.texto || null, foto_url: fotoUrl, status: 'pendente', feedback: null,
+    }, { onConflict: 'atividade_id,usuario_id' })
     if (error) throw new Error(error.message)
     setEntregando(null)
     carregar()
@@ -132,11 +137,11 @@ export default function Atividades() {
     if (data && data.ok === false) { alert('Essa entrega já tinha sido avaliada — atualizei a lista.') }
     carregar()
   }
-  async function reprovarEntrega(e) {
+  async function reprovarEntrega(e, feedback) {
     if (avaliando) return
     setAvaliando(e.id)
     const { error } = await supabase.from('entregas')
-      .update({ status: 'reprovada', avaliado_por: profile?.id })
+      .update({ status: 'reprovada', avaliado_por: profile?.id, feedback: feedback || null })
       .eq('id', e.id).eq('status', 'pendente')
     setAvaliando(null)
     if (error) { alert('Não consegui reprovar: ' + (error.message || error)); return }
@@ -144,16 +149,18 @@ export default function Atividades() {
   }
   async function excluirEntrega(e) {
     if (!window.confirm(`Apagar a entrega de ${e.autor?.nome || 'desbravador'} em "${e.atividade?.titulo || ''}"?`)) return
-    // apaga a entrega PRIMEIRO; só mexe nos pontos se ela foi mesmo apagada
+    // Remove os pontos ANTES da entrega (o vínculo entrega_id vira null ao apagá-la).
+    if (e.status === 'aprovada') {
+      const { data: del } = await supabase.from('pontos').delete().eq('entrega_id', e.id).select('id')
+      if (!del || del.length === 0) {
+        // entrega antiga (aprovada antes do vínculo): usa o motivo como antes
+        await supabase.from('pontos').delete()
+          .eq('usuario_id', e.usuario_id).eq('origem', 'atividade')
+          .eq('motivo', `Atividade: ${e.atividade?.titulo || ''}`)
+      }
+    }
     const { error } = await supabase.from('entregas').delete().eq('id', e.id)
     if (error) { alert('Não foi possível apagar: ' + error.message); return }
-    // se estava aprovada, remove também os pontos que ela gerou
-    if (e.status === 'aprovada') {
-      const { error: ep } = await supabase.from('pontos').delete()
-        .eq('usuario_id', e.usuario_id).eq('origem', 'atividade')
-        .eq('motivo', `Atividade: ${e.atividade?.titulo || ''}`)
-      if (ep) alert('Entrega apagada, mas houve erro ao remover os pontos: ' + ep.message)
-    }
     carregar()
   }
 
@@ -218,7 +225,8 @@ export default function Atividades() {
         <motion.div layout className="grid sm:grid-cols-2 gap-3">
           <AnimatePresence mode="popLayout">
             {lista.map((a) => {
-              const status = entregues[a.id]
+              const minha = entregues[a.id]
+              const status = minha?.status
               const encerrado = prazoEncerrado(a.prazo)
               const entreguesSet = ehAdmin ? new Set(entregas.filter((e) => e.atividade_id === a.id).map((e) => e.usuario_id)) : null
               const faltam = ehAdmin ? membros.filter((m) => !entreguesSet.has(m.id)) : []
@@ -260,17 +268,30 @@ export default function Atividades() {
                     </div>
                   )}
 
+                  {status === 'reprovada' && minha?.feedback && (
+                    <div className="text-[11px] bg-amber-50 border border-amber-200 text-amber-700 rounded-lg p-2">
+                      <span className="font-semibold">Motivo:</span> {minha.feedback}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between mt-1 gap-2">
                     <span className={`text-xs ${encerrado ? 'text-red-400 font-medium' : 'text-slate-400'}`}>📅 {fmtData(a.prazo)}</span>
                     <div className="flex items-center gap-2">
                       {ehAdmin && (
-                        <button onClick={() => excluirAtividade(a)} title="Excluir"
-                          className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1.5">🗑️</button>
+                        <>
+                          <button onClick={() => setEditando(a)} title="Editar"
+                            className="text-xs text-slate-500 hover:bg-slate-100 rounded-lg px-2 py-1.5">✏️</button>
+                          <button onClick={() => excluirAtividade(a)} title="Excluir"
+                            className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1.5">🗑️</button>
+                        </>
                       )}
-                      {status ? (
-                        <span className="text-xs font-semibold text-green-600">
-                          {status === 'aprovada' ? '✅ Aprovada' : status === 'reprovada' ? '↺ Reprovada' : '✅ Entregue'}
-                        </span>
+                      {status === 'aprovada' ? (
+                        <span className="text-xs font-semibold text-green-600">✅ Aprovada</span>
+                      ) : status === 'reprovada' ? (
+                        <motion.button whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.05 }} onClick={() => setEntregando(a)}
+                          className="text-xs bg-amber-100 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">↺ Enviar de novo</motion.button>
+                      ) : status ? (
+                        <span className="text-xs font-semibold text-slate-500">✅ Entregue</span>
                       ) : encerrado ? (
                         <span className="text-xs font-semibold text-red-400">⏰ Prazo encerrado</span>
                       ) : (
@@ -289,7 +310,10 @@ export default function Atividades() {
       )}
 
       <AnimatePresence>
-        {criando && <NovaAtividadeModal key="nova" onFechar={() => setCriando(false)} onSalvar={salvarNova} />}
+        {criando && <NovaAtividadeModal key="nova" onFechar={() => setCriando(false)} onSalvar={(d) => salvarAtividade(d)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {editando && <NovaAtividadeModal key="editar" inicial={editando} onFechar={() => setEditando(null)} onSalvar={(d) => salvarAtividade(d, editando.id)} />}
       </AnimatePresence>
       <AnimatePresence>
         {entregando && <EntregarModal key="entrega" atividade={entregando} onFechar={() => setEntregando(null)} onConfirmar={confirmarEntrega} />}
@@ -301,6 +325,7 @@ export default function Atividades() {
 /* ---------- Aba de correção das entregas (liderança) ---------- */
 function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
   const [ampliar, setAmpliar] = useState(null)
+  const [motivos, setMotivos] = useState({})
   if (!pendentes.length) {
     return (
       <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -334,8 +359,11 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
           ) : (
             <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>
           ))}
-          <div className="flex gap-2 mt-3">
-            <button onClick={() => onReprovar(e)} disabled={!!avaliando}
+          <input value={motivos[e.id] || ''} onChange={(ev) => setMotivos((m) => ({ ...m, [e.id]: ev.target.value }))}
+            maxLength={200} placeholder="Motivo, se for reprovar (a criança vê e pode reenviar)"
+            className="w-full mt-3 rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => onReprovar(e, motivos[e.id])} disabled={!!avaliando}
               className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Reprovar</button>
             <button onClick={() => onAprovar(e)} disabled={!!avaliando}
               className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">{avaliando === e.id ? '...' : `✅ Aprovar (+${e.atividade?.pontos || 0})`}</button>
@@ -409,8 +437,14 @@ function EntregasView({ entregas, onExcluir }) {
 }
 
 /* ---------- Modal: criar nova atividade ---------- */
-function NovaAtividadeModal({ onFechar, onSalvar }) {
-  const [form, setForm] = useState({
+function NovaAtividadeModal({ onFechar, onSalvar, inicial }) {
+  const [form, setForm] = useState(inicial ? {
+    titulo: inicial.titulo || '', categoria: inicial.categoria || 'Espiritual',
+    descricao: inicial.descricao || '', pts: inicial.pontos ?? 50,
+    prazo: inicial.prazo ? String(inicial.prazo).slice(0, 10) : '',
+    alvo: inicial.alvo || 'Todas as unidades',
+    criterios: inicial.criterios || { foto: false, texto: true, arquivo: false },
+  } : {
     titulo: '', categoria: 'Espiritual', descricao: '', pts: 50, prazo: '', alvo: 'Todas as unidades',
     criterios: { foto: false, texto: true, arquivo: false },
   })
@@ -427,7 +461,7 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
 
   return (
     <Overlay onFechar={onFechar}>
-      <Painel titulo="➕ Nova atividade" onFechar={onFechar}>
+      <Painel titulo={inicial ? '✏️ Editar atividade' : '➕ Nova atividade'} onFechar={onFechar}>
         <form onSubmit={salvar} className="p-5 space-y-3 overflow-y-auto">
           <Campo label="Título da atividade">
             <input className={inputClass} required value={form.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder="Ex.: Ler o livro de João" />
@@ -464,7 +498,7 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
           </Campo>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{salvando ? 'Salvando...' : 'Salvar atividade'}</button>
+            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{salvando ? 'Salvando...' : (inicial ? 'Salvar alterações' : 'Salvar atividade')}</button>
           </div>
         </form>
       </Painel>

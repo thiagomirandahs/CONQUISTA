@@ -23,9 +23,12 @@ Deno.serve(async (req) => {
     const notif = body.record ?? body // o webhook envia { type, table, record, ... }
     if (!notif?.titulo) return new Response('ok (sem notificacao)', { status: 200 })
 
-    // Define quem recebe: 'lideranca' -> só instrutor/diretoria; senão -> todos os inscritos
+    // Define quem recebe: pessoal (só 1 usuário) -> 'lideranca' -> todos os inscritos
     let subs: any[] = []
-    if (notif.para === 'lideranca') {
+    if (notif.para_usuario) {
+      const { data } = await sb.from('push_subscriptions').select('*').eq('user_id', notif.para_usuario)
+      subs = data ?? []
+    } else if (notif.para === 'lideranca') {
       const { data: lideres } = await sb
         .from('profiles').select('id')
         .in('papel', ['instrutor', 'diretoria']).eq('status', 'ativo')
