@@ -151,6 +151,22 @@ export default function Ranking() {
                   <Stat rotulo="Pontos" valor={<Contador value={valor(card.item)} />} destaque />
                   <Stat rotulo={ehUnidade ? 'Membros' : 'Unidade'} valor={ehUnidade ? card.item.membros.length : (card.item.unidade || '—')} />
                 </div>
+                {ehUnidade && (
+                  <div className="mt-4 bg-slate-50 rounded-xl p-3 text-sm">
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-500">Média dos {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'}</span>
+                      <span className="font-semibold text-slate-800">{card.item.media}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-500">Pontos de time</span>
+                      <span className="font-semibold text-slate-800">+{card.item.avulsos}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-200 mt-1 pt-1.5">
+                      <span className="font-bold text-slate-600">Total</span>
+                      <span className="font-extrabold text-azul">{card.item.pontos}</span>
+                    </div>
+                  </div>
+                )}
                 <button onClick={() => setCard(null)} className="w-full mt-5 bg-azul text-white font-bold rounded-xl py-2.5">Fechar</button>
               </div>
             </motion.div>

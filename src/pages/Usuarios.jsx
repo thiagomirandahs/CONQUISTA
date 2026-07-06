@@ -32,8 +32,10 @@ export default function Usuarios() {
   async function trocarCargo(u, novoPapel) {
     if (novoPapel === u.papel) return
     try {
-      await mudarCargo(u.id, novoPapel)
-      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, papel: novoPapel } : x)))
+      const r = await mudarCargo(u.id, novoPapel)
+      setUsuarios((us) => us.map((x) => (x.id === u.id
+        ? { ...x, papel: novoPapel, unidade_id: r?.limpouUnidade ? null : x.unidade_id }
+        : x)))
     } catch (e) {
       alert('Não foi possível trocar o cargo: ' + (e?.message || e))
     }

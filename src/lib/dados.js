@@ -26,7 +26,10 @@ export async function carregarRanking() {
   const unidades = (us || [])
     .map((u) => {
       const membros = (ps || [])
-        .filter((p) => p.unidade_id === u.id) // desbravadores + conselheiros da unidade entram na média
+        // Só desbravadores e conselheiros entram na média do time. Assim, um membro
+        // promovido a líder (instrutor/tesoureiro/diretoria) que ainda tenha unidade
+        // antiga NÃO puxa mais a média pra baixo.
+        .filter((p) => p.unidade_id === u.id && (p.papel === 'desbravador' || p.papel === 'conselheiro'))
         .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
         .sort((a, b) => b.pts - a.pts || a.nome.localeCompare(b.nome, 'pt-BR'))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
@@ -153,9 +156,14 @@ export async function resetarSenha(userId, novaSenha) {
 }
 
 // Muda o papel (cargo) de um membro — o RLS deixa a liderança atualizar perfis.
+// Só desbravador/conselheiro pertencem a uma unidade: ao promover pra líder,
+// limpa a unidade pra pessoa não continuar contando na média do time antigo.
 export async function mudarCargo(userId, papel) {
-  const { error } = await supabase.from('profiles').update({ papel }).eq('id', userId)
+  const mantemUnidade = papel === 'desbravador' || papel === 'conselheiro'
+  const patch = mantemUnidade ? { papel } : { papel, unidade_id: null }
+  const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
   if (error) throw new Error(error.message)
+  return { limpouUnidade: !mantemUnidade }
 }
 
 // Muda a unidade (time) de um membro — passe null/'' pra deixar "sem unidade".
