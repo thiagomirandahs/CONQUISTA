@@ -23,8 +23,15 @@ function embaralhar(arr) {
   }
   return a
 }
+const CORES_FESTA = ['#1e3a8a', '#f5c518', '#ffffff', '#10b981', '#d97706']
 function festa() {
-  confetti({ particleCount: 130, spread: 80, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#ffffff', '#10b981'] })
+  confetti({ particleCount: 130, spread: 80, origin: { y: 0.4 }, colors: CORES_FESTA })
+}
+// Festa grande de quem conquistou a Trilha inteira (fim de temporada)
+function festaGrande() {
+  confetti({ particleCount: 170, spread: 100, origin: { y: 0.35 }, colors: CORES_FESTA })
+  setTimeout(() => confetti({ particleCount: 90, angle: 60, spread: 75, origin: { x: 0, y: 0.6 }, colors: CORES_FESTA }), 200)
+  setTimeout(() => confetti({ particleCount: 90, angle: 120, spread: 75, origin: { x: 1, y: 0.6 }, colors: CORES_FESTA }), 380)
 }
 
 export default function Trilha() {
@@ -41,12 +48,17 @@ export default function Trilha() {
   }
 
   const posto = prog.passos % POSTOS.length
+  const medalhas = Math.floor(prog.passos / POSTOS.length) // quantas vezes já completou a Trilha
+  const temporada = medalhas + 1
+  const conquistouAgora = resultado?.conquistou
 
   async function aoTerminar(estrelas) {
     try {
       const r = await registrarJogo('memoria', estrelas)
-      festa()
-      setResultado({ estrelas: r.estrelas, pontos: r.pontos })
+      // Fechou uma volta inteira (chegou ao Cume) = conquistou a Trilha
+      const conquistou = r.passos > 0 && r.passos % POSTOS.length === 0
+      if (conquistou) festaGrande(); else festa()
+      setResultado({ estrelas: r.estrelas, pontos: r.pontos, conquistou, medalhas: Math.floor(r.passos / POSTOS.length) })
       setJogando(false)
       recarregar()
     } catch (e) {
@@ -58,15 +70,26 @@ export default function Trilha() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">🗺️ Trilha do Acampamento</h2>
-        <p className="text-sm text-slate-500">Jogue o desafio de hoje e avance rumo ao Cume! 🏔️</p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-800">🗺️ Trilha do Acampamento</h2>
+            <p className="text-sm text-slate-500">Jogue o desafio de hoje e avance rumo ao Cume! 🏔️</p>
+          </div>
+          {medalhas > 0 && (
+            <div className="shrink-0 text-center bg-amber-50 border border-dourado/50 rounded-xl px-3 py-1.5" title="Medalhas da Trilha">
+              <div className="text-lg leading-none">🏅</div>
+              <div className="text-[11px] font-extrabold text-amber-700 mt-0.5">× {medalhas}</div>
+            </div>
+          )}
+        </div>
+        <div className="mt-1.5 inline-block text-xs font-bold text-azul bg-azul/10 rounded-full px-2.5 py-0.5">Temporada {temporada}</div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-3 mb-4">
         <div className="flex flex-col gap-1.5">
           {POSTOS.map((p, i) => {
-            const passado = i < posto
-            const aqui = i === posto
+            const passado = conquistouAgora || i < posto
+            const aqui = !conquistouAgora && i === posto
             return (
               <div key={p.nome} className="flex items-center gap-3 rounded-xl p-2"
                 style={aqui ? { boxShadow: `inset 0 0 0 2px ${p.cor}` } : {}}>
@@ -88,6 +111,16 @@ export default function Trilha() {
 
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
+      ) : conquistouAgora ? (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl p-8 shadow-sm text-center border-2 border-dourado bg-gradient-to-b from-amber-50 to-white">
+          <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 13 }} className="text-7xl mb-2">🏅</motion.div>
+          <h3 className="text-xl font-extrabold text-slate-800">Você conquistou a Trilha!</h3>
+          <p className="text-sm text-slate-500 mt-1">Chegou ao Cume 🏔️ e completou todos os 6 postos.</p>
+          <p className="text-amber-700 font-extrabold mt-3">{resultado.medalhas}ª medalha 🏅 · {'⭐'.repeat(resultado.estrelas)}</p>
+          <p className="text-sm text-slate-600 mt-3">Amanhã começa a <b>Temporada {resultado.medalhas + 1}</b> — dá pra ganhar ainda mais medalhas! 🚀</p>
+        </motion.div>
       ) : prog.feito ? (
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
           <div className="text-5xl mb-2">🎉</div>
@@ -101,6 +134,9 @@ export default function Trilha() {
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
           <div className="text-5xl mb-2">🧠</div>
           <p className="font-bold text-slate-800 mb-1">Jogo da Memória</p>
+          {posto === 0 && medalhas > 0 && (
+            <p className="text-xs font-extrabold text-azul mb-2">🚀 Temporada {temporada} começando — vá pela Fogueira! 🔥</p>
+          )}
           <p className="text-sm text-slate-400 mb-4">Ache os pares dos itens do desbravador. Menos tentativas = mais estrelas!</p>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setJogando(true)}
             className="bg-azul text-white font-extrabold rounded-xl px-6 py-3 shadow">🎮 Jogar (+10)</motion.button>
