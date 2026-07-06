@@ -166,6 +166,18 @@ export async function lancarPontosIndividual({ userId, pontos, motivo, lancadoPo
   if (error) throw new Error(error.message)
 }
 
+// Envia/troca a foto de perfil do próprio usuário — o RLS deixa cada um editar seu perfil.
+export async function atualizarFotoPerfil({ userId, file }) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `perfis/${userId}-${Date.now()}.${ext}`
+  const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
+  if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
+  const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
+  const { error } = await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', userId)
+  if (error) throw new Error(error.message)
+  return pub.publicUrl
+}
+
 // =====================================================================
 //  DEVOCIONAL DIÁRIO — versículo do dia + quiz + foto + sequência
 // =====================================================================

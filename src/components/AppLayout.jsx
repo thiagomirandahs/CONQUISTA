@@ -72,6 +72,10 @@ export default function AppLayout() {
         </nav>
         <div className="p-3 space-y-1">
           {profile?.nome && <p className="px-4 pb-1 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+          <NavLink to="/perfil"
+            className="block w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
+            👤 Meu perfil
+          </NavLink>
           <button onClick={atualizarApp}
             className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
             🔄 Atualizar app
@@ -145,6 +149,10 @@ export default function AppLayout() {
               </nav>
               <div className="p-3 space-y-1 border-t border-white/10">
                 {profile?.nome && <p className="px-4 pb-1 text-[11px] text-blue-200 truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
+                <NavLink to="/perfil" onClick={() => setMenuAberto(false)}
+                  className="block w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
+                  👤 Meu perfil
+                </NavLink>
                 <button onClick={atualizarApp}
                   className="w-full text-sm bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-left transition-colors">
                   🔄 Atualizar app

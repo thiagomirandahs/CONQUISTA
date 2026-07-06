@@ -39,8 +39,13 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }
 
+  // Recarrega o perfil do banco (ex.: depois de trocar a foto) pra refletir na hora
+  async function recarregarPerfil() {
+    if (session?.user?.id) await carregarPerfil(session.user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ session, profile, carregando, sair }}>
+    <AuthContext.Provider value={{ session, profile, carregando, sair, recarregarPerfil }}>
       {children}
     </AuthContext.Provider>
   )
