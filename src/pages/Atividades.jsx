@@ -20,9 +20,12 @@ const inputClass =
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'sem prazo')
 const hojeISO = new Date().toISOString().slice(0, 10)
 const prazoEncerrado = (iso) => iso && String(iso).slice(0, 10) < hojeISO
+// Detecta se a comprovação enviada é um vídeo (pela extensão do arquivo no Storage)
+const ehVideo = (url = '') => /\.(mp4|mov|m4v|webm|ogg|3gp|3gpp|avi|mkv|qt)(\?|$)/i.test(url)
+const MAX_MB = 50 // limite amigável pra vídeo não estourar o upload
 function badgesCriterio(c = {}) {
   const arr = []
-  if (c.foto) arr.push('📷 Foto')
+  if (c.foto) arr.push('📷 Foto/🎥 vídeo')
   if (c.texto) arr.push('✍️ Texto')
   if (c.arquivo) arr.push('📎 Arquivo')
   return arr.length ? arr : ['Sem comprovação']
@@ -283,10 +286,14 @@ function CorrigirView({ pendentes, onAprovar, onReprovar }) {
           </div>
           {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
           {e.foto_url && (e.foto_url.startsWith('http') ? (
-            <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
-              <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-56 object-cover rounded-lg" />
-              <span className="text-[11px] text-slate-400">toque para ampliar 🔍</span>
-            </button>
+            ehVideo(e.foto_url) ? (
+              <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-64 rounded-lg bg-black" />
+            ) : (
+              <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
+                <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-56 object-cover rounded-lg" />
+                <span className="text-[11px] text-slate-400">toque para ampliar 🔍</span>
+              </button>
+            )
           ) : (
             <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>
           ))}
@@ -336,9 +343,13 @@ function EntregasView({ entregas, onExcluir }) {
           </div>
           {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
           {e.foto_url && e.foto_url.startsWith('http') && (
-            <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
-              <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-48 object-cover rounded-lg" />
-            </button>
+            ehVideo(e.foto_url) ? (
+              <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-56 rounded-lg bg-black" />
+            ) : (
+              <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
+                <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-48 object-cover rounded-lg" />
+              </button>
+            )
           )}
           <button onClick={() => onExcluir(e)}
             className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 py-2 text-sm font-semibold">
@@ -407,7 +418,7 @@ function NovaAtividadeModal({ onFechar, onSalvar }) {
           </div>
           <Campo label="O que precisa entregar? (critérios)">
             <div className="flex gap-2">
-              <Toggle ativo={form.criterios.foto} onClick={() => toggle('foto')}>📷 Foto</Toggle>
+              <Toggle ativo={form.criterios.foto} onClick={() => toggle('foto')}>📷 Foto/🎥 vídeo</Toggle>
               <Toggle ativo={form.criterios.texto} onClick={() => toggle('texto')}>✍️ Texto</Toggle>
               <Toggle ativo={form.criterios.arquivo} onClick={() => toggle('arquivo')}>📎 Arquivo</Toggle>
             </div>
@@ -430,15 +441,20 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
   const [previa, setPrevia] = useState(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
+  const previaEhVideo = foto?.type?.startsWith('video/')
 
   function escolherFoto(f) {
     setErro('')
+    if (f && f.size > MAX_MB * 1024 * 1024) {
+      setErro(`Arquivo grande demais (${(f.size / 1024 / 1024).toFixed(0)}MB). Máx. ${MAX_MB}MB — grave um vídeo mais curto.`)
+      setFoto(null); setPrevia(null); return
+    }
     setFoto(f || null)
     setPrevia(f ? URL.createObjectURL(f) : null)
   }
 
   async function confirmar() {
-    if (c.foto && !foto) { setErro('Anexe a foto de comprovação.'); return }
+    if (c.foto && !foto) { setErro('Anexe a foto ou o vídeo de comprovação.'); return }
     setEnviando(true)
     setErro('')
     try {
@@ -464,10 +480,13 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
             </Campo>
           )}
           {(c.foto || c.arquivo) && (
-            <Campo label={c.foto ? '📷 Foto de comprovação' : '📎 Arquivo'}>
-              <input type="file" accept={c.foto ? 'image/*' : undefined} className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-              {previa && <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />}
+            <Campo label={c.foto ? '📷 Foto ou 🎥 vídeo de comprovação' : '📎 Arquivo'}>
+              <input type="file" accept={c.foto ? 'image/*,video/*' : undefined} className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
+              {previa && (previaEhVideo
+                ? <video src={previa} controls playsInline className="mt-2 w-full max-h-56 rounded-lg bg-black" />
+                : <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />)}
               {foto && !previa && <p className="text-xs text-green-600 mt-1">Anexado: {foto.name}</p>}
+              {c.foto && <p className="text-[11px] text-slate-400 mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
             </Campo>
           )}
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
