@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarUsuarios, resetarSenha } from '../lib/dados.js'
+import { carregarUsuarios, resetarSenha, mudarCargo, lancarPontosIndividual } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -25,7 +25,18 @@ export default function Usuarios() {
   const [carregando, setCarregando] = useState(true)
   const [busca, setBusca] = useState('')
   const [alvo, setAlvo] = useState(null)
+  const [pontosPara, setPontosPara] = useState(null)
   const [erroCarregar, setErroCarregar] = useState('')
+
+  async function trocarCargo(u, novoPapel) {
+    if (novoPapel === u.papel) return
+    try {
+      await mudarCargo(u.id, novoPapel)
+      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, papel: novoPapel } : x)))
+    } catch (e) {
+      alert('Não foi possível trocar o cargo: ' + (e?.message || e))
+    }
+  }
 
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
@@ -50,7 +61,7 @@ export default function Usuarios() {
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">👥 Usuários</h2>
-        <p className="text-sm text-slate-500">Resetar a senha de quem não consegue entrar</p>
+        <p className="text-sm text-slate-500">Trocar cargo, lançar pontos e resetar senha</p>
       </div>
 
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
@@ -70,17 +81,26 @@ export default function Usuarios() {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
           {lista.map((u) => (
-            <div key={u.id} className="flex items-center gap-3 px-3 py-2.5">
-              <Avatar foto={u.foto} nome={u.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-slate-800 text-sm truncate">{u.nome || '(sem nome)'}</div>
-                <div className="text-[11px] text-slate-400 truncate">
-                  {rotuloPapel[u.papel] || u.papel}{u.status !== 'ativo' ? ' · pendente' : ''}
+            <div key={u.id} className="px-3 py-3">
+              <div className="flex items-center gap-3">
+                <Avatar foto={u.foto} nome={u.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-800 text-sm truncate">
+                    {u.nome || '(sem nome)'}{u.status !== 'ativo' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
+                  </div>
+                  {u.email && <div className="text-[11px] text-azul/80 truncate">✉️ {u.email}</div>}
                 </div>
-                {u.email && <div className="text-[11px] text-azul/80 truncate">✉️ {u.email}</div>}
               </div>
-              <button onClick={() => setAlvo(u)}
-                className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-2 font-semibold shrink-0">🔑 Resetar senha</button>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <select value={u.papel} onChange={(e) => trocarCargo(u, e.target.value)}
+                  className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-slate-700 outline-none">
+                  {Object.entries(rotuloPapel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <button onClick={() => setPontosPara(u)}
+                  className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">🎖️ Pontos</button>
+                <button onClick={() => setAlvo(u)}
+                  className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-1.5 font-semibold">🔑 Senha</button>
+              </div>
             </div>
           ))}
         </div>
@@ -89,7 +109,65 @@ export default function Usuarios() {
       <AnimatePresence>
         {alvo && <ModalReset usuario={alvo} onFechar={() => setAlvo(null)} />}
       </AnimatePresence>
+      <AnimatePresence>
+        {pontosPara && <ModalPontos usuario={pontosPara} lancadoPor={profile?.id} onFechar={() => setPontosPara(null)} />}
+      </AnimatePresence>
     </div>
+  )
+}
+
+function ModalPontos({ usuario, lancadoPor, onFechar }) {
+  const [valor, setValor] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function confirmar() {
+    const n = parseInt(valor, 10)
+    if (!n) { setErro('Digite os pontos (ex.: 20, ou -10 pra tirar).'); return }
+    setSalvando(true)
+    setErro('')
+    try {
+      await lancarPontosIndividual({ userId: usuario.id, pontos: n, motivo: motivo.trim(), lancadoPor })
+      onFechar()
+    } catch (e) {
+      setErro('Não foi possível: ' + (e?.message || e))
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onFechar}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🎖️ Pontos pra {(usuario.nome || '').split(' ')[0]}</h3>
+        <p className="text-sm text-slate-500 mb-4">Pontos individuais (entram no ranking). Use número negativo pra tirar.</p>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Pontos</label>
+        <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="ex.: 20"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm mb-2 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+        <div className="flex gap-1.5 mb-3">
+          {[10, 20, 50, -10].map((q) => (
+            <button type="button" key={q} onClick={() => setValor(String(q))}
+              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">{q > 0 ? '+' : ''}{q}</button>
+          ))}
+        </div>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Motivo (opcional)</label>
+        <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={120} placeholder="ex.: Ajudou na limpeza"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm mb-3 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+
+        {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
+        <div className="flex gap-2">
+          <button onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+          <motion.button onClick={confirmar} disabled={salvando} whileTap={{ scale: 0.97 }}
+            className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">{salvando ? '...' : 'Lançar'}</motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

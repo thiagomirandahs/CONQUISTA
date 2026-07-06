@@ -152,6 +152,20 @@ export async function resetarSenha(userId, novaSenha) {
   return { ok: true }
 }
 
+// Muda o papel (cargo) de um membro — o RLS deixa a liderança atualizar perfis.
+export async function mudarCargo(userId, papel) {
+  const { error } = await supabase.from('profiles').update({ papel }).eq('id', userId)
+  if (error) throw new Error(error.message)
+}
+
+// Lança pontos avulsos a um membro (individual), com motivo — só liderança (RLS).
+export async function lancarPontosIndividual({ userId, pontos, motivo, lancadoPor }) {
+  const { error } = await supabase.from('pontos').insert({
+    usuario_id: userId, origem: 'manual', pontos, motivo: motivo || 'Ajuste manual', lancado_por: lancadoPor,
+  })
+  if (error) throw new Error(error.message)
+}
+
 // =====================================================================
 //  DEVOCIONAL DIÁRIO — versículo do dia + quiz + foto + sequência
 // =====================================================================
