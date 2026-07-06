@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarUsuarios, resetarSenha, mudarCargo, lancarPontosIndividual } from '../lib/dados.js'
+import { carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades, lancarPontosIndividual } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -22,6 +22,7 @@ export default function Usuarios() {
   const { profile } = useAuth()
   const ehAdmin = PODE_GERIR.includes(profile?.papel)
   const [usuarios, setUsuarios] = useState([])
+  const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [busca, setBusca] = useState('')
   const [alvo, setAlvo] = useState(null)
@@ -38,10 +39,26 @@ export default function Usuarios() {
     }
   }
 
+  async function trocarUnidade(u, novoId) {
+    const alvoId = novoId || null
+    if (alvoId === (u.unidade_id || null)) return
+    try {
+      await mudarUnidade(u.id, alvoId)
+      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, unidade_id: alvoId } : x)))
+    } catch (e) {
+      alert('Não foi possível trocar a unidade: ' + (e?.message || e))
+    }
+  }
+
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
     carregarUsuarios()
-      .then((d) => { setUsuarios(d); setCarregando(false) })
+      .then((us) => {
+        setUsuarios(us)
+        setCarregando(false)
+        // Unidades são secundárias: se falhar, a lista de usuários continua funcionando
+        listarUnidades().then(setUnidades).catch(() => {})
+      })
       .catch((e) => { setErroCarregar(e?.message || 'Erro ao carregar'); setCarregando(false) })
   }, [ehAdmin])
 
@@ -61,7 +78,7 @@ export default function Usuarios() {
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">👥 Usuários</h2>
-        <p className="text-sm text-slate-500">Trocar cargo, lançar pontos e resetar senha</p>
+        <p className="text-sm text-slate-500">Trocar cargo e unidade, lançar pontos e resetar senha</p>
       </div>
 
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
@@ -86,7 +103,11 @@ export default function Usuarios() {
                 <Avatar foto={u.foto} nome={u.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-slate-800 text-sm truncate">
-                    {u.nome || '(sem nome)'}{u.status !== 'ativo' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
+                    {u.nome || '(sem nome)'}
+                    {u.status !== 'ativo' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
+                    {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
+                      <span className="ml-2 text-[10px] text-orange-600 font-normal">sem unidade</span>
+                    )}
                   </div>
                   {u.email && <div className="text-[11px] text-azul/80 truncate">✉️ {u.email}</div>}
                 </div>
@@ -95,6 +116,11 @@ export default function Usuarios() {
                 <select value={u.papel} onChange={(e) => trocarCargo(u, e.target.value)}
                   className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-slate-700 outline-none">
                   {Object.entries(rotuloPapel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <select value={u.unidade_id || ''} onChange={(e) => trocarUnidade(u, e.target.value)}
+                  className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-slate-700 outline-none max-w-[9.5rem]">
+                  <option value="">🏳️ Sem unidade</option>
+                  {unidades.map((un) => <option key={un.id} value={un.id}>🏠 {un.nome}</option>)}
                 </select>
                 <button onClick={() => setPontosPara(u)}
                   className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">🎖️ Pontos</button>

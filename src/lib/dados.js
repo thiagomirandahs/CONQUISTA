@@ -158,6 +158,20 @@ export async function mudarCargo(userId, papel) {
   if (error) throw new Error(error.message)
 }
 
+// Muda a unidade (time) de um membro — passe null/'' pra deixar "sem unidade".
+// Mesmo RLS do cargo: só liderança (o trigger protege_campos_perfil não reverte pra pode_aprovar).
+export async function mudarUnidade(userId, unidadeId) {
+  const { error } = await supabase.from('profiles').update({ unidade_id: unidadeId || null }).eq('id', userId)
+  if (error) throw new Error(error.message)
+}
+
+// Lista as unidades (id, nome, cor) pra escolher no gerenciamento de usuários.
+export async function listarUnidades() {
+  const { data, error } = await supabase.from('unidades').select('id,nome,cor').order('nome')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
 // Lança pontos avulsos a um membro (individual), com motivo — só liderança (RLS).
 export async function lancarPontosIndividual({ userId, pontos, motivo, lancadoPor }) {
   const { error } = await supabase.from('pontos').insert({
