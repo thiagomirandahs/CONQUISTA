@@ -387,6 +387,7 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
 /* ---------- Aba de todas as entregas (liderança) — ver e apagar ---------- */
 function EntregasView({ entregas, onExcluir }) {
   const [ampliar, setAmpliar] = useState(null)
+  const [filtro, setFiltro] = useState('todas') // atividade escolhida (pra não virar lista infinita)
   if (!entregas.length) {
     return (
       <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -398,9 +399,25 @@ function EntregasView({ entregas, onExcluir }) {
   }
   const badge = (s) => (s === 'aprovada' ? 'bg-green-100 text-green-700' : s === 'reprovada' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700')
   const rotulo = (s) => (s === 'aprovada' ? '✅ Aprovada' : s === 'reprovada' ? '↺ Reprovada' : '⏳ Pendente')
+
+  // Agrupa por atividade pra oferecer o filtro (evita a lista gigante)
+  const porAtiv = {}
+  entregas.forEach((e) => {
+    const k = e.atividade_id || 'sem'
+    if (!porAtiv[k]) porAtiv[k] = { id: k, titulo: e.atividade?.titulo || 'Sem atividade', n: 0 }
+    porAtiv[k].n++
+  })
+  const atividades = Object.values(porAtiv).sort((a, b) => (a.titulo || '').localeCompare(b.titulo || '', 'pt-BR'))
+  const lista = filtro === 'todas' ? entregas : entregas.filter((e) => (e.atividade_id || 'sem') === filtro)
+
   return (
     <div className="space-y-3">
-      {entregas.map((e) => (
+      <select value={filtro} onChange={(ev) => setFiltro(ev.target.value)}
+        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm bg-white outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30">
+        <option value="todas">📋 Todas as atividades ({entregas.length})</option>
+        {atividades.map((a) => <option key={a.id} value={a.id}>{a.titulo} ({a.n})</option>)}
+      </select>
+      {lista.map((e) => (
         <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
