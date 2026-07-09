@@ -33,6 +33,16 @@ function badgesCriterio(c = {}) {
   return arr.length ? arr : ['Sem comprovação']
 }
 
+// Deixa os links do texto clicáveis E quebráveis (URL comprida não estoura a tela)
+function comLinks(texto) {
+  if (!texto) return null
+  return String(texto).split(/(https?:\/\/[^\s]+)/g).map((p, i) =>
+    /^https?:\/\//.test(p)
+      ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" className="text-azul underline break-all">{p}</a>
+      : p
+  )
+}
+
 export default function Atividades() {
   const { profile } = useAuth()
   const ehAdmin = PODE_GERIR.includes(profile?.papel)
@@ -240,8 +250,8 @@ export default function Atividades() {
                     <div className="text-3xl">{iconeCat[a.categoria] || '📋'}</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-semibold text-azul-claro">{a.categoria} · {a.alvo}</div>
-                      <div className="font-bold text-slate-800 leading-tight">{a.titulo}</div>
-                      <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{a.descricao}</div>
+                      <div className="font-bold text-slate-800 leading-tight break-words">{a.titulo}</div>
+                      <div className="text-xs text-slate-500 mt-0.5 line-clamp-2 break-words">{comLinks(a.descricao)}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-dourado font-extrabold leading-none">+{a.pontos}</div>
@@ -347,7 +357,7 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
             </div>
             <div className="text-dourado font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
           </div>
-          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
+          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
           {e.foto_url && (e.foto_url.startsWith('http') ? (
             ehVideo(e.foto_url) ? (
               <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-64 rounded-lg bg-black" />
@@ -426,7 +436,7 @@ function EntregasView({ entregas, onExcluir }) {
             </div>
             <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
           </div>
-          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic">"{e.texto}"</p>}
+          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
           {e.foto_url && e.foto_url.startsWith('http') && (
             ehVideo(e.foto_url) ? (
               <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-56 rounded-lg bg-black" />
@@ -561,8 +571,8 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
       <Painel titulo="📤 Entregar atividade" onFechar={onFechar}>
         <div className="p-5 space-y-3 overflow-y-auto">
           <div className="bg-slate-50 rounded-xl p-3">
-            <div className="font-bold text-slate-800">{atividade.titulo}</div>
-            <div className="text-xs text-slate-500">{atividade.descricao}</div>
+            <div className="font-bold text-slate-800 break-words">{atividade.titulo}</div>
+            <div className="text-xs text-slate-500 break-words">{comLinks(atividade.descricao)}</div>
             <div className="text-xs text-dourado font-bold mt-1">Vale +{atividade.pontos} pontos</div>
           </div>
           {c.texto && (
