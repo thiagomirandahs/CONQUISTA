@@ -336,13 +336,18 @@ export async function avaliarMissao(id, aprovar) {
 // ------- Painel de conteúdo (versículos e desafios) — só liderança (RLS) -------
 // O RLS "ler/gerir versiculos|desafios" já limita tudo a pode_gerir(); a criança
 // nunca lê a tabela (a resposta certa continua secreta).
-const TABELAS_CONTEUDO = ['versiculos', 'desafios']
+const TABELAS_CONTEUDO = ['versiculos', 'desafios', 'classe_requisitos']
 function tabelaOk(tabela) {
   if (!TABELAS_CONTEUDO.includes(tabela)) throw new Error('Tabela inválida')
   return tabela
 }
 export async function carregarConteudo(tabela) {
-  const { data, error } = await supabase.from(tabelaOk(tabela)).select('*').order('created_at')
+  const t = tabelaOk(tabela)
+  // Cartão de classe ordena por classe+ordem; versículos/desafios por criação
+  const q = t === 'classe_requisitos'
+    ? supabase.from(t).select('*').order('classe').order('ordem')
+    : supabase.from(t).select('*').order('created_at')
+  const { data, error } = await q
   if (error) throw new Error(error.message)
   return data || []
 }

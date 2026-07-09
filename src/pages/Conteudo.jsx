@@ -18,6 +18,7 @@ export default function Conteudo() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [editando, setEditando] = useState(null) // item (edição) ou {} (novo)
+  const [filtroClasse, setFiltroClasse] = useState('') // filtro por classe na aba Cartão
 
   async function carregar() {
     setCarregando(true); setErro('')
@@ -47,24 +48,35 @@ export default function Conteudo() {
   }
 
   const ehVers = aba === 'versiculos'
+  const ehClasse = aba === 'classe_requisitos'
   const ativos = lista.filter((i) => i.ativo).length
+  const listaMostrada = ehClasse && filtroClasse ? lista.filter((i) => i.classe === filtroClasse) : lista
 
   return (
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">📖 Conteúdo</h2>
-        <p className="text-sm text-slate-500">Versículos e desafios das missões diárias</p>
+        <p className="text-sm text-slate-500">Versículos, desafios das missões e requisitos das classes</p>
       </div>
 
-      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
-        {[['versiculos', '📖 Versículos'], ['desafios', '🎯 Desafios']].map(([k, lbl]) => (
+      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-md">
+        {[['versiculos', '📖 Versículos'], ['desafios', '🎯 Desafios'], ['classe_requisitos', '🎓 Classe']].map(([k, lbl]) => (
           <button key={k} onClick={() => setAba(k)}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
         ))}
       </div>
 
+      {ehClasse && (
+        <select value={filtroClasse} onChange={(e) => setFiltroClasse(e.target.value)}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm mb-3 bg-white outline-none">
+          <option value="">Todas as classes</option>
+          {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      )}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-slate-400">{ativos} ativo{ativos === 1 ? '' : 's'} no rodízio · {lista.length} no total</span>
+        <span className="text-xs text-slate-400">
+          {ehClasse ? `${listaMostrada.length} requisito${listaMostrada.length === 1 ? '' : 's'}` : `${ativos} ativo${ativos === 1 ? '' : 's'} no rodízio · ${lista.length} no total`}
+        </span>
         <motion.button whileTap={{ scale: 0.94 }} onClick={() => setEditando({})}
           className="text-sm bg-azul text-white rounded-xl px-4 py-2 font-semibold shadow-sm">+ Novo</motion.button>
       </div>
@@ -73,25 +85,27 @@ export default function Conteudo() {
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">{erro}</div>
-      ) : lista.length === 0 ? (
+      ) : listaMostrada.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-          <div className="text-4xl mb-2">{ehVers ? '📖' : '🎯'}</div>
+          <div className="text-4xl mb-2">{ehVers ? '📖' : ehClasse ? '🎓' : '🎯'}</div>
           <p className="font-semibold text-slate-700">Nada cadastrado ainda</p>
           <p className="text-sm text-slate-400">Toque em "+ Novo" pra adicionar o primeiro.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {lista.map((item) => (
+          {listaMostrada.map((item) => (
             <div key={item.id} className={`bg-white rounded-2xl p-3 shadow-sm flex items-start gap-3 ${item.ativo ? '' : 'opacity-60'}`}>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-800 text-sm break-words">
-                  {ehVers ? (item.texto || '(sem texto)') : (item.pergunta || '(sem pergunta)')}
+                  {aba === 'desafios' ? (item.pergunta || '(sem pergunta)') : (item.texto || '(sem texto)')}
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {ehVers && item.referencia && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">📗 {item.referencia}</span>}
-                  {!ehVers && <span className="text-[11px] bg-azul/10 text-azul rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
-                  {!ehVers && item.pede_foto && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">📷 Foto</span>}
-                  {!ehVers && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
+                  {ehClasse && <span className="text-[11px] bg-azul/10 text-azul rounded-full px-2 py-0.5">🎓 {item.classe}</span>}
+                  {ehClasse && item.secao && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{item.secao}</span>}
+                  {aba === 'desafios' && <span className="text-[11px] bg-azul/10 text-azul rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
+                  {aba === 'desafios' && item.pede_foto && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">📷 Foto</span>}
+                  {aba === 'desafios' && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
@@ -121,16 +135,19 @@ export default function Conteudo() {
 
 function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
   const ehVers = aba === 'versiculos'
+  const ehClasse = aba === 'classe_requisitos'
   const [form, setForm] = useState(() => inicial ? {
     texto: inicial.texto || '', referencia: inicial.referencia || '',
     pergunta: inicial.pergunta || (ehVers ? 'De qual livro da Bíblia é este versículo?' : ''),
     tema: inicial.tema || '', classe: inicial.classe || '', pede_foto: !!inicial.pede_foto,
+    secao: inicial.secao || '', ordem: inicial.ordem ?? 0,
     opcoes: Array.isArray(inicial.opcoes) && inicial.opcoes.length ? inicial.opcoes.map(String) : ['', ''],
     correta: inicial.correta ?? 0, ativo: inicial.ativo !== false,
   } : {
     texto: '', referencia: '',
     pergunta: ehVers ? 'De qual livro da Bíblia é este versículo?' : '',
     tema: '', classe: '', pede_foto: false,
+    secao: '', ordem: 0,
     opcoes: ['', ''], correta: 0, ativo: true,
   })
   const [salvando, setSalvando] = useState(false)
@@ -151,6 +168,19 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
   async function salvar(e) {
     e.preventDefault()
     setErro('')
+    if (ehClasse) {
+      if (!form.classe) return setErro('Escolha a classe.')
+      if (!form.texto.trim()) return setErro('Escreva o requisito.')
+      setSalvando(true)
+      try {
+        await salvarConteudo(aba, {
+          classe: form.classe, secao: form.secao.trim() || null,
+          ordem: Number(form.ordem) || 0, texto: form.texto.trim(), ativo: form.ativo,
+        }, inicial?.id)
+        onSalvo()
+      } catch (e2) { setErro(e2?.message || String(e2)); setSalvando(false) }
+      return
+    }
     if (ehVers && !form.texto.trim()) return setErro('Escreva o versículo.')
     if (ehVers && !form.referencia.trim()) return setErro('Informe a referência (ex.: João 3:16).')
     if (!form.pergunta.trim()) return setErro(semQuiz ? 'Escreva a instrução da missão.' : 'Escreva a pergunta do quiz.')
@@ -179,60 +209,84 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
         className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         <div className="bg-azul text-white px-5 py-4 flex items-center justify-between shrink-0">
-          <h3 className="font-extrabold">{inicial ? 'Editar' : 'Novo'} {ehVers ? 'versículo' : 'desafio'}</h3>
+          <h3 className="font-extrabold">{inicial ? 'Editar' : 'Novo'} {ehVers ? 'versículo' : ehClasse ? 'requisito' : 'desafio'}</h3>
           <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
         </div>
 
         <form onSubmit={salvar} className="p-5 space-y-3 overflow-y-auto">
-          {ehVers ? (
+          {ehClasse ? (
             <>
-              <Campo label="Versículo">
-                <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)} placeholder="Ex.: Porque Deus amou o mundo de tal maneira..." />
+              <div className="grid grid-cols-2 gap-3">
+                <Campo label="Classe">
+                  <select className={inputClass} value={form.classe} onChange={(e) => set('classe', e.target.value)}>
+                    <option value="">Escolha...</option>
+                    {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Campo>
+                <Campo label="Ordem (opcional)">
+                  <input type="number" step="1" min="0" className={inputClass} value={form.ordem} onChange={(e) => set('ordem', e.target.value)} />
+                </Campo>
+              </div>
+              <Campo label="Seção (opcional)">
+                <input className={inputClass} value={form.secao} onChange={(e) => set('secao', e.target.value)} placeholder="Ex.: Geral, Natureza, Vida espiritual" />
               </Campo>
-              <Campo label="Referência">
-                <input className={inputClass} value={form.referencia} onChange={(e) => set('referencia', e.target.value)} placeholder="Ex.: João 3:16" />
+              <Campo label="Requisito">
+                <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)} placeholder="Ex.: Decorar e explicar o Voto e a Lei do Desbravador" />
               </Campo>
             </>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <Campo label="Tema (opcional)">
-                  <input className={inputClass} value={form.tema} onChange={(e) => set('tema', e.target.value)} placeholder="Ex.: Nós, Lei..." />
-                </Campo>
-                <Campo label="Classe">
-                  <select className={inputClass} value={form.classe} onChange={(e) => set('classe', e.target.value)}>
-                    <option value="">Geral (todas)</option>
-                    {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </Campo>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={form.pede_foto} onChange={(e) => set('pede_foto', e.target.checked)} className="w-4 h-4 accent-azul" />
-                📷 Missão de foto (a criança faz a tarefa e envia foto — sem quiz)
-              </label>
-            </>
-          )}
-
-          <Campo label={semQuiz ? 'Instrução da missão' : 'Pergunta do quiz'}>
-            <input className={inputClass} value={form.pergunta} onChange={(e) => set('pergunta', e.target.value)}
-              placeholder={semQuiz ? 'Ex.: Tire uma foto ajudando em casa' : 'Ex.: De qual livro é este versículo?'} />
-          </Campo>
-
-          {!semQuiz && (
-            <Campo label="Opções (marque ⚪ a certa)">
-              <div className="space-y-2">
-                {form.opcoes.map((o, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input type="radio" name="correta" checked={form.correta === i} onChange={() => set('correta', i)} className="w-4 h-4 accent-azul shrink-0" />
-                    <input value={o} onChange={(e) => setOpcao(i, e.target.value)} placeholder={`Opção ${i + 1}`} className={inputClass} />
-                    {form.opcoes.length > 2 && (
-                      <button type="button" onClick={() => removeOpcao(i)} className="text-red-400 hover:text-red-600 text-xl leading-none px-1 shrink-0">×</button>
-                    )}
+              {ehVers ? (
+                <>
+                  <Campo label="Versículo">
+                    <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)} placeholder="Ex.: Porque Deus amou o mundo de tal maneira..." />
+                  </Campo>
+                  <Campo label="Referência">
+                    <input className={inputClass} value={form.referencia} onChange={(e) => set('referencia', e.target.value)} placeholder="Ex.: João 3:16" />
+                  </Campo>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Campo label="Tema (opcional)">
+                      <input className={inputClass} value={form.tema} onChange={(e) => set('tema', e.target.value)} placeholder="Ex.: Nós, Lei..." />
+                    </Campo>
+                    <Campo label="Classe">
+                      <select className={inputClass} value={form.classe} onChange={(e) => set('classe', e.target.value)}>
+                        <option value="">Geral (todas)</option>
+                        {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </Campo>
                   </div>
-                ))}
-              </div>
-              <button type="button" onClick={addOpcao} className="text-xs text-azul font-semibold mt-2">+ opção</button>
-            </Campo>
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={form.pede_foto} onChange={(e) => set('pede_foto', e.target.checked)} className="w-4 h-4 accent-azul" />
+                    📷 Missão de foto (a criança faz a tarefa e envia foto — sem quiz)
+                  </label>
+                </>
+              )}
+
+              <Campo label={semQuiz ? 'Instrução da missão' : 'Pergunta do quiz'}>
+                <input className={inputClass} value={form.pergunta} onChange={(e) => set('pergunta', e.target.value)}
+                  placeholder={semQuiz ? 'Ex.: Tire uma foto ajudando em casa' : 'Ex.: De qual livro é este versículo?'} />
+              </Campo>
+
+              {!semQuiz && (
+                <Campo label="Opções (marque ⚪ a certa)">
+                  <div className="space-y-2">
+                    {form.opcoes.map((o, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input type="radio" name="correta" checked={form.correta === i} onChange={() => set('correta', i)} className="w-4 h-4 accent-azul shrink-0" />
+                        <input value={o} onChange={(e) => setOpcao(i, e.target.value)} placeholder={`Opção ${i + 1}`} className={inputClass} />
+                        {form.opcoes.length > 2 && (
+                          <button type="button" onClick={() => removeOpcao(i)} className="text-red-400 hover:text-red-600 text-xl leading-none px-1 shrink-0">×</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={addOpcao} className="text-xs text-azul font-semibold mt-2">+ opção</button>
+                </Campo>
+              )}
+            </>
           )}
 
           <label className="flex items-center gap-2 text-sm text-slate-700">
