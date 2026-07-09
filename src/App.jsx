@@ -22,6 +22,7 @@ const AprovarMissoes = lazy(() => import('./pages/AprovarMissoes.jsx'))
 const Trilha = lazy(() => import('./pages/Trilha.jsx'))
 const Perfil = lazy(() => import('./pages/Perfil.jsx'))
 const Avisos = lazy(() => import('./pages/Avisos.jsx'))
+const Conteudo = lazy(() => import('./pages/Conteudo.jsx'))
 
 function Carregando() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/pontos" element={<RemoverPontos />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/avisos" element={<Avisos />} />
+          <Route path="/conteudo" element={<Conteudo />} />
         </Route>
       </Routes>
     </Suspense>
