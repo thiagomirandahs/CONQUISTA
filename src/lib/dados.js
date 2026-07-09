@@ -69,6 +69,28 @@ export async function lancarPontosUnidade({ unidadeId, pontos, motivo, lancadoPo
   if (error) throw error
 }
 
+// Resumo pro Painel da Diretoria: números do clube numa olhada, com atalhos.
+export async function carregarPainelDiretoria() {
+  const agora = new Date()
+  const mes = agora.getMonth() + 1
+  const ano = agora.getFullYear()
+  const head = { count: 'exact', head: true }
+  const [cad, ent, ativos, mens, miss] = await Promise.all([
+    supabase.from('profiles').select('id', head).eq('status', 'pendente'),
+    supabase.from('entregas').select('id', head).eq('status', 'pendente'),
+    supabase.from('profiles').select('id', head).eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
+    supabase.from('mensalidades').select('id', head).eq('mes', mes).eq('ano', ano).eq('status', 'pago'),
+    supabase.rpc('missoes_pendentes').then((r) => (r.data || []).length).catch(() => 0),
+  ])
+  return {
+    cadastros: cad.count || 0,
+    entregas: ent.count || 0,
+    membros: ativos.count || 0,
+    mensPagas: mens.count || 0,
+    missoes: miss || 0,
+  }
+}
+
 // Lançamentos de pontos recentes (individual e de unidade) para a liderança remover.
 export async function carregarLancamentos() {
   const { data } = await supabase

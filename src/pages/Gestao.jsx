@@ -1,6 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { carregarPainelDiretoria } from '../lib/dados.js'
+
+const PODE_GERIR = ['instrutor', 'diretoria']
 
 const FERRAMENTAS = [
   { to: '/aprovacoes', icon: '✅', titulo: 'Aprovações', desc: 'Liberar novos cadastros', papeis: ['diretoria', 'instrutor'] },
@@ -16,6 +20,7 @@ const FERRAMENTAS = [
 export default function Gestao() {
   const { profile } = useAuth()
   const disp = FERRAMENTAS.filter((f) => f.papeis.includes(profile?.papel))
+  const ehAdmin = PODE_GERIR.includes(profile?.papel)
 
   return (
     <div>
@@ -23,6 +28,8 @@ export default function Gestao() {
         <h2 className="text-2xl font-extrabold text-slate-800">⚙️ Gestão</h2>
         <p className="text-sm text-slate-500">Ferramentas da liderança</p>
       </div>
+
+      {ehAdmin && <PainelDiretoria />}
 
       {disp.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -43,6 +50,35 @@ export default function Gestao() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// Painel da diretoria: o clube numa olhada, cada número é um atalho.
+function PainelDiretoria() {
+  const [d, setD] = useState(null)
+  useEffect(() => { carregarPainelDiretoria().then(setD).catch(() => {}) }, [])
+  if (!d) return null
+  const tiles = [
+    { n: d.cadastros, lbl: 'Cadastros a aprovar', to: '/aprovacoes', alerta: d.cadastros > 0 },
+    { n: d.entregas, lbl: 'Entregas a corrigir', to: '/atividades', alerta: d.entregas > 0 },
+    { n: d.missoes, lbl: 'Missões a aprovar', to: '/aprovar-missoes', alerta: d.missoes > 0 },
+    { n: `${d.mensPagas}/${d.membros}`, lbl: 'Mensalidades do mês', to: '/mensalidades', alerta: false },
+  ]
+  return (
+    <div className="mb-5">
+      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">📊 Resumo do clube</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {tiles.map((t) => (
+          <motion.div key={t.lbl} whileTap={{ scale: 0.97 }}>
+            <Link to={t.to}
+              className={`block rounded-2xl p-3 shadow-sm text-center ${t.alerta ? 'bg-amber-50 border border-amber-200' : 'bg-white'}`}>
+              <div className={`text-2xl font-extrabold leading-none ${t.alerta ? 'text-amber-700' : 'text-slate-800'}`}>{t.n}</div>
+              <div className="text-[11px] text-slate-500 leading-tight mt-1">{t.lbl}</div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
     </div>
   )
 }
