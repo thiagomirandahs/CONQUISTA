@@ -24,6 +24,7 @@ const Perfil = lazy(() => import('./pages/Perfil.jsx'))
 const Avisos = lazy(() => import('./pages/Avisos.jsx'))
 const Conteudo = lazy(() => import('./pages/Conteudo.jsx'))
 const RadarFaltas = lazy(() => import('./pages/RadarFaltas.jsx'))
+const Agenda = lazy(() => import('./pages/Agenda.jsx'))
 
 function Carregando() {
   return (
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/avisos" element={<Avisos />} />
           <Route path="/conteudo" element={<Conteudo />} />
           <Route path="/radar" element={<RadarFaltas />} />
+          <Route path="/agenda" element={<Agenda />} />
         </Route>
       </Routes>
     </Suspense>
