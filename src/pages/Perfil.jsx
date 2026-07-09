@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { atualizarFotoPerfil, carregarMeuExtrato } from '../lib/dados.js'
+import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas } from '../lib/dados.js'
 
 const rotuloPapel = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
@@ -20,6 +20,7 @@ export default function Perfil() {
   const [previa, setPrevia] = useState(null)
   const [extrato, setExtrato] = useState([])
   const [carregandoExtrato, setCarregandoExtrato] = useState(true)
+  const [metricas, setMetricas] = useState({ passos: 0, sequencia: 0, fotos: 0 })
 
   useEffect(() => {
     if (!profile?.id) return
@@ -27,9 +28,25 @@ export default function Perfil() {
       .then(setExtrato)
       .catch(() => {})
       .finally(() => setCarregandoExtrato(false))
+    carregarMetricasConquistas(profile.id).then(setMetricas).catch(() => {})
   }, [profile?.id])
 
   const totalPts = extrato.reduce((s, p) => s + (p.pontos || 0), 0)
+  const porOrigem = extrato.reduce((m, p) => { m[p.origem] = (m[p.origem] || 0) + 1; return m }, {})
+  const medalhas = Math.floor((metricas.passos || 0) / 6)
+  const missoesFeitas = (porOrigem.missao || 0) + (porOrigem.devocional || 0)
+  const conquistas = [
+    { emoji: '🌱', nome: 'Primeiros passos', atual: totalPts, meta: 1 },
+    { emoji: '⭐', nome: 'Cem pontos', atual: totalPts, meta: 100 },
+    { emoji: '🔥', nome: 'Ofensiva 7 dias', atual: metricas.sequencia, meta: 7 },
+    { emoji: '💥', nome: 'Ofensiva 30 dias', atual: metricas.sequencia, meta: 30 },
+    { emoji: '🏅', nome: 'Conquistou a Trilha', atual: medalhas, meta: 1 },
+    { emoji: '🗺️', nome: 'Explorador', atual: metricas.passos, meta: 10 },
+    { emoji: '📖', nome: 'Devoto', atual: missoesFeitas, meta: 10 },
+    { emoji: '📋', nome: 'Caprichoso', atual: porOrigem.atividade || 0, meta: 5 },
+    { emoji: '📸', nome: 'Fotógrafo', atual: metricas.fotos, meta: 3 },
+  ].map((b) => ({ ...b, pronto: b.atual >= b.meta }))
+  const nConquistadas = conquistas.filter((b) => b.pronto).length
 
   async function escolher(file) {
     if (!file) return
@@ -75,6 +92,37 @@ export default function Perfil() {
       </div>
 
       <p className="text-center text-xs text-slate-400 mt-4">A foto ideal é quadrada e mostra bem o rosto 🙂</p>
+
+      {/* Ofensiva (sequência de dias fazendo a missão) */}
+      <div className="mt-6 rounded-2xl p-4 text-white flex items-center gap-3 shadow-sm"
+        style={{ background: 'linear-gradient(90deg,#f97316,#f59e0b)' }}>
+        <div className="text-4xl">🔥</div>
+        <div className="min-w-0">
+          <div className="text-2xl font-extrabold leading-none">{metricas.sequencia} dia{metricas.sequencia === 1 ? '' : 's'}</div>
+          <div className="text-xs text-white/90 mt-1">
+            {metricas.sequencia > 0
+              ? 'de ofensiva! Não perca o ritmo — faça a missão de hoje. 🎯'
+              : 'Faça a missão de hoje pra começar sua ofensiva!'}
+          </div>
+        </div>
+      </div>
+
+      {/* Estante de conquistas (insígnias colecionáveis) */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-extrabold text-slate-800">🎖️ Minhas conquistas</h3>
+          <span className="text-xs text-slate-400">{nConquistadas} de {conquistas.length}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {conquistas.map((b) => (
+            <div key={b.nome} className={`rounded-xl p-3 text-center border ${b.pronto ? 'bg-amber-50 border-dourado/40' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`text-3xl ${b.pronto ? '' : 'grayscale opacity-40'}`}>{b.emoji}</div>
+              <div className={`text-[11px] font-bold mt-1 leading-tight ${b.pronto ? 'text-amber-700' : 'text-slate-500'}`}>{b.nome}</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">{b.pronto ? '✓ conquistada' : `${Math.min(b.atual, b.meta)}/${b.meta}`}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Extrato: de onde vieram meus pontos */}
       <div className="mt-6">

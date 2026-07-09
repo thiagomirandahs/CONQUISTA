@@ -218,6 +218,21 @@ export async function carregarMeuExtrato(userId) {
   return data || []
 }
 
+// Métricas pras conquistas/insígnias (derivadas do que já existe): passos da
+// trilha, sequência das missões e fotos no mural. Resiliente a erro.
+export async function carregarMetricasConquistas(userId) {
+  const [trilha, resumoRes, fotosRes] = await Promise.all([
+    carregarTrilha().catch(() => ({ passos: 0 })),
+    supabase.rpc('meu_resumo_missoes'),
+    supabase.from('fotos').select('id', { count: 'exact', head: true }).eq('autor_id', userId),
+  ])
+  return {
+    passos: trilha?.passos || 0,
+    sequencia: resumoRes?.data?.sequencia || 0,
+    fotos: fotosRes?.count || 0,
+  }
+}
+
 // Envia/troca a foto de perfil do próprio usuário — o RLS deixa cada um editar seu perfil.
 export async function atualizarFotoPerfil({ userId, file }) {
   file = await comprimirImagem(file, { maxLado: 640 })
