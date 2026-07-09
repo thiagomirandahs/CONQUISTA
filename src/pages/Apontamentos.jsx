@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
 import { hojeLocalISO } from '../lib/data.js'
+import Avatar from '../components/Avatar.jsx'
 
 // Valores dos pontos (fácil de ajustar aqui)
 const PT = { naHora: 10, atrasado: 5, faltou: 0, biblia: 20, uniforme: 10, igreja: 10, atividade: 10 }
@@ -33,6 +34,7 @@ export default function Apontamentos() {
   const [data, setData] = useState(hojeLocalISO())
   const [carregando, setCarregando] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [modo, setModo] = useState('detalhado') // detalhado | rapida
 
   useEffect(() => {
     if (ehAdmin) supabase.from('unidades').select('id,nome').order('nome').then(({ data }) => setUnidades(data || []))
@@ -124,12 +126,45 @@ export default function Apontamentos() {
         Na hora +{PT.naHora} · Atrasado +{PT.atrasado} · 📖 Bíblia +{PT.biblia} · 👕 Uniforme +{PT.uniforme} · ⛪ Igreja +{PT.igreja} · ⭐ Atividade +{PT.atividade} · Faltou: 0
       </div>
 
+      {unidadeId && desbravadores.length > 0 && (
+        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-3 max-w-xs">
+          {[['detalhado', '📝 Detalhado'], ['rapida', '⚡ Chamada rápida']].map(([k, lbl]) => (
+            <button key={k} onClick={() => setModo(k)}
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${modo === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+          ))}
+        </div>
+      )}
+
       {!unidadeId ? (
         <p className="text-slate-400 text-sm">{ehConselheiro ? 'Você ainda não tem uma unidade definida.' : 'Escolha uma unidade acima.'}</p>
       ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : desbravadores.length === 0 ? (
         <p className="text-slate-400 text-sm">Nenhum desbravador aprovado nesta unidade ainda.</p>
+      ) : modo === 'rapida' ? (
+        <div className="space-y-2">
+          <div className="bg-azul/10 text-azul rounded-xl px-3 py-2 text-sm font-bold text-center">
+            {desbravadores.filter((d) => (marcas[d.id]?.presenca ?? 'naHora') !== 'faltou').length}/{desbravadores.length} presentes
+          </div>
+          {desbravadores.map((d) => {
+            const presente = (marcas[d.id]?.presenca ?? 'naHora') !== 'faltou'
+            return (
+              <button key={d.id} onClick={() => setMarca(d.id, 'presenca', presente ? 'faltou' : 'naHora')}
+                className={`w-full flex items-center gap-3 rounded-2xl p-2.5 shadow-sm border-2 transition ${presente ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'}`}>
+                <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
+                <span className="flex-1 text-left font-semibold text-slate-800 truncate">
+                  {d.nome}
+                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                </span>
+                <span className={`text-sm font-bold shrink-0 ${presente ? 'text-green-600' : 'text-slate-400'}`}>{presente ? '✅ Presente' : '❌ Faltou'}</span>
+              </button>
+            )
+          })}
+          <motion.button whileTap={{ scale: 0.97 }} onClick={salvar} disabled={salvando}
+            className="w-full bg-azul text-white font-bold rounded-xl py-3 shadow disabled:opacity-60">
+            {salvando ? 'Salvando...' : '💾 Salvar chamada'}
+          </motion.button>
+        </div>
       ) : (
         <div className="space-y-3">
           {desbravadores.map((d) => {

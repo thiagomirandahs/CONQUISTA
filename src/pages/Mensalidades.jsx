@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
 import { hojeLocalISO } from '../lib/data.js'
+import { baixarCSV } from '../lib/csv.js'
 import Avatar from '../components/Avatar.jsx'
 
 const FINANCEIRO = ['tesoureiro', 'diretoria']
@@ -164,14 +165,30 @@ export default function Mensalidades() {
 }
 
 function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses }) {
+  function baixar() {
+    const cab = ['Membro', ...meses, 'Meses pagos']
+    const linhas = desbravadores.map((d) => {
+      const linha = anual[d.id] || {}
+      const cols = meses.map((_, i) => (linha[i + 1] === 'pago' ? 'Pago' : ''))
+      return [d.nome || '', ...cols, cols.filter((c) => c === 'Pago').length]
+    })
+    baixarCSV(`mensalidades-${ano}.csv`, cab, linhas)
+  }
   if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
   return (
     <div>
-      <div className="mb-3 max-w-[140px]">
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Ano</label>
-        <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
-          {anos.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
+      <div className="mb-3 flex items-end justify-between gap-2">
+        <div className="max-w-[140px]">
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Ano</label>
+          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
+            {anos.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+        {desbravadores.length > 0 && (
+          <button onClick={baixar} className="text-sm bg-white border border-slate-300 text-slate-700 rounded-lg px-3 py-2 font-semibold shadow-sm hover:bg-slate-50">
+            📥 Baixar CSV
+          </button>
+        )}
       </div>
       {desbravadores.length === 0 ? (
         <p className="text-slate-400 text-sm">Ninguém cadastrado ainda.</p>

@@ -91,6 +91,41 @@ export async function carregarPainelDiretoria() {
   }
 }
 
+// Radar de faltas: quem faltou nas últimas reuniões seguidas (2+). Lê os
+// apontamentos recentes e conta as faltas mais recentes de cada pessoa.
+export async function carregarRadarFaltas() {
+  const { data } = await supabase.from('pontos')
+    .select('usuario_id, data, marca, pessoa:profiles!usuario_id(nome, foto, status)')
+    .eq('origem', 'apontamento')
+    .order('data', { ascending: false })
+    .limit(500)
+  const porPessoa = {}
+  ;(data || []).forEach((p) => {
+    if (!p.usuario_id) return
+    ;(porPessoa[p.usuario_id] ||= { pessoa: p.pessoa, linhas: [] }).linhas.push(p)
+  })
+  const radar = []
+  Object.entries(porPessoa).forEach(([id, info]) => {
+    if (!info.pessoa || info.pessoa.status !== 'ativo') return
+    let faltas = 0
+    for (const l of info.linhas) { // linhas em ordem decrescente de data
+      if (l.marca && l.marca.presenca === 'faltou') faltas++
+      else break
+    }
+    if (faltas >= 2) radar.push({ id, nome: info.pessoa.nome, foto: info.pessoa.foto, faltas, ultima: info.linhas[0]?.data })
+  })
+  radar.sort((a, b) => b.faltas - a.faltas || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+  return radar
+}
+
+// Aviso PESSOAL (só uma pessoa vê/recebe) — usa a coluna para_usuario. Só liderança (RLS).
+export async function enviarAvisoPessoal({ userId, titulo, corpo, criadoPor }) {
+  const { error } = await supabase.from('notificacoes').insert({
+    titulo, corpo: corpo || null, tipo: 'geral', link: '/', para: 'pessoal', para_usuario: userId, criado_por: criadoPor,
+  })
+  if (error) throw new Error(error.message)
+}
+
 // Lançamentos de pontos recentes (individual e de unidade) para a liderança remover.
 export async function carregarLancamentos() {
   const { data } = await supabase
