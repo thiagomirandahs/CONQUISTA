@@ -264,6 +264,12 @@ export async function registrarJogo(tipo, estrelas) {
   if (error) throw new Error(error.message)
   return data
 }
+// Ranking da Trilha (todos): soma de estrelas + nº de jogos por pessoa.
+export async function carregarRankingTrilha() {
+  const { data, error } = await supabase.rpc('ranking_trilha')
+  if (error) throw new Error(error.message)
+  return data || []
+}
 
 // Devocional (popup diário): já fez hoje? + o versículo do dia (sem a resposta).
 export async function carregarDevocionalPopup() {

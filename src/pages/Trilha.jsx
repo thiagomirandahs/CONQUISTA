@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
-import { carregarTrilha, registrarJogo } from '../lib/dados.js'
+import Avatar from '../components/Avatar.jsx'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha } from '../lib/dados.js'
 
 // Os 6 postos da trilha = as 6 classes (cores oficiais dos lenços)
 const POSTOS = [
@@ -40,12 +41,22 @@ export default function Trilha() {
   const [prog, setProg] = useState({ feito: false, passos: 0 })
   const [jogando, setJogando] = useState(false)
   const [resultado, setResultado] = useState(null)
+  const [aba, setAba] = useState('trilha') // trilha | ranking
+  const [ranking, setRanking] = useState([])
+  const [carregandoRank, setCarregandoRank] = useState(false)
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
   async function recarregar() {
     setCarregando(true)
     try { setProg(await carregarTrilha()) } finally { setCarregando(false) }
   }
+
+  // Carrega o ranking só quando a aba abre (e recarrega quando o jogo termina)
+  useEffect(() => {
+    if (aba !== 'ranking') return
+    setCarregandoRank(true)
+    carregarRankingTrilha().then(setRanking).catch(() => {}).finally(() => setCarregandoRank(false))
+  }, [aba, prog.passos])
 
   const posto = prog.passos % POSTOS.length
   const medalhas = Math.floor(prog.passos / POSTOS.length) // quantas vezes já completou a Trilha
@@ -85,6 +96,17 @@ export default function Trilha() {
         <div className="mt-1.5 inline-block text-xs font-bold text-azul bg-azul/10 rounded-full px-2.5 py-0.5">Temporada {temporada}</div>
       </div>
 
+      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+        {[['trilha', '🗺️ Minha trilha'], ['ranking', '🏆 Ranking']].map(([k, lbl]) => (
+          <button key={k} onClick={() => setAba(k)}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+        ))}
+      </div>
+
+      {aba === 'ranking' ? (
+        <RankingTrilha lista={ranking} carregando={carregandoRank} meuId={profile?.id} />
+      ) : (
+      <>
       <div className="bg-white rounded-2xl shadow-sm p-3 mb-4">
         <div className="flex flex-col gap-1.5">
           {POSTOS.map((p, i) => {
@@ -142,6 +164,45 @@ export default function Trilha() {
             className="bg-azul text-white font-extrabold rounded-xl px-6 py-3 shadow">🎮 Jogar (+10)</motion.button>
         </div>
       )}
+      </>
+      )}
+    </div>
+  )
+}
+
+const POSTOS_LEN = POSTOS.length
+function RankingTrilha({ lista, carregando, meuId }) {
+  const top = ['🥇', '🥈', '🥉']
+  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
+  if (!lista.length) {
+    return (
+      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="text-4xl mb-2">🏔️</div>
+        <p className="font-semibold text-slate-700">Ninguém jogou ainda</p>
+        <p className="text-sm text-slate-400">Seja o primeiro a subir a trilha!</p>
+      </div>
+    )
+  }
+  return (
+    <div>
+      <p className="text-xs text-slate-400 mb-2">Quem avançou mais e com menos tentativas (⭐ = soma das estrelas).</p>
+      <div className="bg-white rounded-2xl shadow-sm p-2">
+        {lista.map((r, i) => {
+          const eu = r.id === meuId
+          const medalhas = Math.floor((r.passos || 0) / POSTOS_LEN)
+          return (
+            <div key={r.id} className={`flex items-center gap-3 px-2 py-2.5 rounded-xl ${eu ? 'bg-azul/5' : ''}`}>
+              <span className="w-6 text-center font-extrabold text-slate-400">{top[i] || i + 1}</span>
+              <Avatar foto={r.foto} nome={r.nome || '?'} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-slate-800 text-sm truncate">{r.nome || 'Desbravador'}{eu && ' (você)'}</div>
+                <div className="text-[11px] text-slate-400">{r.passos} jogo{r.passos === 1 ? '' : 's'}{medalhas > 0 ? ` · 🏅×${medalhas}` : ''}</div>
+              </div>
+              <span className="font-extrabold text-dourado shrink-0">⭐ {r.estrelas}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
