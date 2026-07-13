@@ -27,6 +27,7 @@ const RadarFaltas = lazy(() => import('./pages/RadarFaltas.jsx'))
 const Agenda = lazy(() => import('./pages/Agenda.jsx'))
 const Temporada = lazy(() => import('./pages/Temporada.jsx'))
 const JogosTrilha = lazy(() => import('./pages/JogosTrilha.jsx'))
+const DesafiosSemana = lazy(() => import('./pages/DesafiosSemana.jsx'))
 
 function Carregando() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/radar" element={<RadarFaltas />} />
           <Route path="/temporada" element={<Temporada />} />
           <Route path="/jogos-trilha" element={<JogosTrilha />} />
+          <Route path="/desafios" element={<DesafiosSemana />} />
           <Route path="/agenda" element={<Agenda />} />
         </Route>
       </Routes>

@@ -64,6 +64,54 @@ export async function carregarRanking() {
   return { unidades, individual }
 }
 
+// ------- Desafios da Semana (corrida que zera toda segunda) -------
+// Metas da cartela pessoal: o que a criança faz na semana, contado por origem.
+export const METAS_SEMANA = [
+  { chave: 'missao', emoji: '🎯', nome: 'Missões', meta: 5 },
+  { chave: 'trilha', emoji: '🎮', nome: 'Jogos', meta: 3 },
+  { chave: 'devocional', emoji: '📖', nome: 'Devocional', meta: 5 },
+  { chave: 'atividade', emoji: '📋', nome: 'Atividades', meta: 1 },
+]
+
+// Corrida das unidades NA SEMANA: mesma média do ranking geral, mas só dos
+// pontos desde a segunda (ranking_semana() faz a janela no banco).
+export async function carregarDesafiosSemana() {
+  const [{ data: us }, { data: ps }, { data: sem }] = await Promise.all([
+    supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
+    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
+    supabase.rpc('ranking_semana'),
+  ])
+  const inicio = sem?.inicio || null
+  const totalPessoa = {}
+  const totalTime = {}
+  ;(sem?.pessoas || []).forEach((r) => { totalPessoa[r.id] = r.total || 0 })
+  ;(sem?.times || []).forEach((r) => { totalTime[r.id] = r.total || 0 })
+
+  const unidades = (us || [])
+    .map((u) => {
+      // Mesma regra do ranking geral: só desbravador/conselheiro entram na média.
+      const membros = (ps || [])
+        .filter((p) => p.unidade_id === u.id && (p.papel === 'desbravador' || p.papel === 'conselheiro'))
+        .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, pts: totalPessoa[p.id] || 0 }))
+      const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
+      const avulsos = totalTime[u.id] || 0
+      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media, avulsos, pontos: avulsos + media }
+    })
+    .sort((a, b) => b.pontos - a.pontos || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+
+  return { inicio, unidades }
+}
+
+// Cartela pessoal da semana: conta os PRÓPRIOS pontos por origem desde a segunda.
+// (RLS deixa ler os próprios; filtramos por usuário + data, poucas linhas.)
+export async function carregarMinhaCartela(inicio, meuId) {
+  if (!inicio || !meuId) return METAS_SEMANA.map((m) => ({ ...m, feito: 0 }))
+  const { data } = await supabase.from('pontos').select('origem').eq('usuario_id', meuId).gte('data', inicio)
+  const cont = {}
+  ;(data || []).forEach((p) => { cont[p.origem] = (cont[p.origem] || 0) + 1 })
+  return METAS_SEMANA.map((m) => ({ ...m, feito: cont[m.chave] || 0 }))
+}
+
 // ------- Temporadas (zerar o ranking guardando histórico) — só diretoria -------
 // Encerra a temporada atual (guardando os campeões que o app já calculou) e
 // começa outra do zero. Passe os nomes dos campeões atuais pra registrar.
