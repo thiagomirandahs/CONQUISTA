@@ -37,10 +37,10 @@ function festaGrande() {
 
 // Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
 const JOGOS = {
-  memoria: { nome: 'Jogo da Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
-  genius: { nome: 'Siga a Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
-  caca: { nome: 'Caça-palavras', emoji: '🔍', desc: 'Ache as palavras escondidas no quadro', Comp: JogoCacaPalavras },
-  desliza: { nome: 'Quebra-cabeça', emoji: '🧩', desc: 'Deslize as peças até ordenar os números', Comp: JogoDeslizante },
+  memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
+  genius: { nome: 'Siga a Sequência', curto: 'Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
+  caca: { nome: 'Caça-palavras', curto: 'Caça', emoji: '🔍', desc: 'Ache as palavras escondidas no quadro', Comp: JogoCacaPalavras },
+  desliza: { nome: 'Quebra-cabeça', curto: 'Peças', emoji: '🧩', desc: 'Deslize as peças até ordenar os números', Comp: JogoDeslizante },
 }
 
 export default function Trilha() {
@@ -50,7 +50,7 @@ export default function Trilha() {
   const [jogando, setJogando] = useState(false)
   const [resultado, setResultado] = useState(null)
   const [aba, setAba] = useState('trilha') // trilha | ranking
-  const [ranking, setRanking] = useState([])
+  const [ranking, setRanking] = useState({}) // { geral:[...], memoria:[...], ... }
   const [carregandoRank, setCarregandoRank] = useState(false)
   const [jogosAtivos, setJogosAtivos] = useState(['memoria']) // chaves dos jogos ativos
   const [jogoAtual, setJogoAtual] = useState('memoria')
@@ -108,7 +108,7 @@ export default function Trilha() {
       </div>
 
       {aba === 'ranking' ? (
-        <RankingTrilha lista={ranking} carregando={carregandoRank} meuId={profile?.id} />
+        <RankingTrilha dados={ranking} carregando={carregandoRank} meuId={profile?.id} />
       ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : prog.feito ? (
@@ -153,39 +153,52 @@ export default function Trilha() {
   )
 }
 
-const POSTOS_LEN = POSTOS.length
-function RankingTrilha({ lista, carregando, meuId }) {
+// Placar por jogo: chips no topo trocam entre "Geral" e cada jogo.
+function RankingTrilha({ dados, carregando, meuId }) {
+  const [jogo, setJogo] = useState('geral')
   const top = ['🥇', '🥈', '🥉']
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
-  if (!lista.length) {
-    return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-        <div className="text-4xl mb-2">🏔️</div>
-        <p className="font-semibold text-slate-700">Ninguém jogou ainda</p>
-        <p className="text-sm text-slate-400">Seja o primeiro a subir a trilha!</p>
-      </div>
-    )
-  }
+  const abas = [['geral', '🏆', 'Geral'], ...Object.entries(JOGOS).map(([k, j]) => [k, j.emoji, j.curto])]
+  const lista = (dados && dados[jogo]) || []
   return (
     <div>
-      <p className="text-xs text-slate-400 mb-2">Quem avançou mais e com menos tentativas (⭐ = soma das estrelas).</p>
-      <div className="bg-white rounded-2xl shadow-sm p-2">
-        {lista.map((r, i) => {
-          const eu = r.id === meuId
-          const medalhas = Math.floor((r.passos || 0) / POSTOS_LEN)
-          return (
-            <div key={r.id} className={`flex items-center gap-3 px-2 py-2.5 rounded-xl ${eu ? 'bg-azul/5' : ''}`}>
-              <span className="w-6 text-center font-extrabold text-slate-400">{top[i] || i + 1}</span>
-              <Avatar foto={r.foto} nome={r.nome || '?'} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-slate-800 text-sm truncate">{r.nome || 'Desbravador'}{eu && ' (você)'}</div>
-                <div className="text-[11px] text-slate-400">{r.passos} jogo{r.passos === 1 ? '' : 's'}{medalhas > 0 ? ` · 🏅×${medalhas}` : ''}</div>
-              </div>
-              <span className="font-extrabold text-dourado shrink-0">⭐ {r.estrelas}</span>
-            </div>
-          )
-        })}
+      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
+        {abas.map(([k, emoji, lbl]) => (
+          <button key={k} onClick={() => setJogo(k)}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-colors ${jogo === k ? 'bg-azul text-white' : 'bg-white text-slate-500 shadow-sm'}`}>
+            {emoji} {lbl}
+          </button>
+        ))}
       </div>
+
+      {carregando ? (
+        <p className="text-slate-400 text-sm">Carregando...</p>
+      ) : lista.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+          <div className="text-4xl mb-2">🎮</div>
+          <p className="font-semibold text-slate-700">Ninguém jogou {jogo === 'geral' ? 'ainda' : 'esse ainda'}</p>
+          <p className="text-sm text-slate-400">Seja o primeiro a pontuar!</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs text-slate-400 mb-2">{jogo === 'geral' ? 'Somando todos os jogos' : 'Só nesse jogo'} · ⭐ = soma das estrelas.</p>
+          <div className="bg-white rounded-2xl shadow-sm p-2">
+            {lista.map((r, i) => {
+              const eu = r.id === meuId
+              return (
+                <div key={r.id} className={`flex items-center gap-3 px-2 py-2.5 rounded-xl ${eu ? 'bg-azul/5' : ''}`}>
+                  <span className="w-6 text-center font-extrabold text-slate-400">{top[i] || i + 1}</span>
+                  <Avatar foto={r.foto} nome={r.nome || '?'} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-800 text-sm truncate">{r.nome || 'Desbravador'}{eu && ' (você)'}</div>
+                    <div className="text-[11px] text-slate-400">{r.passos} jogo{r.passos === 1 ? '' : 's'}</div>
+                  </div>
+                  <span className="font-extrabold text-dourado shrink-0">⭐ {r.estrelas}</span>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }

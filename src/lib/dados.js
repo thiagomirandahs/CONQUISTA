@@ -390,11 +390,12 @@ export async function alternarJogoTrilha(chave, ativo) {
   if (error) throw new Error(error.message)
   if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
 }
-// Ranking da Trilha (todos): soma de estrelas + nº de jogos por pessoa.
+// Ranking dos Jogos, POR JOGO. Devolve { geral:[...], memoria:[...], ... }
+// com {id,nome,foto,passos,estrelas} ordenados. Jogo sem plays não vira chave.
 export async function carregarRankingTrilha() {
   const { data, error } = await supabase.rpc('ranking_trilha')
   if (error) throw new Error(error.message)
-  return data || []
+  return data || {}
 }
 
 // Devocional (popup diário): já fez hoje? + o versículo do dia (sem a resposta).
