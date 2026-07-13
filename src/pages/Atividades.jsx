@@ -51,6 +51,7 @@ export default function Atividades() {
   const [carregando, setCarregando] = useState(true)
   const [erroBanco, setErroBanco] = useState('')
   const [filtro, setFiltro] = useState('Todas')
+  const [verEncerradas, setVerEncerradas] = useState(false) // só liderança: mostrar as com prazo vencido
   const [criando, setCriando] = useState(false)
   const [editando, setEditando] = useState(null) // atividade sendo editada
   const [entregando, setEntregando] = useState(null)
@@ -91,11 +92,21 @@ export default function Atividades() {
   }
   useEffect(() => { carregar() }, [profile?.id]) // eslint-disable-line
 
-  const lista = filtro === 'Todas' ? atividades : atividades.filter((a) => a.categoria === filtro)
+  // Categorias do filtro: as fixas + as livres que existirem nas atividades
+  const nomesFixos = categorias.map((c) => c.nome)
+  const categoriasDisp = [
+    ...categorias,
+    ...[...new Set(atividades.map((a) => a.categoria).filter(Boolean))]
+      .filter((n) => !nomesFixos.includes(n))
+      .map((n) => ({ icon: iconeCat[n] || '📋', nome: n })),
+  ]
+  // Prazo encerrado some da lista; só a liderança pode ver as encerradas (pra editar/apagar)
+  const lista = (filtro === 'Todas' ? atividades : atividades.filter((a) => a.categoria === filtro))
+    .filter((a) => !prazoEncerrado(a.prazo) || (ehAdmin && verEncerradas))
 
   async function salvarAtividade(nova, id) {
     const dados = {
-      titulo: nova.titulo, descricao: nova.descricao, categoria: nova.categoria,
+      titulo: nova.titulo, descricao: nova.descricao, categoria: (nova.categoria || '').trim() || 'Geral',
       pontos: nova.pts, prazo: nova.prazo || null, alvo: nova.alvo, criterios: nova.criterios,
     }
     const resp = id
@@ -211,8 +222,8 @@ export default function Atividades() {
         <EntregasView entregas={entregas} onExcluir={excluirEntrega} />
       ) : (
       <>
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-5 no-scrollbar">
-        {categorias.map((c) => {
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-3 no-scrollbar">
+        {categoriasDisp.map((c) => {
           const ativo = filtro === c.nome
           return (
             <button key={c.nome} onClick={() => setFiltro(c.nome)}
@@ -223,6 +234,13 @@ export default function Atividades() {
           )
         })}
       </div>
+
+      {ehAdmin && (
+        <label className="flex items-center gap-2 text-xs text-slate-500 mb-4">
+          <input type="checkbox" checked={verEncerradas} onChange={(e) => setVerEncerradas(e.target.checked)} className="w-4 h-4 accent-azul" />
+          Mostrar também as com prazo encerrado (só liderança vê)
+        </label>
+      )}
 
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
@@ -496,9 +514,10 @@ function NovaAtividadeModal({ onFechar, onSalvar, inicial }) {
           </Campo>
           <div className="grid grid-cols-2 gap-3">
             <Campo label="Categoria">
-              <select className={inputClass} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}>
-                {categorias.filter((c) => c.nome !== 'Todas').map((c) => <option key={c.nome}>{c.nome}</option>)}
-              </select>
+              <input list="cat-sugestoes" className={inputClass} value={form.categoria} onChange={(e) => set('categoria', e.target.value)} placeholder="Ex.: Espiritual (ou crie uma nova)" />
+              <datalist id="cat-sugestoes">
+                {categorias.filter((c) => c.nome !== 'Todas').map((c) => <option key={c.nome} value={c.nome} />)}
+              </datalist>
             </Campo>
             <Campo label="Pontos">
               <input type="number" min="0" className={inputClass} value={form.pts} onChange={(e) => set('pts', e.target.value)} />
