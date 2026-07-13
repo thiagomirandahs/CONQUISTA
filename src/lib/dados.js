@@ -380,6 +380,16 @@ export async function registrarJogo(tipo, estrelas) {
   if (error) throw new Error(error.message)
   return data
 }
+// Jogos da Trilha (quais estão ativos) — todos leem; liderança liga/desliga.
+export async function carregarJogosTrilha() {
+  const { data } = await supabase.from('jogos_trilha').select('*').order('ordem')
+  return data || []
+}
+export async function alternarJogoTrilha(chave, ativo) {
+  const { data, error } = await supabase.from('jogos_trilha').update({ ativo }).eq('chave', chave).select('chave')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
+}
 // Ranking da Trilha (todos): soma de estrelas + nº de jogos por pessoa.
 export async function carregarRankingTrilha() {
   const { data, error } = await supabase.rpc('ranking_trilha')

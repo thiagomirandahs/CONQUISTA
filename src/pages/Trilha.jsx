@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha } from '../lib/dados.js'
 
 // Os 6 postos da trilha = as 6 classes (cores oficiais dos lenços)
 const POSTOS = [
@@ -35,6 +35,12 @@ function festaGrande() {
   setTimeout(() => confetti({ particleCount: 90, angle: 120, spread: 75, origin: { x: 1, y: 0.6 }, colors: CORES_FESTA }), 380)
 }
 
+// Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
+const JOGOS = {
+  memoria: { nome: 'Jogo da Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
+  genius: { nome: 'Siga a Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
+}
+
 export default function Trilha() {
   const { profile } = useAuth()
   const [carregando, setCarregando] = useState(true)
@@ -44,6 +50,18 @@ export default function Trilha() {
   const [aba, setAba] = useState('trilha') // trilha | ranking
   const [ranking, setRanking] = useState([])
   const [carregandoRank, setCarregandoRank] = useState(false)
+  const [jogosAtivos, setJogosAtivos] = useState(['memoria']) // chaves dos jogos ativos
+  const [jogoAtual, setJogoAtual] = useState('memoria')
+
+  // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem)
+  useEffect(() => {
+    carregarJogosTrilha()
+      .then((l) => {
+        const ativos = l.filter((g) => g.ativo).map((g) => g.chave).filter((c) => JOGOS[c])
+        if (ativos.length) setJogosAtivos(ativos)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
   async function recarregar() {
@@ -65,7 +83,7 @@ export default function Trilha() {
 
   async function aoTerminar(estrelas) {
     try {
-      const r = await registrarJogo('memoria', estrelas)
+      const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
       // Fechou uma volta inteira (chegou ao Cume) = conquistou a Trilha
       const conquistou = r.passos > 0 && r.passos % POSTOS.length === 0
       if (conquistou) festaGrande(); else festa()
@@ -151,17 +169,37 @@ export default function Trilha() {
           <p className="text-sm text-slate-400 mt-1">Volte amanhã pra avançar mais um posto 🙂</p>
         </div>
       ) : jogando ? (
-        <JogoMemoria onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+        (() => {
+          const Jogo = JOGOS[jogoAtual]?.Comp || JogoMemoria
+          return <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+        })()
       ) : (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <div className="text-5xl mb-2">🧠</div>
-          <p className="font-bold text-slate-800 mb-1">Jogo da Memória</p>
-          {posto === 0 && medalhas > 0 && (
-            <p className="text-xs font-extrabold text-azul mb-2">🚀 Temporada {temporada} começando — vá pela Fogueira! 🔥</p>
-          )}
-          <p className="text-sm text-slate-400 mb-4">Ache os pares dos itens do desbravador. Menos tentativas = mais estrelas!</p>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setJogando(true)}
-            className="bg-azul text-white font-extrabold rounded-xl px-6 py-3 shadow">🎮 Jogar (+10)</motion.button>
+        <div>
+          <div className="text-center mb-3">
+            <p className="font-bold text-slate-800">Desafio do dia 🎮</p>
+            {posto === 0 && medalhas > 0 && (
+              <p className="text-xs font-extrabold text-azul mt-1">🚀 Temporada {temporada} começando — vá pela Fogueira! 🔥</p>
+            )}
+            <p className="text-sm text-slate-400 mt-1">Escolha um jogo pra avançar na trilha. Menos tentativas = mais estrelas!</p>
+          </div>
+          <div className="space-y-2">
+            {jogosAtivos.map((chave) => {
+              const j = JOGOS[chave]
+              if (!j) return null
+              return (
+                <motion.button key={chave} whileTap={{ scale: 0.98 }}
+                  onClick={() => { setJogoAtual(chave); setJogando(true) }}
+                  className="w-full bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left hover:bg-slate-50">
+                  <span className="text-3xl shrink-0">{j.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-800">{j.nome}</div>
+                    <div className="text-xs text-slate-400">{j.desc}</div>
+                  </div>
+                  <span className="text-azul font-extrabold shrink-0">Jogar (+10)</span>
+                </motion.button>
+              )
+            })}
+          </div>
         </div>
       )}
       </>
@@ -256,6 +294,91 @@ function JogoMemoria({ onTerminar, onCancelar }) {
             </motion.button>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// Siga a Sequência (Gênius): os itens piscam numa ordem que cresce; repita.
+function JogoSequencia({ onTerminar, onCancelar }) {
+  const SIMBOLOS = [
+    { e: '🔥', cor: '#ef4444' },
+    { e: '🧭', cor: '#3b82f6' },
+    { e: '🧣', cor: '#10b981' },
+    { e: '🪢', cor: '#f59e0b' },
+  ]
+  const [seq, setSeq] = useState([])
+  const [mostrando, setMostrando] = useState(false)
+  const [aceso, setAceso] = useState(-1)
+  const [pos, setPos] = useState(0)
+  const [rodada, setRodada] = useState(0)
+  const [fim, setFim] = useState(false)
+
+  useEffect(() => { proximaRodada([]) }, []) // eslint-disable-line
+
+  const rand = () => Math.floor(Math.random() * 4)
+
+  function proximaRodada(atual) {
+    const nova = [...atual, rand()]
+    setSeq(nova)
+    setRodada(nova.length)
+    setPos(0)
+    demonstrar(nova)
+  }
+
+  function demonstrar(s) {
+    setMostrando(true)
+    let i = 0
+    const passo = () => {
+      if (i >= s.length) { setAceso(-1); setMostrando(false); return }
+      setAceso(s[i])
+      setTimeout(() => {
+        setAceso(-1)
+        i++
+        setTimeout(passo, 220)
+      }, 520)
+    }
+    setTimeout(passo, 600)
+  }
+
+  function encerrar(rodadasCompletas) {
+    setFim(true)
+    const estrelas = rodadasCompletas >= 7 ? 3 : rodadasCompletas >= 4 ? 2 : 1
+    setTimeout(() => onTerminar(estrelas), 500)
+  }
+
+  function tocar(idx) {
+    if (mostrando || fim) return
+    setAceso(idx)
+    setTimeout(() => setAceso((a) => (a === idx ? -1 : a)), 180)
+    if (idx !== seq[pos]) { encerrar(seq.length - 1); return } // errou
+    const novaPos = pos + 1
+    if (novaPos === seq.length) {
+      if (seq.length >= 15) { encerrar(15); return } // venceu
+      setMostrando(true) // trava toques durante a pausa até a próxima demonstração
+      setTimeout(() => proximaRodada(seq), 650)
+    } else {
+      setPos(novaPos)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-slate-600">Rodada {rodada}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3 h-4">{mostrando ? 'Observe a sequência…' : fim ? 'Fim! 🎉' : 'Sua vez — repita!'}</p>
+      <div className="grid grid-cols-2 gap-3 max-w-[260px] mx-auto">
+        {SIMBOLOS.map((s, i) => (
+          <motion.button key={i} onClick={() => tocar(i)} disabled={mostrando || fim}
+            animate={{ scale: aceso === i ? 1.06 : 1, opacity: aceso === i ? 1 : 0.7 }}
+            transition={{ duration: 0.12 }}
+            className="aspect-square rounded-2xl text-4xl grid place-items-center border-2 border-white shadow"
+            style={{ backgroundColor: aceso === i ? s.cor : s.cor + '33' }}>
+            {s.e}
+          </motion.button>
+        ))}
       </div>
     </div>
   )
