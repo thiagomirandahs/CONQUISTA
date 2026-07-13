@@ -39,6 +39,8 @@ function festaGrande() {
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
   genius: { nome: 'Siga a Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
+  caca: { nome: 'Caça-palavras', emoji: '🔍', desc: 'Ache as palavras escondidas no quadro', Comp: JogoCacaPalavras },
+  desliza: { nome: 'Quebra-cabeça', emoji: '🧩', desc: 'Deslize as peças até ordenar os números', Comp: JogoDeslizante },
 }
 
 export default function Trilha() {
@@ -76,11 +78,6 @@ export default function Trilha() {
     carregarRankingTrilha().then(setRanking).catch(() => {}).finally(() => setCarregandoRank(false))
   }, [aba, prog.passos])
 
-  const posto = prog.passos % POSTOS.length
-  const medalhas = Math.floor(prog.passos / POSTOS.length) // quantas vezes já completou a Trilha
-  const temporada = medalhas + 1
-  const conquistouAgora = resultado?.conquistou
-
   async function aoTerminar(estrelas) {
     try {
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
@@ -99,23 +96,12 @@ export default function Trilha() {
   return (
     <div>
       <div className="mb-4">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h2 className="text-2xl font-extrabold text-slate-800">🗺️ Trilha do Acampamento</h2>
-            <p className="text-sm text-slate-500">Jogue o desafio de hoje e avance rumo ao Cume! 🏔️</p>
-          </div>
-          {medalhas > 0 && (
-            <div className="shrink-0 text-center bg-amber-50 border border-dourado/50 rounded-xl px-3 py-1.5" title="Medalhas da Trilha">
-              <div className="text-lg leading-none">🏅</div>
-              <div className="text-[11px] font-extrabold text-amber-700 mt-0.5">× {medalhas}</div>
-            </div>
-          )}
-        </div>
-        <div className="mt-1.5 inline-block text-xs font-bold text-azul bg-azul/10 rounded-full px-2.5 py-0.5">Temporada {temporada}</div>
+        <h2 className="text-2xl font-extrabold text-slate-800">🎮 Jogos</h2>
+        <p className="text-sm text-slate-500">Jogue o desafio de hoje e ganhe estrelas! ⭐</p>
       </div>
 
       <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
-        {[['trilha', '🗺️ Minha trilha'], ['ranking', '🏆 Ranking']].map(([k, lbl]) => (
+        {[['trilha', '🎮 Jogar'], ['ranking', '🏆 Ranking']].map(([k, lbl]) => (
           <button key={k} onClick={() => setAba(k)}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
         ))}
@@ -123,50 +109,14 @@ export default function Trilha() {
 
       {aba === 'ranking' ? (
         <RankingTrilha lista={ranking} carregando={carregandoRank} meuId={profile?.id} />
-      ) : (
-      <>
-      <div className="bg-white rounded-2xl shadow-sm p-3 mb-4">
-        <div className="flex flex-col gap-1.5">
-          {POSTOS.map((p, i) => {
-            const passado = conquistouAgora || i < posto
-            const aqui = !conquistouAgora && i === posto
-            return (
-              <div key={p.nome} className="flex items-center gap-3 rounded-xl p-2"
-                style={aqui ? { boxShadow: `inset 0 0 0 2px ${p.cor}` } : {}}>
-                <div className="w-9 h-9 rounded-full grid place-items-center text-lg shrink-0"
-                  style={{ backgroundColor: passado || (aqui && prog.feito) ? p.cor : p.cor + '22' }}>
-                  {passado || (aqui && prog.feito) ? '✅' : p.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 text-sm truncate">
-                    {p.nome} <span className="text-[11px] font-semibold" style={{ color: p.cor }}>({p.classe})</span>
-                  </div>
-                </div>
-                {aqui && <span className="text-xl">📍</span>}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {carregando ? (
+      ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
-      ) : conquistouAgora ? (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-8 shadow-sm text-center border-2 border-dourado bg-gradient-to-b from-amber-50 to-white">
-          <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 13 }} className="text-7xl mb-2">🏅</motion.div>
-          <h3 className="text-xl font-extrabold text-slate-800">Você conquistou a Trilha!</h3>
-          <p className="text-sm text-slate-500 mt-1">Chegou ao Cume 🏔️ e completou todos os 6 postos.</p>
-          <p className="text-amber-700 font-extrabold mt-3">{resultado.medalhas}ª medalha 🏅 · {'⭐'.repeat(resultado.estrelas)}</p>
-          <p className="text-sm text-slate-600 mt-3">Amanhã começa a <b>Temporada {resultado.medalhas + 1}</b> — dá pra ganhar ainda mais medalhas! 🚀</p>
-        </motion.div>
       ) : prog.feito ? (
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
           <div className="text-5xl mb-2">🎉</div>
           <p className="font-bold text-slate-800">Você já jogou hoje!</p>
           {resultado && <p className="text-sm text-dourado font-bold mt-1">+{resultado.pontos} pontos · {'⭐'.repeat(resultado.estrelas)}</p>}
-          <p className="text-sm text-slate-400 mt-1">Volte amanhã pra avançar mais um posto 🙂</p>
+          <p className="text-sm text-slate-400 mt-1">Volte amanhã pra jogar de novo 🙂</p>
         </div>
       ) : jogando ? (
         (() => {
@@ -177,10 +127,7 @@ export default function Trilha() {
         <div>
           <div className="text-center mb-3">
             <p className="font-bold text-slate-800">Desafio do dia 🎮</p>
-            {posto === 0 && medalhas > 0 && (
-              <p className="text-xs font-extrabold text-azul mt-1">🚀 Temporada {temporada} começando — vá pela Fogueira! 🔥</p>
-            )}
-            <p className="text-sm text-slate-400 mt-1">Escolha um jogo pra avançar na trilha. Menos tentativas = mais estrelas!</p>
+            <p className="text-sm text-slate-400 mt-1">Escolha um jogo e ganhe estrelas! Menos tentativas = mais estrelas.</p>
           </div>
           <div className="space-y-2">
             {jogosAtivos.map((chave) => {
@@ -201,8 +148,6 @@ export default function Trilha() {
             })}
           </div>
         </div>
-      )}
-      </>
       )}
     </div>
   )
@@ -378,6 +323,187 @@ function JogoSequencia({ onTerminar, onCancelar }) {
             style={{ backgroundColor: aceso === i ? s.cor : s.cor + '33' }}>
             {s.e}
           </motion.button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===================== Caça-palavras =====================
+// Monta um quadro NxN com as palavras escondidas e preenche o resto com
+// letras aleatórias. Roda 1x na montagem do jogo.
+function gerarCaca() {
+  const N = 8
+  const alvos = ['FOGO', 'TENDA', 'MAPA', 'MATA', 'TROPA', 'NORTE']
+  const grid = Array(N * N).fill('')
+  const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]] // →  ↓  ↘  ↙
+  const colocadas = []
+  for (const p of alvos) {
+    for (let t = 0; t < 200; t++) {
+      const [dr, dc] = dirs[Math.floor(Math.random() * dirs.length)]
+      const r0 = Math.floor(Math.random() * N)
+      const c0 = Math.floor(Math.random() * N)
+      const rf = r0 + dr * (p.length - 1)
+      const cf = c0 + dc * (p.length - 1)
+      if (rf < 0 || rf >= N || cf < 0 || cf >= N) continue
+      let cabe = true
+      for (let k = 0; k < p.length; k++) {
+        const idx = (r0 + dr * k) * N + (c0 + dc * k)
+        if (grid[idx] && grid[idx] !== p[k]) { cabe = false; break }
+      }
+      if (!cabe) continue
+      for (let k = 0; k < p.length; k++) grid[(r0 + dr * k) * N + (c0 + dc * k)] = p[k]
+      colocadas.push(p)
+      break
+    }
+  }
+  const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  for (let i = 0; i < grid.length; i++) if (!grid[i]) grid[i] = AZ[Math.floor(Math.random() * 26)]
+  return { N, grid, palavras: colocadas }
+}
+
+function JogoCacaPalavras({ onTerminar, onCancelar }) {
+  const [jogo] = useState(gerarCaca)
+  const { N, grid, palavras } = jogo
+  const [sel, setSel] = useState(-1)
+  const [achadas, setAchadas] = useState([])
+  const [celulas, setCelulas] = useState(() => new Set())
+  const [erros, setErros] = useState(0)
+  const [fim, setFim] = useState(false)
+
+  // Palavra formada pela linha reta entre duas células (nas duas direções)
+  function palavraEntre(a, b) {
+    const r1 = Math.floor(a / N), c1 = a % N, r2 = Math.floor(b / N), c2 = b % N
+    const reto = r1 === r2 || c1 === c2 || Math.abs(r2 - r1) === Math.abs(c2 - c1)
+    if (!reto) return null
+    const dr = Math.sign(r2 - r1), dc = Math.sign(c2 - c1)
+    const len = Math.max(Math.abs(r2 - r1), Math.abs(c2 - c1)) + 1
+    let s = ''; const idxs = []
+    for (let k = 0; k < len; k++) { const idx = (r1 + dr * k) * N + (c1 + dc * k); s += grid[idx]; idxs.push(idx) }
+    const rev = s.split('').reverse().join('')
+    const match = palavras.find((p) => !achadas.includes(p) && (p === s || p === rev))
+    return match ? { match, idxs } : null
+  }
+
+  function tocar(idx) {
+    if (fim) return
+    if (sel === -1) { setSel(idx); return }
+    if (sel === idx) { setSel(-1); return }
+    const res = palavraEntre(sel, idx)
+    if (res) {
+      const novas = [...achadas, res.match]
+      setAchadas(novas)
+      setCelulas((cs) => { const n = new Set(cs); res.idxs.forEach((i) => n.add(i)); return n })
+      setSel(-1)
+      if (novas.length === palavras.length) {
+        setFim(true)
+        const est = erros <= 2 ? 3 : erros <= 5 ? 2 : 1
+        setTimeout(() => onTerminar(est), 700)
+      }
+    } else {
+      setErros((e) => e + 1)
+      setSel(-1)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">{achadas.length}/{palavras.length} achadas</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">{fim ? 'Achou todas! 🎉' : 'Toque na 1ª e na última letra da palavra.'}</p>
+      <div className="grid gap-1 mx-auto max-w-[320px]" style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}>
+        {grid.map((ch, i) => {
+          const achada = celulas.has(i)
+          const sela = sel === i
+          return (
+            <button key={i} onClick={() => tocar(i)} disabled={fim}
+              className={`aspect-square rounded-md text-xs sm:text-sm font-extrabold grid place-items-center transition-colors ${
+                achada ? 'bg-green-500 text-white' : sela ? 'bg-azul text-white' : 'bg-slate-100 text-slate-700'
+              }`}>
+              {ch}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+        {palavras.map((p) => (
+          <span key={p} className={`text-xs font-bold rounded-full px-2.5 py-1 ${achadas.includes(p) ? 'bg-green-100 text-green-700 line-through' : 'bg-slate-100 text-slate-500'}`}>{p}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===================== Quebra-cabeça deslizante (3x3) =====================
+function vizinhosDesl(i, N) {
+  const r = Math.floor(i / N), c = i % N, v = []
+  if (r > 0) v.push(i - N)
+  if (r < N - 1) v.push(i + N)
+  if (c > 0) v.push(i - 1)
+  if (c < N - 1) v.push(i + 1)
+  return v
+}
+function resolvidoDesl(t) {
+  for (let i = 0; i < t.length - 1; i++) if (t[i] !== i + 1) return false
+  return t[t.length - 1] === 0
+}
+// Embaralha fazendo jogadas válidas a partir do resolvido (sempre tem solução)
+function embaralharDesl(N) {
+  const t = []
+  for (let i = 1; i < N * N; i++) t.push(i)
+  t.push(0)
+  let vazio = N * N - 1
+  for (let i = 0; i < 100; i++) {
+    const viz = vizinhosDesl(vazio, N)
+    const p = viz[Math.floor(Math.random() * viz.length)]
+    ;[t[vazio], t[p]] = [t[p], t[vazio]]
+    vazio = p
+  }
+  return resolvidoDesl(t) ? embaralharDesl(N) : t
+}
+
+function JogoDeslizante({ onTerminar, onCancelar }) {
+  const N = 3
+  const [tabu, setTabu] = useState(() => embaralharDesl(N))
+  const [mov, setMov] = useState(0)
+  const [fim, setFim] = useState(false)
+
+  function mover(idx) {
+    if (fim) return
+    const vazio = tabu.indexOf(0)
+    if (!vizinhosDesl(idx, N).includes(vazio)) return
+    const novo = [...tabu]
+    ;[novo[idx], novo[vazio]] = [novo[vazio], novo[idx]]
+    const m = mov + 1
+    setTabu(novo)
+    setMov(m)
+    if (resolvidoDesl(novo)) {
+      setFim(true)
+      const est = m <= 30 ? 3 : m <= 60 ? 2 : 1
+      setTimeout(() => onTerminar(est), 700)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Movimentos: {mov}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">{fim ? 'Resolvido! 🎉' : 'Deslize as peças até ficar 1, 2, 3…'}</p>
+      <div className="grid grid-cols-3 gap-2 max-w-[260px] mx-auto">
+        {tabu.map((v) => (
+          v === 0 ? (
+            <div key={v} className="aspect-square rounded-2xl bg-slate-50" />
+          ) : (
+            <motion.button key={v} layout onClick={() => mover(tabu.indexOf(v))} disabled={fim}
+              transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+              className="aspect-square rounded-2xl bg-azul text-white text-2xl font-extrabold grid place-items-center shadow">
+              {v}
+            </motion.button>
+          )
         ))}
       </div>
     </div>

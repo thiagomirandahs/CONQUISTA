@@ -24,8 +24,10 @@ create policy "gerir jogos_trilha" on public.jogos_trilha for all to authenticat
   using (public.pode_gerir()) with check (public.pode_gerir());
 
 insert into public.jogos_trilha (chave, nome, emoji, ativo, ordem) values
-  ('memoria', 'Jogo da Memória', '🧠', true,  1),
-  ('genius',  'Siga a Sequência', '🎮', false, 2)
+  ('memoria', 'Jogo da Memória',  '🧠', true,  1),
+  ('genius',  'Siga a Sequência', '🎮', false, 2),
+  ('caca',    'Caça-palavras',    '🔍', false, 3),
+  ('desliza', 'Quebra-cabeça',    '🧩', false, 4)
 on conflict (chave) do nothing;
 
 notify pgrst, 'reload schema';
