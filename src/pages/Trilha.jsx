@@ -264,6 +264,8 @@ function JogoSequencia({ onTerminar, onCancelar }) {
     { e: '🧭', cor: '#3b82f6' },
     { e: '🧣', cor: '#10b981' },
     { e: '🪢', cor: '#f59e0b' },
+    { e: '📖', cor: '#8b5cf6' },
+    { e: '⛺', cor: '#06b6d4' },
   ]
   const [seq, setSeq] = useState([])
   const [mostrando, setMostrando] = useState(false)
@@ -274,7 +276,7 @@ function JogoSequencia({ onTerminar, onCancelar }) {
 
   useEffect(() => { proximaRodada([]) }, []) // eslint-disable-line
 
-  const rand = () => Math.floor(Math.random() * 4)
+  const rand = () => Math.floor(Math.random() * SIMBOLOS.length)
 
   function proximaRodada(atual) {
     const nova = [...atual, rand()]
@@ -327,7 +329,7 @@ function JogoSequencia({ onTerminar, onCancelar }) {
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3 h-4">{mostrando ? 'Observe a sequência…' : fim ? 'Fim! 🎉' : 'Sua vez — repita!'}</p>
-      <div className="grid grid-cols-2 gap-3 max-w-[260px] mx-auto">
+      <div className="grid grid-cols-3 gap-3 max-w-[300px] mx-auto">
         {SIMBOLOS.map((s, i) => (
           <motion.button key={i} onClick={() => tocar(i)} disabled={mostrando || fim}
             animate={{ scale: aceso === i ? 1.06 : 1, opacity: aceso === i ? 1 : 0.7 }}
