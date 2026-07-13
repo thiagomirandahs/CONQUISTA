@@ -20,8 +20,11 @@ export async function carregarRanking() {
     ;(tot.pessoas || []).forEach((r) => { totalPessoa[r.id] = r.total || 0 })
     ;(tot.times || []).forEach((r) => { totalTime[r.id] = r.total || 0 })
   } else {
-    // Plano B (enquanto o SQL novo ranking_totais não foi aplicado): soma no cliente.
-    const { data: pts } = await supabase.from('pontos').select('usuario_id,unidade_id,pontos')
+    // Plano B (RPC indisponível): soma no cliente, alinhado à temporada atual.
+    const { data: ini } = await supabase.rpc('temporada_inicio')
+    let q = supabase.from('pontos').select('usuario_id,unidade_id,pontos')
+    if (ini && !String(ini).startsWith('-inf')) q = q.gte('data', ini)
+    const { data: pts } = await q
     ;(pts || []).forEach((p) => {
       if (p.usuario_id) totalPessoa[p.usuario_id] = (totalPessoa[p.usuario_id] || 0) + (p.pontos || 0)
       else if (p.unidade_id) totalTime[p.unidade_id] = (totalTime[p.unidade_id] || 0) + (p.pontos || 0)
@@ -51,7 +54,7 @@ export async function carregarRanking() {
 
   const individual = (ps || [])
     .map((p) => ({
-      id: p.id, nome: p.nome, foto: p.foto,
+      id: p.id, nome: p.nome, foto: p.foto, papel: p.papel,
       unidade: nomeUni[p.unidade_id] || '', cor: corUni[p.unidade_id] || '#1e3a8a',
       pts: totalPessoa[p.id] || 0,
     }))
@@ -59,6 +62,25 @@ export async function carregarRanking() {
     .sort((a, b) => b.pts - a.pts || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
 
   return { unidades, individual }
+}
+
+// ------- Temporadas (zerar o ranking guardando histórico) — só diretoria -------
+// Encerra a temporada atual (guardando os campeões que o app já calculou) e
+// começa outra do zero. Passe os nomes dos campeões atuais pra registrar.
+export async function iniciarNovaTemporada({ campeaoIndividual, campeaoUnidade }) {
+  const { data, error } = await supabase.rpc('nova_temporada', {
+    p_campeao_individual: campeaoIndividual || null,
+    p_campeao_unidade: campeaoUnidade || null,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function carregarTemporadas() {
+  const { data } = await supabase.from('temporadas')
+    .select('numero, inicio, fim, campeao_individual, campeao_unidade')
+    .not('fim', 'is', null)
+    .order('numero', { ascending: false })
+  return data || []
 }
 
 // Lança pontos avulsos de time direto para uma unidade (sem atividade nem pessoa).

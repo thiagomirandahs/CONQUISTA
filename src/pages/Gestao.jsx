@@ -14,6 +14,7 @@ const FERRAMENTAS = [
   { to: '/pontos', icon: '➖', titulo: 'Remover pontos', desc: 'Apagar lançamentos errados', papeis: ['diretoria', 'instrutor'] },
   { to: '/aprovar-missoes', icon: '🎯', titulo: 'Aprovar missões', desc: 'Aprovar as fotos das missões', papeis: ['diretoria', 'instrutor'] },
   { to: '/radar', icon: '📡', titulo: 'Radar de faltas', desc: 'Quem está sumindo do clube', papeis: ['diretoria', 'instrutor'] },
+  { to: '/temporada', icon: '🏁', titulo: 'Temporadas', desc: 'Zerar o ranking pra recomeçar', papeis: ['diretoria'] },
   { to: '/avisos', icon: '📣', titulo: 'Enviar aviso', desc: 'Recado pro clube (aparece no sino)', papeis: ['diretoria', 'instrutor'] },
   { to: '/conteudo', icon: '📖', titulo: 'Conteúdo', desc: 'Versículos e desafios das missões', papeis: ['diretoria', 'instrutor'] },
 ]

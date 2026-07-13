@@ -127,7 +127,7 @@ export default function Perfil() {
       {/* Extrato: de onde vieram meus pontos */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-extrabold text-slate-800">⭐ Meus pontos</h3>
+          <h3 className="font-extrabold text-slate-800">⭐ Meu histórico de pontos</h3>
           {!carregandoExtrato && extrato.length > 0 && (
             <span className="text-azul font-extrabold">{totalPts} pts</span>
           )}
