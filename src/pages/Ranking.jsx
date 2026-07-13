@@ -156,18 +156,51 @@ export default function Ranking() {
                   <Stat rotulo={ehUnidade ? 'Membros' : 'Unidade'} valor={ehUnidade ? card.item.membros.length : (card.item.unidade || '—')} />
                 </div>
                 {ehUnidade && (
-                  <div className="mt-4 bg-slate-50 rounded-xl p-3 text-sm">
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Média dos {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'}</span>
-                      <span className="font-semibold text-slate-800">{card.item.media}</span>
+                  <div className="mt-4 space-y-3">
+                    {/* A conta aberta: dá pra conferir a média membro por membro */}
+                    <div className="bg-slate-50 rounded-xl p-3">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Como a média é feita</p>
+                      {card.item.membros.length === 0 ? (
+                        <p className="text-xs text-slate-400">Nenhum desbravador ou conselheiro nesta unidade ainda — média fica 0.</p>
+                      ) : (
+                        <>
+                          <div className="space-y-1.5">
+                            {card.item.membros.map((m) => (
+                              <div key={m.id} className="flex items-center justify-between text-sm gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Avatar foto={m.foto} nome={m.nome || '?'} cor={card.item.cor} size="w-6 h-6" textSize="text-[10px]" />
+                                  <span className="text-slate-600 truncate">
+                                    {m.nome || 'Desbravador'}
+                                    {m.papel === 'conselheiro' && <span className="text-[10px] text-slate-400"> · conselheiro</span>}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-slate-800 shrink-0">{m.pts}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex justify-between items-center border-t border-slate-200 mt-2 pt-2 text-xs">
+                            <span className="text-slate-500">
+                              Soma {card.item.membros.reduce((s, m) => s + m.pts, 0)} ÷ {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'}
+                            </span>
+                            <span className="font-bold text-slate-700">≈ média {card.item.media}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="flex justify-between py-0.5">
-                      <span className="text-slate-500">Pontos de time</span>
-                      <span className="font-semibold text-slate-800">+{card.item.avulsos}</span>
-                    </div>
-                    <div className="flex justify-between border-t border-slate-200 mt-1 pt-1.5">
-                      <span className="font-bold text-slate-600">Total</span>
-                      <span className="font-extrabold text-azul">{card.item.pontos}</span>
+                    {/* O total do time */}
+                    <div className="bg-slate-50 rounded-xl p-3 text-sm">
+                      <div className="flex justify-between py-0.5">
+                        <span className="text-slate-500">Média dos membros</span>
+                        <span className="font-semibold text-slate-800">{card.item.media}</span>
+                      </div>
+                      <div className="flex justify-between py-0.5">
+                        <span className="text-slate-500">Pontos de time (avulsos)</span>
+                        <span className="font-semibold text-slate-800">+{card.item.avulsos}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-slate-200 mt-1 pt-1.5">
+                        <span className="font-bold text-slate-600">Total</span>
+                        <span className="font-extrabold text-azul">{card.item.pontos}</span>
+                      </div>
                     </div>
                   </div>
                 )}
