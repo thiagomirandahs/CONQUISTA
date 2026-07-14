@@ -206,6 +206,10 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
                   </select>
                 </Campo>
               </div>
+              <Campo label="Texto pra ler (opcional)">
+                <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)}
+                  placeholder="A história, versículo ou explicação que a criança lê antes de responder. Aparece na missão." />
+              </Campo>
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" checked={form.pede_foto} onChange={(e) => set('pede_foto', e.target.checked)} className="w-4 h-4 accent-azul" />
                 📷 Missão de foto (a criança faz a tarefa e envia foto — sem quiz)
