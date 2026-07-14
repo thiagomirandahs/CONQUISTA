@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
-import { carregarRanking, lancarPontosUnidade } from '../lib/dados.js'
+import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade } from '../lib/dados.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -18,6 +18,7 @@ export default function Unidades() {
   const [carregando, setCarregando] = useState(true)
   const [sel, setSel] = useState(null)
   const [pontosPara, setPontosPara] = useState(null) // unidade que vai receber pontos de time
+  const [editando, setEditando] = useState(false) // formulário de identidade da unidade
 
   async function carregar() {
     try {
@@ -47,16 +48,17 @@ export default function Unidades() {
     carregar()
   }
 
-  async function trocarImagem(u, file) {
-    file = await comprimirImagem(file, { maxLado: 512 })
+  // Sobe imagem da unidade: 'emblema' (logo redondo) ou 'bandeira' (banner).
+  async function trocarImagem(u, file, campo = 'emblema') {
+    file = await comprimirImagem(file, { maxLado: campo === 'bandeira' ? 1024 : 512 })
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-    const path = `unidades/${u.id}-${Date.now()}.${ext}`
+    const path = `unidades/${u.id}-${campo}-${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
     if (upErr) { alert('Erro no upload: ' + upErr.message); return }
     const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
-    const { error } = await supabase.from('unidades').update({ emblema: pub.publicUrl }).eq('id', u.id)
+    const { error } = await supabase.from('unidades').update({ [campo]: pub.publicUrl }).eq('id', u.id)
     if (error) { alert('Erro ao salvar: ' + error.message); return }
-    setSel((s) => (s ? { ...s, emblema: pub.publicUrl } : s))
+    setSel((s) => (s ? { ...s, [campo]: pub.publicUrl } : s))
     carregar()
   }
 
@@ -106,6 +108,7 @@ export default function Unidades() {
                   </div>
                 )}
                 <div className="font-bold text-slate-800">{u.nome}</div>
+                {u.lema && <div className="text-[11px] text-slate-500 italic truncate">"{u.lema}"</div>}
                 <div className="text-xs text-slate-400 mb-3">{u.membros.length} membros</div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-400">Pontos</span>
@@ -131,20 +134,34 @@ export default function Unidades() {
               initial={{ y: 60, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
               className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
-              <div className="p-5 text-white relative" style={{ backgroundColor: sel.cor }}>
-                <button onClick={() => setSel(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
-                {sel.emblema ? (
-                  <img src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-white/20 grid place-items-center text-2xl font-extrabold mb-2">{sel.nome?.[0]?.toUpperCase()}</div>
-                )}
-                <h3 className="text-2xl font-extrabold">{sel.nome}</h3>
-                <div className="flex gap-4 mt-2 text-sm">
-                  <span>👥 {sel.membros.length} membros</span>
-                  <span>⭐ {sel.pontos} pts</span>
+              <div className="text-white relative overflow-hidden" style={{ backgroundColor: sel.cor }}>
+                {sel.bandeira && <img src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                {sel.bandeira && <div className="absolute inset-0 bg-black/45" />}
+                <div className="relative p-5">
+                  <button onClick={() => setSel(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+                  {sel.emblema ? (
+                    <img src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-white/20 grid place-items-center text-2xl font-extrabold mb-2">{sel.nome?.[0]?.toUpperCase()}</div>
+                  )}
+                  <h3 className="text-2xl font-extrabold">{sel.nome}</h3>
+                  {(() => {
+                    const c = sel.membros.find((m) => m.papel === 'conselheiro')
+                    return c ? <div className="text-xs text-white/90 mt-0.5">🎗️ Conselheiro(a): {c.nome}</div> : null
+                  })()}
+                  <div className="flex gap-4 mt-2 text-sm">
+                    <span>👥 {sel.membros.length} membros</span>
+                    <span>⭐ {sel.pontos} pts</span>
+                  </div>
+                  <div className="text-xs text-white/80 mt-1">time {sel.avulsos} + média dos membros {sel.media}</div>
                 </div>
-                <div className="text-xs text-white/80 mt-1">time {sel.avulsos} + média dos membros {sel.media}</div>
               </div>
+              {(sel.lema || sel.grito) && (
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 space-y-1">
+                  {sel.lema && <p className="text-sm text-slate-600"><span className="font-bold text-slate-700">Lema:</span> <em>"{sel.lema}"</em></p>}
+                  {sel.grito && <p className="text-sm text-slate-600 whitespace-pre-line"><span className="font-bold text-slate-700">Grito:</span> {sel.grito}</p>}
+                </div>
+              )}
               <div className="p-3 overflow-y-auto">
                 <p className="text-xs font-semibold text-slate-400 px-2 mb-1">MEMBROS</p>
                 {sel.membros.length === 0 ? (
@@ -168,15 +185,19 @@ export default function Unidades() {
                     🏆 Lançar pontos pra unidade
                   </button>
                   <div className="flex gap-2">
+                    <button onClick={() => setEditando(true)}
+                      className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold">
+                      🚩 Identidade
+                    </button>
                     <label className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
-                      📷 Imagem
+                      📷 Emblema
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
                     </label>
-                    <button onClick={() => excluirUnidade(sel)}
-                      className="flex-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
-                      🗑️ Excluir
-                    </button>
                   </div>
+                  <button onClick={() => excluirUnidade(sel)}
+                    className="w-full text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
+                    🗑️ Excluir unidade
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -194,6 +215,23 @@ export default function Unidades() {
               await lancarPontosUnidade({ unidadeId: pontosPara.id, pontos: valor, motivo, lancadoPor: profile?.id })
               setPontosPara(null)
               setSel(null)
+              carregar()
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Modal: editar identidade da unidade (lema, grito, bandeira) — só liderança */}
+      <AnimatePresence>
+        {editando && sel && (
+          <FormIdentidade
+            unidade={sel}
+            onFechar={() => setEditando(false)}
+            onTrocarBandeira={(file) => trocarImagem(sel, file, 'bandeira')}
+            onSalvar={async (lema, grito) => {
+              await salvarIdentidadeUnidade({ unidadeId: sel.id, lema, grito })
+              setSel((s) => (s ? { ...s, lema: (lema || '').trim() || null, grito: (grito || '').trim() || null } : s))
+              setEditando(false)
               carregar()
             }}
           />
@@ -255,6 +293,67 @@ function PontosUnidade({ unidade, onLancar, onFechar }) {
             className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
             {salvando ? 'Lançando...' : 'Lançar'}
           </motion.button>
+        </div>
+      </motion.form>
+    </motion.div>
+  )
+}
+
+// Formulário da identidade: lema + grito (texto) e a bandeira (imagem, sobe na hora)
+function FormIdentidade({ unidade, onFechar, onSalvar, onTrocarBandeira }) {
+  const [lema, setLema] = useState(unidade.lema || '')
+  const [grito, setGrito] = useState(unidade.grito || '')
+  const [salvando, setSalvando] = useState(false)
+  const travado = useRef(false)
+
+  async function enviar(e) {
+    e.preventDefault()
+    if (travado.current) return // trava síncrona contra duplo-clique
+    travado.current = true
+    setSalvando(true)
+    try {
+      await onSalvar(lema, grito)
+    } catch (err) {
+      alert('Não deu pra salvar: ' + (err?.message || err))
+      travado.current = false
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={salvando ? undefined : onFechar}>
+      <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[88vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🚩 Identidade da {unidade.nome}</h3>
+        <p className="text-sm text-slate-500 mb-4">O que dá alma pro time — todos veem no perfil da unidade.</p>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Lema</label>
+        <input type="text" value={lema} onChange={(e) => setLema(e.target.value)} maxLength={120} placeholder='ex.: Sempre alerta para servir!'
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Grito de guerra</label>
+        <textarea value={grito} onChange={(e) => setGrito(e.target.value)} maxLength={240} rows={3} placeholder="ex.: Águia, águia, voa alto, nossa unidade é lá no alto!"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3 resize-none" />
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Bandeira</label>
+        <div className="flex items-center gap-3 mb-5">
+          {unidade.bandeira
+            ? <img src={unidade.bandeira} alt="bandeira" className="w-24 h-14 rounded-lg object-cover shadow" />
+            : <div className="w-24 h-14 rounded-lg bg-slate-100 grid place-items-center text-slate-300 text-2xl">🚩</div>}
+          <label className="text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl px-4 py-2 font-semibold cursor-pointer">
+            {unidade.bandeira ? 'Trocar' : 'Enviar'} bandeira
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onTrocarBandeira(e.target.files[0])} />
+          </label>
+        </div>
+
+        <div className="flex gap-2">
+          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Fechar</button>
+          <button type="submit" disabled={salvando} className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </button>
         </div>
       </motion.form>
     </motion.div>

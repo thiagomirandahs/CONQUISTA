@@ -5,7 +5,9 @@ import { hojeLocalISO } from './data.js'
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
 export async function carregarRanking() {
   const [{ data: us }, { data: ps }] = await Promise.all([
-    supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
+    // '*' (não lista colunas) pra não quebrar se lema/grito/bandeira ainda não
+    // existirem no banco (janela entre o deploy e rodar o SQL da identidade).
+    supabase.from('unidades').select('*').order('nome'),
     // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
     // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
     supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
@@ -47,7 +49,7 @@ export async function carregarRanking() {
       const avulsos = totalTime[u.id] || 0
       // Método escolhido: pontos avulsos do time + média dos desbravadores (ambos justos com o tamanho)
       const pontos = avulsos + media
-      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, membros, media, avulsos, pontos }
+      return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, lema: u.lema, grito: u.grito, bandeira: u.bandeira, membros, media, avulsos, pontos }
     })
     // Ranking de unidades: maior pontuação total primeiro (desempate por nome) → 1º, 2º, 3º...
     .sort((a, b) => b.pontos - a.pontos || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
@@ -137,6 +139,16 @@ export async function lancarPontosUnidade({ unidadeId, pontos, motivo, lancadoPo
   const { error } = await supabase.from('pontos').insert({
     unidade_id: unidadeId, pontos, motivo: motivo || null, origem: 'unidade', lancado_por: lancadoPor,
   })
+  if (error) throw error
+}
+
+// Identidade da unidade: lema e grito (a bandeira/emblema sobem pelo Storage
+// direto na tela). Só liderança consegue (policy "gerir unidades").
+export async function salvarIdentidadeUnidade({ unidadeId, lema, grito }) {
+  const { error } = await supabase.from('unidades').update({
+    lema: (lema || '').trim() || null,
+    grito: (grito || '').trim() || null,
+  }).eq('id', unidadeId)
   if (error) throw error
 }
 
