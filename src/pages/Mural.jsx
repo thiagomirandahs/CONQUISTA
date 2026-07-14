@@ -85,7 +85,7 @@ export default function Mural() {
                     variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                     className="rounded-2xl overflow-hidden shadow-sm aspect-square relative bg-slate-200">
-                    <img src={f.url} alt={f.legenda || categoria.nome} loading="lazy" className="w-full h-full object-cover" />
+                    <img src={f.thumb || f.url} alt={f.legenda || categoria.nome} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     {f.legenda && (
                       <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs font-medium p-2 text-left truncate">
                         {f.legenda}
@@ -107,7 +107,7 @@ export default function Mural() {
               initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
               {CATEGORIAS.map((c) => {
                 const lista = fotosDe(c.nome)
-                const capa = lista[0]?.url
+                const capa = lista[0]?.thumb || lista[0]?.url
                 return (
                   <motion.button key={c.nome} onClick={() => setCategoria(c)}
                     variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
@@ -138,7 +138,7 @@ export default function Mural() {
         {lightbox && (
           <motion.div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLightbox(null)}>
-            <motion.img onClick={(e) => e.stopPropagation()} src={lightbox.url} alt={lightbox.legenda || ''}
+            <motion.img onClick={(e) => e.stopPropagation()} src={lightbox.url} alt={lightbox.legenda || ''} decoding="async"
               initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
               className="max-w-full max-h-[75vh] rounded-2xl shadow-2xl object-contain" />
             {lightbox.legenda && <p className="text-white text-center mt-4 max-w-md px-4">{lightbox.legenda}</p>}

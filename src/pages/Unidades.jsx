@@ -58,8 +58,10 @@ export default function Unidades() {
     const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
     const { error } = await supabase.from('unidades').update({ [campo]: pub.publicUrl }).eq('id', u.id)
     if (error) { alert('Erro ao salvar: ' + error.message); return }
+    // Emblema/bandeira não mexem em média/membros: atualiza só na tela, sem
+    // recarregar o ranking inteiro de todas as unidades.
     setSel((s) => (s ? { ...s, [campo]: pub.publicUrl } : s))
-    carregar()
+    setUnidades((list) => list.map((x) => (x.id === u.id ? { ...x, [campo]: pub.publicUrl } : x)))
   }
 
   return (
@@ -230,9 +232,10 @@ export default function Unidades() {
             onTrocarBandeira={(file) => trocarImagem(sel, file, 'bandeira')}
             onSalvar={async (lema, grito) => {
               await salvarIdentidadeUnidade({ unidadeId: sel.id, lema, grito })
-              setSel((s) => (s ? { ...s, lema: (lema || '').trim() || null, grito: (grito || '').trim() || null } : s))
+              const patch = { lema: (lema || '').trim() || null, grito: (grito || '').trim() || null }
+              setSel((s) => (s ? { ...s, ...patch } : s))
+              setUnidades((list) => list.map((x) => (x.id === sel.id ? { ...x, ...patch } : x)))
               setEditando(false)
-              carregar()
             }}
           />
         )}

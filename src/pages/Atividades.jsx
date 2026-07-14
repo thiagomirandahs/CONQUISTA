@@ -64,30 +64,38 @@ export default function Atividades() {
   const [abertoFaltam, setAbertoFaltam] = useState(null) // atividade com a lista de pendentes aberta
 
   async function carregar() {
-    const { data: ats, error } = await supabase.from('atividades').select('*').order('created_at', { ascending: false })
-    if (error) setErroBanco(error.message)
+    // As buscas são independentes entre si — vão todas juntas (1 rodada em vez de 5).
+    const vazio = Promise.resolve({ data: [] })
+    const [ats, ents, pend, todas, mem] = await Promise.all([
+      supabase.from('atividades').select('*').order('created_at', { ascending: false }),
+      profile?.id
+        ? supabase.from('entregas').select('atividade_id,status,feedback').eq('usuario_id', profile.id)
+        : vazio,
+      ehAdmin
+        ? supabase.from('entregas')
+            .select('id, usuario_id, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+            .eq('status', 'pendente').order('created_at', { ascending: true })
+        : vazio,
+      ehAdmin
+        ? supabase.from('entregas')
+            .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+            .order('created_at', { ascending: false }).limit(200)
+        : vazio,
+      ehAdmin
+        ? supabase.from('profiles').select('id,nome')
+            .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
+        : vazio,
+    ])
+    if (ats.error) setErroBanco(ats.error.message)
     else setErroBanco('')
-    setAtividades(ats || [])
-    if (profile?.id) {
-      const { data: ents } = await supabase.from('entregas').select('atividade_id,status,feedback').eq('usuario_id', profile.id)
-      const map = {}
-      ;(ents || []).forEach((e) => { map[e.atividade_id] = { status: e.status, feedback: e.feedback } })
-      setEntregues(map)
-    }
+    setAtividades(ats.data || [])
+    const map = {}
+    ;(ents.data || []).forEach((e) => { map[e.atividade_id] = { status: e.status, feedback: e.feedback } })
+    setEntregues(map)
     if (ehAdmin) {
-      const { data: pend } = await supabase.from('entregas')
-        .select('id, usuario_id, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
-        .eq('status', 'pendente').order('created_at', { ascending: true })
-      setPendentes(pend || [])
-      const { data: todas } = await supabase.from('entregas')
-        .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
-        .order('created_at', { ascending: false })
-        .limit(200)
-      setEntregas(todas || [])
-      // quem PODE entregar (pra calcular quem ainda não entregou)
-      const { data: mem } = await supabase.from('profiles').select('id,nome')
-        .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
-      setMembros(mem || [])
+      setPendentes(pend.data || [])
+      setEntregas(todas.data || [])
+      setMembros(mem.data || []) // quem PODE entregar (pra calcular quem ainda não entregou)
     }
     setCarregando(false)
   }

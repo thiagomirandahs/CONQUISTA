@@ -257,29 +257,45 @@ export async function removerLancamento(id) {
 export async function carregarFotos() {
   const { data } = await supabase
     .from('fotos')
-    .select('id,url,legenda,evento,autor_id,created_at')
+    // '*' pra não quebrar a listagem na janela entre o deploy e rodar o SQL da
+    // thumb (sem a coluna, cada foto só não traz 'thumb' e o grid cai pra url).
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(300)
   return data || []
 }
 
 // Envia o arquivo ao Storage e cria o registro da foto na categoria escolhida.
+// Sobe DUAS versões: a cheia (~1080px, pro lightbox) e uma miniatura (~400px,
+// pro grid/capa) — assim as listas gastam pouca internet.
 export async function adicionarFoto({ file, evento, legenda, autorId }) {
-  file = await comprimirImagem(file)
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-  const path = `mural/${autorId}-${Date.now()}.${ext}`
+  const cheia = await comprimirImagem(file)
+  const mini = await comprimirImagem(cheia, { maxLado: 400, qualidade: 0.6 })
+  const stamp = `mural/${autorId}-${Date.now()}`
+  const extC = (cheia.name.split('.').pop() || 'jpg').toLowerCase()
+  const extT = (mini.name.split('.').pop() || 'jpg').toLowerCase()
+  const pathCheia = `${stamp}.${extC}`
+  const pathThumb = `${stamp}-thumb.${extT}`
 
-  const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
-  if (upErr) throw upErr
+  const [upCheia, upThumb] = await Promise.all([
+    supabase.storage.from('imagens').upload(pathCheia, cheia, { upsert: true }),
+    supabase.storage.from('imagens').upload(pathThumb, mini, { upsert: true }),
+  ])
+  if (upCheia.error) throw upCheia.error
 
-  const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
-  const { data, error } = await supabase
-    .from('fotos')
-    .insert({ url: pub.publicUrl, evento, legenda: legenda || null, autor_id: autorId })
-    .select('id,url,legenda,evento,autor_id,created_at')
-    .single()
-  if (error) throw error
-  return data
+  const url = supabase.storage.from('imagens').getPublicUrl(pathCheia).data.publicUrl
+  // Se a miniatura falhar, o grid cai pra foto cheia (thumb = null) — não trava o envio.
+  const thumb = upThumb.error ? null : supabase.storage.from('imagens').getPublicUrl(pathThumb).data.publicUrl
+
+  const base = { url, evento, legenda: legenda || null, autor_id: autorId }
+  let ins = await supabase.from('fotos').insert({ ...base, thumb }).select('*').single()
+  // Se a coluna thumb ainda não existe (SQL não rodado), grava sem ela — o envio
+  // não pode quebrar por causa da janela de deploy.
+  if (ins.error && /thumb/i.test(ins.error.message || '')) {
+    ins = await supabase.from('fotos').insert(base).select('*').single()
+  }
+  if (ins.error) throw ins.error
+  return ins.data
 }
 
 // Exclui uma foto. O RLS só deixa o autor (ou a liderança) apagar; se nada
