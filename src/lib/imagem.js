@@ -2,7 +2,7 @@
 // Supabase e deixa tudo rápido no 3G. Vídeos e arquivos não-imagem passam
 // direto (sem mexer). GIF é preservado pra não perder a animação.
 // Em qualquer erro, devolve o arquivo original — nunca atrapalha o envio.
-export async function comprimirImagem(file, { maxLado = 1280, qualidade = 0.8 } = {}) {
+export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72 } = {}) {
   if (!file || !file.type || !file.type.startsWith('image/')) return file
   if (file.type === 'image/gif') return file
   try {

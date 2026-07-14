@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
@@ -16,6 +16,7 @@ const categorias = [
 const iconeCat = { Espiritual: '🙏', Especialidades: '🎖️', Serviço: '🤝', Eventos: '🏕️', Presença: '✅' }
 const unidadesAlvo = ['Todas as unidades']
 const PODE_GERIR = ['instrutor', 'diretoria']
+const SET_VAZIO = new Set() // reusado quando a atividade não tem entregas
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
@@ -103,6 +104,14 @@ export default function Atividades() {
   // Prazo encerrado some da lista; só a liderança pode ver as encerradas (pra editar/apagar)
   const lista = (filtro === 'Todas' ? atividades : atividades.filter((a) => a.categoria === filtro))
     .filter((a) => !prazoEncerrado(a.prazo) || (ehAdmin && verEncerradas))
+
+  // Mapa atividade_id -> Set(usuario_id que entregou), calculado 1x quando as
+  // entregas mudam (antes recriava um Set por card em TODO render).
+  const entregasPorAtividade = useMemo(() => {
+    const m = {}
+    entregas.forEach((e) => { (m[e.atividade_id] || (m[e.atividade_id] = new Set())).add(e.usuario_id) })
+    return m
+  }, [entregas])
 
   async function salvarAtividade(nova, id) {
     const dados = {
@@ -251,16 +260,16 @@ export default function Atividades() {
           <p className="text-sm text-slate-400">{ehAdmin ? 'Toque em "+ Nova atividade" para criar a primeira.' : 'A liderança ainda vai cadastrar as atividades.'}</p>
         </div>
       ) : (
-        <motion.div layout className="grid sm:grid-cols-2 gap-3">
-          <AnimatePresence mode="popLayout">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <AnimatePresence>
             {lista.map((a) => {
               const minha = entregues[a.id]
               const status = minha?.status
               const encerrado = prazoEncerrado(a.prazo)
-              const entreguesSet = ehAdmin ? new Set(entregas.filter((e) => e.atividade_id === a.id).map((e) => e.usuario_id)) : null
+              const entreguesSet = ehAdmin ? (entregasPorAtividade[a.id] || SET_VAZIO) : null
               const faltam = ehAdmin ? membros.filter((m) => !entreguesSet.has(m.id)) : []
               return (
-                <motion.div key={a.id} layout
+                <motion.div key={a.id}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 24 }}
                   className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-2">
@@ -333,7 +342,7 @@ export default function Atividades() {
               )
             })}
           </AnimatePresence>
-        </motion.div>
+        </div>
       )}
       </>
       )}

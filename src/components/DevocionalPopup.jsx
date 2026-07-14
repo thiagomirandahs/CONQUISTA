@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarDevocionalPopup, fazerDevocional } from '../lib/dados.js'
 
@@ -28,7 +27,10 @@ export default function DevocionalPopup() {
     setErro('')
     try {
       await fazerDevocional(resposta)
-      confetti({ particleCount: 120, spread: 75, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#ffffff'] })
+      // Confete carregado sob demanda (fica fora do pacote inicial do app)
+      import('canvas-confetti').then(({ default: confetti }) =>
+        confetti({ particleCount: 120, spread: 75, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#ffffff'] })
+      ).catch(() => {})
       setAberto(false)
     } catch (e) {
       setErro(e?.message || String(e))

@@ -15,6 +15,9 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
+        // Não faz precache dos bundles "legacy"/polyfills: celular moderno nunca
+        // roda esse código, então não vale baixar/guardar (economiza dados).
+        globIgnores: ['**/*-legacy*.js', '**/polyfills*.js'],
         // Carrega o handler de push (public/push-sw.js) dentro do service worker
         importScripts: ['/push-sw.js'],
       },
@@ -37,6 +40,11 @@ export default defineConfig({
       targets: ['defaults', 'Android >= 6', 'Chrome >= 61', 'not dead'],
     }),
   ],
+  build: {
+    // Minifica com terser e tira console/debugger do bundle de produção
+    minify: 'terser',
+    terserOptions: { compress: { drop_console: true, drop_debugger: true } },
+  },
   server: {
     open: true, // abre o navegador automaticamente ao rodar "npm run dev"
   },

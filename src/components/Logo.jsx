@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
-// Mostra a logo do clube (public/logo.png).
-// Se o arquivo ainda não existir, mostra um emblema "FC" no lugar.
+// Mostra a logo do clube. Usa o icon-192 (56KB) em vez do logo.png de 319KB —
+// a logo nunca passa de ~96px na tela, então 192px sobra e economiza dados.
+// Se o arquivo não existir, mostra um emblema "FC" no lugar.
 export default function Logo({ className = 'w-12 h-12' }) {
   const [erro, setErro] = useState(false)
 
@@ -15,9 +16,11 @@ export default function Logo({ className = 'w-12 h-12' }) {
 
   return (
     <img
-      src="/logo.png"
+      src="/icon-192.png"
       alt="Filhos da Conquista"
       className={`${className} object-contain`}
+      loading="lazy"
+      decoding="async"
       onError={() => setErro(true)}
     />
   )

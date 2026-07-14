@@ -4,20 +4,22 @@ import { hojeLocalISO } from './data.js'
 
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
 export async function carregarRanking() {
-  const [{ data: us }, { data: ps }] = await Promise.all([
+  // Busca tudo em paralelo (inclusive o placar): o ranking_totais não depende de
+  // us/ps, então deixá-lo no mesmo Promise.all corta 1 ida ao servidor na 1ª tela.
+  const [{ data: us }, { data: ps }, { data: tot, error: totErr }] = await Promise.all([
     // '*' (não lista colunas) pra não quebrar se lema/grito/bandeira ainda não
     // existirem no banco (janela entre o deploy e rodar o SQL da identidade).
     supabase.from('unidades').select('*').order('nome'),
     // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
     // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
     supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
+    // Soma no BANCO (RPC) pra não esbarrar no limite silencioso de 1000 linhas do Supabase.
+    supabase.rpc('ranking_totais'),
   ])
 
   // Pontos individuais (por pessoa) e pontos avulsos de time (por unidade)
   const totalPessoa = {}
   const totalTime = {}
-  // Soma no BANCO (RPC) pra não esbarrar no limite silencioso de 1000 linhas do Supabase.
-  const { data: tot, error: totErr } = await supabase.rpc('ranking_totais')
   if (!totErr && tot) {
     ;(tot.pessoas || []).forEach((r) => { totalPessoa[r.id] = r.total || 0 })
     ;(tot.times || []).forEach((r) => { totalTime[r.id] = r.total || 0 })

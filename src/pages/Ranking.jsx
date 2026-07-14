@@ -109,7 +109,7 @@ export default function Ranking() {
 
           {/* Lista */}
           <motion.div key={'lista-' + aba} className="bg-white rounded-2xl shadow-sm p-2"
-            initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
+            initial="hide" animate="show" variants={{ show: {} }}>
             {lista.map((item, i) => (
               <motion.button key={item.id} onClick={() => setCard({ item, pos: i })}
                 variants={{ hide: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }}
@@ -120,13 +120,13 @@ export default function Ranking() {
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-slate-800 text-sm truncate">{item.nome}</div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
-                    <motion.div className="h-full rounded-full" style={{ backgroundColor: item.cor }}
-                      initial={{ width: 0 }} animate={{ width: `${(valor(item) / max) * 100}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 + i * 0.05 }} />
+                    <motion.div className="h-full w-full rounded-full origin-left" style={{ backgroundColor: item.cor }}
+                      initial={{ scaleX: 0 }} animate={{ scaleX: Math.min(1, valor(item) / max) }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }} />
                   </div>
                   {item.unidade && <div className="text-[11px] text-slate-400 mt-0.5">{item.unidade}</div>}
                 </div>
-                <span className="font-extrabold text-azul w-10 text-right"><Contador value={valor(item)} /></span>
+                <span className="font-extrabold text-azul w-10 text-right">{valor(item)}</span>
               </motion.button>
             ))}
           </motion.div>

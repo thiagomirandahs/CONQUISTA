@@ -8,6 +8,7 @@ export default function Avatar({ foto, nome = '?', emoji, cor = '#1e3a8a', size 
   if (foto && !erro) {
     return (
       <img src={foto} alt={nome}
+        loading="lazy" decoding="async"
         onError={() => setErro(true)}
         className={`${size} rounded-full object-cover shadow ring-2 ring-white`} />
     )
