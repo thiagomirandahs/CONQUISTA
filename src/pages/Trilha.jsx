@@ -5,15 +5,6 @@ import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha } from '../lib/dados.js'
 
-// Os 6 postos da trilha = as 6 classes (cores oficiais dos lenços)
-const POSTOS = [
-  { nome: 'Fogueira', classe: 'Amigo', cor: '#1d4ed8', icon: '🔥' },
-  { nome: 'Ponte de Cordas', classe: 'Companheiro', cor: '#dc2626', icon: '🌉' },
-  { nome: 'Trilha na Mata', classe: 'Pesquisador', cor: '#16a34a', icon: '🥾' },
-  { nome: 'Torre de Vigia', classe: 'Pioneiro', cor: '#6b7280', icon: '🗼' },
-  { nome: 'Travessia do Rio', classe: 'Excursionista', cor: '#7c3aed', icon: '🛶' },
-  { nome: 'Cume', classe: 'Guia', cor: '#d97706', icon: '🏔️' },
-]
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
 function embaralhar(arr) {
@@ -28,13 +19,6 @@ const CORES_FESTA = ['#1e3a8a', '#f5c518', '#ffffff', '#10b981', '#d97706']
 function festa() {
   confetti({ particleCount: 130, spread: 80, origin: { y: 0.4 }, colors: CORES_FESTA })
 }
-// Festa grande de quem conquistou a Trilha inteira (fim de temporada)
-function festaGrande() {
-  confetti({ particleCount: 170, spread: 100, origin: { y: 0.35 }, colors: CORES_FESTA })
-  setTimeout(() => confetti({ particleCount: 90, angle: 60, spread: 75, origin: { x: 0, y: 0.6 }, colors: CORES_FESTA }), 200)
-  setTimeout(() => confetti({ particleCount: 90, angle: 120, spread: 75, origin: { x: 1, y: 0.6 }, colors: CORES_FESTA }), 380)
-}
-
 // Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
@@ -46,7 +30,7 @@ const JOGOS = {
 export default function Trilha() {
   const { profile } = useAuth()
   const [carregando, setCarregando] = useState(true)
-  const [prog, setProg] = useState({ feito: false, passos: 0 })
+  const [prog, setProg] = useState({ feito: false, passos: 0, hoje: [] })
   const [jogando, setJogando] = useState(false)
   const [resultado, setResultado] = useState(null)
   const [aba, setAba] = useState('trilha') // trilha | ranking
@@ -55,12 +39,13 @@ export default function Trilha() {
   const [jogosAtivos, setJogosAtivos] = useState(['memoria']) // chaves dos jogos ativos
   const [jogoAtual, setJogoAtual] = useState('memoria')
 
-  // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem)
+  // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
+  // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
+  // Só se a busca FALHAR (offline / SQL não rodado) fica o padrão 'memoria'.
   useEffect(() => {
     carregarJogosTrilha()
       .then((l) => {
-        const ativos = l.filter((g) => g.ativo).map((g) => g.chave).filter((c) => JOGOS[c])
-        if (ativos.length) setJogosAtivos(ativos)
+        setJogosAtivos(l.filter((g) => g.ativo).map((g) => g.chave).filter((c) => JOGOS[c]))
       })
       .catch(() => {})
   }, [])
@@ -81,10 +66,8 @@ export default function Trilha() {
   async function aoTerminar(estrelas) {
     try {
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
-      // Fechou uma volta inteira (chegou ao Cume) = conquistou a Trilha
-      const conquistou = r.passos > 0 && r.passos % POSTOS.length === 0
-      if (conquistou) festaGrande(); else festa()
-      setResultado({ estrelas: r.estrelas, pontos: r.pontos, conquistou, medalhas: Math.floor(r.passos / POSTOS.length) })
+      festa()
+      setResultado({ estrelas: r.estrelas, pontos: r.pontos, extra: !!r.extra })
       setJogando(false)
       recarregar()
     } catch (e) {
@@ -93,11 +76,21 @@ export default function Trilha() {
     }
   }
 
+  // Cada jogo vale 1x por dia: os já jogados hoje ficam marcados; o resto segue jogável.
+  const jogadosHoje = prog.hoje || []
+  // Janela de deploy: o servidor ANTIGO só devolve 'feito' (nunca 'hoje'), e lá
+  // ainda vale a trava de 1 jogo/dia. Nesse caso, 'feito' já significa "jogou hoje"
+  // → bloqueia tudo (senão a criança joga e só leva o erro no fim). Depois do SQL,
+  // 'feito' só é true quando 'hoje' tem itens, então isto nunca dispara à toa.
+  const servidorAntigo = prog.feito && jogadosHoje.length === 0
+  const semJogos = servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c))
+  const proxPontos = jogadosHoje.length === 0 ? 10 : 5
+
   return (
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">🎮 Jogos</h2>
-        <p className="text-sm text-slate-500">Jogue o desafio de hoje e ganhe estrelas! ⭐</p>
+        <p className="text-sm text-slate-500">Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐</p>
       </div>
 
       <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
@@ -111,13 +104,6 @@ export default function Trilha() {
         <RankingTrilha dados={ranking} carregando={carregandoRank} meuId={profile?.id} />
       ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
-      ) : prog.feito ? (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-          <div className="text-5xl mb-2">🎉</div>
-          <p className="font-bold text-slate-800">Você já jogou hoje!</p>
-          {resultado && <p className="text-sm text-dourado font-bold mt-1">+{resultado.pontos} pontos · {'⭐'.repeat(resultado.estrelas)}</p>}
-          <p className="text-sm text-slate-400 mt-1">Volte amanhã pra jogar de novo 🙂</p>
-        </div>
       ) : jogando ? (
         (() => {
           const Jogo = JOGOS[jogoAtual]?.Comp || JogoMemoria
@@ -125,28 +111,59 @@ export default function Trilha() {
         })()
       ) : (
         <div>
-          <div className="text-center mb-3">
-            <p className="font-bold text-slate-800">Desafio do dia 🎮</p>
-            <p className="text-sm text-slate-400 mt-1">Escolha um jogo e ganhe estrelas! Menos tentativas = mais estrelas.</p>
-          </div>
-          <div className="space-y-2">
-            {jogosAtivos.map((chave) => {
-              const j = JOGOS[chave]
-              if (!j) return null
-              return (
-                <motion.button key={chave} whileTap={{ scale: 0.98 }}
-                  onClick={() => { setJogoAtual(chave); setJogando(true) }}
-                  className="w-full bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left hover:bg-slate-50">
-                  <span className="text-3xl shrink-0">{j.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800">{j.nome}</div>
-                    <div className="text-xs text-slate-400">{j.desc}</div>
-                  </div>
-                  <span className="text-azul font-extrabold shrink-0">Jogar (+10)</span>
-                </motion.button>
-              )
-            })}
-          </div>
+          {resultado && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
+              <div className="text-4xl mb-1">🎉</div>
+              <p className="font-extrabold text-slate-800">+{resultado.pontos} pontos · {'⭐'.repeat(resultado.estrelas)}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {resultado.extra ? 'Jogo extra do dia (vale 5)' : 'Primeiro jogo do dia (vale 10)'}
+              </p>
+            </div>
+          )}
+
+          {jogosAtivos.length === 0 ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+              <div className="text-4xl mb-2">🎮</div>
+              <p className="font-semibold text-slate-700">Nenhum jogo ativo agora</p>
+              <p className="text-sm text-slate-500 mt-1">A liderança liga os jogos em Gestão → 🎮 Jogos da Trilha.</p>
+            </div>
+          ) : semJogos ? (
+            <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+              <div className="text-5xl mb-2">🏆</div>
+              <p className="font-bold text-slate-800">Você jogou todos os jogos de hoje!</p>
+              <p className="text-sm text-slate-400 mt-1">Volte amanhã pra jogar de novo 🙂</p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-3">
+                <p className="font-bold text-slate-800">Escolha um jogo 🎮</p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Cada jogo vale 1x por dia. O 1º do dia dá <b>+10</b>; os outros, <b>+5</b>.
+                </p>
+              </div>
+              <div className="space-y-2">
+                {jogosAtivos.map((chave) => {
+                  const j = JOGOS[chave]
+                  if (!j) return null
+                  const jogado = jogadosHoje.includes(chave)
+                  return (
+                    <motion.button key={chave} disabled={jogado} whileTap={jogado ? undefined : { scale: 0.98 }}
+                      onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
+                      className={`w-full rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-slate-50 opacity-70' : 'bg-white hover:bg-slate-50'}`}>
+                      <span className="text-3xl shrink-0">{j.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-800">{j.nome}</div>
+                        <div className="text-xs text-slate-400">{j.desc}</div>
+                      </div>
+                      {jogado
+                        ? <span className="text-green-600 font-extrabold shrink-0 text-sm">✓ jogado</span>
+                        : <span className="text-azul font-extrabold shrink-0">Jogar (+{proxPontos})</span>}
+                    </motion.button>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

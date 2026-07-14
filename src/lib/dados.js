@@ -72,7 +72,7 @@ export async function carregarRanking() {
 // Metas da cartela pessoal: o que a criança faz na semana, contado por origem.
 export const METAS_SEMANA = [
   { chave: 'missao', emoji: '🎯', nome: 'Missões', meta: 5 },
-  { chave: 'trilha', emoji: '🎮', nome: 'Jogos', meta: 3 },
+  { chave: 'trilha', emoji: '🎮', nome: 'Jogos', meta: 8 },
   { chave: 'devocional', emoji: '📖', nome: 'Devocional', meta: 5 },
   { chave: 'atividade', emoji: '📋', nome: 'Atividades', meta: 1 },
 ]
@@ -448,10 +448,13 @@ export async function carregarMissao() {
 }
 
 // Trilha do Acampamento — meu progresso (jogou hoje? passos) e registrar o jogo.
+// Progresso dos jogos: { feito, passos, hoje: ['memoria','caca'] } — 'hoje' são
+// os jogos JÁ jogados hoje (cada jogo pode ser jogado 1x por dia).
 export async function carregarTrilha() {
   const { data, error } = await supabase.rpc('meu_progresso_trilha')
   if (error) throw new Error(error.message)
-  return data || { feito: false, passos: 0 }
+  const d = data || {}
+  return { feito: !!d.feito, passos: d.passos || 0, hoje: Array.isArray(d.hoje) ? d.hoje : [] }
 }
 export async function registrarJogo(tipo, estrelas) {
   const { data, error } = await supabase.rpc('registrar_jogo', { p_tipo: tipo, p_estrelas: estrelas })
