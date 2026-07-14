@@ -116,6 +116,100 @@ export async function carregarMinhaCartela(inicio, meuId) {
   return METAS_SEMANA.map((m) => ({ ...m, feito: cont[m.chave] || 0 }))
 }
 
+// ------- Duelo entre unidades (uma unidade desafia a outra) -------
+// Traz tudo o que a tela precisa numa rodada só: duelos + unidades + catálogo.
+export async function carregarDuelos() {
+  const [{ data: ds, error: erroDuelos }, { data: us, error: erroUni }, { data: cat, error: erroCat }] = await Promise.all([
+    // Cancelado é filtrado NO BANCO: senão ele gastaria a cota de 60 e empurraria
+    // o histórico julgado pra fora da tela. status asc põe os 'aberto' primeiro,
+    // então o limite nunca corta um duelo aberto (que ainda conta no teto lá).
+    supabase.from('duelos').select('*')
+      .neq('status', 'cancelado')
+      .order('status', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(60),
+    supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
+    supabase.from('desafios_unidade').select('*').order('titulo'),
+  ])
+  // Sem as tabelas (SQL não rodado), a tela mostra "rode o SQL" em vez de "nenhum duelo".
+  // O catálogo também precisa checar erro: senão a tela mentiria dizendo que a
+  // liderança não cadastrou nada, quando na verdade foi a rede que falhou.
+  if (erroDuelos) throw new Error(erroDuelos.message)
+  if (erroCat) throw new Error(erroCat.message)
+  if (erroUni) throw new Error(erroUni.message) // senão os cards viriam com nome "?"
+  const uni = Object.fromEntries((us || []).map((u) => [u.id, u]))
+  const des = Object.fromEntries((cat || []).map((d) => [d.id, d]))
+  const semUni = { nome: '?', cor: '#1e3a8a' }
+  const duelos = (ds || [])
+    .map((d) => {
+      const cat0 = des[d.desafio_id] || {}
+      return {
+        ...d,
+        a: uni[d.unidade_a] || semUni,
+        b: uni[d.unidade_b] || semUni,
+        // Usa o SNAPSHOT gravado no duelo; o catálogo só entra como reserva
+        // (editar o catálogo não pode reescrever o histórico já julgado).
+        desafio: {
+          titulo: d.titulo || cat0.titulo || 'Desafio',
+          // '||' (e não '??') de propósito: duelo antigo sem snapshot vem com 0,
+          // e 0 tem que cair no catálogo — senão a tela mostraria "+0".
+          pontos: d.pontos || cat0.pontos || 0,
+          descricao: cat0.descricao || null,
+        },
+      }
+    })
+    .sort((x, y) => (x.status === y.status ? 0 : x.status === 'aberto' ? -1 : 1))
+  return { duelos, unidades: us || [], catalogo: cat || [] }
+}
+
+// Qualquer desbravador desafia OUTRA unidade (as regras são checadas no banco).
+export async function criarDuelo(desafioId, unidadeB) {
+  const { data, error } = await supabase.rpc('criar_duelo', { p_desafio_id: desafioId, p_unidade_b: unidadeB })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Só liderança: define quem cumpriu ('a' | 'b' | 'ambos' | 'ninguem') e premia.
+export async function julgarDuelo(id, vencedor) {
+  const { data, error } = await supabase.rpc('julgar_duelo', { p_id: id, p_vencedor: vencedor })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Cancelar: MARCA como cancelado (não apaga). Liderança sempre; o autor só
+// enquanto o duelo está aberto. Apagar de vez zerava os contadores e permitia
+// criar/apagar em loop tocando o push do clube — por isso é RPC, não delete.
+export async function cancelarDuelo(id) {
+  const { data, error } = await supabase.rpc('cancelar_duelo', { p_id: id })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Catálogo de desafios de unidade (só liderança edita — RLS "gerir desafios_unidade")
+export async function salvarDesafioUnidade(d, id) {
+  const linha = {
+    titulo: (d.titulo || '').trim(),
+    descricao: (d.descricao || '').trim() || null,
+    pontos: Math.max(1, Math.min(500, parseInt(d.pontos, 10) || 50)),
+    dias: Math.max(1, Math.min(90, parseInt(d.dias, 10) || 7)),
+    ativo: d.ativo !== false,
+  }
+  const q = id
+    ? supabase.from('desafios_unidade').update(linha).eq('id', id).select('id')
+    : supabase.from('desafios_unidade').insert(linha).select('id')
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
+}
+
+export async function excluirDesafioUnidade(id) {
+  const { error } = await supabase.from('desafios_unidade').delete().eq('id', id)
+  // Se já foi usado num duelo, o banco barra (on delete restrict) — desative em vez de apagar.
+  if (error) throw new Error(/violates foreign key|restrict/i.test(error.message)
+    ? 'Esse desafio já foi usado num duelo. Desative-o em vez de apagar.'
+    : error.message)
+}
+
 // ------- Temporadas (zerar o ranking guardando histórico) — só diretoria -------
 // Encerra a temporada atual (guardando os campeões que o app já calculou) e
 // começa outra do zero. Passe os nomes dos campeões atuais pra registrar.

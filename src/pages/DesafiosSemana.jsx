@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
+import Duelos from '../components/Duelos.jsx'
 import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -24,6 +25,7 @@ export default function DesafiosSemana() {
   const [cartela, setCartela] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [premiando, setPremiando] = useState(false)
+  const [aba, setAba] = useState('semana') // semana | duelos
 
   async function carregar() {
     setCarregando(true)
@@ -53,15 +55,28 @@ export default function DesafiosSemana() {
     }
   }
 
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
-
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">🏁 Desafios da Semana</h2>
-        <p className="text-sm text-slate-500">{fmtSemana(dados.inicio)} · zera toda segunda!</p>
+        <h2 className="text-2xl font-extrabold text-slate-800">🏁 Desafios</h2>
+        <p className="text-sm text-slate-500">
+          {aba === 'semana' ? `${fmtSemana(dados.inicio)} · zera toda segunda!` : 'Uma unidade desafia a outra ⚔️'}
+        </p>
       </div>
 
+      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+        {[['semana', '🏁 Semana'], ['duelos', '⚔️ Duelos']].map(([k, lbl]) => (
+          <button key={k} onClick={() => setAba(k)}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {aba === 'duelos' ? <Duelos onMudou={carregar} /> : carregando ? (
+        <p className="text-slate-400 text-sm">Carregando...</p>
+      ) : (
+      <>
       {/* Cartela pessoal */}
       <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
@@ -128,6 +143,8 @@ export default function DesafiosSemana() {
           </button>
         )}
       </div>
+      </>
+      )}
 
       {premiando && top && <ModalPremiar top={top} onCancelar={() => setPremiando(false)} onConfirmar={premiar} />}
     </div>
