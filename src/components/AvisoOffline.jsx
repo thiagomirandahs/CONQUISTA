@@ -20,7 +20,7 @@ export default function AvisoOffline() {
   return (
     <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
       <span className="text-lg">📡</span>
-      <span>Sem internet no momento — o que aparece pode estar desatualizado. Reconecte e atualize.</span>
+      <span>Sem internet — você ainda vê o que já abriu (fotos e listas). Pra enviar foto, jogar ou lançar pontos, reconecte. 🙂</span>
     </div>
   )
 }

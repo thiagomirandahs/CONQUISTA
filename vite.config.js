@@ -20,6 +20,33 @@ export default defineConfig({
         globIgnores: ['**/*-legacy*.js', '**/polyfills*.js'],
         // Carrega o handler de push (public/push-sw.js) dentro do service worker
         importScripts: ['/push-sw.js'],
+        // "Ver offline": guarda imagens e as listas já carregadas do Supabase.
+        runtimeCaching: [
+          {
+            // Fotos/avatares do Storage: guardar pra ver offline + carregar rápido.
+            // CacheFirst porque cada arquivo tem caminho único (nunca muda).
+            urlPattern: /\/storage\/v1\/object\/public\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'imagens-conquista',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Dados (listas) do Supabase: online busca o fresco; se a internet cair
+            // (ou demorar +4s), mostra a última versão vista. Só GET é guardado —
+            // enviar/jogar (POST/PATCH) passa direto, sem cache.
+            urlPattern: /\/rest\/v1\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'dados-conquista',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Filhos da Conquista',
