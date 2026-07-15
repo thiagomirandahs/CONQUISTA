@@ -116,6 +116,24 @@ export async function carregarMinhaCartela(inicio, meuId) {
   return METAS_SEMANA.map((m) => ({ ...m, feito: cont[m.chave] || 0 }))
 }
 
+// Mensalidade pendente do PRÓPRIO usuário (pro popup de cobrança). O RLS já
+// limita às próprias, mas a liderança (financeiro) vê todas — por isso filtramos
+// por desbravador_id, pra o líder não receber o popup dos outros. Devolve a mais
+// antiga pendente + quantas no total.
+export async function minhaMensalidadePendente(userId) {
+  if (!userId) return null
+  const { data } = await supabase
+    .from('mensalidades')
+    .select('mes,ano,valor')
+    .eq('desbravador_id', userId)
+    .eq('status', 'pendente')
+    .order('ano', { ascending: true })
+    .order('mes', { ascending: true })
+  const pend = data || []
+  if (!pend.length) return null
+  return { ...pend[0], quantas: pend.length }
+}
+
 // ------- Duelo entre unidades (uma unidade desafia a outra) -------
 // Traz tudo o que a tela precisa numa rodada só: duelos + unidades + catálogo.
 export async function carregarDuelos() {
