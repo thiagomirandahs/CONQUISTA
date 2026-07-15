@@ -28,6 +28,8 @@ const Agenda = lazy(() => import('./pages/Agenda.jsx'))
 const Temporada = lazy(() => import('./pages/Temporada.jsx'))
 const JogosTrilha = lazy(() => import('./pages/JogosTrilha.jsx'))
 const DesafiosSemana = lazy(() => import('./pages/DesafiosSemana.jsx'))
+const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
+const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 
 function Carregando() {
   return (
@@ -47,6 +49,12 @@ function Protegido({ children }) {
   return children
 }
 
+// O responsável cai direto no "Meu Filho"; os demais, no ranking.
+function InicioRedirect() {
+  const { profile } = useAuth()
+  return <Navigate to={profile?.papel === 'pais' ? '/meu-filho' : '/ranking'} replace />
+}
+
 export default function App() {
   return (
     <Suspense fallback={<Carregando />}>
@@ -55,8 +63,10 @@ export default function App() {
         <Route path="/cadastro" element={<Cadastro />} />
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
-          <Route path="/" element={<Navigate to="/ranking" replace />} />
+          <Route path="/" element={<InicioRedirect />} />
           <Route path="/ranking" element={<Ranking />} />
+          <Route path="/meu-filho" element={<MeuFilho />} />
+          <Route path="/vinculos-pais" element={<VinculosPais />} />
           <Route path="/missoes" element={<Missoes />} />
           <Route path="/trilha" element={<Trilha />} />
           <Route path="/aprovar-missoes" element={<AprovarMissoes />} />

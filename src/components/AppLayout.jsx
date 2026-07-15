@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
@@ -18,13 +18,20 @@ const abasBase = [
   { to: '/mural', label: 'Mural', icon: '📸' },
 ]
 const TEM_GESTAO = ['conselheiro', 'instrutor', 'diretoria', 'tesoureiro']
+// Telas que o responsável (papel=pais) pode abrir. As demais o mandam pro Meu
+// Filho — reforço de UX; a proteção de dados de verdade é o RLS no banco.
+const CAMINHOS_PAI = ['/meu-filho', '/perfil']
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
+  const ehPai = profile?.papel === 'pais'
   const temGestao = TEM_GESTAO.includes(profile?.papel)
-  const abas = temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
+  // O responsável tem uma navegação enxuta (só "Meu Filho").
+  const abas = ehPai
+    ? [{ to: '/meu-filho', label: 'Meu Filho', icon: '👨‍👩‍👧' }]
+    : temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
   const [menuAberto, setMenuAberto] = useState(false)
 
   // Força buscar a versão mais nova e recarregar (reforço da auto-atualização)
@@ -36,9 +43,14 @@ export default function AppLayout() {
     window.location.reload()
   }
 
+  // O pai não navega pelas telas de membro (evita ver tela vazia após a blindagem)
+  if (ehPai && !CAMINHOS_PAI.includes(location.pathname)) {
+    return <Navigate to="/meu-filho" replace />
+  }
+
   return (
     <div className="min-h-full lg:flex">
-      <DevocionalPopup />
+      {!ehPai && <DevocionalPopup />}
       <AvisosPopup />
       {/* ===== Menu lateral (PC) ===== */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-azul text-white z-30">

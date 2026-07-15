@@ -134,6 +134,58 @@ export async function minhaMensalidadePendente(userId) {
   return { ...pend[0], quantas: pend.length }
 }
 
+// ------- Portal dos Pais (responsável -> filho) -------
+// Pai pede o vínculo digitando o nome do filho; a diretoria aprova.
+export async function pedirVinculo(nome) {
+  const { data, error } = await supabase.rpc('pedir_vinculo', { p_nome: nome })
+  if (error) throw new Error(error.message)
+  return data
+}
+// Meus pedidos de vínculo (pra o pai ver o status: pendente/aprovado/rejeitado).
+export async function meusPedidosVinculo() {
+  const { data } = await supabase.from('responsaveis')
+    .select('id,nome_digitado,status,criado_em').order('criado_em', { ascending: false })
+  return data || []
+}
+// Dados dos filhos aprovados (pontos, presença, mensalidade). RLS/segurança no banco.
+export async function carregarMeusFilhos() {
+  const { data, error } = await supabase.rpc('meus_filhos')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+// Diretoria: pedidos de vínculo aguardando aprovação.
+export async function carregarVinculosPendentes() {
+  const { data, error } = await supabase.rpc('vinculos_pendentes')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+// Diretoria: buscar desbravadores por nome (pra escolher o filho certo ao aprovar).
+export async function buscarDesbravadores(termo) {
+  let q = supabase.from('profiles')
+    .select('id,nome,foto,unidade_id').eq('status', 'ativo')
+    .in('papel', ['desbravador', 'conselheiro']).order('nome').limit(20)
+  if (termo && termo.trim()) q = q.ilike('nome', `%${termo.trim()}%`)
+  const { data } = await q
+  return data || []
+}
+export async function aprovarVinculo(id, desbravadorId) {
+  const { error } = await supabase.rpc('aprovar_vinculo', { p_id: id, p_desbravador_id: desbravadorId })
+  if (error) throw new Error(error.message)
+}
+export async function rejeitarVinculo(id) {
+  const { error } = await supabase.rpc('rejeitar_vinculo', { p_id: id })
+  if (error) throw new Error(error.message)
+}
+// PIX do clube (config_clube). Todos leem; liderança salva.
+export async function lerPix() {
+  const { data } = await supabase.from('config_clube').select('valor').eq('chave', 'pix').maybeSingle()
+  return data?.valor || ''
+}
+export async function salvarPix(valor) {
+  const { error } = await supabase.from('config_clube').update({ valor: (valor || '').trim() }).eq('chave', 'pix')
+  if (error) throw new Error(error.message)
+}
+
 // ------- Duelo entre unidades (uma unidade desafia a outra) -------
 // Traz tudo o que a tela precisa numa rodada só: duelos + unidades + catálogo.
 export async function carregarDuelos() {
