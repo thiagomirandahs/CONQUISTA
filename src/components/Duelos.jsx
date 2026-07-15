@@ -3,11 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from './Avatar.jsx'
 import {
-  carregarDuelos, criarDuelo, julgarDuelo, cancelarDuelo,
+  carregarDuelos, criarDuelo, julgarDuelo, cancelarDuelo, progressoDuelo,
   salvarDesafioUnidade, excluirDesafioUnidade,
 } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
+const TIPOS_ACOMP = [
+  ['manual', 'No olho (a liderança avalia)'],
+  ['missoes', 'Missões feitas'],
+  ['presenca', 'Presenças na reunião'],
+  ['jogos', 'Jogos jogados'],
+  ['devocional', 'Devocionais feitos'],
+]
+const rotuloTipo = (t) => (TIPOS_ACOMP.find(([k]) => k === t) || [])[1] || 'No olho'
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—')
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
@@ -26,6 +34,7 @@ export default function Duelos({ onMudou }) {
   const [desafiando, setDesafiando] = useState(false)
   const [julgando, setJulgando] = useState(null)
   const [verCatalogo, setVerCatalogo] = useState(false)
+  const [progresso, setProgresso] = useState(null)
 
   async function carregar() {
     setCarregando(true); setErro('')
@@ -105,7 +114,7 @@ export default function Duelos({ onMudou }) {
         <div className="space-y-3">
           {dados.duelos.map((d) => (
             <CardDuelo key={d.id} d={d} ehAdmin={ehAdmin} meuId={profile?.id}
-              onJulgar={() => setJulgando(d)} onCancelar={() => cancelar(d)} />
+              onJulgar={() => setJulgando(d)} onCancelar={() => cancelar(d)} onProgresso={() => setProgresso(d)} />
           ))}
         </div>
       )}
@@ -134,13 +143,17 @@ export default function Duelos({ onMudou }) {
           <ModalCatalogo key="catalogo" lista={dados.catalogo}
             onFechar={() => setVerCatalogo(false)} onMudou={carregar} />
         )}
+        {progresso && (
+          <ModalProgresso key="progresso" duelo={progresso} onFechar={() => setProgresso(null)} />
+        )}
       </AnimatePresence>
     </div>
   )
 }
 
-function CardDuelo({ d, ehAdmin, meuId, onJulgar, onCancelar }) {
+function CardDuelo({ d, ehAdmin, meuId, onJulgar, onCancelar, onProgresso }) {
   const aberto = d.status === 'aberto'
+  const temProgresso = d.desafio.tipo && d.desafio.tipo !== 'manual'
   const venceu = (lado) => d.vencedor === lado || d.vencedor === 'ambos'
   const podeCancelar = aberto && (ehAdmin || d.criado_por === meuId)
   const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) // yyyy-mm-dd
@@ -176,8 +189,15 @@ function CardDuelo({ d, ehAdmin, meuId, onJulgar, onCancelar }) {
         <p className="text-xs text-green-700 mt-2 font-semibold">As duas cumpriram! Cada uma levou +{d.desafio.pontos}.</p>
       )}
 
+      {temProgresso && (
+        <button onClick={onProgresso}
+          className="w-full mt-3 bg-azul/10 text-azul font-bold rounded-xl py-2 text-sm">
+          📊 Ver desenvolvimento
+        </button>
+      )}
+
       {aberto && (ehAdmin || podeCancelar) && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-2">
           {ehAdmin && (
             <button onClick={onJulgar} className="flex-1 bg-dourado text-azul font-bold rounded-xl py-2 text-sm">
               ⚖️ Julgar
@@ -381,6 +401,8 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
     descricao: inicial.descricao || '',
     pontos: inicial.pontos ?? 50,
     dias: inicial.dias ?? 7,
+    tipo: inicial.tipo || 'manual',
+    meta: inicial.meta ?? 1,
     ativo: inicial.ativo !== false,
   })
   const [erro, setErro] = useState('')
@@ -424,6 +446,24 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
             value={f.dias} onChange={(e) => set('dias', e.target.value)} />
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">Como acompanhar</label>
+          <select className={inputClass} value={f.tipo} onChange={(e) => set('tipo', e.target.value)}>
+            {TIPOS_ACOMP.map(([k, lbl]) => <option key={k} value={k}>{lbl}</option>)}
+          </select>
+        </div>
+        {f.tipo !== 'manual' && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Meta por pessoa</label>
+            <input type="number" min="1" max="50" className={inputClass}
+              value={f.meta} onChange={(e) => set('meta', e.target.value)} />
+          </div>
+        )}
+      </div>
+      {f.tipo !== 'manual' && (
+        <p className="text-[11px] text-slate-400">O app conta sozinho e mostra o progresso de cada criança no duelo.</p>
+      )}
       <label className="flex items-center gap-2 text-sm text-slate-700">
         <input type="checkbox" checked={f.ativo} onChange={(e) => set('ativo', e.target.checked)} className="w-4 h-4 accent-azul" />
         Ativo (aparece pras unidades escolherem)
@@ -444,5 +484,68 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
         </button>
       </div>
     </form>
+  )
+}
+
+// Desenvolvimento do duelo: quem cumpriu e quanto cada um fez, por unidade.
+function ModalProgresso({ duelo, onFechar }) {
+  const [prog, setProg] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let vivo = true
+    progressoDuelo(duelo.id)
+      .then((p) => { if (vivo) { setProg(p); setCarregando(false) } })
+      .catch((e) => { if (vivo) { setErro(e?.message || 'Erro'); setCarregando(false) } })
+    return () => { vivo = false }
+  }, [duelo.id])
+
+  const lados = prog && prog.tipo !== 'manual' ? [[duelo.a, prog.a], [duelo.b, prog.b]] : []
+
+  return (
+    <Overlay onFechar={onFechar}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-1">📊 {duelo.desafio.titulo}</h3>
+        {prog && prog.tipo !== 'manual' && (
+          <p className="text-sm text-slate-500 mb-4">Meta: <b>{prog.meta}</b> por pessoa · {rotuloTipo(prog.tipo).toLowerCase()}</p>
+        )}
+
+        {carregando ? (
+          <p className="text-sm text-slate-400">Carregando...</p>
+        ) : erro ? (
+          <p className="text-sm text-red-600">{erro}</p>
+        ) : !prog || prog.tipo === 'manual' ? (
+          <p className="text-sm text-slate-500">Esse desafio é avaliado no olho pela liderança (o app não mede sozinho).</p>
+        ) : (
+          lados.map(([uni, lado], i) => (
+            <div key={i} className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar foto={uni.emblema} nome={uni.nome || '?'} cor={uni.cor} size="w-7 h-7" textSize="text-xs" />
+                <span className="font-bold text-slate-800 flex-1 truncate">{uni.nome}</span>
+                <span className="text-xs font-bold text-green-600 shrink-0">{lado?.cumpriram || 0}/{lado?.total || 0} cumpriram</span>
+              </div>
+              {(lado?.membros || []).length === 0 ? (
+                <p className="text-xs text-slate-400">Sem membros nesta unidade.</p>
+              ) : (
+                <div className="space-y-1">
+                  {lado.membros.map((m, j) => (
+                    <div key={j} className="flex items-center gap-2 text-sm">
+                      <span className="flex-1 truncate text-slate-600">{m.nome}{m.cumpriu ? ' ✅' : ''}</span>
+                      <span className={`font-bold shrink-0 ${m.cumpriu ? 'text-green-600' : 'text-slate-400'}`}>{m.feito}/{prog.meta}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+
+        <button onClick={onFechar} className="w-full mt-2 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Fechar</button>
+      </motion.div>
+    </Overlay>
   )
 }

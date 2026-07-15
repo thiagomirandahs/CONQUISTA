@@ -225,6 +225,7 @@ export async function carregarDuelos() {
           // e 0 tem que cair no catálogo — senão a tela mostraria "+0".
           pontos: d.pontos || cat0.pontos || 0,
           descricao: cat0.descricao || null,
+          tipo: cat0.tipo || 'manual', // se o app mede, dá pra ver o progresso
         },
       }
     })
@@ -237,6 +238,14 @@ export async function criarDuelo(desafioId, unidadeB) {
   const { data, error } = await supabase.rpc('criar_duelo', { p_desafio_id: desafioId, p_unidade_b: unidadeB })
   if (error) throw new Error(error.message)
   return data
+}
+
+// Desenvolvimento do duelo: quem cumpriu e quanto cada um fez (por unidade).
+// Só para desafios que o app mede (missões/presença/jogos/devocional).
+export async function progressoDuelo(id) {
+  const { data, error } = await supabase.rpc('progresso_duelo', { p_id: id })
+  if (error) throw new Error(error.message)
+  return data || { tipo: 'manual' }
 }
 
 // Só liderança: define quem cumpriu ('a' | 'b' | 'ambos' | 'ninguem') e premia.
@@ -257,17 +266,26 @@ export async function cancelarDuelo(id) {
 
 // Catálogo de desafios de unidade (só liderança edita — RLS "gerir desafios_unidade")
 export async function salvarDesafioUnidade(d, id) {
-  const linha = {
+  const base = {
     titulo: (d.titulo || '').trim(),
     descricao: (d.descricao || '').trim() || null,
     pontos: Math.max(1, Math.min(500, parseInt(d.pontos, 10) || 50)),
     dias: Math.max(1, Math.min(90, parseInt(d.dias, 10) || 7)),
     ativo: d.ativo !== false,
   }
-  const q = id
+  const comTipo = {
+    ...base,
+    tipo: ['manual', 'missoes', 'presenca', 'jogos', 'devocional'].includes(d.tipo) ? d.tipo : 'manual',
+    meta: Math.max(1, Math.min(50, parseInt(d.meta, 10) || 1)),
+  }
+  const grava = (linha) => (id
     ? supabase.from('desafios_unidade').update(linha).eq('id', id).select('id')
-    : supabase.from('desafios_unidade').insert(linha).select('id')
-  const { data, error } = await q
+    : supabase.from('desafios_unidade').insert(linha).select('id'))
+  let { data, error } = await grava(comTipo)
+  // Janela de deploy: se tipo/meta ainda não existem no banco, grava sem elas.
+  if (error && /tipo|meta|column|schema cache/i.test(error.message || '')) {
+    ;({ data, error } = await grava(base))
+  }
   if (error) throw new Error(error.message)
   if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
 }
