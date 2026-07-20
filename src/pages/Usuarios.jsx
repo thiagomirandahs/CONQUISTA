@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades, lancarPontosIndividual } from '../lib/dados.js'
+import {
+  carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
+  lancarPontosIndividual, definirAtivoUsuario, excluirUsuario,
+} from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -27,7 +30,21 @@ export default function Usuarios() {
   const [busca, setBusca] = useState('')
   const [alvo, setAlvo] = useState(null)
   const [pontosPara, setPontosPara] = useState(null)
+  const [excluindo, setExcluindo] = useState(null) // usuário no modal de exclusão
   const [erroCarregar, setErroCarregar] = useState('')
+  const ehDiretoria = profile?.papel === 'diretoria'
+
+  // Desativar/reativar: bloqueia (ou libera) o acesso sem apagar o histórico.
+  async function alternarAtivo(u) {
+    const desativando = u.status === 'ativo'
+    if (desativando && !window.confirm(`Desativar ${u.nome || 'esta pessoa'}?\n\nEla não vai mais conseguir entrar e some do ranking, mas o histórico fica guardado. Dá pra reativar depois.`)) return
+    try {
+      await definirAtivoUsuario(u.id, !desativando)
+      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: desativando ? 'inativo' : 'ativo' } : x)))
+    } catch (e) {
+      alert('Não foi possível: ' + (e?.message || e))
+    }
+  }
 
   async function trocarCargo(u, novoPapel) {
     if (novoPapel === u.papel) return
@@ -106,7 +123,8 @@ export default function Usuarios() {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-slate-800 text-sm truncate">
                     {u.nome || '(sem nome)'}
-                    {u.status !== 'ativo' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
+                    {u.status === 'pendente' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
+                    {u.status === 'inativo' && <span className="ml-2 text-[10px] text-slate-500 font-normal bg-slate-100 rounded px-1.5 py-0.5">desativado</span>}
                     {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
                       <span className="ml-2 text-[10px] text-orange-600 font-normal">sem unidade</span>
                     )}
@@ -128,12 +146,26 @@ export default function Usuarios() {
                   className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">🎖️ Pontos</button>
                 <button onClick={() => setAlvo(u)}
                   className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-1.5 font-semibold">🔑 Senha</button>
+                <button onClick={() => alternarAtivo(u)}
+                  className={`text-xs rounded-lg px-3 py-1.5 font-semibold ${u.status === 'ativo' ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
+                  {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
+                </button>
+                {ehDiretoria && u.id !== profile?.id && (
+                  <button onClick={() => setExcluindo(u)}
+                    className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-1.5 font-semibold">🗑️ Excluir</button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
+      <AnimatePresence>
+        {excluindo && (
+          <ModalExcluir usuario={excluindo} onFechar={() => setExcluindo(null)}
+            onExcluido={(id) => { setUsuarios((us) => us.filter((x) => x.id !== id)); setExcluindo(null) }} />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {alvo && <ModalReset usuario={alvo} onFechar={() => setAlvo(null)} />}
       </AnimatePresence>
@@ -278,6 +310,62 @@ function ModalReset({ usuario, onFechar }) {
             </div>
           </>
         )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Exclusão definitiva: mostra o que se perde e exige digitar EXCLUIR.
+function ModalExcluir({ usuario, onFechar, onExcluido }) {
+  const [texto, setTexto] = useState('')
+  const [apagando, setApagando] = useState(false)
+  const [erro, setErro] = useState('')
+  const confirmado = texto.trim().toUpperCase() === 'EXCLUIR'
+
+  async function apagar() {
+    if (!confirmado || apagando) return
+    setApagando(true); setErro('')
+    try {
+      await excluirUsuario(usuario.id)
+      onExcluido(usuario.id)
+    } catch (e) {
+      setErro(e?.message || String(e))
+      setApagando(false)
+    }
+  }
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={apagando ? undefined : onFechar}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        <h3 className="text-lg font-extrabold text-red-600 mb-1">🗑️ Excluir {usuario.nome || 'usuário'}</h3>
+        <p className="text-sm text-slate-600 mb-3">Isso é <strong>permanente</strong>. Vai apagar junto:</p>
+        <ul className="text-sm text-slate-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-3 space-y-0.5">
+          <li>• Todos os <b>pontos</b> dela (a média da unidade muda)</li>
+          <li>• <b>Entregas</b> de atividades, <b>mensalidades</b> e <b>jogos</b></li>
+          <li className="text-slate-500">• As <b>fotos do mural</b> ficam (só perdem o autor)</li>
+        </ul>
+        <p className="text-xs text-slate-500 mb-3">
+          Se a pessoa só saiu do clube, prefira <b>🚫 Desativar</b> — guarda o histórico e dá pra reativar.
+        </p>
+
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Digite <b>EXCLUIR</b> pra confirmar</label>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="EXCLUIR" disabled={apagando}
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200 mb-3" />
+
+        {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
+
+        <div className="flex gap-2">
+          <button onClick={onFechar} disabled={apagando}
+            className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
+          <button onClick={apagar} disabled={!confirmado || apagando}
+            className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 disabled:opacity-40">
+            {apagando ? 'Excluindo...' : 'Excluir de vez'}
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   )

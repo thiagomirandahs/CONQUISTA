@@ -561,6 +561,25 @@ export async function mudarCargo(userId, papel) {
   return { limpouUnidade: !mantemUnidade }
 }
 
+// Desativa/reativa uma pessoa. Desativada não entra no app e some do ranking
+// e das listas, mas o histórico dela (pontos, fotos) fica preservado.
+// Usa a permissão que a liderança já tem de editar perfil — sem SQL novo.
+export async function definirAtivoUsuario(userId, ativo) {
+  const { data, error } = await supabase.from('profiles')
+    .update({ status: ativo ? 'ativo' : 'inativo' }).eq('id', userId).select('id,status')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
+  return data[0]
+}
+
+// ⚠️ APAGA a pessoa e TUDO dela (pontos, entregas, mensalidades, jogos, fotos).
+// Sem volta. Só diretoria (a checagem de verdade é no banco).
+export async function excluirUsuario(userId) {
+  const { data, error } = await supabase.rpc('excluir_usuario', { p_id: userId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Muda a unidade (time) de um membro — passe null/'' pra deixar "sem unidade".
 // Mesmo RLS do cargo: só liderança (o trigger protege_campos_perfil não reverte pra pode_aprovar).
 export async function mudarUnidade(userId, unidadeId) {
