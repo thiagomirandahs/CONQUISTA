@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
@@ -29,6 +29,10 @@ const JOGOS = {
   bussola: { nome: 'Bússola', curto: 'Bússola', emoji: '🧭', desc: 'Girou 90°… pra onde você está olhando?', Comp: JogoBussola },
   forca: { nome: 'Forca', curto: 'Forca', emoji: '🎯', desc: 'Adivinhe a palavra letra por letra', Comp: JogoForca },
   contas: { nome: 'Conta Rápida', curto: 'Contas', emoji: '🔢', desc: 'Quantas contas você acerta em 30 segundos?', Comp: JogoContas },
+  nos: { nome: 'Quiz dos Nós', curto: 'Nós', emoji: '🪢', desc: 'Qual nó serve pra quê? Teste seus nós e amarras', Comp: JogoNos },
+  semaforo: { nome: 'Semáfora', curto: 'Semáfora', emoji: '🚩', desc: 'Leia a letra pela posição das bandeiras', Comp: JogoSemaforo },
+  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Coma e cresça sem bater na parede', Comp: JogoCobra },
+  anagrama: { nome: 'Anagrama', curto: 'Anagrama', emoji: '🔤', desc: 'Desembaralhe a palavra do clube', Comp: JogoAnagrama },
 }
 
 export default function Trilha() {
@@ -820,6 +824,318 @@ function JogoContas({ onTerminar, onCancelar }) {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+// ===================== 🪢 Quiz dos Nós =====================
+const PERGUNTAS_NOS = [
+  { p: 'Qual nó emenda duas cordas da MESMA grossura?', o: ['Nó direito (quadrado)', 'Lais de guia', 'Volta do fiel', 'Nó de escota'], c: 0 },
+  { p: 'E pra emendar duas cordas de grossuras DIFERENTES?', o: ['Nó de escota', 'Nó direito', 'Nó cego', 'Volta do fiel'], c: 0 },
+  { p: 'Qual nó faz uma alça que NÃO aperta (usada em resgate)?', o: ['Lais de guia', 'Nó direito', 'Nó de escota', 'Nó cego'], c: 0 },
+  { p: 'Qual nó prende a corda a um poste e começa as amarras?', o: ['Volta do fiel', 'Lais de guia', 'Nó de pescador', 'Nó direito'], c: 0 },
+  { p: 'Qual nó serve de "parada" na ponta da corda, pra não escapar?', o: ['Nó de oito', 'Volta do fiel', 'Nó de escota', 'Lais de guia'], c: 0 },
+  { p: 'Qual amarra une dois mastros em cruz (90°)?', o: ['Amarra quadrada', 'Amarra diagonal', 'Amarra redonda', 'Volta do fiel'], c: 0 },
+  { p: 'E pra unir dois mastros cruzados em X (diagonal)?', o: ['Amarra diagonal', 'Amarra quadrada', 'Amarra redonda', 'Nó de escota'], c: 0 },
+  { p: 'Qual amarra emenda dois mastros pra ficarem mais compridos?', o: ['Amarra redonda (de extensão)', 'Amarra quadrada', 'Amarra diagonal', 'Nó de oito'], c: 0 },
+]
+
+function JogoNos({ onTerminar, onCancelar }) {
+  // Sorteia 6 perguntas e embaralha as opções de cada uma (a certa muda de lugar)
+  const [rodadas] = useState(() => embaralhar(PERGUNTAS_NOS).slice(0, 6).map((q) => {
+    const certa = q.o[q.c]
+    return { p: q.p, opcoes: embaralhar(q.o), certa }
+  }))
+  const [n, setN] = useState(0)
+  const [acertos, setAcertos] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const [fim, setFim] = useState(false)
+  const q = rodadas[n]
+
+  function responder(op) {
+    if (fim || aviso) return
+    const ok = op === q.certa
+    const total = acertos + (ok ? 1 : 0)
+    if (ok) setAcertos(total)
+    setAviso(ok ? 'Isso! ✅' : `Era: ${q.certa}`)
+    setTimeout(() => {
+      setAviso('')
+      if (n + 1 >= rodadas.length) {
+        setFim(true)
+        onTerminar(total >= 6 ? 3 : total >= 4 ? 2 : 1)
+      } else setN(n + 1)
+    }, 1300)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-slate-600">Pergunta {n + 1} de {rodadas.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <div className="text-center text-4xl mb-2">🪢</div>
+      <p className="text-slate-700 font-semibold text-center mb-4">{q.p}</p>
+      <div className="space-y-2">
+        {q.opcoes.map((op) => (
+          <motion.button key={op} whileTap={{ scale: 0.98 }} onClick={() => responder(op)} disabled={!!aviso || fim}
+            className="w-full rounded-xl bg-slate-50 hover:bg-slate-100 py-3 px-3 text-sm font-semibold text-slate-700 text-left disabled:opacity-60">
+            {op}
+          </motion.button>
+        ))}
+      </div>
+      {aviso && <p className={`text-sm font-bold text-center mt-3 ${aviso.startsWith('Isso') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
+      <p className="text-xs text-slate-400 text-center mt-2">Acertos: {acertos}</p>
+    </div>
+  )
+}
+
+// ===================== 🚩 Semáfora =====================
+// Só o CÍRCULO 1 (A–G), que é como o clube ensina no começo — e são as posições
+// conferidas em fonte confiável. Dá pra ampliar depois com o manual do clube.
+// Cada braço aponta pra baixo (0°) e gira pro seu lado: low 45°, out 90°,
+// high 135°, up 180°. "esq" = mão DIREITA de quem sinaliza (como você vê).
+const POS_ANG = { down: 0, low: 45, out: 90, high: 135, up: 180 }
+const SEMAFORO = {
+  A: { esq: 'low', dir: 'down' },
+  B: { esq: 'out', dir: 'down' },
+  C: { esq: 'high', dir: 'down' },
+  D: { esq: 'up', dir: 'down' },
+  E: { esq: 'down', dir: 'high' },
+  F: { esq: 'down', dir: 'out' },
+  G: { esq: 'down', dir: 'low' },
+}
+const LETRAS_SEM = Object.keys(SEMAFORO)
+
+function Bandeirinha({ lado, pos }) {
+  // esq gira pra esquerda (negativo), dir pra direita (positivo)
+  const ang = (lado === 'esq' ? -1 : 1) * POS_ANG[pos]
+  return (
+    <div className="absolute left-1/2 top-1/2 w-2 h-16 -ml-1 origin-top"
+      style={{ transform: `rotate(${ang}deg)` }}>
+      <div className="w-2 h-16 bg-slate-700 rounded-full" />
+      <div className="w-4 h-4 -ml-1 rounded-sm bg-red-500" />
+    </div>
+  )
+}
+
+function JogoSemaforo({ onTerminar, onCancelar }) {
+  const TOTAL = 6
+  const sortear = () => {
+    const certa = LETRAS_SEM[Math.floor(Math.random() * LETRAS_SEM.length)]
+    const outras = embaralhar(LETRAS_SEM.filter((l) => l !== certa)).slice(0, 3)
+    return { certa, opcoes: embaralhar([certa, ...outras]) }
+  }
+  const [q, setQ] = useState(sortear)
+  const [n, setN] = useState(1)
+  const [acertos, setAcertos] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const [fim, setFim] = useState(false)
+  const sinal = SEMAFORO[q.certa]
+
+  function responder(l) {
+    if (fim || aviso) return
+    const ok = l === q.certa
+    const total = acertos + (ok ? 1 : 0)
+    if (ok) setAcertos(total)
+    setAviso(ok ? 'Isso! ✅' : `Era a letra ${q.certa}`)
+    setTimeout(() => {
+      setAviso('')
+      if (n >= TOTAL) {
+        setFim(true)
+        onTerminar(total >= 6 ? 3 : total >= 4 ? 2 : 1)
+      } else { setN(n + 1); setQ(sortear()) }
+    }, 1100)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Letra {n} de {TOTAL}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-2">Que letra as bandeiras estão fazendo? (A a G)</p>
+
+      <div className="relative h-44 mx-auto w-44 bg-slate-50 rounded-2xl mb-3">
+        <div className="absolute left-1/2 top-1/2 w-6 h-6 -ml-3 -mt-3 rounded-full bg-slate-700" />
+        <Bandeirinha lado="esq" pos={sinal.esq} />
+        <Bandeirinha lado="dir" pos={sinal.dir} />
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {q.opcoes.map((l) => (
+          <motion.button key={l} whileTap={{ scale: 0.96 }} onClick={() => responder(l)} disabled={!!aviso || fim}
+            className="rounded-xl bg-slate-50 hover:bg-slate-100 py-3 text-xl font-extrabold text-slate-700 disabled:opacity-60">
+            {l}
+          </motion.button>
+        ))}
+      </div>
+      {aviso && <p className={`text-sm font-bold mt-3 ${aviso.startsWith('Isso') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
+      <p className="text-xs text-slate-400 mt-2">Acertos: {acertos}</p>
+    </div>
+  )
+}
+
+// ===================== 🐍 Cobrinha =====================
+const N_COBRA = 12
+function novaComidaCobra(corpo) {
+  const livres = []
+  for (let y = 0; y < N_COBRA; y++) {
+    for (let x = 0; x < N_COBRA; x++) {
+      if (!corpo.some((s) => s.x === x && s.y === y)) livres.push({ x, y })
+    }
+  }
+  return livres[Math.floor(Math.random() * livres.length)] || { x: 0, y: 0 }
+}
+
+function JogoCobra({ onTerminar, onCancelar }) {
+  const [jogo, setJogo] = useState(() => ({
+    cobra: [{ x: 6, y: 6 }], comida: { x: 3, y: 3 }, pontos: 0, fim: false,
+  }))
+  const dirRef = useRef({ x: 0, y: -1 }) // começa subindo
+
+  // Passo do jogo: tudo calculado dentro do updater (sem efeito colateral).
+  useEffect(() => {
+    if (jogo.fim) return
+    const t = setInterval(() => {
+      setJogo((j) => {
+        if (j.fim) return j
+        const d = dirRef.current
+        const cab = { x: j.cobra[0].x + d.x, y: j.cobra[0].y + d.y }
+        const bateu = cab.x < 0 || cab.x >= N_COBRA || cab.y < 0 || cab.y >= N_COBRA
+          || j.cobra.some((s) => s.x === cab.x && s.y === cab.y)
+        if (bateu) return { ...j, fim: true }
+        const comeu = cab.x === j.comida.x && cab.y === j.comida.y
+        const corpo = [cab, ...j.cobra]
+        if (!comeu) corpo.pop()
+        return {
+          cobra: corpo,
+          comida: comeu ? novaComidaCobra(corpo) : j.comida,
+          pontos: j.pontos + (comeu ? 1 : 0),
+          fim: false,
+        }
+      })
+    }, 230)
+    return () => clearInterval(t)
+  }, [jogo.fim])
+
+  // Acabou: entrega as estrelas
+  useEffect(() => {
+    if (!jogo.fim) return
+    const t = setTimeout(() => onTerminar(jogo.pontos >= 10 ? 3 : jogo.pontos >= 5 ? 2 : 1), 1000)
+    return () => clearTimeout(t)
+  }, [jogo.fim]) // eslint-disable-line
+
+  function virar(x, y) {
+    const d = dirRef.current
+    if (d.x === -x && d.y === -y) return // não pode voltar em cima de si
+    dirRef.current = { x, y }
+  }
+
+  const ehCobra = (x, y) => jogo.cobra.some((s) => s.x === x && s.y === y)
+  const ehCabeca = (x, y) => jogo.cobra[0].x === x && jogo.cobra[0].y === y
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-green-600">🍎 {jogo.pontos}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+
+      {jogo.fim ? (
+        <div className="py-8">
+          <div className="text-5xl mb-2">🐍</div>
+          <p className="font-extrabold text-slate-800">Fim! Você comeu {jogo.pontos}.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-px bg-slate-200 rounded-xl overflow-hidden mx-auto max-w-[280px] mb-3"
+            style={{ gridTemplateColumns: `repeat(${N_COBRA}, 1fr)` }}>
+            {Array.from({ length: N_COBRA * N_COBRA }, (_, i) => {
+              const x = i % N_COBRA, y = Math.floor(i / N_COBRA)
+              const comida = jogo.comida.x === x && jogo.comida.y === y
+              return (
+                <div key={i} className={`aspect-square ${
+                  ehCabeca(x, y) ? 'bg-green-600' : ehCobra(x, y) ? 'bg-green-400' : comida ? 'bg-red-500' : 'bg-white'
+                }`} />
+              )
+            })}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto">
+            <div />
+            <button onClick={() => virar(0, -1)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">↑</button>
+            <div />
+            <button onClick={() => virar(-1, 0)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">←</button>
+            <button onClick={() => virar(0, 1)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">↓</button>
+            <button onClick={() => virar(1, 0)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">→</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ===================== 🔤 Anagrama =====================
+const PALAVRAS_ANAGRAMA = [
+  'ACAMPAMENTO', 'FOGUEIRA', 'BUSSOLA', 'MOCHILA', 'BARRACA',
+  'UNIFORME', 'LANTERNA', 'BANDEIRA', 'CAMINHADA', 'CANIVETE',
+]
+function embaralharPalavra(p) {
+  let s = embaralhar(p.split('')).join('')
+  // garante que não saiu igual à original
+  for (let i = 0; i < 5 && s === p; i++) s = embaralhar(p.split('')).join('')
+  return s
+}
+
+function JogoAnagrama({ onTerminar, onCancelar }) {
+  const [rodadas] = useState(() => embaralhar(PALAVRAS_ANAGRAMA).slice(0, 3).map((p) => ({
+    palavra: p, embaralhada: embaralharPalavra(p),
+  })))
+  const [i, setI] = useState(0)
+  const [resp, setResp] = useState('')
+  const [erros, setErros] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const [fim, setFim] = useState(false)
+  const q = rodadas[i]
+
+  function conferir(e) {
+    e.preventDefault()
+    if (fim || aviso) return
+    const ok = resp.trim().toUpperCase() === q.palavra
+    const total = erros + (ok ? 0 : 1)
+    if (!ok) setErros(total)
+    setAviso(ok ? 'Acertou! ✅' : `Era ${q.palavra}`)
+    setTimeout(() => {
+      setAviso(''); setResp('')
+      if (i + 1 >= rodadas.length) {
+        setFim(true)
+        onTerminar(total === 0 ? 3 : total === 1 ? 2 : 1)
+      } else setI(i + 1)
+    }, 1200)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {rodadas.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">Desembaralhe a palavra do clube 🏕️</p>
+
+      <div className="flex flex-wrap justify-center gap-1.5 my-4">
+        {q.embaralhada.split('').map((l, k) => (
+          <span key={k} className="w-8 h-10 rounded-lg bg-azul/10 text-azul grid place-items-center text-lg font-extrabold">{l}</span>
+        ))}
+      </div>
+
+      <form onSubmit={conferir} className="flex gap-2">
+        <input value={resp} onChange={(e) => setResp(e.target.value)} disabled={!!aviso || fim}
+          placeholder="Qual é a palavra?" autoCapitalize="characters"
+          className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm uppercase outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+        <button type="submit" disabled={!resp.trim() || !!aviso || fim}
+          className="rounded-xl bg-azul text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
+      </form>
+      {aviso && <p className={`text-sm font-bold mt-3 ${aviso.startsWith('Acertou') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
     </div>
   )
 }
