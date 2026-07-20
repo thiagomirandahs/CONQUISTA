@@ -25,6 +25,10 @@ const JOGOS = {
   genius: { nome: 'Siga a Sequência', curto: 'Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
   caca: { nome: 'Caça-palavras', curto: 'Caça', emoji: '🔍', desc: 'Ache as palavras escondidas no quadro', Comp: JogoCacaPalavras },
   desliza: { nome: 'Quebra-cabeça', curto: 'Peças', emoji: '🧩', desc: 'Deslize as peças até ordenar os números', Comp: JogoDeslizante },
+  morse: { nome: 'Código Morse', curto: 'Morse', emoji: '📻', desc: 'Decifre a palavra em pontos e traços', Comp: JogoMorse },
+  bussola: { nome: 'Bússola', curto: 'Bússola', emoji: '🧭', desc: 'Girou 90°… pra onde você está olhando?', Comp: JogoBussola },
+  forca: { nome: 'Forca', curto: 'Forca', emoji: '🎯', desc: 'Adivinhe a palavra letra por letra', Comp: JogoForca },
+  contas: { nome: 'Conta Rápida', curto: 'Contas', emoji: '🔢', desc: 'Quantas contas você acerta em 30 segundos?', Comp: JogoContas },
 }
 
 export default function Trilha() {
@@ -538,6 +542,284 @@ function JogoDeslizante({ onTerminar, onCancelar }) {
           )
         ))}
       </div>
+    </div>
+  )
+}
+
+// ===================== 📻 Código Morse =====================
+// Matéria de verdade do clube: a tabela fica à vista pra APRENDER jogando.
+const MORSE = {
+  A: '·–', B: '–···', C: '–·–·', D: '–··', E: '·', F: '··–·', G: '––·', H: '····', I: '··',
+  J: '·–––', K: '–·–', L: '·–··', M: '––', N: '–·', O: '–––', P: '·––·', Q: '––·–', R: '·–·',
+  S: '···', T: '–', U: '··–', V: '···–', W: '·––', X: '–··–', Y: '–·––', Z: '––··',
+}
+const PALAVRAS_MORSE = ['FOGO', 'MATA', 'NORTE', 'TENDA', 'MAPA', 'CORDA', 'SOL', 'LUA', 'NO', 'SUL']
+
+function JogoMorse({ onTerminar, onCancelar }) {
+  const [palavras] = useState(() => embaralhar(PALAVRAS_MORSE).slice(0, 3))
+  const [i, setI] = useState(0)
+  const [resp, setResp] = useState('')
+  const [erros, setErros] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const [fim, setFim] = useState(false)
+  const palavra = palavras[i]
+
+  function conferir(e) {
+    e.preventDefault()
+    if (fim || aviso) return
+    const acertou = resp.trim().toUpperCase() === palavra
+    const totalErros = erros + (acertou ? 0 : 1)
+    if (!acertou) setErros(totalErros)
+    setAviso(acertou ? 'Acertou! ✅' : `Era ${palavra}`)
+    setTimeout(() => {
+      setAviso(''); setResp('')
+      if (i + 1 >= palavras.length) {
+        setFim(true)
+        onTerminar(totalErros === 0 ? 3 : totalErros === 1 ? 2 : 1)
+      } else setI(i + 1)
+    }, 1100)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {palavras.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">Decifre a palavra usando a tabela abaixo 👇</p>
+
+      <div className="bg-azul text-white rounded-2xl p-4 text-center mb-3">
+        <div className="text-2xl font-bold tracking-widest break-words leading-relaxed">
+          {palavra.split('').map((l) => MORSE[l]).join('   ')}
+        </div>
+      </div>
+
+      <form onSubmit={conferir} className="flex gap-2 mb-3">
+        <input value={resp} onChange={(e) => setResp(e.target.value)} disabled={!!aviso || fim}
+          placeholder="Qual é a palavra?" autoCapitalize="characters"
+          className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm uppercase outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+        <button type="submit" disabled={!resp.trim() || !!aviso || fim}
+          className="rounded-xl bg-azul text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
+      </form>
+      {aviso && <p className={`text-sm font-bold text-center mb-2 ${aviso.startsWith('Acertou') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
+
+      <div className="grid grid-cols-4 gap-1 text-[11px] text-slate-500">
+        {Object.entries(MORSE).map(([l, m]) => (
+          <div key={l} className="bg-slate-50 rounded px-1 py-0.5 text-center">
+            <b className="text-slate-700">{l}</b> {m}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===================== 🧭 Bússola =====================
+const ROSA = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'] // 45° cada, sentido horário
+const NOME_DIR = {
+  N: 'Norte', NE: 'Nordeste', L: 'Leste', SE: 'Sudeste',
+  S: 'Sul', SO: 'Sudoeste', O: 'Oeste', NO: 'Noroeste',
+}
+function novaBussola() {
+  const de = Math.floor(Math.random() * 8)
+  const passos = 1 + Math.floor(Math.random() * 4) // 45° a 180°
+  const horario = Math.random() < 0.5
+  const destino = ((de + (horario ? passos : -passos)) % 8 + 8) % 8
+  const erradas = embaralhar(ROSA.filter((_, k) => k !== destino)).slice(0, 3)
+  return {
+    de: ROSA[de], graus: passos * 45, horario,
+    certa: ROSA[destino], opcoes: embaralhar([ROSA[destino], ...erradas]),
+  }
+}
+
+function JogoBussola({ onTerminar, onCancelar }) {
+  const TOTAL = 6
+  const [q, setQ] = useState(() => novaBussola())
+  const [n, setN] = useState(1)
+  const [acertos, setAcertos] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const [fim, setFim] = useState(false)
+
+  function responder(dir) {
+    if (fim || aviso) return
+    const ok = dir === q.certa
+    const total = acertos + (ok ? 1 : 0)
+    if (ok) setAcertos(total)
+    setAviso(ok ? 'Isso! ✅' : `Era ${NOME_DIR[q.certa]}`)
+    setTimeout(() => {
+      setAviso('')
+      if (n >= TOTAL) {
+        setFim(true)
+        onTerminar(total >= 6 ? 3 : total >= 4 ? 2 : 1)
+      } else { setN(n + 1); setQ(novaBussola()) }
+    }, 1000)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-slate-600">Pergunta {n} de {TOTAL}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+
+      <div className="text-5xl mb-2">🧭</div>
+      <p className="text-slate-700 leading-snug mb-1">
+        Você está virado para o <b>{NOME_DIR[q.de]}</b> e gira <b>{q.graus}°</b>{' '}
+        <b>{q.horario ? 'à direita' : 'à esquerda'}</b>.
+      </p>
+      <p className="text-sm text-slate-400 mb-4">Para onde está olhando agora?</p>
+
+      <div className="grid grid-cols-2 gap-2">
+        {q.opcoes.map((d) => (
+          <motion.button key={d} whileTap={{ scale: 0.97 }} onClick={() => responder(d)} disabled={!!aviso || fim}
+            className="rounded-xl bg-slate-50 hover:bg-slate-100 py-3 font-bold text-slate-700 disabled:opacity-60">
+            {NOME_DIR[d]}
+          </motion.button>
+        ))}
+      </div>
+      {aviso && <p className={`text-sm font-bold mt-3 ${aviso.startsWith('Isso') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
+      <p className="text-xs text-slate-400 mt-3">Acertos: {acertos}</p>
+    </div>
+  )
+}
+
+// ===================== 🎯 Forca =====================
+const PALAVRAS_FORCA = [
+  'ACAMPAMENTO', 'DESBRAVADOR', 'BUSSOLA', 'FOGUEIRA', 'UNIFORME',
+  'ESPECIALIDADE', 'LANTERNA', 'MOCHILA', 'BARRACA', 'CANIVETE',
+  'CANTINA', 'BANDEIRA', 'CONSELHEIRO', 'INVESTIDURA', 'CAMINHADA',
+]
+const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+
+function JogoForca({ onTerminar, onCancelar }) {
+  const VIDAS = 6
+  const [palavra] = useState(() => PALAVRAS_FORCA[Math.floor(Math.random() * PALAVRAS_FORCA.length)])
+  const [usadas, setUsadas] = useState([])
+  const [fim, setFim] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const erradas = usadas.filter((l) => !palavra.includes(l))
+  const vidas = VIDAS - erradas.length
+
+  function tentar(l) {
+    if (fim || usadas.includes(l)) return
+    const novas = [...usadas, l]
+    setUsadas(novas)
+    const err = novas.filter((x) => !palavra.includes(x)).length
+    const ganhou = palavra.split('').every((x) => novas.includes(x))
+    if (ganhou) {
+      setFim(true); setMsg('Você descobriu! 🎉')
+      setTimeout(() => onTerminar(err <= 1 ? 3 : err <= 3 ? 2 : 1), 900)
+    } else if (err >= VIDAS) {
+      setFim(true); setMsg(`Acabaram as vidas! Era ${palavra}`)
+      setTimeout(() => onTerminar(1), 1400)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">
+          {'❤️'.repeat(Math.max(0, vidas))}{'🖤'.repeat(Math.min(VIDAS, erradas.length))}
+        </span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">Adivinhe a palavra do mundo desbravador</p>
+
+      <div className="flex flex-wrap justify-center gap-1.5 mb-3">
+        {palavra.split('').map((l, k) => (
+          <span key={k} className="w-7 h-9 border-b-2 border-slate-300 grid place-items-center text-xl font-extrabold text-azul">
+            {usadas.includes(l) || fim ? l : ''}
+          </span>
+        ))}
+      </div>
+
+      {msg && <p className={`text-sm font-bold mb-2 ${msg.startsWith('Você') ? 'text-green-600' : 'text-amber-600'}`}>{msg}</p>}
+
+      <div className="grid grid-cols-7 gap-1">
+        {ALFABETO.map((l) => {
+          const usada = usadas.includes(l)
+          const certa = usada && palavra.includes(l)
+          return (
+            <button key={l} onClick={() => tentar(l)} disabled={usada || fim}
+              className={`aspect-square rounded-lg text-sm font-extrabold ${
+                !usada ? 'bg-slate-100 text-slate-700' : certa ? 'bg-green-500 text-white' : 'bg-slate-300 text-white'
+              } disabled:opacity-70`}>
+              {l}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ===================== 🔢 Conta Rápida =====================
+function novaConta() {
+  const op = ['+', '-', '×'][Math.floor(Math.random() * 3)]
+  let a, b, r
+  if (op === '×') { a = 2 + Math.floor(Math.random() * 8); b = 2 + Math.floor(Math.random() * 8); r = a * b }
+  else if (op === '+') { a = 5 + Math.floor(Math.random() * 40); b = 5 + Math.floor(Math.random() * 40); r = a + b }
+  else { a = 12 + Math.floor(Math.random() * 40); b = 1 + Math.floor(Math.random() * 10); r = a - b }
+  // 3 alternativas erradas, todas diferentes da certa
+  const set = new Set([r])
+  while (set.size < 4) {
+    const d = r + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 6))
+    if (d >= 0) set.add(d)
+  }
+  return { a, b, op, r, opcoes: embaralhar([...set]) }
+}
+
+function JogoContas({ onTerminar, onCancelar }) {
+  const SEGUNDOS = 30
+  const [q, setQ] = useState(() => novaConta())
+  const [acertos, setAcertos] = useState(0)
+  const [tempo, setTempo] = useState(SEGUNDOS)
+  const [fim, setFim] = useState(false)
+
+  useEffect(() => {
+    if (fim) return
+    if (tempo <= 0) {
+      setFim(true)
+      setTimeout(() => onTerminar(acertos >= 12 ? 3 : acertos >= 7 ? 2 : 1), 700)
+      return
+    }
+    const t = setTimeout(() => setTempo((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [tempo, fim]) // eslint-disable-line
+
+  function responder(v) {
+    if (fim) return
+    if (v === q.r) setAcertos((x) => x + 1)
+    setQ(novaConta())
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-sm font-extrabold ${tempo <= 10 ? 'text-red-500' : 'text-slate-600'}`}>⏱️ {tempo}s</span>
+        <span className="text-sm font-semibold text-green-600">✅ {acertos}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+
+      {fim ? (
+        <div className="py-6">
+          <div className="text-5xl mb-2">🏁</div>
+          <p className="font-extrabold text-slate-800">Tempo! Você acertou {acertos}.</p>
+        </div>
+      ) : (
+        <>
+          <div className="text-4xl font-extrabold text-azul my-5">{q.a} {q.op} {q.b}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {q.opcoes.map((v) => (
+              <motion.button key={v} whileTap={{ scale: 0.96 }} onClick={() => responder(v)}
+                className="rounded-xl bg-slate-50 hover:bg-slate-100 py-4 text-xl font-extrabold text-slate-700">
+                {v}
+              </motion.button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
