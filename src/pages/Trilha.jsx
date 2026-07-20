@@ -31,7 +31,7 @@ const JOGOS = {
   contas: { nome: 'Conta Rápida', curto: 'Contas', emoji: '🔢', desc: 'Quantas contas você acerta em 30 segundos?', Comp: JogoContas },
   nos: { nome: 'Quiz dos Nós', curto: 'Nós', emoji: '🪢', desc: 'Qual nó serve pra quê? Teste seus nós e amarras', Comp: JogoNos },
   semaforo: { nome: 'Semáfora', curto: 'Semáfora', emoji: '🚩', desc: 'Leia a letra pela posição das bandeiras', Comp: JogoSemaforo },
-  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Coma e cresça sem bater na parede', Comp: JogoCobra },
+  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: JogoCobra },
   anagrama: { nome: 'Anagrama', curto: 'Anagrama', emoji: '🔤', desc: 'Desembaralhe a palavra do clube', Comp: JogoAnagrama },
 }
 
@@ -1000,11 +1000,17 @@ function JogoCobra({ onTerminar, onCancelar }) {
       setJogo((j) => {
         if (j.fim) return j
         const d = dirRef.current
-        const cab = { x: j.cobra[0].x + d.x, y: j.cobra[0].y + d.y }
-        const bateu = cab.x < 0 || cab.x >= N_COBRA || cab.y < 0 || cab.y >= N_COBRA
-          || j.cobra.some((s) => s.x === cab.x && s.y === cab.y)
-        if (bateu) return { ...j, fim: true }
+        // ATRAVESSA A PAREDE: some de um lado e volta pelo outro (o % com +N
+        // resolve o lado negativo também).
+        const cab = {
+          x: (j.cobra[0].x + d.x + N_COBRA) % N_COBRA,
+          y: (j.cobra[0].y + d.y + N_COBRA) % N_COBRA,
+        }
         const comeu = cab.x === j.comida.x && cab.y === j.comida.y
+        // Só morre batendo em SI MESMA. O rabo não conta quando não come,
+        // porque ele sai da casa no mesmo passo.
+        const corpoRisco = comeu ? j.cobra : j.cobra.slice(0, -1)
+        if (corpoRisco.some((s) => s.x === cab.x && s.y === cab.y)) return { ...j, fim: true }
         const corpo = [cab, ...j.cobra]
         if (!comeu) corpo.pop()
         return {
@@ -1021,7 +1027,7 @@ function JogoCobra({ onTerminar, onCancelar }) {
   // Acabou: entrega as estrelas
   useEffect(() => {
     if (!jogo.fim) return
-    const t = setTimeout(() => onTerminar(jogo.pontos >= 10 ? 3 : jogo.pontos >= 5 ? 2 : 1), 1000)
+    const t = setTimeout(() => onTerminar(jogo.pontos >= 15 ? 3 : jogo.pontos >= 8 ? 2 : 1), 1000)
     return () => clearTimeout(t)
   }, [jogo.fim]) // eslint-disable-line
 
