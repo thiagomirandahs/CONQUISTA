@@ -181,6 +181,31 @@ export async function lerPix() {
   const { data } = await supabase.from('config_clube').select('valor').eq('chave', 'pix').maybeSingle()
   return data?.valor || ''
 }
+// ------- Popup de aviso (a liderança escreve a mensagem que abre no app) -------
+// Guardado no config_clube (chave/valor). Se as chaves ainda não existem, o
+// upsert cria — por isso esta feature não precisa de SQL novo.
+const CHAVES_POPUP = ['popup_ativo', 'popup_titulo', 'popup_texto', 'popup_alvo']
+export async function lerConfigPopup() {
+  const { data } = await supabase.from('config_clube').select('chave,valor').in('chave', CHAVES_POPUP)
+  const m = Object.fromEntries((data || []).map((r) => [r.chave, r.valor]))
+  return {
+    ativo: m.popup_ativo === 'sim',
+    titulo: m.popup_titulo || '',
+    texto: m.popup_texto || '',
+    alvo: m.popup_alvo === 'devendo' ? 'devendo' : 'todos',
+  }
+}
+export async function salvarConfigPopup(cfg) {
+  const linhas = [
+    { chave: 'popup_ativo', valor: cfg.ativo ? 'sim' : 'nao' },
+    { chave: 'popup_titulo', valor: (cfg.titulo || '').trim() },
+    { chave: 'popup_texto', valor: (cfg.texto || '').trim() },
+    { chave: 'popup_alvo', valor: cfg.alvo === 'devendo' ? 'devendo' : 'todos' },
+  ]
+  const { error } = await supabase.from('config_clube').upsert(linhas, { onConflict: 'chave' })
+  if (error) throw new Error(error.message)
+}
+
 export async function salvarPix(valor) {
   const { error } = await supabase.from('config_clube').update({ valor: (valor || '').trim() }).eq('chave', 'pix')
   if (error) throw new Error(error.message)

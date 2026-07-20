@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
-import { enviarAviso } from '../lib/dados.js'
+import { enviarAviso, lerConfigPopup, salvarConfigPopup } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const inputClass =
@@ -82,6 +82,75 @@ export default function Avisos() {
       </form>
 
       <p className="text-center text-xs text-slate-400 mt-3">O aviso aparece no 🔔 de quem você escolher. Se o push estiver ligado, também chega no celular.</p>
+
+      <PopupAviso />
+    </div>
+  )
+}
+
+// Popup que abre NA CARA de quem entra no app. Texto livre, editado aqui.
+function PopupAviso() {
+  const [cfg, setCfg] = useState(null)
+  const [salvando, setSalvando] = useState(false)
+  const [ok, setOk] = useState(false)
+
+  useEffect(() => {
+    lerConfigPopup()
+      .then(setCfg)
+      .catch(() => setCfg({ ativo: false, titulo: '', texto: '', alvo: 'todos' }))
+  }, [])
+
+  if (!cfg) return null
+  const set = (k, v) => { setCfg((c) => ({ ...c, [k]: v })); setOk(false) }
+
+  async function salvar() {
+    setSalvando(true)
+    try { await salvarConfigPopup(cfg); setOk(true) }
+    catch (e) { alert('Não deu pra salvar: ' + (e?.message || e)) }
+    setSalvando(false)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm mt-5 space-y-3">
+      <div>
+        <h3 className="font-extrabold text-slate-800">🔔 Popup de aviso</h3>
+        <p className="text-xs text-slate-400">Abre na tela de quem entrar no app. Escreva o que quiser.</p>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" checked={cfg.ativo} onChange={(e) => set('ativo', e.target.checked)} className="w-4 h-4 accent-azul" />
+        Ligado (mostrar o popup)
+      </label>
+
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Título</label>
+        <input className={inputClass} value={cfg.titulo} onChange={(e) => set('titulo', e.target.value)} maxLength={60}
+          placeholder="Ex.: Mensalidade de julho" />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Mensagem</label>
+        <textarea rows="4" className={inputClass} value={cfg.texto} onChange={(e) => set('texto', e.target.value)} maxLength={400}
+          placeholder={'Ex.: A mensalidade é R$ 30 e vence dia 10.\nPague no PIX do clube e avise a tesouraria. 🙂'} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">Quem vê o popup</label>
+        <div className="flex gap-2">
+          {[['todos', '👥 Todo mundo'], ['devendo', '💰 Só quem está devendo']].map(([k, lbl]) => (
+            <button type="button" key={k} onClick={() => set('alvo', k)}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold border transition ${cfg.alvo === k ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>{lbl}</button>
+          ))}
+        </div>
+      </div>
+
+      {ok && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg p-3">✅ Salvo! Quem abrir o app vai ver.</div>}
+
+      <button onClick={salvar} disabled={salvando || (cfg.ativo && !cfg.texto.trim())}
+        className="w-full bg-azul text-white font-bold rounded-xl py-3 shadow disabled:opacity-60">
+        {salvando ? 'Salvando...' : 'Salvar popup'}
+      </button>
+      <p className="text-[11px] text-slate-400">
+        Aparece 1x por dia pra cada pessoa. Se você mudar o texto, ele reaparece na hora — mesmo pra quem já tinha fechado.
+      </p>
     </div>
   )
 }
