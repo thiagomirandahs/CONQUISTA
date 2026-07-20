@@ -118,6 +118,12 @@ export default function AppLayout() {
           </div>
         </header>
 
+        {profile?.teste && (
+          <div className="bg-purple-100 text-purple-800 text-xs font-semibold text-center py-1.5 px-4">
+            🧪 Modo teste — nada aqui pontua nem entra no ranking
+          </div>
+        )}
+
         <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-10">
           <AnimatePresence mode="wait">
             <motion.div

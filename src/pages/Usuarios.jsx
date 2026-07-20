@@ -4,7 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
-  lancarPontosIndividual, definirAtivoUsuario, excluirUsuario,
+  lancarPontosIndividual, definirAtivoUsuario, excluirUsuario, definirTesteUsuario,
 } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -41,6 +41,18 @@ export default function Usuarios() {
     try {
       await definirAtivoUsuario(u.id, !desativando)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: desativando ? 'inativo' : 'ativo' } : x)))
+    } catch (e) {
+      alert('Não foi possível: ' + (e?.message || e))
+    }
+  }
+
+  // Conta de teste: usa o app à vontade sem pontuar e sem entrar no ranking.
+  async function alternarTeste(u) {
+    const ligando = !u.teste
+    if (ligando && !window.confirm(`Marcar ${u.nome || 'esta conta'} como TESTE?\n\nEla para de ganhar pontos, pode repetir jogos/missões sem limite e some do ranking. Dá pra desmarcar depois.`)) return
+    try {
+      await definirTesteUsuario(u.id, ligando)
+      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, teste: ligando } : x)))
     } catch (e) {
       alert('Não foi possível: ' + (e?.message || e))
     }
@@ -125,6 +137,7 @@ export default function Usuarios() {
                     {u.nome || '(sem nome)'}
                     {u.status === 'pendente' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
                     {u.status === 'inativo' && <span className="ml-2 text-[10px] text-slate-500 font-normal bg-slate-100 rounded px-1.5 py-0.5">desativado</span>}
+                    {u.teste && <span className="ml-2 text-[10px] text-purple-700 font-normal bg-purple-100 rounded px-1.5 py-0.5">🧪 teste</span>}
                     {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
                       <span className="ml-2 text-[10px] text-orange-600 font-normal">sem unidade</span>
                     )}
@@ -150,6 +163,12 @@ export default function Usuarios() {
                   className={`text-xs rounded-lg px-3 py-1.5 font-semibold ${u.status === 'ativo' ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
                   {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
                 </button>
+                {ehDiretoria && (
+                  <button onClick={() => alternarTeste(u)}
+                    className={`text-xs rounded-lg px-3 py-1.5 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {u.teste ? '🧪 Sair do teste' : '🧪 Teste'}
+                  </button>
+                )}
                 {ehDiretoria && u.id !== profile?.id && (
                   <button onClick={() => setExcluindo(u)}
                     className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-1.5 font-semibold">🗑️ Excluir</button>

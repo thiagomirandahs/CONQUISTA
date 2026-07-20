@@ -12,7 +12,8 @@ export async function carregarRanking() {
     supabase.from('unidades').select('*').order('nome'),
     // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
     // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
-    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
+    // '*' (não lista colunas) pra não quebrar antes de rodar o SQL do modo teste.
+    supabase.from('profiles').select('*').eq('status', 'ativo').neq('papel', 'pais'),
     // Soma no BANCO (RPC) pra não esbarrar no limite silencioso de 1000 linhas do Supabase.
     supabase.rpc('ranking_totais'),
   ])
@@ -35,12 +36,15 @@ export async function carregarRanking() {
     })
   }
 
+  // Conta de TESTE não entra no ranking nem puxa a média da unidade.
+  const pessoas = (ps || []).filter((p) => !p.teste)
+
   const corUni = Object.fromEntries((us || []).map((u) => [u.id, u.cor || '#1e3a8a']))
   const nomeUni = Object.fromEntries((us || []).map((u) => [u.id, u.nome]))
 
   const unidades = (us || [])
     .map((u) => {
-      const membros = (ps || [])
+      const membros = pessoas
         // Só desbravadores e conselheiros entram na média do time. Assim, um membro
         // promovido a líder (instrutor/tesoureiro/diretoria) que ainda tenha unidade
         // antiga NÃO puxa mais a média pra baixo.
@@ -56,7 +60,7 @@ export async function carregarRanking() {
     // Ranking de unidades: maior pontuação total primeiro (desempate por nome) → 1º, 2º, 3º...
     .sort((a, b) => b.pontos - a.pontos || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
 
-  const individual = (ps || [])
+  const individual = pessoas
     .map((p) => ({
       id: p.id, nome: p.nome, foto: p.foto, papel: p.papel,
       unidade: nomeUni[p.unidade_id] || '', cor: corUni[p.unidade_id] || '#1e3a8a',
@@ -568,6 +572,20 @@ export async function definirAtivoUsuario(userId, ativo) {
   const { data, error } = await supabase.from('profiles')
     .update({ status: ativo ? 'ativo' : 'inativo' }).eq('id', userId).select('id,status')
   if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
+  return data[0]
+}
+
+// Liga/desliga o MODO TESTE de uma conta: não pontua, não trava no 1x/dia e
+// não aparece no ranking. Serve pra testar o app sem sujar nada.
+export async function definirTesteUsuario(userId, teste) {
+  const { data, error } = await supabase.from('profiles')
+    .update({ teste: !!teste }).eq('id', userId).select('id,teste')
+  if (error) {
+    throw new Error(/teste|column|schema cache/i.test(error.message)
+      ? 'Rode o SQL supabase/2026-07-15-modo-teste.sql primeiro.'
+      : error.message)
+  }
   if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
   return data[0]
 }
