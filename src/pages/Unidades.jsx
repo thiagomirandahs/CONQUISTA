@@ -136,7 +136,7 @@ export default function Unidades() {
               initial={{ y: 60, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
               className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
-              <div className="text-white relative overflow-hidden" style={{ backgroundColor: sel.cor }}>
+              <div className="text-white relative overflow-hidden shrink-0" style={{ backgroundColor: sel.cor }}>
                 {sel.bandeira && <img src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                 {sel.bandeira && <div className="absolute inset-0 bg-black/45" />}
                 <div className="relative p-5">
@@ -159,12 +159,13 @@ export default function Unidades() {
                 </div>
               </div>
               {(sel.lema || sel.grito) && (
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 space-y-1">
+                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 space-y-1 shrink-0">
                   {sel.lema && <p className="text-sm text-slate-600"><span className="font-bold text-slate-700">Lema:</span> <em>"{sel.lema}"</em></p>}
                   {sel.grito && <p className="text-sm text-slate-600 whitespace-pre-line"><span className="font-bold text-slate-700">Grito:</span> {sel.grito}</p>}
                 </div>
               )}
-              <div className="p-3 overflow-y-auto">
+              {/* Só a LISTA rola; cabeçalho e botões ficam fixos (sem cortar nada) */}
+              <div className="p-3 overflow-y-auto flex-1 min-h-0">
                 <p className="text-xs font-semibold text-slate-400 px-2 mb-1">MEMBROS</p>
                 {sel.membros.length === 0 ? (
                   <p className="text-sm text-slate-400 px-2 py-4 text-center">Nenhum membro aprovado nesta unidade ainda.</p>
@@ -181,7 +182,7 @@ export default function Unidades() {
                 ))}
               </div>
               {ehAdmin && (
-                <div className="p-3 border-t border-slate-100 space-y-2">
+                <div className="p-3 border-t border-slate-100 space-y-2 shrink-0">
                   <button onClick={() => setPontosPara(sel)}
                     className="w-full text-sm text-white bg-azul hover:bg-azul-claro rounded-xl py-2.5 font-semibold">
                     🏆 Lançar pontos pra unidade

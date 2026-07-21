@@ -140,8 +140,8 @@ export default function Ranking() {
             <motion.div onClick={(e) => e.stopPropagation()}
               initial={{ y: 60, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
-              <div className="p-6 text-center text-white relative" style={{ backgroundColor: card.item.cor }}>
+              className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+              <div className="p-6 text-center text-white relative shrink-0" style={{ backgroundColor: card.item.cor }}>
                 <button onClick={() => setCard(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
                 <div className="flex justify-center mb-2">
                   <Avatar foto={card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl" />
@@ -149,7 +149,7 @@ export default function Ranking() {
                 <h3 className="text-xl font-extrabold">{card.item.nome}</h3>
                 <p className="text-white/90 text-sm">{tituloDivertido(card.pos)}</p>
               </div>
-              <div className="p-5">
+              <div className="p-5 overflow-y-auto flex-1 min-h-0">
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <Stat rotulo="Posição" valor={`${card.pos + 1}º`} />
                   <Stat rotulo="Pontos" valor={<Contador value={valor(card.item)} />} destaque />
