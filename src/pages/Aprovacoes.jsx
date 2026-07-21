@@ -73,28 +73,34 @@ export default function Aprovacoes() {
             {pendentes.map((p) => (
               <motion.div key={p.id} layout
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -50 }}
-                className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-azul/10 text-azul grid place-items-center font-extrabold shrink-0">
-                  {p.nome?.[0]?.toUpperCase() || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 truncate">{p.nome || 'Sem nome'}</div>
-                  <div className="text-xs text-slate-400">
-                    {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
+                className="bg-white rounded-2xl p-4 shadow-sm">
+                {/* Linha 1: avatar + dados (largura toda pro nome/unidade/data) */}
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-azul/10 text-azul grid place-items-center font-extrabold shrink-0">
+                    {p.nome?.[0]?.toUpperCase() || '?'}
                   </div>
-                  {p.cargo && (
-                    <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
-                    </span>
-                  )}
-                  {ehLideranca(p.cargo) && (
-                    <div className="text-[10px] text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-800 truncate">{p.nome || 'Sem nome'}</div>
+                    <div className="text-xs text-slate-400">
+                      {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
+                    </div>
+                    {p.cargo && (
+                      <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
+                      </span>
+                    )}
+                    {ehLideranca(p.cargo) && (
+                      <div className="text-[10px] text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
+                    )}
+                  </div>
                 </div>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => decidir(p.id, 'rejeitado')}
-                  className="text-xs rounded-lg px-3 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 shrink-0">Recusar</motion.button>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => decidir(p.id, 'ativo')}
-                  className="text-xs rounded-lg px-3 py-2 bg-azul text-white font-semibold hover:bg-azul-claro shrink-0">Aprovar</motion.button>
+                {/* Linha 2: botões largos, fáceis de acertar no celular */}
+                <div className="flex gap-2 mt-3">
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => decidir(p.id, 'rejeitado')}
+                    className="flex-1 text-sm rounded-xl py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 font-semibold">Recusar</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => decidir(p.id, 'ativo')}
+                    className="flex-1 text-sm rounded-xl py-2.5 bg-azul text-white font-semibold hover:bg-azul-claro">Aprovar</motion.button>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>

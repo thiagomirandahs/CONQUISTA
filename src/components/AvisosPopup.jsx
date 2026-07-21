@@ -56,7 +56,7 @@ export default function AvisosPopup() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="p-5 text-white" style={{ background: 'linear-gradient(135deg,#b45309,#f59e0b)' }}>
               <div className="text-xs font-semibold opacity-90 mb-1">📣 Aviso do clube</div>
               <p className="text-lg font-extrabold leading-tight">{aviso.titulo || 'Atenção!'}</p>

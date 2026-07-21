@@ -383,7 +383,7 @@ function ModalCatalogo({ lista, onFechar, onMudou }) {
                     </div>
                     {c.descricao && <div className="text-xs text-slate-500 mt-0.5">{c.descricao}</div>}
                   </div>
-                  <button onClick={() => setEditando(c)} className="text-xs text-azul font-semibold shrink-0">Editar</button>
+                  <button onClick={() => setEditando(c)} className="text-xs text-azul font-semibold shrink-0 p-3 -m-3">Editar</button>
                 </div>
               ))}
             </div>

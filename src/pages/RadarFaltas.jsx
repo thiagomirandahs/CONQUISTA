@@ -63,17 +63,19 @@ export default function RadarFaltas() {
         <div className="space-y-2">
           <p className="text-xs text-slate-400 mb-1">Faltaram 2 ou mais reuniões seguidas:</p>
           {lista.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3">
-              <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-10 h-10" textSize="text-base" />
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-slate-800 text-sm truncate">{p.nome || 'Desbravador'}</div>
-                <div className="text-[11px] text-red-500 font-semibold">❌ {p.faltas} faltas seguidas · última reunião: {fmtData(p.ultima)}</div>
+            <div key={p.id} className="bg-white rounded-2xl p-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-10 h-10" textSize="text-base" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-800 text-sm truncate">{p.nome || 'Desbravador'}</div>
+                  <div className="text-[11px] text-red-500 font-semibold">❌ {p.faltas} faltas seguidas · última reunião: {fmtData(p.ultima)}</div>
+                </div>
               </div>
               {enviados[p.id] ? (
-                <span className="text-xs text-green-600 font-bold shrink-0">Enviado ✓</span>
+                <div className="text-center text-xs text-green-600 font-bold mt-2 py-2 bg-green-50 rounded-xl">Enviado ✓</div>
               ) : (
-                <motion.button whileTap={{ scale: 0.94 }} onClick={() => chamar(p)}
-                  className="text-xs bg-azul text-white rounded-lg px-3 py-2 font-semibold shrink-0">🧡 Sentimos sua falta</motion.button>
+                <motion.button whileTap={{ scale: 0.96 }} onClick={() => chamar(p)}
+                  className="w-full text-sm bg-azul text-white rounded-xl py-2.5 font-semibold mt-2">🧡 Sentimos sua falta</motion.button>
               )}
             </div>
           ))}

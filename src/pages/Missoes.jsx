@@ -130,7 +130,7 @@ export default function Missoes() {
                 <div className="grid grid-cols-2 gap-2">
                   {missao.opcoes.map((op, i) => (
                     <button key={i} type="button" onClick={() => setResposta(i)}
-                      className={`rounded-xl py-2 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>
+                      className={`rounded-xl py-3 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>
                       {op}
                     </button>
                   ))}

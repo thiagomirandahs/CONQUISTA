@@ -150,7 +150,7 @@ export default function Mensalidades() {
                   {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
                 </span>
                 <button onClick={() => alternar(d)}
-                  className={`text-xs font-bold rounded-lg px-3 py-1.5 transition-colors ${pago ? 'bg-green-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
+                  className={`text-xs font-bold rounded-lg px-3.5 py-2.5 transition-colors ${pago ? 'bg-green-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
                   {pago ? '✅ Pago' : '⏳ Pendente'}
                 </button>
               </div>

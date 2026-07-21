@@ -279,7 +279,7 @@ function JogoMemoria({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Tentativas: {jogadas}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <div className="grid grid-cols-4 gap-2 select-none">
         {cartas.map((c, i) => {
@@ -371,7 +371,7 @@ function JogoSequencia({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Rodada {rodada}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3 h-4">{mostrando ? 'Observe a sequência…' : fim ? 'Fim! 🎉' : 'Sua vez — repita!'}</p>
       <div className="grid grid-cols-3 gap-3 max-w-[300px] mx-auto">
@@ -473,7 +473,7 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">{achadas.length}/{palavras.length} achadas</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3">{fim ? 'Achou todas! 🎉' : 'Toque na 1ª e na última letra da palavra.'}</p>
       <div className="grid gap-1 mx-auto max-w-[320px]" style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}>
@@ -553,7 +553,7 @@ function JogoDeslizante({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Movimentos: {mov}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3">{fim ? 'Resolvido! 🎉' : 'Deslize as peças até ficar 1, 2, 3…'}</p>
       <div className="grid grid-cols-3 gap-2 max-w-[260px] mx-auto">
@@ -611,7 +611,7 @@ function JogoMorse({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {palavras.length}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3">Decifre a palavra usando a tabela abaixo 👇</p>
 
@@ -711,7 +711,7 @@ function JogoBussola({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Pergunta {n} de {TOTAL}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
 
       <RosaDosVentos de={q.de} />
@@ -774,7 +774,7 @@ function JogoForca({ onTerminar, onCancelar }) {
         <span className="text-sm font-semibold text-slate-600">
           {'❤️'.repeat(Math.max(0, vidas))}{'🖤'.repeat(Math.min(VIDAS, erradas.length))}
         </span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3">Adivinhe a palavra do mundo desbravador</p>
 
@@ -857,7 +857,7 @@ function JogoContas({ onTerminar, onCancelar }) {
       <div className="flex items-center justify-between mb-2">
         <span className={`text-sm font-extrabold ${tempo <= 10 ? 'text-red-500' : 'text-slate-600'}`}>⏱️ {tempo}s</span>
         <span className="text-sm font-semibold text-green-600">✅ {acertos}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       {/* Barra do tempo esvaziando (fica vermelha na reta final) */}
       <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
@@ -930,7 +930,7 @@ function JogoNos({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Pergunta {n + 1} de {rodadas.length}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <div className="text-center text-4xl mb-2">🪢</div>
       <p className="text-slate-700 font-semibold text-center mb-4">{q.p}</p>
@@ -1010,7 +1010,7 @@ function JogoSemaforo({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Letra {n} de {TOTAL}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-2">Que letra as bandeiras estão fazendo? (A a G)</p>
 
@@ -1103,7 +1103,7 @@ function JogoCobra({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-green-600">🍎 {jogo.pontos}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
 
       {jogo.fim ? (
@@ -1187,7 +1187,7 @@ function JogoAnagrama({ onTerminar, onCancelar }) {
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {rodadas.length}</span>
-        <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-slate-400 mb-3">Desembaralhe a palavra do clube 🏕️</p>
 

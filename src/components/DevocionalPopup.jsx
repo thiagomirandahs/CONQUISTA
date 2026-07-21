@@ -45,7 +45,7 @@ export default function DevocionalPopup() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="p-5 text-white" style={{ background: 'linear-gradient(135deg,#1e3a8a,#4338ca)' }}>
               <div className="text-xs font-semibold opacity-90 mb-1">📖 Devocional do dia</div>
               <p className="text-[15px] leading-snug">"{versiculo.texto}"</p>
@@ -58,7 +58,7 @@ export default function DevocionalPopup() {
                   <div className="grid grid-cols-2 gap-2">
                     {versiculo.opcoes.map((op, i) => (
                       <button key={i} type="button" onClick={() => setResposta(i)}
-                        className={`rounded-xl py-2 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>
+                        className={`rounded-xl py-3 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>
                         {op}
                       </button>
                     ))}

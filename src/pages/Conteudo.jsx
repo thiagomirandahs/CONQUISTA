@@ -187,7 +187,7 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
           {ehVers ? (
             <>
               <Campo label="Versículo">
-                <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)} placeholder="Ex.: Porque Deus amou o mundo de tal maneira..." />
+                <textarea rows="3" maxLength={400} className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)} placeholder="Ex.: Porque Deus amou o mundo de tal maneira..." />
               </Campo>
               <Campo label="Referência">
                 <input className={inputClass} value={form.referencia} onChange={(e) => set('referencia', e.target.value)} placeholder="Ex.: João 3:16" />
@@ -235,7 +235,7 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={addOpcao} className="text-xs text-azul font-semibold mt-2">+ opção</button>
+              <button type="button" onClick={addOpcao} className="inline-block text-xs text-azul font-semibold mt-1 py-3 pr-4">+ opção</button>
             </Campo>
           )}
 

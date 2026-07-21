@@ -182,7 +182,7 @@ export default function Apontamentos() {
                 <div className="flex gap-1.5 mb-2">
                   {[['naHora', 'Na hora'], ['atrasado', 'Atrasado'], ['faltou', 'Faltou']].map(([k, lbl]) => (
                     <button key={k} onClick={() => setMarca(d.id, 'presenca', k)}
-                      className={`flex-1 rounded-lg py-1.5 text-xs font-semibold border ${m.presenca === k ? (k === 'faltou' ? 'bg-red-500 text-white border-red-500' : 'bg-azul text-white border-azul') : 'bg-white text-slate-500 border-slate-200'}`}>
+                      className={`flex-1 rounded-lg py-3 text-xs font-semibold border ${m.presenca === k ? (k === 'faltou' ? 'bg-red-500 text-white border-red-500' : 'bg-azul text-white border-azul') : 'bg-white text-slate-500 border-slate-200'}`}>
                       {lbl}
                     </button>
                   ))}
@@ -190,7 +190,7 @@ export default function Apontamentos() {
                 <div className="flex flex-wrap gap-1.5">
                   {[['biblia', '📖 Bíblia'], ['uniforme', '👕 Uniforme'], ['igreja', '⛪ Igreja'], ['atividade', '⭐ Atividade']].map(([k, lbl]) => (
                     <button key={k} disabled={faltou} onClick={() => setMarca(d.id, k, !m[k])}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium border transition ${m[k] && !faltou ? 'bg-green-500 text-white border-green-500' : 'bg-white text-slate-500 border-slate-200'} ${faltou ? 'opacity-40' : ''}`}>
+                      className={`rounded-full px-3.5 py-2.5 text-xs font-medium border transition ${m[k] && !faltou ? 'bg-green-500 text-white border-green-500' : 'bg-white text-slate-500 border-slate-200'} ${faltou ? 'opacity-40' : ''}`}>
                       {lbl}
                     </button>
                   ))}

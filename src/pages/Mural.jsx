@@ -199,7 +199,7 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
       <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-full overflow-y-auto">
         <h3 className="text-lg font-extrabold text-slate-800 mb-1">Adicionar foto</h3>
         <p className="text-sm text-slate-500 mb-4">Álbum: <strong>{categoria.icon} {categoria.nome}</strong></p>
 

@@ -147,31 +147,31 @@ export default function Usuarios() {
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <select value={u.papel} onChange={(e) => trocarCargo(u, e.target.value)}
-                  className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-slate-700 outline-none">
+                  className="text-xs rounded-lg border border-slate-300 px-2 py-2 bg-white text-slate-700 outline-none">
                   {Object.entries(rotuloPapel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
                 <select value={u.unidade_id || ''} onChange={(e) => trocarUnidade(u, e.target.value)}
-                  className="text-xs rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-slate-700 outline-none max-w-[9.5rem]">
+                  className="text-xs rounded-lg border border-slate-300 px-2 py-2 bg-white text-slate-700 outline-none max-w-[9.5rem]">
                   <option value="">🏳️ Sem unidade</option>
                   {unidades.map((un) => <option key={un.id} value={un.id}>🏠 {un.nome}</option>)}
                 </select>
                 <button onClick={() => setPontosPara(u)}
-                  className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">🎖️ Pontos</button>
+                  className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
                 <button onClick={() => setAlvo(u)}
-                  className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-1.5 font-semibold">🔑 Senha</button>
+                  className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
                 <button onClick={() => alternarAtivo(u)}
-                  className={`text-xs rounded-lg px-3 py-1.5 font-semibold ${u.status === 'ativo' ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
+                  className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
                   {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
                 </button>
                 {ehDiretoria && (
                   <button onClick={() => alternarTeste(u)}
-                    className={`text-xs rounded-lg px-3 py-1.5 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
+                    className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
                     {u.teste ? '🧪 Sair do teste' : '🧪 Teste'}
                   </button>
                 )}
                 {ehDiretoria && u.id !== profile?.id && (
                   <button onClick={() => setExcluindo(u)}
-                    className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-1.5 font-semibold">🗑️ Excluir</button>
+                    className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-2 font-semibold">🗑️ Excluir</button>
                 )}
               </div>
             </div>
@@ -221,7 +221,7 @@ function ModalPontos({ usuario, lancadoPor, onFechar }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
         <h3 className="text-lg font-extrabold text-slate-800 mb-1">🎖️ Pontos pra {(usuario.nome || '').split(' ')[0]}</h3>
         <p className="text-sm text-slate-500 mb-4">Pontos individuais (entram no ranking). Use número negativo pra tirar.</p>
 
@@ -284,7 +284,7 @@ function ModalReset({ usuario, onFechar }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
         <h3 className="text-lg font-extrabold text-slate-800 mb-1">🔑 Resetar senha</h3>
         <p className="text-sm text-slate-500 mb-3">Nova senha para <strong>{usuario.nome}</strong>.</p>
 
@@ -359,7 +359,7 @@ function ModalExcluir({ usuario, onFechar, onExcluido }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
         <h3 className="text-lg font-extrabold text-red-600 mb-1">🗑️ Excluir {usuario.nome || 'usuário'}</h3>
         <p className="text-sm text-slate-600 mb-3">Isso é <strong>permanente</strong>. Vai apagar junto:</p>
         <ul className="text-sm text-slate-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-3 space-y-0.5">
