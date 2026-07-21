@@ -115,7 +115,18 @@ export default function Trilha() {
       ) : jogando ? (
         (() => {
           const Jogo = JOGOS[jogoAtual]?.Comp || JogoMemoria
-          return <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+          // No PC o jogo fica centralizado num cartão, sem esticar a tela toda
+          return (
+            <motion.div key={jogoAtual} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+              className="max-w-md mx-auto">
+              <div className="text-center mb-2">
+                <span className="inline-flex items-center gap-2 bg-white rounded-full shadow-sm px-4 py-1.5 text-sm font-extrabold text-slate-700">
+                  {JOGOS[jogoAtual]?.emoji} {JOGOS[jogoAtual]?.nome}
+                </span>
+              </div>
+              <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+            </motion.div>
+          )
         })()
       ) : (
         <div>
@@ -149,23 +160,26 @@ export default function Trilha() {
                   Cada jogo vale 1x por dia. O 1º do dia dá <b>+10</b>; os outros, <b>+5</b>.
                 </p>
               </div>
-              <div className="space-y-2">
+              <div className="grid sm:grid-cols-2 gap-2.5">
                 {jogosAtivos.map((chave) => {
                   const j = JOGOS[chave]
                   if (!j) return null
                   const jogado = jogadosHoje.includes(chave)
                   return (
-                    <motion.button key={chave} disabled={jogado} whileTap={jogado ? undefined : { scale: 0.98 }}
+                    <motion.button key={chave} disabled={jogado}
+                      whileTap={jogado ? undefined : { scale: 0.97 }} whileHover={jogado ? undefined : { y: -3 }}
                       onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
-                      className={`w-full rounded-2xl p-4 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-slate-50 opacity-70' : 'bg-white hover:bg-slate-50'}`}>
-                      <span className="text-3xl shrink-0">{j.emoji}</span>
+                      className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-slate-50 opacity-70' : 'bg-white'}`}>
+                      <span className={`w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0 ${jogado ? 'bg-slate-100' : 'bg-gradient-to-br from-azul/10 to-dourado/20'}`}>
+                        {j.emoji}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-800">{j.nome}</div>
-                        <div className="text-xs text-slate-400">{j.desc}</div>
+                        <div className="font-bold text-slate-800 leading-tight">{j.nome}</div>
+                        <div className="text-[11px] text-slate-400 leading-snug mt-0.5">{j.desc}</div>
                       </div>
                       {jogado
-                        ? <span className="text-green-600 font-extrabold shrink-0 text-sm">✓ jogado</span>
-                        : <span className="text-azul font-extrabold shrink-0">Jogar (+{proxPontos})</span>}
+                        ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
+                        : <span className="bg-azul text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">+{proxPontos}</span>}
                     </motion.button>
                   )
                 })}
@@ -262,18 +276,24 @@ function JogoMemoria({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Tentativas: {jogadas}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 select-none">
         {cartas.map((c, i) => {
-          const aberta = viradas.includes(i) || achadas.includes(c.emoji)
+          const achada = achadas.includes(c.emoji)
+          const aberta = viradas.includes(i) || achada
           return (
-            <motion.button key={c.id} onClick={() => clicar(i)} whileTap={{ scale: 0.95 }}
-              className={`aspect-square rounded-xl text-2xl grid place-items-center border-2 transition-colors ${aberta ? 'bg-azul/10 border-azul' : 'bg-slate-100 border-slate-200'}`}>
-              {aberta ? c.emoji : '❓'}
+            <motion.button key={c.id} onClick={() => clicar(i)} whileTap={{ scale: 0.92 }}
+              animate={achada ? { scale: [1, 1.12, 1] } : {}}
+              className={`aspect-square rounded-xl text-3xl grid place-items-center border-2 transition-colors shadow-sm ${
+                achada ? 'bg-green-50 border-green-400'
+                : aberta ? 'bg-white border-azul'
+                : 'bg-gradient-to-br from-azul to-azul-claro border-transparent'
+              }`}>
+              {aberta ? c.emoji : <span className="text-white/80 text-xl font-extrabold">?</span>}
             </motion.button>
           )
         })}
@@ -348,7 +368,7 @@ function JogoSequencia({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Rodada {rodada}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -357,10 +377,13 @@ function JogoSequencia({ onTerminar, onCancelar }) {
       <div className="grid grid-cols-3 gap-3 max-w-[300px] mx-auto">
         {SIMBOLOS.map((s, i) => (
           <motion.button key={i} onClick={() => tocar(i)} disabled={mostrando || fim}
-            animate={{ scale: aceso === i ? 1.06 : 1, opacity: aceso === i ? 1 : 0.7 }}
+            animate={{ scale: aceso === i ? 1.08 : 1, opacity: aceso === i ? 1 : 0.75 }}
             transition={{ duration: 0.12 }}
-            className="aspect-square rounded-2xl text-4xl grid place-items-center border-2 border-white shadow"
-            style={{ backgroundColor: aceso === i ? s.cor : s.cor + '33' }}>
+            className="aspect-square rounded-2xl text-4xl grid place-items-center border-2 border-white shadow select-none"
+            style={{
+              backgroundColor: aceso === i ? s.cor : s.cor + '33',
+              boxShadow: aceso === i ? `0 0 24px ${s.cor}` : undefined,
+            }}>
             {s.e}
           </motion.button>
         ))}
@@ -447,7 +470,7 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">{achadas.length}/{palavras.length} achadas</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -527,7 +550,7 @@ function JogoDeslizante({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Movimentos: {mov}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -585,7 +608,7 @@ function JogoMorse({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {palavras.length}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -636,6 +659,31 @@ function novaBussola() {
   }
 }
 
+// Rosa dos ventos com a agulha apontando pra direção inicial da pergunta
+function RosaDosVentos({ de }) {
+  const ang = ROSA.indexOf(de) * 45
+  return (
+    <div className="relative w-40 h-40 mx-auto mb-3 rounded-full border-4 border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-inner select-none">
+      {ROSA.map((d, i) => (
+        <div key={d} className="absolute inset-0" style={{ transform: `rotate(${i * 45}deg)` }}>
+          <div className="absolute top-1.5 inset-x-0 text-center">
+            <span className={`inline-block text-[10px] font-extrabold ${i % 2 === 0 ? 'text-slate-600' : 'text-slate-300'}`}
+              style={{ transform: `rotate(${-i * 45}deg)` }}>
+              {d}
+            </span>
+          </div>
+        </div>
+      ))}
+      <motion.div className="absolute inset-0" animate={{ rotate: ang }}
+        transition={{ type: 'spring', stiffness: 120, damping: 14 }}>
+        <div className="absolute top-6 inset-x-0 text-center text-red-500 text-xl leading-none">▲</div>
+        <div className="absolute bottom-6 inset-x-0 text-center text-slate-300 text-xl leading-none">▼</div>
+      </motion.div>
+      <div className="absolute left-1/2 top-1/2 w-3 h-3 -ml-1.5 -mt-1.5 rounded-full bg-azul ring-4 ring-azul/20" />
+    </div>
+  )
+}
+
 function JogoBussola({ onTerminar, onCancelar }) {
   const TOTAL = 6
   const [q, setQ] = useState(() => novaBussola())
@@ -660,16 +708,16 @@ function JogoBussola({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Pergunta {n} de {TOTAL}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
       </div>
 
-      <div className="text-5xl mb-2">🧭</div>
+      <RosaDosVentos de={q.de} />
       <p className="text-slate-700 leading-snug mb-1">
-        Você está virado para o <b>{NOME_DIR[q.de]}</b> e gira <b>{q.graus}°</b>{' '}
-        <b>{q.horario ? 'à direita' : 'à esquerda'}</b>.
+        A agulha mostra: você está virado para o <b>{NOME_DIR[q.de]}</b>.<br />
+        Agora gire <b>{q.graus}°</b> <b>{q.horario ? 'à direita ↻' : 'à esquerda ↺'}</b>.
       </p>
       <p className="text-sm text-slate-400 mb-4">Para onde está olhando agora?</p>
 
@@ -721,7 +769,7 @@ function JogoForca({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">
           {'❤️'.repeat(Math.max(0, vidas))}{'🖤'.repeat(Math.min(VIDAS, erradas.length))}
@@ -730,12 +778,18 @@ function JogoForca({ onTerminar, onCancelar }) {
       </div>
       <p className="text-xs text-slate-400 mb-3">Adivinhe a palavra do mundo desbravador</p>
 
-      <div className="flex flex-wrap justify-center gap-1.5 mb-3">
-        {palavra.split('').map((l, k) => (
-          <span key={k} className="w-7 h-9 border-b-2 border-slate-300 grid place-items-center text-xl font-extrabold text-azul">
-            {usadas.includes(l) || fim ? l : ''}
-          </span>
-        ))}
+      <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+        {palavra.split('').map((l, k) => {
+          const mostra = usadas.includes(l) || fim
+          return (
+            <motion.span key={k} animate={mostra ? { scale: [0.6, 1.15, 1] } : {}}
+              className={`w-7 h-10 rounded-lg grid place-items-center text-xl font-extrabold ${
+                mostra ? 'bg-azul/10 text-azul border-b-4 border-azul' : 'bg-slate-100 border-b-4 border-slate-300'
+              }`}>
+              {mostra ? l : ''}
+            </motion.span>
+          )
+        })}
       </div>
 
       {msg && <p className={`text-sm font-bold mb-2 ${msg.startsWith('Você') ? 'text-green-600' : 'text-amber-600'}`}>{msg}</p>}
@@ -799,11 +853,16 @@ function JogoContas({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
         <span className={`text-sm font-extrabold ${tempo <= 10 ? 'text-red-500' : 'text-slate-600'}`}>⏱️ {tempo}s</span>
         <span className="text-sm font-semibold text-green-600">✅ {acertos}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
+      </div>
+      {/* Barra do tempo esvaziando (fica vermelha na reta final) */}
+      <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
+        <div className={`h-full rounded-full transition-all duration-1000 ease-linear ${tempo <= 10 ? 'bg-red-500' : 'bg-azul'}`}
+          style={{ width: `${(tempo / SEGUNDOS) * 100}%` }} />
       </div>
 
       {fim ? (
@@ -868,7 +927,7 @@ function JogoNos({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-slate-600">Pergunta {n + 1} de {rodadas.length}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -948,7 +1007,7 @@ function JogoSemaforo({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Letra {n} de {TOTAL}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -1041,7 +1100,7 @@ function JogoCobra({ onTerminar, onCancelar }) {
   const ehCabeca = (x, y) => jogo.cobra[0].x === x && jogo.cobra[0].y === y
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-green-600">🍎 {jogo.pontos}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>
@@ -1054,26 +1113,30 @@ function JogoCobra({ onTerminar, onCancelar }) {
         </div>
       ) : (
         <>
-          <div className="grid gap-px bg-slate-200 rounded-xl overflow-hidden mx-auto max-w-[280px] mb-3"
-            style={{ gridTemplateColumns: `repeat(${N_COBRA}, 1fr)` }}>
-            {Array.from({ length: N_COBRA * N_COBRA }, (_, i) => {
-              const x = i % N_COBRA, y = Math.floor(i / N_COBRA)
-              const comida = jogo.comida.x === x && jogo.comida.y === y
-              return (
-                <div key={i} className={`aspect-square ${
-                  ehCabeca(x, y) ? 'bg-green-600' : ehCobra(x, y) ? 'bg-green-400' : comida ? 'bg-red-500' : 'bg-white'
-                }`} />
-              )
-            })}
+          <div className="bg-emerald-950 rounded-2xl p-1.5 mx-auto max-w-[300px] mb-3 shadow-inner select-none">
+            <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(${N_COBRA}, 1fr)` }}>
+              {Array.from({ length: N_COBRA * N_COBRA }, (_, i) => {
+                const x = i % N_COBRA, y = Math.floor(i / N_COBRA)
+                const comida = jogo.comida.x === x && jogo.comida.y === y
+                return (
+                  <div key={i} className={`aspect-square rounded-[3px] ${
+                    ehCabeca(x, y) ? 'bg-lime-300 shadow-[0_0_8px_rgba(163,230,53,0.8)]'
+                    : ehCobra(x, y) ? 'bg-lime-500'
+                    : comida ? 'bg-red-500 rounded-full animate-pulse'
+                    : 'bg-emerald-900/70'
+                  }`} />
+                )
+              })}
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto">
+          <div className="grid grid-cols-3 gap-2 max-w-[220px] mx-auto select-none">
             <div />
-            <button onClick={() => virar(0, -1)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">↑</button>
+            <button onClick={() => virar(0, -1)} className="rounded-2xl bg-slate-100 active:bg-azul active:text-white py-4 text-2xl font-bold shadow-sm">↑</button>
             <div />
-            <button onClick={() => virar(-1, 0)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">←</button>
-            <button onClick={() => virar(0, 1)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">↓</button>
-            <button onClick={() => virar(1, 0)} className="rounded-xl bg-slate-100 py-3 text-xl font-bold">→</button>
+            <button onClick={() => virar(-1, 0)} className="rounded-2xl bg-slate-100 active:bg-azul active:text-white py-4 text-2xl font-bold shadow-sm">←</button>
+            <button onClick={() => virar(0, 1)} className="rounded-2xl bg-slate-100 active:bg-azul active:text-white py-4 text-2xl font-bold shadow-sm">↓</button>
+            <button onClick={() => virar(1, 0)} className="rounded-2xl bg-slate-100 active:bg-azul active:text-white py-4 text-2xl font-bold shadow-sm">→</button>
           </div>
         </>
       )}
@@ -1121,7 +1184,7 @@ function JogoAnagrama({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm text-center">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-slate-600">Palavra {i + 1} de {rodadas.length}</span>
         <button onClick={onCancelar} className="text-xs text-slate-400">Cancelar</button>

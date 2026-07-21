@@ -42,11 +42,11 @@ export default function Gestao() {
           <p className="text-sm text-slate-400">Seu perfil não tem acesso a estas áreas.</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {disp.map((f) => (
             <motion.div key={f.to} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }}>
-              <Link to={f.to} className="block bg-white rounded-2xl p-5 shadow-sm">
-                <div className="text-3xl mb-2">{f.icon}</div>
+              <Link to={f.to} className="block bg-white rounded-2xl p-5 shadow-sm h-full">
+                <div className="w-12 h-12 rounded-2xl grid place-items-center text-2xl mb-2 bg-gradient-to-br from-azul/10 to-dourado/20">{f.icon}</div>
                 <div className="font-bold text-slate-800">{f.titulo}</div>
                 <div className="text-sm text-slate-400">{f.desc}</div>
               </Link>

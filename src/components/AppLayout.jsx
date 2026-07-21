@@ -21,6 +21,15 @@ const TEM_GESTAO = ['conselheiro', 'instrutor', 'diretoria', 'tesoureiro']
 // Telas que o responsável (papel=pais) pode abrir. As demais o mandam pro Meu
 // Filho — reforço de UX; a proteção de dados de verdade é o RLS no banco.
 const CAMINHOS_PAI = ['/meu-filho', '/perfil']
+// Barra inferior do celular: as 5 telas que a criançada mais usa, sempre à mão.
+// O resto continua no menu ☰.
+const ABAS_RODAPE = [
+  { to: '/ranking', label: 'Ranking', icon: '🏆' },
+  { to: '/desafios', label: 'Desafios', icon: '🏁' },
+  { to: '/trilha', label: 'Jogos', icon: '🎮' },
+  { to: '/missoes', label: 'Missões', icon: '🎯' },
+  { to: '/mural', label: 'Mural', icon: '📸' },
+]
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
 export default function AppLayout() {
@@ -124,7 +133,7 @@ export default function AppLayout() {
           </div>
         )}
 
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-10">
+        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-28 lg:pb-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -138,6 +147,31 @@ export default function AppLayout() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* ===== Barra inferior (celular): as 5 telas mais usadas ===== */}
+      {!ehPai && (
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-slate-200"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="grid grid-cols-5 max-w-lg mx-auto">
+            {ABAS_RODAPE.map((aba) => (
+              <NavLink key={aba.to} to={aba.to}
+                className={({ isActive }) =>
+                  `flex flex-col items-center gap-0.5 pt-2 pb-1.5 transition-colors ${isActive ? 'text-azul' : 'text-slate-400'}`
+                }>
+                {({ isActive }) => (
+                  <>
+                    <motion.span animate={{ scale: isActive ? 1.15 : 1, y: isActive ? -1 : 0 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                      className="text-xl leading-none">{aba.icon}</motion.span>
+                    <span className={`text-[10px] leading-none ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{aba.label}</span>
+                    <span className={`h-1 w-6 rounded-full ${isActive ? 'bg-dourado' : 'bg-transparent'}`} />
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
 
       {/* ===== Menu deslizante (celular) — abre no ☰ ===== */}
       <AnimatePresence>
