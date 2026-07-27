@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
@@ -12,6 +12,15 @@ const CATEGORIAS = [
   { nome: 'Culto', cor: '#6366f1', icon: '🙏' },
   { nome: 'Serviço', cor: '#10b981', icon: '🤝' },
   { nome: 'Feira', cor: '#ef4444', icon: '🎪' },
+  { nome: 'Ateliê', cor: '#9333ea', icon: '🎨' },
+]
+
+// Tema do dia do Ateliê (gira sozinho, um por dia)
+const TEMAS_ATELIE = [
+  'A arca de Noé', 'Um acampamento do clube', 'Davi e Golias', 'A criação do mundo',
+  'Sua unidade em ação', 'Daniel na cova dos leões', 'Uma fogueira com amigos',
+  'O que você quer ser quando crescer', 'Jesus acalmando a tempestade',
+  'A bandeira do clube', 'Um animal da criação', 'Moisés abrindo o mar', 'Sua família',
 ]
 
 export default function Mural() {
@@ -21,6 +30,7 @@ export default function Mural() {
   const [categoria, setCategoria] = useState(null) // categoria aberta (álbum)
   const [lightbox, setLightbox] = useState(null)   // foto ampliada
   const [upload, setUpload] = useState(false)      // modal de envio
+  const [desenhando, setDesenhando] = useState(false) // ateliê de desenho
 
   useEffect(() => {
     let vivo = true
@@ -60,6 +70,12 @@ export default function Mural() {
                 </h2>
                 <p className="text-sm text-slate-500">{fotosDe(categoria.nome).length} foto(s) neste álbum</p>
               </div>
+              {categoria.nome === 'Ateliê' && (
+                <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setDesenhando(true)}
+                  className="text-sm text-white rounded-xl px-4 py-2 font-semibold shadow-sm shrink-0 bg-purple-600">
+                  🎨 Desenhar
+                </motion.button>
+              )}
               <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setUpload(true)}
                 className="text-sm text-white rounded-xl px-4 py-2 font-semibold shadow-sm shrink-0"
                 style={{ backgroundColor: categoria.cor }}>+ Foto</motion.button>
@@ -162,7 +178,139 @@ export default function Mural() {
           <UploadFoto categoria={categoria} onEnviar={aoEnviar} onFechar={() => setUpload(false)} />
         )}
       </AnimatePresence>
+
+      {/* Ateliê: desenhar com o dedo e publicar no álbum 🎨 */}
+      <AnimatePresence>
+        {desenhando && (
+          <ModalDesenho
+            onFechar={() => setDesenhando(false)}
+            onEnviar={async ({ file, legenda }) => {
+              await aoEnviar({ file, legenda })
+              setDesenhando(false)
+            }} />
+        )}
+      </AnimatePresence>
     </div>
+  )
+}
+
+// Ateliê de desenho: canvas de traço livre (dedo), cores, tamanhos, desfazer.
+// O desenho vira uma imagem e entra no álbum 🎨 Ateliê como uma foto normal.
+const CORES_ATELIE = ['#1e3a8a', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0ea5e9', '#78350f', '#000000', '#ffffff']
+const TAM_CANVAS = 600
+
+function ModalDesenho({ onFechar, onEnviar }) {
+  const canvasRef = useRef(null)
+  const atualRef = useRef(null) // traço em andamento (fora do estado = fluido)
+  const [tracos, setTracos] = useState([])
+  const [cor, setCor] = useState('#1e3a8a')
+  const [larg, setLarg] = useState(8)
+  const [legenda, setLegenda] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const tema = TEMAS_ATELIE[Math.floor(Date.now() / 86400000) % TEMAS_ATELIE.length]
+
+  function desenharTudo() {
+    const c = canvasRef.current?.getContext('2d')
+    if (!c) return
+    c.fillStyle = '#ffffff'
+    c.fillRect(0, 0, TAM_CANVAS, TAM_CANVAS)
+    c.lineCap = 'round'
+    c.lineJoin = 'round'
+    for (const t of [...tracos, atualRef.current].filter(Boolean)) {
+      c.strokeStyle = t.cor
+      c.lineWidth = t.larg
+      c.beginPath()
+      t.pts.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)))
+      if (t.pts.length === 1) c.lineTo(t.pts[0].x + 0.1, t.pts[0].y) // toque único vira ponto
+      c.stroke()
+    }
+  }
+  useEffect(() => { desenharTudo() }, [tracos]) // eslint-disable-line
+
+  function pos(e) {
+    const r = canvasRef.current.getBoundingClientRect()
+    return { x: (e.clientX - r.left) * (TAM_CANVAS / r.width), y: (e.clientY - r.top) * (TAM_CANVAS / r.height) }
+  }
+  function comecar(e) {
+    e.preventDefault()
+    canvasRef.current.setPointerCapture?.(e.pointerId)
+    atualRef.current = { cor, larg, pts: [pos(e)] }
+    desenharTudo()
+  }
+  function mover(e) {
+    if (!atualRef.current) return
+    atualRef.current.pts.push(pos(e))
+    desenharTudo()
+  }
+  function soltar() {
+    if (!atualRef.current) return
+    setTracos((t) => [...t, atualRef.current])
+    atualRef.current = null
+  }
+
+  function enviar() {
+    if (!tracos.length || enviando) return
+    setEnviando(true)
+    canvasRef.current.toBlob(async (blob) => {
+      try {
+        const file = new File([blob], 'desenho.png', { type: 'image/png' })
+        await onEnviar({ file, legenda: legenda.trim() || `🎨 ${tema}` })
+      } catch (err) {
+        alert('Não deu pra enviar: ' + (err?.message || err))
+        setEnviando(false)
+      }
+    }, 'image/png')
+  }
+
+  return (
+    <motion.div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={enviando ? undefined : onFechar}>
+      <motion.div onClick={(e) => e.stopPropagation()}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-4 sm:p-5 max-h-full overflow-y-auto">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-lg font-extrabold text-slate-800">🎨 Ateliê</h3>
+          <button onClick={onFechar} disabled={enviando} className="text-xs text-slate-400 p-3 -m-3">Fechar</button>
+        </div>
+        <p className="text-xs text-slate-500 mb-3">Tema de hoje: <b>{tema}</b> (mas pode desenhar o que quiser!)</p>
+
+        <canvas ref={canvasRef} width={TAM_CANVAS} height={TAM_CANVAS}
+          onPointerDown={comecar} onPointerMove={mover} onPointerUp={soltar} onPointerLeave={soltar}
+          className="w-full aspect-square rounded-2xl border-2 border-slate-200 bg-white"
+          style={{ touchAction: 'none' }} />
+
+        <div className="flex items-center gap-1.5 mt-3 flex-wrap select-none">
+          {CORES_ATELIE.map((c) => (
+            <button key={c} onClick={() => setCor(c)}
+              className={`w-8 h-8 rounded-full border-2 shrink-0 ${cor === c ? 'border-azul scale-110' : 'border-slate-200'} transition-transform`}
+              style={{ backgroundColor: c }} title={c === '#ffffff' ? 'Borracha' : ''} />
+          ))}
+        </div>
+        <div className="flex items-center gap-2 mt-2 select-none">
+          {[4, 8, 16].map((l) => (
+            <button key={l} onClick={() => setLarg(l)}
+              className={`w-10 h-10 rounded-xl grid place-items-center ${larg === l ? 'bg-azul/10 ring-2 ring-azul' : 'bg-slate-50'}`}>
+              <span className="rounded-full bg-slate-700" style={{ width: l, height: l }} />
+            </button>
+          ))}
+          <div className="flex-1" />
+          <button onClick={() => setTracos((t) => t.slice(0, -1))} disabled={!tracos.length}
+            className="text-sm font-bold text-slate-600 bg-slate-100 rounded-xl px-3 py-2.5 disabled:opacity-40">↩️ Desfazer</button>
+          <button onClick={() => setTracos([])} disabled={!tracos.length}
+            className="text-sm font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2.5 disabled:opacity-40">🗑️ Limpar</button>
+        </div>
+
+        <input value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
+          placeholder={`Legenda (ex.: ${tema})`}
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mt-3" />
+
+        <button onClick={enviar} disabled={!tracos.length || enviando}
+          className="w-full mt-3 bg-purple-600 text-white font-extrabold rounded-xl py-3 disabled:opacity-50">
+          {enviando ? 'Publicando…' : '🎨 Publicar no mural'}
+        </button>
+      </motion.div>
+    </motion.div>
   )
 }
 
