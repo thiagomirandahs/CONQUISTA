@@ -1952,6 +1952,8 @@ function JogoReflexo({ onTerminar, onCancelar }) {
           <p className="font-extrabold text-slate-800 text-lg">Você chegou ao nível {nivel}!</p>
           {resultado === 'erro' ? (
             <p className="text-xs text-slate-400 mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+          ) : resultado?.fora ? (
+            <p className="text-sm font-bold text-slate-500 mt-1">Boa! 🙂 (a liderança joga, mas fica fora do ranking)</p>
           ) : resultado ? (
             <p className={`text-sm font-bold mt-1 ${resultado.melhorou ? 'text-green-600' : 'text-slate-500'}`}>
               {resultado.melhorou ? '🚀 NOVO recorde seu da semana!' : `Seu recorde da semana: ${resultado.recorde}`}
@@ -1959,7 +1961,9 @@ function JogoReflexo({ onTerminar, onCancelar }) {
           ) : (
             <p className="text-xs text-slate-400 mt-1">Salvando recorde…</p>
           )}
-          <p className="text-[11px] text-slate-400 mt-2">O maior recorde da semana ganha <b>+20 pontos</b> no domingo!</p>
+          {!resultado?.fora && (
+            <p className="text-[11px] text-slate-400 mt-2">O maior recorde da semana ganha <b>+20 pontos</b> no domingo!</p>
+          )}
           <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
             <button onClick={onCancelar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Sair</button>
             <button onClick={deNovo} className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5">🔁 De novo</button>

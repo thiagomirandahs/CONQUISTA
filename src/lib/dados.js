@@ -721,6 +721,19 @@ export async function registrarRecorde(jogo, pontos) {
   return data || { recorde: pontos, melhorou: false }
 }
 
+// Interruptor: só desbravadores disputam os recordes (liderança fica de fora
+// do ranking e do prêmio). A regra de verdade é aplicada no servidor.
+export async function lerReflexoSoDesbravador() {
+  const { data } = await supabase.from('config_clube').select('valor')
+    .eq('chave', 'reflexo_so_desbravador').maybeSingle()
+  return (data?.valor ?? 'sim') === 'sim'
+}
+export async function salvarReflexoSoDesbravador(so) {
+  const { error } = await supabase.from('config_clube')
+    .upsert([{ chave: 'reflexo_so_desbravador', valor: so ? 'sim' : 'nao' }], { onConflict: 'chave' })
+  if (error) throw new Error(error.message)
+}
+
 // Liderança: apaga o recorde DA SEMANA de alguém (ex.: valor forjado).
 // A pessoa pode cravar um novo jogando de verdade.
 export async function excluirRecorde(usuarioId, jogo) {

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
-import { carregarJogosTrilha, alternarJogoTrilha } from '../lib/dados.js'
+import {
+  carregarJogosTrilha, alternarJogoTrilha,
+  lerReflexoSoDesbravador, salvarReflexoSoDesbravador,
+} from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -45,6 +48,8 @@ export default function JogosTrilha() {
         <p className="text-sm text-slate-500">Ligue os jogos que a criançada pode jogar</p>
       </div>
 
+      <SoDesbravador />
+
       {carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : erro || lista.length === 0 ? (
@@ -70,6 +75,46 @@ export default function JogosTrilha() {
           <p className="text-[11px] text-slate-400 mt-2">Se você desligar todos, a criançada ainda joga o Jogo da Memória (o clássico).</p>
         </div>
       )}
+    </div>
+  )
+}
+
+// Interruptor: só desbravadores disputam os recordes do ⚡ Reflexo.
+// A liderança continua jogando — só não entra no ranking nem ganha os +20.
+function SoDesbravador() {
+  const [ligado, setLigado] = useState(null)
+  const [salvando, setSalvando] = useState(false)
+
+  useEffect(() => { lerReflexoSoDesbravador().then(setLigado).catch(() => setLigado(null)) }, [])
+  if (ligado === null) return null
+
+  async function alternar() {
+    const novo = !ligado
+    setSalvando(true)
+    try { await salvarReflexoSoDesbravador(novo); setLigado(novo) }
+    catch (e) {
+      alert(/config_clube|does not exist|schema cache/i.test(e?.message || '')
+        ? 'Rode o SQL supabase/2026-07-27-reflexo-so-desbravador.sql primeiro.'
+        : 'Não foi possível: ' + (e?.message || e))
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 mb-4">
+      <span className="text-3xl shrink-0">⚡</span>
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-slate-800">Reflexo: só desbravadores disputam</div>
+        <div className="text-xs text-slate-400">
+          {ligado
+            ? 'A liderança joga, mas fica fora do ranking e do prêmio de +20'
+            : 'Todo mundo disputa — inclusive conselheiro, instrutor e diretoria'}
+        </div>
+      </div>
+      <motion.button whileTap={{ scale: 0.9 }} onClick={alternar} disabled={salvando}
+        className={`relative w-14 h-8 rounded-full shrink-0 transition-colors disabled:opacity-60 ${ligado ? 'bg-green-500' : 'bg-slate-300'}`}>
+        <motion.span layout className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow ${ligado ? 'right-1' : 'left-1'}`} />
+      </motion.button>
     </div>
   )
 }
