@@ -713,6 +713,21 @@ export async function carregarJogosTrilha() {
   const { data } = await supabase.from('jogos_trilha').select('*').order('ordem')
   return data || []
 }
+// ⚡ Modo sem fim: registra a corrida e o banco guarda só o MELHOR da semana.
+// Devolve { recorde, melhorou }. Repetição é livre — não dá +10/+5 (sem farm).
+export async function registrarRecorde(jogo, pontos) {
+  const { data, error } = await supabase.rpc('registrar_recorde', { p_jogo: jogo, p_pontos: pontos })
+  if (error) throw new Error(error.message)
+  return data || { recorde: pontos, melhorou: false }
+}
+
+// Ranking de recordes da semana (top 20). O maior ganha +20 no domingo.
+export async function carregarRecordesSemana(jogo) {
+  const { data, error } = await supabase.rpc('recordes_semana', { p_jogo: jogo })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
 export async function alternarJogoTrilha(chave, ativo) {
   const { data, error } = await supabase.from('jogos_trilha').update({ ativo }).eq('chave', chave).select('chave')
   if (error) throw new Error(error.message)

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana } from '../lib/dados.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -39,7 +39,10 @@ const JOGOS = {
   termo: { nome: 'Termo do Clube', curto: 'Termo', emoji: '🟩', desc: 'Descubra a palavra de 5 letras em 6 tentativas', Comp: JogoTermo },
   proximo: { nome: 'Qual é o Próximo?', curto: 'Próximo', emoji: '➡️', desc: 'Complete a sequência lógica', Comp: JogoProximo },
   velha: { nome: 'Jogo da Velha', curto: 'Velha', emoji: '⭕', desc: 'Melhor de 3 contra o app — você é o ❌', Comp: JogoVelha },
+  reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexo },
 }
+// Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
+const ARCADE = new Set(['reflexo'])
 
 export default function Trilha() {
   const { profile } = useAuth()
@@ -97,7 +100,9 @@ export default function Trilha() {
   // → bloqueia tudo (senão a criança joga e só leva o erro no fim). Depois do SQL,
   // 'feito' só é true quando 'hoje' tem itens, então isto nunca dispara à toa.
   const servidorAntigo = prog.feito && jogadosHoje.length === 0
-  const semJogos = servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c))
+  // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
+  const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
+    && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
   const proxPontos = jogadosHoje.length === 0 ? 10 : 5
 
   return (
@@ -170,12 +175,12 @@ export default function Trilha() {
                 {jogosAtivos.map((chave) => {
                   const j = JOGOS[chave]
                   if (!j) return null
-                  const jogado = jogadosHoje.includes(chave)
+                  const jogado = jogadosHoje.includes(chave) && !ARCADE.has(chave)
                   return (
                     <motion.button key={chave} disabled={jogado}
                       whileTap={jogado ? undefined : { scale: 0.97 }} whileHover={jogado ? undefined : { y: -3 }}
                       onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
-                      className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-slate-50 opacity-70' : 'bg-white'}`}>
+                      className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-slate-50 opacity-70' : 'bg-white'} ${ARCADE.has(chave) ? 'ring-2 ring-dourado' : ''}`}>
                       <span className={`w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0 ${jogado ? 'bg-slate-100' : 'bg-gradient-to-br from-azul/10 to-dourado/20'}`}>
                         {j.emoji}
                       </span>
@@ -183,7 +188,9 @@ export default function Trilha() {
                         <div className="font-bold text-slate-800 leading-tight">{j.nome}</div>
                         <div className="text-[11px] text-slate-400 leading-snug mt-0.5">{j.desc}</div>
                       </div>
-                      {jogado
+                      {ARCADE.has(chave)
+                        ? <span className="bg-dourado text-azul font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">🚀 Recorde</span>
+                        : jogado
                         ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
                         : <span className="bg-azul text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">+{proxPontos}</span>}
                     </motion.button>
@@ -201,9 +208,18 @@ export default function Trilha() {
 // Placar por jogo: chips no topo trocam entre "Geral" e cada jogo.
 function RankingTrilha({ dados, carregando, meuId }) {
   const [jogo, setJogo] = useState('geral')
+  const [recordes, setRecordes] = useState(null) // ranking dos jogos sem fim
   const top = ['🥇', '🥈', '🥉']
   const abas = [['geral', '🏆', 'Geral'], ...Object.entries(JOGOS).map(([k, j]) => [k, j.emoji, j.curto])]
   const lista = (dados && dados[jogo]) || []
+  const ehArcade = ARCADE.has(jogo)
+
+  useEffect(() => {
+    if (!ehArcade) return
+    setRecordes(null)
+    carregarRecordesSemana(jogo).then(setRecordes).catch(() => setRecordes([]))
+  }, [jogo]) // eslint-disable-line
+
   return (
     <div>
       <div className="flex gap-1.5 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
@@ -215,7 +231,36 @@ function RankingTrilha({ dados, carregando, meuId }) {
         ))}
       </div>
 
-      {carregando ? (
+      {ehArcade ? (
+        recordes === null ? (
+          <p className="text-slate-400 text-sm">Carregando...</p>
+        ) : recordes.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+            <div className="text-4xl mb-2">⚡</div>
+            <p className="font-semibold text-slate-700">Nenhum recorde essa semana ainda</p>
+            <p className="text-sm text-slate-400">Jogue sem limite e crave o seu!</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-slate-400 mb-2">⚡ Recordes da SEMANA — o maior ganha <b>+20 pontos</b> no domingo!</p>
+            <div className="bg-white rounded-2xl shadow-sm p-2">
+              {recordes.map((r, i) => {
+                const eu = r.id === meuId
+                return (
+                  <div key={r.id} className={`flex items-center gap-3 px-2 py-2.5 rounded-xl ${eu ? 'bg-azul/5' : ''}`}>
+                    <span className="w-6 text-center font-extrabold text-slate-400">{top[i] || i + 1}</span>
+                    <Avatar foto={r.foto} nome={r.nome || '?'} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slate-800 text-sm truncate">{r.nome || 'Desbravador'}{eu && ' (você)'}</div>
+                    </div>
+                    <span className="font-extrabold text-dourado shrink-0">⚡ {r.pontos}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )
+      ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : lista.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
@@ -1804,6 +1849,120 @@ function JogoVelha({ onTerminar, onCancelar }) {
         ))}
       </div>
       <p className="text-[11px] text-slate-400 mt-3">Melhor de 3. Vitória vale 2 pontos e empate vale 1 — some 4+ pra fazer 3⭐.</p>
+    </div>
+  )
+}
+
+// ===================== ⚡ Reflexo (modo SEM FIM) =====================
+// Toque no alvo certo antes do tempo acabar. Cada acerto = +1 nível; o tempo
+// encurta e a grade cresce. Errou ou estourou o tempo = fim. SEM limite de
+// jogadas (não dá +10/+5) — a corrida vira RECORDE da semana; o maior ganha
+// +20 automático no domingo.
+const EMOJIS_REFLEXO = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
+
+function JogoReflexo({ onTerminar, onCancelar }) {
+  const [nivel, setNivel] = useState(0)
+  const [alvo, setAlvo] = useState(null)
+  const [grade, setGrade] = useState([])
+  const [rodadaId, setRodadaId] = useState(0) // muda a cada rodada (reinicia o timer)
+  const [fim, setFim] = useState(false)
+  const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
+  const timerRef = useRef(null)
+
+  const tempo = Math.max(900, 2600 - nivel * 60) // ms pra acertar (encurta por nível)
+
+  function novaRodada(nv) {
+    const tam = nv < 8 ? 4 : nv < 20 ? 6 : 9
+    const itens = embaralhar(EMOJIS_REFLEXO).slice(0, tam)
+    setGrade(itens)
+    setAlvo(itens[Math.floor(Math.random() * itens.length)])
+    setRodadaId((r) => r + 1)
+  }
+  useEffect(() => { novaRodada(0) }, []) // eslint-disable-line
+
+  // Estourou o tempo = fim de jogo
+  useEffect(() => {
+    if (fim || alvo === null) return
+    timerRef.current = setTimeout(() => encerrar(nivel), tempo)
+    return () => clearTimeout(timerRef.current)
+  }, [rodadaId, fim]) // eslint-disable-line
+
+  function tocar(e) {
+    if (fim) return
+    clearTimeout(timerRef.current)
+    if (e === alvo) {
+      const nv = nivel + 1
+      setNivel(nv)
+      novaRodada(nv)
+    } else {
+      encerrar(nivel)
+    }
+  }
+
+  async function encerrar(pontos) {
+    if (fim) return
+    setFim(true)
+    try {
+      setResultado(await registrarRecorde('reflexo', pontos))
+    } catch {
+      setResultado('erro') // offline/SQL não rodado: a corrida não vira recorde
+    }
+  }
+
+  function deNovo() {
+    setNivel(0)
+    setFim(false)
+    setResultado(null)
+    novaRodada(0)
+  }
+
+  const cols = grade.length <= 4 ? 2 : 3
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-extrabold text-slate-600">⚡ Nível {nivel}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Sair</button>
+      </div>
+
+      {fim ? (
+        <div className="py-4">
+          <div className="text-5xl mb-2">🏁</div>
+          <p className="font-extrabold text-slate-800 text-lg">Você chegou ao nível {nivel}!</p>
+          {resultado === 'erro' ? (
+            <p className="text-xs text-slate-400 mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+          ) : resultado ? (
+            <p className={`text-sm font-bold mt-1 ${resultado.melhorou ? 'text-green-600' : 'text-slate-500'}`}>
+              {resultado.melhorou ? '🚀 NOVO recorde seu da semana!' : `Seu recorde da semana: ${resultado.recorde}`}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400 mt-1">Salvando recorde…</p>
+          )}
+          <p className="text-[11px] text-slate-400 mt-2">O maior recorde da semana ganha <b>+20 pontos</b> no domingo!</p>
+          <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
+            <button onClick={onCancelar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Sair</button>
+            <button onClick={deNovo} className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5">🔁 De novo</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-slate-700 font-bold mb-2">Toque no <span className="text-3xl align-middle">{alvo}</span></p>
+          {/* Barra do tempo da rodada (encolhe até zerar) */}
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-[280px] mx-auto mb-3">
+            <motion.div key={rodadaId} initial={{ scaleX: 1 }} animate={{ scaleX: 0 }}
+              transition={{ duration: tempo / 1000, ease: 'linear' }}
+              className="h-full bg-azul rounded-full origin-left" />
+          </div>
+          <div className="grid gap-2 mx-auto max-w-[280px] select-none" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+            {grade.map((e) => (
+              <motion.button key={e + rodadaId} whileTap={{ scale: 0.92 }} onClick={() => tocar(e)}
+                className="aspect-square rounded-2xl bg-slate-50 hover:bg-slate-100 grid place-items-center text-4xl shadow-sm">
+                {e}
+              </motion.button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-3">Sem limite de jogadas — cada corrida pode virar seu recorde da semana. 🚀</p>
+        </>
+      )}
     </div>
   )
 }
