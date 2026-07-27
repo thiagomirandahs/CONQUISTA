@@ -1888,9 +1888,10 @@ function JogoReflexo({ onTerminar, onCancelar }) {
   const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
   const timerRef = useRef(null)
 
-  // Mais tempo por alvo (pedido do dono: tava rápido demais) — a dificuldade
-  // vem da GRADE crescer: mais itens pra procurar, não menos tempo pra pensar.
-  const tempo = Math.max(1400, 3500 - nivel * 50) // 3,5s no início; piso 1,4s
+  // Calibragem (dono): tem que dar pra passar de 100 jogando de verdade.
+  // Começa em 4s, aperta só 25ms por nível e NUNCA fica abaixo de 2s (piso no
+  // nível 80). A dificuldade dos níveis altos é a constância + a grade de 12.
+  const tempo = Math.max(2000, 4000 - nivel * 25)
 
   function novaRodada(nv) {
     const tam = nv < 6 ? 4 : nv < 14 ? 6 : nv < 25 ? 9 : 12
