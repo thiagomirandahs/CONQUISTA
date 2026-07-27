@@ -34,6 +34,10 @@ const JOGOS = {
   cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: JogoCobra },
   anagrama: { nome: 'Anagrama', curto: 'Anagrama', emoji: '🔤', desc: 'Desembaralhe a palavra do clube', Comp: JogoAnagrama },
   minado: { nome: 'Campo Minado', curto: 'Minado', emoji: '💣', desc: 'Abra o campo sem pisar nas minas', Comp: JogoCampoMinado },
+  mudou: { nome: 'O Que Mudou?', curto: 'Mudou', emoji: '👀', desc: 'Memorize a grade e diga o que sumiu', Comp: JogoMudou },
+  hanoi: { nome: 'Torre de Hanói', curto: 'Hanói', emoji: '🗼', desc: 'Leve os discos pro último pino em poucos movimentos', Comp: JogoHanoi },
+  termo: { nome: 'Termo do Clube', curto: 'Termo', emoji: '🟩', desc: 'Descubra a palavra de 5 letras em 6 tentativas', Comp: JogoTermo },
+  proximo: { nome: 'Qual é o Próximo?', curto: 'Próximo', emoji: '➡️', desc: 'Complete a sequência lógica', Comp: JogoProximo },
 }
 
 export default function Trilha() {
@@ -1343,6 +1347,346 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
         ))}
       </div>
       <p className="text-[11px] text-slate-400 mt-2">O número mostra quantas minas tem nas casas vizinhas.</p>
+    </div>
+  )
+}
+
+// ===================== 👀 O Que Mudou? (memória) =====================
+// Memoriza a grade por alguns segundos; um item vira ❓ e a criança diz qual era.
+const POOL_MUDOU = ['🔥', '⛺', '🧭', '🪢', '📖', '🥾', '🎒', '🔦', '🍎', '🌲', '🐍', '🦅', '⭐', '🌙', '☀️', '🚩', '🛶', '🪓', '🧣', '💧']
+const TAMANHOS_MUDOU = [4, 6, 6, 8, 9]
+const COLS_MUDOU = { 4: 2, 6: 3, 8: 4, 9: 3 }
+
+function rodadaMudou(n) {
+  const itens = embaralhar(POOL_MUDOU).slice(0, n)
+  const alvo = Math.floor(Math.random() * n)
+  const fora = embaralhar(POOL_MUDOU.filter((e) => !itens.includes(e))).slice(0, 3)
+  return { itens, alvo, opcoes: embaralhar([itens[alvo], ...fora]) }
+}
+
+function JogoMudou({ onTerminar, onCancelar }) {
+  const [n, setN] = useState(0)
+  const [rod, setRod] = useState(() => rodadaMudou(TAMANHOS_MUDOU[0]))
+  const [fase, setFase] = useState('olhar') // olhar | responder
+  const [acertos, setAcertos] = useState(0)
+  const [aviso, setAviso] = useState('')
+
+  // Tempo de memorizar cresce um pouco com o tamanho da grade
+  useEffect(() => {
+    if (fase !== 'olhar') return
+    const t = setTimeout(() => setFase('responder'), 2500 + rod.itens.length * 250)
+    return () => clearTimeout(t)
+  }, [fase, rod])
+
+  function responder(op) {
+    if (fase !== 'responder' || aviso) return
+    const certo = rod.itens[rod.alvo]
+    const ok = op === certo
+    const tot = acertos + (ok ? 1 : 0)
+    if (ok) setAcertos(tot)
+    setAviso(ok ? 'Boa memória! ✅' : `Era ${certo}`)
+    setTimeout(() => {
+      setAviso('')
+      if (n + 1 >= TAMANHOS_MUDOU.length) {
+        onTerminar(tot >= 5 ? 3 : tot >= 3 ? 2 : 1)
+      } else {
+        const nx = n + 1
+        setN(nx)
+        setRod(rodadaMudou(TAMANHOS_MUDOU[nx]))
+        setFase('olhar')
+      }
+    }, 1200)
+  }
+
+  const cols = COLS_MUDOU[rod.itens.length] || 3
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Rodada {n + 1} de {TAMANHOS_MUDOU.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3 h-4">
+        {fase === 'olhar' ? '👀 Memorize os itens…' : aviso || 'Qual item estava na casa ❓?'}
+      </p>
+
+      <div className="grid gap-2 mx-auto max-w-[260px] mb-4 select-none" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        {rod.itens.map((e, i) => (
+          <div key={i} className={`aspect-square rounded-xl grid place-items-center text-3xl ${
+            fase === 'responder' && i === rod.alvo ? 'bg-azul/10 border-2 border-azul text-azul font-extrabold' : 'bg-slate-50'
+          }`}>
+            {fase === 'olhar' ? e : i === rod.alvo ? '❓' : e}
+          </div>
+        ))}
+      </div>
+
+      {fase === 'responder' && (
+        <div className="grid grid-cols-4 gap-2">
+          {rod.opcoes.map((op) => (
+            <motion.button key={op} whileTap={{ scale: 0.94 }} onClick={() => responder(op)} disabled={!!aviso}
+              className="rounded-xl bg-slate-50 hover:bg-slate-100 py-3 text-2xl disabled:opacity-60">
+              {op}
+            </motion.button>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-slate-400 mt-3">Acertos: {acertos}</p>
+    </div>
+  )
+}
+
+// ===================== 🗼 Torre de Hanói (lógica) =====================
+// 4 discos, mínimo 15 movimentos. Toque num pino pra pegar o disco de cima e
+// noutro pra soltar (nunca disco grande sobre pequeno).
+const HANOI_DISCOS = 4
+const HANOI_MINIMO = 15
+const HANOI_COR = ['', 'bg-red-400', 'bg-amber-400', 'bg-green-500', 'bg-azul']
+
+function JogoHanoi({ onTerminar, onCancelar }) {
+  const [pinos, setPinos] = useState(() => [[4, 3, 2, 1], [], []]) // fim do array = topo
+  const [sel, setSel] = useState(null)
+  const [mov, setMov] = useState(0)
+  const [erro, setErro] = useState(false)
+  const [fim, setFim] = useState(false)
+
+  function tocar(p) {
+    if (fim) return
+    if (sel === null) {
+      if (pinos[p].length) setSel(p)
+      return
+    }
+    if (sel === p) { setSel(null); return }
+    const disco = pinos[sel][pinos[sel].length - 1]
+    const topoDestino = pinos[p][pinos[p].length - 1]
+    if (topoDestino && topoDestino < disco) {
+      // não pode: grande sobre pequeno (pisca em vermelho)
+      setErro(true)
+      setTimeout(() => setErro(false), 450)
+      setSel(null)
+      return
+    }
+    const novo = pinos.map((x) => [...x])
+    novo[sel].pop()
+    novo[p].push(disco)
+    const m = mov + 1
+    setPinos(novo)
+    setMov(m)
+    setSel(null)
+    if (novo[2].length === HANOI_DISCOS) {
+      setFim(true)
+      setTimeout(() => onTerminar(m <= HANOI_MINIMO ? 3 : m <= 22 ? 2 : 1), 1000)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Movimentos: {mov} <span className="text-slate-400">(mínimo: {HANOI_MINIMO})</span></span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
+      </div>
+      <p className={`text-xs mb-3 h-4 font-semibold ${erro ? 'text-red-500' : fim ? 'text-green-600' : 'text-slate-400'}`}>
+        {erro ? 'Não pode: disco grande sobre pequeno!' : fim ? `Conseguiu em ${mov} movimentos! 🎉` : 'Leve todos os discos pro 3º pino 👉'}
+      </p>
+
+      <div className="flex items-end justify-center gap-2 select-none mb-1">
+        {pinos.map((pino, p) => (
+          <button key={p} onClick={() => tocar(p)}
+            className={`relative flex-1 max-w-[110px] h-36 flex flex-col-reverse items-center pb-1 rounded-xl transition-colors ${
+              sel === p ? 'bg-azul/10 ring-2 ring-azul' : 'bg-slate-50'
+            }`}>
+            <div className="absolute bottom-1 top-4 left-1/2 -ml-[3px] w-1.5 bg-slate-300 rounded-full" />
+            {pino.map((d, i) => (
+              <div key={d}
+                className={`relative z-10 h-4 rounded-full mb-0.5 shadow-sm ${HANOI_COR[d]} ${
+                  sel === p && i === pino.length - 1 ? 'ring-2 ring-white -translate-y-0.5' : ''
+                }`}
+                style={{ width: `${26 + d * 16}px` }} />
+            ))}
+          </button>
+        ))}
+      </div>
+      <div className="h-2 bg-slate-300 rounded-full max-w-[350px] mx-auto" />
+      <p className="text-[11px] text-slate-400 mt-3">Toque num pino pra pegar o disco de cima; toque noutro pra soltar.</p>
+    </div>
+  )
+}
+
+// ===================== 🟩 Termo do Clube (lógica) =====================
+// Estilo Termo/Wordle: 5 letras, 6 tentativas, palavras do mundo desbravador
+// (sem acento/ç: LENÇO = LENCO). Verde = certa no lugar; amarelo = existe.
+const PALAVRAS_TERMO = ['TENDA', 'CORDA', 'LENCO', 'TRIBO', 'JESUS', 'GRACA', 'ANJOS', 'AMIGO',
+  'UNIAO', 'HONRA', 'SERVO', 'TERRA', 'MUNDO', 'CANTO', 'AGUIA', 'FESTA']
+const TECLADO_TERMO = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
+
+function avaliarTermo(tent, alvo) {
+  const res = Array(5).fill('cinza')
+  const sobras = {}
+  for (let i = 0; i < 5; i++) {
+    if (tent[i] === alvo[i]) res[i] = 'verde'
+    else sobras[alvo[i]] = (sobras[alvo[i]] || 0) + 1
+  }
+  for (let i = 0; i < 5; i++) {
+    if (res[i] !== 'verde' && sobras[tent[i]] > 0) { res[i] = 'amarelo'; sobras[tent[i]]-- }
+  }
+  return res
+}
+const COR_TERMO = {
+  verde: 'bg-green-500 text-white border-green-500',
+  amarelo: 'bg-amber-400 text-white border-amber-400',
+  cinza: 'bg-slate-400 text-white border-slate-400',
+}
+
+function JogoTermo({ onTerminar, onCancelar }) {
+  const [alvo] = useState(() => PALAVRAS_TERMO[Math.floor(Math.random() * PALAVRAS_TERMO.length)])
+  const [linhas, setLinhas] = useState([])
+  const [atual, setAtual] = useState('')
+  const [fim, setFim] = useState(null) // ganhou | perdeu
+  const [aviso, setAviso] = useState('')
+
+  function tecla(k) {
+    if (fim) return
+    if (k === '⌫') { setAtual((a) => a.slice(0, -1)); return }
+    if (k === 'OK') {
+      if (atual.length < 5) { setAviso('Complete as 5 letras'); setTimeout(() => setAviso(''), 900); return }
+      const res = avaliarTermo(atual, alvo)
+      const novas = [...linhas, { tent: atual, res }]
+      setLinhas(novas)
+      setAtual('')
+      if (atual === alvo) {
+        setFim('ganhou')
+        setTimeout(() => onTerminar(novas.length <= 3 ? 3 : 2), 1200)
+      } else if (novas.length >= 6) {
+        setFim('perdeu')
+        setTimeout(() => onTerminar(1), 1800)
+      }
+      return
+    }
+    if (atual.length < 5) setAtual((a) => a + k)
+  }
+
+  // Cor de cada tecla = melhor resultado que aquela letra já teve
+  const corTecla = {}
+  const rank = { verde: 3, amarelo: 2, cinza: 1 }
+  linhas.forEach(({ tent, res }) => tent.split('').forEach((l, i) => {
+    if (!corTecla[l] || rank[res[i]] > rank[corTecla[l]]) corTecla[l] = res[i]
+  }))
+
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Tentativa {Math.min(linhas.length + 1, 6)} de 6</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
+      </div>
+      <p className={`text-xs mb-3 h-4 font-semibold ${fim === 'ganhou' ? 'text-green-600' : fim === 'perdeu' ? 'text-amber-600' : 'text-slate-400'}`}>
+        {fim === 'ganhou' ? 'Descobriu! 🎉' : fim === 'perdeu' ? `Era ${alvo}!` : aviso || 'Palavra do mundo desbravador'}
+      </p>
+
+      <div className="grid gap-1.5 mx-auto max-w-[280px] mb-4 select-none">
+        {Array.from({ length: 6 }, (_, r) => {
+          const linha = linhas[r]
+          const ehAtual = r === linhas.length && !fim
+          return (
+            <div key={r} className="grid grid-cols-5 gap-1.5">
+              {Array.from({ length: 5 }, (_, c) => {
+                const letra = linha ? linha.tent[c] : ehAtual ? (atual[c] || '') : ''
+                const cor = linha ? COR_TERMO[linha.res[c]] : 'bg-white border-slate-200 text-slate-800'
+                return (
+                  <div key={c} className={`aspect-square rounded-lg border-2 grid place-items-center text-xl font-extrabold ${cor} ${
+                    ehAtual && atual[c] ? 'border-azul' : ''
+                  }`}>
+                    {letra}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="space-y-1.5 select-none">
+        {TECLADO_TERMO.map((row, r) => (
+          <div key={r} className="flex justify-center gap-1">
+            {r === 2 && (
+              <button onClick={() => tecla('OK')} className="rounded-lg bg-azul text-white text-xs font-extrabold px-2.5 h-11">OK</button>
+            )}
+            {row.split('').map((k) => (
+              <button key={k} onClick={() => tecla(k)}
+                className={`rounded-lg w-[8.2%] min-w-6 h-11 text-sm font-extrabold ${
+                  corTecla[k] ? COR_TERMO[corTecla[k]] : 'bg-slate-100 text-slate-700'
+                }`}>
+                {k}
+              </button>
+            ))}
+            {r === 2 && (
+              <button onClick={() => tecla('⌫')} className="rounded-lg bg-slate-200 text-slate-700 text-sm font-extrabold px-2.5 h-11">⌫</button>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-slate-400 mt-3">Sem acento nem ç (ex.: LENÇO = LENCO). Verde = lugar certo; amarelo = tem na palavra.</p>
+    </div>
+  )
+}
+
+// ===================== ➡️ Qual é o Próximo? (lógica) =====================
+const SEQS_PROXIMO = [
+  { s: '2, 4, 6, 8, …', o: ['9', '10', '12', '16'], c: 1 },
+  { s: '1, 2, 4, 8, …', o: ['12', '14', '16', '10'], c: 2 },
+  { s: '21, 18, 15, 12, …', o: ['10', '9', '8', '11'], c: 1 },
+  { s: '1, 1, 2, 3, 5, …', o: ['6', '7', '8', '10'], c: 2 },
+  { s: '1, 4, 9, 16, …', o: ['20', '24', '25', '36'], c: 2 },
+  { s: '3, 6, 12, 24, …', o: ['30', '36', '48', '44'], c: 2 },
+  { s: '10, 9, 7, 4, …', o: ['0', '1', '2', '3'], c: 0 },
+  { s: '2, 3, 5, 7, 11, …', o: ['12', '13', '14', '15'], c: 1 },
+  { s: '🔴 🔵 🔴 🔵 🔴 …', o: ['🔴', '🔵', '🟢', '🟡'], c: 1 },
+  { s: '⭐ ⭐ 🔥 ⭐ ⭐ 🔥 ⭐ ⭐ …', o: ['⭐', '🔥', '🌙', '☀️'], c: 1 },
+  { s: '🌱 🌿 🌳 🌱 🌿 …', o: ['🌱', '🌿', '🌳', '🍂'], c: 2 },
+  { s: '🌞 🌙 🌞 🌙 🌞 …', o: ['🌞', '🌙', '⭐', '☁️'], c: 1 },
+]
+
+function JogoProximo({ onTerminar, onCancelar }) {
+  const [rodadas] = useState(() => embaralhar(SEQS_PROXIMO).slice(0, 6).map((q) => ({
+    s: q.s, certa: q.o[q.c], opcoes: embaralhar(q.o),
+  })))
+  const [n, setN] = useState(0)
+  const [acertos, setAcertos] = useState(0)
+  const [aviso, setAviso] = useState('')
+  const q = rodadas[n]
+
+  function responder(op) {
+    if (aviso) return
+    const ok = op === q.certa
+    const tot = acertos + (ok ? 1 : 0)
+    if (ok) setAcertos(tot)
+    setAviso(ok ? 'Isso! ✅' : `Era ${q.certa}`)
+    setTimeout(() => {
+      setAviso('')
+      if (n + 1 >= rodadas.length) onTerminar(tot >= 6 ? 3 : tot >= 4 ? 2 : 1)
+      else setN(n + 1)
+    }, 1100)
+  }
+
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-slate-600">Sequência {n + 1} de {rodadas.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-4">O que vem no lugar do “…”?</p>
+
+      <div className="bg-azul/5 rounded-2xl py-5 px-3 mb-4">
+        <span className="text-2xl font-extrabold text-azul tracking-wide break-words">{q.s}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {q.opcoes.map((op) => (
+          <motion.button key={op} whileTap={{ scale: 0.96 }} onClick={() => responder(op)} disabled={!!aviso}
+            className="rounded-xl bg-slate-50 hover:bg-slate-100 py-4 text-xl font-extrabold text-slate-700 disabled:opacity-60">
+            {op}
+          </motion.button>
+        ))}
+      </div>
+      {aviso && <p className={`text-sm font-bold mt-3 ${aviso.startsWith('Isso') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
+      <p className="text-xs text-slate-400 mt-2">Acertos: {acertos}</p>
     </div>
   )
 }
