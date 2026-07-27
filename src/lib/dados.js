@@ -45,10 +45,11 @@ export async function carregarRanking() {
   const unidades = (us || [])
     .map((u) => {
       const membros = pessoas
-        // Só desbravadores e conselheiros entram na média do time. Assim, um membro
-        // promovido a líder (instrutor/tesoureiro/diretoria) que ainda tenha unidade
-        // antiga NÃO puxa mais a média pra baixo.
-        .filter((p) => p.unidade_id === u.id && (p.papel === 'desbravador' || p.papel === 'conselheiro'))
+        // TODO MUNDO que está DENTRO da unidade conta na média — inclusive líderes
+        // (decisão do dono em 24/07/2026: a unidade da liderança disputa de igual).
+        // Quem é promovido continua saindo da unidade antiga automaticamente
+        // (mudarCargo), então líder só conta se for realocado numa unidade.
+        .filter((p) => p.unidade_id === u.id)
         .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
         .sort((a, b) => b.pts - a.pts || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
@@ -86,7 +87,8 @@ export const METAS_SEMANA = [
 export async function carregarDesafiosSemana() {
   const [{ data: us }, { data: ps }, { data: sem }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    supabase.from('profiles').select('id,nome,foto,unidade_id,papel').eq('status', 'ativo').neq('papel', 'pais'),
+    // '*' pra trazer também a coluna 'teste' (conta de teste fica fora da corrida)
+    supabase.from('profiles').select('*').eq('status', 'ativo').neq('papel', 'pais'),
     supabase.rpc('ranking_semana'),
   ])
   const inicio = sem?.inicio || null
@@ -97,9 +99,10 @@ export async function carregarDesafiosSemana() {
 
   const unidades = (us || [])
     .map((u) => {
-      // Mesma regra do ranking geral: só desbravador/conselheiro entram na média.
+      // Mesma regra do ranking geral: todo mundo da unidade conta na média
+      // (inclusive líderes); conta de teste fica fora.
       const membros = (ps || [])
-        .filter((p) => p.unidade_id === u.id && (p.papel === 'desbravador' || p.papel === 'conselheiro'))
+        .filter((p) => p.unidade_id === u.id && !p.teste)
         .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, pts: totalPessoa[p.id] || 0 }))
       const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
       const avulsos = totalTime[u.id] || 0

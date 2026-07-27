@@ -174,7 +174,7 @@ export default function Unidades() {
                     <Avatar foto={m.foto} nome={m.nome} cor={sel.cor} size="w-9 h-9" textSize="text-sm" />
                     <span className="flex-1 min-w-0 font-medium text-slate-800 truncate">
                       {m.nome}
-                      {m.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                      {m.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
                     </span>
                     <span className="text-lg">{medalhas[i] || ''}</span>
                     <span className="font-extrabold text-azul">{m.pts}</span>

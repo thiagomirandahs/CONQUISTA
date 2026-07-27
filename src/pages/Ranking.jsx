@@ -171,7 +171,7 @@ export default function Ranking() {
                                   <Avatar foto={m.foto} nome={m.nome || '?'} cor={card.item.cor} size="w-6 h-6" textSize="text-[10px]" />
                                   <span className="text-slate-600 truncate">
                                     {m.nome || 'Desbravador'}
-                                    {m.papel === 'conselheiro' && <span className="text-[10px] text-slate-400"> · conselheiro</span>}
+                                    {m.papel !== 'desbravador' && <span className="text-[10px] text-slate-400"> · {m.papel}</span>}
                                   </span>
                                 </div>
                                 <span className="font-semibold text-slate-800 shrink-0">{m.pts}</span>
