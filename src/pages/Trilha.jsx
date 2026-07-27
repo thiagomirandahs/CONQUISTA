@@ -1869,10 +1869,12 @@ function JogoReflexo({ onTerminar, onCancelar }) {
   const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
   const timerRef = useRef(null)
 
-  const tempo = Math.max(900, 2600 - nivel * 60) // ms pra acertar (encurta por nível)
+  // Mais tempo por alvo (pedido do dono: tava rápido demais) — a dificuldade
+  // vem da GRADE crescer: mais itens pra procurar, não menos tempo pra pensar.
+  const tempo = Math.max(1400, 3500 - nivel * 50) // 3,5s no início; piso 1,4s
 
   function novaRodada(nv) {
-    const tam = nv < 8 ? 4 : nv < 20 ? 6 : 9
+    const tam = nv < 6 ? 4 : nv < 14 ? 6 : nv < 25 ? 9 : 12
     const itens = embaralhar(EMOJIS_REFLEXO).slice(0, tam)
     setGrade(itens)
     setAlvo(itens[Math.floor(Math.random() * itens.length)])
