@@ -20,6 +20,16 @@
 --   * empate gera UMA notificação com todos os nomes (não uma por campeão).
 -- =====================================================================
 
+-- 0) Pré-requisitos (existiam no script do modo-teste; garantimos aqui também
+--    porque este script os usa — idempotente, não conflita se já existirem)
+alter table public.profiles add column if not exists teste boolean not null default false;
+
+create or replace function public.eh_teste()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select teste from public.profiles where id = auth.uid()), false);
+$$;
+grant execute on function public.eh_teste() to authenticated;
+
 -- 1) O jogo no catálogo (entra DESLIGADO; ligar em Gestão -> 🎮 Jogos da Trilha)
 insert into public.jogos_trilha (chave, nome, emoji, ativo, ordem) values
   ('reflexo', 'Reflexo', '⚡', false, 19)
