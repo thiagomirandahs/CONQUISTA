@@ -45,11 +45,13 @@ export default function Apontamentos() {
     let vivo = true
     setCarregando(true)
     const motivo = `Reunião ${fmtData(data)}`
-    // Admin (instrutor/diretoria) também vê os conselheiros da unidade pra marcar presença;
-    // conselheiro comum continua só com desbravadores (o RLS não o deixaria pontuar conselheiros).
-    const qPessoas = supabase.from('profiles').select('id,nome,foto,papel')
+    // Admin (instrutor/diretoria) vê TODO MUNDO da unidade — inclusive líderes
+    // (decisão do dono, 24/07: a liderança também pontua nos apontamentos; o
+    // banco já permite via pode_apontar). Conselheiro comum segue só com
+    // desbravadores (o banco não o deixaria pontuar conselheiros/líderes).
+    const qPessoas = supabase.from('profiles').select('*')
       .eq('unidade_id', unidadeId).eq('status', 'ativo')
-    if (ehAdmin) qPessoas.in('papel', ['desbravador', 'conselheiro'])
+    if (ehAdmin) qPessoas.neq('papel', 'pais')
     else qPessoas.eq('papel', 'desbravador')
     qPessoas.order('papel', { ascending: false }).order('nome')
     Promise.all([
@@ -58,7 +60,8 @@ export default function Apontamentos() {
       supabase.from('pontos').select('usuario_id,marca').eq('origem', 'apontamento').eq('motivo', motivo),
     ]).then(([{ data: desb }, { data: existentes }]) => {
       if (!vivo) return
-      setDesbravadores(desb || [])
+      // Conta de teste não entra na chamada (não pontua nem aparece no ranking)
+      setDesbravadores((desb || []).filter((d) => !d.teste))
       const salvos = {}
       ;(existentes || []).forEach((p) => { if (p.marca) salvos[p.usuario_id] = p.marca })
       const m = {}
@@ -154,7 +157,7 @@ export default function Apontamentos() {
                 <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
                 <span className="flex-1 text-left font-semibold text-slate-800 truncate">
                   {d.nome}
-                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                  {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                 </span>
                 <span className={`text-sm font-bold shrink-0 ${presente ? 'text-green-600' : 'text-slate-400'}`}>{presente ? '✅ Presente' : '❌ Faltou'}</span>
               </button>
@@ -175,7 +178,7 @@ export default function Apontamentos() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-slate-800">
                     {d.nome}
-                    {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                    {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                   </span>
                   <span className="text-azul font-extrabold">{calcTotal(m)} pts</span>
                 </div>
