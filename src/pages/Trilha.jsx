@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde } from '../lib/dados.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -120,7 +120,8 @@ export default function Trilha() {
       </div>
 
       {aba === 'ranking' ? (
-        <RankingTrilha dados={ranking} carregando={carregandoRank} meuId={profile?.id} />
+        <RankingTrilha dados={ranking} carregando={carregandoRank} meuId={profile?.id}
+          ehAdmin={['instrutor', 'diretoria'].includes(profile?.papel)} />
       ) : carregando ? (
         <p className="text-slate-400 text-sm">Carregando...</p>
       ) : jogando ? (
@@ -206,7 +207,7 @@ export default function Trilha() {
 }
 
 // Placar por jogo: chips no topo trocam entre "Geral" e cada jogo.
-function RankingTrilha({ dados, carregando, meuId }) {
+function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
   const [jogo, setJogo] = useState('geral')
   const [recordes, setRecordes] = useState(null) // ranking dos jogos sem fim
   const top = ['🥇', '🥈', '🥉']
@@ -214,11 +215,25 @@ function RankingTrilha({ dados, carregando, meuId }) {
   const lista = (dados && dados[jogo]) || []
   const ehArcade = ARCADE.has(jogo)
 
-  useEffect(() => {
-    if (!ehArcade) return
+  function recarregarRecs() {
     setRecordes(null)
     carregarRecordesSemana(jogo).then(setRecordes).catch(() => setRecordes([]))
+  }
+  useEffect(() => {
+    if (!ehArcade) return
+    recarregarRecs()
   }, [jogo]) // eslint-disable-line
+
+  // Liderança: apaga um recorde suspeito da semana (ex.: valor forjado)
+  async function apagarRec(r) {
+    if (!window.confirm(`Apagar o recorde de ${r.nome || 'este membro'} (⚡ ${r.pontos}) desta semana?\n\nEle pode fazer um novo jogando de verdade.`)) return
+    try {
+      await excluirRecorde(r.id, jogo)
+      recarregarRecs()
+    } catch (e) {
+      alert('Não foi possível: ' + (e?.message || e))
+    }
+  }
 
   return (
     <div>
@@ -254,6 +269,10 @@ function RankingTrilha({ dados, carregando, meuId }) {
                       <div className="font-bold text-slate-800 text-sm truncate">{r.nome || 'Desbravador'}{eu && ' (você)'}</div>
                     </div>
                     <span className="font-extrabold text-dourado shrink-0">⚡ {r.pontos}</span>
+                    {ehAdmin && (
+                      <button onClick={() => apagarRec(r)} title="Apagar recorde suspeito"
+                        className="text-red-400 hover:text-red-600 shrink-0 p-2 -m-1">🗑️</button>
+                    )}
                   </div>
                 )
               })}

@@ -721,6 +721,19 @@ export async function registrarRecorde(jogo, pontos) {
   return data || { recorde: pontos, melhorou: false }
 }
 
+// Liderança: apaga o recorde DA SEMANA de alguém (ex.: valor forjado).
+// A pessoa pode cravar um novo jogando de verdade.
+export async function excluirRecorde(usuarioId, jogo) {
+  const sp = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+  const dow = (sp.getDay() + 6) % 7 // 0 = segunda
+  sp.setDate(sp.getDate() - dow)
+  const semana = `${sp.getFullYear()}-${String(sp.getMonth() + 1).padStart(2, '0')}-${String(sp.getDate()).padStart(2, '0')}`
+  const { data, error } = await supabase.from('recordes').delete()
+    .eq('usuario_id', usuarioId).eq('jogo', jogo).eq('semana', semana).select('id')
+  if (error) throw new Error(error.message)
+  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança) ou recorde não encontrado.')
+}
+
 // Ranking de recordes da semana (top 20). O maior ganha +20 no domingo.
 export async function carregarRecordesSemana(jogo) {
   const { data, error } = await supabase.rpc('recordes_semana', { p_jogo: jogo })
