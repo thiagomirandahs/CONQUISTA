@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
@@ -1879,25 +1879,74 @@ function JogoVelha({ onTerminar, onCancelar }) {
 // +20 automático no domingo.
 const EMOJIS_REFLEXO = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
 
+// Progressão do Reflexo (tudo em % do campo quadrado, pra ser responsivo):
+// nível 0 = 1 item GRANDE no meio; a cada nível entra mais item e TODOS
+// encolhem. Quantidade e tamanho crescem/diminuem juntos com o nível.
+const qtdReflexo = (nv) => Math.min(20, 1 + Math.floor(nv * 0.7))   // 1 → 20 itens
+const tamReflexo = (nv) => Math.max(13, 58 - nv * 1.6)               // 58% → 13% do campo
+
+// Espalha os itens pelo campo tentando não deixá-los grudados (para de tentar
+// depois de umas voltas — em nível alto pode encostar, e tudo bem).
+function posicoesReflexo(qtd, tamPct) {
+  const meia = tamPct / 2
+  const lo = meia + 1, hi = 99 - meia
+  const minDist = tamPct * 0.82
+  const pts = []
+  for (let i = 0; i < qtd; i++) {
+    let esc = null
+    for (let t = 0; t < 40; t++) {
+      const x = lo + Math.random() * (hi - lo)
+      const y = lo + Math.random() * (hi - lo)
+      if (!esc) esc = { x, y }
+      if (pts.every((p) => Math.hypot(p.x - x, p.y - y) >= minDist)) { esc = { x, y }; break }
+    }
+    pts.push(esc)
+  }
+  return pts
+}
+
 function JogoReflexo({ onTerminar, onCancelar }) {
   const [nivel, setNivel] = useState(0)
   const [alvo, setAlvo] = useState(null)
-  const [grade, setGrade] = useState([])
+  const [grade, setGrade] = useState([]) // [{ e, x, y }] em % do campo
+  const [tam, setTam] = useState(58)     // tamanho do item (% do campo) desta rodada
   const [rodadaId, setRodadaId] = useState(0) // muda a cada rodada (reinicia o timer)
   const [fim, setFim] = useState(false)
   const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
   const timerRef = useRef(null)
 
+  // Mede o campo (px) pra escalar o emoji junto com o item; re-mede se a tela
+  // mudar de tamanho. Callback ref funciona mesmo quando o campo some/volta.
+  const [campoPx, setCampoPx] = useState(300)
+  const obsRef = useRef(null)
+  const medirCampo = useCallback((el) => {
+    if (obsRef.current) { obsRef.current.disconnect(); obsRef.current = null }
+    if (el) {
+      setCampoPx(el.offsetWidth || 300)
+      const ro = new ResizeObserver(() => setCampoPx(el.offsetWidth || 300))
+      ro.observe(el)
+      obsRef.current = ro
+    }
+  }, [])
+
   // Calibragem (dono): tem que dar pra passar de 100 jogando de verdade.
-  // Começa em 4s, aperta só 25ms por nível e NUNCA fica abaixo de 2s (piso no
-  // nível 80). A dificuldade dos níveis altos é a constância + a grade de 12.
+  // Começa em 4s, aperta só 25ms por nível e NUNCA fica abaixo de 2s.
   const tempo = Math.max(2000, 4000 - nivel * 25)
 
   function novaRodada(nv) {
-    const tam = nv < 6 ? 4 : nv < 14 ? 6 : nv < 25 ? 9 : 12
-    const itens = embaralhar(EMOJIS_REFLEXO).slice(0, tam)
-    setGrade(itens)
-    setAlvo(itens[Math.floor(Math.random() * itens.length)])
+    const qtd = qtdReflexo(nv)
+    const sz = tamReflexo(nv)
+    const alvoNovo = EMOJIS_REFLEXO[Math.floor(Math.random() * EMOJIS_REFLEXO.length)]
+    // Enche o resto com outros emojis (podem repetir — o alvo é sempre único,
+    // então dá pra encher a tela sem confundir quem é quem).
+    const outros = EMOJIS_REFLEXO.filter((e) => e !== alvoNovo)
+    const emojis = [alvoNovo]
+    for (let i = 1; i < qtd; i++) emojis.push(outros[Math.floor(Math.random() * outros.length)])
+    const baralhado = embaralhar(emojis)
+    const pos = posicoesReflexo(qtd, sz)
+    setGrade(baralhado.map((e, i) => ({ e, x: pos[i].x, y: pos[i].y })))
+    setTam(sz)
+    setAlvo(alvoNovo)
     setRodadaId((r) => r + 1)
   }
   useEffect(() => { novaRodada(0) }, []) // eslint-disable-line
@@ -1938,7 +1987,6 @@ function JogoReflexo({ onTerminar, onCancelar }) {
     novaRodada(0)
   }
 
-  const cols = grade.length <= 4 ? 2 : 3
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
@@ -1978,11 +2026,17 @@ function JogoReflexo({ onTerminar, onCancelar }) {
               transition={{ duration: tempo / 1000, ease: 'linear' }}
               className="h-full bg-azul rounded-full origin-left" />
           </div>
-          <div className="grid gap-2 mx-auto max-w-[280px] select-none" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-            {grade.map((e) => (
-              <motion.button key={e + rodadaId} whileTap={{ scale: 0.92 }} onClick={() => tocar(e)}
-                className="aspect-square rounded-2xl bg-slate-50 hover:bg-slate-100 grid place-items-center text-4xl shadow-sm">
-                {e}
+          <div ref={medirCampo} className="relative mx-auto w-full max-w-[300px] aspect-square rounded-2xl bg-slate-50 overflow-hidden select-none">
+            {grade.map((it, i) => (
+              <motion.button key={rodadaId + '-' + i} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                whileTap={{ scale: 0.85 }} onClick={() => tocar(it.e)}
+                className="absolute rounded-xl bg-white shadow-sm grid place-items-center leading-none"
+                style={{
+                  left: `${it.x}%`, top: `${it.y}%`, width: `${tam}%`, height: `${tam}%`,
+                  transform: 'translate(-50%, -50%)', fontSize: `${(campoPx * tam) / 100 * 0.58}px`,
+                }}>
+                {it.e}
               </motion.button>
             ))}
           </div>
