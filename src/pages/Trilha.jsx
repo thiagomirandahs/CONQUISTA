@@ -1882,34 +1882,34 @@ const EMOJIS_REFLEXO = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '�
 // Progressão do Reflexo (tudo em % do campo quadrado, pra ser responsivo):
 // nível 0 = 1 item GRANDE no meio; a cada nível entra mais item e TODOS
 // encolhem. Quantidade e tamanho crescem/diminuem juntos com o nível.
-const qtdReflexo = (nv) => Math.min(20, 1 + Math.floor(nv * 0.7))   // 1 → 20 itens
-const tamReflexo = (nv) => Math.max(13, 58 - nv * 1.6)               // 58% → 13% do campo
+const qtdReflexo = (nv) => Math.min(16, 1 + Math.floor(nv * 0.7))   // 1 → 16 itens
 
-// Espalha os itens pelo campo tentando não deixá-los grudados (para de tentar
-// depois de umas voltas — em nível alto pode encostar, e tudo bem).
-function posicoesReflexo(qtd, tamPct) {
-  const meia = tamPct / 2
-  const lo = meia + 1, hi = 99 - meia
-  const minDist = tamPct * 0.82
-  const pts = []
-  for (let i = 0; i < qtd; i++) {
-    let esc = null
-    for (let t = 0; t < 40; t++) {
-      const x = lo + Math.random() * (hi - lo)
-      const y = lo + Math.random() * (hi - lo)
-      if (!esc) esc = { x, y }
-      if (pts.every((p) => Math.hypot(p.x - x, p.y - y) >= minDist)) { esc = { x, y }; break }
-    }
-    pts.push(esc)
-  }
-  return pts
+// Onde cada item fica E qual o tamanho deles. O TAMANHO sai da grade: quanto
+// mais itens, mais células, menores os itens (exatamente o pedido — o item
+// encolhe conforme a quantidade aumenta). Cada item cabe inteiro na sua célula,
+// então NUNCA se sobrepõem nem saem da tela. Um "tremidinho" tira o ar de grade
+// certinha. Com 1 item só, fica grande e centralizado.
+function layoutReflexo(qtd) {
+  if (qtd === 1) return { tam: 52, pos: [{ x: 50, y: 50 }] }
+  const cols = Math.ceil(Math.sqrt(qtd))
+  const rows = Math.ceil(qtd / cols)
+  const larg = 100 / cols, alt = 100 / rows
+  const tam = Math.min(larg, alt) * 0.82
+  const celulas = []
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) celulas.push({ r, c })
+  const jx = (larg - tam) / 2, jy = (alt - tam) / 2 // folga dentro da célula
+  const pos = embaralhar(celulas).slice(0, qtd).map(({ r, c }) => ({
+    x: larg * (c + 0.5) + (Math.random() * 2 - 1) * jx,
+    y: alt * (r + 0.5) + (Math.random() * 2 - 1) * jy,
+  }))
+  return { tam, pos }
 }
 
 function JogoReflexo({ onTerminar, onCancelar }) {
   const [nivel, setNivel] = useState(0)
   const [alvo, setAlvo] = useState(null)
   const [grade, setGrade] = useState([]) // [{ e, x, y }] em % do campo
-  const [tam, setTam] = useState(58)     // tamanho do item (% do campo) desta rodada
+  const [tam, setTam] = useState(52)     // tamanho do item (% do campo) desta rodada
   const [rodadaId, setRodadaId] = useState(0) // muda a cada rodada (reinicia o timer)
   const [fim, setFim] = useState(false)
   const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
@@ -1935,7 +1935,7 @@ function JogoReflexo({ onTerminar, onCancelar }) {
 
   function novaRodada(nv) {
     const qtd = qtdReflexo(nv)
-    const sz = tamReflexo(nv)
+    const { tam: sz, pos } = layoutReflexo(qtd)
     const alvoNovo = EMOJIS_REFLEXO[Math.floor(Math.random() * EMOJIS_REFLEXO.length)]
     // Enche o resto com outros emojis (podem repetir — o alvo é sempre único,
     // então dá pra encher a tela sem confundir quem é quem).
@@ -1943,7 +1943,6 @@ function JogoReflexo({ onTerminar, onCancelar }) {
     const emojis = [alvoNovo]
     for (let i = 1; i < qtd; i++) emojis.push(outros[Math.floor(Math.random() * outros.length)])
     const baralhado = embaralhar(emojis)
-    const pos = posicoesReflexo(qtd, sz)
     setGrade(baralhado.map((e, i) => ({ e, x: pos[i].x, y: pos[i].y })))
     setTam(sz)
     setAlvo(alvoNovo)
@@ -2031,10 +2030,10 @@ function JogoReflexo({ onTerminar, onCancelar }) {
               <motion.button key={rodadaId + '-' + i} initial={{ scale: 0 }} animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 whileTap={{ scale: 0.85 }} onClick={() => tocar(it.e)}
-                className="absolute rounded-xl bg-white shadow-sm grid place-items-center leading-none"
+                className="absolute rounded-full bg-white shadow-sm grid place-items-center leading-none"
                 style={{
                   left: `${it.x}%`, top: `${it.y}%`, width: `${tam}%`, height: `${tam}%`,
-                  transform: 'translate(-50%, -50%)', fontSize: `${(campoPx * tam) / 100 * 0.58}px`,
+                  transform: 'translate(-50%, -50%)', fontSize: `${(campoPx * tam) / 100 * 0.6}px`,
                 }}>
                 {it.e}
               </motion.button>
