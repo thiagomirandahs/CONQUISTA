@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
@@ -1879,55 +1879,19 @@ function JogoVelha({ onTerminar, onCancelar }) {
 // +20 automático no domingo.
 const EMOJIS_REFLEXO = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
 
-// Progressão do Reflexo (tudo em % do campo quadrado, pra ser responsivo):
-// nível 0 = 1 item GRANDE no meio; a cada nível entra mais item e TODOS
-// encolhem. Quantidade e tamanho crescem/diminuem juntos com o nível.
-const qtdReflexo = (nv) => Math.min(16, 1 + Math.floor(nv * 0.7))   // 1 → 16 itens
-
-// Onde cada item fica E qual o tamanho deles. O TAMANHO sai da grade: quanto
-// mais itens, mais células, menores os itens (exatamente o pedido — o item
-// encolhe conforme a quantidade aumenta). Cada item cabe inteiro na sua célula,
-// então NUNCA se sobrepõem nem saem da tela. Um "tremidinho" tira o ar de grade
-// certinha. Com 1 item só, fica grande e centralizado.
-function layoutReflexo(qtd) {
-  if (qtd === 1) return { tam: 52, pos: [{ x: 50, y: 50 }] }
-  const cols = Math.ceil(Math.sqrt(qtd))
-  const rows = Math.ceil(qtd / cols)
-  const larg = 100 / cols, alt = 100 / rows
-  const tam = Math.min(larg, alt) * 0.82
-  const celulas = []
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) celulas.push({ r, c })
-  const jx = (larg - tam) / 2, jy = (alt - tam) / 2 // folga dentro da célula
-  const pos = embaralhar(celulas).slice(0, qtd).map(({ r, c }) => ({
-    x: larg * (c + 0.5) + (Math.random() * 2 - 1) * jx,
-    y: alt * (r + 0.5) + (Math.random() * 2 - 1) * jy,
-  }))
-  return { tam, pos }
-}
+// Progressão: começa com 1 item e entra MAIS UM a cada nível (um item por
+// rodada), até a grade encher com os 12 itens. Depois disso, o que aperta é o
+// tempo. Itens sempre iguais e alinhados na grade (como era antes).
+const qtdReflexo = (nv) => Math.min(EMOJIS_REFLEXO.length, 1 + nv)
 
 function JogoReflexo({ onTerminar, onCancelar }) {
   const [nivel, setNivel] = useState(0)
   const [alvo, setAlvo] = useState(null)
-  const [grade, setGrade] = useState([]) // [{ e, x, y }] em % do campo
-  const [tam, setTam] = useState(52)     // tamanho do item (% do campo) desta rodada
+  const [grade, setGrade] = useState([]) // emojis da rodada (o alvo está entre eles)
   const [rodadaId, setRodadaId] = useState(0) // muda a cada rodada (reinicia o timer)
   const [fim, setFim] = useState(false)
   const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
   const timerRef = useRef(null)
-
-  // Mede o campo (px) pra escalar o emoji junto com o item; re-mede se a tela
-  // mudar de tamanho. Callback ref funciona mesmo quando o campo some/volta.
-  const [campoPx, setCampoPx] = useState(300)
-  const obsRef = useRef(null)
-  const medirCampo = useCallback((el) => {
-    if (obsRef.current) { obsRef.current.disconnect(); obsRef.current = null }
-    if (el) {
-      setCampoPx(el.offsetWidth || 300)
-      const ro = new ResizeObserver(() => setCampoPx(el.offsetWidth || 300))
-      ro.observe(el)
-      obsRef.current = ro
-    }
-  }, [])
 
   // Calibragem (dono): tem que dar pra passar de 100 jogando de verdade.
   // Começa em 4s, aperta só 25ms por nível e NUNCA fica abaixo de 2s.
@@ -1935,17 +1899,9 @@ function JogoReflexo({ onTerminar, onCancelar }) {
 
   function novaRodada(nv) {
     const qtd = qtdReflexo(nv)
-    const { tam: sz, pos } = layoutReflexo(qtd)
-    const alvoNovo = EMOJIS_REFLEXO[Math.floor(Math.random() * EMOJIS_REFLEXO.length)]
-    // Enche o resto com outros emojis (podem repetir — o alvo é sempre único,
-    // então dá pra encher a tela sem confundir quem é quem).
-    const outros = EMOJIS_REFLEXO.filter((e) => e !== alvoNovo)
-    const emojis = [alvoNovo]
-    for (let i = 1; i < qtd; i++) emojis.push(outros[Math.floor(Math.random() * outros.length)])
-    const baralhado = embaralhar(emojis)
-    setGrade(baralhado.map((e, i) => ({ e, x: pos[i].x, y: pos[i].y })))
-    setTam(sz)
-    setAlvo(alvoNovo)
+    const itens = embaralhar(EMOJIS_REFLEXO).slice(0, qtd) // itens únicos na grade
+    setGrade(itens)
+    setAlvo(itens[Math.floor(Math.random() * itens.length)])
     setRodadaId((r) => r + 1)
   }
   useEffect(() => { novaRodada(0) }, []) // eslint-disable-line
@@ -1986,6 +1942,11 @@ function JogoReflexo({ onTerminar, onCancelar }) {
     novaRodada(0)
   }
 
+  // Colunas e tamanho do emoji acompanham a quantidade (item grande quando é
+  // pouco; encolhe conforme a grade enche) — sempre alinhados e proporcionais.
+  const cols = grade.length === 1 ? 1 : grade.length <= 4 ? 2 : 3
+  const tamEmoji = cols === 1 ? 'text-[86px]' : cols === 2 ? 'text-5xl' : 'text-4xl'
+
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
@@ -2025,17 +1986,11 @@ function JogoReflexo({ onTerminar, onCancelar }) {
               transition={{ duration: tempo / 1000, ease: 'linear' }}
               className="h-full bg-azul rounded-full origin-left" />
           </div>
-          <div ref={medirCampo} className="relative mx-auto w-full max-w-[300px] aspect-square rounded-2xl bg-slate-50 overflow-hidden select-none">
-            {grade.map((it, i) => (
-              <motion.button key={rodadaId + '-' + i} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                whileTap={{ scale: 0.85 }} onClick={() => tocar(it.e)}
-                className="absolute rounded-full bg-white shadow-sm grid place-items-center leading-none"
-                style={{
-                  left: `${it.x}%`, top: `${it.y}%`, width: `${tam}%`, height: `${tam}%`,
-                  transform: 'translate(-50%, -50%)', fontSize: `${(campoPx * tam) / 100 * 0.6}px`,
-                }}>
-                {it.e}
+          <div className="grid gap-2 mx-auto max-w-[280px] select-none" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+            {grade.map((e, i) => (
+              <motion.button key={rodadaId + '-' + i} whileTap={{ scale: 0.92 }} onClick={() => tocar(e)}
+                className={`aspect-square rounded-2xl bg-slate-50 hover:bg-slate-100 grid place-items-center shadow-sm ${tamEmoji}`}>
+                {e}
               </motion.button>
             ))}
           </div>
