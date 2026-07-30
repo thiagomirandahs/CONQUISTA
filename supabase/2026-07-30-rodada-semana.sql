@@ -19,6 +19,10 @@
 --  Liderança: os prêmios seguem o MESMO interruptor "só desbravadores" do reflexo
 --  (Gestão -> 🎮 Jogos da Trilha). Ligado = a liderança joga mas não leva os
 --  prêmios; desligado = todo mundo concorre.
+--
+--  À prova de duplicar: (1) trava de concorrência (advisory lock) serializa
+--  execuções simultâneas; (2) os prêmios só saem se AINDA NÃO houver lançamento
+--  daquela semana em `pontos` (imutável — não depende de flag que dá pra editar).
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -57,26 +61,26 @@ declare
   v_nome_prox text;
   r record;
 begin
-  -- IDEMPOTÊNCIA: se a rodada desta semana já foi processada, não faz nada.
-  -- (A função roda inteira numa transação: ou grava tudo, ou nada. Assim, uma
-  -- 2ª execução na mesma semana é um no-op — e não premia o jogo errado depois
-  -- do sorteio ter trocado o jogo da semana.)
-  if coalesce((select valor from public.config_clube where chave = 'rodada_semana_feita'), '') = v_marca then
-    return;
-  end if;
+  -- TRAVA DE CONCORRÊNCIA: se duas execuções acontecerem juntas (cron + rodar
+  -- à mão, ou o cron disparar 2x), a 2ª espera a 1ª terminar e só então segue —
+  -- aí já enxerga o que foi pago e não repete. (Mesmo truque do registrar_jogo.)
+  perform pg_advisory_xact_lock(hashtext('rodada_semana'));
 
   -- ===================================================================
   -- 🌟 CAMPEÃO DAS ESTRELAS DA SEMANA (+30)
+  --    Idempotência: só paga se ainda não existe o lançamento desta semana.
+  --    (exclui 'reflexo' da soma — ele pontua por recorde, não por estrela)
   -- ===================================================================
   if not exists (
     select 1 from public.pontos
-    where origem = 'campeao' and motivo like '%(estrelas ' || v_marca || ')%'
+    where origem = 'campeao'
+      and motivo = '🌟 Campeão das estrelas da semana (' || v_marca || ')'
   ) then
     select max(soma) into v_max from (
       select sum(t.estrelas) as soma
       from public.trilha_jogos t
       join public.profiles p on p.id = t.usuario_id
-      where t.data >= v_ini and t.data < v_fim
+      where t.data >= v_ini and t.data < v_fim and t.tipo <> 'reflexo'
         and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
         and (not v_so_desb or p.papel = 'desbravador')
       group by t.usuario_id
@@ -88,7 +92,7 @@ begin
         select t.usuario_id, min(p.nome) as nome
         from public.trilha_jogos t
         join public.profiles p on p.id = t.usuario_id
-        where t.data >= v_ini and t.data < v_fim
+        where t.data >= v_ini and t.data < v_fim and t.tipo <> 'reflexo'
           and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
           and (not v_so_desb or p.papel = 'desbravador')
         group by t.usuario_id
@@ -96,7 +100,7 @@ begin
       loop
         insert into public.pontos (usuario_id, origem, pontos, motivo)
         values (r.usuario_id, 'campeao', 30,
-          '🌟 Campeão das estrelas da semana (estrelas ' || v_marca || ')');
+          '🌟 Campeão das estrelas da semana (' || v_marca || ')');
         v_nomes := coalesce(v_nomes || ', ', '') || coalesce(r.nome, 'Alguém');
       end loop;
 
@@ -110,88 +114,92 @@ begin
   end if;
 
   -- ===================================================================
-  -- 🎲 CAMPEÃO DO JOGO DA SEMANA (+20)  — o jogo que estava valendo
+  -- 🎲 JOGO DA SEMANA — o jogo que estava valendo (lido da config)
   -- ===================================================================
   select valor into v_jogo from public.config_clube where chave = 'jogo_da_semana';
 
-  if v_jogo is not null and v_jogo <> '' then
+  -- (a) premia o melhor no jogo da semana (+20). Idempotência por SEMANA e
+  --     baseada nos pontos já lançados: mesmo que o jogo já tenha rodado pra
+  --     o próximo, isto não paga o jogo errado nem paga de novo.
+  if v_jogo is not null and v_jogo <> ''
+     and not exists (
+       select 1 from public.pontos
+       where origem = 'campeao'
+         and motivo like '🎲 Campeão do jogo da semana:%(' || v_marca || ')'
+     ) then
     select nome into v_nome_jogo from public.jogos_trilha where chave = v_jogo;
 
-    if not exists (
-      select 1 from public.pontos
-      where origem = 'campeao' and motivo like '%(jogo ' || v_jogo || ' ' || v_marca || ')%'
-    ) then
-      select max(soma) into v_max from (
-        select sum(t.estrelas) as soma
+    select max(soma) into v_max from (
+      select sum(t.estrelas) as soma
+      from public.trilha_jogos t
+      join public.profiles p on p.id = t.usuario_id
+      where t.tipo = v_jogo and t.data >= v_ini and t.data < v_fim
+        and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
+        and (not v_so_desb or p.papel = 'desbravador')
+      group by t.usuario_id
+    ) q;
+
+    if v_max is not null and v_max > 0 then
+      v_nomes := null;
+      for r in
+        select t.usuario_id, min(p.nome) as nome
         from public.trilha_jogos t
         join public.profiles p on p.id = t.usuario_id
         where t.tipo = v_jogo and t.data >= v_ini and t.data < v_fim
           and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
           and (not v_so_desb or p.papel = 'desbravador')
         group by t.usuario_id
-      ) q;
+        having sum(t.estrelas) = v_max
+      loop
+        insert into public.pontos (usuario_id, origem, pontos, motivo)
+        values (r.usuario_id, 'campeao', 20,
+          '🎲 Campeão do jogo da semana: ' || coalesce(v_nome_jogo, v_jogo) || ' (' || v_marca || ')');
+        v_nomes := coalesce(v_nomes || ', ', '') || coalesce(r.nome, 'Alguém');
+      end loop;
 
-      if v_max is not null and v_max > 0 then
-        v_nomes := null;
-        for r in
-          select t.usuario_id, min(p.nome) as nome
-          from public.trilha_jogos t
-          join public.profiles p on p.id = t.usuario_id
-          where t.tipo = v_jogo and t.data >= v_ini and t.data < v_fim
-            and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
-            and (not v_so_desb or p.papel = 'desbravador')
-          group by t.usuario_id
-          having sum(t.estrelas) = v_max
-        loop
-          insert into public.pontos (usuario_id, origem, pontos, motivo)
-          values (r.usuario_id, 'campeao', 20,
-            '🎲 Campeão do jogo da semana: ' || coalesce(v_nome_jogo, v_jogo)
-            || ' (jogo ' || v_jogo || ' ' || v_marca || ')');
-          v_nomes := coalesce(v_nomes || ', ', '') || coalesce(r.nome, 'Alguém');
-        end loop;
-
-        if v_nomes is not null then
-          insert into public.notificacoes (titulo, corpo, tipo, link, para)
-          values ('🎲 Campeão do jogo da semana!',
-            v_nomes || ' foi o melhor no ' || coalesce(v_nome_jogo, v_jogo) || ' e levou +20 pontos!',
-            'geral', '/trilha', 'todos');
-        end if;
+      if v_nomes is not null then
+        insert into public.notificacoes (titulo, corpo, tipo, link, para)
+        values ('🎲 Campeão do jogo da semana!',
+          v_nomes || ' foi o melhor no ' || coalesce(v_nome_jogo, v_jogo) || ' e levou +20 pontos!',
+          'geral', '/trilha', 'todos');
       end if;
     end if;
   end if;
 
-  -- ===================================================================
-  -- 🔄 SORTEIA O JOGO DA PRÓXIMA SEMANA
-  -- ===================================================================
-  -- de preferência, um jogo ativo diferente do reflexo E do desta semana
-  select chave into v_prox
-  from public.jogos_trilha
-  where ativo = true and chave <> 'reflexo' and chave <> coalesce(v_jogo, '')
-  order by random() limit 1;
-
-  -- se não sobrou opção diferente, aceita repetir (contanto que não seja reflexo)
-  if v_prox is null then
+  -- (b) sorteia o jogo da PRÓXIMA semana (uma vez por semana). Se já rodou o
+  --     sorteio desta semana, não mexe. Pior caso de re-sorteio só troca o jogo
+  --     de novo — nunca mexe em pontos.
+  if coalesce((select valor from public.config_clube where chave = 'jogo_semana_rodada'), '') <> v_marca then
+    -- de preferência um jogo ativo diferente do reflexo E do desta semana
     select chave into v_prox
     from public.jogos_trilha
-    where ativo = true and chave <> 'reflexo'
+    where ativo = true and chave <> 'reflexo' and chave <> coalesce(v_jogo, '')
     order by random() limit 1;
-  end if;
 
-  if v_prox is not null then
-    insert into public.config_clube (chave, valor) values ('jogo_da_semana', v_prox)
+    -- se não sobrou opção diferente, aceita repetir (contanto que não seja reflexo)
+    if v_prox is null then
+      select chave into v_prox
+      from public.jogos_trilha
+      where ativo = true and chave <> 'reflexo'
+      order by random() limit 1;
+    end if;
+
+    if v_prox is not null then
+      insert into public.config_clube (chave, valor) values ('jogo_da_semana', v_prox)
+      on conflict (chave) do update set valor = excluded.valor;
+
+      select nome into v_nome_prox from public.jogos_trilha where chave = v_prox;
+      insert into public.notificacoes (titulo, corpo, tipo, link, para)
+      values ('🎲 Novo jogo da semana!',
+        'Essa semana o jogo que vale prêmio é o ' || coalesce(v_nome_prox, v_prox)
+        || '! Quem fizer mais estrelas nele até domingo leva +20. 🏆',
+        'geral', '/trilha', 'todos');
+    end if;
+
+    -- marca que o sorteio desta semana já foi feito
+    insert into public.config_clube (chave, valor) values ('jogo_semana_rodada', v_marca)
     on conflict (chave) do update set valor = excluded.valor;
-
-    select nome into v_nome_prox from public.jogos_trilha where chave = v_prox;
-    insert into public.notificacoes (titulo, corpo, tipo, link, para)
-    values ('🎲 Novo jogo da semana!',
-      'Essa semana o jogo que vale prêmio é o ' || coalesce(v_nome_prox, v_prox)
-      || '! Quem fizer mais estrelas nele até domingo leva +20. 🏆',
-      'geral', '/trilha', 'todos');
   end if;
-
-  -- rodada desta semana concluída (trava de idempotência lá do início)
-  insert into public.config_clube (chave, valor) values ('rodada_semana_feita', v_marca)
-  on conflict (chave) do update set valor = excluded.valor;
 end;
 $$;
 
