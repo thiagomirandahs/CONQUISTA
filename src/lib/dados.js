@@ -188,6 +188,13 @@ export async function lerPix() {
   const { data } = await supabase.from('config_clube').select('valor').eq('chave', 'pix').maybeSingle()
   return data?.valor || ''
 }
+// Jogo da semana: a chave do jogo sorteado que vale +20 pro melhor no domingo.
+// É o agendador (SQL 2026-07-30-rodada-semana) que sorteia e grava. Aqui só lê.
+export async function lerJogoDaSemana() {
+  const { data } = await supabase.from('config_clube').select('valor')
+    .eq('chave', 'jogo_da_semana').maybeSingle()
+  return data?.valor || ''
+}
 // ------- Popup de aviso (a liderança escreve a mensagem que abre no app) -------
 // Guardado no config_clube (chave/valor). Se as chaves ainda não existem, o
 // upsert cria — por isso esta feature não precisa de SQL novo.

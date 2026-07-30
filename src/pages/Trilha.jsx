@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana } from '../lib/dados.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -55,6 +55,7 @@ export default function Trilha() {
   const [carregandoRank, setCarregandoRank] = useState(false)
   const [jogosAtivos, setJogosAtivos] = useState(['memoria']) // chaves dos jogos ativos
   const [jogoAtual, setJogoAtual] = useState('memoria')
+  const [jogoSemana, setJogoSemana] = useState('') // chave do jogo da semana (vale +20)
 
   // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
   // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
@@ -65,6 +66,8 @@ export default function Trilha() {
         setJogosAtivos(l.filter((g) => g.ativo).map((g) => g.chave).filter((c) => JOGOS[c]))
       })
       .catch(() => {})
+    // Jogo da semana (o que vale +20 pro melhor no domingo). Se falhar, some.
+    lerJogoDaSemana().then((c) => JOGOS[c] && setJogoSemana(c)).catch(() => {})
   }, [])
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
@@ -172,6 +175,24 @@ export default function Trilha() {
                   Cada jogo vale 1x por dia. O 1º do dia dá <b>+10</b>; os outros, <b>+5</b>.
                 </p>
               </div>
+
+              {jogoSemana && JOGOS[jogoSemana] && (
+                <motion.button whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (jogosAtivos.includes(jogoSemana)) {
+                      setJogoAtual(jogoSemana); setJogando(true); setResultado(null)
+                    }
+                  }}
+                  className="w-full text-left rounded-2xl p-3.5 mb-3 bg-amber-50 border-2 border-dourado flex items-center gap-3">
+                  <span className="text-3xl shrink-0">{JOGOS[jogoSemana].emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-extrabold text-dourado uppercase tracking-wide">🎲 Jogo da semana</div>
+                    <div className="font-extrabold text-slate-800 leading-tight">{JOGOS[jogoSemana].nome}</div>
+                    <div className="text-xs text-slate-500">Quem fizer mais estrelas nele até domingo leva <b>+20</b> 🏆</div>
+                  </div>
+                </motion.button>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-2.5">
                 {jogosAtivos.map((chave) => {
                   const j = JOGOS[chave]
