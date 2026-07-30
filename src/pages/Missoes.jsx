@@ -124,6 +124,12 @@ export default function Missoes() {
           </div>
 
           <div className="bg-white p-4 space-y-4">
+            {/* Missões de foto (e outras sem opções) guardam o enunciado em
+                'pergunta' — mostra ele aqui, senão a criança não vê o que fazer. */}
+            {(missao.opcoes || []).length === 0 && missao.pergunta && (
+              <p className="text-[15px] font-semibold text-slate-800 leading-snug">{missao.pergunta}</p>
+            )}
+
             {(missao.opcoes || []).length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 mb-2">❓ {missao.pergunta}</p>
