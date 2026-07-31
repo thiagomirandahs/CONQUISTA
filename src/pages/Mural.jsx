@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
@@ -197,17 +197,46 @@ export default function Mural() {
 // Ateliê de desenho: canvas de traço livre (dedo), cores, tamanhos, desfazer.
 // O desenho vira uma imagem e entra no álbum 🎨 Ateliê como uma foto normal.
 const CORES_ATELIE = ['#1e3a8a', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0ea5e9', '#78350f', '#000000', '#ffffff']
-const TAM_CANVAS = 600
+const TAM_CANVAS = 900 // resolução do desenho (maior = aguenta zoom sem borrar)
 
 function ModalDesenho({ onFechar, onEnviar }) {
   const canvasRef = useRef(null)
   const atualRef = useRef(null) // traço em andamento (fora do estado = fluido)
   const [tracos, setTracos] = useState([])
   const [cor, setCor] = useState('#1e3a8a')
-  const [larg, setLarg] = useState(8)
+  const [larg, setLarg] = useState(12)
   const [legenda, setLegenda] = useState('')
   const [enviando, setEnviando] = useState(false)
   const tema = TEMAS_ATELIE[Math.floor(Date.now() / 86400000) % TEMAS_ATELIE.length]
+
+  // Zoom/pan por transform CSS no canvas (transform-origin 0 0). Como pos() lê o
+  // getBoundingClientRect — que JÁ inclui o transform — o traço sai no lugar
+  // certo em qualquer zoom, sem conta extra. 1 dedo desenha; 2 dedos movem/zoom.
+  const [view, setView] = useState({ z: 1, panX: 0, panY: 0 })
+  const [base, setBase] = useState(320) // lado do canvas na tela (px) sem zoom
+  const contElRef = useRef(null)
+  const roRef = useRef(null)
+  const inited = useRef(false)
+  const pointers = useRef(new Map())
+  const pinchRef = useRef(null)
+
+  // Mede a área de desenho; na 1ª vez centraliza o canvas nela.
+  const contRef = useCallback((node) => {
+    roRef.current?.disconnect()
+    contElRef.current = node || null
+    if (!node) return
+    const medir = () => {
+      const w = node.clientWidth, h = node.clientHeight
+      const b = Math.max(160, Math.min(w, h) - 12)
+      setBase(b)
+      if (!inited.current && w > 0 && h > 0) {
+        inited.current = true
+        setView({ z: 1, panX: (w - b) / 2, panY: (h - b) / 2 })
+      }
+    }
+    medir()
+    const ro = new ResizeObserver(medir); ro.observe(node); roRef.current = ro
+  }, [])
 
   function desenharTudo() {
     const c = canvasRef.current?.getContext('2d')
@@ -227,25 +256,74 @@ function ModalDesenho({ onFechar, onEnviar }) {
   }
   useEffect(() => { desenharTudo() }, [tracos]) // eslint-disable-line
 
+  // toque -> pixel do canvas. Sem borda no canvas + rect já com o transform = exato.
   function pos(e) {
     const r = canvasRef.current.getBoundingClientRect()
     return { x: (e.clientX - r.left) * (TAM_CANVAS / r.width), y: (e.clientY - r.top) * (TAM_CANVAS / r.height) }
   }
+  function doisPontos() {
+    const v = [...pointers.current.values()]
+    return { a: v[0], b: v[1] }
+  }
+  function iniciarPinca() {
+    const { a, b } = doisPontos()
+    if (!a || !b) return
+    pinchRef.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }
+  }
+  // Mantém o ponto entre os dois dedos "grudado" enquanto dá zoom/move.
+  function aplicarPinca() {
+    const { a, b } = doisPontos()
+    if (!a || !b) return
+    if (!pinchRef.current) { iniciarPinca(); return }
+    const dist = Math.hypot(a.x - b.x, a.y - b.y)
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    const k = dist / (pinchRef.current.dist || dist)
+    const r = contElRef.current.getBoundingClientRect()
+    const pm = pinchRef.current.mid
+    setView((vw) => {
+      const z = Math.min(6, Math.max(0.4, vw.z * k))
+      const lx = (pm.x - r.left - vw.panX) / vw.z
+      const ly = (pm.y - r.top - vw.panY) / vw.z
+      return { z, panX: (mid.x - r.left) - z * lx, panY: (mid.y - r.top) - z * ly }
+    })
+    pinchRef.current = { dist, mid }
+  }
   function comecar(e) {
     e.preventDefault()
     canvasRef.current.setPointerCapture?.(e.pointerId)
-    atualRef.current = { cor, larg, pts: [pos(e)] }
-    desenharTudo()
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.current.size === 1) {
+      atualRef.current = { cor, larg, pts: [pos(e)] }; desenharTudo()
+    } else {
+      atualRef.current = null; desenharTudo(); iniciarPinca() // 2+ dedos = mover/zoom
+    }
   }
   function mover(e) {
-    if (!atualRef.current) return
-    atualRef.current.pts.push(pos(e))
-    desenharTudo()
+    if (!pointers.current.has(e.pointerId)) return
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.current.size >= 2) { aplicarPinca(); return }
+    if (atualRef.current) { atualRef.current.pts.push(pos(e)); desenharTudo() }
   }
-  function soltar() {
-    if (!atualRef.current) return
-    setTracos((t) => [...t, atualRef.current])
-    atualRef.current = null
+  function soltar(e) {
+    pointers.current.delete(e?.pointerId)
+    if (pointers.current.size < 2) pinchRef.current = null
+    if (atualRef.current && pointers.current.size === 0) {
+      setTracos((t) => [...t, atualRef.current]); atualRef.current = null
+    }
+  }
+  function zoomBotao(f) {
+    const r = contElRef.current?.getBoundingClientRect(); if (!r) return
+    const cx = r.width / 2, cy = r.height / 2
+    setView((vw) => {
+      const z = Math.min(6, Math.max(0.4, vw.z * f))
+      const lx = (cx - vw.panX) / vw.z, ly = (cy - vw.panY) / vw.z
+      return { z, panX: cx - z * lx, panY: cy - z * ly }
+    })
+  }
+  function centralizar() {
+    const r = contElRef.current?.getBoundingClientRect(); if (!r) return
+    const b = Math.max(160, Math.min(r.width, r.height) - 12)
+    setView({ z: 1, panX: (r.width - b) / 2, panY: (r.height - b) / 2 })
   }
 
   function enviar() {
@@ -263,53 +341,65 @@ function ModalDesenho({ onFechar, onEnviar }) {
   }
 
   return (
-    <motion.div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6"
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={enviando ? undefined : onFechar}>
-      <motion.div onClick={(e) => e.stopPropagation()}
-        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-4 sm:p-5 max-h-full overflow-y-auto">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-extrabold text-slate-800">🎨 Ateliê</h3>
-          <button onClick={onFechar} disabled={enviando} className="text-xs text-slate-400 p-3 -m-3">Fechar</button>
+    <motion.div className="fixed inset-0 z-[60] bg-slate-900/95 flex flex-col"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      {/* topo */}
+      <div className="flex items-center justify-between gap-2 px-4 py-2 text-white shrink-0">
+        <div className="min-w-0">
+          <h3 className="text-base font-extrabold leading-tight">🎨 Ateliê</h3>
+          <p className="text-[11px] text-white/70 truncate">Tema: {tema} · 2 dedos p/ mover e dar zoom ✌️</p>
         </div>
-        <p className="text-xs text-slate-500 mb-3">Tema de hoje: <b>{tema}</b> (mas pode desenhar o que quiser!)</p>
+        <button onClick={onFechar} disabled={enviando}
+          className="text-sm font-bold text-white bg-white/15 rounded-lg px-3 py-2 shrink-0 disabled:opacity-50">Fechar</button>
+      </div>
 
+      {/* área do desenho (tela cheia) */}
+      <div ref={contRef} className="relative flex-1 overflow-hidden bg-slate-800 touch-none">
         <canvas ref={canvasRef} width={TAM_CANVAS} height={TAM_CANVAS}
-          onPointerDown={comecar} onPointerMove={mover} onPointerUp={soltar} onPointerLeave={soltar}
-          className="w-full aspect-square rounded-2xl border-2 border-slate-200 bg-white"
-          style={{ touchAction: 'none' }} />
+          onPointerDown={comecar} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
+          className="absolute top-0 left-0 rounded-lg shadow-2xl bg-white"
+          style={{ width: base, height: base, transformOrigin: '0 0',
+            transform: `translate(${view.panX}px, ${view.panY}px) scale(${view.z})`, touchAction: 'none' }} />
 
-        <div className="flex items-center gap-1.5 mt-3 flex-wrap select-none">
+        {/* controles de zoom flutuantes */}
+        <div className="absolute right-3 bottom-3 flex flex-col gap-2 select-none">
+          <button onClick={() => zoomBotao(1.3)} className="w-11 h-11 rounded-full bg-white shadow-lg text-2xl font-bold text-slate-700 grid place-items-center leading-none">+</button>
+          <button onClick={() => zoomBotao(1 / 1.3)} className="w-11 h-11 rounded-full bg-white shadow-lg text-2xl font-bold text-slate-700 grid place-items-center leading-none">−</button>
+          <button onClick={centralizar} title="Centralizar" className="w-11 h-11 rounded-full bg-white shadow-lg text-lg grid place-items-center">⤢</button>
+        </div>
+      </div>
+
+      {/* barra de ferramentas */}
+      <div className="shrink-0 bg-white px-3 pt-2 pb-3 space-y-2">
+        <div className="flex items-center gap-1.5 flex-wrap select-none">
           {CORES_ATELIE.map((c) => (
             <button key={c} onClick={() => setCor(c)}
               className={`w-8 h-8 rounded-full border-2 shrink-0 ${cor === c ? 'border-azul scale-110' : 'border-slate-200'} transition-transform`}
               style={{ backgroundColor: c }} title={c === '#ffffff' ? 'Borracha' : ''} />
           ))}
-        </div>
-        <div className="flex items-center gap-2 mt-2 select-none">
-          {[4, 8, 16].map((l) => (
+          <div className="w-px h-7 bg-slate-200 mx-0.5" />
+          {[6, 12, 24].map((l) => (
             <button key={l} onClick={() => setLarg(l)}
-              className={`w-10 h-10 rounded-xl grid place-items-center ${larg === l ? 'bg-azul/10 ring-2 ring-azul' : 'bg-slate-50'}`}>
-              <span className="rounded-full bg-slate-700" style={{ width: l, height: l }} />
+              className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${larg === l ? 'bg-azul/10 ring-2 ring-azul' : 'bg-slate-50'}`}>
+              <span className="rounded-full bg-slate-700" style={{ width: Math.min(l, 22), height: Math.min(l, 22) }} />
             </button>
           ))}
           <div className="flex-1" />
           <button onClick={() => setTracos((t) => t.slice(0, -1))} disabled={!tracos.length}
-            className="text-sm font-bold text-slate-600 bg-slate-100 rounded-xl px-3 py-2.5 disabled:opacity-40">↩️ Desfazer</button>
+            className="text-base font-bold text-slate-600 bg-slate-100 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer">↩️</button>
           <button onClick={() => setTracos([])} disabled={!tracos.length}
-            className="text-sm font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2.5 disabled:opacity-40">🗑️ Limpar</button>
+            className="text-base font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Limpar">🗑️</button>
         </div>
-
-        <input value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
-          placeholder={`Legenda (ex.: ${tema})`}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mt-3" />
-
-        <button onClick={enviar} disabled={!tracos.length || enviando}
-          className="w-full mt-3 bg-purple-600 text-white font-extrabold rounded-xl py-3 disabled:opacity-50">
-          {enviando ? 'Publicando…' : '🎨 Publicar no mural'}
-        </button>
-      </motion.div>
+        <div className="flex items-center gap-2">
+          <input value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
+            placeholder={`Legenda (ex.: ${tema})`}
+            className="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+          <button onClick={enviar} disabled={!tracos.length || enviando}
+            className="bg-purple-600 text-white font-extrabold rounded-xl px-4 py-2.5 disabled:opacity-50 shrink-0">
+            {enviando ? '…' : '🎨 Publicar'}
+          </button>
+        </div>
+      </div>
     </motion.div>
   )
 }
