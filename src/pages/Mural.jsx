@@ -203,6 +203,7 @@ function ModalDesenho({ onFechar, onEnviar }) {
   const canvasRef = useRef(null)
   const atualRef = useRef(null) // traço em andamento (fora do estado = fluido)
   const [tracos, setTracos] = useState([])
+  const tracosRef = useRef([]) // fonte da verdade do desenho (não depende de closure)
   const [cor, setCor] = useState('#1e3a8a')
   const [larg, setLarg] = useState(12)
   const [legenda, setLegenda] = useState('')
@@ -245,7 +246,7 @@ function ModalDesenho({ onFechar, onEnviar }) {
     c.fillRect(0, 0, TAM_CANVAS, TAM_CANVAS)
     c.lineCap = 'round'
     c.lineJoin = 'round'
-    for (const t of [...tracos, atualRef.current].filter(Boolean)) {
+    for (const t of [...tracosRef.current, atualRef.current].filter(Boolean)) {
       c.strokeStyle = t.cor
       c.lineWidth = t.larg
       c.beginPath()
@@ -255,6 +256,20 @@ function ModalDesenho({ onFechar, onEnviar }) {
     }
   }
   useEffect(() => { desenharTudo() }, [tracos]) // eslint-disable-line
+
+  // Ouve move/solta na JANELA (não só no canvas): pega o dedo mesmo se ele sair
+  // do canvas ou se a captura falhar. Sem isto, um pointerup perdido deixava o
+  // ponteiro "preso" e os traços seguintes viravam gesto (não desenhavam).
+  useEffect(() => {
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    window.addEventListener('pointercancel', soltar)
+    return () => {
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+      window.removeEventListener('pointercancel', soltar)
+    }
+  }, []) // eslint-disable-line
 
   // toque -> pixel do canvas. Sem borda no canvas + rect já com o transform = exato.
   function pos(e) {
@@ -290,7 +305,6 @@ function ModalDesenho({ onFechar, onEnviar }) {
   }
   function comecar(e) {
     e.preventDefault()
-    canvasRef.current.setPointerCapture?.(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.current.size === 1) {
       atualRef.current = { cor, larg, pts: [pos(e)] }; desenharTudo()
@@ -305,12 +319,17 @@ function ModalDesenho({ onFechar, onEnviar }) {
     if (atualRef.current) { atualRef.current.pts.push(pos(e)); desenharTudo() }
   }
   function soltar(e) {
-    pointers.current.delete(e?.pointerId)
+    if (!pointers.current.has(e.pointerId)) return
+    pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinchRef.current = null
     if (atualRef.current && pointers.current.size === 0) {
-      setTracos((t) => [...t, atualRef.current]); atualRef.current = null
+      tracosRef.current = [...tracosRef.current, atualRef.current] // grava o traço
+      setTracos(tracosRef.current)
+      atualRef.current = null
     }
   }
+  function desfazer() { tracosRef.current = tracosRef.current.slice(0, -1); setTracos(tracosRef.current) }
+  function limpar() { tracosRef.current = []; setTracos([]) }
   function zoomBotao(f) {
     const r = contElRef.current?.getBoundingClientRect(); if (!r) return
     const cx = r.width / 2, cy = r.height / 2
@@ -356,7 +375,7 @@ function ModalDesenho({ onFechar, onEnviar }) {
       {/* área do desenho (tela cheia) */}
       <div ref={contRef} className="relative flex-1 overflow-hidden bg-slate-800 touch-none">
         <canvas ref={canvasRef} width={TAM_CANVAS} height={TAM_CANVAS}
-          onPointerDown={comecar} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
+          onPointerDown={comecar}
           className="absolute top-0 left-0 rounded-lg shadow-2xl bg-white"
           style={{ width: base, height: base, transformOrigin: '0 0',
             transform: `translate(${view.panX}px, ${view.panY}px) scale(${view.z})`, touchAction: 'none' }} />
@@ -385,9 +404,9 @@ function ModalDesenho({ onFechar, onEnviar }) {
             </button>
           ))}
           <div className="flex-1" />
-          <button onClick={() => setTracos((t) => t.slice(0, -1))} disabled={!tracos.length}
+          <button onClick={desfazer} disabled={!tracos.length}
             className="text-base font-bold text-slate-600 bg-slate-100 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer">↩️</button>
-          <button onClick={() => setTracos([])} disabled={!tracos.length}
+          <button onClick={limpar} disabled={!tracos.length}
             className="text-base font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Limpar">🗑️</button>
         </div>
         <div className="flex items-center gap-2">
