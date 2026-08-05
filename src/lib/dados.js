@@ -761,6 +761,38 @@ export async function carregarRecordesSemana(jogo) {
   return data || []
 }
 
+// ---------- 🆘 Pedir ajuda a um amigo (jogos de palavra) ----------
+// Lista de amigos ativos (não pais) pro seletor — a RLS de profiles já libera
+// pra membro ativo. Tira o próprio id da lista.
+export async function listarColegas(meuId) {
+  const { data } = await supabase.from('profiles').select('id,nome,foto,unidade_id')
+    .eq('status', 'ativo').neq('papel', 'pais').order('nome')
+  return (data || []).filter((p) => p.id !== meuId)
+}
+export async function pedirAjuda({ para, jogo, enunciado, resposta }) {
+  const { data, error } = await supabase.rpc('pedir_ajuda',
+    { p_para: para, p_jogo: jogo, p_enunciado: enunciado, p_resposta: resposta })
+  if (error) throw new Error(error.message)
+  return data // id do pedido
+}
+export async function ajudasRecebidas() {
+  const { data, error } = await supabase.rpc('ajudas_recebidas')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+export async function resolverAjuda(id, tentativa) {
+  const { data, error } = await supabase.rpc('resolver_ajuda', { p_id: id, p_tentativa: tentativa })
+  if (error) throw new Error(error.message)
+  return data || { ok: false }
+}
+export async function ajudaStatus(id) {
+  const { data, error } = await supabase.rpc('ajuda_status', { p_id: id })
+  if (error) throw new Error(error.message)
+  return data || { status: 'nao' }
+}
+export async function cancelarAjuda(id) { await supabase.rpc('cancelar_ajuda', { p_id: id }) }
+export async function recusarAjuda(id) { await supabase.rpc('recusar_ajuda', { p_id: id }) }
+
 export async function alternarJogoTrilha(chave, ativo) {
   const { data, error } = await supabase.from('jogos_trilha').update({ ativo }).eq('chave', chave).select('chave')
   if (error) throw new Error(error.message)

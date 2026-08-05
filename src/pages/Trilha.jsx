@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana } from '../lib/dados.js'
+import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas } from '../lib/dados.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -58,6 +59,8 @@ export default function Trilha() {
   const [jogosAtivos, setJogosAtivos] = useState(['memoria']) // chaves dos jogos ativos
   const [jogoAtual, setJogoAtual] = useState('memoria')
   const [jogoSemana, setJogoSemana] = useState('') // chave do jogo da semana (vale +20)
+  const [pedidosAjuda, setPedidosAjuda] = useState([]) // pedidos de ajuda de amigos
+  const [caixaAjuda, setCaixaAjuda] = useState(false)
 
   // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
   // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
@@ -73,6 +76,18 @@ export default function Trilha() {
   }, [])
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
+
+  // Pedidos de ajuda que amigos me mandaram (poll leve + ao voltar o foco)
+  useEffect(() => {
+    if (!profile?.id) return
+    const carregar = () => ajudasRecebidas().then(setPedidosAjuda).catch(() => {})
+    carregar()
+    const t = setInterval(carregar, 20000)
+    const foco = () => { if (document.visibilityState === 'visible') carregar() }
+    window.addEventListener('focus', foco)
+    document.addEventListener('visibilitychange', foco)
+    return () => { clearInterval(t); window.removeEventListener('focus', foco); document.removeEventListener('visibilitychange', foco) }
+  }, [profile?.id])
   async function recarregar() {
     setCarregando(true)
     try { setProg(await carregarTrilha()) } finally { setCarregando(false) }
@@ -147,6 +162,18 @@ export default function Trilha() {
         })()
       ) : (
         <div>
+          {pedidosAjuda.length > 0 && (
+            <button onClick={() => setCaixaAjuda(true)}
+              className="w-full mb-3 flex items-center gap-3 rounded-2xl bg-azul/10 border border-azul/20 p-3 text-left">
+              <span className="text-2xl shrink-0">🆘</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-extrabold text-azul text-sm">
+                  {pedidosAjuda.length} amigo{pedidosAjuda.length > 1 ? 's' : ''} precisa{pedidosAjuda.length > 1 ? 'm' : ''} de ajuda!
+                </p>
+                <p className="text-xs text-slate-500">Toque pra ajudar e ganhar +5 🤝</p>
+              </div>
+            </button>
+          )}
           {resultado && (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
               <div className="text-4xl mb-1">🎉</div>
@@ -224,6 +251,11 @@ export default function Trilha() {
             </>
           )}
         </div>
+      )}
+
+      {caixaAjuda && (
+        <CaixaAjuda pedidos={pedidosAjuda} aoFechar={() => setCaixaAjuda(false)}
+          aoResolvido={(id) => setPedidosAjuda((ps) => ps.filter((p) => p.id !== id))} />
       )}
     </div>
   )
@@ -845,6 +877,7 @@ function JogoForca({ onTerminar, onCancelar }) {
 
   const erradas = usadas.filter((l) => !palavra.includes(l))
   const vidas = VIDAS - erradas.length
+  const mascara = palavra.split('').map((l) => (usadas.includes(l) ? l : '_')).join(' ')
 
   function tentar(l) {
     if (fim || usadas.includes(l)) return
@@ -859,6 +892,11 @@ function JogoForca({ onTerminar, onCancelar }) {
       setFim(true); setMsg(`Acabaram as vidas! Era ${palavra}`)
       setTimeout(() => onTerminar(1), 1400)
     }
+  }
+  function ajudado(resp) {
+    if (fim) return
+    setFim(true); setMsg(`Um amigo te ajudou! Era ${resp || palavra} 🤝`)
+    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
   }
 
   return (
@@ -886,6 +924,13 @@ function JogoForca({ onTerminar, onCancelar }) {
       </div>
 
       {msg && <p className={`text-sm font-bold mb-2 ${msg.startsWith('Você') ? 'text-green-600' : 'text-amber-600'}`}>{msg}</p>}
+
+      {!fim && (
+        <div className="mb-3">
+          <PedirAjuda jogo="forca" resposta={palavra} onAjudado={ajudado}
+            enunciado={{ tipo: 'forca', mascara, tema: 'mundo desbravador' }} />
+        </div>
+      )}
 
       <div className="grid grid-cols-7 gap-1">
         {ALFABETO.map((l) => {
@@ -1275,6 +1320,11 @@ function JogoAnagrama({ onTerminar, onCancelar }) {
       } else setI(i + 1)
     }, 1200)
   }
+  function ajudado(r) {
+    if (fim || aviso) return
+    setFim(true); setAviso(`Um amigo te ajudou! Era ${r || q.palavra} 🤝`)
+    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
+  }
 
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -1297,6 +1347,12 @@ function JogoAnagrama({ onTerminar, onCancelar }) {
         <button type="submit" disabled={!resp.trim() || !!aviso || fim}
           className="rounded-xl bg-azul text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
       </form>
+      {!fim && !aviso && (
+        <div className="mt-3">
+          <PedirAjuda jogo="anagrama" resposta={q.palavra} onAjudado={ajudado}
+            enunciado={{ tipo: 'anagrama', letras: q.embaralhada, dica: 'Palavra do clube' }} />
+        </div>
+      )}
       {aviso && <p className={`text-sm font-bold mt-3 ${aviso.startsWith('Acertou') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
     </div>
   )
@@ -1650,6 +1706,11 @@ function JogoTermo({ onTerminar, onCancelar }) {
     }
     if (atual.length < 5) setAtual((a) => a + k)
   }
+  function ajudado() {
+    if (fim) return
+    setFim('ajudado') // revela a palavra no topo
+    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
+  }
 
   // Cor de cada tecla = melhor resultado que aquela letra já teve
   const corTecla = {}
@@ -1664,9 +1725,16 @@ function JogoTermo({ onTerminar, onCancelar }) {
         <span className="text-sm font-semibold text-slate-600">Tentativa {Math.min(linhas.length + 1, 6)} de 6</span>
         <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
       </div>
-      <p className={`text-xs mb-3 h-4 font-semibold ${fim === 'ganhou' ? 'text-green-600' : fim === 'perdeu' ? 'text-amber-600' : 'text-slate-400'}`}>
-        {fim === 'ganhou' ? 'Descobriu! 🎉' : fim === 'perdeu' ? `Era ${alvo}!` : aviso || 'Palavra do mundo desbravador'}
+      <p className={`text-xs mb-3 h-4 font-semibold ${fim === 'ganhou' ? 'text-green-600' : fim ? 'text-amber-600' : 'text-slate-400'}`}>
+        {fim === 'ganhou' ? 'Descobriu! 🎉' : fim === 'ajudado' ? `Um amigo te ajudou! Era ${alvo} 🤝` : fim === 'perdeu' ? `Era ${alvo}!` : aviso || 'Palavra do mundo desbravador'}
       </p>
+
+      {!fim && (
+        <div className="mb-3">
+          <PedirAjuda jogo="termo" resposta={alvo} onAjudado={ajudado}
+            enunciado={{ tipo: 'termo', tentativas: linhas.map((l) => ({ tent: l.tent, res: l.res })), tamanho: 5 }} />
+        </div>
+      )}
 
       <div className="grid gap-1.5 mx-auto max-w-[280px] mb-4 select-none">
         {Array.from({ length: 6 }, (_, r) => {
