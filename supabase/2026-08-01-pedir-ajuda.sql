@@ -40,6 +40,7 @@ returns text language sql immutable set search_path = '' as $$
     'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ',
     'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')));
 $$;
+revoke execute on function public.norm_txt(text) from public, anon;
 
 -- 1) PEDIR AJUDA -------------------------------------------------------
 create or replace function public.pedir_ajuda(p_para uuid, p_jogo text, p_enunciado jsonb, p_resposta text)
@@ -49,6 +50,7 @@ declare
   v_id uuid;
   v_nome text;
   v_nomejogo text;
+  v_ja_aberto boolean;
 begin
   if v_uid is null then raise exception 'Não autenticado.'; end if;
   if not public.eh_membro_ativo() then raise exception 'Sem permissão.'; end if;
@@ -60,21 +62,30 @@ begin
   if coalesce(trim(p_resposta), '') = '' then raise exception 'Desafio sem resposta.'; end if;
 
   perform pg_advisory_xact_lock(hashtext(v_uid::text || ':pedir_ajuda'));
-  -- só 1 pedido aberto por vez: o novo cancela o anterior
-  update public.ajudas set status = 'cancelado' where de_id = v_uid and status = 'aberto';
 
+  -- ANTI-FLOOD: no máximo 5 pedidos a cada 5 minutos (não deixa spammar a caixa de um colega)
+  if (select count(*) from public.ajudas where de_id = v_uid and criado_em > now() - interval '5 minutes') >= 5 then
+    raise exception 'Você pediu ajuda demais agora. Espere um pouquinho 🙂';
+  end if;
+
+  -- já havia pedido ABERTO pra ESTE mesmo amigo? então NÃO re-notifica (evita flood dirigido)
+  v_ja_aberto := exists (select 1 from public.ajudas where de_id = v_uid and para_id = p_para and status = 'aberto');
+
+  -- só 1 pedido aberto por vez: cancela os anteriores e cria o novo (com o desafio atual)
+  update public.ajudas set status = 'cancelado' where de_id = v_uid and status = 'aberto';
   insert into public.ajudas (de_id, para_id, jogo, enunciado, resposta)
   values (v_uid, p_para, p_jogo, p_enunciado, p_resposta)
   returning id into v_id;
 
-  select nome into v_nome from public.profiles where id = v_uid;
-  select nome into v_nomejogo from public.jogos_trilha where chave = p_jogo;
-
-  -- notificação direcionada ao amigo (feita aqui dentro pois o cliente não pode inserir notificação)
-  insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por)
-  values ('🆘 Pedido de ajuda!',
-    coalesce(v_nome, 'Um amigo') || ' precisou da sua ajuda no ' || coalesce(v_nomejogo, p_jogo) || '! Abra os 🎮 Jogos e ajude.',
-    'geral', '/trilha', 'pessoal', p_para, v_uid);
+  if not v_ja_aberto then
+    select nome into v_nome from public.profiles where id = v_uid;
+    select nome into v_nomejogo from public.jogos_trilha where chave = p_jogo;
+    -- notificação direcionada ao amigo (feita aqui dentro pois o cliente não pode inserir notificação)
+    insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por)
+    values ('🆘 Pedido de ajuda!',
+      coalesce(v_nome, 'Um amigo') || ' precisou da sua ajuda no ' || coalesce(v_nomejogo, p_jogo) || '! Abra os 🎮 Jogos e ajude.',
+      'geral', '/trilha', 'pessoal', p_para, v_uid);
+  end if;
 
   return v_id;
 end;
