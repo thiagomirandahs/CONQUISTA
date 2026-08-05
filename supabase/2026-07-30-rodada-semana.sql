@@ -32,7 +32,7 @@
 insert into public.config_clube (chave, valor)
 select 'jogo_da_semana', j.chave
 from public.jogos_trilha j
-where j.ativo = true and j.chave <> 'reflexo'
+where j.ativo = true and j.chave not in ('reflexo', 'corrida')
 order by random()
 limit 1
 on conflict (chave) do nothing;
@@ -173,14 +173,14 @@ begin
     -- de preferência um jogo ativo diferente do reflexo E do desta semana
     select chave into v_prox
     from public.jogos_trilha
-    where ativo = true and chave <> 'reflexo' and chave <> coalesce(v_jogo, '')
+    where ativo = true and chave not in ('reflexo', 'corrida') and chave <> coalesce(v_jogo, '')
     order by random() limit 1;
 
-    -- se não sobrou opção diferente, aceita repetir (contanto que não seja reflexo)
+    -- se não sobrou opção diferente, aceita repetir (só não jogos de recorde)
     if v_prox is null then
       select chave into v_prox
       from public.jogos_trilha
-      where ativo = true and chave <> 'reflexo'
+      where ativo = true and chave not in ('reflexo', 'corrida')
       order by random() limit 1;
     end if;
 
