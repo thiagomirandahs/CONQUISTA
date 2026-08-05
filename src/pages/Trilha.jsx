@@ -39,6 +39,7 @@ const JOGOS = {
   termo: { nome: 'Termo do Clube', curto: 'Termo', emoji: '🟩', desc: 'Descubra a palavra de 5 letras em 6 tentativas', Comp: JogoTermo },
   proximo: { nome: 'Qual é o Próximo?', curto: 'Próximo', emoji: '➡️', desc: 'Complete a sequência lógica', Comp: JogoProximo },
   velha: { nome: 'Jogo da Velha', curto: 'Velha', emoji: '⭕', desc: 'Melhor de 3 contra o app — você é o ❌', Comp: JogoVelha },
+  socorro: { nome: 'Primeiros Socorros', curto: 'Socorros', emoji: '🚑', desc: 'O que fazer primeiro? Aprenda socorrendo de verdade', Comp: JogoSocorro },
   reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexo },
   corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorrida },
 }
@@ -1890,6 +1891,116 @@ function JogoVelha({ onTerminar, onCancelar }) {
         ))}
       </div>
       <p className="text-[11px] text-slate-400 mt-3">Melhor de 3. Vitória vale 2 pontos e empate vale 1 — some 4+ pra fazer 3⭐.</p>
+    </div>
+  )
+}
+
+// ===================== 🚑 Primeiros Socorros =====================
+// "O que fazer PRIMEIRO?" — cenas reais da especialidade de Primeiros Socorros.
+// A criança escolhe a ação certa e o jogo EXPLICA o porquê. Sorteia 5 por rodada.
+const SOCORRO = [
+  { emoji: '🔥', cena: 'Você encostou na panela quente da fogueira e queimou a mão. O que fazer PRIMEIRO?',
+    o: ['Pôr a mão embaixo de água fria corrente', 'Passar pasta de dente', 'Passar manteiga', 'Estourar a bolha'], c: 0,
+    dica: 'Água fria corrente por alguns minutos alivia e protege a pele. Nada de pasta, manteiga nem estourar bolha.' },
+  { emoji: '🩸', cena: 'Um amigo cortou o dedo e está sangrando. Qual o primeiro passo?',
+    o: ['Apertar o corte com um pano limpo', 'Assoprar o corte', 'Passar terra pra estancar', 'Deixar sangrar bastante'], c: 0,
+    dica: 'Pressione com um pano limpo pra estancar. Depois lave com água e sabão e cubra.' },
+  { emoji: '😮‍💨', cena: 'Alguém engasgou e não consegue falar nem tossir. O que fazer?',
+    o: ['Chamar um adulto e dar batidas firmes nas costas', 'Dar água pra empurrar', 'Deixar deitado esperando', 'Mandar continuar comendo'], c: 0,
+    dica: 'Engasgo com falta de ar é urgente: chame ajuda e dê batidas firmes entre as costas.' },
+  { emoji: '🐍', cena: 'Picada de cobra na perna, no acampamento. O que fazer PRIMEIRO?',
+    o: ['Manter a pessoa calma e parada e levar ao hospital', 'Chupar o veneno', 'Cortar o local da picada', 'Amarrar bem apertado'], c: 0,
+    dica: 'Mantenha a pessoa calma e imóvel (o movimento espalha o veneno) e leve rápido ao hospital. Nunca corte nem chupe.' },
+  { emoji: '🐝', cena: 'Você levou uma ferroada de abelha. Qual o primeiro passo?',
+    o: ['Raspar o ferrão pra fora e lavar com água e sabão', 'Apertar pra espremer o ferrão', 'Coçar bastante o local', 'Passar barro'], c: 0,
+    dica: 'Raspe o ferrão de lado (apertar solta mais veneno), lave e ponha algo frio. Se inchar muito ou faltar ar, procure ajuda.' },
+  { emoji: '👃', cena: 'O nariz de um colega começou a sangrar. O que fazer?',
+    o: ['Inclinar a cabeça pra FRENTE e apertar as narinas', 'Jogar a cabeça pra trás', 'Deitar de costas', 'Assoar o nariz com força'], c: 0,
+    dica: 'Cabeça pra frente e aperte as narinas por uns minutos. Jogar pra trás faz engolir sangue.' },
+  { emoji: '🦶', cena: 'Você torceu o pé e ele começou a inchar. Primeiro passo?',
+    o: ['Parar, descansar e pôr gelo (com um pano) no local', 'Continuar correndo', 'Massagear bem forte', 'Colocar água quente'], c: 0,
+    dica: 'Repouso + gelo (enrolado num pano) nas primeiras horas diminui o inchaço. Nada de forçar nem água quente.' },
+  { emoji: '☀️', cena: 'Depois de muito sol, um desbravador passou mal, quente e tonto. O que fazer?',
+    o: ['Levar pra sombra, refrescar e dar água aos poucos', 'Deixar mais um pouco no sol', 'Agasalhar bem a pessoa', 'Mandar fazer exercício'], c: 0,
+    dica: 'Insolação: sombra, refrescar o corpo e água aos poucos. Se não melhorar, procure ajuda.' },
+  { emoji: '😵', cena: 'Um colega desmaiou de repente. O que fazer PRIMEIRO?',
+    o: ['Deitar a pessoa e levantar as pernas um pouco; chamar ajuda', 'Sacudir e jogar água no rosto', 'Dar um tapa pra acordar', 'Levantar e fazer andar'], c: 0,
+    dica: 'Deite e eleve as pernas (ajuda o sangue voltar à cabeça) e chame um adulto. Nada de sacudir ou bater.' },
+  { emoji: '🤕', cena: 'Alguém bateu a cabeça e está confuso ou com muito sono. O que fazer?',
+    o: ['Manter em repouso e procurar um adulto/socorro', 'Mandar continuar brincando', 'Balançar pra ver se reage', 'Dar remédio por conta própria'], c: 0,
+    dica: 'Batida na cabeça com confusão/sono precisa de avaliação: repouso e procure ajuda de um adulto ou do serviço de saúde.' },
+]
+
+function JogoSocorro({ onTerminar, onCancelar }) {
+  // Sorteia 5 cenas e embaralha as opções de cada uma (a certa muda de lugar)
+  const [rodadas] = useState(() => embaralhar(SOCORRO).slice(0, 5).map((s) => ({
+    emoji: s.emoji, cena: s.cena, dica: s.dica, certa: s.o[s.c], opcoes: embaralhar(s.o),
+  })))
+  const [n, setN] = useState(0)
+  const [acertos, setAcertos] = useState(0)
+  const [escolha, setEscolha] = useState(null) // texto da opção escolhida | null
+  const [fim, setFim] = useState(false)
+  const q = rodadas[n]
+  const acertou = escolha === q.certa
+
+  function responder(op) {
+    if (escolha !== null || fim) return
+    setEscolha(op)
+    if (op === q.certa) setAcertos((a) => a + 1)
+  }
+  function proxima() {
+    if (n + 1 >= rodadas.length) {
+      setFim(true)
+      onTerminar(acertos >= 5 ? 3 : acertos >= 3 ? 2 : 1)
+    } else { setN(n + 1); setEscolha(null) }
+  }
+
+  if (fim) {
+    return (
+      <div className="bg-white rounded-3xl p-6 shadow-md text-center">
+        <div className="text-5xl mb-2">🚑</div>
+        <p className="font-extrabold text-slate-800 text-lg">Você acertou {acertos} de {rodadas.length}!</p>
+        <p className="text-sm text-slate-500 mt-1">Primeiros socorros salvam vidas. 💪</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-md">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-slate-600">Cena {n + 1} de {rodadas.length}</span>
+        <button onClick={onCancelar} className="text-xs text-slate-400 p-3 -m-3">Cancelar</button>
+      </div>
+      <div className="text-center text-5xl mb-2">{q.emoji}</div>
+      <p className="text-slate-800 font-bold text-center mb-4">{q.cena}</p>
+      <div className="space-y-2">
+        {q.opcoes.map((op) => {
+          const revela = escolha !== null
+          const ehCerta = op === q.certa
+          const ehEscolha = op === escolha
+          const cor = !revela ? 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+            : ehCerta ? 'bg-green-100 text-green-800 ring-2 ring-green-400'
+              : ehEscolha ? 'bg-red-100 text-red-700 ring-2 ring-red-300'
+                : 'bg-slate-50 text-slate-400'
+          return (
+            <motion.button key={op} whileTap={revela ? undefined : { scale: 0.98 }} onClick={() => responder(op)} disabled={revela}
+              className={`w-full rounded-xl py-3 px-3 text-sm font-semibold text-left ${cor}`}>
+              {revela && ehCerta ? '✅ ' : revela && ehEscolha ? '❌ ' : ''}{op}
+            </motion.button>
+          )
+        })}
+      </div>
+      {escolha !== null && (
+        <>
+          <div className={`text-sm font-semibold mt-3 rounded-xl p-3 ${acertou ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
+            {acertou ? 'Isso! ' : 'Fique ligado: '}{q.dica}
+          </div>
+          <button onClick={proxima} className="w-full mt-3 rounded-xl bg-azul text-white font-extrabold py-3">
+            {n + 1 >= rodadas.length ? 'Ver resultado 🎉' : 'Próxima ▶️'}
+          </button>
+        </>
+      )}
+      <p className="text-xs text-slate-400 text-center mt-2">Acertos: {acertos}</p>
     </div>
   )
 }
