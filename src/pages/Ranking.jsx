@@ -180,9 +180,9 @@ export default function Ranking() {
                           </div>
                           <div className="flex justify-between items-center border-t border-slate-200 mt-2 pt-2 text-xs">
                             <span className="text-slate-500">
-                              Soma {card.item.membros.reduce((s, m) => s + m.pts, 0)} ÷ {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'}
+                              {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'} · soma {card.item.membros.reduce((s, m) => s + m.pts, 0)}
                             </span>
-                            <span className="font-bold text-slate-700">≈ média {card.item.media}</span>
+                            <span className="font-bold text-slate-700">≈ média nivelada {card.item.media}</span>
                           </div>
                         </>
                       )}
@@ -190,7 +190,7 @@ export default function Ranking() {
                     {/* O total do time */}
                     <div className="bg-slate-50 rounded-xl p-3 text-sm">
                       <div className="flex justify-between py-0.5">
-                        <span className="text-slate-500">Média dos membros</span>
+                        <span className="text-slate-500">Média nivelada</span>
                         <span className="font-semibold text-slate-800">{card.item.media}</span>
                       </div>
                       <div className="flex justify-between py-0.5">

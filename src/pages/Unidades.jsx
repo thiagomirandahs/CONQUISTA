@@ -121,7 +121,7 @@ export default function Unidades() {
                     initial={{ width: 0 }} animate={{ width: `${Math.min(u.pontos, 100)}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} />
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">time {u.avulsos} + média {u.media}</div>
+                <div className="text-[10px] text-slate-400 mt-1">time {u.avulsos} + média nivelada {u.media}</div>
               </div>
             </motion.button>
           ))}
@@ -155,7 +155,7 @@ export default function Unidades() {
                     <span>👥 {sel.membros.length} membros</span>
                     <span>⭐ {sel.pontos} pts</span>
                   </div>
-                  <div className="text-xs text-white/80 mt-1">time {sel.avulsos} + média dos membros {sel.media}</div>
+                  <div className="text-xs text-white/80 mt-1">time {sel.avulsos} + média nivelada {sel.media}</div>
                 </div>
               </div>
               {(sel.lema || sel.grito) && (

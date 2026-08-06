@@ -42,6 +42,14 @@ export async function carregarRanking() {
   const corUni = Object.fromEntries((us || []).map((u) => [u.id, u.cor || '#1e3a8a']))
   const nomeUni = Object.fromEntries((us || []).map((u) => [u.id, u.nome]))
 
+  // Média geral do clube (por membro que está numa unidade). Serve pra NIVELAR as
+  // unidades pequenas: uma unidade de 2 não fica em 1º só por ter 2 craques.
+  const emUnidade = pessoas.filter((p) => p.unidade_id && nomeUni[p.unidade_id])
+  const mediaClube = emUnidade.length
+    ? emUnidade.reduce((s, p) => s + (totalPessoa[p.id] || 0), 0) / emUnidade.length
+    : 0
+  const K_NIVELA = 4 // "membros fantasma" na média do clube (maior = nivela mais)
+
   const unidades = (us || [])
     .map((u) => {
       const membros = pessoas
@@ -52,9 +60,12 @@ export async function carregarRanking() {
         .filter((p) => p.unidade_id === u.id)
         .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, papel: p.papel, cor: u.cor || '#1e3a8a', pts: totalPessoa[p.id] || 0 }))
         .sort((a, b) => b.pts - a.pts || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
-      const media = membros.length ? Math.round(membros.reduce((s, m) => s + m.pts, 0) / membros.length) : 0
+      // MÉDIA NIVELADA (Bayesian): completa a unidade com K membros na média do
+      // clube. Unidade pequena é puxada pra média geral (não dispara com 2 craques);
+      // unidade grande quase não muda. Assim fica justo dos dois lados.
+      const soma = membros.reduce((s, m) => s + m.pts, 0)
+      const media = membros.length ? Math.round((soma + K_NIVELA * mediaClube) / (membros.length + K_NIVELA)) : 0
       const avulsos = totalTime[u.id] || 0
-      // Método escolhido: pontos avulsos do time + média dos desbravadores (ambos justos com o tamanho)
       const pontos = avulsos + media
       return { id: u.id, nome: u.nome, cor: u.cor || '#1e3a8a', emblema: u.emblema, lema: u.lema, grito: u.grito, bandeira: u.bandeira, membros, media, avulsos, pontos }
     })
