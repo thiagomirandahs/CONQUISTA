@@ -123,7 +123,6 @@ export default function Trilha() {
   // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
   const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
-  const proxPontos = jogadosHoje.length === 0 ? 10 : 5
 
   return (
     <div>
@@ -179,7 +178,7 @@ export default function Trilha() {
               <div className="text-4xl mb-1">🎉</div>
               <p className="font-extrabold text-slate-800">+{resultado.pontos} pontos · {'⭐'.repeat(resultado.estrelas)}</p>
               <p className="text-xs text-slate-500 mt-0.5">
-                {resultado.extra ? 'Jogo extra do dia (vale 5)' : 'Primeiro jogo do dia (vale 10)'}
+                Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟
               </p>
             </div>
           )}
@@ -201,7 +200,7 @@ export default function Trilha() {
               <div className="text-center mb-3">
                 <p className="font-bold text-slate-800">Escolha um jogo 🎮</p>
                 <p className="text-sm text-slate-400 mt-1">
-                  Cada jogo vale 1x por dia. O 1º do dia dá <b>+10</b>; os outros, <b>+5</b>.
+                  Cada jogo, 1x por dia. Cada ⭐ vale 5 pontos: <b>1⭐=5</b> · <b>2⭐=10</b> · <b>3⭐=15</b>.
                 </p>
               </div>
 
@@ -243,7 +242,7 @@ export default function Trilha() {
                         ? <span className="bg-dourado text-azul font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">🚀 Recorde</span>
                         : jogado
                         ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
-                        : <span className="bg-azul text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">+{proxPontos}</span>}
+                        : <span className="bg-azul text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 5-15</span>}
                     </motion.button>
                   )
                 })}
