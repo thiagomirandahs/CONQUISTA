@@ -149,7 +149,7 @@ export default function Trilha() {
           // No PC o jogo fica centralizado num cartão, sem esticar a tela toda
           return (
             <motion.div key={jogoAtual} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-              className="max-w-md mx-auto">
+              className={`${jogoAtual === 'corrida' ? 'max-w-3xl' : 'max-w-md'} mx-auto`}>
               <div className="text-center mb-2">
                 <span className="inline-flex items-center gap-2 bg-white rounded-full shadow-sm px-4 py-1.5 text-sm font-extrabold text-slate-700">
                   {JOGOS[jogoAtual]?.emoji} {JOGOS[jogoAtual]?.nome}
@@ -2090,7 +2090,7 @@ function JogoCorrida({ onCancelar }) {
   const W = 760, H = 240, CHAO = H - 30, PX = 72
 
   function novoJogo() {
-    return { y: CHAO, vy: 0, obst: [], vel: 4.6, prox: 60, score: 0, morto: false }
+    return { y: CHAO, vy: 0, obst: [], vel: 4.6, prox: 60, score: 0, morto: false, ultimo: 0, acc: 0 }
   }
 
   function desenhar(c, j) {
@@ -2105,10 +2105,8 @@ function JogoCorrida({ onCancelar }) {
     c.fillText(String(j.score), W - 14, 32)
   }
 
-  function passo() {
-    const j = jogoRef.current, cv = canvasRef.current
-    if (!j || !cv) return
-    const c = cv.getContext('2d')
+  // UM passo fixo de física (1/60s). Fica igual em qualquer tela (60/90/120Hz).
+  function atualizar(j) {
     j.vy += 0.75; j.y += j.vy
     if (j.y > CHAO) { j.y = CHAO; j.vy = 0 }
     j.vel = Math.min(11, j.vel + 0.0018)
@@ -2123,6 +2121,22 @@ function JogoCorrida({ onCancelar }) {
       if (Math.abs(o.x - PX) < 20 && j.y > CHAO - 18) j.morto = true // perto no x E não pulou alto
     }
     j.obst = j.obst.filter((o) => o.x > -40)
+  }
+
+  // Loop: acumula o tempo REAL e roda a física em passos fixos de 1/60s — assim
+  // o pulo e a velocidade não dependem do FPS do celular (antes 120Hz corria 2x).
+  const PASSO_MS = 1000 / 60
+  function passo(agora) {
+    const j = jogoRef.current, cv = canvasRef.current
+    if (!j || !cv) return
+    const c = cv.getContext('2d')
+    if (!j.ultimo) j.ultimo = agora
+    let dt = agora - j.ultimo
+    j.ultimo = agora
+    if (dt > 100) dt = 100 // aba pausou: não dá salto gigante
+    j.acc += dt
+    let n = 0
+    while (j.acc >= PASSO_MS && n < 6) { atualizar(j); j.acc -= PASSO_MS; n++; if (j.morto) break }
     desenhar(c, j)
     if (j.morto) { terminar(j.score); return }
     rafRef.current = requestAnimationFrame(passo)
