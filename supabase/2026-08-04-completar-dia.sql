@@ -50,9 +50,11 @@ begin
 
   perform pg_advisory_xact_lock(hashtext(v_uid::text || ':bonus_dia:' || v_hoje::text));
 
+  -- idempotência por CHAVE ESTÁVEL (origem + data SP) — não depende do texto do motivo
   v_ja := exists (
     select 1 from public.pontos
-    where usuario_id = v_uid and origem = 'bonus_dia' and motivo like '%(' || v_marca || ')%'
+    where usuario_id = v_uid and origem = 'bonus_dia'
+      and (data at time zone 'America/Sao_Paulo')::date = v_hoje
   );
   if not v_ja then
     insert into public.pontos (usuario_id, origem, pontos, motivo)

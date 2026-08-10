@@ -132,6 +132,12 @@ export default function Trilha() {
   const feitosHoje = jogosDiarios.filter((c) => jogadosHoje.includes(c))
   const completouDia = jogosDiarios.length > 0 && feitosHoje.length >= jogosDiarios.length
 
+  // Rede de segurança: se completou o dia mas o +50 não saiu (ex.: falhou a
+  // chamada no fim do último jogo), tenta de novo ao abrir (o servidor dá 1x/dia).
+  useEffect(() => {
+    if (completouDia) bonusTodosJogos().then((b) => { if (b?.ganhou > 0) { festa(); setBonusDia(b.ganhou) } }).catch(() => {})
+  }, [completouDia]) // eslint-disable-line
+
   return (
     <div>
       <div className="mb-4">
