@@ -125,8 +125,9 @@ grant execute on function public.meu_resumo_missoes() to authenticated;
 create or replace function public.missoes_pendentes()
 returns table (id uuid, nome text, foto_url text, data date)
 language plpgsql security definer set search_path = '' as $$
+#variable_conflict use_column
 begin
-  if not exists (select 1 from public.profiles where id = auth.uid() and status = 'ativo' and papel in ('instrutor','diretoria')) then
+  if not exists (select 1 from public.profiles pr where pr.id = auth.uid() and pr.status = 'ativo' and pr.papel in ('instrutor','diretoria')) then
     raise exception 'Sem permissão (apenas diretoria/instrutor).';
   end if;
   return query
