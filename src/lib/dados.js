@@ -726,6 +726,13 @@ export async function registrarJogo(tipo, estrelas) {
   if (error) throw new Error(error.message)
   return data
 }
+// Bônus de +50 por jogar TODOS os jogos do dia (o servidor confere e dá 1x/dia).
+// Devolve { completo, total, feitos, ganhou }. Silencioso se o SQL não rodou.
+export async function bonusTodosJogos() {
+  const { data, error } = await supabase.rpc('bonus_todos_jogos')
+  if (error) return { completo: false, total: 0, feitos: 0, ganhou: 0 }
+  return data || { completo: false, total: 0, feitos: 0, ganhou: 0 }
+}
 // Jogos da Trilha (quais estão ativos) — todos leem; liderança liga/desliga.
 export async function carregarJogosTrilha() {
   const { data } = await supabase.from('jogos_trilha').select('*').order('ordem')

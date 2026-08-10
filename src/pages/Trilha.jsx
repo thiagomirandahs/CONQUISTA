@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos } from '../lib/dados.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -62,6 +62,7 @@ export default function Trilha() {
   const [jogoSemana, setJogoSemana] = useState('') // chave do jogo da semana (vale +20)
   const [pedidosAjuda, setPedidosAjuda] = useState([]) // pedidos de ajuda de amigos
   const [caixaAjuda, setCaixaAjuda] = useState(false)
+  const [bonusDia, setBonusDia] = useState(0) // celebração ao completar todos os jogos do dia
 
   // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
   // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
@@ -107,7 +108,9 @@ export default function Trilha() {
       festa()
       setResultado({ estrelas: r.estrelas, pontos: r.pontos, extra: !!r.extra })
       setJogando(false)
-      recarregar()
+      await recarregar()
+      // Completou TODOS os jogos do dia? O servidor confere e dá +50 (1x/dia).
+      try { const b = await bonusTodosJogos(); if (b?.ganhou > 0) { festa(); setBonusDia(b.ganhou) } } catch { /* silencioso */ }
     } catch (e) {
       alert(e?.message || String(e))
       setJogando(false)
@@ -124,6 +127,10 @@ export default function Trilha() {
   // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
   const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
+  // "Jogos do dia" (não conta arcade): progresso pro bônus de +50
+  const jogosDiarios = jogosAtivos.filter((c) => !ARCADE.has(c))
+  const feitosHoje = jogosDiarios.filter((c) => jogadosHoje.includes(c))
+  const completouDia = jogosDiarios.length > 0 && feitosHoje.length >= jogosDiarios.length
 
   return (
     <div>
@@ -181,6 +188,29 @@ export default function Trilha() {
               <p className="text-xs text-slate-500 mt-0.5">
                 Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟
               </p>
+            </div>
+          )}
+
+          {bonusDia > 0 && (
+            <div className="bg-dourado/15 border-2 border-dourado rounded-2xl p-4 text-center mb-3 relative">
+              <button onClick={() => setBonusDia(0)} className="absolute top-1.5 right-3 text-slate-400 text-xl leading-none p-1">×</button>
+              <div className="text-4xl mb-1">🎁</div>
+              <p className="font-extrabold text-slate-800">Você completou TODOS os jogos de hoje!</p>
+              <p className="text-sm font-extrabold text-dourado mt-0.5">+{bonusDia} de bônus! 🎉</p>
+            </div>
+          )}
+
+          {jogosDiarios.length > 0 && (
+            <div className={`rounded-2xl p-3 mb-3 border ${completouDia ? 'bg-green-50 border-green-200' : 'bg-azul/5 border-azul/20'}`}>
+              <div className="flex items-center justify-between text-sm gap-2">
+                <span className="font-bold text-slate-700">
+                  {completouDia ? '✅ Jogos do dia completos! +50 🎁' : `🎮 Jogos do dia: ${feitosHoje.length}/${jogosDiarios.length}`}
+                </span>
+                {!completouDia && <span className="text-[11px] text-slate-500 shrink-0">complete todos = +50 🎁</span>}
+              </div>
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden mt-2">
+                <div className="h-full bg-azul rounded-full transition-all" style={{ width: `${Math.round((100 * feitosHoje.length) / jogosDiarios.length)}%` }} />
+              </div>
             </div>
           )}
 
