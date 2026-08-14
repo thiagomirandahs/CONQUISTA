@@ -811,6 +811,13 @@ export async function ajudaStatus(id) {
 export async function cancelarAjuda(id) { await supabase.rpc('cancelar_ajuda', { p_id: id }) }
 export async function recusarAjuda(id) { await supabase.rpc('recusar_ajuda', { p_id: id }) }
 
+// Painel da liderança: quem jogou hoje/na semana e quem está sumido (2+ dias).
+export async function atividadeJogos() {
+  const { data, error } = await supabase.rpc('atividade_jogos')
+  if (error) throw new Error(error.message)
+  return data || { hoje: 0, semana: 0, total: 0, ausentes: [] }
+}
+
 export async function alternarJogoTrilha(chave, ativo) {
   const { data, error } = await supabase.from('jogos_trilha').update({ ativo }).eq('chave', chave).select('chave')
   if (error) throw new Error(error.message)

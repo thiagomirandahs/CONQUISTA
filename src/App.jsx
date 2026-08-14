@@ -19,6 +19,7 @@ const Usuarios = lazy(() => import('./pages/Usuarios.jsx'))
 const RemoverPontos = lazy(() => import('./pages/RemoverPontos.jsx'))
 const Missoes = lazy(() => import('./pages/Missoes.jsx'))
 const AprovarMissoes = lazy(() => import('./pages/AprovarMissoes.jsx'))
+const Atividade = lazy(() => import('./pages/Atividade.jsx'))
 const Trilha = lazy(() => import('./pages/Trilha.jsx'))
 const Perfil = lazy(() => import('./pages/Perfil.jsx'))
 const Avisos = lazy(() => import('./pages/Avisos.jsx'))
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/missoes" element={<Missoes />} />
           <Route path="/trilha" element={<Trilha />} />
           <Route path="/aprovar-missoes" element={<AprovarMissoes />} />
+          <Route path="/atividade-jogos" element={<Atividade />} />
           <Route path="/atividades" element={<Atividades />} />
           <Route path="/unidades" element={<Unidades />} />
           <Route path="/mural" element={<Mural />} />
