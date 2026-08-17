@@ -14,12 +14,22 @@ export function pushSuportado() {
   return typeof navigator !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 }
 
-// Já existe inscrição ativa neste aparelho?
+// Já existe inscrição ativa (e com a chave VAPID ATUAL) neste aparelho?
 export async function pushAtivo() {
   if (!pushSuportado() || Notification.permission !== 'granted') return false
   const reg = await navigator.serviceWorker.getRegistration()
   const sub = reg && (await reg.pushManager.getSubscription())
-  return !!sub
+  if (!sub) return false
+  // Se a inscrição foi feita com uma chave VAPID DIFERENTE da atual (chave trocada),
+  // ela não recebe mais push → trata como INATIVA pra o app oferecer "Ativar" e migrar.
+  const bruta = sub.options?.applicationServerKey
+  if (bruta && VAPID_PUBLIC) {
+    const atual = new Uint8Array(bruta)
+    const nova = base64UrlParaUint8(VAPID_PUBLIC)
+    const mesma = atual.length === nova.length && atual.every((b, i) => b === nova[i])
+    if (!mesma) return false
+  }
+  return true
 }
 
 // Pede permissão, inscreve o aparelho e salva a inscrição no Supabase.
