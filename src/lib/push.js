@@ -31,11 +31,32 @@ export async function ativarPush(userId) {
   if (permissao !== 'granted') throw new Error('PERMISSAO_NEGADA')
 
   const reg = await navigator.serviceWorker.ready
+  const chaveNova = base64UrlParaUint8(VAPID_PUBLIC)
   let sub = await reg.pushManager.getSubscription()
+
+  // Se já existe inscrição, mas foi feita com uma chave VAPID DIFERENTE da atual
+  // (ex.: as chaves foram trocadas), a inscrição antiga nunca recebe push.
+  // Nesse caso: apaga a antiga do banco, cancela no navegador e recria com a chave nova.
+  if (sub) {
+    const chaveAtual = new Uint8Array(sub.options?.applicationServerKey || [])
+    const mesmaChave =
+      chaveAtual.length === chaveNova.length &&
+      chaveAtual.every((b, i) => b === chaveNova[i])
+    if (!mesmaChave) {
+      try {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+      } catch (_) {
+        // se falhar a limpeza, segue mesmo assim — a nova inscrição substitui pelo endpoint
+      }
+      await sub.unsubscribe()
+      sub = null
+    }
+  }
+
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlParaUint8(VAPID_PUBLIC),
+      applicationServerKey: chaveNova,
     })
   }
   const json = sub.toJSON()
