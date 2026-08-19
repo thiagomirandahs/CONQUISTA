@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos } from '../lib/dados.js'
+import * as juice from '../lib/juice.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
 
@@ -16,9 +16,43 @@ function embaralhar(arr) {
   }
   return a
 }
-const CORES_FESTA = ['#1e3a8a', '#f5c518', '#ffffff', '#10b981', '#d97706']
-function festa() {
-  confetti({ particleCount: 130, spread: 80, origin: { y: 0.4 }, colors: CORES_FESTA })
+const festa = juice.festa
+
+// Conta de 0 até o alvo com desaceleração — dá vida ao número de pontos no resultado.
+function useContagem(alvo, duracao = 650) {
+  const [valor, setValor] = useState(0)
+  useEffect(() => {
+    let frame
+    const t0 = performance.now()
+    const passo = (t) => {
+      const p = Math.min(1, (t - t0) / duracao)
+      setValor(Math.round(alvo * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) frame = requestAnimationFrame(passo)
+    }
+    frame = requestAnimationFrame(passo)
+    return () => cancelAnimationFrame(frame)
+  }, [alvo, duracao])
+  return valor
+}
+
+function ResultadoCard({ resultado }) {
+  const pontos = useContagem(resultado.pontos)
+  return (
+    <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
+      <div className="text-4xl mb-1">🎉</div>
+      <p className="font-extrabold text-slate-800">
+        +{pontos} pontos ·{' '}
+        {Array.from({ length: resultado.estrelas }).map((_, i) => (
+          <motion.span key={i} initial={{ scale: 0 }} animate={{ scale: 1 }}
+            transition={{ delay: 0.25 + i * 0.15, type: 'spring', stiffness: 400, damping: 12 }}
+            className="inline-block">⭐</motion.span>
+        ))}
+      </p>
+      <p className="text-xs text-slate-500 mt-0.5">
+        Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟
+      </p>
+    </div>
+  )
 }
 // Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
 const JOGOS = {
@@ -105,12 +139,12 @@ export default function Trilha() {
   async function aoTerminar(estrelas) {
     try {
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
-      festa()
+      juice.vitoria(r.estrelas)
       setResultado({ estrelas: r.estrelas, pontos: r.pontos, extra: !!r.extra })
       setJogando(false)
       await recarregar()
       // Completou TODOS os jogos do dia? O servidor confere e dá +50 (1x/dia).
-      try { const b = await bonusTodosJogos(); if (b?.ganhou > 0) { festa(); setBonusDia(b.ganhou) } } catch { /* silencioso */ }
+      try { const b = await bonusTodosJogos(); if (b?.ganhou > 0) { festa(3); setBonusDia(b.ganhou) } } catch { /* silencioso */ }
     } catch (e) {
       alert(e?.message || String(e))
       setJogando(false)
@@ -135,7 +169,7 @@ export default function Trilha() {
   // Rede de segurança: se completou o dia mas o +50 não saiu (ex.: falhou a
   // chamada no fim do último jogo), tenta de novo ao abrir (o servidor dá 1x/dia).
   useEffect(() => {
-    if (completouDia) bonusTodosJogos().then((b) => { if (b?.ganhou > 0) { festa(); setBonusDia(b.ganhou) } }).catch(() => {})
+    if (completouDia) bonusTodosJogos().then((b) => { if (b?.ganhou > 0) { festa(3); setBonusDia(b.ganhou) } }).catch(() => {})
   }, [completouDia]) // eslint-disable-line
 
   return (
@@ -187,15 +221,7 @@ export default function Trilha() {
               </div>
             </button>
           )}
-          {resultado && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
-              <div className="text-4xl mb-1">🎉</div>
-              <p className="font-extrabold text-slate-800">+{resultado.pontos} pontos · {'⭐'.repeat(resultado.estrelas)}</p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟
-              </p>
-            </div>
-          )}
+          {resultado && <ResultadoCard resultado={resultado} />}
 
           {bonusDia > 0 && (
             <div className="bg-dourado/15 border-2 border-dourado rounded-2xl p-4 text-center mb-3 relative">

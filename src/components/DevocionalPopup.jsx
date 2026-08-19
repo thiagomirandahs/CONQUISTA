@@ -27,10 +27,8 @@ export default function DevocionalPopup() {
     setErro('')
     try {
       await fazerDevocional(resposta)
-      // Confete carregado sob demanda (fica fora do pacote inicial do app)
-      import('canvas-confetti').then(({ default: confetti }) =>
-        confetti({ particleCount: 120, spread: 75, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#ffffff'] })
-      ).catch(() => {})
+      // Som+confete carregados sob demanda (ficam fora do pacote inicial do app)
+      import('../lib/juice.js').then(({ vitoria }) => vitoria(3)).catch(() => {})
       setAberto(false)
     } catch (e) {
       setErro(e?.message || String(e))

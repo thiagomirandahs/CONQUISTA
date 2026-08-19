@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarRanking, carregarTemporadas, iniciarNovaTemporada } from '../lib/dados.js'
+import { vitoria as festa } from '../lib/juice.js'
 
 const fmtData = (iso) => {
   if (!iso) return ''
@@ -52,7 +52,7 @@ export default function Temporada() {
     setProcessando(true)
     try {
       const r = await iniciarNovaTemporada({ campeaoIndividual: campInd, campeaoUnidade: campUni })
-      confetti({ particleCount: 160, spread: 90, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#fff', '#10b981'] })
+      festa()
       setConfirmando(false)
       alert(`🏁 Temporada ${r?.numero || ''} iniciada! O ranking foi zerado e os campeões ficaram salvos.`)
       carregar()

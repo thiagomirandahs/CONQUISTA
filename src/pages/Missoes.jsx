@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarMissao, enviarMissao, classeDoUsuario } from '../lib/dados.js'
+import { vitoria as festa } from '../lib/juice.js'
 
 // Cores oficiais dos lenços das classes (ajustadas p/ contraste com texto branco)
 const corClasse = {
   Amigo: '#1d4ed8', Companheiro: '#dc2626', Pesquisador: '#16a34a',
   Pioneiro: '#6b7280', Excursionista: '#7c3aed', Guia: '#d97706',
-}
-function festa() {
-  confetti({ particleCount: 140, spread: 80, origin: { y: 0.4 }, colors: ['#1e3a8a', '#f5c518', '#ffffff', '#10b981'] })
 }
 
 export default function Missoes() {

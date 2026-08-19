@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas } from '../lib/dados.js'
+import { somLigado, alternarSom } from '../lib/juice.js'
 
 const rotuloPapel = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
@@ -21,6 +22,8 @@ export default function Perfil() {
   const [extrato, setExtrato] = useState([])
   const [carregandoExtrato, setCarregandoExtrato] = useState(true)
   const [metricas, setMetricas] = useState({ passos: 0, sequencia: 0, fotos: 0 })
+  const [somOn, setSomOn] = useState(true)
+  useEffect(() => { setSomOn(somLigado()) }, [])
 
   useEffect(() => {
     if (!profile?.id) return
@@ -153,6 +156,22 @@ export default function Perfil() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Som e vibração dos jogos (desliga pra sala de aula/culto) */}
+      <div className="mt-6 bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-bold text-slate-800 text-sm">{somOn ? '🔊' : '🔇'} Som e vibração dos jogos</div>
+          <div className="text-xs text-slate-400 mt-0.5">Efeitos ao acertar, errar e vencer</div>
+        </div>
+        <button
+          onClick={() => setSomOn(alternarSom())}
+          aria-label={somOn ? 'Desligar som e vibração' : 'Ligar som e vibração'}
+          className={`shrink-0 w-12 h-7 rounded-full relative transition-colors ${somOn ? 'bg-azul' : 'bg-slate-300'}`}>
+          <motion.span layout transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="absolute top-1 w-5 h-5 bg-white rounded-full shadow"
+            style={{ left: somOn ? 24 : 4 }} />
+        </button>
       </div>
     </div>
   )

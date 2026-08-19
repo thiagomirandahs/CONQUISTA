@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarRanking } from '../lib/dados.js'
+import { vitoria as festa } from '../lib/juice.js'
 
 const medalhas = ['🥇', '🥈', '🥉']
-
-function festa() {
-  confetti({ particleCount: 130, spread: 80, origin: { y: 0.35 }, colors: ['#1e3a8a', '#f5c518', '#ffffff', '#1d4ed8'] })
-}
 function tituloDivertido(pos) {
   if (pos === 0) return '👑 Campeão(ã) do clube!'
   if (pos === 1) return '🥈 Quase no topo!'
