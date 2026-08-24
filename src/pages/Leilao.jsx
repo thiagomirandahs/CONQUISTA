@@ -8,6 +8,10 @@ import {
 import { vitoria as festa, acerto } from '../lib/juice.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
+// Só quem de fato compete pela unidade dá lance — diretoria/instrutor/tesoureiro
+// não jogam os jogos que geram os pontos (mesmo que estejam ligados a alguma
+// unidade, ex.: a unidade "Liderança" ou um conselheiro promovido).
+const PODE_LEILOAR = ['desbravador', 'conselheiro']
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
@@ -44,7 +48,8 @@ function tempoRel(iso) {
 export default function Leilao() {
   const { profile } = useAuth()
   const ehAdmin = PODE_GERIR.includes(profile?.papel)
-  const minhaUni = profile?.unidade_id || null
+  const podeLeiloar = PODE_LEILOAR.includes(profile?.papel)
+  const minhaUni = podeLeiloar ? (profile?.unidade_id || null) : null
 
   const [dados, setDados] = useState({ leilao: null, itens: [], unidades: [] })
   const [carregando, setCarregando] = useState(true)
@@ -226,7 +231,11 @@ export default function Leilao() {
             </div>
           )}
           {aberto && !minhaUni && (
-            <p className="text-xs text-slate-400 mb-3">Você precisa estar numa unidade pra dar lance.</p>
+            <p className="text-xs text-slate-400 mb-3">
+              {podeLeiloar
+                ? 'Você precisa estar numa unidade (com cadastro aprovado) pra dar lance.'
+                : 'Só desbravadores e conselheiros dão lance no leilão — acompanhe a disputa das unidades abaixo 👇'}
+            </p>
           )}
 
           {convitesPendentes.length > 0 && (
