@@ -12,11 +12,11 @@ const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
 
 const ITENS_PADRAO = [
-  { nome: 'Dormitório', emoji: '🏕️', descricao: 'Escolhe onde vai dormir no próximo acampamento', preco_base: 300, incremento_minimo: 10 },
-  { nome: 'Vale Ajuda', emoji: '🆘', descricao: 'Um "vale" pra pedir uma ajudinha quando precisar', preco_base: 150, incremento_minimo: 10 },
-  { nome: 'Poder de Trocar a Pergunta', emoji: '🔄', descricao: 'Troca uma pergunta difícil por uma fácil', preco_base: 100, incremento_minimo: 5 },
-  { nome: 'Poder Supremo', emoji: '👑', descricao: 'Um poder especial — combine com a liderança', preco_base: 80, incremento_minimo: 5 },
-  { nome: 'Caixa Misteriosa', emoji: '🎁', descricao: 'Ninguém sabe o que tem dentro...', preco_base: 30, incremento_minimo: 5 },
+  { nome: 'Dormitório', emoji: '🏕️', descricao: 'Escolhe onde vai dormir no próximo acampamento', preco_base: 8000, incremento_minimo: 500 },
+  { nome: 'Vale Ajuda', emoji: '🆘', descricao: 'Um "vale" pra pedir uma ajudinha quando precisar', preco_base: 5000, incremento_minimo: 300 },
+  { nome: 'Poder de Trocar a Pergunta', emoji: '🔄', descricao: 'Troca uma pergunta difícil por uma fácil', preco_base: 4000, incremento_minimo: 200 },
+  { nome: 'Poder Supremo', emoji: '👑', descricao: 'Um poder especial — combine com a liderança', preco_base: 3500, incremento_minimo: 200 },
+  { nome: 'Caixa Misteriosa', emoji: '🎁', descricao: 'Ninguém sabe o que tem dentro...', preco_base: 3000, incremento_minimo: 100 },
 ]
 
 function tempoRestante(fechaEm) {
