@@ -12,6 +12,7 @@ const abasBase = [
   { to: '/desafios', label: 'Desafios', icon: '🏁' },
   { to: '/missoes', label: 'Missões', icon: '🎯' },
   { to: '/trilha', label: 'Jogos', icon: '🎮' },
+  { to: '/leilao', label: 'Leilão', icon: '🏛️' },
   { to: '/agenda', label: 'Agenda', icon: '📅' },
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },

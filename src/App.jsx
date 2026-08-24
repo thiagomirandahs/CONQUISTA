@@ -29,6 +29,7 @@ const Agenda = lazy(() => import('./pages/Agenda.jsx'))
 const Temporada = lazy(() => import('./pages/Temporada.jsx'))
 const JogosTrilha = lazy(() => import('./pages/JogosTrilha.jsx'))
 const DesafiosSemana = lazy(() => import('./pages/DesafiosSemana.jsx'))
+const Leilao = lazy(() => import('./pages/Leilao.jsx'))
 const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
 const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/temporada" element={<Temporada />} />
           <Route path="/jogos-trilha" element={<JogosTrilha />} />
           <Route path="/desafios" element={<DesafiosSemana />} />
+          <Route path="/leilao" element={<Leilao />} />
           <Route path="/agenda" element={<Agenda />} />
         </Route>
       </Routes>
