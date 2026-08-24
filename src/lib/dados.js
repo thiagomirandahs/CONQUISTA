@@ -1015,6 +1015,39 @@ export async function cancelarLeilao(id) {
   return data
 }
 
+// ------- Modo Acampamento (colocação 1º/2º/3º/4º das unidades numa prova) -------
+// Só entram as unidades que TÊM desbravador/conselheiro (a "Liderança" fica de fora).
+export async function carregarUnidadesCompetidoras() {
+  const [{ data: us, error: erroU }, { data: ps, error: erroP }] = await Promise.all([
+    supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
+    supabase.from('profiles').select('unidade_id').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).not('unidade_id', 'is', null),
+  ])
+  if (erroU) throw new Error(erroU.message)
+  if (erroP) throw new Error(erroP.message)
+  const comCompetidor = new Set((ps || []).map((p) => p.unidade_id))
+  return (us || []).filter((u) => comCompetidor.has(u.id))
+}
+
+// colocacoes: [{unidade_id, posicao: 1|2|3|4|null, pontos: number}]
+export async function lancarColocacaoAcampamento(atividade, colocacoes) {
+  const { data, error } = await supabase.rpc('lancar_colocacao_acampamento', { p_atividade: atividade, p_colocacoes: colocacoes })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Últimos lançamentos do acampamento (pra liderança ver o que já foi lançado)
+export async function carregarHistoricoAcampamento() {
+  const { data: ps, error } = await supabase
+    .from('pontos').select('id,pontos,motivo,data,unidade_id')
+    .eq('origem', 'acampamento').order('data', { ascending: false }).limit(30)
+  if (error) throw new Error(error.message)
+  const unidadeIds = [...new Set((ps || []).map((p) => p.unidade_id).filter(Boolean))]
+  if (!unidadeIds.length) return []
+  const { data: us } = await supabase.from('unidades').select('id,nome,cor').in('id', unidadeIds)
+  const uniPorId = Object.fromEntries((us || []).map((u) => [u.id, u]))
+  return (ps || []).map((p) => ({ ...p, unidade: uniPorId[p.unidade_id] || { nome: '?' } }))
+}
+
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {
   const { data } = await supabase

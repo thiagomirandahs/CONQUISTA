@@ -9,7 +9,7 @@ const rotuloPapel = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
   tesoureiro: 'Tesoureiro', diretoria: 'Diretoria', pais: 'Pais',
 }
-const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯', trilha: '🗺️', manual: '🎖️' }
+const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯', trilha: '🗺️', manual: '🎖️', acampamento: '🏕️', leilao: '🏛️' }
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
 
 // Página "Meu perfil": mostra a foto atual e deixa o próprio usuário trocá-la.
