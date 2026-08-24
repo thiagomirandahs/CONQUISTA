@@ -33,6 +33,14 @@ function tempoRestante(fechaEm) {
   return `${seg}s`
 }
 
+function tempoRel(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000
+  if (s < 60) return 'agora'
+  if (s < 3600) return Math.floor(s / 60) + ' min atrás'
+  if (s < 86400) return Math.floor(s / 3600) + ' h atrás'
+  return Math.floor(s / 86400) + ' d atrás'
+}
+
 export default function Leilao() {
   const { profile } = useAuth()
   const ehAdmin = PODE_GERIR.includes(profile?.papel)
@@ -48,17 +56,23 @@ export default function Leilao() {
   const [lanceDe, setLanceDe] = useState(null) // item em que estou dando lance
   const [processando, setProcessando] = useState(false)
 
+  async function buscarDados() {
+    const d = await carregarLeilao()
+    setDados(d)
+    if (minhaUni) {
+      const [s, p] = await Promise.all([saldoLeilaoUnidade(minhaUni), pontosTemporadaUnidade(minhaUni)])
+      setSaldo(s); setPontos(p)
+    }
+  }
   async function carregar() {
     setCarregando(true); setErro('')
-    try {
-      const d = await carregarLeilao()
-      setDados(d)
-      if (minhaUni) {
-        const [s, p] = await Promise.all([saldoLeilaoUnidade(minhaUni), pontosTemporadaUnidade(minhaUni)])
-        setSaldo(s); setPontos(p)
-      }
-    } catch (e) { setErro(e?.message || 'Erro') }
+    try { await buscarDados() } catch (e) { setErro(e?.message || 'Erro') }
     setCarregando(false)
+  }
+  // Atualização de fundo (poll/foco): mesma busca, mas SEM mostrar "Carregando..."
+  // de novo — senão a tela piscaria e fecharia qualquer histórico aberto.
+  async function atualizarSilencioso() {
+    try { await buscarDados() } catch { /* falha silenciosa — mantém o que já tinha na tela */ }
   }
   useEffect(() => { carregar() }, []) // eslint-disable-line
 
@@ -68,6 +82,18 @@ export default function Leilao() {
     const t = setInterval(() => forcaRender((n) => n + 1), 1000)
     return () => clearInterval(t)
   }, [dados.leilao?.status])
+
+  // Acompanhamento ao vivo: enquanto está aberto, busca de novo sozinho (a cada
+  // 15s) e também ao voltar o foco na aba/app — pra ver o lance dos outros sem
+  // precisar recarregar a página. É o que dá o clima de disputa ao vivo.
+  useEffect(() => {
+    if (dados.leilao?.status !== 'aberto') return
+    const t = setInterval(atualizarSilencioso, 15000)
+    const foco = () => { if (document.visibilityState === 'visible') atualizarSilencioso() }
+    window.addEventListener('focus', foco)
+    document.addEventListener('visibilitychange', foco)
+    return () => { clearInterval(t); window.removeEventListener('focus', foco); document.removeEventListener('visibilitychange', foco) }
+  }, [dados.leilao?.status]) // eslint-disable-line
 
   if (carregando) return <p className="text-slate-400 text-sm">Carregando leilão...</p>
 
@@ -257,6 +283,13 @@ export default function Leilao() {
 function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
   const atual = item.atual
   const proximoMinimo = atual ? atual.valor + item.incremento_minimo : item.preco_base
+  const [verHistorico, setVerHistorico] = useState(false)
+  // Histórico público: só lances que já valeram de verdade (não os pendentes,
+  // que ainda estão sendo combinados e só aparecem pra unidade convidada).
+  const historico = (item.lances || [])
+    .filter((l) => l.status !== 'pendente')
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
   return (
     <motion.div layout className="bg-white rounded-2xl p-4 shadow-sm">
       <div className="flex items-start gap-3">
@@ -283,6 +316,37 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
                 : 'Ninguém deu lance neste item.'}
             </div>
           )}
+
+          {historico.length > 0 && (
+            <button onClick={() => setVerHistorico((v) => !v)}
+              className="mt-2 text-[11px] font-semibold text-azul flex items-center gap-1">
+              {verHistorico ? '▲ Esconder' : '▼ Ver'} disputa ({historico.length} lance{historico.length > 1 ? 's' : ''})
+            </button>
+          )}
+          <AnimatePresence>
+            {verHistorico && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden">
+                <div className="mt-2 space-y-1.5 border-t border-slate-100 pt-2">
+                  {historico.map((l) => (
+                    <div key={l.id} className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        {l.unidades.map((u, i) => (
+                          <span key={i} className="font-bold px-1.5 py-0.5 rounded text-white text-[10px]" style={{ background: u.cor || '#1e3a8a' }}>
+                            {u.nome}
+                          </span>
+                        ))}
+                        <span className={l.status === 'superado' ? 'text-slate-400 line-through' : 'font-bold text-slate-700'}>
+                          {l.valor} pts
+                        </span>
+                      </div>
+                      <span className="text-slate-400 shrink-0">{tempoRel(l.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
       {podeDarLance && (
