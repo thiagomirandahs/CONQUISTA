@@ -30,7 +30,7 @@ const ABAS_RODAPE = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
   { to: '/desafios', label: 'Desafios', icon: '🏁' },
   { to: '/trilha', label: 'Jogos', icon: '🎮' },
-  { to: '/missoes', label: 'Missões', icon: '🎯' },
+  { to: '/biblia', label: 'Bíblia', icon: '📖' },
   { to: '/chat', label: 'Chat', icon: '💬' },
 ]
 

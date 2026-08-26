@@ -1161,8 +1161,17 @@ export async function carregarCapituloBiblia(livroAbrev, capitulo) {
   if (error) throw new Error(error.message)
   return data || []
 }
-export async function registrarLeituraBiblia(livroAbrev, capitulo) {
-  const { data, error } = await supabase.rpc('registrar_leitura_biblia', {
+// Leitura em 2 passos (anti-atalho): abrir grava a hora no servidor;
+// confirmar só pontua depois do tempo mínimo. Ver 2026-08-26-biblia-antifarm.sql.
+export async function iniciarLeituraBiblia(livroAbrev, capitulo) {
+  const { data, error } = await supabase.rpc('biblia_iniciar_leitura', {
+    p_livro_abrev: livroAbrev, p_capitulo: capitulo,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function confirmarLeituraBiblia(livroAbrev, capitulo) {
+  const { data, error } = await supabase.rpc('biblia_confirmar_leitura', {
     p_livro_abrev: livroAbrev, p_capitulo: capitulo,
   })
   if (error) throw new Error(error.message)

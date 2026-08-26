@@ -19,6 +19,34 @@ alter table public.biblia_livros enable row level security;
 drop policy if exists "ler livros biblia" on public.biblia_livros;
 create policy "ler livros biblia" on public.biblia_livros for select to authenticated using (true);
 
+-- Seed dos 66 livros (idempotente). O TEXTO dos versículos vem por CSV, mas
+-- os livros já entram aqui pra o leitor nunca dar "Livro inválido" numa
+-- instalação nova antes de importar o CSV.
+insert into public.biblia_livros (abrev, nome, ordem, testamento, capitulos) values
+('gn','Gênesis',1,'AT',50),('ex','Êxodo',2,'AT',40),('lv','Levítico',3,'AT',27),
+('nm','Números',4,'AT',36),('dt','Deuteronômio',5,'AT',34),('js','Josué',6,'AT',24),
+('jz','Juízes',7,'AT',21),('rt','Rute',8,'AT',4),('1sm','1 Samuel',9,'AT',31),
+('2sm','2 Samuel',10,'AT',24),('1rs','1 Reis',11,'AT',22),('2rs','2 Reis',12,'AT',25),
+('1cr','1 Crônicas',13,'AT',29),('2cr','2 Crônicas',14,'AT',36),('ed','Esdras',15,'AT',10),
+('ne','Neemias',16,'AT',13),('et','Ester',17,'AT',10),('jó','Jó',18,'AT',42),
+('sl','Salmos',19,'AT',150),('pv','Provérbios',20,'AT',31),('ec','Eclesiastes',21,'AT',12),
+('ct','Cânticos',22,'AT',8),('is','Isaías',23,'AT',66),('jr','Jeremias',24,'AT',52),
+('lm','Lamentações de Jeremias',25,'AT',5),('ez','Ezequiel',26,'AT',48),('dn','Daniel',27,'AT',12),
+('os','Oséias',28,'AT',14),('jl','Joel',29,'AT',3),('am','Amós',30,'AT',9),
+('ob','Obadias',31,'AT',1),('jn','Jonas',32,'AT',4),('mq','Miquéias',33,'AT',7),
+('na','Naum',34,'AT',3),('hc','Habacuque',35,'AT',3),('sf','Sofonias',36,'AT',3),
+('ag','Ageu',37,'AT',2),('zc','Zacarias',38,'AT',14),('ml','Malaquias',39,'AT',4),
+('mt','Mateus',40,'NT',28),('mc','Marcos',41,'NT',16),('lc','Lucas',42,'NT',24),
+('jo','João',43,'NT',21),('atos','Atos',44,'NT',28),('rm','Romanos',45,'NT',16),
+('1co','1 Coríntios',46,'NT',16),('2co','2 Coríntios',47,'NT',13),('gl','Gálatas',48,'NT',6),
+('ef','Efésios',49,'NT',6),('fp','Filipenses',50,'NT',4),('cl','Colossenses',51,'NT',4),
+('1ts','1 Tessalonicenses',52,'NT',5),('2ts','2 Tessalonicenses',53,'NT',3),('1tm','1 Timóteo',54,'NT',6),
+('2tm','2 Timóteo',55,'NT',4),('tt','Tito',56,'NT',3),('fm','Filemom',57,'NT',1),
+('hb','Hebreus',58,'NT',13),('tg','Tiago',59,'NT',5),('1pe','1 Pedro',60,'NT',5),
+('2pe','2 Pedro',61,'NT',3),('1jo','1 João',62,'NT',5),('2jo','2 João',63,'NT',1),
+('3jo','3 João',64,'NT',1),('jd','Judas',65,'NT',1),('ap','Apocalipse',66,'NT',22)
+on conflict (abrev) do nothing;
+
 create table if not exists public.biblia_versiculos (
   livro_abrev text not null references public.biblia_livros(abrev) on delete cascade,
   capitulo int not null,
@@ -43,58 +71,11 @@ drop policy if exists "ler minhas leituras biblia" on public.biblia_leituras;
 create policy "ler minhas leituras biblia" on public.biblia_leituras for select to authenticated
   using (usuario_id = auth.uid() or public.pode_gerir());
 
--- ---------------------------------------------------------------------
--- Marca um capítulo como lido. 1ª vez que lê aquele capítulo = pontua
--- (+2, teto de 20/dia vindos da Bíblia = 10 capítulos "pagos" por dia;
--- pode continuar lendo além disso, só não ganha ponto novo). Conta de
--- teste não pontua. Idempotente: reler um capítulo já lido não dá erro
--- nem ponto de novo.
--- ---------------------------------------------------------------------
-create or replace function public.registrar_leitura_biblia(p_livro_abrev text, p_capitulo int)
-returns json language plpgsql security definer set search_path = '' as $$
-declare
-  v_uid uuid := auth.uid();
-  v_max_capitulos int;
-  v_rows int;
-  v_pontos_hoje int;
-  v_pontos_ganhos int := 0;
-  v_total_lidos int;
-begin
-  if v_uid is null then raise exception 'Não autenticado.'; end if;
-  if not exists (select 1 from public.profiles where id = v_uid and status = 'ativo') then
-    raise exception 'Você precisa estar com o cadastro ativo pra ler a Bíblia no app.';
-  end if;
-
-  select capitulos into v_max_capitulos from public.biblia_livros where abrev = p_livro_abrev;
-  if v_max_capitulos is null then raise exception 'Livro inválido.'; end if;
-  if p_capitulo < 1 or p_capitulo > v_max_capitulos then raise exception 'Capítulo inválido.'; end if;
-
-  -- on conflict do nothing + row_count: idempotente e sem corrida (2 cliques
-  -- rápidos no mesmo capítulo nunca dão erro nem pontuam 2x)
-  insert into public.biblia_leituras (usuario_id, livro_abrev, capitulo)
-  values (v_uid, p_livro_abrev, p_capitulo)
-  on conflict (usuario_id, livro_abrev, capitulo) do nothing;
-  get diagnostics v_rows = row_count;
-
-  if v_rows > 0 and not public.eh_teste() then
-    select coalesce(sum(pontos), 0) into v_pontos_hoje from public.pontos
-    where usuario_id = v_uid and origem = 'biblia'
-      and (data at time zone 'America/Sao_Paulo')::date = (now() at time zone 'America/Sao_Paulo')::date;
-
-    if v_pontos_hoje < 20 then
-      v_pontos_ganhos := least(2, 20 - v_pontos_hoje);
-      insert into public.pontos (usuario_id, origem, pontos, motivo)
-      values (v_uid, 'biblia', v_pontos_ganhos,
-              'Leu ' || (select nome from public.biblia_livros where abrev = p_livro_abrev) || ' ' || p_capitulo);
-    end if;
-  end if;
-
-  select count(*) into v_total_lidos from public.biblia_leituras where usuario_id = v_uid;
-
-  return json_build_object('ja_lido', v_rows = 0, 'pontos_ganhos', v_pontos_ganhos, 'total_capitulos_lidos', v_total_lidos);
-end;
-$$;
-grant execute on function public.registrar_leitura_biblia(text, int) to authenticated;
+-- NOTA: a marcação de "capítulo lido" mudou pra fluxo de 2 passos (abrir +
+-- confirmar, com tempo mínimo de leitura) — ver 2026-08-26-biblia-antifarm.sql.
+-- A função antiga de 1 passo (registrar_leitura_biblia) foi REMOVIDA de
+-- propósito: recriá-la aqui reabriria o atalho de pontuar sem ler. Rode o
+-- arquivo antifarm depois deste.
 
 -- Meu progresso de leitura (pra tela da Bíblia e pro Perfil)
 create or replace function public.minha_leitura_biblia()
