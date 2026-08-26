@@ -4,12 +4,15 @@ import { useAuth } from '../context/Auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import Avatar from '../components/Avatar.jsx'
 import {
-  carregarChatUnidade, carregarMinhasConversasDiretas, carregarMensagensDireta,
-  listarColegasChat, enviarMensagemUnidade, enviarMensagemDireta,
+  carregarChatUnidade, carregarChatGeral, carregarMinhasConversasDiretas, carregarMensagensDireta,
+  listarColegasChat, enviarMensagemUnidade, enviarMensagemGeral, enviarMensagemDireta,
 } from '../lib/dados.js'
 import { acerto } from '../lib/juice.js'
 
-const PODE_CHAT = ['desbravador', 'conselheiro']
+// Quem manda mensagem no chat da unidade / conversas diretas.
+const MEMBRO = ['desbravador', 'conselheiro']
+// Liderança: além de auditar tudo, também conversa no chat Geral.
+const LIDERANCA = ['instrutor', 'diretoria', 'tesoureiro']
 
 function tempoRel(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
@@ -21,8 +24,14 @@ function tempoRel(iso) {
 
 export default function Chat() {
   const { profile } = useAuth()
-  const podeUsar = PODE_CHAT.includes(profile?.papel)
-  const [aba, setAba] = useState('unidade')
+  const ehMembro = MEMBRO.includes(profile?.papel)
+  const ehLideranca = LIDERANCA.includes(profile?.papel)
+  const podeUsar = ehMembro || ehLideranca
+  // Todo mundo tem o Geral; membros ainda têm Unidade e Conversas diretas.
+  const abas = ehMembro
+    ? [['geral', '📣 Geral'], ['unidade', '🏠 Minha Unidade'], ['conversas', '💬 Conversas']]
+    : [['geral', '📣 Geral']]
+  const [aba, setAba] = useState('geral')
   const [conversaDireta, setConversaDireta] = useState(null) // {conversaId, outro} ou null (lista)
   const [escolhendo, setEscolhendo] = useState(false)
 
@@ -30,12 +39,8 @@ export default function Chat() {
     return (
       <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Chat é só entre desbravadores e conselheiros</p>
-        <p className="text-sm text-slate-400">
-          {['instrutor', 'diretoria'].includes(profile?.papel)
-            ? 'Como liderança, você acompanha todas as conversas em Gestão → 💬 Moderação do chat.'
-            : 'Fale com a liderança se algo parecer errado.'}
-        </p>
+        <p className="font-semibold text-slate-700">O chat é pra desbravadores, conselheiros e liderança</p>
+        <p className="text-sm text-slate-400">Fale com a liderança se algo parecer errado.</p>
       </div>
     )
   }
@@ -44,11 +49,15 @@ export default function Chat() {
     <div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-slate-800">💬 Chat</h2>
-        <p className="text-sm text-slate-500">A liderança acompanha todas as conversas — trate os outros com respeito 🙂</p>
+        <p className="text-sm text-slate-500">
+          {ehLideranca
+            ? 'No Geral você fala com o clube todo. As demais conversas você acompanha em Gestão → 💬 Moderação.'
+            : 'A liderança acompanha todas as conversas — trate os outros com respeito 🙂'}
+        </p>
       </div>
 
-      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
-        {[['unidade', '🏠 Minha Unidade'], ['conversas', '💬 Conversas']].map(([k, lbl]) => (
+      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-md">
+        {abas.map(([k, lbl]) => (
           <button key={k} onClick={() => { setAba(k); setConversaDireta(null) }}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>
             {lbl}
@@ -56,7 +65,9 @@ export default function Chat() {
         ))}
       </div>
 
-      {aba === 'unidade' ? (
+      {aba === 'geral' ? (
+        <Thread key="geral" tipo="geral" meuId={profile?.id} />
+      ) : aba === 'unidade' ? (
         <Thread key="unidade" tipo="unidade" unidadeId={profile?.unidade_id} meuId={profile?.id} />
       ) : conversaDireta ? (
         <div>
@@ -159,8 +170,8 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
   async function carregarInicial() {
     setCarregando(true); setErro('')
     try {
-      if (tipo === 'unidade') {
-        const r = await carregarChatUnidade(unidadeId)
+      if (tipo === 'unidade' || tipo === 'geral') {
+        const r = tipo === 'geral' ? await carregarChatGeral() : await carregarChatUnidade(unidadeId)
         setConversaId(r.conversaId)
         setMensagens(r.mensagens)
         r.mensagens.forEach((m) => { autoresRef.current[m.autor_id] = m.autor })
@@ -201,7 +212,9 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
     if (!v) return
     setErro(''); setEnviando(true)
     try {
-      const r = tipo === 'unidade' ? await enviarMensagemUnidade(v) : await enviarMensagemDireta(destinatario.id, v)
+      const r = tipo === 'geral' ? await enviarMensagemGeral(v)
+        : tipo === 'unidade' ? await enviarMensagemUnidade(v)
+        : await enviarMensagemDireta(destinatario.id, v)
       acerto(1)
       setTexto('')
       if (!conversaId && r?.conversa_id) setConversaId(r.conversa_id)
@@ -228,7 +241,7 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
             return (
               <div key={m.id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${minha ? 'bg-azul text-white' : 'bg-slate-100 text-slate-800'}`}>
-                  {!minha && tipo === 'unidade' && <div className="text-[11px] font-bold opacity-70 mb-0.5">{m.autor?.nome || '...'}</div>}
+                  {!minha && (tipo === 'unidade' || tipo === 'geral') && <div className="text-[11px] font-bold opacity-70 mb-0.5">{m.autor?.nome || '...'}</div>}
                   <div className={`text-sm ${m.apagada ? 'italic opacity-60' : ''}`}>
                     {m.apagada ? 'Mensagem removida pela liderança' : m.texto}
                   </div>

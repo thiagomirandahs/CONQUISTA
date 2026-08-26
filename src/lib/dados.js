@@ -1074,6 +1074,20 @@ export async function carregarChatUnidade(unidadeId) {
   return { conversaId: conv.id, mensagens: await carregarMensagensDaConversa(conv.id) }
 }
 
+// Chat GERAL do clube (todos juntos, inclusive liderança) — ver 2026-08-26-chat-geral.sql.
+export async function carregarChatGeral() {
+  const { data: conv, error } = await supabase
+    .from('chat_conversas').select('id').eq('tipo', 'geral').maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!conv) return { conversaId: null, mensagens: [] }
+  return { conversaId: conv.id, mensagens: await carregarMensagensDaConversa(conv.id) }
+}
+export async function enviarMensagemGeral(texto) {
+  const { data, error } = await supabase.rpc('chat_enviar_geral', { p_texto: texto })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Minhas conversas diretas (1 linha por pessoa com quem já troquei mensagem).
 export async function carregarMinhasConversasDiretas(meuId) {
   const { data: cps, error } = await supabase.from('chat_participantes').select('conversa_id').eq('usuario_id', meuId)
