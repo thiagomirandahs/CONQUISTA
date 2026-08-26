@@ -1197,6 +1197,23 @@ export async function minhaLeituraBiblia() {
   return data
 }
 
+// ------- Bichinho virtual (mascote de cuidado diário) -------
+export async function meuBichinho() {
+  const { data, error } = await supabase.rpc('meu_bichinho')
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function adotarBichinho(nome, especie) {
+  const { data, error } = await supabase.rpc('bichinho_adotar', { p_nome: nome, p_especie: especie })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function cuidarBichinho(acao) {
+  const { data, error } = await supabase.rpc('bichinho_cuidar', { p_acao: acao })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {
   const { data } = await supabase

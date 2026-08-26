@@ -15,6 +15,7 @@ const abasBase = [
   { to: '/leilao', label: 'Leilão', icon: '🏛️' },
   { to: '/chat', label: 'Chat', icon: '💬' },
   { to: '/biblia', label: 'Bíblia', icon: '📖' },
+  { to: '/bichinho', label: 'Bichinho', icon: '🐾' },
   { to: '/agenda', label: 'Agenda', icon: '📅' },
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },

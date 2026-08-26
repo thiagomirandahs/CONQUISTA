@@ -1,0 +1,181 @@
+import { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { meuBichinho, adotarBichinho, cuidarBichinho } from '../lib/dados.js'
+import { montarBichinhoSvg, ESPECIES } from '../lib/bichinhoPecas.js'
+
+function humorDe(b) {
+  if (!b?.vivo) return 'morto'
+  const min = Math.min(b.fome, b.higiene, b.felicidade)
+  if (min <= 15) return 'doente'
+  if (min <= 40) return 'triste'
+  if (b.fome >= 75 && b.higiene >= 75 && b.felicidade >= 75) return 'feliz'
+  return 'ok'
+}
+
+function BichinhoImg({ especie, humor, estagio, size = 190 }) {
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio }), [especie, humor, estagio])
+  return <svg viewBox="0 0 100 100" width={size} height={size} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+function Barra({ icone, rotulo, valor }) {
+  const cor = valor <= 20 ? 'bg-red-500' : valor <= 45 ? 'bg-amber-400' : 'bg-green-500'
+  return (
+    <div>
+      <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+        <span>{icone} {rotulo}</span><span>{valor}%</span>
+      </div>
+      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+        <motion.div className={`h-full ${cor}`} animate={{ width: `${valor}%` }} transition={{ type: 'spring', stiffness: 200, damping: 26 }} />
+      </div>
+    </div>
+  )
+}
+
+export default function Bichinho() {
+  const [bicho, setBicho] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [cuidando, setCuidando] = useState('')
+  const [flash, setFlash] = useState('') // +pts ou aviso rápido
+  const [erro, setErro] = useState('')
+
+  async function carregar() {
+    setCarregando(true)
+    try { setBicho(await meuBichinho()) } catch (e) { setErro(e?.message || 'Erro') }
+    setCarregando(false)
+  }
+  useEffect(() => { carregar() }, [])
+
+  async function cuidar(acao) {
+    if (cuidando) return
+    setCuidando(acao); setErro('')
+    try {
+      const r = await cuidarBichinho(acao)
+      if (r?.morreu) { await carregar(); return }
+      // atualiza barrinhas na hora
+      setBicho((b) => b ? { ...b, fome: r.fome, higiene: r.higiene, felicidade: r.felicidade,
+        cuidados_total: (b.cuidados_total || 0) + 1, cuidou_hoje: true } : b)
+      if (r?.pontos_ganhos > 0) {
+        setFlash(`+${r.pontos_ganhos} pts 🎉`)
+        import('../lib/juice.js').then(({ vitoria }) => vitoria(2)).catch(() => {})
+      } else {
+        setFlash('💛')
+        import('../lib/juice.js').then(({ acerto }) => acerto(1)).catch(() => {})
+      }
+      setTimeout(() => setFlash(''), 1800)
+    } catch (e) { setErro(e?.message || String(e)) }
+    setCuidando('')
+  }
+
+  if (carregando) return <p className="text-slate-400 text-sm text-center mt-10">Carregando…</p>
+
+  // ---------- Sem bichinho, ou morreu → tela de adotar ----------
+  if (!bicho?.tem || !bicho?.vivo) {
+    return <Adotar morto={bicho?.tem && !bicho?.vivo} nomeAntigo={bicho?.nome} especieAntiga={bicho?.especie} onPronto={carregar} />
+  }
+
+  const humor = humorDe(bicho)
+  const emPerigo = !!bicho.em_perigo
+  const horasParaMorte = Math.max(0, 72 - (bicho.horas_sem_cuidado || 0))
+  const estagioNome = { 1: 'Filhote', 2: 'Jovem', 3: 'Adulto' }[bicho.estagio] || 'Filhote'
+
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="text-xl font-extrabold text-azul">{bicho.nome}</h1>
+          <p className="text-xs text-slate-500">{estagioNome} · {bicho.dias_cuidados || 0} {bicho.dias_cuidados === 1 ? 'dia cuidando' : 'dias cuidando'}</p>
+        </div>
+        {bicho.ofensiva > 0 && (
+          <span className="text-sm font-extrabold bg-orange-100 text-orange-600 rounded-full px-3 py-1">🔥 {bicho.ofensiva} {bicho.ofensiva === 1 ? 'dia' : 'dias'}</span>
+        )}
+      </div>
+
+      <div className="bg-gradient-to-b from-blue-50 to-white rounded-3xl shadow p-5 text-center relative overflow-hidden">
+        <AnimatePresence>
+          {flash && (
+            <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
+              className="absolute left-1/2 -translate-x-1/2 top-3 text-sm font-extrabold text-green-600">{flash}</motion.div>
+          )}
+        </AnimatePresence>
+        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+          <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} />
+        </motion.div>
+        {emPerigo && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
+            🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl shadow p-4 mt-3 space-y-3">
+        <Barra icone="🍖" rotulo="Fome" valor={bicho.fome} />
+        <Barra icone="🛁" rotulo="Higiene" valor={bicho.higiene} />
+        <Barra icone="😊" rotulo="Felicidade" valor={bicho.felicidade} />
+      </div>
+
+      {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mt-3">{erro}</div>}
+
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        {[['alimentar', '🍎', 'Alimentar'], ['banho', '🛁', 'Dar banho'], ['brincar', '🎾', 'Brincar']].map(([acao, ic, lbl]) => (
+          <motion.button key={acao} whileTap={{ scale: 0.94 }} disabled={!!cuidando} onClick={() => cuidar(acao)}
+            className="bg-azul text-white font-bold rounded-2xl py-3 flex flex-col items-center gap-1 disabled:opacity-60">
+            <span className="text-2xl">{ic}</span>
+            <span className="text-xs">{lbl}</span>
+          </motion.button>
+        ))}
+      </div>
+
+      <p className="text-[11px] text-slate-400 text-center mt-3">
+        Fazer pelo menos <b>1 cuidado por dia</b> já mantém {bicho.nome} vivo e feliz, dá <b>+2 pontos</b> e mantém sua ofensiva 🔥. Se ficar <b>3 dias sem nenhum cuidado</b>, ele pode ir embora. 🥺
+      </p>
+    </div>
+  )
+}
+
+// ---------------- Tela de adotar (novo ou depois da morte) ----------------
+function Adotar({ morto, nomeAntigo, especieAntiga, onPronto }) {
+  const [especie, setEspecie] = useState('cachorro')
+  const [nome, setNome] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function adotar() {
+    const n = nome.trim()
+    if (!n) { setErro('Dê um nome ao bichinho 🙂'); return }
+    setEnviando(true); setErro('')
+    try { await adotarBichinho(n, especie); await onPronto() }
+    catch (e) { setErro(e?.message || String(e)); setEnviando(false) }
+  }
+
+  return (
+    <div className="max-w-md mx-auto">
+      {morto && (
+        <div className="bg-slate-100 rounded-2xl p-4 text-center mb-4">
+          <div className="text-3xl mb-1">⭐</div>
+          <p className="font-bold text-slate-700">{nomeAntigo || 'Seu bichinho'} foi pro céu dos bichinhos…</p>
+          <p className="text-sm text-slate-500">Ficou tempo demais sem cuidados. Que tal adotar um novo e cuidar com carinho? 🐾</p>
+        </div>
+      )}
+      <h1 className="text-xl font-extrabold text-azul mb-1">🐾 Adote um bichinho</h1>
+      <p className="text-sm text-slate-500 mb-4">Escolha o bichinho e dê um nome. Depois é só cuidar todo dia!</p>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {ESPECIES.map((e) => (
+          <button key={e.id} onClick={() => setEspecie(e.id)}
+            className={`rounded-2xl p-3 flex flex-col items-center border-2 transition ${especie === e.id ? 'border-azul bg-blue-50' : 'border-slate-100 bg-white'}`}>
+            <BichinhoImg especie={e.id} humor="feliz" estagio={1} size={96} />
+            <span className="text-sm font-bold text-slate-700">{e.emoji} {e.nome}</span>
+          </button>
+        ))}
+      </div>
+
+      <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={20} placeholder="Nome do bichinho"
+        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-azul mb-2" />
+      {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-2">{erro}</div>}
+      <motion.button whileTap={{ scale: 0.97 }} disabled={enviando} onClick={adotar}
+        className="w-full bg-azul text-white font-extrabold rounded-xl py-3 disabled:opacity-60">
+        {enviando ? '...' : '🐾 Adotar'}
+      </motion.button>
+    </div>
+  )
+}
