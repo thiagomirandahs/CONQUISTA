@@ -30,7 +30,7 @@ const ABAS_RODAPE = [
   { to: '/desafios', label: 'Desafios', icon: '🏁' },
   { to: '/trilha', label: 'Jogos', icon: '🎮' },
   { to: '/missoes', label: 'Missões', icon: '🎯' },
-  { to: '/mural', label: 'Mural', icon: '📸' },
+  { to: '/chat', label: 'Chat', icon: '💬' },
 ]
 
 // Moldura adaptável: menu lateral no PC, menu inferior no celular
