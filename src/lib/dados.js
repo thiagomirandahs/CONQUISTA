@@ -1145,6 +1145,35 @@ export async function salvarAvatar(avatar, tipo = 'personagem') {
   return data
 }
 
+// ------- Bíblia (leitor + pontos + link do Devocional) -------
+export async function carregarLivrosBiblia() {
+  const { data, error } = await supabase.from('biblia_livros').select('*').order('ordem')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+export async function carregarCapituloBiblia(livroAbrev, capitulo) {
+  const { data, error } = await supabase
+    .from('biblia_versiculos')
+    .select('versiculo,texto')
+    .eq('livro_abrev', livroAbrev)
+    .eq('capitulo', capitulo)
+    .order('versiculo')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+export async function registrarLeituraBiblia(livroAbrev, capitulo) {
+  const { data, error } = await supabase.rpc('registrar_leitura_biblia', {
+    p_livro_abrev: livroAbrev, p_capitulo: capitulo,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function minhaLeituraBiblia() {
+  const { data, error } = await supabase.rpc('minha_leitura_biblia')
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {
   const { data } = await supabase
