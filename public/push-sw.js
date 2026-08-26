@@ -14,6 +14,12 @@ self.addEventListener('push', (event) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: { link: data.link || '/' },
+    // Vibra o aparelho ao chegar (Android; iOS ignora, não tem suporte).
+    vibrate: [300, 100, 300, 100, 300],
+    // Sem isto o navegador pode empilhar avisos calados — "silent: false"
+    // deixa explícito que o som PADRÃO do aparelho toca (não dá pra usar um
+    // som customizado em push web; quem manda é o volume/toque do sistema).
+    silent: false,
   }
   event.waitUntil(self.registration.showNotification(titulo, opcoes))
 })
