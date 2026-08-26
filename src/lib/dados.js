@@ -1213,6 +1213,16 @@ export async function cuidarBichinho(acao) {
   if (error) throw new Error(error.message)
   return data
 }
+export async function equiparBichinho(item) {
+  const { data, error } = await supabase.rpc('bichinho_equipar', { p_item: item })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function petsDoClube() {
+  const { data, error } = await supabase.rpc('pets_do_clube')
+  if (error) throw new Error(error.message)
+  return data || []
+}
 
 // Membros ativos que têm data de nascimento (pro card de aniversariantes).
 export async function carregarAniversariantes() {

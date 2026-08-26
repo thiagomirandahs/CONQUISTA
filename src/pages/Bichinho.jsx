@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { meuBichinho, adotarBichinho, cuidarBichinho } from '../lib/dados.js'
-import { montarBichinhoSvg, ESPECIES } from '../lib/bichinhoPecas.js'
+import { Link } from 'react-router-dom'
+import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho } from '../lib/dados.js'
+import { montarBichinhoSvg, ESPECIES, ITENS } from '../lib/bichinhoPecas.js'
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -12,8 +13,8 @@ function humorDe(b) {
   return 'ok'
 }
 
-function BichinhoImg({ especie, humor, estagio, size = 190 }) {
-  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio }), [especie, humor, estagio])
+function BichinhoImg({ especie, humor, estagio, item = 'nenhum', size = 190 }) {
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item }), [especie, humor, estagio, item])
   return <svg viewBox="0 0 100 100" width={size} height={size} dangerouslySetInnerHTML={{ __html: svg }} />
 }
 
@@ -66,6 +67,14 @@ export default function Bichinho() {
     setCuidando('')
   }
 
+  async function equipar(item) {
+    setErro('')
+    const anterior = bicho?.item
+    setBicho((b) => b ? { ...b, item } : b) // otimista
+    try { await equiparBichinho(item) }
+    catch (e) { setBicho((b) => b ? { ...b, item: anterior } : b); setErro(e?.message || String(e)) }
+  }
+
   if (carregando) return <p className="text-slate-400 text-sm text-center mt-10">Carregando…</p>
 
   // ---------- Sem bichinho, ou morreu → tela de adotar ----------
@@ -98,7 +107,7 @@ export default function Bichinho() {
           )}
         </AnimatePresence>
         <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-          <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} />
+          <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} />
         </motion.div>
         {emPerigo && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
@@ -123,6 +132,27 @@ export default function Bichinho() {
             <span className="text-xs">{lbl}</span>
           </motion.button>
         ))}
+      </div>
+
+      <div className="bg-white rounded-2xl shadow p-4 mt-3">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-slate-700 text-sm">🎩 Enfeitar</h3>
+          <Link to="/pets-clube" className="text-xs font-semibold text-azul">Ver pets do clube →</Link>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {ITENS.map((it) => {
+            const bloq = (bicho.nivel || 1) < it.nivel
+            const ativo = bicho.item === it.id
+            return (
+              <button key={it.id} disabled={bloq} onClick={() => equipar(it.id)}
+                className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-azul bg-blue-50' : 'border-slate-100'} ${bloq ? 'opacity-50' : ''}`}>
+                <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item={it.id} size={46} />
+                <span className="text-[10px] font-semibold text-slate-600 leading-none">{it.nome}</span>
+                {bloq && <span className="text-[9px] text-slate-400 leading-none mt-0.5">nível {it.nivel}</span>}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <p className="text-[11px] text-slate-400 text-center mt-3">
