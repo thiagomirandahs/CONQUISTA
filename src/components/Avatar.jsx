@@ -1,9 +1,14 @@
 import { useState } from 'react'
+import AvatarPersonagem from './AvatarPersonagem.jsx'
 
-// Avatar do desbravador: mostra a FOTO se houver; senão, um emoji ou a inicial do nome.
+// Avatar do desbravador: personagem customizado > FOTO > emoji > inicial do nome.
 // Quando os desbravadores subirem foto, é só passar `foto="url"`.
-export default function Avatar({ foto, nome = '?', emoji, cor = '#1e3a8a', size = 'w-12 h-12', textSize = 'text-lg' }) {
+export default function Avatar({ foto, nome = '?', emoji, cor = '#1e3a8a', size = 'w-12 h-12', textSize = 'text-lg', avatarPersonagem }) {
   const [erro, setErro] = useState(false)
+
+  if (avatarPersonagem) {
+    return <AvatarPersonagem avatar={avatarPersonagem} size={size} />
+  }
 
   if (foto && !erro) {
     return (

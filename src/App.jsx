@@ -31,6 +31,8 @@ const JogosTrilha = lazy(() => import('./pages/JogosTrilha.jsx'))
 const DesafiosSemana = lazy(() => import('./pages/DesafiosSemana.jsx'))
 const Leilao = lazy(() => import('./pages/Leilao.jsx'))
 const ModoAcampamento = lazy(() => import('./pages/ModoAcampamento.jsx'))
+const Chat = lazy(() => import('./pages/Chat.jsx'))
+const ChatModeracao = lazy(() => import('./pages/ChatModeracao.jsx'))
 const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
 const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 
@@ -92,6 +94,8 @@ export default function App() {
           <Route path="/desafios" element={<DesafiosSemana />} />
           <Route path="/leilao" element={<Leilao />} />
           <Route path="/modo-acampamento" element={<ModoAcampamento />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat-moderacao" element={<ChatModeracao />} />
           <Route path="/agenda" element={<Agenda />} />
         </Route>
       </Routes>

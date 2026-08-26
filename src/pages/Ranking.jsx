@@ -89,7 +89,8 @@ export default function Ranking() {
                     <motion.div className="text-3xl" animate={{ y: [0, -7, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}>👑</motion.div>
                   )}
                   <div className="relative">
-                    <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size={pos === 0 ? 'w-20 h-20' : 'w-14 h-14'} textSize={pos === 0 ? 'text-3xl' : 'text-xl'} />
+                    <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size={pos === 0 ? 'w-20 h-20' : 'w-14 h-14'} textSize={pos === 0 ? 'text-3xl' : 'text-xl'}
+                      avatarPersonagem={item.avatarTipo === 'personagem' ? item.avatar : undefined} />
                     <span className="absolute -bottom-1 -right-1 text-xl drop-shadow">{medalhas[pos]}</span>
                   </div>
                   <div className="font-bold text-slate-800 text-xs mt-1 truncate max-w-[90px]">{item.nome}</div>
@@ -112,7 +113,8 @@ export default function Ranking() {
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50 text-left">
                 <span className="w-5 text-center font-extrabold text-slate-400">{i + 1}</span>
-                <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size="w-10 h-10" textSize="text-base" />
+                <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size="w-10 h-10" textSize="text-base"
+                  avatarPersonagem={item.avatarTipo === 'personagem' ? item.avatar : undefined} />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-slate-800 text-sm truncate">{item.nome}</div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
@@ -140,7 +142,8 @@ export default function Ranking() {
               <div className="p-6 text-center text-white relative shrink-0" style={{ backgroundColor: card.item.cor }}>
                 <button onClick={() => setCard(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
                 <div className="flex justify-center mb-2">
-                  <Avatar foto={card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl" />
+                  <Avatar foto={card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl"
+                    avatarPersonagem={card.item.avatarTipo === 'personagem' ? card.item.avatar : undefined} />
                 </div>
                 <h3 className="text-xl font-extrabold">{card.item.nome}</h3>
                 <p className="text-white/90 text-sm">{tituloDivertido(card.pos)}</p>
@@ -164,7 +167,8 @@ export default function Ranking() {
                             {card.item.membros.map((m) => (
                               <div key={m.id} className="flex items-center justify-between text-sm gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <Avatar foto={m.foto} nome={m.nome || '?'} cor={card.item.cor} size="w-6 h-6" textSize="text-[10px]" />
+                                  <Avatar foto={m.foto} nome={m.nome || '?'} cor={card.item.cor} size="w-6 h-6" textSize="text-[10px]"
+                                    avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
                                   <span className="text-slate-600 truncate">
                                     {m.nome || 'Desbravador'}
                                     {m.papel !== 'desbravador' && <span className="text-[10px] text-slate-400"> · {m.papel}</span>}

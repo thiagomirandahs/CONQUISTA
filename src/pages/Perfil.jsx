@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
-import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas } from '../lib/dados.js'
-import { somLigado, alternarSom } from '../lib/juice.js'
+import AvatarPersonagem from '../components/AvatarPersonagem.jsx'
+import PersonalizarAvatar from '../components/PersonalizarAvatar.jsx'
+import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
+import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
+import { calcularNivel } from '../lib/nivel.js'
+
+const CHAVE_NIVEL_VISTO = 'nivelVisto'
 
 const rotuloPapel = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
@@ -23,6 +28,9 @@ export default function Perfil() {
   const [carregandoExtrato, setCarregandoExtrato] = useState(true)
   const [metricas, setMetricas] = useState({ passos: 0, sequencia: 0, fotos: 0 })
   const [somOn, setSomOn] = useState(true)
+  const [totalPts, setTotalPts] = useState(0)
+  const [personalizando, setPersonalizando] = useState(false)
+  const [subiuNivel, setSubiuNivel] = useState(0)
   useEffect(() => { setSomOn(somLigado()) }, [])
 
   useEffect(() => {
@@ -32,9 +40,16 @@ export default function Perfil() {
       .catch(() => {})
       .finally(() => setCarregandoExtrato(false))
     carregarMetricasConquistas(profile.id).then(setMetricas).catch(() => {})
+    meuTotalPontos().then((t) => {
+      setTotalPts(t)
+      const nivelAgora = calcularNivel(t).nivel
+      const visto = Number(localStorage.getItem(CHAVE_NIVEL_VISTO) || 0)
+      if (visto > 0 && nivelAgora > visto) { festa(3); setSubiuNivel(nivelAgora) }
+      localStorage.setItem(CHAVE_NIVEL_VISTO, String(nivelAgora))
+    }).catch(() => {})
   }, [profile?.id])
 
-  const totalPts = extrato.reduce((s, p) => s + (p.pontos || 0), 0)
+  const nivel = calcularNivel(totalPts)
   const porOrigem = extrato.reduce((m, p) => { m[p.origem] = (m[p.origem] || 0) + 1; return m }, {})
   const medalhas = Math.floor((metricas.passos || 0) / 6)
   const missoesFeitas = (porOrigem.missao || 0) + (porOrigem.devocional || 0)
@@ -74,21 +89,54 @@ export default function Perfil() {
         <p className="text-sm text-slate-500">Sua foto aparece no ranking, nas unidades e nos apontamentos</p>
       </div>
 
+      {subiuNivel > 0 && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-4 rounded-2xl p-4 text-center text-white shadow-sm"
+          style={{ background: 'linear-gradient(90deg,#1e3a8a,#4338ca)' }}>
+          <div className="text-3xl mb-1">🎉</div>
+          <p className="font-extrabold">Você subiu pro Nível {subiuNivel}!</p>
+          <p className="text-xs text-blue-100 mt-0.5">Talvez tenha peça nova pra desbloquear no seu avatar 👀</p>
+        </motion.div>
+      )}
+
+      {/* Nível (derivado dos pontos da temporada) */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-extrabold text-slate-800">🌟 Nível {nivel.nivel}</span>
+          <span className="text-xs text-slate-400">{totalPts} pts</span>
+        </div>
+        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <motion.div className="h-full bg-gradient-to-r from-azul to-dourado rounded-full"
+            initial={{ width: 0 }} animate={{ width: `${Math.round(nivel.progresso * 100)}%` }} transition={{ duration: 0.6 }} />
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1.5">
+          {nivel.faltam > 0 ? `Faltam ${nivel.faltam} pts pro Nível ${nivel.nivel + 1}` : 'Nível máximo por enquanto — você é demais! 🏆'}
+        </p>
+      </div>
+
       <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
         <div className="mx-auto w-28 h-28 mb-4">
           {previa
             ? <img src={previa} alt="prévia" className="w-28 h-28 rounded-full object-cover shadow ring-2 ring-white" />
-            : <Avatar foto={profile?.foto} nome={profile?.nome || '?'} cor="#1e3a8a" size="w-28 h-28" textSize="text-4xl" />}
+            : profile?.avatar_tipo === 'personagem'
+              ? <AvatarPersonagem avatar={profile?.avatar} size="w-28 h-28" />
+              : <Avatar foto={profile?.foto} nome={profile?.nome || '?'} cor="#1e3a8a" size="w-28 h-28" textSize="text-4xl" />}
         </div>
 
         <div className="font-extrabold text-slate-800 text-lg">{profile?.nome}</div>
         <div className="text-sm text-slate-400 mb-4">{rotuloPapel[profile?.papel] || profile?.papel}</div>
 
-        <label className={`inline-flex items-center gap-2 bg-azul text-white font-semibold rounded-xl px-5 py-2.5 cursor-pointer ${enviando ? 'opacity-60 pointer-events-none' : 'hover:bg-azul-claro'}`}>
-          {enviando ? 'Enviando…' : '📷 Trocar foto'}
-          <input type="file" accept="image/*" className="hidden" disabled={enviando}
-            onChange={(e) => escolher(e.target.files?.[0])} />
-        </label>
+        <div className="flex gap-2 justify-center flex-wrap">
+          <label className={`inline-flex items-center gap-2 bg-azul text-white font-semibold rounded-xl px-5 py-2.5 cursor-pointer ${enviando ? 'opacity-60 pointer-events-none' : 'hover:bg-azul-claro'}`}>
+            {enviando ? 'Enviando…' : '📷 Trocar foto'}
+            <input type="file" accept="image/*" className="hidden" disabled={enviando}
+              onChange={(e) => escolher(e.target.files?.[0])} />
+          </label>
+          <button onClick={() => setPersonalizando(true)}
+            className="inline-flex items-center gap-2 bg-dourado/15 text-amber-700 font-semibold rounded-xl px-5 py-2.5">
+            🧑‍🎨 Meu avatar
+          </button>
+        </div>
 
         {msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm mt-3 text-green-600 font-semibold">{msg}</motion.p>}
         {erro && <p className="text-sm mt-3 text-red-600">{erro}</p>}
@@ -173,6 +221,12 @@ export default function Perfil() {
             style={{ left: somOn ? 24 : 4 }} />
         </button>
       </div>
+
+      {personalizando && (
+        <PersonalizarAvatar avatarAtual={profile?.avatar} nivel={nivel.nivel}
+          onFechar={() => setPersonalizando(false)}
+          onSalvo={async () => { setPersonalizando(false); await recarregarPerfil?.() }} />
+      )}
     </div>
   )
 }

@@ -171,7 +171,8 @@ export default function Unidades() {
                   <p className="text-sm text-slate-400 px-2 py-4 text-center">Nenhum membro aprovado nesta unidade ainda.</p>
                 ) : sel.membros.map((m, i) => (
                   <div key={m.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50">
-                    <Avatar foto={m.foto} nome={m.nome} cor={sel.cor} size="w-9 h-9" textSize="text-sm" />
+                    <Avatar foto={m.foto} nome={m.nome} cor={sel.cor} size="w-9 h-9" textSize="text-sm"
+                      avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
                     <span className="flex-1 min-w-0 font-medium text-slate-800 truncate">
                       {m.nome}
                       {m.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
