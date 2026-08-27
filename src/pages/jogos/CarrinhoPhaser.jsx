@@ -110,11 +110,11 @@ class CarroScene extends Phaser.Scene {
     if (this.estado !== 'jogando') return
 
     this.vel = Math.min(470, this.vel + 12 * dt)
-    // carro segue o dedo (suave) + inclina pro lado que vai
-    const d = this.alvoX - this.carX
-    this.carX += d * Math.min(1, dt * 14)
-    this.carX = Math.max(24, Math.min(W - 24, this.carX))
-    this.carro.setPosition(this.carX, CARRO_Y).setAngle(Math.max(-12, Math.min(12, d * 0.5)))
+    // carro segue o dedo DIRETO (resposta imediata) + inclina pela velocidade do dedo
+    const prevX = this.carX
+    this.carX = Math.max(24, Math.min(W - 24, this.alvoX))
+    const passo = this.carX - prevX
+    this.carro.setPosition(this.carX, CARRO_Y).setAngle(Math.max(-12, Math.min(12, passo * 1.2)))
 
     // spawn por distância
     this.distSpawn += this.vel * dt

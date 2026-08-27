@@ -104,6 +104,7 @@ class CorridaScene extends Phaser.Scene {
     this.runnerY = 0; this.vy = 0; this.noChao = true
     this.speed = 0; this.score = 0; this.passo = 0
     this.obstaculos = []; this.distSpawn = 0; this.gap = 340
+    this.jumpBufferedAt = 0
     this.placar.setText('0')
   }
   iniciar() {
@@ -114,8 +115,12 @@ class CorridaScene extends Phaser.Scene {
     this.breath?.pause(); this.runner.setScale(1)
   }
   pular() {
-    if (this.estado !== 'correndo' || !this.noChao) return
-    this.vy = -840; this.noChao = false
+    if (this.estado !== 'correndo') return
+    if (!this.noChao) { this.jumpBufferedAt = this.time.now; return } // segura o toque no ar
+    this.executarPulo()
+  }
+  executarPulo() {
+    this.vy = -840; this.noChao = false; this.jumpBufferedAt = 0
     this.tweens.add({ targets: this.runner, scaleX: 0.86, scaleY: 1.16, yoyo: true, duration: 130, ease: 'Quad.out' })
   }
   aterrissar() {
@@ -154,6 +159,8 @@ class CorridaScene extends Phaser.Scene {
     if (this.runnerY >= 0) {
       if (!this.noChao && this.vy > 250) this.aterrissar()
       this.runnerY = 0; this.vy = 0; this.noChao = true
+      if (this.jumpBufferedAt && this.time.now - this.jumpBufferedAt <= 140) this.executarPulo()
+      else this.jumpBufferedAt = 0
     } else this.noChao = false
     this.runner.y = GROUND_Y + this.runnerY
 

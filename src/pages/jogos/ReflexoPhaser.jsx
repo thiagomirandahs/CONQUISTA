@@ -63,8 +63,9 @@ class ReflexoScene extends Phaser.Scene {
     const n = qtdDe(this.nivel)
     const itens = embaralhar(EMOJIS).slice(0, n)
     this.alvo = itens[Math.floor(Math.random() * itens.length)]
-    this.alvoTxt.setText(this.alvo).setScale(0)
-    this.tweens.add({ targets: this.alvoTxt, scale: 1, duration: 240, ease: 'Back.out' })
+    this.alvoTxt.setText(this.alvo).setScale(1)
+    this.tweens.killTweensOf(this.alvoTxt)
+    this.tweens.add({ targets: this.alvoTxt, scale: { from: 0.88, to: 1 }, duration: 110, ease: 'Quad.out' })
 
     this.tempoTotal = Math.max(2000, 4000 - this.nivel * 25)
     this.tempoRestante = this.tempoTotal

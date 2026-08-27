@@ -45,15 +45,15 @@ class CobraScene extends Phaser.Scene {
     })
     // arrastar (swipe)
     this.input.on('pointerdown', (p) => { this._sw = { x: p.x, y: p.y } })
-    this.input.on('pointerup', (p) => {
-      if (!this._sw) return
+    this.input.on('pointermove', (p) => {
+      if (!this._sw || !p.isDown) return
       const dx = p.x - this._sw.x, dy = p.y - this._sw.y
-      if (Math.max(Math.abs(dx), Math.abs(dy)) >= 16) {
-        if (Math.abs(dx) > Math.abs(dy)) this.virar(dx > 0 ? 1 : -1, 0)
-        else this.virar(0, dy > 0 ? 1 : -1)
-      }
-      this._sw = null
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 14) return
+      if (Math.abs(dx) > Math.abs(dy)) this.virar(dx > 0 ? 1 : -1, 0)
+      else this.virar(0, dy > 0 ? 1 : -1)
+      this._sw = { x: p.x, y: p.y } // reancora → curvas em sequência sem levantar o dedo
     })
+    this.input.on('pointerup', () => { this._sw = null })
 
     this.game.events.on('cobra:start', this.iniciar, this)
     this.game.events.on('cobra:virar', (d) => this.virar(d.x, d.y), this)
@@ -71,7 +71,7 @@ class CobraScene extends Phaser.Scene {
   resetVars() {
     this.corpo = [{ x: 6, y: 6 }]
     this.corpoAnt = [{ x: 6, y: 6 }]
-    this.dir = { x: 0, y: -1 }; this.dirProx = { x: 0, y: -1 }
+    this.dir = { x: 0, y: -1 }; this.filaDir = []
     this.comida = { x: 3, y: 3 }; this.pontos = 0; this.acc = 0
     this.setFoodPos()
   }
@@ -79,9 +79,10 @@ class CobraScene extends Phaser.Scene {
 
   virar(x, y) {
     if (this.estado !== 'jogando') return
-    if (this.dir.x === -x && this.dir.y === -y) return // não volta em cima de si
-    if (this.dir.x === x && this.dir.y === y) return
-    this.dirProx = { x, y }
+    const ref = this.filaDir.length ? this.filaDir[this.filaDir.length - 1] : this.dir
+    if (ref.x === -x && ref.y === -y) return // não volta em cima de si
+    if (ref.x === x && ref.y === y) return    // já vai nessa direção
+    if (this.filaDir.length < 2) this.filaDir.push({ x, y })
   }
   novaComida() {
     const livres = []
@@ -93,7 +94,7 @@ class CobraScene extends Phaser.Scene {
   setFoodPos() { this.food.setPosition(PAD + (this.comida.x + 0.5) * CELL, PAD + (this.comida.y + 0.5) * CELL) }
 
   step() {
-    this.dir = this.dirProx
+    if (this.filaDir.length) this.dir = this.filaDir.shift()
     const cab = { x: (this.corpo[0].x + this.dir.x + N) % N, y: (this.corpo[0].y + this.dir.y + N) % N }
     const comeu = cab.x === this.comida.x && cab.y === this.comida.y
     const risco = comeu ? this.corpo : this.corpo.slice(0, -1)
@@ -206,11 +207,11 @@ export default function CobrinhaPhaser({ onTerminar, onCancelar }) {
       {/* Direcional (além do arrastar e das setas) */}
       <div className="grid grid-cols-3 gap-2 max-w-[220px] mx-auto mt-3 select-none">
         <div />
-        <button onClick={() => virar(0, -1)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">↑</button>
+        <button onPointerDown={() => virar(0, -1)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">↑</button>
         <div />
-        <button onClick={() => virar(-1, 0)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">←</button>
-        <button onClick={() => virar(0, 1)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">↓</button>
-        <button onClick={() => virar(1, 0)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">→</button>
+        <button onPointerDown={() => virar(-1, 0)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">←</button>
+        <button onPointerDown={() => virar(0, 1)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">↓</button>
+        <button onPointerDown={() => virar(1, 0)} className="rounded-2xl bg-surface2 active:bg-brand active:text-white py-3.5 text-2xl font-bold shadow-sm">→</button>
       </div>
 
       <p className="text-[11px] text-faint mt-3">Arraste na tela (ou setas / direcional). Atravessa as paredes — só não bata em você mesmo! 🐍</p>
