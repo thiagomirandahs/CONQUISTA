@@ -60,6 +60,7 @@ function ResultadoCard({ resultado }) {
 const JogoCorridaPhaser = lazy(() => import('./jogos/CorridaPhaser.jsx'))
 const JogoCobraPhaser = lazy(() => import('./jogos/CobrinhaPhaser.jsx'))
 const JogoCarrinhoPhaser = lazy(() => import('./jogos/CarrinhoPhaser.jsx'))
+const JogoReflexoPhaser = lazy(() => import('./jogos/ReflexoPhaser.jsx'))
 
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
@@ -82,7 +83,7 @@ const JOGOS = {
   velha: { nome: 'Jogo da Velha', curto: 'Velha', emoji: '⭕', desc: 'Melhor de 3 contra o app — você é o ❌', Comp: JogoVelha },
   socorro: { nome: 'Primeiros Socorros', curto: 'Socorros', emoji: '🚑', desc: 'O que fazer primeiro? Aprenda socorrendo de verdade', Comp: JogoSocorro },
   carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: JogoCarrinhoPhaser },
-  reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexo },
+  reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexoPhaser },
   corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorridaPhaser },
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
