@@ -18,7 +18,7 @@ const unidadesAlvo = ['Todas as unidades']
 const PODE_GERIR = ['instrutor', 'diretoria']
 const SET_VAZIO = new Set() // reusado quando a atividade não tem entregas
 const inputClass =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
+  'w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'sem prazo')
 // Compara no fuso de Brasília e recalcula a cada render (não "trava" o dia)
@@ -39,7 +39,7 @@ function comLinks(texto) {
   if (!texto) return null
   return String(texto).split(/(https?:\/\/[^\s]+)/g).map((p, i) =>
     /^https?:\/\//.test(p)
-      ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" className="text-azul underline break-all">{p}</a>
+      ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" className="text-brand underline break-all">{p}</a>
       : p
   )
 }
@@ -207,12 +207,12 @@ export default function Atividades() {
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">Atividades</h2>
-          <p className="text-sm text-slate-500">Entregue e ganhe pontos · líderes cadastram aqui</p>
+          <h2 className="text-2xl font-extrabold text-ink">Atividades</h2>
+          <p className="text-sm text-muted">Entregue e ganhe pontos · líderes cadastram aqui</p>
         </div>
         {ehAdmin && (
           <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setCriando(true)}
-            className="shrink-0 text-sm bg-azul text-white rounded-xl px-4 py-2 font-semibold shadow-sm">
+            className="shrink-0 text-sm bg-gradient-to-r from-brand to-brand2 text-white rounded-xl px-4 py-2 font-semibold shadow-glow">
             + Nova atividade
           </motion.button>
         )}
@@ -225,10 +225,10 @@ export default function Atividades() {
       )}
 
       {ehAdmin && (
-        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-md">
+        <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-4 max-w-md">
           {[['atividades', '📋 Atividades'], ['corrigir', `✅ Corrigir${pendentes.length ? ` (${pendentes.length})` : ''}`], ['entregas', '📦 Entregas']].map(([k, lbl]) => (
             <button key={k} onClick={() => setAba(k)}
-              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
           ))}
         </div>
       )}
@@ -244,8 +244,8 @@ export default function Atividades() {
           const ativo = filtro === c.nome
           return (
             <button key={c.nome} onClick={() => setFiltro(c.nome)}
-              className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${ativo ? 'text-white' : 'text-slate-600 bg-white border border-slate-200 hover:border-azul-claro'}`}>
-              {ativo && <motion.span layoutId="cat-pill" className="absolute inset-0 bg-azul rounded-full" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
+              className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${ativo ? 'text-white' : 'text-muted bg-surface border border-line hover:border-brand'}`}>
+              {ativo && <motion.span layoutId="cat-pill" className="absolute inset-0 bg-gradient-to-r from-brand to-brand2 rounded-full shadow-glow" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
               <span className="relative z-10"><span className="mr-1">{c.icon}</span>{c.nome}</span>
             </button>
           )
@@ -253,19 +253,19 @@ export default function Atividades() {
       </div>
 
       {ehAdmin && (
-        <label className="flex items-center gap-2 text-xs text-slate-500 mb-4">
-          <input type="checkbox" checked={verEncerradas} onChange={(e) => setVerEncerradas(e.target.checked)} className="w-4 h-4 accent-azul" />
+        <label className="flex items-center gap-2 text-xs text-muted mb-4">
+          <input type="checkbox" checked={verEncerradas} onChange={(e) => setVerEncerradas(e.target.checked)} className="w-4 h-4 accent-brand" />
           Mostrar também as com prazo encerrado (só liderança vê)
         </label>
       )}
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : lista.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">📋</div>
-          <p className="font-semibold text-slate-700">Nenhuma atividade ainda</p>
-          <p className="text-sm text-slate-400">{ehAdmin ? 'Toque em "+ Nova atividade" para criar a primeira.' : 'A liderança ainda vai cadastrar as atividades.'}</p>
+          <p className="font-semibold text-ink">Nenhuma atividade ainda</p>
+          <p className="text-sm text-faint">{ehAdmin ? 'Toque em "+ Nova atividade" para criar a primeira.' : 'A liderança ainda vai cadastrar as atividades.'}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
@@ -280,34 +280,34 @@ export default function Atividades() {
                 <motion.div key={a.id}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                  className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                  className="bg-surface rounded-2xl p-4 shadow-soft flex flex-col gap-2">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">{iconeCat[a.categoria] || '📋'}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-semibold text-azul-claro">{a.categoria} · {a.alvo}</div>
-                      <div className="font-bold text-slate-800 leading-tight break-words">{a.titulo}</div>
-                      <div className="text-xs text-slate-500 mt-0.5 line-clamp-2 break-words">{comLinks(a.descricao)}</div>
+                      <div className="text-[11px] font-semibold text-brand">{a.categoria} · {a.alvo}</div>
+                      <div className="font-bold text-ink leading-tight break-words">{a.titulo}</div>
+                      <div className="text-xs text-muted mt-0.5 line-clamp-2 break-words">{comLinks(a.descricao)}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-dourado font-extrabold leading-none">+{a.pontos}</div>
-                      <div className="text-[10px] text-slate-400">pontos</div>
+                      <div className="text-gold font-extrabold leading-none">+{a.pontos}</div>
+                      <div className="text-[10px] text-faint">pontos</div>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
                     {badgesCriterio(a.criterios).map((b) => (
-                      <span key={b} className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">{b}</span>
+                      <span key={b} className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">{b}</span>
                     ))}
                   </div>
 
                   {ehAdmin && membros.length > 0 && (
                     <div className="text-[11px]">
                       <button type="button" onClick={() => setAbertoFaltam(abertoFaltam === a.id ? null : a.id)}
-                        className="font-semibold text-slate-500 hover:text-azul">
+                        className="font-semibold text-muted hover:text-brand">
                         ✅ {entreguesSet.size}/{membros.length} entregaram{faltam.length ? ` · ${faltam.length} faltando ▾` : ' 🎉'}
                       </button>
                       {abertoFaltam === a.id && faltam.length > 0 && (
-                        <div className="mt-1 text-slate-500 bg-slate-50 rounded-lg p-2 leading-relaxed">
+                        <div className="mt-1 text-muted bg-surface2 rounded-lg p-2 leading-relaxed">
                           <span className="font-semibold">Faltam entregar:</span> {faltam.map((m) => m.nome || '—').join(', ')}
                         </div>
                       )}
@@ -321,12 +321,12 @@ export default function Atividades() {
                   )}
 
                   <div className="flex items-center justify-between mt-1 gap-2">
-                    <span className={`text-xs ${encerrado ? 'text-red-400 font-medium' : 'text-slate-400'}`}>📅 {fmtData(a.prazo)}</span>
+                    <span className={`text-xs ${encerrado ? 'text-red-400 font-medium' : 'text-faint'}`}>📅 {fmtData(a.prazo)}</span>
                     <div className="flex items-center gap-2">
                       {ehAdmin && (
                         <>
                           <button onClick={() => setEditando(a)} title="Editar"
-                            className="text-xs text-slate-500 hover:bg-slate-100 rounded-lg px-2 py-1.5">✏️</button>
+                            className="text-xs text-muted hover:bg-surface2 rounded-lg px-2 py-1.5">✏️</button>
                           <button onClick={() => excluirAtividade(a)} title="Excluir"
                             className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1.5">🗑️</button>
                         </>
@@ -337,12 +337,12 @@ export default function Atividades() {
                         <motion.button whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.05 }} onClick={() => setEntregando(a)}
                           className="text-xs bg-amber-100 text-amber-700 rounded-lg px-3 py-1.5 font-semibold">↺ Enviar de novo</motion.button>
                       ) : status ? (
-                        <span className="text-xs font-semibold text-slate-500">✅ Entregue</span>
+                        <span className="text-xs font-semibold text-muted">✅ Entregue</span>
                       ) : encerrado ? (
                         <span className="text-xs font-semibold text-red-400">⏰ Prazo encerrado</span>
                       ) : (
                         <motion.button whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.05 }} onClick={() => setEntregando(a)}
-                          className="text-xs bg-azul text-white rounded-lg px-3 py-1.5 font-medium">Entregar</motion.button>
+                          className="text-xs bg-gradient-to-r from-brand to-brand2 text-white rounded-lg px-3 py-1.5 font-medium shadow-glow">Entregar</motion.button>
                       )}
                     </div>
                   </div>
@@ -374,43 +374,43 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
   const [motivos, setMotivos] = useState({})
   if (!pendentes.length) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🎉</div>
-        <p className="font-semibold text-slate-700">Nada para corrigir!</p>
-        <p className="text-sm text-slate-400">Todas as entregas já foram avaliadas.</p>
+        <p className="font-semibold text-ink">Nada para corrigir!</p>
+        <p className="text-sm text-faint">Todas as entregas já foram avaliadas.</p>
       </div>
     )
   }
   return (
     <div className="space-y-3">
       {pendentes.map((e) => (
-        <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm">
+        <div key={e.id} className="bg-surface rounded-2xl p-4 shadow-soft">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="font-bold text-slate-800">{e.autor?.nome || 'Desbravador'}</div>
-              <div className="text-xs text-azul-claro font-semibold">{e.atividade?.titulo}</div>
+              <div className="font-bold text-ink">{e.autor?.nome || 'Desbravador'}</div>
+              <div className="text-xs text-brand font-semibold">{e.atividade?.titulo}</div>
             </div>
-            <div className="text-dourado font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
+            <div className="text-gold font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
           </div>
-          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
+          {e.texto && <p className="text-sm text-muted mt-2 bg-surface2 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
           {e.foto_url && (e.foto_url.startsWith('http') ? (
             ehVideo(e.foto_url) ? (
               <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-64 rounded-lg bg-black" />
             ) : (
               <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
                 <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-56 object-cover rounded-lg" />
-                <span className="text-[11px] text-slate-400">toque para ampliar 🔍</span>
+                <span className="text-[11px] text-faint">toque para ampliar 🔍</span>
               </button>
             )
           ) : (
-            <p className="text-xs text-slate-400 mt-1">📎 {e.foto_url}</p>
+            <p className="text-xs text-faint mt-1">📎 {e.foto_url}</p>
           ))}
           <input value={motivos[e.id] || ''} onChange={(ev) => setMotivos((m) => ({ ...m, [e.id]: ev.target.value }))}
             maxLength={200} placeholder="Motivo, se for reprovar (a criança vê e pode reenviar)"
-            className="w-full mt-3 rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+            className="w-full mt-3 rounded-lg border border-line bg-surface2 px-3 py-2 text-xs text-ink outline-none placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30" />
           <div className="flex gap-2 mt-2">
             <button onClick={() => onReprovar(e, motivos[e.id])} disabled={!!avaliando}
-              className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Reprovar</button>
+              className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-50">Reprovar</button>
             <button onClick={() => onAprovar(e)} disabled={!!avaliando}
               className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">{avaliando === e.id ? '...' : `✅ Aprovar (+${e.atividade?.pontos || 0})`}</button>
           </div>
@@ -435,10 +435,10 @@ function EntregasView({ entregas, onExcluir }) {
   const [filtro, setFiltro] = useState('todas') // atividade escolhida (pra não virar lista infinita)
   if (!entregas.length) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">📦</div>
-        <p className="font-semibold text-slate-700">Nenhuma entrega ainda</p>
-        <p className="text-sm text-slate-400">As entregas dos desbravadores aparecem aqui.</p>
+        <p className="font-semibold text-ink">Nenhuma entrega ainda</p>
+        <p className="text-sm text-faint">As entregas dos desbravadores aparecem aqui.</p>
       </div>
     )
   }
@@ -458,20 +458,20 @@ function EntregasView({ entregas, onExcluir }) {
   return (
     <div className="space-y-3">
       <select value={filtro} onChange={(ev) => setFiltro(ev.target.value)}
-        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm bg-white outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30">
+        className="w-full rounded-xl border border-line px-3 py-2.5 text-sm bg-surface text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/30">
         <option value="todas">📋 Todas as atividades ({entregas.length})</option>
         {atividades.map((a) => <option key={a.id} value={a.id}>{a.titulo} ({a.n})</option>)}
       </select>
       {lista.map((e) => (
-        <div key={e.id} className="bg-white rounded-2xl p-4 shadow-sm">
+        <div key={e.id} className="bg-surface rounded-2xl p-4 shadow-soft">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="font-bold text-slate-800">{e.autor?.nome || 'Desbravador'}</div>
-              <div className="text-xs text-azul-claro font-semibold">{e.atividade?.titulo}</div>
+              <div className="font-bold text-ink">{e.autor?.nome || 'Desbravador'}</div>
+              <div className="text-xs text-brand font-semibold">{e.atividade?.titulo}</div>
             </div>
             <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
           </div>
-          {e.texto && <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
+          {e.texto && <p className="text-sm text-muted mt-2 bg-surface2 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
           {e.foto_url && e.foto_url.startsWith('http') && (
             ehVideo(e.foto_url) ? (
               <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-56 rounded-lg bg-black" />
@@ -561,8 +561,8 @@ function NovaAtividadeModal({ onFechar, onSalvar, inicial }) {
             </div>
           </Campo>
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{salvando ? 'Salvando...' : (inicial ? 'Salvar alterações' : 'Salvar atividade')}</button>
+            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-line py-2.5 font-semibold text-muted">Cancelar</button>
+            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white py-2.5 font-semibold shadow-glow disabled:opacity-60">{salvando ? 'Salvando...' : (inicial ? 'Salvar alterações' : 'Salvar atividade')}</button>
           </div>
         </form>
       </Painel>
@@ -606,10 +606,10 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
     <Overlay onFechar={onFechar}>
       <Painel titulo="📤 Entregar atividade" onFechar={onFechar}>
         <div className="p-5 space-y-3 overflow-y-auto">
-          <div className="bg-slate-50 rounded-xl p-3">
-            <div className="font-bold text-slate-800 break-words">{atividade.titulo}</div>
-            <div className="text-xs text-slate-500 break-words">{comLinks(atividade.descricao)}</div>
-            <div className="text-xs text-dourado font-bold mt-1">Vale +{atividade.pontos} pontos</div>
+          <div className="bg-surface2 rounded-xl p-3">
+            <div className="font-bold text-ink break-words">{atividade.titulo}</div>
+            <div className="text-xs text-muted break-words">{comLinks(atividade.descricao)}</div>
+            <div className="text-xs text-gold font-bold mt-1">Vale +{atividade.pontos} pontos</div>
           </div>
           {c.texto && (
             <Campo label="✍️ Sua resposta">
@@ -623,13 +623,13 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
                 ? <video src={previa} controls playsInline className="mt-2 w-full max-h-56 rounded-lg bg-black" />
                 : <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />)}
               {foto && !previa && <p className="text-xs text-green-600 mt-1">Anexado: {foto.name}</p>}
-              {c.foto && <p className="text-[11px] text-slate-400 mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
+              {c.foto && <p className="text-[11px] text-faint mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
             </Campo>
           )}
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
           <div className="flex gap-2 pt-2">
-            <button onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
+            <button onClick={onFechar} className="flex-1 rounded-lg border border-line py-2.5 font-semibold text-muted">Cancelar</button>
+            <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white py-2.5 font-semibold shadow-glow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
           </div>
         </div>
       </Painel>
@@ -651,8 +651,8 @@ function Painel({ titulo, children, onFechar }) {
     <motion.div onClick={(e) => e.stopPropagation()}
       initial={{ y: 60, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-      className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div className="bg-azul text-white px-5 py-4 flex items-center justify-between">
+      className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-gradient-to-r from-brand to-brand2 text-white px-5 py-4 flex items-center justify-between">
         <h3 className="font-extrabold">{titulo}</h3>
         <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
       </div>
@@ -663,7 +663,7 @@ function Painel({ titulo, children, onFechar }) {
 function Campo({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-ink mb-1">{label}</label>
       {children}
     </div>
   )
@@ -671,7 +671,7 @@ function Campo({ label, children }) {
 function Toggle({ ativo, onClick, children }) {
   return (
     <button type="button" onClick={onClick}
-      className={`flex-1 rounded-xl px-2 py-2 text-sm font-medium border transition ${ativo ? 'bg-azul text-white border-azul shadow' : 'bg-white text-slate-600 border-slate-200'}`}>
+      className={`flex-1 rounded-xl px-2 py-2 text-sm font-medium border transition ${ativo ? 'bg-gradient-to-r from-brand to-brand2 text-white border-brand shadow-glow' : 'bg-surface text-muted border-line'}`}>
       {children}
     </button>
   )

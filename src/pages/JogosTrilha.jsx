@@ -26,10 +26,10 @@ export default function JogosTrilha() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da liderança</p>
-        <p className="text-sm text-slate-400">Apenas diretoria/instrutor ativam os jogos.</p>
+        <p className="font-semibold text-ink">Área da liderança</p>
+        <p className="text-sm text-faint">Apenas diretoria/instrutor ativam os jogos.</p>
       </div>
     )
   }
@@ -44,14 +44,14 @@ export default function JogosTrilha() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">🎮 Jogos da Trilha</h2>
-        <p className="text-sm text-slate-500">Ligue os jogos que a criançada pode jogar</p>
+        <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos da Trilha</h2>
+        <p className="text-sm text-muted">Ligue os jogos que a criançada pode jogar</p>
       </div>
 
       <SoDesbravador />
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : erro || lista.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
           <p className="font-semibold mb-1">Nada pra mostrar</p>
@@ -60,19 +60,19 @@ export default function JogosTrilha() {
       ) : (
         <div className="space-y-2">
           {lista.map((j) => (
-            <div key={j.chave} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+            <div key={j.chave} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center gap-3">
               <span className="text-3xl shrink-0">{j.emoji}</span>
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-slate-800">{j.nome}</div>
-                <div className="text-xs text-slate-400">{j.ativo ? 'Aparece pros meninos' : 'Escondido'}</div>
+                <div className="font-bold text-ink">{j.nome}</div>
+                <div className="text-xs text-faint">{j.ativo ? 'Aparece pros meninos' : 'Escondido'}</div>
               </div>
               <motion.button whileTap={{ scale: 0.9 }} onClick={() => alternar(j)}
-                className={`relative w-14 h-8 rounded-full shrink-0 transition-colors ${j.ativo ? 'bg-green-500' : 'bg-slate-300'}`}>
+                className={`relative w-14 h-8 rounded-full shrink-0 transition-colors ${j.ativo ? 'bg-green-500' : 'bg-surface2'}`}>
                 <motion.span layout className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow ${j.ativo ? 'right-1' : 'left-1'}`} />
               </motion.button>
             </div>
           ))}
-          <p className="text-[11px] text-slate-400 mt-2">Se você desligar todos, a criançada ainda joga o Jogo da Memória (o clássico).</p>
+          <p className="text-[11px] text-faint mt-2">Se você desligar todos, a criançada ainda joga o Jogo da Memória (o clássico).</p>
         </div>
       )}
     </div>
@@ -101,18 +101,18 @@ function SoDesbravador() {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 mb-4">
+    <div className="bg-surface rounded-2xl p-4 shadow-soft flex items-center gap-3 mb-4">
       <span className="text-3xl shrink-0">⚡</span>
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-slate-800">Reflexo: só desbravadores disputam</div>
-        <div className="text-xs text-slate-400">
+        <div className="font-bold text-ink">Reflexo: só desbravadores disputam</div>
+        <div className="text-xs text-faint">
           {ligado
             ? 'A liderança joga, mas fica fora do ranking e do prêmio de +20'
             : 'Todo mundo disputa — inclusive conselheiro, instrutor e diretoria'}
         </div>
       </div>
       <motion.button whileTap={{ scale: 0.9 }} onClick={alternar} disabled={salvando}
-        className={`relative w-14 h-8 rounded-full shrink-0 transition-colors disabled:opacity-60 ${ligado ? 'bg-green-500' : 'bg-slate-300'}`}>
+        className={`relative w-14 h-8 rounded-full shrink-0 transition-colors disabled:opacity-60 ${ligado ? 'bg-green-500' : 'bg-surface2'}`}>
         <motion.span layout className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow ${ligado ? 'right-1' : 'left-1'}`} />
       </motion.button>
     </div>

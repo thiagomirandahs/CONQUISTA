@@ -23,10 +23,10 @@ export default function RadarFaltas() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da liderança</p>
-        <p className="text-sm text-slate-400">Apenas diretoria/instrutor veem o radar de faltas.</p>
+        <p className="font-semibold text-ink">Área da liderança</p>
+        <p className="text-sm text-faint">Apenas diretoria/instrutor veem o radar de faltas.</p>
       </div>
     )
   }
@@ -47,27 +47,27 @@ export default function RadarFaltas() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">📡 Radar de faltas</h2>
-        <p className="text-sm text-slate-500">Quem está sumindo — recupere antes de perder de vez</p>
+        <h2 className="text-2xl font-extrabold text-ink">📡 Radar de faltas</h2>
+        <p className="text-sm text-muted">Quem está sumindo — recupere antes de perder de vez</p>
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : lista.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎉</div>
-          <p className="font-semibold text-slate-700">Ninguém sumido!</p>
-          <p className="text-sm text-slate-400">Todo mundo apareceu nas últimas reuniões.</p>
+          <p className="font-semibold text-ink">Ninguém sumido!</p>
+          <p className="text-sm text-faint">Todo mundo apareceu nas últimas reuniões.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-slate-400 mb-1">Faltaram 2 ou mais reuniões seguidas:</p>
+          <p className="text-xs text-faint mb-1">Faltaram 2 ou mais reuniões seguidas:</p>
           {lista.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl p-3 shadow-sm">
+            <div key={p.id} className="bg-surface rounded-2xl p-3 shadow-soft">
               <div className="flex items-center gap-3">
                 <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-10 h-10" textSize="text-base" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 text-sm truncate">{p.nome || 'Desbravador'}</div>
+                  <div className="font-bold text-ink text-sm truncate">{p.nome || 'Desbravador'}</div>
                   <div className="text-[11px] text-red-500 font-semibold">❌ {p.faltas} faltas seguidas · última reunião: {fmtData(p.ultima)}</div>
                 </div>
               </div>
@@ -75,11 +75,11 @@ export default function RadarFaltas() {
                 <div className="text-center text-xs text-green-600 font-bold mt-2 py-2 bg-green-50 rounded-xl">Enviado ✓</div>
               ) : (
                 <motion.button whileTap={{ scale: 0.96 }} onClick={() => chamar(p)}
-                  className="w-full text-sm bg-azul text-white rounded-xl py-2.5 font-semibold mt-2">🧡 Sentimos sua falta</motion.button>
+                  className="w-full text-sm bg-gradient-to-r from-brand to-brand2 shadow-glow text-white rounded-xl py-2.5 font-semibold mt-2">🧡 Sentimos sua falta</motion.button>
               )}
             </div>
           ))}
-          <p className="text-[11px] text-slate-400 mt-2">O aviso vai só pra essa pessoa (no sino e, se ativou, no celular).</p>
+          <p className="text-[11px] text-faint mt-2">O aviso vai só pra essa pessoa (no sino e, se ativou, no celular).</p>
         </div>
       )}
     </div>

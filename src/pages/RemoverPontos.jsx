@@ -22,10 +22,10 @@ export default function RemoverPontos() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da diretoria</p>
-        <p className="text-sm text-slate-400">Apenas diretoria/instrutor podem remover pontos.</p>
+        <p className="font-semibold text-ink">Área da diretoria</p>
+        <p className="text-sm text-faint">Apenas diretoria/instrutor podem remover pontos.</p>
       </div>
     )
   }
@@ -52,35 +52,35 @@ export default function RemoverPontos() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">➖ Remover pontos</h2>
-        <p className="text-sm text-slate-500">Apague lançamentos errados (individual ou de unidade)</p>
+        <h2 className="text-2xl font-extrabold text-ink">➖ Remover pontos</h2>
+        <p className="text-sm text-muted">Apague lançamentos errados (individual ou de unidade)</p>
       </div>
 
       <div className="flex gap-2 mb-3">
         {[['todos', 'Todos'], ['individual', '🧒 Individual'], ['unidade', '🛡️ Unidade']].map(([k, lbl]) => (
           <button key={k} onClick={() => setTipo(k)}
-            className={`text-sm rounded-full px-3 py-1.5 font-semibold border transition ${tipo === k ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>{lbl}</button>
+            className={`text-sm rounded-full px-3 py-1.5 font-semibold border transition ${tipo === k ? 'bg-gradient-to-r from-brand to-brand2 text-white border-transparent shadow-glow' : 'bg-surface text-muted border-line'}`}>{lbl}</button>
         ))}
       </div>
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
-        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm mb-3 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+        className="w-full rounded-xl bg-surface2 border border-line px-3 py-2.5 text-sm mb-3 text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : filtrada.length === 0 ? (
-        <p className="text-slate-400 text-sm">Nenhum lançamento encontrado.</p>
+        <p className="text-faint text-sm">Nenhum lançamento encontrado.</p>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+        <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
           {filtrada.map((p) => (
             <div key={p.id} className="flex items-center gap-3 px-3 py-2.5">
               <span className="text-xl shrink-0">{iconeOrigem[p.origem] || '⭐'}</span>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-slate-800 text-sm truncate">
+                <div className="font-semibold text-ink text-sm truncate">
                   {p.unidade_id ? '🛡️ ' : ''}{nomeDe(p)}
                 </div>
-                <div className="text-[11px] text-slate-400 truncate">{p.motivo || p.origem} · {fmtData(p.data)}</div>
+                <div className="text-[11px] text-faint truncate">{p.motivo || p.origem} · {fmtData(p.data)}</div>
               </div>
-              <span className={`font-extrabold shrink-0 ${p.pontos < 0 ? 'text-red-500' : 'text-azul'}`}>{p.pontos > 0 ? '+' : ''}{p.pontos}</span>
+              <span className={`font-extrabold shrink-0 ${p.pontos < 0 ? 'text-red-500' : 'text-brand'}`}>{p.pontos > 0 ? '+' : ''}{p.pontos}</span>
               <button onClick={() => remover(p)} disabled={removendo === p.id}
                 className="text-red-600 bg-red-50 hover:bg-red-100 rounded-lg px-3 py-2 font-semibold shrink-0 disabled:opacity-50" aria-label="Remover">
                 🗑️
