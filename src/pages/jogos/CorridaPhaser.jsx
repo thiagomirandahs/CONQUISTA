@@ -70,6 +70,7 @@ class CorridaScene extends Phaser.Scene {
     // Respira parado (idle) e reage aos comandos do React
     this.breath = this.tweens.add({ targets: this.runner, scaleX: 1.03, scaleY: 0.97, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' })
     this.game.events.on('corrida:start', this.iniciar, this)
+    this.game.events.on('corrida:pular', this.pular, this) // toque em qualquer lugar (via React)
 
     this.resetVars()
   }
@@ -227,6 +228,16 @@ export default function CorridaPhaser({ onCancelar }) {
     return () => window.removeEventListener('keydown', tecla)
   }, [fase])
 
+  // Enquanto está jogando, tocar em QUALQUER lugar da tela faz pular (mais fácil
+  // no celular do que acertar o canvas). A cena ignora o comando se ele já estiver
+  // no ar, então não tem pulo duplo.
+  useEffect(() => {
+    if (fase !== 'jogando') return
+    const pular = () => gameRef.current?.events.emit('corrida:pular')
+    window.addEventListener('pointerdown', pular)
+    return () => window.removeEventListener('pointerdown', pular)
+  }, [fase])
+
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
@@ -268,7 +279,7 @@ export default function CorridaPhaser({ onCancelar }) {
           </div>
         )}
       </div>
-      <p className="text-[11px] text-faint mt-3">Toque (ou espaço) pra pular a fogueira e os obstáculos. Sem limite — cada corrida pode virar seu recorde da semana. 🏆</p>
+      <p className="text-[11px] text-faint mt-3">Toque em qualquer lugar da tela (ou espaço) pra pular os obstáculos. Sem limite — cada corrida pode virar seu recorde da semana. 🏆</p>
     </div>
   )
 }
