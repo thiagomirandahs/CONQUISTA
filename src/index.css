@@ -1,33 +1,104 @@
 @import "tailwindcss";
 
-/* Cores oficiais do clube Filhos da Conquista */
+/* Modo escuro por atributo (ligaremos o seletor quando as telas estiverem
+   migradas). Deixa pronto pra usar `dark:` no futuro. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* =====================================================================
+   Sistema de cores — 2 camadas:
+   1) tokens de RUNTIME (--c-*) que mudam por tema (claro/escuro)
+   2) o @theme aponta as utilidades do Tailwind (bg-brand, text-ink...)
+      pros tokens de runtime — assim trocar o tema troca tudo de uma vez.
+   As cores do clube (azul/dourado) continuam existindo pra não quebrar as
+   telas que ainda não foram repaginadas.
+   ===================================================================== */
 @theme {
+  /* cores oficiais do clube (mantidas) */
   --color-azul: #1e3a8a;
   --color-azul-claro: #1d4ed8;
   --color-dourado: #f5c518;
   --color-amarelo: #facc15;
   --color-prata: #9ca3af;
+
+  /* novo sistema (apontam pros tokens de runtime) */
+  --color-brand: var(--c-brand);
+  --color-brand2: var(--c-brand2);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface2: var(--c-surface2);
+  --color-line: var(--c-line);
+  --color-gold: var(--c-gold);
+  --color-fun: var(--c-fun);
+
+  --shadow-soft: 0 14px 34px -18px rgba(23, 37, 98, 0.35);
+  --shadow-glow: 0 12px 26px -10px var(--c-brand);
+}
+
+/* ---- Tema CLARO (padrão) ---- */
+:root {
+  --c-brand:   #3b5bfd;
+  --c-brand2:  #12c6ff;
+  --c-ink:     #111a3d;
+  --c-muted:   #5c6690;
+  --c-faint:   #8a93bb;
+  --c-bg:      #eef2fb;
+  --c-surface: #ffffff;
+  --c-surface2:#f4f6ff;
+  --c-line:    rgba(20, 32, 80, 0.10);
+  --c-gold:    #f5b012;
+  --c-fun:     #ff5d8f;
+  --c-glass:   rgba(255, 255, 255, 0.72);
+  --stage:
+    radial-gradient(60rem 30rem at 110% -8%, rgba(18, 198, 255, 0.10), transparent 60%),
+    radial-gradient(52rem 26rem at -18% 108%, rgba(255, 93, 143, 0.08), transparent 60%),
+    linear-gradient(180deg, #f6f8ff 0%, #e9eefb 100%);
+}
+
+/* ---- Tema ESCURO (pronto; ativado quando as telas migrarem) ---- */
+:root[data-theme="dark"] {
+  --c-brand:   #5f7bff;
+  --c-brand2:  #38e1ff;
+  --c-ink:     #eaf0ff;
+  --c-muted:   #9aa6d4;
+  --c-faint:   #6b76a6;
+  --c-bg:      #070b1c;
+  --c-surface: #0e1738;
+  --c-surface2:#111c44;
+  --c-line:    rgba(120, 150, 255, 0.16);
+  --c-gold:    #ffc23a;
+  --c-fun:     #ff6fa0;
+  --c-glass:   rgba(22, 34, 80, 0.55);
+  --stage:
+    radial-gradient(60rem 30rem at 110% -8%, rgba(56, 225, 255, 0.10), transparent 60%),
+    radial-gradient(52rem 26rem at -18% 108%, rgba(255, 111, 160, 0.08), transparent 60%),
+    linear-gradient(180deg, #0a1130 0%, #05081a 100%);
 }
 
 html, body, #root { height: 100%; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  /* Fundo com leves manchas de cor do clube (azul e dourado) */
-  background:
-    radial-gradient(60rem 30rem at 110% -10%, rgba(30, 58, 138, 0.06), transparent 60%),
-    radial-gradient(50rem 26rem at -20% 110%, rgba(245, 197, 24, 0.07), transparent 60%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  background: var(--c-bg);
+  background-image: var(--stage);
   background-attachment: fixed;
-  color: #0f172a;
+  color: var(--c-ink);
 }
 
-/* Toque mais gostoso no celular: sem "flash" azul nem zoom de duplo-toque */
-button {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+/* Cartão de vidro reutilizável (fundo translúcido + borda + blur) */
+@utility glass {
+  background: var(--c-glass);
+  border: 1px solid var(--c-line);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
-/* Esconde a barra de rolagem (usado nos filtros horizontais) */
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
