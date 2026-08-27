@@ -67,9 +67,9 @@ export default function Agenda() {
           <p className="text-sm text-faint">{ehAdmin ? 'Toque em "+ Novo" pra marcar o próximo.' : 'A liderança ainda vai marcar os próximos eventos.'}</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <motion.div className="space-y-2" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
           {lista.map((ev) => (
-            <div key={ev.id} className="bg-surface rounded-2xl p-4 shadow-soft flex gap-3">
+            <motion.div key={ev.id} variants={{ hide: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }} className="bg-surface rounded-2xl p-4 shadow-soft flex gap-3">
               <div className="text-3xl shrink-0">{iconeTipo[ev.tipo] || '📅'}</div>
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-bold text-brand2">{ev.tipo || 'Evento'}</div>
@@ -85,10 +85,10 @@ export default function Agenda() {
                   <button onClick={() => excluir(ev)} title="Apagar" className="text-base text-red-500 hover:bg-red-50 rounded-lg p-2">🗑️</button>
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
           <p className="text-[11px] text-faint mt-2 text-center">Na véspera, quem ativou os avisos recebe um lembrete no celular. 🔔</p>
-        </div>
+        </motion.div>
       )}
 
       <AnimatePresence>

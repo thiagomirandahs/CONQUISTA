@@ -81,14 +81,14 @@ export default function DesafiosSemana() {
       <div className="bg-surface rounded-2xl shadow-soft p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-ink">Sua cartela</h3>
-          {cheia && <span className="text-xs font-extrabold text-green-600">Cartela cheia! 🎉</span>}
+          {cheia && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 12 }} className="text-xs font-extrabold text-green-600">Cartela cheia! 🎉</motion.span>}
         </div>
-        <div className="space-y-3">
+        <motion.div className="space-y-3" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.07 } } }}>
           {cartela.map((m) => {
             const pct = Math.min(100, Math.round((m.feito / m.meta) * 100))
             const ok = m.feito >= m.meta
             return (
-              <div key={m.chave}>
+              <motion.div key={m.chave} variants={{ hide: { opacity: 0, x: -14 }, show: { opacity: 1, x: 0 } }}>
                 <div className="flex items-center justify-between text-sm mb-1">
                   <span className="text-muted">{m.emoji} {m.nome}</span>
                   <span className={`font-bold ${ok ? 'text-green-600' : 'text-muted'}`}>
@@ -99,10 +99,10 @@ export default function DesafiosSemana() {
                   <motion.div initial={{ width: 0 }} animate={{ width: pct + '%' }} transition={{ duration: 0.5 }}
                     className={`h-full rounded-full ${ok ? 'bg-green-500' : 'bg-brand'}`} />
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
         <p className="text-[11px] text-faint mt-3">Cada missão, jogo, devocional e atividade da semana conta aqui. Na segunda começa de novo!</p>
       </div>
 
@@ -116,9 +116,9 @@ export default function DesafiosSemana() {
             <p className="text-sm text-muted">A semana está começando — ninguém pontuou ainda. Bora! 🚀</p>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <motion.div className="space-y-2.5" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
             {dados.unidades.map((u, i) => (
-              <div key={u.id} className="flex items-center gap-3">
+              <motion.div key={u.id} variants={{ hide: { opacity: 0, x: -14 }, show: { opacity: 1, x: 0 } }} className="flex items-center gap-3">
                 <span className="w-6 text-center font-extrabold text-faint">{['🥇', '🥈', '🥉'][i] || i + 1}</span>
                 <Avatar foto={u.emblema} nome={u.nome || '?'} cor={u.cor} size="w-8 h-8" textSize="text-xs" />
                 <div className="flex-1 min-w-0">
@@ -131,9 +131,9 @@ export default function DesafiosSemana() {
                       transition={{ duration: 0.5 }} className="h-full rounded-full" style={{ backgroundColor: u.cor }} />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {ehAdmin && top && top.pontos > 0 && (

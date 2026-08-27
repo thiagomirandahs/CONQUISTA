@@ -266,12 +266,14 @@ export default function Leilao() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <motion.div className="space-y-3" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.08 } } }}>
             {itens.map((it) => (
-              <ItemCard key={it.id} item={it} aberto={aberto} podeDarLance={aberto && !!minhaUni}
-                onDarLance={() => setLanceDe(it)} />
+              <motion.div key={it.id} variants={{ hide: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}>
+                <ItemCard item={it} aberto={aberto} podeDarLance={aberto && !!minhaUni}
+                  onDarLance={() => setLanceDe(it)} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </>
       )}
 

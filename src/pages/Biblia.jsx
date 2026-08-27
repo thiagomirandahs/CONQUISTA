@@ -251,12 +251,12 @@ export default function Biblia() {
         <h1 className="text-lg font-extrabold text-brand mb-3">{livroSel.nome}</h1>
         <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
           {Array.from({ length: livroSel.capitulos }, (_, i) => i + 1).map((c) => (
-            <button key={c} onClick={() => abrirCapitulo(livroSel, c)}
+            <motion.button key={c} onClick={() => abrirCapitulo(livroSel, c)} whileTap={{ scale: 0.88 }}
               className={`aspect-square rounded-xl font-bold text-sm ${
                 lidos.has(c) ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow text-white' : 'bg-surface text-muted shadow-soft'
               }`}>
               {c}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -298,13 +298,13 @@ export default function Biblia() {
                 {grupo.lista.map((l) => {
                   const lidosLivro = progressoDoLivro(progresso, l.abrev)
                   return (
-                    <button key={l.abrev} onClick={() => setLivroSel(l)}
+                    <motion.button key={l.abrev} onClick={() => setLivroSel(l)} whileTap={{ scale: 0.98 }}
                       className="w-full flex items-center justify-between px-4 py-3 text-left">
                       <span className="font-semibold text-ink">{l.nome}</span>
                       <span className="text-xs text-faint">
                         {lidosLivro > 0 ? `${lidosLivro}/${l.capitulos} ✓` : `${l.capitulos} cap.`}
                       </span>
-                    </button>
+                    </motion.button>
                   )
                 })}
               </div>
