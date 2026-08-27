@@ -68,7 +68,14 @@ export default function Bichinho() {
     banho: { rotate: [0, -6, 6, -5, 5, 0], scale: [1, 1.03, 1, 1.03, 1], transition: { duration: 0.75, ease: 'easeInOut' } },
     brincar: { y: [0, -22, 0, -12, 0], scale: [1, 1.12, 0.94, 1.05, 1], rotate: [0, -6, 6, -3, 0], transition: { duration: 0.75, ease: 'easeOut' } },
   }
-  const COMIDAS = ['🍎', '🍖', '🥕', '🍓', '🦴']
+  // Comida e brinquedo combinam com a espécie (osso pro cão, peixe pro gato...).
+  const COMIDA_ESPECIE = {
+    cachorro: ['🦴', '🍖', '🥩'],
+    gato: ['🐟', '🍣', '🐡'],
+    coelho: ['🥕', '🥬', '🍓'],
+    passaro: ['🌻', '🌰', '🐛'],
+  }
+  const BRINQUEDO_ESPECIE = { cachorro: '🎾', gato: '🧶', coelho: '🥎', passaro: '🔔' }
 
   // Reação ao cuidar: mexe o corpo conforme a ação, mostra o "prop" (comida
   // sendo comida / bolhas no banho / bolinha quicando) e solta coraçõezinhos.
@@ -84,8 +91,10 @@ export default function Bichinho() {
 
     const fxId = base
     const bolhas = acao === 'banho' ? Array.from({ length: 6 }, (_, i) => ({ i, x: 26 + Math.random() * 48, d: i * 0.1 })) : []
-    const comida = acao === 'alimentar' ? COMIDAS[Math.floor(Math.random() * COMIDAS.length)] : ''
-    setFx({ tipo: acao, id: fxId, comida, bolhas })
+    const lista = COMIDA_ESPECIE[bicho?.especie] || ['🍎', '🍖', '🥕']
+    const comida = acao === 'alimentar' ? lista[Math.floor(Math.random() * lista.length)] : ''
+    const brinquedo = acao === 'brincar' ? (BRINQUEDO_ESPECIE[bicho?.especie] || '🎾') : ''
+    setFx({ tipo: acao, id: fxId, comida, brinquedo, bolhas })
     setTimeout(() => setFx((f) => (f && f.id === fxId ? null : f)), 1400)
   }
 
@@ -200,7 +209,7 @@ export default function Bichinho() {
                     <motion.span className="text-3xl select-none" style={{ marginBottom: 34 }}
                       initial={{ opacity: 0, x: -60, y: 0, scale: 0.7 }}
                       animate={{ opacity: [0, 1, 1, 1, 0], x: [-60, -18, 18, -8, 0], y: [0, -46, 0, -28, 0], rotate: [0, 220, 380, 560, 680] }}
-                      transition={{ duration: 1.2, ease: 'easeInOut' }}>🎾</motion.span>
+                      transition={{ duration: 1.2, ease: 'easeInOut' }}>{fx.brinquedo}</motion.span>
                   </div>
                 )}
               </motion.div>
