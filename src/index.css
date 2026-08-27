@@ -85,6 +85,8 @@ body {
   background-image: var(--stage);
   background-attachment: fixed;
   color: var(--c-ink);
+  /* App 100% mobile: toque não dá zoom por toque duplo (pinça-zoom continua). */
+  touch-action: manipulation;
 }
 
 /* Cartão de vidro reutilizável (fundo translúcido + borda + blur) */
