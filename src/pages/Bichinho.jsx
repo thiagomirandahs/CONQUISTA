@@ -59,23 +59,34 @@ export default function Bichinho() {
   const [erro, setErro] = useState('')
   const [hearts, setHearts] = useState([]) // coraçõezinhos que sobem ao cuidar
   const [aba, setAba] = useState('enfeite') // aba do painel Personalizar
+  const [fx, setFx] = useState(null) // efeito da ação (comida/bolhas/bolinha)
   const petControls = useAnimationControls()
 
-  // Reação alegre ao cuidar: pulão + balançada + chuva de coraçõezinhos.
-  function reagir() {
-    petControls.start({
-      y: [0, -18, 0, -6, 0],
-      scale: [1, 1.16, 0.92, 1.06, 1],
-      rotate: [0, -7, 7, -3, 0],
-      transition: { duration: 0.75, ease: 'easeOut' },
-    })
+  // Motion do corpo por ação: comer = mastigadinha, banho = tremidinha, brincar = pulão.
+  const MOTION_ACAO = {
+    alimentar: { y: [0, -4, 0, -4, 0], scale: [1, 1.05, 0.97, 1.05, 1], rotate: [0, -2, 3, -2, 0], transition: { duration: 0.9, ease: 'easeInOut' } },
+    banho: { rotate: [0, -6, 6, -5, 5, 0], scale: [1, 1.03, 1, 1.03, 1], transition: { duration: 0.75, ease: 'easeInOut' } },
+    brincar: { y: [0, -22, 0, -12, 0], scale: [1, 1.12, 0.94, 1.05, 1], rotate: [0, -6, 6, -3, 0], transition: { duration: 0.75, ease: 'easeOut' } },
+  }
+  const COMIDAS = ['🍎', '🍖', '🥕', '🍓', '🦴']
+
+  // Reação ao cuidar: mexe o corpo conforme a ação, mostra o "prop" (comida
+  // sendo comida / bolhas no banho / bolinha quicando) e solta coraçõezinhos.
+  function reagir(acao) {
+    petControls.start(MOTION_ACAO[acao] || MOTION_ACAO.brincar)
     const base = Date.now()
     const emojis = ['💛', '✨', '🥰', '💫', '💚', '⭐', '🎉']
-    const novos = Array.from({ length: 7 }, (_, i) => ({
+    const novos = Array.from({ length: 6 }, (_, i) => ({
       id: base + i, x: 24 + Math.random() * 52, drift: (Math.random() - 0.5) * 36, e: emojis[i % emojis.length],
     }))
     setHearts((h) => [...h, ...novos])
     setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1500)
+
+    const fxId = base
+    const bolhas = acao === 'banho' ? Array.from({ length: 6 }, (_, i) => ({ i, x: 26 + Math.random() * 48, d: i * 0.1 })) : []
+    const comida = acao === 'alimentar' ? COMIDAS[Math.floor(Math.random() * COMIDAS.length)] : ''
+    setFx({ tipo: acao, id: fxId, comida, bolhas })
+    setTimeout(() => setFx((f) => (f && f.id === fxId ? null : f)), 1400)
   }
 
   async function carregar() {
@@ -94,7 +105,7 @@ export default function Bichinho() {
       // atualiza barrinhas na hora
       setBicho((b) => b ? { ...b, fome: r.fome, higiene: r.higiene, felicidade: r.felicidade,
         cuidados_total: (b.cuidados_total || 0) + 1, cuidou_hoje: true } : b)
-      reagir()
+      reagir(acao)
       if (r?.pontos_ganhos > 0) {
         setFlash(`+${r.pontos_ganhos} pts 🎉`)
         import('../lib/juice.js').then(({ vitoria }) => vitoria(2)).catch(() => {})
@@ -162,6 +173,39 @@ export default function Bichinho() {
               transition={{ duration: 1.4, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
               style={{ left: `${h.x}%` }}>{h.e}</motion.span>
           ))}
+          <AnimatePresence>
+            {fx && (
+              <motion.div key={fx.id} className="absolute inset-0 pointer-events-none z-20" exit={{ opacity: 0 }}>
+                {fx.tipo === 'alimentar' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.span className="text-3xl select-none" style={{ marginTop: 16 }}
+                      initial={{ opacity: 0, x: 44, y: -34, scale: 0.5, rotate: -20 }}
+                      animate={{ opacity: [0, 1, 1, 1, 0], x: [44, 2, 0, 0, 0], y: [-34, 4, 8, 8, 8], scale: [0.5, 1.1, 0.8, 0.42, 0.12] }}
+                      transition={{ duration: 1.15, times: [0, 0.3, 0.55, 0.85, 1], ease: 'easeInOut' }}>{fx.comida}</motion.span>
+                  </div>
+                )}
+                {fx.tipo === 'banho' && (
+                  <>
+                    <motion.span className="absolute left-1/2 -translate-x-1/2 text-2xl select-none" style={{ top: '8%' }}
+                      initial={{ opacity: 0, y: -6 }} animate={{ opacity: [0, 1, 1, 0], y: [-6, 2, 2, -4] }} transition={{ duration: 1.2 }}>🚿</motion.span>
+                    {fx.bolhas.map((b) => (
+                      <motion.span key={b.i} className="absolute text-xl select-none" style={{ left: `${b.x}%`, top: '56%' }}
+                        initial={{ opacity: 0, y: 8, scale: 0.4 }} animate={{ opacity: [0, 0.95, 0], y: -66, scale: [0.4, 1, 0.85] }}
+                        transition={{ duration: 1.25, delay: b.d, ease: 'easeOut' }}>🫧</motion.span>
+                    ))}
+                  </>
+                )}
+                {fx.tipo === 'brincar' && (
+                  <div className="absolute inset-0 flex items-end justify-center">
+                    <motion.span className="text-3xl select-none" style={{ marginBottom: 34 }}
+                      initial={{ opacity: 0, x: -60, y: 0, scale: 0.7 }}
+                      animate={{ opacity: [0, 1, 1, 1, 0], x: [-60, -18, 18, -8, 0], y: [0, -46, 0, -28, 0], rotate: [0, 220, 380, 560, 680] }}
+                      transition={{ duration: 1.2, ease: 'easeInOut' }}>🎾</motion.span>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
           <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
             <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
               <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} cor={bicho.cor} olhos={bicho.olhos} animar />
