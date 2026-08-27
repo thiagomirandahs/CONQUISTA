@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
+import FeedbackJogo from '../components/FeedbackJogo.jsx'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos } from '../lib/dados.js'
 import * as juice from '../lib/juice.js'
 
@@ -38,20 +39,21 @@ function useContagem(alvo, duracao = 650) {
 function ResultadoCard({ resultado }) {
   const pontos = useContagem(resultado.pontos)
   return (
-    <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
-      <div className="text-4xl mb-1">🎉</div>
-      <p className="font-extrabold text-ink">
-        +{pontos} pontos ·{' '}
+    <motion.div initial={{ opacity: 0, scale: 0.85, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+      className="relative overflow-hidden bg-green-50 border border-green-200 rounded-2xl p-4 text-center mb-3">
+      <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: [0, 1.3, 1], rotate: 0 }}
+        transition={{ duration: 0.5, delay: 0.05, times: [0, 0.6, 1] }} className="text-5xl mb-1">🎉</motion.div>
+      <p className="font-extrabold text-ink text-lg">+{pontos} pontos</p>
+      <div className="flex justify-center gap-1 mt-1">
         {Array.from({ length: resultado.estrelas }).map((_, i) => (
-          <motion.span key={i} initial={{ scale: 0 }} animate={{ scale: 1 }}
-            transition={{ delay: 0.25 + i * 0.15, type: 'spring', stiffness: 400, damping: 12 }}
-            className="inline-block">⭐</motion.span>
+          <motion.span key={i} initial={{ scale: 0, rotate: -70 }} animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.2 + i * 0.14, type: 'spring', stiffness: 420, damping: 11 }}
+            className="text-3xl inline-block" style={{ filter: 'drop-shadow(0 2px 6px rgba(245,197,24,0.55))' }}>⭐</motion.span>
         ))}
-      </p>
-      <p className="text-xs text-muted mt-0.5">
-        Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟
-      </p>
-    </div>
+      </div>
+      <p className="text-xs text-muted mt-1">Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟</p>
+    </motion.div>
   )
 }
 // Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
@@ -181,6 +183,7 @@ export default function Trilha() {
 
   return (
     <div>
+      <FeedbackJogo />
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos</h2>
         <p className="text-sm text-muted">Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐</p>
@@ -456,6 +459,7 @@ function JogoMemoria({ onTerminar, onCancelar }) {
       const [a, b] = novas
       if (cartas[a].emoji === cartas[b].emoji) {
         const novoAchadas = [...achadas, cartas[a].emoji]
+        juice.acerto(achadas.length)
         setTimeout(() => {
           setAchadas(novoAchadas)
           setViradas([])
@@ -466,6 +470,7 @@ function JogoMemoria({ onTerminar, onCancelar }) {
           }
         }, 500)
       } else {
+        juice.erro()
         setTimeout(() => { setViradas([]); setBloqueado(false) }, 800)
       }
     }
@@ -552,7 +557,8 @@ function JogoSequencia({ onTerminar, onCancelar }) {
     if (mostrando || fim) return
     setAceso(idx)
     setTimeout(() => setAceso((a) => (a === idx ? -1 : a)), 180)
-    if (idx !== seq[pos]) { encerrar(seq.length - 1); return } // errou
+    if (idx !== seq[pos]) { juice.erro(); encerrar(seq.length - 1); return } // errou
+    juice.acerto(pos)
     const novaPos = pos + 1
     if (novaPos === seq.length) {
       if (seq.length >= 15) { encerrar(15); return } // venceu
@@ -651,6 +657,7 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
     const res = palavraEntre(sel, idx)
     if (res) {
       const novas = [...achadas, res.match]
+      juice.acerto(achadas.length)
       setAchadas(novas)
       setCelulas((cs) => { const n = new Set(cs); res.idxs.forEach((i) => n.add(i)); return n })
       setSel(-1)
@@ -660,6 +667,7 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
         setTimeout(() => onTerminar(est), 700)
       }
     } else {
+      juice.erro()
       setErros((e) => e + 1)
       setSel(-1)
     }
@@ -792,7 +800,7 @@ function JogoMorse({ onTerminar, onCancelar }) {
     if (fim || aviso) return
     const acertou = resp.trim().toUpperCase() === palavra
     const totalErros = erros + (acertou ? 0 : 1)
-    if (!acertou) setErros(totalErros)
+    if (acertou) juice.acerto(); else { setErros(totalErros); juice.erro() }
     setAviso(acertou ? 'Acertou! ✅' : `Era ${palavra}`)
     setTimeout(() => {
       setAviso(''); setResp('')
@@ -892,7 +900,7 @@ function JogoBussola({ onTerminar, onCancelar }) {
     if (fim || aviso) return
     const ok = dir === q.certa
     const total = acertos + (ok ? 1 : 0)
-    if (ok) setAcertos(total)
+    if (ok) { setAcertos(total); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era ${NOME_DIR[q.certa]}`)
     setTimeout(() => {
       setAviso('')
@@ -954,6 +962,7 @@ function JogoForca({ onTerminar, onCancelar }) {
     if (fim || usadas.includes(l)) return
     const novas = [...usadas, l]
     setUsadas(novas)
+    if (palavra.includes(l)) juice.acerto(); else juice.erro()
     const err = novas.filter((x) => !palavra.includes(x)).length
     const ganhou = palavra.split('').every((x) => novas.includes(x))
     if (ganhou) {
@@ -1057,7 +1066,7 @@ function JogoContas({ onTerminar, onCancelar }) {
 
   function responder(v) {
     if (fim) return
-    if (v === q.r) setAcertos((x) => x + 1)
+    if (v === q.r) { setAcertos((x) => x + 1); juice.acerto(acertos) } else juice.erro()
     setQ(novaConta())
   }
 
@@ -1136,7 +1145,7 @@ function JogoNos({ onTerminar, onCancelar }) {
     if (fim || aviso) return
     const ok = op === q.certa
     const total = acertos + (ok ? 1 : 0)
-    if (ok) setAcertos(total)
+    if (ok) { setAcertos(total); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era: ${q.certa}`)
     setTimeout(() => {
       setAviso('')
@@ -1216,7 +1225,7 @@ function JogoSemaforo({ onTerminar, onCancelar }) {
     if (fim || aviso) return
     const ok = l === q.certa
     const total = acertos + (ok ? 1 : 0)
-    if (ok) setAcertos(total)
+    if (ok) { setAcertos(total); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era a letra ${q.certa}`)
     setTimeout(() => {
       setAviso('')
@@ -1393,7 +1402,7 @@ function JogoAnagrama({ onTerminar, onCancelar }) {
     if (fim || aviso) return
     const ok = resp.trim().toUpperCase() === q.palavra
     const total = erros + (ok ? 0 : 1)
-    if (!ok) setErros(total)
+    if (ok) juice.acerto(); else { setErros(total); juice.erro() }
     setAviso(ok ? 'Acertou! ✅' : `Era ${q.palavra}`)
     setTimeout(() => {
       setAviso(''); setResp('')
@@ -1502,6 +1511,7 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
     if (ms.has(i)) {
       setAbertas((a) => new Set([...a, i]))
       setFim('perdeu')
+      juice.colisao()
       setTimeout(() => onTerminar(1), 1600)
       return
     }
@@ -1520,6 +1530,7 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
       }
     }
     setAbertas(novas)
+    juice.acerto(abertas.size)
 
     if (novas.size === N_MINADO * N_MINADO - MINAS_TOTAL) {
       setFim('ganhou')
@@ -1610,7 +1621,7 @@ function JogoMudou({ onTerminar, onCancelar }) {
     const certo = rod.itens[rod.alvo]
     const ok = op === certo
     const tot = acertos + (ok ? 1 : 0)
-    if (ok) setAcertos(tot)
+    if (ok) { setAcertos(tot); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Boa memória! ✅' : `Era ${certo}`)
     setTimeout(() => {
       setAviso('')
@@ -1686,6 +1697,7 @@ function JogoHanoi({ onTerminar, onCancelar }) {
     const topoDestino = pinos[p][pinos[p].length - 1]
     if (topoDestino && topoDestino < disco) {
       // não pode: grande sobre pequeno (pisca em vermelho)
+      juice.erro()
       setErro(true)
       setTimeout(() => setErro(false), 450)
       setSel(null)
@@ -1783,6 +1795,7 @@ function JogoTermo({ onTerminar, onCancelar }) {
         setTimeout(() => onTerminar(novas.length <= 3 ? 3 : 2), 1200)
       } else if (novas.length >= 6) {
         setFim('perdeu')
+        juice.erro()
         setTimeout(() => onTerminar(1), 1800)
       }
       return
@@ -1895,7 +1908,7 @@ function JogoProximo({ onTerminar, onCancelar }) {
     if (aviso) return
     const ok = op === q.certa
     const tot = acertos + (ok ? 1 : 0)
-    if (ok) setAcertos(tot)
+    if (ok) { setAcertos(tot); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era ${q.certa}`)
     setTimeout(() => {
       setAviso('')
@@ -1987,6 +2000,7 @@ function JogoVelha({ onTerminar, onCancelar }) {
     const r = vencedorVelha(tab)
     if (!r || fimPartida) return
     setFimPartida(r)
+    if (r === 'X') juice.acerto(); else if (r === 'O') juice.erro()
     const chave = r === 'X' ? 'v' : r === 'empate' ? 'e' : 'd'
     const novo = { ...placar, [chave]: placar[chave] + 1 }
     setPlacar(novo)
@@ -2084,7 +2098,7 @@ function JogoSocorro({ onTerminar, onCancelar }) {
   function responder(op) {
     if (escolha !== null || fim) return
     setEscolha(op)
-    if (op === q.certa) setAcertos((a) => a + 1)
+    if (op === q.certa) { setAcertos((a) => a + 1); juice.acerto(acertos) } else juice.erro()
   }
   function proxima() {
     if (n + 1 >= rodadas.length) {

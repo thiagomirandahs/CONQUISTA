@@ -52,6 +52,14 @@ export function vibrar(padrao) {
   try { navigator.vibrate?.(padrao) } catch { /* iOS ignora sozinho */ }
 }
 
+// Sinal visual: dispara um evento que o overlay <FeedbackJogo/> escuta pra
+// mostrar faíscas (acerto) ou um flash vermelho (erro). Não depende do mudo
+// (é visual, não som) e falha em silêncio se não houver window.
+function sinalVisual(tipo) {
+  if (typeof window === 'undefined') return
+  try { window.dispatchEvent(new CustomEvent('juicefx', { detail: { tipo } })) } catch { /* ok */ }
+}
+
 // Confete escalonado: 1⭐ discreto, 3⭐ com uma 2ª rajada.
 export function festa(estrelas = 3) {
   const n = Math.max(1, Math.min(3, Math.round(estrelas) || 3))
@@ -66,11 +74,13 @@ export function festa(estrelas = 3) {
 export function acerto(combo = 0) {
   tom({ freq: 660 + Math.min(combo, 8) * 40, duracao: 0.09 })
   vibrar(12)
+  sinalVisual('acerto')
 }
 
 export function erro() {
   tom({ freq: 160, duracao: 0.14, tipo: 'square', volume: 0.12 })
   vibrar([30, 25, 30])
+  sinalVisual('erro')
 }
 
 // Fim de jogo (vence a rodada): confete + arpejo animado pelas estrelas + vibração.
