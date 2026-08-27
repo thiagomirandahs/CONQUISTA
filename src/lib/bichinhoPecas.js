@@ -155,9 +155,15 @@ const ESCALA_ESTAGIO = { 1: 0.9, 2: 1.0, 3: 1.06 }
 // respiração leve no corpo + piscadinha (pálpebras da cor da pele descem
 // sobre os olhos de tempos em tempos). Respeita "reduzir animações".
 const ANIM_STYLE = `<style>
-  @keyframes bicho-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes bicho-idle{
+    0%{transform:scale(1) rotate(0deg)}
+    25%{transform:scale(1.02) rotate(-1.6deg)}
+    50%{transform:scale(1.035) rotate(0deg)}
+    75%{transform:scale(1.02) rotate(1.6deg)}
+    100%{transform:scale(1) rotate(0deg)}
+  }
   @keyframes bicho-blink{0%,92%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
-  .bicho-body{transform-box:fill-box;transform-origin:center;animation:bicho-breathe 3.2s ease-in-out infinite}
+  .bicho-body{transform-box:fill-box;transform-origin:50% 90%;animation:bicho-idle 3.6s ease-in-out infinite}
   .bicho-lid{transform-box:fill-box;transform-origin:top;animation:bicho-blink 4.6s ease-in-out infinite}
   @media (prefers-reduced-motion:reduce){.bicho-body,.bicho-lid{animation:none}}
 </style>`

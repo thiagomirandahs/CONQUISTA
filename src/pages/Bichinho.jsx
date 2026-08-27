@@ -1,11 +1,8 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, ESPECIES, ITENS } from '../lib/bichinhoPecas.js'
-
-// 3D carregado só quando o usuário liga (não pesa o resto do app)
-const Bicho3D = lazy(() => import('../components/Bicho3D.jsx'))
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -42,16 +39,23 @@ export default function Bichinho() {
   const [flash, setFlash] = useState('') // +pts ou aviso rápido
   const [erro, setErro] = useState('')
   const [hearts, setHearts] = useState([]) // coraçõezinhos que sobem ao cuidar
-  const [modo3d, setModo3d] = useState(false) // 🧊 ver em 3D (beta)
   const petControls = useAnimationControls()
 
-  // Reação alegre ao cuidar: pulinho + coraçõezinhos subindo.
+  // Reação alegre ao cuidar: pulão + balançada + chuva de coraçõezinhos.
   function reagir() {
-    petControls.start({ scale: [1, 1.14, 0.95, 1.03, 1], transition: { duration: 0.55 } })
+    petControls.start({
+      y: [0, -18, 0, -6, 0],
+      scale: [1, 1.16, 0.92, 1.06, 1],
+      rotate: [0, -7, 7, -3, 0],
+      transition: { duration: 0.75, ease: 'easeOut' },
+    })
     const base = Date.now()
-    const novos = Array.from({ length: 5 }, (_, i) => ({ id: base + i, x: 18 + Math.random() * 64, e: ['💛', '✨', '🥰', '💫', '💚'][i % 5] }))
+    const emojis = ['💛', '✨', '🥰', '💫', '💚', '⭐', '🎉']
+    const novos = Array.from({ length: 7 }, (_, i) => ({
+      id: base + i, x: 14 + Math.random() * 70, drift: (Math.random() - 0.5) * 40, e: emojis[i % emojis.length],
+    }))
     setHearts((h) => [...h, ...novos])
-    setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1400)
+    setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1500)
   }
 
   async function carregar() {
@@ -116,10 +120,6 @@ export default function Bichinho() {
       </div>
 
       <div className="glass rounded-3xl shadow-soft p-5 text-center relative overflow-hidden">
-        <button onClick={() => setModo3d((v) => !v)}
-          className="absolute top-3 right-3 z-10 text-[11px] font-bold rounded-full px-2.5 py-1 bg-surface2 text-brand">
-          {modo3d ? '🖼️ 2D' : '🧊 Ver em 3D'}
-        </button>
         <AnimatePresence>
           {flash && (
             <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
@@ -127,21 +127,15 @@ export default function Bichinho() {
           )}
         </AnimatePresence>
         {hearts.map((h) => (
-          <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.6 }} animate={{ opacity: [0, 1, 0], y: -84, scale: 1 }}
-            transition={{ duration: 1.3, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
+          <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: [0, 1, 0], y: -92, scale: 1.1, x: h.drift }}
+            transition={{ duration: 1.4, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
             style={{ left: `${h.x}%` }}>{h.e}</motion.span>
         ))}
-        {modo3d ? (
-          <Suspense fallback={<p className="text-faint text-sm py-24">Carregando 3D…</p>}>
-            <Bicho3D especie={bicho.especie} />
-          </Suspense>
-        ) : (
-          <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-            <motion.div animate={petControls}>
-              <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
-            </motion.div>
+        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+          <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
+            <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
           </motion.div>
-        )}
+        </motion.div>
         {emPerigo && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
             🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
