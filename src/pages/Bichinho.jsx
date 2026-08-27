@@ -1,8 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, ESPECIES, ITENS } from '../lib/bichinhoPecas.js'
+
+// 3D carregado só quando o usuário liga (não pesa o resto do app)
+const Bicho3D = lazy(() => import('../components/Bicho3D.jsx'))
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -39,6 +42,7 @@ export default function Bichinho() {
   const [flash, setFlash] = useState('') // +pts ou aviso rápido
   const [erro, setErro] = useState('')
   const [hearts, setHearts] = useState([]) // coraçõezinhos que sobem ao cuidar
+  const [modo3d, setModo3d] = useState(false) // 🧊 ver em 3D (beta)
   const petControls = useAnimationControls()
 
   // Reação alegre ao cuidar: pulinho + coraçõezinhos subindo.
@@ -112,22 +116,32 @@ export default function Bichinho() {
       </div>
 
       <div className="glass rounded-3xl shadow-soft p-5 text-center relative overflow-hidden">
+        <button onClick={() => setModo3d((v) => !v)}
+          className="absolute top-3 right-3 z-10 text-[11px] font-bold rounded-full px-2.5 py-1 bg-surface2 text-brand">
+          {modo3d ? '🖼️ 2D' : '🧊 Ver em 3D'}
+        </button>
         <AnimatePresence>
           {flash && (
             <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
-              className="absolute left-1/2 -translate-x-1/2 top-3 text-sm font-extrabold text-green-600">{flash}</motion.div>
+              className="absolute left-1/2 -translate-x-1/2 top-3 text-sm font-extrabold text-green-600 z-10">{flash}</motion.div>
           )}
         </AnimatePresence>
         {hearts.map((h) => (
           <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.6 }} animate={{ opacity: [0, 1, 0], y: -84, scale: 1 }}
-            transition={{ duration: 1.3, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none"
+            transition={{ duration: 1.3, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
             style={{ left: `${h.x}%` }}>{h.e}</motion.span>
         ))}
-        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-          <motion.div animate={petControls}>
-            <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
+        {modo3d ? (
+          <Suspense fallback={<p className="text-faint text-sm py-24">Carregando 3D…</p>}>
+            <Bicho3D especie={bicho.especie} />
+          </Suspense>
+        ) : (
+          <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+            <motion.div animate={petControls}>
+              <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
         {emPerigo && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
             🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
