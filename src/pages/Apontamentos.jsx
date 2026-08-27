@@ -94,10 +94,10 @@ export default function Apontamentos() {
 
   if (!podeApontar) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área dos conselheiros e liderança</p>
-        <p className="text-sm text-slate-400">Aqui se lançam os pontos de presença, uniforme, Bíblia, etc.</p>
+        <p className="font-semibold text-ink">Área dos conselheiros e liderança</p>
+        <p className="text-sm text-faint">Aqui se lançam os pontos de presença, uniforme, Bíblia, etc.</p>
       </div>
     )
   }
@@ -105,19 +105,19 @@ export default function Apontamentos() {
   return (
     <div className="pb-4">
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">✍️ Apontamentos</h2>
-        <p className="text-sm text-slate-500">Pontos da reunião, por desbravador</p>
+        <h2 className="text-2xl font-extrabold text-ink">✍️ Apontamentos</h2>
+        <p className="text-sm text-muted">Pontos da reunião, por desbravador</p>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-3 grid gap-3" style={{ gridTemplateColumns: ehAdmin ? '1fr 1fr' : '1fr' }}>
+      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-3 grid gap-3" style={{ gridTemplateColumns: ehAdmin ? '1fr 1fr' : '1fr' }}>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Data da reunião</label>
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold text-muted mb-1">Data da reunião</label>
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink focus:border-brand" />
         </div>
         {ehAdmin && (
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Unidade</label>
-            <select value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <label className="block text-xs font-semibold text-muted mb-1">Unidade</label>
+            <select value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)} className="w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink focus:border-brand">
               <option value="">Escolha...</option>
               {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
             </select>
@@ -125,46 +125,46 @@ export default function Apontamentos() {
         )}
       </div>
 
-      <div className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+      <div className="text-[11px] text-faint mb-3 leading-relaxed">
         Na hora +{PT.naHora} · Atrasado +{PT.atrasado} · 📖 Bíblia +{PT.biblia} · 👕 Uniforme +{PT.uniforme} · ⛪ Igreja +{PT.igreja} · ⭐ Atividade +{PT.atividade} · Faltou: 0
       </div>
 
       {unidadeId && desbravadores.length > 0 && (
-        <div className="bg-white rounded-xl p-1 flex shadow-sm mb-3 max-w-xs">
+        <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-3 max-w-xs">
           {[['detalhado', '📝 Detalhado'], ['rapida', '⚡ Chamada rápida']].map(([k, lbl]) => (
             <button key={k} onClick={() => setModo(k)}
-              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${modo === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${modo === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
           ))}
         </div>
       )}
 
       {!unidadeId ? (
-        <p className="text-slate-400 text-sm">{ehConselheiro ? 'Você ainda não tem uma unidade definida.' : 'Escolha uma unidade acima.'}</p>
+        <p className="text-faint text-sm">{ehConselheiro ? 'Você ainda não tem uma unidade definida.' : 'Escolha uma unidade acima.'}</p>
       ) : carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : desbravadores.length === 0 ? (
-        <p className="text-slate-400 text-sm">Nenhum desbravador aprovado nesta unidade ainda.</p>
+        <p className="text-faint text-sm">Nenhum desbravador aprovado nesta unidade ainda.</p>
       ) : modo === 'rapida' ? (
         <div className="space-y-2">
-          <div className="bg-azul/10 text-azul rounded-xl px-3 py-2 text-sm font-bold text-center">
+          <div className="bg-brand/10 text-brand rounded-xl px-3 py-2 text-sm font-bold text-center">
             {desbravadores.filter((d) => (marcas[d.id]?.presenca ?? 'naHora') !== 'faltou').length}/{desbravadores.length} presentes
           </div>
           {desbravadores.map((d) => {
             const presente = (marcas[d.id]?.presenca ?? 'naHora') !== 'faltou'
             return (
               <button key={d.id} onClick={() => setMarca(d.id, 'presenca', presente ? 'faltou' : 'naHora')}
-                className={`w-full flex items-center gap-3 rounded-2xl p-2.5 shadow-sm border-2 transition ${presente ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'}`}>
+                className={`w-full flex items-center gap-3 rounded-2xl p-2.5 shadow-soft border-2 transition ${presente ? 'bg-green-50 border-green-300' : 'bg-surface border-line'}`}>
                 <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
-                <span className="flex-1 text-left font-semibold text-slate-800 truncate">
+                <span className="flex-1 text-left font-semibold text-ink truncate">
                   {d.nome}
-                  {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
+                  {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                 </span>
-                <span className={`text-sm font-bold shrink-0 ${presente ? 'text-green-600' : 'text-slate-400'}`}>{presente ? '✅ Presente' : '❌ Faltou'}</span>
+                <span className={`text-sm font-bold shrink-0 ${presente ? 'text-green-600' : 'text-faint'}`}>{presente ? '✅ Presente' : '❌ Faltou'}</span>
               </button>
             )
           })}
           <motion.button whileTap={{ scale: 0.97 }} onClick={salvar} disabled={salvando}
-            className="w-full bg-azul text-white font-bold rounded-xl py-3 shadow disabled:opacity-60">
+            className="w-full bg-gradient-to-r from-brand to-brand2 text-white font-bold rounded-xl py-3 shadow-glow disabled:opacity-60">
             {salvando ? 'Salvando...' : '💾 Salvar chamada'}
           </motion.button>
         </div>
@@ -174,18 +174,18 @@ export default function Apontamentos() {
             const m = marcas[d.id] || marcaInicial()
             const faltou = m.presenca === 'faltou'
             return (
-              <div key={d.id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <div key={d.id} className="bg-surface rounded-2xl p-4 shadow-soft">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-ink">
                     {d.nome}
-                    {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
+                    {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                   </span>
-                  <span className="text-azul font-extrabold">{calcTotal(m)} pts</span>
+                  <span className="text-brand font-extrabold">{calcTotal(m)} pts</span>
                 </div>
                 <div className="flex gap-1.5 mb-2">
                   {[['naHora', 'Na hora'], ['atrasado', 'Atrasado'], ['faltou', 'Faltou']].map(([k, lbl]) => (
                     <button key={k} onClick={() => setMarca(d.id, 'presenca', k)}
-                      className={`flex-1 rounded-lg py-3 text-xs font-semibold border ${m.presenca === k ? (k === 'faltou' ? 'bg-red-500 text-white border-red-500' : 'bg-azul text-white border-azul') : 'bg-white text-slate-500 border-slate-200'}`}>
+                      className={`flex-1 rounded-lg py-3 text-xs font-semibold border ${m.presenca === k ? (k === 'faltou' ? 'bg-red-500 text-white border-red-500' : 'bg-gradient-to-r from-brand to-brand2 text-white border-brand shadow-glow') : 'bg-surface text-muted border-line'}`}>
                       {lbl}
                     </button>
                   ))}
@@ -193,7 +193,7 @@ export default function Apontamentos() {
                 <div className="flex flex-wrap gap-1.5">
                   {[['biblia', '📖 Bíblia'], ['uniforme', '👕 Uniforme'], ['igreja', '⛪ Igreja'], ['atividade', '⭐ Atividade']].map(([k, lbl]) => (
                     <button key={k} disabled={faltou} onClick={() => setMarca(d.id, k, !m[k])}
-                      className={`rounded-full px-3.5 py-2.5 text-xs font-medium border transition ${m[k] && !faltou ? 'bg-green-500 text-white border-green-500' : 'bg-white text-slate-500 border-slate-200'} ${faltou ? 'opacity-40' : ''}`}>
+                      className={`rounded-full px-3.5 py-2.5 text-xs font-medium border transition ${m[k] && !faltou ? 'bg-green-500 text-white border-green-500' : 'bg-surface text-muted border-line'} ${faltou ? 'opacity-40' : ''}`}>
                       {lbl}
                     </button>
                   ))}
@@ -203,7 +203,7 @@ export default function Apontamentos() {
           })}
 
           <motion.button whileTap={{ scale: 0.97 }} onClick={salvar} disabled={salvando}
-            className="w-full bg-azul text-white font-bold rounded-xl py-3 shadow disabled:opacity-60">
+            className="w-full bg-gradient-to-r from-brand to-brand2 text-white font-bold rounded-xl py-3 shadow-glow disabled:opacity-60">
             {salvando ? 'Salvando...' : '💾 Salvar apontamentos'}
           </motion.button>
         </div>

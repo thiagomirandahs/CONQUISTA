@@ -44,10 +44,10 @@ export default function Aprovacoes() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área restrita</p>
-        <p className="text-sm text-slate-400">Apenas a diretoria e instrutores podem aprovar cadastros.</p>
+        <p className="font-semibold text-ink">Área restrita</p>
+        <p className="text-sm text-faint">Apenas a diretoria e instrutores podem aprovar cadastros.</p>
       </div>
     )
   }
@@ -55,17 +55,17 @@ export default function Aprovacoes() {
   return (
     <div>
       <div className="mb-5">
-        <h2 className="text-2xl font-extrabold text-slate-800">✅ Aprovações</h2>
-        <p className="text-sm text-slate-500">Novos cadastros aguardando liberação</p>
+        <h2 className="text-2xl font-extrabold text-ink">✅ Aprovações</h2>
+        <p className="text-sm text-muted">Novos cadastros aguardando liberação</p>
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : pendentes.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎉</div>
-          <p className="font-semibold text-slate-700">Tudo em dia!</p>
-          <p className="text-sm text-slate-400">Nenhum cadastro pendente no momento.</p>
+          <p className="font-semibold text-ink">Tudo em dia!</p>
+          <p className="text-sm text-faint">Nenhum cadastro pendente no momento.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -73,19 +73,19 @@ export default function Aprovacoes() {
             {pendentes.map((p) => (
               <motion.div key={p.id} layout
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -50 }}
-                className="bg-white rounded-2xl p-4 shadow-sm">
+                className="bg-surface rounded-2xl p-4 shadow-soft">
                 {/* Linha 1: avatar + dados (largura toda pro nome/unidade/data) */}
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-azul/10 text-azul grid place-items-center font-extrabold shrink-0">
+                  <div className="w-11 h-11 rounded-full bg-brand/10 text-brand grid place-items-center font-extrabold shrink-0">
                     {p.nome?.[0]?.toUpperCase() || '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 truncate">{p.nome || 'Sem nome'}</div>
-                    <div className="text-xs text-slate-400">
+                    <div className="font-bold text-ink truncate">{p.nome || 'Sem nome'}</div>
+                    <div className="text-xs text-faint">
                       {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
                     </div>
                     {p.cargo && (
-                      <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                      <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-surface2 text-muted'}`}>
                         {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
                       </span>
                     )}
@@ -97,9 +97,9 @@ export default function Aprovacoes() {
                 {/* Linha 2: botões largos, fáceis de acertar no celular */}
                 <div className="flex gap-2 mt-3">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => decidir(p.id, 'rejeitado')}
-                    className="flex-1 text-sm rounded-xl py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 font-semibold">Recusar</motion.button>
+                    className="flex-1 text-sm rounded-xl py-2.5 border border-line text-muted hover:bg-surface2 font-semibold">Recusar</motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => decidir(p.id, 'ativo')}
-                    className="flex-1 text-sm rounded-xl py-2.5 bg-azul text-white font-semibold hover:bg-azul-claro">Aprovar</motion.button>
+                    className="flex-1 text-sm rounded-xl py-2.5 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold">Aprovar</motion.button>
                 </div>
               </motion.div>
             ))}

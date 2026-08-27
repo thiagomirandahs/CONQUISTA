@@ -32,26 +32,26 @@ export default function Gestao() {
   return (
     <div>
       <div className="mb-5">
-        <h2 className="text-2xl font-extrabold text-slate-800">⚙️ Gestão</h2>
-        <p className="text-sm text-slate-500">Ferramentas da liderança</p>
+        <h2 className="text-2xl font-extrabold text-ink">⚙️ Gestão</h2>
+        <p className="text-sm text-muted">Ferramentas da liderança</p>
       </div>
 
       {ehAdmin && <PainelDiretoria />}
 
       {disp.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🔒</div>
-          <p className="font-semibold text-slate-700">Sem ferramentas de gestão</p>
-          <p className="text-sm text-slate-400">Seu perfil não tem acesso a estas áreas.</p>
+          <p className="font-semibold text-ink">Sem ferramentas de gestão</p>
+          <p className="text-sm text-faint">Seu perfil não tem acesso a estas áreas.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {disp.map((f) => (
             <motion.div key={f.to} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }}>
-              <Link to={f.to} className="block bg-white rounded-2xl p-5 shadow-sm h-full">
-                <div className="w-12 h-12 rounded-2xl grid place-items-center text-2xl mb-2 bg-gradient-to-br from-azul/10 to-dourado/20">{f.icon}</div>
-                <div className="font-bold text-slate-800">{f.titulo}</div>
-                <div className="text-sm text-slate-400">{f.desc}</div>
+              <Link to={f.to} className="block bg-surface rounded-2xl p-5 shadow-soft h-full">
+                <div className="w-12 h-12 rounded-2xl grid place-items-center text-2xl mb-2 bg-gradient-to-br from-brand/10 to-gold/20">{f.icon}</div>
+                <div className="font-bold text-ink">{f.titulo}</div>
+                <div className="text-sm text-faint">{f.desc}</div>
               </Link>
             </motion.div>
           ))}
@@ -74,14 +74,14 @@ function PainelDiretoria() {
   ]
   return (
     <div className="mb-5">
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">📊 Resumo do clube</h3>
+      <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2">📊 Resumo do clube</h3>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {tiles.map((t) => (
           <motion.div key={t.lbl} whileTap={{ scale: 0.97 }}>
             <Link to={t.to}
-              className={`block rounded-2xl p-3 shadow-sm text-center ${t.alerta ? 'bg-amber-50 border border-amber-200' : 'bg-white'}`}>
-              <div className={`text-2xl font-extrabold leading-none ${t.alerta ? 'text-amber-700' : 'text-slate-800'}`}>{t.n}</div>
-              <div className="text-[11px] text-slate-500 leading-tight mt-1">{t.lbl}</div>
+              className={`block rounded-2xl p-3 shadow-soft text-center ${t.alerta ? 'bg-amber-50 border border-amber-200' : 'bg-surface'}`}>
+              <div className={`text-2xl font-extrabold leading-none ${t.alerta ? 'text-amber-700' : 'text-ink'}`}>{t.n}</div>
+              <div className="text-[11px] text-muted leading-tight mt-1">{t.lbl}</div>
             </Link>
           </motion.div>
         ))}

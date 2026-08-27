@@ -79,10 +79,10 @@ export default function Mensalidades() {
 
   if (!podeVer) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área do tesoureiro e diretoria</p>
-        <p className="text-sm text-slate-400">Aqui se controlam as mensalidades.</p>
+        <p className="font-semibold text-ink">Área do tesoureiro e diretoria</p>
+        <p className="text-sm text-faint">Aqui se controlam as mensalidades.</p>
       </div>
     )
   }
@@ -94,14 +94,14 @@ export default function Mensalidades() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">💰 Mensalidades</h2>
-        <p className="text-sm text-slate-500">Controle de pagamentos (desbravadores e conselheiros)</p>
+        <h2 className="text-2xl font-extrabold text-ink">💰 Mensalidades</h2>
+        <p className="text-sm text-muted">Controle de pagamentos (desbravadores e conselheiros)</p>
       </div>
 
-      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+      <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-4 max-w-xs">
         {[['mes', '📅 Por mês'], ['ano', '🗓️ Ano inteiro']].map(([k, lbl]) => (
           <button key={k} onClick={() => setAba(k)}
-            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
         ))}
       </div>
 
@@ -109,45 +109,45 @@ export default function Mensalidades() {
         <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} meses={meses} />
       ) : (
       <>
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 grid grid-cols-3 gap-3">
+      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4 grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Mês</label>
-          <select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
+          <label className="block text-xs font-semibold text-muted mb-1">Mês</label>
+          <select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
             {meses.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Ano</label>
-          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
+          <label className="block text-xs font-semibold text-muted mb-1">Ano</label>
+          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
             {anos.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Valor (R$)</label>
-          <input type="number" min="0" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm" />
+          <label className="block text-xs font-semibold text-muted mb-1">Valor (R$)</label>
+          <input type="number" min="0" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint focus:border-brand px-2 py-2 text-sm" />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <Resumo rotulo="Pagos" valor={`${qtdPagos}/${desbravadores.length}`} cor="text-green-600" />
         <Resumo rotulo="Pendentes" valor={desbravadores.length - qtdPagos} cor="text-amber-600" />
-        <Resumo rotulo="Arrecadado" valor={`R$ ${total}`} cor="text-azul" />
+        <Resumo rotulo="Arrecadado" valor={`R$ ${total}`} cor="text-brand" />
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : desbravadores.length === 0 ? (
-        <p className="text-slate-400 text-sm">Ninguém cadastrado ainda.</p>
+        <p className="text-faint text-sm">Ninguém cadastrado ainda.</p>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+        <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
           {desbravadores.map((d) => {
             const pago = pagamentos[d.id]?.status === 'pago'
             return (
               <div key={d.id} className="flex items-center gap-3 px-4 py-3">
                 <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
-                <span className="flex-1 min-w-0 font-medium text-slate-800 truncate">
+                <span className="flex-1 min-w-0 font-medium text-ink truncate">
                   {d.nome}
-                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
+                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
                 </span>
                 <button onClick={() => alternar(d)}
                   className={`text-xs font-bold rounded-lg px-3.5 py-2.5 transition-colors ${pago ? 'bg-green-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
@@ -174,30 +174,30 @@ function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses 
     })
     baixarCSV(`mensalidades-${ano}.csv`, cab, linhas)
   }
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
+  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
   return (
     <div>
       <div className="mb-3 flex items-end justify-between gap-2">
         <div className="max-w-[140px]">
-          <label className="block text-xs font-semibold text-slate-500 mb-1">Ano</label>
-          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm">
+          <label className="block text-xs font-semibold text-muted mb-1">Ano</label>
+          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
             {anos.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
         {desbravadores.length > 0 && (
-          <button onClick={baixar} className="text-sm bg-white border border-slate-300 text-slate-700 rounded-lg px-3 py-2 font-semibold shadow-sm hover:bg-slate-50">
+          <button onClick={baixar} className="text-sm bg-surface border border-line text-ink rounded-lg px-3 py-2 font-semibold shadow-soft hover:bg-surface2">
             📥 Baixar CSV
           </button>
         )}
       </div>
       {desbravadores.length === 0 ? (
-        <p className="text-slate-400 text-sm">Ninguém cadastrado ainda.</p>
+        <p className="text-faint text-sm">Ninguém cadastrado ainda.</p>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm p-2 overflow-x-auto">
+        <div className="bg-surface rounded-2xl shadow-soft p-2 overflow-x-auto">
           <table className="text-xs w-full border-collapse">
             <thead>
-              <tr className="text-slate-400">
-                <th className="text-left font-semibold px-2 py-1.5 sticky left-0 bg-white">Membro</th>
+              <tr className="text-faint">
+                <th className="text-left font-semibold px-2 py-1.5 sticky left-0 bg-surface">Membro</th>
                 {meses.map((m, i) => <th key={i} className="px-1 py-1.5 font-semibold" title={m}>{m[0]}</th>)}
                 <th className="px-1.5 py-1.5 font-semibold">Pgs</th>
               </tr>
@@ -207,19 +207,19 @@ function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses 
                 const linha = anual[d.id] || {}
                 const pagos = Object.values(linha).filter((s) => s === 'pago').length
                 return (
-                  <tr key={d.id} className="border-t border-slate-100">
-                    <td className="text-left px-2 py-1.5 font-medium text-slate-700 truncate max-w-[110px] sticky left-0 bg-white">{d.nome}</td>
+                  <tr key={d.id} className="border-t border-line">
+                    <td className="text-left px-2 py-1.5 font-medium text-ink truncate max-w-[110px] sticky left-0 bg-surface">{d.nome}</td>
                     {meses.map((_, i) => {
                       const s = linha[i + 1]
-                      return <td key={i} className="px-1 py-1.5 text-center">{s === 'pago' ? '✅' : <span className="text-slate-300">·</span>}</td>
+                      return <td key={i} className="px-1 py-1.5 text-center">{s === 'pago' ? '✅' : <span className="text-faint">·</span>}</td>
                     })}
-                    <td className="px-1.5 py-1.5 text-center font-bold text-azul">{pagos}</td>
+                    <td className="px-1.5 py-1.5 text-center font-bold text-brand">{pagos}</td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          <p className="text-[11px] text-slate-400 mt-2 px-1">✅ pago · <span className="text-slate-300">·</span> em aberto — deslize pra ver todos os meses.</p>
+          <p className="text-[11px] text-faint mt-2 px-1">✅ pago · <span className="text-faint">·</span> em aberto — deslize pra ver todos os meses.</p>
         </div>
       )}
     </div>
@@ -228,9 +228,9 @@ function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses 
 
 function Resumo({ rotulo, valor, cor }) {
   return (
-    <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+    <div className="bg-surface rounded-xl p-3 text-center shadow-soft">
       <div className={`font-extrabold ${cor}`}>{valor}</div>
-      <div className="text-[10px] text-slate-400">{rotulo}</div>
+      <div className="text-[10px] text-faint">{rotulo}</div>
     </div>
   )
 }

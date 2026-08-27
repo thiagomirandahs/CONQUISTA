@@ -6,7 +6,7 @@ import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.
 const PODE_GERIR = ['instrutor', 'diretoria']
 const CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']
 const inputClass =
-  'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
+  'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 // Painel pra liderança cadastrar o versículo do dia e os desafios das classes,
 // sem depender de rodar SQL. O RLS já limita tudo a quem pode gerir.
@@ -28,10 +28,10 @@ export default function Conteudo() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da liderança</p>
-        <p className="text-sm text-slate-400">Apenas diretoria/instrutor podem editar o conteúdo.</p>
+        <p className="font-semibold text-ink">Área da liderança</p>
+        <p className="text-sm text-faint">Apenas diretoria/instrutor podem editar o conteúdo.</p>
       </div>
     )
   }
@@ -52,55 +52,55 @@ export default function Conteudo() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">📖 Conteúdo</h2>
-        <p className="text-sm text-slate-500">Versículos e desafios das missões diárias</p>
+        <h2 className="text-2xl font-extrabold text-ink">📖 Conteúdo</h2>
+        <p className="text-sm text-muted">Versículos e desafios das missões diárias</p>
       </div>
 
-      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
+      <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-4 max-w-xs">
         {[['versiculos', '📖 Versículos'], ['desafios', '🎯 Desafios']].map(([k, lbl]) => (
           <button key={k} onClick={() => setAba(k)}
-            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>{lbl}</button>
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
         ))}
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-slate-400">{ativos} ativo{ativos === 1 ? '' : 's'} no rodízio · {lista.length} no total</span>
+        <span className="text-xs text-faint">{ativos} ativo{ativos === 1 ? '' : 's'} no rodízio · {lista.length} no total</span>
         <motion.button whileTap={{ scale: 0.94 }} onClick={() => setEditando({})}
-          className="text-sm bg-azul text-white rounded-xl px-4 py-2 font-semibold shadow-sm">+ Novo</motion.button>
+          className="text-sm bg-gradient-to-r from-brand to-brand2 text-white rounded-xl px-4 py-2 font-semibold shadow-glow">+ Novo</motion.button>
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">{erro}</div>
       ) : lista.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">{ehVers ? '📖' : '🎯'}</div>
-          <p className="font-semibold text-slate-700">Nada cadastrado ainda</p>
-          <p className="text-sm text-slate-400">Toque em "+ Novo" pra adicionar o primeiro.</p>
+          <p className="font-semibold text-ink">Nada cadastrado ainda</p>
+          <p className="text-sm text-faint">Toque em "+ Novo" pra adicionar o primeiro.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {lista.map((item) => (
-            <div key={item.id} className={`bg-white rounded-2xl p-3 shadow-sm flex items-start gap-3 ${item.ativo ? '' : 'opacity-60'}`}>
+            <div key={item.id} className={`bg-surface rounded-2xl p-3 shadow-soft flex items-start gap-3 ${item.ativo ? '' : 'opacity-60'}`}>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-slate-800 text-sm break-words">
+                <div className="font-semibold text-ink text-sm break-words">
                   {ehVers ? (item.texto || '(sem texto)') : (item.pergunta || '(sem pergunta)')}
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-1">
-                  {ehVers && item.referencia && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">📗 {item.referencia}</span>}
-                  {!ehVers && <span className="text-[11px] bg-azul/10 text-azul rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
-                  {!ehVers && item.pede_foto && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">📷 Foto</span>}
-                  {!ehVers && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-[11px] bg-slate-100 text-slate-600 rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
+                  {ehVers && item.referencia && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">📗 {item.referencia}</span>}
+                  {!ehVers && <span className="text-[11px] bg-brand/10 text-brand rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
+                  {!ehVers && item.pede_foto && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">📷 Foto</span>}
+                  {!ehVers && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <button onClick={() => alternarAtivo(item)}
-                  className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${item.ativo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                  className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${item.ativo ? 'bg-green-100 text-green-700' : 'bg-surface2 text-muted'}`}>
                   {item.ativo ? '✅ Ativo' : '💤 Inativo'}
                 </button>
                 <div className="flex gap-1">
-                  <button onClick={() => setEditando(item)} title="Editar" className="text-xs text-slate-500 hover:bg-slate-100 rounded-lg px-2 py-1">✏️</button>
+                  <button onClick={() => setEditando(item)} title="Editar" className="text-xs text-muted hover:bg-surface2 rounded-lg px-2 py-1">✏️</button>
                   <button onClick={() => excluir(item)} title="Apagar" className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1">🗑️</button>
                 </div>
               </div>
@@ -177,8 +177,8 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-        <div className="bg-azul text-white px-5 py-4 flex items-center justify-between shrink-0">
+        className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+        <div className="bg-gradient-to-r from-brand to-brand2 text-white px-5 py-4 flex items-center justify-between shrink-0">
           <h3 className="font-extrabold">{inicial ? 'Editar' : 'Novo'} {ehVers ? 'versículo' : 'desafio'}</h3>
           <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
         </div>
@@ -210,8 +210,8 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
                 <textarea rows="3" className={inputClass} value={form.texto} onChange={(e) => set('texto', e.target.value)}
                   placeholder="A história, versículo ou explicação que a criança lê antes de responder. Aparece na missão." />
               </Campo>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={form.pede_foto} onChange={(e) => set('pede_foto', e.target.checked)} className="w-4 h-4 accent-azul" />
+              <label className="flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" checked={form.pede_foto} onChange={(e) => set('pede_foto', e.target.checked)} className="w-4 h-4 accent-brand" />
                 📷 Missão de foto (a criança faz a tarefa e envia foto — sem quiz)
               </label>
             </>
@@ -227,7 +227,7 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
               <div className="space-y-2">
                 {form.opcoes.map((o, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <input type="radio" name="correta" checked={form.correta === i} onChange={() => set('correta', i)} className="w-4 h-4 accent-azul shrink-0" />
+                    <input type="radio" name="correta" checked={form.correta === i} onChange={() => set('correta', i)} className="w-4 h-4 accent-brand shrink-0" />
                     <input value={o} onChange={(e) => setOpcao(i, e.target.value)} placeholder={`Opção ${i + 1}`} className={inputClass} />
                     {form.opcoes.length > 2 && (
                       <button type="button" onClick={() => removeOpcao(i)} className="text-red-400 hover:text-red-600 text-xl leading-none px-1 shrink-0">×</button>
@@ -235,19 +235,19 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={addOpcao} className="inline-block text-xs text-azul font-semibold mt-1 py-3 pr-4">+ opção</button>
+              <button type="button" onClick={addOpcao} className="inline-block text-xs text-brand font-semibold mt-1 py-3 pr-4">+ opção</button>
             </Campo>
           )}
 
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" checked={form.ativo} onChange={(e) => set('ativo', e.target.checked)} className="w-4 h-4 accent-azul" />
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={form.ativo} onChange={(e) => set('ativo', e.target.checked)} className="w-4 h-4 accent-brand" />
             Ativo (entra no rodízio das missões)
           </label>
 
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-slate-300 py-2.5 font-semibold text-slate-600">Cancelar</button>
-            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-azul text-white py-2.5 font-semibold shadow disabled:opacity-60">{salvando ? 'Salvando...' : 'Salvar'}</button>
+            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-line py-2.5 font-semibold text-muted">Cancelar</button>
+            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white py-2.5 font-semibold shadow-glow disabled:opacity-60">{salvando ? 'Salvando...' : 'Salvar'}</button>
           </div>
         </form>
       </motion.div>
@@ -258,7 +258,7 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
 function Campo({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-ink mb-1">{label}</label>
       {children}
     </div>
   )

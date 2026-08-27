@@ -6,7 +6,7 @@ import { vitoria as festa } from '../lib/juice.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const inputClass =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
+  'w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30 placeholder:text-faint'
 const COLOCACOES = [1, 2, 3, 4]
 const PONTOS_PADRAO = { 1: 300, 2: 200, 3: 100, 4: 50 }
 const fmtData = (iso) => {
@@ -42,15 +42,15 @@ export default function ModoAcampamento() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Só a liderança</p>
-        <p className="text-sm text-slate-400">Lançar pontuação do acampamento é uma ação da diretoria/instrutor.</p>
+        <p className="font-semibold text-ink">Só a liderança</p>
+        <p className="text-sm text-faint">Lançar pontuação do acampamento é uma ação da diretoria/instrutor.</p>
       </div>
     )
   }
 
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
+  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
 
   if (erro) {
     const faltaSQL = /does not exist|schema cache|could not find the (table|relation)/i.test(erro)
@@ -108,19 +108,19 @@ export default function ModoAcampamento() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">🏕️ Modo Acampamento</h2>
-        <p className="text-sm text-slate-500">Lance a colocação das unidades em cada prova/atividade — pode usar quantas vezes quiser.</p>
+        <h2 className="text-2xl font-extrabold text-ink">🏕️ Modo Acampamento</h2>
+        <p className="text-sm text-muted">Lance a colocação das unidades em cada prova/atividade — pode usar quantas vezes quiser.</p>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label className="block text-sm font-semibold text-slate-700 mb-1">Atividade (opcional)</label>
+      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4">
+        <label className="block text-sm font-semibold text-ink mb-1">Atividade (opcional)</label>
         <input value={atividade} onChange={(e) => setAtividade(e.target.value)} placeholder="ex.: Corrida de saco, prova de nó..." className={inputClass} />
 
-        <p className="text-sm font-semibold text-slate-700 mb-2 mt-4">Pontos por colocação</p>
+        <p className="text-sm font-semibold text-ink mb-2 mt-4">Pontos por colocação</p>
         <div className="grid grid-cols-4 gap-2">
           {COLOCACOES.map((pos) => (
             <div key={pos}>
-              <label className="text-[11px] text-slate-400">{pos}º lugar</label>
+              <label className="text-[11px] text-faint">{pos}º lugar</label>
               <input type="number" min={0} value={pontosPorColocacao[pos]}
                 onChange={(e) => setPontosPorColocacao((m) => ({ ...m, [pos]: Number(e.target.value) || 0 }))}
                 className={inputClass} />
@@ -128,9 +128,9 @@ export default function ModoAcampamento() {
           ))}
         </div>
 
-        <p className="text-sm font-semibold text-slate-700 mb-2 mt-5">Quem ficou em cada colocação?</p>
+        <p className="text-sm font-semibold text-ink mb-2 mt-5">Quem ficou em cada colocação?</p>
         {unidades.length === 0 ? (
-          <p className="text-sm text-slate-400">Nenhuma unidade com desbravador/conselheiro cadastrado.</p>
+          <p className="text-sm text-faint">Nenhuma unidade com desbravador/conselheiro cadastrado.</p>
         ) : (
           <div className="space-y-2">
             {unidades.map((u) => (
@@ -146,7 +146,7 @@ export default function ModoAcampamento() {
                         disabled={ocupadaPorOutro}
                         onClick={() => escolher(u.id, pos)}
                         className={`w-9 h-9 rounded-lg text-sm font-extrabold transition ${
-                          escolhida(u.id, pos) ? 'bg-dourado text-white' : ocupadaPorOutro ? 'bg-slate-100 text-slate-300' : 'bg-slate-100 text-slate-500'
+                          escolhida(u.id, pos) ? 'bg-gold text-white' : ocupadaPorOutro ? 'bg-surface2 text-faint' : 'bg-surface2 text-muted'
                         }`}>
                         {pos}º
                       </motion.button>
@@ -161,25 +161,25 @@ export default function ModoAcampamento() {
         {msg && <p className="text-sm mt-4 font-semibold">{msg}</p>}
 
         <motion.button whileTap={{ scale: 0.97 }} disabled={enviando} onClick={lancar}
-          className="mt-4 w-full bg-azul text-white font-extrabold rounded-xl py-3 disabled:opacity-60">
+          className="mt-4 w-full bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-extrabold rounded-xl py-3 disabled:opacity-60">
           {enviando ? '...' : '🏆 Lançar colocação'}
         </motion.button>
       </div>
 
       {historico.length > 0 && (
         <div>
-          <h3 className="font-extrabold text-slate-800 mb-2 text-sm">📋 Últimos lançamentos</h3>
-          <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+          <h3 className="font-extrabold text-ink mb-2 text-sm">📋 Últimos lançamentos</h3>
+          <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
             {historico.map((h) => (
               <div key={h.id} className="flex items-center gap-3 px-3 py-2.5">
                 <span className="text-xs font-bold px-2 py-1 rounded text-white shrink-0" style={{ background: h.unidade.cor || '#1e3a8a' }}>
                   {h.unidade.nome}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-slate-700 truncate">{h.motivo}</div>
-                  <div className="text-[11px] text-slate-400">{fmtData(h.data)}</div>
+                  <div className="text-sm text-ink truncate">{h.motivo}</div>
+                  <div className="text-[11px] text-faint">{fmtData(h.data)}</div>
                 </div>
-                <span className="font-extrabold text-azul shrink-0">+{h.pontos}</span>
+                <span className="font-extrabold text-brand shrink-0">+{h.pontos}</span>
               </div>
             ))}
           </div>

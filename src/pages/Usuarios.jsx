@@ -95,10 +95,10 @@ export default function Usuarios() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da diretoria</p>
-        <p className="text-sm text-slate-400">Apenas diretoria/instrutor podem gerenciar usuários.</p>
+        <p className="font-semibold text-ink">Área da diretoria</p>
+        <p className="text-sm text-faint">Apenas diretoria/instrutor podem gerenciar usuários.</p>
       </div>
     )
   }
@@ -108,15 +108,15 @@ export default function Usuarios() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">👥 Usuários</h2>
-        <p className="text-sm text-slate-500">Trocar cargo e unidade, lançar pontos e resetar senha</p>
+        <h2 className="text-2xl font-extrabold text-ink">👥 Usuários</h2>
+        <p className="text-sm text-muted">Trocar cargo e unidade, lançar pontos e resetar senha</p>
       </div>
 
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
-        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm mb-3 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+        className="w-full rounded-xl border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : erroCarregar ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar os usuários</p>
@@ -125,47 +125,47 @@ export default function Usuarios() {
             <code className="bg-amber-100 rounded px-1 ml-1">supabase/2026-06-29-usuarios-reset-sql.sql</code></p>
         </div>
       ) : lista.length === 0 ? (
-        <p className="text-slate-400 text-sm">Nenhum usuário encontrado.</p>
+        <p className="text-faint text-sm">Nenhum usuário encontrado.</p>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+        <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
           {lista.map((u) => (
             <div key={u.id} className="px-3 py-3">
               <div className="flex items-center gap-3">
                 <Avatar foto={u.foto} nome={u.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-800 text-sm truncate">
+                  <div className="font-semibold text-ink text-sm truncate">
                     {u.nome || '(sem nome)'}
                     {u.status === 'pendente' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
-                    {u.status === 'inativo' && <span className="ml-2 text-[10px] text-slate-500 font-normal bg-slate-100 rounded px-1.5 py-0.5">desativado</span>}
+                    {u.status === 'inativo' && <span className="ml-2 text-[10px] text-muted font-normal bg-surface2 rounded px-1.5 py-0.5">desativado</span>}
                     {u.teste && <span className="ml-2 text-[10px] text-purple-700 font-normal bg-purple-100 rounded px-1.5 py-0.5">🧪 teste</span>}
                     {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
                       <span className="ml-2 text-[10px] text-orange-600 font-normal">sem unidade</span>
                     )}
                   </div>
-                  {u.email && <div className="text-[11px] text-azul/80 truncate">✉️ {u.email}</div>}
+                  {u.email && <div className="text-[11px] text-brand/80 truncate">✉️ {u.email}</div>}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <select value={u.papel} onChange={(e) => trocarCargo(u, e.target.value)}
-                  className="text-xs rounded-lg border border-slate-300 px-2 py-2 bg-white text-slate-700 outline-none">
+                  className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none">
                   {Object.entries(rotuloPapel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
                 <select value={u.unidade_id || ''} onChange={(e) => trocarUnidade(u, e.target.value)}
-                  className="text-xs rounded-lg border border-slate-300 px-2 py-2 bg-white text-slate-700 outline-none max-w-[9.5rem]">
+                  className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none max-w-[9.5rem]">
                   <option value="">🏳️ Sem unidade</option>
                   {unidades.map((un) => <option key={un.id} value={un.id}>🏠 {un.nome}</option>)}
                 </select>
                 <button onClick={() => setPontosPara(u)}
-                  className="text-xs bg-dourado/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
+                  className="text-xs bg-gold/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
                 <button onClick={() => setAlvo(u)}
-                  className="text-xs bg-azul/10 text-azul rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
+                  className="text-xs bg-brand/10 text-brand rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
                 <button onClick={() => alternarAtivo(u)}
-                  className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-slate-100 text-slate-600' : 'bg-green-50 text-green-700'}`}>
+                  className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
                   {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
                 </button>
                 {ehDiretoria && (
                   <button onClick={() => alternarTeste(u)}
-                    className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
+                    className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-surface2 text-muted'}`}>
                     {u.teste ? '🧪 Sair do teste' : '🧪 Teste'}
                   </button>
                 )}
@@ -221,29 +221,29 @@ function ModalPontos({ usuario, lancadoPor, onFechar }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🎖️ Pontos pra {(usuario.nome || '').split(' ')[0]}</h3>
-        <p className="text-sm text-slate-500 mb-4">Pontos individuais (entram no ranking). Use número negativo pra tirar.</p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">🎖️ Pontos pra {(usuario.nome || '').split(' ')[0]}</h3>
+        <p className="text-sm text-muted mb-4">Pontos individuais (entram no ranking). Use número negativo pra tirar.</p>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Pontos</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Pontos</label>
         <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="ex.: 20"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm mb-2 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-2 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
         <div className="flex gap-1.5 mb-3">
           {[10, 20, 50, -10].map((q) => (
             <button type="button" key={q} onClick={() => setValor(String(q))}
-              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">{q > 0 ? '+' : ''}{q}</button>
+              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-line text-muted hover:bg-surface2">{q > 0 ? '+' : ''}{q}</button>
           ))}
         </div>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Motivo (opcional)</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Motivo (opcional)</label>
         <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={120} placeholder="ex.: Ajudou na limpeza"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm mb-3 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
         {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
         <div className="flex gap-2">
-          <button onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+          <button onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
           <motion.button onClick={confirmar} disabled={salvando} whileTap={{ scale: 0.97 }}
-            className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">{salvando ? '...' : 'Lançar'}</motion.button>
+            className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">{salvando ? '...' : 'Lançar'}</motion.button>
         </div>
       </motion.div>
     </motion.div>
@@ -284,46 +284,46 @@ function ModalReset({ usuario, onFechar }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🔑 Resetar senha</h3>
-        <p className="text-sm text-slate-500 mb-3">Nova senha para <strong>{usuario.nome}</strong>.</p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">🔑 Resetar senha</h3>
+        <p className="text-sm text-muted mb-3">Nova senha para <strong>{usuario.nome}</strong>.</p>
 
         {usuario.email ? (
-          <div className="bg-slate-50 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <div className="bg-surface2 rounded-xl p-3 mb-4 flex items-center gap-2">
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-slate-400">E-mail do cadastro</div>
-              <div className="font-medium text-slate-800 text-sm truncate select-all">{usuario.email}</div>
+              <div className="text-[11px] text-faint">E-mail do cadastro</div>
+              <div className="font-medium text-ink text-sm truncate select-all">{usuario.email}</div>
             </div>
-            <a href={`mailto:${usuario.email}`} className="text-azul text-xs font-semibold bg-azul/10 rounded-lg px-3 py-2 shrink-0">✉️ Enviar</a>
+            <a href={`mailto:${usuario.email}`} className="text-brand text-xs font-semibold bg-brand/10 rounded-lg px-3 py-2 shrink-0">✉️ Enviar</a>
           </div>
         ) : (
-          <div className="bg-slate-50 rounded-xl p-3 mb-4 text-xs text-slate-400">Sem e-mail no cadastro.</div>
+          <div className="bg-surface2 rounded-xl p-3 mb-4 text-xs text-faint">Sem e-mail no cadastro.</div>
         )}
 
         {pronto ? (
           <>
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center mb-4">
               <p className="text-sm text-green-700 font-semibold mb-1">✅ Senha redefinida!</p>
-              <p className="text-xs text-slate-500 mb-2">Passe esta senha para {(usuario.nome || '').split(' ')[0]}:</p>
-              <div className="text-xl font-extrabold tracking-wider text-slate-800 bg-white rounded-lg py-2 border border-slate-200 select-all">{senha}</div>
-              <button onClick={copiar} className="text-xs text-azul font-semibold mt-2">{copiado ? 'Copiado! ✓' : '📋 Copiar senha'}</button>
+              <p className="text-xs text-muted mb-2">Passe esta senha para {(usuario.nome || '').split(' ')[0]}:</p>
+              <div className="text-xl font-extrabold tracking-wider text-ink bg-surface rounded-lg py-2 border border-line select-all">{senha}</div>
+              <button onClick={copiar} className="text-xs text-brand font-semibold mt-2">{copiado ? 'Copiado! ✓' : '📋 Copiar senha'}</button>
             </div>
-            <button onClick={onFechar} className="w-full rounded-xl bg-azul text-white font-semibold py-2.5">Fechar</button>
+            <button onClick={onFechar} className="w-full rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5">Fechar</button>
           </>
         ) : (
           <>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Nova senha (mín. 6)</label>
+            <label className="block text-xs font-semibold text-muted mb-1">Nova senha (mín. 6)</label>
             <div className="flex gap-2 mb-3">
               <input value={senha} onChange={(e) => setSenha(e.target.value)}
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+                className="flex-1 rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm font-mono outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
               <button type="button" onClick={() => setSenha(gerarSenha())}
-                className="text-xs bg-slate-100 text-slate-600 rounded-lg px-3 font-semibold">🎲 Gerar</button>
+                className="text-xs bg-surface2 text-muted rounded-lg px-3 font-semibold">🎲 Gerar</button>
             </div>
             {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
             <div className="flex gap-2">
-              <button onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+              <button onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
               <motion.button onClick={confirmar} disabled={salvando} whileTap={{ scale: 0.97 }}
-                className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+                className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">
                 {salvando ? 'Salvando...' : 'Definir senha'}
               </motion.button>
             </div>
@@ -359,27 +359,27 @@ function ModalExcluir({ usuario, onFechar, onExcluido }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
         <h3 className="text-lg font-extrabold text-red-600 mb-1">🗑️ Excluir {usuario.nome || 'usuário'}</h3>
-        <p className="text-sm text-slate-600 mb-3">Isso é <strong>permanente</strong>. Vai apagar junto:</p>
-        <ul className="text-sm text-slate-600 bg-red-50 border border-red-200 rounded-xl p-3 mb-3 space-y-0.5">
+        <p className="text-sm text-muted mb-3">Isso é <strong>permanente</strong>. Vai apagar junto:</p>
+        <ul className="text-sm text-muted bg-red-50 border border-red-200 rounded-xl p-3 mb-3 space-y-0.5">
           <li>• Todos os <b>pontos</b> dela (a média da unidade muda)</li>
           <li>• <b>Entregas</b> de atividades, <b>mensalidades</b> e <b>jogos</b></li>
-          <li className="text-slate-500">• As <b>fotos do mural</b> ficam (só perdem o autor)</li>
+          <li className="text-muted">• As <b>fotos do mural</b> ficam (só perdem o autor)</li>
         </ul>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-muted mb-3">
           Se a pessoa só saiu do clube, prefira <b>🚫 Desativar</b> — guarda o histórico e dá pra reativar.
         </p>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Digite <b>EXCLUIR</b> pra confirmar</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Digite <b>EXCLUIR</b> pra confirmar</label>
         <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="EXCLUIR" disabled={apagando}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200 mb-3" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-200 mb-3" />
 
         {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
 
         <div className="flex gap-2">
           <button onClick={onFechar} disabled={apagando}
-            className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
+            className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
           <button onClick={apagar} disabled={!confirmado || apagando}
             className="flex-1 rounded-xl bg-red-600 text-white font-bold py-2.5 disabled:opacity-40">
             {apagando ? 'Excluindo...' : 'Excluir de vez'}
