@@ -165,10 +165,10 @@ export default function Biblia() {
     return (
       <div>
         <button onClick={voltarParaGrade}
-          className="text-sm font-semibold text-azul mb-3">← Capítulos de {livroSel.nome}</button>
-        <div className="bg-white rounded-2xl shadow p-5">
+          className="text-sm font-semibold text-brand mb-3">← Capítulos de {livroSel.nome}</button>
+        <div className="bg-surface rounded-2xl shadow-soft p-5">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-lg font-extrabold text-azul">{livroSel.nome} {capituloSel}</h1>
+            <h1 className="text-lg font-extrabold text-brand">{livroSel.nome} {capituloSel}</h1>
             <AnimatePresence>
               {fase === 'lido' && ganhoPontos > 0 && (
                 <motion.span key="pts" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
@@ -178,12 +178,12 @@ export default function Biblia() {
               )}
               {fase === 'lido' && ganhoPontos === 0 && (
                 <motion.span key="lido" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                  className="text-xs font-bold bg-slate-100 text-slate-500 rounded-full px-3 py-1">
+                  className="text-xs font-bold bg-surface2 text-muted rounded-full px-3 py-1">
                   ✓ lido
                 </motion.span>
               )}
               {fase === 'jalido' && (
-                <span key="ja" className="text-xs font-bold bg-slate-100 text-slate-500 rounded-full px-3 py-1">
+                <span key="ja" className="text-xs font-bold bg-surface2 text-muted rounded-full px-3 py-1">
                   ✓ já lido
                 </span>
               )}
@@ -191,20 +191,20 @@ export default function Biblia() {
           </div>
 
           {fase === 'lendo' && (
-            <div className="mb-4 rounded-xl bg-blue-50 border border-blue-100 p-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-azul mb-1.5">
+            <div className="mb-4 rounded-xl bg-surface2 border border-line p-3">
+              <div className="flex items-center justify-between text-xs font-semibold text-brand mb-1.5">
                 <span>📖 Continue lendo pra ganhar seus pontos…</span>
                 <span>{segRestantes}s</span>
               </div>
-              <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
-                <div className="h-full bg-azul transition-all duration-1000 ease-linear"
+              <div className="h-2 bg-line rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-brand to-brand2 transition-all duration-1000 ease-linear"
                   style={{ width: `${pctLeitura}%` }} />
               </div>
             </div>
           )}
 
           {fase === 'lido' && limiteAtingido && (
-            <div className="mb-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm p-3">
+            <div className="mb-4 rounded-xl bg-surface2 border border-line text-muted text-sm p-3">
               ✅ Progresso salvo! Você já pegou o máximo de pontos de Bíblia por hoje — pode continuar lendo à vontade 🙂
             </div>
           )}
@@ -216,14 +216,14 @@ export default function Biblia() {
           )}
 
           {fase === 'carregando' ? (
-            <p className="text-slate-400 text-sm py-8 text-center">Carregando…</p>
+            <p className="text-faint text-sm py-8 text-center">Carregando…</p>
           ) : fase === 'vazio' ? (
-            <p className="text-slate-400 text-sm py-8 text-center">Este capítulo ainda não foi carregado. 🙂</p>
+            <p className="text-faint text-sm py-8 text-center">Este capítulo ainda não foi carregado. 🙂</p>
           ) : (
             <div className="space-y-2 leading-relaxed">
               {versiculos.map((v) => (
-                <p key={v.versiculo} className="text-slate-700">
-                  <sup className="text-dourado font-bold mr-1">{v.versiculo}</sup>{v.texto}
+                <p key={v.versiculo} className="text-ink">
+                  <sup className="text-gold font-bold mr-1">{v.versiculo}</sup>{v.texto}
                 </p>
               ))}
             </div>
@@ -231,9 +231,9 @@ export default function Biblia() {
 
           <div className="flex gap-2 mt-5">
             <button onClick={() => mudarCapitulo(-1)}
-              className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">← Anterior</button>
+              className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">← Anterior</button>
             <button onClick={() => mudarCapitulo(1)}
-              className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5">Próximo →</button>
+              className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5">Próximo →</button>
           </div>
         </div>
       </div>
@@ -247,13 +247,13 @@ export default function Biblia() {
     )
     return (
       <div>
-        <button onClick={voltarParaLivros} className="text-sm font-semibold text-azul mb-3">← Livros</button>
-        <h1 className="text-lg font-extrabold text-azul mb-3">{livroSel.nome}</h1>
+        <button onClick={voltarParaLivros} className="text-sm font-semibold text-brand mb-3">← Livros</button>
+        <h1 className="text-lg font-extrabold text-brand mb-3">{livroSel.nome}</h1>
         <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
           {Array.from({ length: livroSel.capitulos }, (_, i) => i + 1).map((c) => (
             <button key={c} onClick={() => abrirCapitulo(livroSel, c)}
               className={`aspect-square rounded-xl font-bold text-sm ${
-                lidos.has(c) ? 'bg-azul text-white' : 'bg-white text-slate-600 shadow'
+                lidos.has(c) ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow text-white' : 'bg-surface text-muted shadow-soft'
               }`}>
               {c}
             </button>
@@ -270,8 +270,8 @@ export default function Biblia() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-xl font-extrabold text-azul">📖 Bíblia</h1>
-        <p className="text-slate-500 text-sm">Almeida Corrigida Fiel</p>
+        <h1 className="text-xl font-extrabold text-brand">📖 Bíblia</h1>
+        <p className="text-muted text-sm">Almeida Corrigida Fiel</p>
       </div>
 
       {!carregando && livros.length === 0 ? (
@@ -280,28 +280,28 @@ export default function Biblia() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-2xl shadow p-4 mb-4">
+          <div className="bg-surface rounded-2xl shadow-soft p-4 mb-4">
             <div className="flex justify-between text-sm mb-1">
-              <span className="font-semibold text-slate-600">Seu progresso</span>
-              <span className="font-bold text-azul">{totalLidos}/{totalCapitulos} capítulos</span>
+              <span className="font-semibold text-muted">Seu progresso</span>
+              <span className="font-bold text-brand">{totalLidos}/{totalCapitulos} capítulos</span>
             </div>
-            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div className="h-full bg-dourado" initial={{ width: 0 }} animate={{ width: `${pct}%` }} />
+            <div className="h-2.5 bg-surface2 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-gold" initial={{ width: 0 }} animate={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2">Cada capítulo lido vale +2 pontos (até 20 por dia). Fique um tempinho lendo pra contar 🙂</p>
+            <p className="text-[11px] text-faint mt-2">Cada capítulo lido vale +2 pontos (até 20 por dia). Fique um tempinho lendo pra contar 🙂</p>
           </div>
 
           {[{ titulo: 'Antigo Testamento', lista: antigo }, { titulo: 'Novo Testamento', lista: novo }].map((grupo) => (
             <div key={grupo.titulo} className="mb-5">
-              <h2 className="text-sm font-bold text-slate-500 mb-2">{grupo.titulo}</h2>
-              <div className="bg-white rounded-2xl shadow divide-y divide-slate-100">
+              <h2 className="text-sm font-bold text-muted mb-2">{grupo.titulo}</h2>
+              <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
                 {grupo.lista.map((l) => {
                   const lidosLivro = progressoDoLivro(progresso, l.abrev)
                   return (
                     <button key={l.abrev} onClick={() => setLivroSel(l)}
                       className="w-full flex items-center justify-between px-4 py-3 text-left">
-                      <span className="font-semibold text-slate-700">{l.nome}</span>
-                      <span className="text-xs text-slate-400">
+                      <span className="font-semibold text-ink">{l.nome}</span>
+                      <span className="text-xs text-faint">
                         {lidosLivro > 0 ? `${lidosLivro}/${l.capitulos} ✓` : `${l.capitulos} cap.`}
                       </span>
                     </button>

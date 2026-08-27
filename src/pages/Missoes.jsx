@@ -63,8 +63,8 @@ export default function Missoes() {
     <div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">🎯 Missões</h2>
-          <p className="text-sm text-slate-500">Uma missão nova todo dia — ganhe pontos! 🔥</p>
+          <h2 className="text-2xl font-extrabold text-ink">🎯 Missões</h2>
+          <p className="text-sm text-muted">Uma missão nova todo dia — ganhe pontos! 🔥</p>
         </div>
         {classe && (
           <span className="text-xs font-bold text-white rounded-full px-3 py-1.5 shrink-0" style={{ backgroundColor: corClasse[classe] || '#1e3a8a' }}>
@@ -80,38 +80,38 @@ export default function Missoes() {
       )}
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando missão...</p>
+        <p className="text-faint text-sm">Carregando missão...</p>
       ) : !missao ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎯</div>
-          <p className="font-semibold text-slate-700">Missões chegando!</p>
-          <p className="text-sm text-slate-400">A liderança ainda vai cadastrar as missões (rode o SQL).</p>
+          <p className="font-semibold text-ink">Missões chegando!</p>
+          <p className="text-sm text-faint">A liderança ainda vai cadastrar as missões (rode o SQL).</p>
         </div>
       ) : resumo.feito ? (
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+        <div className="bg-surface rounded-2xl p-6 shadow-soft text-center">
           {resumo.status === 'pendente' ? (
             <>
               <div className="text-5xl mb-2">⏳</div>
-              <p className="font-bold text-slate-800">Missão enviada!</p>
-              <p className="text-sm text-slate-400">Aguardando a liderança aprovar a foto pra valer os pontos.</p>
+              <p className="font-bold text-ink">Missão enviada!</p>
+              <p className="text-sm text-faint">Aguardando a liderança aprovar a foto pra valer os pontos.</p>
             </>
           ) : resumo.status === 'reprovada' ? (
             <>
               <div className="text-5xl mb-2">↺</div>
-              <p className="font-bold text-slate-800">Missão de hoje não foi aprovada</p>
-              <p className="text-sm text-slate-400">Capriche mais na próxima 🙂</p>
+              <p className="font-bold text-ink">Missão de hoje não foi aprovada</p>
+              <p className="text-sm text-faint">Capriche mais na próxima 🙂</p>
             </>
           ) : (
             <>
               <div className="text-5xl mb-2">✅</div>
-              <p className="font-bold text-slate-800">Missão de hoje concluída!</p>
-              <p className="text-sm text-slate-400">Volte amanhã pra uma nova missão 🙂</p>
+              <p className="font-bold text-ink">Missão de hoje concluída!</p>
+              <p className="text-sm text-faint">Volte amanhã pra uma nova missão 🙂</p>
             </>
           )}
           {resumo.foto && <img src={resumo.foto} alt="sua foto" className="mt-3 mx-auto w-32 h-32 object-cover rounded-xl" />}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden shadow-sm">
+        <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="p-4 text-white" style={{ background: ehDevocional ? 'linear-gradient(135deg,#1e3a8a,#4338ca)' : 'linear-gradient(135deg,#047857,#10b981)' }}>
             <div className="text-xs font-semibold opacity-90">
               {ehDevocional ? '📖 Devocional do dia' : `🎖️ Desafio${missao.tema ? ' · ' + missao.tema : ''}`}
@@ -120,20 +120,20 @@ export default function Missoes() {
             {ehDevocional && <p className="text-[11px] opacity-80 mt-1">📖 Leia com atenção e responda de qual livro é 👇</p>}
           </div>
 
-          <div className="bg-white p-4 space-y-4">
+          <div className="bg-surface p-4 space-y-4">
             {/* Missões de foto (e outras sem opções) guardam o enunciado em
                 'pergunta' — mostra ele aqui, senão a criança não vê o que fazer. */}
             {(missao.opcoes || []).length === 0 && missao.pergunta && (
-              <p className="text-[15px] font-semibold text-slate-800 leading-snug">{missao.pergunta}</p>
+              <p className="text-[15px] font-semibold text-ink leading-snug">{missao.pergunta}</p>
             )}
 
             {(missao.opcoes || []).length > 0 && (
               <div>
-                <p className="text-sm font-semibold text-slate-700 mb-2">❓ {missao.pergunta}</p>
+                <p className="text-sm font-semibold text-ink mb-2">❓ {missao.pergunta}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {missao.opcoes.map((op, i) => (
                     <button key={i} type="button" onClick={() => setResposta(i)}
-                      className={`rounded-xl py-3 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'}`}>
+                      className={`rounded-xl py-3 px-2 text-sm font-semibold border transition ${resposta === i ? 'bg-gradient-to-r from-brand to-brand2 text-white border-transparent shadow-glow' : 'bg-surface text-muted border-line'}`}>
                       {op}
                     </button>
                   ))}
@@ -143,7 +143,7 @@ export default function Missoes() {
 
             {missao.pede_foto && (
               <div>
-                <p className="text-sm font-semibold text-slate-700 mb-1">📷 Foto da missão</p>
+                <p className="text-sm font-semibold text-ink mb-1">📷 Foto da missão</p>
                 <input type="file" accept="image/*" className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
                 {previa && <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />}
               </div>
@@ -152,7 +152,7 @@ export default function Missoes() {
             {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
 
             <motion.button onClick={concluir} disabled={enviando} whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-azul text-white font-extrabold py-3 disabled:opacity-60">
+              className="w-full rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-extrabold py-3 shadow-glow disabled:opacity-60">
               {enviando ? 'Enviando...' : 'Concluir missão 🎉'}
             </motion.button>
           </div>

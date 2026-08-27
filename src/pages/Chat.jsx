@@ -37,10 +37,10 @@ export default function Chat() {
 
   if (!podeUsar) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">O chat é pra desbravadores, conselheiros e liderança</p>
-        <p className="text-sm text-slate-400">Fale com a liderança se algo parecer errado.</p>
+        <p className="font-semibold text-ink">O chat é pra desbravadores, conselheiros e liderança</p>
+        <p className="text-sm text-faint">Fale com a liderança se algo parecer errado.</p>
       </div>
     )
   }
@@ -48,18 +48,18 @@ export default function Chat() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">💬 Chat</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-2xl font-extrabold text-ink">💬 Chat</h2>
+        <p className="text-sm text-muted">
           {ehLideranca
             ? 'No Geral você fala com o clube todo. As demais conversas você acompanha em Gestão → 💬 Moderação.'
             : 'A liderança acompanha todas as conversas — trate os outros com respeito 🙂'}
         </p>
       </div>
 
-      <div className="bg-white rounded-xl p-1 flex shadow-sm mb-4 max-w-md">
+      <div className="bg-surface rounded-2xl p-1 flex shadow-soft mb-4 max-w-md">
         {abas.map(([k, lbl]) => (
           <button key={k} onClick={() => { setAba(k); setConversaDireta(null) }}
-            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-azul text-white' : 'text-slate-500'}`}>
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>
             {lbl}
           </button>
         ))}
@@ -71,7 +71,7 @@ export default function Chat() {
         <Thread key="unidade" tipo="unidade" unidadeId={profile?.unidade_id} meuId={profile?.id} />
       ) : conversaDireta ? (
         <div>
-          <button onClick={() => setConversaDireta(null)} className="text-sm text-azul font-semibold mb-2">← Voltar</button>
+          <button onClick={() => setConversaDireta(null)} className="text-sm text-brand font-semibold mb-2">← Voltar</button>
           <Thread key={conversaDireta.conversaId || conversaDireta.outro.id} tipo="direta"
             conversaIdInicial={conversaDireta.conversaId} destinatario={conversaDireta.outro} meuId={profile?.id} />
         </div>
@@ -97,24 +97,24 @@ function ListaConversas({ meuId, onAbrir, onNova }) {
   return (
     <div>
       <motion.button whileTap={{ scale: 0.97 }} onClick={onNova}
-        className="w-full bg-azul text-white font-bold rounded-xl py-2.5 text-sm mb-3">
+        className="w-full bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl py-2.5 text-sm mb-3">
         + Nova conversa
       </motion.button>
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : lista.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">💬</div>
-          <p className="font-semibold text-slate-700">Nenhuma conversa ainda</p>
-          <p className="text-sm text-slate-400">Toque em "+ Nova conversa" pra começar.</p>
+          <p className="font-semibold text-ink">Nenhuma conversa ainda</p>
+          <p className="text-sm text-faint">Toque em "+ Nova conversa" pra começar.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {lista.map((c) => (
             <button key={c.conversaId} onClick={() => onAbrir(c)}
-              className="w-full flex items-center gap-3 bg-white rounded-2xl p-3 shadow-sm text-left">
+              className="w-full flex items-center gap-3 bg-surface rounded-2xl p-3 shadow-soft text-left">
               <Avatar foto={c.outro.foto} nome={c.outro.nome} size="w-10 h-10" textSize="text-base" />
-              <span className="font-semibold text-slate-800">{c.outro.nome}</span>
+              <span className="font-semibold text-ink">{c.outro.nome}</span>
             </button>
           ))}
         </div>
@@ -135,21 +135,21 @@ function EscolherColega({ meuId, onFechar, onEscolher }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 30, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 30, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-slate-100">
-          <h3 className="font-extrabold text-slate-800 mb-2">Falar com quem?</h3>
+        className="bg-surface w-full max-w-sm rounded-3xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-line">
+          <h3 className="font-extrabold text-ink mb-2">Falar com quem?</h3>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome..."
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-azul-claro" />
+            className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-brand" />
         </div>
         <div className="overflow-y-auto flex-1">
           {filtrados.map((c) => (
             <button key={c.id} onClick={() => onEscolher(c)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-50">
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface2 border-b border-line">
               <Avatar foto={c.foto} nome={c.nome} size="w-9 h-9" textSize="text-sm" />
-              <span className="font-semibold text-slate-700 text-sm">{c.nome}</span>
+              <span className="font-semibold text-ink text-sm">{c.nome}</span>
             </button>
           ))}
-          {filtrados.length === 0 && <p className="text-sm text-slate-400 text-center py-6">Ninguém encontrado.</p>}
+          {filtrados.length === 0 && <p className="text-sm text-faint text-center py-6">Ninguém encontrado.</p>}
         </div>
       </motion.div>
     </motion.div>
@@ -223,29 +223,29 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm flex flex-col" style={{ height: '65vh' }}>
+    <div className="bg-surface rounded-2xl shadow-soft flex flex-col" style={{ height: '65vh' }}>
       {tipo === 'direta' && (
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 shrink-0">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-line shrink-0">
           <Avatar foto={destinatario.foto} nome={destinatario.nome} size="w-8 h-8" textSize="text-sm" />
-          <span className="font-bold text-slate-800 text-sm">{destinatario.nome}</span>
+          <span className="font-bold text-ink text-sm">{destinatario.nome}</span>
         </div>
       )}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {carregando ? (
-          <p className="text-slate-400 text-sm text-center mt-4">Carregando...</p>
+          <p className="text-faint text-sm text-center mt-4">Carregando...</p>
         ) : mensagens.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center mt-4">Nenhuma mensagem ainda — dá o primeiro "oi"! 👋</p>
+          <p className="text-faint text-sm text-center mt-4">Nenhuma mensagem ainda — dá o primeiro "oi"! 👋</p>
         ) : (
           mensagens.map((m) => {
             const minha = m.autor_id === meuId
             return (
               <div key={m.id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${minha ? 'bg-azul text-white' : 'bg-slate-100 text-slate-800'}`}>
+                <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${minha ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'bg-surface2 text-ink'}`}>
                   {!minha && (tipo === 'unidade' || tipo === 'geral') && <div className="text-[11px] font-bold opacity-70 mb-0.5">{m.autor?.nome || '...'}</div>}
                   <div className={`text-sm ${m.apagada ? 'italic opacity-60' : ''}`}>
                     {m.apagada ? 'Mensagem removida pela liderança' : m.texto}
                   </div>
-                  <div className={`text-[10px] mt-0.5 ${minha ? 'text-blue-100' : 'text-slate-400'}`}>{tempoRel(m.created_at)}</div>
+                  <div className={`text-[10px] mt-0.5 ${minha ? 'text-blue-100' : 'text-faint'}`}>{tempoRel(m.created_at)}</div>
                 </div>
               </div>
             )
@@ -254,13 +254,13 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
         <div ref={fimRef} />
       </div>
       {erro && <p className="text-xs text-red-600 px-3 pb-1">{erro}</p>}
-      <div className="flex gap-2 p-3 border-t border-slate-100 shrink-0">
+      <div className="flex gap-2 p-3 border-t border-line shrink-0">
         <input value={texto} onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') enviar() }}
           maxLength={500} placeholder="Escreva uma mensagem..."
-          className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-azul-claro" />
+          className="flex-1 rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand" />
         <motion.button whileTap={{ scale: 0.95 }} disabled={enviando || !texto.trim()} onClick={enviar}
-          className="bg-azul text-white font-bold rounded-xl px-4 disabled:opacity-50">
+          className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl px-4 disabled:opacity-50">
           ➤
         </motion.button>
       </div>

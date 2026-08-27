@@ -22,10 +22,10 @@ function Barra({ icone, rotulo, valor }) {
   const cor = valor <= 20 ? 'bg-red-500' : valor <= 45 ? 'bg-amber-400' : 'bg-green-500'
   return (
     <div>
-      <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+      <div className="flex justify-between text-xs font-semibold text-muted mb-1">
         <span>{icone} {rotulo}</span><span>{valor}%</span>
       </div>
-      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="h-2.5 bg-surface2 rounded-full overflow-hidden">
         <motion.div className={`h-full ${cor}`} animate={{ width: `${valor}%` }} transition={{ type: 'spring', stiffness: 200, damping: 26 }} />
       </div>
     </div>
@@ -75,7 +75,7 @@ export default function Bichinho() {
     catch (e) { setBicho((b) => b ? { ...b, item: anterior } : b); setErro(e?.message || String(e)) }
   }
 
-  if (carregando) return <p className="text-slate-400 text-sm text-center mt-10">Carregando…</p>
+  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
 
   // ---------- Sem bichinho, ou morreu → tela de adotar ----------
   if (!bicho?.tem || !bicho?.vivo) {
@@ -91,15 +91,15 @@ export default function Bichinho() {
     <div className="max-w-md mx-auto">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-xl font-extrabold text-azul">{bicho.nome}</h1>
-          <p className="text-xs text-slate-500">{estagioNome} · {bicho.dias_cuidados || 0} {bicho.dias_cuidados === 1 ? 'dia cuidando' : 'dias cuidando'}</p>
+          <h1 className="text-xl font-extrabold text-brand">{bicho.nome}</h1>
+          <p className="text-xs text-muted">{estagioNome} · {bicho.dias_cuidados || 0} {bicho.dias_cuidados === 1 ? 'dia cuidando' : 'dias cuidando'}</p>
         </div>
         {bicho.ofensiva > 0 && (
           <span className="text-sm font-extrabold bg-orange-100 text-orange-600 rounded-full px-3 py-1">🔥 {bicho.ofensiva} {bicho.ofensiva === 1 ? 'dia' : 'dias'}</span>
         )}
       </div>
 
-      <div className="bg-gradient-to-b from-blue-50 to-white rounded-3xl shadow p-5 text-center relative overflow-hidden">
+      <div className="glass rounded-3xl shadow-soft p-5 text-center relative overflow-hidden">
         <AnimatePresence>
           {flash && (
             <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
@@ -116,7 +116,7 @@ export default function Bichinho() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow p-4 mt-3 space-y-3">
+      <div className="bg-surface rounded-2xl shadow-soft p-4 mt-3 space-y-3">
         <Barra icone="🍖" rotulo="Fome" valor={bicho.fome} />
         <Barra icone="🛁" rotulo="Higiene" valor={bicho.higiene} />
         <Barra icone="😊" rotulo="Felicidade" valor={bicho.felicidade} />
@@ -127,17 +127,17 @@ export default function Bichinho() {
       <div className="grid grid-cols-3 gap-2 mt-3">
         {[['alimentar', '🍎', 'Alimentar'], ['banho', '🛁', 'Dar banho'], ['brincar', '🎾', 'Brincar']].map(([acao, ic, lbl]) => (
           <motion.button key={acao} whileTap={{ scale: 0.94 }} disabled={!!cuidando} onClick={() => cuidar(acao)}
-            className="bg-azul text-white font-bold rounded-2xl py-3 flex flex-col items-center gap-1 disabled:opacity-60">
+            className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-2xl py-3 flex flex-col items-center gap-1 disabled:opacity-60">
             <span className="text-2xl">{ic}</span>
             <span className="text-xs">{lbl}</span>
           </motion.button>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow p-4 mt-3">
+      <div className="bg-surface rounded-2xl shadow-soft p-4 mt-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-slate-700 text-sm">🎩 Enfeitar</h3>
-          <Link to="/pets-clube" className="text-xs font-semibold text-azul">Ver pets do clube →</Link>
+          <h3 className="font-bold text-ink text-sm">🎩 Enfeitar</h3>
+          <Link to="/pets-clube" className="text-xs font-semibold text-brand">Ver pets do clube →</Link>
         </div>
         <div className="grid grid-cols-4 gap-2">
           {ITENS.map((it) => {
@@ -145,17 +145,17 @@ export default function Bichinho() {
             const ativo = bicho.item === it.id
             return (
               <button key={it.id} disabled={bloq} onClick={() => equipar(it.id)}
-                className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-azul bg-blue-50' : 'border-slate-100'} ${bloq ? 'opacity-50' : ''}`}>
+                className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-brand bg-surface2' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
                 <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item={it.id} size={46} />
-                <span className="text-[10px] font-semibold text-slate-600 leading-none">{it.nome}</span>
-                {bloq && <span className="text-[9px] text-slate-400 leading-none mt-0.5">nível {it.nivel}</span>}
+                <span className="text-[10px] font-semibold text-muted leading-none">{it.nome}</span>
+                {bloq && <span className="text-[9px] text-faint leading-none mt-0.5">nível {it.nivel}</span>}
               </button>
             )
           })}
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-400 text-center mt-3">
+      <p className="text-[11px] text-faint text-center mt-3">
         Fazer pelo menos <b>1 cuidado por dia</b> já mantém {bicho.nome} vivo e feliz, dá <b>+2 pontos</b> e mantém sua ofensiva 🔥. Se ficar <b>3 dias sem nenhum cuidado</b>, ele pode ir embora. 🥺
       </p>
     </div>
@@ -180,30 +180,30 @@ function Adotar({ morto, nomeAntigo, especieAntiga, onPronto }) {
   return (
     <div className="max-w-md mx-auto">
       {morto && (
-        <div className="bg-slate-100 rounded-2xl p-4 text-center mb-4">
+        <div className="bg-surface2 rounded-2xl p-4 text-center mb-4">
           <div className="text-3xl mb-1">⭐</div>
-          <p className="font-bold text-slate-700">{nomeAntigo || 'Seu bichinho'} foi pro céu dos bichinhos…</p>
-          <p className="text-sm text-slate-500">Ficou tempo demais sem cuidados. Que tal adotar um novo e cuidar com carinho? 🐾</p>
+          <p className="font-bold text-ink">{nomeAntigo || 'Seu bichinho'} foi pro céu dos bichinhos…</p>
+          <p className="text-sm text-muted">Ficou tempo demais sem cuidados. Que tal adotar um novo e cuidar com carinho? 🐾</p>
         </div>
       )}
-      <h1 className="text-xl font-extrabold text-azul mb-1">🐾 Adote um bichinho</h1>
-      <p className="text-sm text-slate-500 mb-4">Escolha o bichinho e dê um nome. Depois é só cuidar todo dia!</p>
+      <h1 className="text-xl font-extrabold text-brand mb-1">🐾 Adote um bichinho</h1>
+      <p className="text-sm text-muted mb-4">Escolha o bichinho e dê um nome. Depois é só cuidar todo dia!</p>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         {ESPECIES.map((e) => (
           <button key={e.id} onClick={() => setEspecie(e.id)}
-            className={`rounded-2xl p-3 flex flex-col items-center border-2 transition ${especie === e.id ? 'border-azul bg-blue-50' : 'border-slate-100 bg-white'}`}>
+            className={`rounded-2xl p-3 flex flex-col items-center border-2 transition ${especie === e.id ? 'border-brand bg-surface2' : 'border-line bg-surface'}`}>
             <BichinhoImg especie={e.id} humor="feliz" estagio={1} size={96} />
-            <span className="text-sm font-bold text-slate-700">{e.emoji} {e.nome}</span>
+            <span className="text-sm font-bold text-ink">{e.emoji} {e.nome}</span>
           </button>
         ))}
       </div>
 
       <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={20} placeholder="Nome do bichinho"
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-azul mb-2" />
+        className="w-full rounded-xl border border-line bg-surface2 px-4 py-3 text-sm outline-none focus:border-brand mb-2" />
       {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-2">{erro}</div>}
       <motion.button whileTap={{ scale: 0.97 }} disabled={enviando} onClick={adotar}
-        className="w-full bg-azul text-white font-extrabold rounded-xl py-3 disabled:opacity-60">
+        className="w-full bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-extrabold rounded-xl py-3 disabled:opacity-60">
         {enviando ? '...' : '🐾 Adotar'}
       </motion.button>
     </div>
