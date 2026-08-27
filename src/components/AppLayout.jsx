@@ -44,6 +44,15 @@ export default function AppLayout() {
     ? [{ to: '/meu-filho', label: 'Meu Filho', icon: '👨‍👩‍👧' }]
     : temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
   const [menuAberto, setMenuAberto] = useState(false)
+  const [tema, setTema] = useState(() =>
+    (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') ? 'escuro' : 'claro')
+
+  function alternarTema() {
+    const novo = tema === 'escuro' ? 'claro' : 'escuro'
+    document.documentElement.setAttribute('data-theme', novo === 'escuro' ? 'dark' : 'light')
+    try { localStorage.setItem('tema', novo) } catch { /* sem storage */ }
+    setTema(novo)
+  }
 
   async function atualizarApp() {
     try {
@@ -91,6 +100,9 @@ export default function AppLayout() {
           <NavLink to="/perfil" className="block w-full text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
             👤 Meu perfil
           </NavLink>
+          <button onClick={alternarTema} className="w-full text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
+            {tema === 'escuro' ? '☀️ Modo claro' : '🌙 Modo escuro'}
+          </button>
           <button onClick={atualizarApp} className="w-full text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
             🔄 Atualizar app
           </button>
@@ -113,6 +125,8 @@ export default function AppLayout() {
               <h1 className="font-extrabold text-[15px] text-ink truncate">Filhos da Conquista</h1>
               <p className="text-[10px] text-faint">Desbravadores · 1994</p>
             </div>
+            <button onClick={alternarTema} aria-label="Alternar tema claro/escuro"
+              className="w-9 h-9 rounded-xl grid place-items-center text-ink bg-surface2 text-lg leading-none">{tema === 'escuro' ? '☀️' : '🌙'}</button>
             <div className="text-ink"><Notificacoes /></div>
           </div>
         </header>

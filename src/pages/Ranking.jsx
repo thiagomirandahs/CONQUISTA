@@ -49,29 +49,29 @@ export default function Ranking() {
       <AvisoOffline />
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">🏆 Ranking</h2>
-          <p className="text-sm text-slate-500">Quem tá mandando bem? ⭐</p>
+          <h2 className="text-2xl font-extrabold text-ink">🏆 Ranking</h2>
+          <p className="text-sm text-muted">Quem tá mandando bem? ⭐</p>
         </div>
         <motion.button whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.05 }} onClick={festa}
-          className="bg-dourado text-azul font-bold rounded-full px-4 py-2 text-sm shadow">🎉 Comemorar</motion.button>
+          className="bg-gold text-brand font-bold rounded-full px-4 py-2 text-sm shadow">🎉 Comemorar</motion.button>
       </div>
 
-      <div className="relative bg-white rounded-xl p-1 flex shadow-sm mb-5 max-w-sm">
+      <div className="relative bg-surface rounded-xl p-1 flex shadow-soft mb-5 max-w-sm">
         {[['unidades', '🛡️ Unidades'], ['individual', '🧒 Individual']].map(([key, label]) => (
           <button key={key} onClick={() => setAba(key)} className="relative flex-1 py-2 text-sm font-bold">
-            {aba === key && <motion.span layoutId="rank-pill" className="absolute inset-0 bg-azul rounded-lg" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
-            <span className={`relative z-10 ${aba === key ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+            {aba === key && <motion.span layoutId="rank-pill" className="absolute inset-0 bg-gradient-to-r from-brand to-brand2 rounded-lg shadow-glow" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
+            <span className={`relative z-10 ${aba === key ? 'text-white' : 'text-muted'}`}>{label}</span>
           </button>
         ))}
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : lista.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏁</div>
-          <p className="font-semibold text-slate-700">Ranking ainda vazio</p>
-          <p className="text-sm text-slate-400">Os pontos vão aparecer quando as atividades começarem a ser entregues e aprovadas.</p>
+          <p className="font-semibold text-ink">Ranking ainda vazio</p>
+          <p className="text-sm text-faint">Os pontos vão aparecer quando as atividades começarem a ser entregues e aprovadas.</p>
         </div>
       ) : (
         <>
@@ -89,12 +89,12 @@ export default function Ranking() {
                     <motion.div className="text-3xl" animate={{ y: [0, -7, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}>👑</motion.div>
                   )}
                   <div className="relative">
-                    <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size={pos === 0 ? 'w-20 h-20' : 'w-14 h-14'} textSize={pos === 0 ? 'text-3xl' : 'text-xl'}
+                    <Avatar foto={ehUnidade ? item.emblema : item.foto} nome={item.nome} cor={item.cor} size={pos === 0 ? 'w-20 h-20' : 'w-14 h-14'} textSize={pos === 0 ? 'text-3xl' : 'text-xl'}
                       avatarPersonagem={item.avatarTipo === 'personagem' ? item.avatar : undefined} />
                     <span className="absolute -bottom-1 -right-1 text-xl drop-shadow">{medalhas[pos]}</span>
                   </div>
-                  <div className="font-bold text-slate-800 text-xs mt-1 truncate max-w-[90px]">{item.nome}</div>
-                  <div className="text-azul font-extrabold text-lg leading-none"><Contador value={valor(item)} /></div>
+                  <div className="font-bold text-ink text-xs mt-1 truncate max-w-[90px]">{item.nome}</div>
+                  <div className="text-brand font-extrabold text-lg leading-none"><Contador value={valor(item)} /></div>
                   <div className={`${pos === 0 ? 'h-24' : pos === 1 ? 'h-16' : 'h-12'} w-full rounded-t-xl mt-1 grid place-items-start justify-center pt-1`}
                     style={{ backgroundColor: corMedalha + '33' }}>
                     <span className="text-xs font-extrabold" style={{ color: corMedalha }}>{pos + 1}º</span>
@@ -105,26 +105,26 @@ export default function Ranking() {
           </motion.div>
 
           {/* Lista */}
-          <motion.div key={'lista-' + aba} className="bg-white rounded-2xl shadow-sm p-2"
+          <motion.div key={'lista-' + aba} className="bg-surface rounded-2xl shadow-soft p-2"
             initial="hide" animate="show" variants={{ show: {} }}>
             {lista.map((item, i) => (
               <motion.button key={item.id} onClick={() => setCard({ item, pos: i })}
                 variants={{ hide: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }}
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50 text-left">
-                <span className="w-5 text-center font-extrabold text-slate-400">{i + 1}</span>
-                <Avatar foto={item.foto} nome={item.nome} cor={item.cor} size="w-10 h-10" textSize="text-base"
+                className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-surface2 text-left">
+                <span className="w-5 text-center font-extrabold text-faint">{i + 1}</span>
+                <Avatar foto={ehUnidade ? item.emblema : item.foto} nome={item.nome} cor={item.cor} size="w-10 h-10" textSize="text-base"
                   avatarPersonagem={item.avatarTipo === 'personagem' ? item.avatar : undefined} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 text-sm truncate">{item.nome}</div>
-                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
+                  <div className="font-bold text-ink text-sm truncate">{item.nome}</div>
+                  <div className="h-2 rounded-full bg-surface2 overflow-hidden mt-1">
                     <motion.div className="h-full w-full rounded-full origin-left" style={{ backgroundColor: item.cor }}
                       initial={{ scaleX: 0 }} animate={{ scaleX: Math.min(1, valor(item) / max) }}
                       transition={{ duration: 0.6, ease: 'easeOut' }} />
                   </div>
-                  {item.unidade && <div className="text-[11px] text-slate-400 mt-0.5">{item.unidade}</div>}
+                  {item.unidade && <div className="text-[11px] text-faint mt-0.5">{item.unidade}</div>}
                 </div>
-                <span className="font-extrabold text-azul w-10 text-right">{valor(item)}</span>
+                <span className="font-extrabold text-brand w-10 text-right">{valor(item)}</span>
               </motion.button>
             ))}
           </motion.div>
@@ -138,11 +138,11 @@ export default function Ranking() {
             <motion.div onClick={(e) => e.stopPropagation()}
               initial={{ y: 60, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+              className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               <div className="p-6 text-center text-white relative shrink-0" style={{ backgroundColor: card.item.cor }}>
                 <button onClick={() => setCard(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
                 <div className="flex justify-center mb-2">
-                  <Avatar foto={card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl"
+                  <Avatar foto={ehUnidade ? card.item.emblema : card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl"
                     avatarPersonagem={card.item.avatarTipo === 'personagem' ? card.item.avatar : undefined} />
                 </div>
                 <h3 className="text-xl font-extrabold">{card.item.nome}</h3>
@@ -157,10 +157,10 @@ export default function Ranking() {
                 {ehUnidade && (
                   <div className="mt-4 space-y-3">
                     {/* A conta aberta: dá pra conferir a média membro por membro */}
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Como a média é feita</p>
+                    <div className="bg-surface2 rounded-xl p-3">
+                      <p className="text-[11px] font-bold text-faint uppercase tracking-wide mb-2">Como a média é feita</p>
                       {card.item.membros.length === 0 ? (
-                        <p className="text-xs text-slate-400">Nenhum desbravador ou conselheiro nesta unidade ainda — média fica 0.</p>
+                        <p className="text-xs text-faint">Nenhum desbravador ou conselheiro nesta unidade ainda — média fica 0.</p>
                       ) : (
                         <>
                           <div className="space-y-1.5">
@@ -169,42 +169,42 @@ export default function Ranking() {
                                 <div className="flex items-center gap-2 min-w-0">
                                   <Avatar foto={m.foto} nome={m.nome || '?'} cor={card.item.cor} size="w-6 h-6" textSize="text-[10px]"
                                     avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
-                                  <span className="text-slate-600 truncate">
+                                  <span className="text-muted truncate">
                                     {m.nome || 'Desbravador'}
-                                    {m.papel !== 'desbravador' && <span className="text-[10px] text-slate-400"> · {m.papel}</span>}
+                                    {m.papel !== 'desbravador' && <span className="text-[10px] text-faint"> · {m.papel}</span>}
                                   </span>
                                 </div>
-                                <span className="font-semibold text-slate-800 shrink-0">{m.pts}</span>
+                                <span className="font-semibold text-ink shrink-0">{m.pts}</span>
                               </div>
                             ))}
                           </div>
-                          <div className="flex justify-between items-center border-t border-slate-200 mt-2 pt-2 text-xs">
-                            <span className="text-slate-500">
+                          <div className="flex justify-between items-center border-t border-line mt-2 pt-2 text-xs">
+                            <span className="text-muted">
                               {card.item.membros.length} membro{card.item.membros.length === 1 ? '' : 's'} · soma {card.item.membros.reduce((s, m) => s + m.pts, 0)}
                             </span>
-                            <span className="font-bold text-slate-700">≈ média nivelada {card.item.media}</span>
+                            <span className="font-bold text-ink">≈ média nivelada {card.item.media}</span>
                           </div>
                         </>
                       )}
                     </div>
                     {/* O total do time */}
-                    <div className="bg-slate-50 rounded-xl p-3 text-sm">
+                    <div className="bg-surface2 rounded-xl p-3 text-sm">
                       <div className="flex justify-between py-0.5">
-                        <span className="text-slate-500">Média nivelada</span>
-                        <span className="font-semibold text-slate-800">{card.item.media}</span>
+                        <span className="text-muted">Média nivelada</span>
+                        <span className="font-semibold text-ink">{card.item.media}</span>
                       </div>
                       <div className="flex justify-between py-0.5">
-                        <span className="text-slate-500">Pontos de time (avulsos)</span>
-                        <span className="font-semibold text-slate-800">+{card.item.avulsos}</span>
+                        <span className="text-muted">Pontos de time (avulsos)</span>
+                        <span className="font-semibold text-ink">+{card.item.avulsos}</span>
                       </div>
-                      <div className="flex justify-between border-t border-slate-200 mt-1 pt-1.5">
-                        <span className="font-bold text-slate-600">Total</span>
-                        <span className="font-extrabold text-azul">{card.item.pontos}</span>
+                      <div className="flex justify-between border-t border-line mt-1 pt-1.5">
+                        <span className="font-bold text-muted">Total</span>
+                        <span className="font-extrabold text-brand">{card.item.pontos}</span>
                       </div>
                     </div>
                   </div>
                 )}
-                <button onClick={() => setCard(null)} className="w-full mt-5 bg-azul text-white font-bold rounded-xl py-2.5">Fechar</button>
+                <button onClick={() => setCard(null)} className="w-full mt-5 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl py-2.5">Fechar</button>
               </div>
             </motion.div>
           </motion.div>
@@ -216,9 +216,9 @@ export default function Ranking() {
 
 function Stat({ rotulo, valor, destaque }) {
   return (
-    <div className="bg-slate-50 rounded-xl py-2">
-      <div className={`font-extrabold ${destaque ? 'text-dourado text-lg' : 'text-slate-800 text-sm'} truncate px-1`}>{valor}</div>
-      <div className="text-[10px] text-slate-400">{rotulo}</div>
+    <div className="bg-surface2 rounded-xl py-2">
+      <div className={`font-extrabold ${destaque ? 'text-gold text-lg' : 'text-ink text-sm'} truncate px-1`}>{valor}</div>
+      <div className="text-[10px] text-faint">{rotulo}</div>
     </div>
   )
 }
