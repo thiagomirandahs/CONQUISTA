@@ -63,6 +63,7 @@ const JogoCorridaPhaser = lazy(() => import('./jogos/CorridaPhaser.jsx'))
 const JogoCobraPhaser = lazy(() => import('./jogos/CobrinhaPhaser.jsx'))
 const JogoCarrinhoPhaser = lazy(() => import('./jogos/CarrinhoPhaser.jsx'))
 const JogoReflexoPhaser = lazy(() => import('./jogos/ReflexoPhaser.jsx'))
+const JogoFutebolPhaser = lazy(() => import('./jogos/FutebolPhaser.jsx'))
 
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
@@ -87,6 +88,7 @@ const JOGOS = {
   carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: JogoCarrinhoPhaser },
   reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexoPhaser },
   corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorridaPhaser },
+  futebol: { nome: 'Pênaltis', curto: 'Pênaltis', emoji: '⚽', desc: 'Cobre 5 pênaltis: arraste pra mirar e engane o goleiro!', Comp: JogoFutebolPhaser },
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
 const ARCADE = new Set(['reflexo', 'corrida'])
