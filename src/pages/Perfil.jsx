@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
+import Contador from '../components/Contador.jsx'
 import AvatarPersonagem from '../components/AvatarPersonagem.jsx'
 import PersonalizarAvatar from '../components/PersonalizarAvatar.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
@@ -103,7 +104,7 @@ export default function Perfil() {
       <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4">
         <div className="flex items-center justify-between mb-1.5">
           <span className="font-extrabold text-ink">🌟 Nível {nivel.nivel}</span>
-          <span className="text-xs text-faint">{totalPts} pts</span>
+          <span className="text-xs text-faint"><Contador value={totalPts} /> pts</span>
         </div>
         <div className="h-2.5 bg-surface2 rounded-full overflow-hidden">
           <motion.div className="h-full bg-gradient-to-r from-brand to-brand2 rounded-full"
@@ -147,7 +148,9 @@ export default function Perfil() {
       {/* Ofensiva (sequência de dias fazendo a missão) */}
       <div className="mt-6 rounded-2xl p-4 text-white flex items-center gap-3 shadow-soft"
         style={{ background: 'linear-gradient(90deg,#f97316,#f59e0b)' }}>
-        <div className="text-4xl">🔥</div>
+        <motion.div className="text-4xl" style={{ transformOrigin: '50% 80%' }}
+          animate={metricas.sequencia > 0 ? { scale: [1, 1.14, 0.97, 1.08, 1], rotate: [0, -5, 5, -3, 0] } : {}}
+          transition={{ repeat: Infinity, duration: 1.3, ease: 'easeInOut' }}>🔥</motion.div>
         <div className="min-w-0">
           <div className="text-2xl font-extrabold leading-none">{metricas.sequencia} dia{metricas.sequencia === 1 ? '' : 's'}</div>
           <div className="text-xs text-white/90 mt-1">
@@ -164,15 +167,22 @@ export default function Perfil() {
           <h3 className="font-extrabold text-ink">🎖️ Minhas conquistas</h3>
           <span className="text-xs text-faint">{nConquistadas} de {conquistas.length}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <motion.div className="grid grid-cols-3 gap-2" initial="hide" animate="show"
+          variants={{ show: { transition: { staggerChildren: 0.05 } } }}>
           {conquistas.map((b) => (
-            <div key={b.nome} className={`rounded-2xl p-3 text-center border ${b.pronto ? 'bg-amber-50 border-gold/40' : 'bg-surface2 border-line'}`}>
-              <div className={`text-3xl ${b.pronto ? '' : 'grayscale opacity-40'}`}>{b.emoji}</div>
+            <motion.div key={b.nome}
+              variants={{ hide: { opacity: 0, scale: 0.8, y: 10 }, show: { opacity: 1, scale: 1, y: 0 } }}
+              transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className={`relative rounded-2xl p-3 text-center border ${b.pronto ? 'bg-amber-50 border-gold/40 shadow-[0_4px_14px_-6px_rgba(245,197,24,0.6)]' : 'bg-surface2 border-line'}`}>
+              {b.pronto && <span className="absolute -top-1.5 -right-1.5 text-sm">✨</span>}
+              <div className={`text-3xl ${b.pronto ? '' : 'grayscale opacity-40'}`}
+                style={b.pronto ? { filter: 'drop-shadow(0 2px 5px rgba(245,197,24,0.5))' } : undefined}>{b.emoji}</div>
               <div className={`text-[11px] font-bold mt-1 leading-tight ${b.pronto ? 'text-amber-700' : 'text-muted'}`}>{b.nome}</div>
               <div className="text-[10px] text-faint mt-0.5">{b.pronto ? '✓ conquistada' : `${Math.min(b.atual, b.meta)}/${b.meta}`}</div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Extrato: de onde vieram meus pontos */}

@@ -106,7 +106,7 @@ export default function Ranking() {
 
           {/* Lista */}
           <motion.div key={'lista-' + aba} className="bg-surface rounded-2xl shadow-soft p-2"
-            initial="hide" animate="show" variants={{ show: {} }}>
+            initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.04, delayChildren: 0.1 } } }}>
             {lista.map((item, i) => (
               <motion.button key={item.id} onClick={() => setCard({ item, pos: i })}
                 variants={{ hide: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }}
