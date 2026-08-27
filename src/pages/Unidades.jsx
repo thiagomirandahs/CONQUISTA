@@ -69,12 +69,12 @@ export default function Unidades() {
       <AvisoOffline />
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">Unidades</h2>
-          <p className="text-sm text-slate-500">Toque numa unidade para ver os membros</p>
+          <h2 className="text-2xl font-extrabold text-ink">Unidades</h2>
+          <p className="text-sm text-muted">Toque numa unidade para ver os membros</p>
         </div>
         {ehAdmin && (
           <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={novaUnidade}
-            className="text-sm bg-azul text-white rounded-xl px-4 py-2 font-medium shadow-sm">
+            className="text-sm bg-gradient-to-r from-brand to-brand2 shadow-glow text-white rounded-xl px-4 py-2 font-medium">
             + Nova
           </motion.button>
         )}
@@ -83,12 +83,12 @@ export default function Unidades() {
       <CardAniversariantes />
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : unidades.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏠</div>
-          <p className="font-semibold text-slate-700">Nenhuma unidade ainda</p>
-          <p className="text-sm text-slate-400">{ehAdmin ? 'Toque em "+ Nova" para criar a primeira.' : 'A diretoria ainda vai cadastrar as unidades.'}</p>
+          <p className="font-semibold text-ink">Nenhuma unidade ainda</p>
+          <p className="text-sm text-faint">{ehAdmin ? 'Toque em "+ Nova" para criar a primeira.' : 'A diretoria ainda vai cadastrar as unidades.'}</p>
         </div>
       ) : (
         <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-3"
@@ -98,7 +98,7 @@ export default function Unidades() {
               variants={{ hide: { opacity: 0, y: 24, scale: 0.92 }, show: { opacity: 1, y: 0, scale: 1 } }}
               transition={{ type: 'spring', stiffness: 300, damping: 22 }}
               whileHover={{ y: -6 }} whileTap={{ scale: 0.97 }}
-              className="bg-white rounded-2xl shadow-sm overflow-hidden text-left">
+              className="bg-surface rounded-2xl shadow-soft overflow-hidden text-left">
               <div className="h-2" style={{ backgroundColor: u.cor }} />
               <div className="p-4">
                 {u.emblema ? (
@@ -109,19 +109,19 @@ export default function Unidades() {
                     {u.nome?.[0]?.toUpperCase()}
                   </div>
                 )}
-                <div className="font-bold text-slate-800">{u.nome}</div>
-                {u.lema && <div className="text-[11px] text-slate-500 italic truncate">"{u.lema}"</div>}
-                <div className="text-xs text-slate-400 mb-3">{u.membros.length} membros</div>
+                <div className="font-bold text-ink">{u.nome}</div>
+                {u.lema && <div className="text-[11px] text-muted italic truncate">"{u.lema}"</div>}
+                <div className="text-xs text-faint mb-3">{u.membros.length} membros</div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-400">Pontos</span>
-                  <span className="text-dourado font-extrabold">{u.pontos} pts</span>
+                  <span className="text-faint">Pontos</span>
+                  <span className="text-gold font-extrabold">{u.pontos} pts</span>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-2 rounded-full bg-surface2 overflow-hidden">
                   <motion.div className="h-full rounded-full" style={{ backgroundColor: u.cor }}
                     initial={{ width: 0 }} animate={{ width: `${Math.min(u.pontos, 100)}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} />
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">time {u.avulsos} + média nivelada {u.media}</div>
+                <div className="text-[10px] text-faint mt-1">time {u.avulsos} + média nivelada {u.media}</div>
               </div>
             </motion.button>
           ))}
@@ -135,7 +135,7 @@ export default function Unidades() {
             <motion.div onClick={(e) => e.stopPropagation()}
               initial={{ y: 60, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-              className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+              className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               <div className="text-white relative overflow-hidden shrink-0" style={{ backgroundColor: sel.cor }}>
                 {sel.bandeira && <img src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                 {sel.bandeira && <div className="absolute inset-0 bg-black/45" />}
@@ -159,41 +159,41 @@ export default function Unidades() {
                 </div>
               </div>
               {(sel.lema || sel.grito) && (
-                <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 space-y-1 shrink-0">
-                  {sel.lema && <p className="text-sm text-slate-600"><span className="font-bold text-slate-700">Lema:</span> <em>"{sel.lema}"</em></p>}
-                  {sel.grito && <p className="text-sm text-slate-600 whitespace-pre-line"><span className="font-bold text-slate-700">Grito:</span> {sel.grito}</p>}
+                <div className="px-4 py-3 bg-surface2 border-b border-line space-y-1 shrink-0">
+                  {sel.lema && <p className="text-sm text-muted"><span className="font-bold text-ink">Lema:</span> <em>"{sel.lema}"</em></p>}
+                  {sel.grito && <p className="text-sm text-muted whitespace-pre-line"><span className="font-bold text-ink">Grito:</span> {sel.grito}</p>}
                 </div>
               )}
               {/* Só a LISTA rola; cabeçalho e botões ficam fixos (sem cortar nada) */}
               <div className="p-3 overflow-y-auto flex-1 min-h-0">
-                <p className="text-xs font-semibold text-slate-400 px-2 mb-1">MEMBROS</p>
+                <p className="text-xs font-semibold text-faint px-2 mb-1">MEMBROS</p>
                 {sel.membros.length === 0 ? (
-                  <p className="text-sm text-slate-400 px-2 py-4 text-center">Nenhum membro aprovado nesta unidade ainda.</p>
+                  <p className="text-sm text-faint px-2 py-4 text-center">Nenhum membro aprovado nesta unidade ainda.</p>
                 ) : sel.membros.map((m, i) => (
-                  <div key={m.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-slate-50">
+                  <div key={m.id} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-surface2">
                     <Avatar foto={m.foto} nome={m.nome} cor={sel.cor} size="w-9 h-9" textSize="text-sm"
                       avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
-                    <span className="flex-1 min-w-0 font-medium text-slate-800 truncate">
+                    <span className="flex-1 min-w-0 font-medium text-ink truncate">
                       {m.nome}
-                      {m.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-azul/10 text-azul rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
+                      {m.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
                     </span>
                     <span className="text-lg">{medalhas[i] || ''}</span>
-                    <span className="font-extrabold text-azul">{m.pts}</span>
+                    <span className="font-extrabold text-brand">{m.pts}</span>
                   </div>
                 ))}
               </div>
               {ehAdmin && (
-                <div className="p-3 border-t border-slate-100 space-y-2 shrink-0">
+                <div className="p-3 border-t border-line space-y-2 shrink-0">
                   <button onClick={() => setPontosPara(sel)}
-                    className="w-full text-sm text-white bg-azul hover:bg-azul-claro rounded-xl py-2.5 font-semibold">
+                    className="w-full text-sm text-white bg-gradient-to-r from-brand to-brand2 shadow-glow rounded-xl py-2.5 font-semibold">
                     🏆 Lançar pontos pra unidade
                   </button>
                   <div className="flex gap-2">
                     <button onClick={() => setEditando(true)}
-                      className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold">
+                      className="flex-1 text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl py-2.5 font-semibold">
                       🚩 Identidade
                     </button>
-                    <label className="flex-1 text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
+                    <label className="flex-1 text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
                       📷 Emblema
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
                     </label>
@@ -272,30 +272,30 @@ function PontosUnidade({ unidade, onLancar, onFechar }) {
       <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[88vh] overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🏆 Pontos pra unidade</h3>
-        <p className="text-sm text-slate-500 mb-4">Pontos de time para <strong>{unidade.nome}</strong> (entram no ranking da unidade).</p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[88vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">🏆 Pontos pra unidade</h3>
+        <p className="text-sm text-muted mb-4">Pontos de time para <strong>{unidade.nome}</strong> (entram no ranking da unidade).</p>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Pontos</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Pontos</label>
         <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="ex.: 50"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-2" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-2" />
         <div className="flex gap-1.5 mb-3">
           {[10, 20, 50, 100].map((q) => (
             <button type="button" key={q} onClick={() => setValor(String(q))}
-              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">+{q}</button>
+              className="flex-1 rounded-lg py-1.5 text-xs font-semibold border border-line text-muted hover:bg-surface2">+{q}</button>
           ))}
         </div>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Motivo (opcional)</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Motivo (opcional)</label>
         <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={120} placeholder="ex.: Venceu a gincana"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
 
         {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
 
         <div className="flex gap-2">
-          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
           <motion.button type="submit" disabled={salvando} whileTap={{ scale: 0.97 }}
-            className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+            className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">
             {salvando ? 'Lançando...' : 'Lançar'}
           </motion.button>
         </div>
@@ -331,32 +331,32 @@ function FormIdentidade({ unidade, onFechar, onSalvar, onTrocarBandeira }) {
       <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[88vh] overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">🚩 Identidade da {unidade.nome}</h3>
-        <p className="text-sm text-slate-500 mb-4">O que dá alma pro time — todos veem no perfil da unidade.</p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[88vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">🚩 Identidade da {unidade.nome}</h3>
+        <p className="text-sm text-muted mb-4">O que dá alma pro time — todos veem no perfil da unidade.</p>
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Lema</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Lema</label>
         <input type="text" value={lema} onChange={(e) => setLema(e.target.value)} maxLength={120} placeholder='ex.: Sempre alerta para servir!'
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Grito de guerra</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Grito de guerra</label>
         <textarea value={grito} onChange={(e) => setGrito(e.target.value)} maxLength={240} rows={3} placeholder="ex.: Águia, águia, voa alto, nossa unidade é lá no alto!"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3 resize-none" />
+          className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3 resize-none" />
 
-        <label className="block text-xs font-semibold text-slate-500 mb-1">Bandeira</label>
+        <label className="block text-xs font-semibold text-muted mb-1">Bandeira</label>
         <div className="flex items-center gap-3 mb-5">
           {unidade.bandeira
             ? <img src={unidade.bandeira} alt="bandeira" className="w-24 h-14 rounded-lg object-cover shadow" />
-            : <div className="w-24 h-14 rounded-lg bg-slate-100 grid place-items-center text-slate-300 text-2xl">🚩</div>}
-          <label className="text-sm text-azul bg-azul/10 hover:bg-azul/20 rounded-xl px-4 py-2 font-semibold cursor-pointer">
+            : <div className="w-24 h-14 rounded-lg bg-surface2 grid place-items-center text-faint text-2xl">🚩</div>}
+          <label className="text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl px-4 py-2 font-semibold cursor-pointer">
             {unidade.bandeira ? 'Trocar' : 'Enviar'} bandeira
             <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onTrocarBandeira(e.target.files[0])} />
           </label>
         </div>
 
         <div className="flex gap-2">
-          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Fechar</button>
-          <button type="submit" disabled={salvando} className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Fechar</button>
+          <button type="submit" disabled={salvando} className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">
             {salvando ? 'Salvando...' : 'Salvar'}
           </button>
         </div>

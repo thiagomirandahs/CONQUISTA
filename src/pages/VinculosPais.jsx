@@ -28,9 +28,9 @@ export default function VinculosPais() {
 
   if (!ehAdmin) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Área da liderança</p>
+        <p className="font-semibold text-ink">Área da liderança</p>
       </div>
     )
   }
@@ -43,37 +43,37 @@ export default function VinculosPais() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">👨‍👩‍👧 Vínculos dos pais</h2>
-        <p className="text-sm text-slate-500">Confirme quem é filho de quem</p>
+        <h2 className="text-2xl font-extrabold text-ink">👨‍👩‍👧 Vínculos dos pais</h2>
+        <p className="text-sm text-muted">Confirme quem é filho de quem</p>
       </div>
 
       <PixConfig ehDiretoria={ehDiretoria} />
 
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2 mt-5">Pedidos aguardando</h3>
+      <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2 mt-5">Pedidos aguardando</h3>
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : pend.length === 0 ? (
-        <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-6 text-center shadow-soft">
           <div className="text-3xl mb-1">✅</div>
-          <p className="text-sm text-slate-500">Nenhum pedido de vínculo pendente.</p>
+          <p className="text-sm text-muted">Nenhum pedido de vínculo pendente.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {pend.map((p) => (
-            <div key={p.id} className="bg-white rounded-2xl shadow-sm p-4">
+            <div key={p.id} className="bg-surface rounded-2xl shadow-soft p-4">
               <div className="text-sm">
-                <span className="font-bold text-slate-800">{p.responsavel}</span>
-                <span className="text-slate-400"> diz ser responsável de</span>
+                <span className="font-bold text-ink">{p.responsavel}</span>
+                <span className="text-faint"> diz ser responsável de</span>
               </div>
-              <div className="text-base font-extrabold text-azul">"{p.nome_digitado}"</div>
-              <div className="text-[11px] text-slate-400 mb-3">pedido em {fmt(p.criado_em)}</div>
+              <div className="text-base font-extrabold text-brand">"{p.nome_digitado}"</div>
+              <div className="text-[11px] text-faint mb-3">pedido em {fmt(p.criado_em)}</div>
               {ehDiretoria ? (
                 <div className="flex gap-2">
-                  <button onClick={() => setAprovando(p)} className="flex-1 bg-azul text-white font-bold rounded-xl py-2 text-sm">Confirmar vínculo</button>
+                  <button onClick={() => setAprovando(p)} className="flex-1 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl py-2 text-sm">Confirmar vínculo</button>
                   <button onClick={() => rejeitar(p)} className="bg-red-50 text-red-600 font-bold rounded-xl py-2 px-3 text-sm">Rejeitar</button>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400">Só a diretoria confirma ou rejeita.</p>
+                <p className="text-xs text-faint">Só a diretoria confirma ou rejeita.</p>
               )}
             </div>
           ))}
@@ -119,24 +119,24 @@ function ModalAprovar({ pedido, onFechar, onAprovado }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">Confirmar vínculo</h3>
-        <p className="text-sm text-slate-500 mb-3">O pai digitou <b>"{pedido.nome_digitado}"</b>. Escolha o desbravador certo:</p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">Confirmar vínculo</h3>
+        <p className="text-sm text-muted mb-3">O pai digitou <b>"{pedido.nome_digitado}"</b>. Escolha o desbravador certo:</p>
         <input value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="Buscar por nome..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+          className="w-full rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
         {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
         <div className="space-y-1">
-          {buscando && <p className="text-xs text-slate-400">Buscando...</p>}
-          {!buscando && lista.length === 0 && <p className="text-xs text-slate-400">Nenhum desbravador encontrado.</p>}
+          {buscando && <p className="text-xs text-faint">Buscando...</p>}
+          {!buscando && lista.length === 0 && <p className="text-xs text-faint">Nenhum desbravador encontrado.</p>}
           {lista.map((d) => (
             <button key={d.id} onClick={() => confirmar(d)} disabled={salvando}
-              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 text-left disabled:opacity-60">
+              className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-surface2 text-left disabled:opacity-60">
               <Avatar foto={d.foto} nome={d.nome || '?'} size="w-9 h-9" textSize="text-sm" />
-              <span className="font-semibold text-slate-800 text-sm truncate">{d.nome}</span>
+              <span className="font-semibold text-ink text-sm truncate">{d.nome}</span>
             </button>
           ))}
         </div>
-        <button onClick={onFechar} disabled={salvando} className="w-full mt-4 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
+        <button onClick={onFechar} disabled={salvando} className="w-full mt-4 rounded-xl bg-surface2 text-ink font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
       </motion.div>
     </motion.div>
   )
@@ -158,15 +158,15 @@ function PixConfig({ ehDiretoria }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4">
-      <p className="font-bold text-slate-800 mb-1">💰 Chave PIX do clube</p>
-      <p className="text-xs text-slate-400 mb-2">Aparece pros pais quando a mensalidade está pendente.</p>
+    <div className="bg-surface rounded-2xl shadow-soft p-4">
+      <p className="font-bold text-ink mb-1">💰 Chave PIX do clube</p>
+      <p className="text-xs text-faint mb-2">Aparece pros pais quando a mensalidade está pendente.</p>
       <div className="flex gap-2">
         <input value={editando} onChange={(e) => { setEditando(e.target.value); setOk(false) }}
           placeholder="chave PIX (CNPJ, telefone, e-mail...)"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+          className="flex-1 rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
         <button onClick={salvar} disabled={salvando || editando.trim() === pix}
-          className="rounded-xl bg-azul text-white font-bold px-4 text-sm disabled:opacity-50">
+          className="rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold px-4 text-sm disabled:opacity-50">
           {salvando ? '...' : ok ? '✓' : 'Salvar'}
         </button>
       </div>

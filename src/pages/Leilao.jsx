@@ -13,7 +13,7 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 // unidade, ex.: a unidade "Liderança" ou um conselheiro promovido).
 const PODE_LEILOAR = ['desbravador', 'conselheiro']
 const inputClass =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30'
+  'w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-ink placeholder-faint outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 const ITENS_PADRAO = [
   { nome: 'Dormitório', emoji: '🏕️', descricao: 'Escolhe onde vai dormir no próximo acampamento', preco_base: 4800, incremento_minimo: 300 },
@@ -100,7 +100,7 @@ export default function Leilao() {
     return () => { clearInterval(t); window.removeEventListener('focus', foco); document.removeEventListener('visibilitychange', foco) }
   }, [dados.leilao?.status]) // eslint-disable-line
 
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando leilão...</p>
+  if (carregando) return <p className="text-faint text-sm">Carregando leilão...</p>
 
   if (erro) {
     const faltaSQL = /does not exist|schema cache|could not find the (table|relation)/i.test(erro)
@@ -173,31 +173,31 @@ export default function Leilao() {
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-800">🏛️ Leilão</h2>
-          <p className="text-sm text-slate-500">Junte pontos com sua unidade e dê o maior lance!</p>
+          <h2 className="text-2xl font-extrabold text-ink">🏛️ Leilão</h2>
+          <p className="text-sm text-muted">Junte pontos com sua unidade e dê o maior lance!</p>
         </div>
         {ehAdmin && !leilao && (
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setCriando(true)}
-            className="bg-azul text-white font-bold rounded-xl px-4 py-2.5 text-sm shrink-0">
+            className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl px-4 py-2.5 text-sm shrink-0">
             + Criar leilão
           </motion.button>
         )}
       </div>
 
       {!leilao ? (
-        <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏛️</div>
-          <p className="font-semibold text-slate-700">Nenhum leilão ainda</p>
-          <p className="text-sm text-slate-400">{ehAdmin ? 'Crie o primeiro leilão do clube!' : 'A liderança ainda vai abrir um leilão.'}</p>
+          <p className="font-semibold text-ink">Nenhum leilão ainda</p>
+          <p className="text-sm text-faint">{ehAdmin ? 'Crie o primeiro leilão do clube!' : 'A liderança ainda vai abrir um leilão.'}</p>
         </div>
       ) : (
         <>
           <div className={`rounded-2xl p-4 mb-4 flex items-center justify-between gap-3 ${
-            aberto ? 'bg-azul text-white' : leilao.status === 'encerrado' ? 'bg-green-50 border border-green-200' : 'bg-slate-100 border border-slate-200'
+            aberto ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow text-white' : leilao.status === 'encerrado' ? 'bg-green-50 border border-green-200' : 'bg-surface2 border border-line'
           }`}>
             <div className="min-w-0">
-              <div className={`font-extrabold truncate ${aberto ? '' : 'text-slate-800'}`}>{leilao.titulo}</div>
-              <div className={`text-xs mt-0.5 ${aberto ? 'text-blue-100' : 'text-slate-500'}`}>
+              <div className={`font-extrabold truncate ${aberto ? '' : 'text-ink'}`}>{leilao.titulo}</div>
+              <div className={`text-xs mt-0.5 ${aberto ? 'text-blue-100' : 'text-muted'}`}>
                 {aberto ? `⏳ Fecha em ${tempoRestante(leilao.fecha_em)}` : leilao.status === 'encerrado' ? '✅ Encerrado' : '✖ Cancelado'}
               </div>
             </div>
@@ -215,23 +215,23 @@ export default function Leilao() {
             )}
             {ehAdmin && !aberto && (
               <motion.button whileTap={{ scale: 0.97 }} onClick={() => setCriando(true)}
-                className="bg-azul text-white font-bold rounded-lg px-3 py-2 text-xs shrink-0">
+                className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-lg px-3 py-2 text-xs shrink-0">
                 + Novo leilão
               </motion.button>
             )}
           </div>
 
           {aberto && minhaUni && (
-            <div className="bg-dourado/10 border border-dourado/30 rounded-2xl p-3 mb-4 flex items-center justify-between">
+            <div className="bg-gold/10 border border-gold/30 rounded-2xl p-3 mb-4 flex items-center justify-between">
               <div>
-                <div className="text-xs text-slate-500">Sua unidade tem disponível</div>
-                <div className="font-extrabold text-slate-800">{saldo} pontos <span className="font-normal text-slate-400 text-xs">de {pontos} no total</span></div>
+                <div className="text-xs text-muted">Sua unidade tem disponível</div>
+                <div className="font-extrabold text-ink">{saldo} pontos <span className="font-normal text-faint text-xs">de {pontos} no total</span></div>
               </div>
               <div className="text-3xl">💰</div>
             </div>
           )}
           {aberto && !minhaUni && (
-            <p className="text-xs text-slate-400 mb-3">
+            <p className="text-xs text-faint mb-3">
               {podeLeiloar
                 ? 'Você precisa estar numa unidade (com cadastro aprovado) pra dar lance.'
                 : 'Só desbravadores e conselheiros dão lance no leilão — acompanhe a disputa das unidades abaixo 👇'}
@@ -300,16 +300,16 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
   return (
-    <motion.div layout className="bg-white rounded-2xl p-4 shadow-sm">
+    <motion.div layout className="bg-surface rounded-2xl p-4 shadow-soft">
       <div className="flex items-start gap-3">
         <span className="text-3xl shrink-0">{item.emoji || '🎁'}</span>
         <div className="flex-1 min-w-0">
-          <div className="font-extrabold text-slate-800">{item.nome}</div>
-          {item.descricao && <div className="text-xs text-slate-500 mt-0.5">{item.descricao}</div>}
+          <div className="font-extrabold text-ink">{item.nome}</div>
+          {item.descricao && <div className="text-xs text-muted mt-0.5">{item.descricao}</div>}
 
           {atual ? (
             <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${atual.status === 'vencedor' ? 'bg-green-100 text-green-700' : 'bg-dourado/15 text-amber-700'}`}>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${atual.status === 'vencedor' ? 'bg-green-100 text-green-700' : 'bg-gold/15 text-amber-700'}`}>
                 {atual.status === 'vencedor' ? '🏆 Venceu' : '👑 Na frente'}: {atual.valor} pts
               </span>
               {atual.unidades.map((u, i) => (
@@ -319,7 +319,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
               ))}
             </div>
           ) : (
-            <div className="mt-2 text-xs text-slate-400">
+            <div className="mt-2 text-xs text-faint">
               {aberto
                 ? <>Nenhum lance ainda · mínimo <b>{item.preco_base}</b> pts</>
                 : 'Ninguém deu lance neste item.'}
@@ -328,7 +328,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
 
           {historico.length > 0 && (
             <button onClick={() => setVerHistorico((v) => !v)}
-              className="mt-2 text-[11px] font-semibold text-azul flex items-center gap-1">
+              className="mt-2 text-[11px] font-semibold text-brand flex items-center gap-1">
               {verHistorico ? '▲ Esconder' : '▼ Ver'} disputa ({historico.length} lance{historico.length > 1 ? 's' : ''})
             </button>
           )}
@@ -336,7 +336,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
             {verHistorico && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden">
-                <div className="mt-2 space-y-1.5 border-t border-slate-100 pt-2">
+                <div className="mt-2 space-y-1.5 border-t border-line pt-2">
                   {historico.map((l) => (
                     <div key={l.id} className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -345,11 +345,11 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
                             {u.nome}
                           </span>
                         ))}
-                        <span className={l.status === 'superado' ? 'text-slate-400 line-through' : 'font-bold text-slate-700'}>
+                        <span className={l.status === 'superado' ? 'text-faint line-through' : 'font-bold text-ink'}>
                           {l.valor} pts
                         </span>
                       </div>
-                      <span className="text-slate-400 shrink-0">{tempoRel(l.created_at)}</span>
+                      <span className="text-faint shrink-0">{tempoRel(l.created_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -360,7 +360,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
       </div>
       {podeDarLance && (
         <motion.button whileTap={{ scale: 0.97 }} onClick={onDarLance}
-          className="mt-3 w-full bg-azul text-white font-bold rounded-xl py-2.5 text-sm">
+          className="mt-3 w-full bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl py-2.5 text-sm">
           Dar lance (mín. {proximoMinimo} pts)
         </motion.button>
       )}
@@ -400,26 +400,26 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 30, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 30, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full max-w-sm rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
+        className="bg-surface w-full max-w-sm rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
         <div className="p-5">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">{item.emoji}</span>
-            <span className="font-extrabold text-slate-800">{item.nome}</span>
+            <span className="font-extrabold text-ink">{item.nome}</span>
           </div>
-          <p className="text-xs text-slate-400 mb-4">Sua unidade tem {saldo} pontos disponíveis agora.</p>
+          <p className="text-xs text-faint mb-4">Sua unidade tem {saldo} pontos disponíveis agora.</p>
 
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Seu lance (mín. {proximoMinimo})</label>
+          <label className="block text-sm font-semibold text-ink mb-1">Seu lance (mín. {proximoMinimo})</label>
           <input type="number" min={proximoMinimo} step={item.incremento_minimo} value={valor}
             onChange={(e) => setValor(e.target.value)} className={inputClass} />
 
           {outrasUnidades.length > 0 && (
             <div className="mt-4">
-              <p className="text-sm font-semibold text-slate-700 mb-2">Juntar com outra(s) unidade(s)? (opcional)</p>
+              <p className="text-sm font-semibold text-ink mb-2">Juntar com outra(s) unidade(s)? (opcional)</p>
               <div className="flex flex-wrap gap-2">
                 {outrasUnidades.map((u) => (
                   <button key={u.id} type="button" onClick={() => alternar(u.id)}
                     className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${
-                      convidadas.includes(u.id) ? 'text-white border-transparent' : 'bg-white text-slate-600 border-slate-200'
+                      convidadas.includes(u.id) ? 'text-white border-transparent' : 'bg-surface text-muted border-line'
                     }`}
                     style={convidadas.includes(u.id) ? { background: u.cor || '#1e3a8a' } : {}}>
                     {u.nome}
@@ -427,7 +427,7 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
                 ))}
               </div>
               {convidadas.length > 0 && (
-                <p className="text-[11px] text-slate-400 mt-2">
+                <p className="text-[11px] text-faint mt-2">
                   Esse lance só entra na disputa depois que alguém de cada unidade convidada confirmar
                   (ela recebe o convite na tela do leilão). Se vencerem, os pontos são rateados proporcional
                   ao total de cada unidade.
@@ -439,9 +439,9 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mt-4">{erro}</div>}
 
           <div className="flex gap-2 mt-5">
-            <button onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+            <button onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
             <motion.button onClick={enviar} disabled={enviando} whileTap={{ scale: 0.97 }}
-              className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5 disabled:opacity-60">
+              className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-extrabold py-2.5 disabled:opacity-60">
               {enviando ? '...' : '🔨 Dar lance'}
             </motion.button>
           </div>
@@ -484,20 +484,20 @@ function ModalCriarLeilao({ onFechar, onCriado }) {
       <motion.div onClick={(e) => e.stopPropagation()}
         initial={{ y: 30, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 30, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        className="bg-surface w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-5">
-          <h3 className="font-extrabold text-slate-800 text-lg mb-4">🏛️ Criar leilão</h3>
+          <h3 className="font-extrabold text-ink text-lg mb-4">🏛️ Criar leilão</h3>
 
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Título</label>
+          <label className="block text-sm font-semibold text-ink mb-1">Título</label>
           <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className={inputClass} />
 
-          <label className="block text-sm font-semibold text-slate-700 mb-1 mt-3">Fecha em</label>
+          <label className="block text-sm font-semibold text-ink mb-1 mt-3">Fecha em</label>
           <input type="datetime-local" value={fechaEm} onChange={(e) => setFechaEm(e.target.value)} className={inputClass} />
 
-          <p className="text-sm font-semibold text-slate-700 mb-2 mt-4">Itens (ajuste o preço-base de cada um)</p>
+          <p className="text-sm font-semibold text-ink mb-2 mt-4">Itens (ajuste o preço-base de cada um)</p>
           <div className="space-y-3">
             {itens.map((it, i) => (
-              <div key={i} className="bg-slate-50 rounded-xl p-3">
+              <div key={i} className="bg-surface2 rounded-xl p-3">
                 <div className="flex gap-2">
                   <input value={it.emoji} onChange={(e) => mudarItem(i, 'emoji', e.target.value)}
                     className={inputClass + ' w-14 text-center text-lg'} maxLength={4} />
@@ -508,12 +508,12 @@ function ModalCriarLeilao({ onFechar, onCriado }) {
                   className={inputClass + ' mt-2 text-sm'} placeholder="Descrição (opcional)" />
                 <div className="flex gap-2 mt-2">
                   <div className="flex-1">
-                    <label className="text-[11px] text-slate-400">Preço-base</label>
+                    <label className="text-[11px] text-faint">Preço-base</label>
                     <input type="number" min={0} value={it.preco_base}
                       onChange={(e) => mudarItem(i, 'preco_base', e.target.value)} className={inputClass} />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[11px] text-slate-400">Incremento mín.</label>
+                    <label className="text-[11px] text-faint">Incremento mín.</label>
                     <input type="number" min={1} value={it.incremento_minimo}
                       onChange={(e) => mudarItem(i, 'incremento_minimo', e.target.value)} className={inputClass} />
                   </div>
@@ -525,9 +525,9 @@ function ModalCriarLeilao({ onFechar, onCriado }) {
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mt-4">{erro}</div>}
 
           <div className="flex gap-2 mt-5">
-            <button onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+            <button onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
             <motion.button onClick={enviar} disabled={enviando} whileTap={{ scale: 0.97 }}
-              className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5 disabled:opacity-60">
+              className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-extrabold py-2.5 disabled:opacity-60">
               {enviando ? '...' : '🏛️ Abrir leilão'}
             </motion.button>
           </div>

@@ -34,10 +34,10 @@ export default function Temporada() {
 
   if (!ehDiretoria) {
     return (
-      <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-slate-700">Só a diretoria</p>
-        <p className="text-sm text-slate-400">Iniciar uma nova temporada é uma ação da diretoria.</p>
+        <p className="font-semibold text-ink">Só a diretoria</p>
+        <p className="text-sm text-faint">Iniciar uma nova temporada é uma ação da diretoria.</p>
       </div>
     )
   }
@@ -65,42 +65,42 @@ export default function Temporada() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">🏁 Temporadas</h2>
-        <p className="text-sm text-slate-500">Zere o ranking pra recomeçar — sem perder o histórico</p>
+        <h2 className="text-2xl font-extrabold text-ink">🏁 Temporadas</h2>
+        <p className="text-sm text-muted">Zere o ranking pra recomeçar — sem perder o histórico</p>
       </div>
 
       {carregando ? (
-        <p className="text-slate-400 text-sm">Carregando...</p>
+        <p className="text-faint text-sm">Carregando...</p>
       ) : (
         <>
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <p className="text-sm text-slate-600 mb-3">
+          <div className="bg-surface rounded-2xl p-5 shadow-soft">
+            <p className="text-sm text-muted mb-3">
               Ao iniciar uma nova temporada, o ranking <b>volta a zero pra todos</b> e os pontos de agora
               deixam de contar. Os pontos antigos <b>ficam guardados</b> no banco (nada é apagado) e os
               campeões atuais entram pra galeria abaixo.
             </p>
-            <div className="bg-amber-50 border border-dourado/40 rounded-xl p-3 mb-4">
+            <div className="bg-amber-50 border border-gold/40 rounded-xl p-3 mb-4">
               <p className="text-xs font-semibold text-amber-700 mb-1">Campeões que serão coroados agora:</p>
-              <p className="text-sm text-slate-700">🧒 Individual: <b>{campInd || '—'}</b></p>
-              <p className="text-sm text-slate-700">🛡️ Unidade: <b>{campUni || '—'}</b></p>
+              <p className="text-sm text-ink">🧒 Individual: <b>{campInd || '—'}</b></p>
+              <p className="text-sm text-ink">🛡️ Unidade: <b>{campUni || '—'}</b></p>
             </div>
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setConfirmando(true)}
-              className="w-full bg-azul text-white font-bold rounded-xl py-3 shadow">
+              className="w-full bg-gradient-to-r from-brand to-brand2 text-white font-bold rounded-xl py-3 shadow-glow">
               🏁 Encerrar e iniciar nova temporada
             </motion.button>
           </div>
 
           {passadas.length > 0 && (
             <div className="mt-6">
-              <h3 className="font-extrabold text-slate-800 mb-2">🏆 Campeões das temporadas</h3>
-              <div className="bg-white rounded-2xl shadow-sm divide-y divide-slate-100">
+              <h3 className="font-extrabold text-ink mb-2">🏆 Campeões das temporadas</h3>
+              <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
                 {passadas.map((t) => (
                   <div key={t.numero} className="px-4 py-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800">Temporada {t.numero}</span>
-                      <span className="text-[11px] text-slate-400">{fmtData(t.inicio)} — {fmtData(t.fim)}</span>
+                      <span className="font-bold text-ink">Temporada {t.numero}</span>
+                      <span className="text-[11px] text-faint">{fmtData(t.inicio)} — {fmtData(t.fim)}</span>
                     </div>
-                    <div className="text-sm text-slate-600 mt-0.5">🧒 {t.campeao_individual || '—'} · 🛡️ {t.campeao_unidade || '—'}</div>
+                    <div className="text-sm text-muted mt-0.5">🧒 {t.campeao_individual || '—'} · 🛡️ {t.campeao_unidade || '—'}</div>
                   </div>
                 ))}
               </div>
@@ -116,18 +116,18 @@ export default function Temporada() {
             <motion.div onClick={(e) => e.stopPropagation()}
               initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
+              className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6">
               <div className="text-4xl text-center mb-2">🏁</div>
-              <h3 className="text-lg font-extrabold text-slate-800 text-center">Iniciar nova temporada?</h3>
-              <p className="text-sm text-slate-500 text-center mt-2">
+              <h3 className="text-lg font-extrabold text-ink text-center">Iniciar nova temporada?</h3>
+              <p className="text-sm text-muted text-center mt-2">
                 O ranking <b>zera pra todos</b>. Os campeões <b>{campInd || '—'}</b> e <b>{campUni || '—'}</b> ficam
                 guardados. Os pontos não são apagados, só param de contar.
               </p>
               <div className="flex gap-2 mt-5">
                 <button onClick={() => setConfirmando(false)} disabled={processando}
-                  className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+                  className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
                 <motion.button onClick={confirmar} disabled={processando} whileTap={{ scale: 0.97 }}
-                  className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">
+                  className="flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-semibold py-2.5 shadow-glow disabled:opacity-60">
                   {processando ? 'Zerando...' : 'Confirmar'}
                 </motion.button>
               </div>

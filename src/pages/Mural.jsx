@@ -62,13 +62,13 @@ export default function Mural() {
             {/* Cabeçalho do álbum */}
             <div className="mb-5 flex items-center gap-3">
               <button onClick={() => setCategoria(null)}
-                className="w-9 h-9 rounded-full bg-white shadow-sm grid place-items-center text-slate-600 shrink-0">←</button>
+                className="w-9 h-9 rounded-full bg-surface shadow-soft grid place-items-center text-muted shrink-0">←</button>
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold text-ink flex items-center gap-2">
                   <span>{categoria.icon}</span>
                   <span className="truncate">{categoria.nome}</span>
                 </h2>
-                <p className="text-sm text-slate-500">{fotosDe(categoria.nome).length} foto(s) neste álbum</p>
+                <p className="text-sm text-muted">{fotosDe(categoria.nome).length} foto(s) neste álbum</p>
               </div>
               {categoria.nome === 'Ateliê' && (
                 <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => setDesenhando(true)}
@@ -82,12 +82,12 @@ export default function Mural() {
             </div>
 
             {carregando ? (
-              <p className="text-slate-400 text-sm">Carregando fotos...</p>
+              <p className="text-faint text-sm">Carregando fotos...</p>
             ) : fotosDe(categoria.nome).length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
+              <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
                 <div className="text-4xl mb-2">{categoria.icon}</div>
-                <p className="font-semibold text-slate-700">Álbum ainda vazio</p>
-                <p className="text-sm text-slate-400 mb-4">Seja o primeiro a postar uma foto de {categoria.nome}.</p>
+                <p className="font-semibold text-ink">Álbum ainda vazio</p>
+                <p className="text-sm text-faint mb-4">Seja o primeiro a postar uma foto de {categoria.nome}.</p>
                 <button onClick={() => setUpload(true)}
                   className="text-white rounded-xl px-5 py-2.5 font-semibold text-sm" style={{ backgroundColor: categoria.cor }}>
                   + Adicionar foto
@@ -100,7 +100,7 @@ export default function Mural() {
                   <motion.button key={f.id} onClick={() => setLightbox(f)}
                     variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                    className="rounded-2xl overflow-hidden shadow-sm aspect-square relative bg-slate-200">
+                    className="rounded-2xl overflow-hidden shadow-soft aspect-square relative bg-surface2">
                     <img src={f.thumb || f.url} alt={f.legenda || categoria.nome} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     {f.legenda && (
                       <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs font-medium p-2 text-left truncate">
@@ -115,8 +115,8 @@ export default function Mural() {
         ) : (
           <motion.div key="cats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="mb-5">
-              <h2 className="text-2xl font-extrabold text-slate-800">Mural de Fotos</h2>
-              <p className="text-sm text-slate-500">Escolha uma categoria para ver e adicionar fotos 📸</p>
+              <h2 className="text-2xl font-extrabold text-ink">Mural de Fotos</h2>
+              <p className="text-sm text-muted">Escolha uma categoria para ver e adicionar fotos 📸</p>
             </div>
 
             <motion.div className="grid grid-cols-2 sm:grid-cols-3 gap-3"
@@ -128,7 +128,7 @@ export default function Mural() {
                   <motion.button key={c.nome} onClick={() => setCategoria(c)}
                     variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    className="rounded-2xl overflow-hidden shadow-sm aspect-square relative text-white grid place-items-center"
+                    className="rounded-2xl overflow-hidden shadow-soft aspect-square relative text-white grid place-items-center"
                     style={{ backgroundColor: c.cor }}>
                     {capa && <img src={capa} alt={c.nome} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
                     <div className="absolute inset-0" style={{ background: capa ? 'rgba(0,0,0,0.35)' : 'transparent' }} />
@@ -382,37 +382,37 @@ function ModalDesenho({ onFechar, onEnviar }) {
 
         {/* controles de zoom flutuantes */}
         <div className="absolute right-3 bottom-3 flex flex-col gap-2 select-none">
-          <button onClick={() => zoomBotao(1.3)} className="w-11 h-11 rounded-full bg-white shadow-lg text-2xl font-bold text-slate-700 grid place-items-center leading-none">+</button>
-          <button onClick={() => zoomBotao(1 / 1.3)} className="w-11 h-11 rounded-full bg-white shadow-lg text-2xl font-bold text-slate-700 grid place-items-center leading-none">−</button>
-          <button onClick={centralizar} title="Centralizar" className="w-11 h-11 rounded-full bg-white shadow-lg text-lg grid place-items-center">⤢</button>
+          <button onClick={() => zoomBotao(1.3)} className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">+</button>
+          <button onClick={() => zoomBotao(1 / 1.3)} className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">−</button>
+          <button onClick={centralizar} title="Centralizar" className="w-11 h-11 rounded-full bg-surface shadow-lg text-lg grid place-items-center">⤢</button>
         </div>
       </div>
 
       {/* barra de ferramentas */}
-      <div className="shrink-0 bg-white px-3 pt-2 pb-3 space-y-2">
+      <div className="shrink-0 bg-surface px-3 pt-2 pb-3 space-y-2">
         <div className="flex items-center gap-1.5 flex-wrap select-none">
           {CORES_ATELIE.map((c) => (
             <button key={c} onClick={() => setCor(c)}
-              className={`w-8 h-8 rounded-full border-2 shrink-0 ${cor === c ? 'border-azul scale-110' : 'border-slate-200'} transition-transform`}
+              className={`w-8 h-8 rounded-full border-2 shrink-0 ${cor === c ? 'border-brand scale-110' : 'border-line'} transition-transform`}
               style={{ backgroundColor: c }} title={c === '#ffffff' ? 'Borracha' : ''} />
           ))}
-          <div className="w-px h-7 bg-slate-200 mx-0.5" />
+          <div className="w-px h-7 bg-line mx-0.5" />
           {[6, 12, 24].map((l) => (
             <button key={l} onClick={() => setLarg(l)}
-              className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${larg === l ? 'bg-azul/10 ring-2 ring-azul' : 'bg-slate-50'}`}>
-              <span className="rounded-full bg-slate-700" style={{ width: Math.min(l, 22), height: Math.min(l, 22) }} />
+              className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${larg === l ? 'bg-brand/10 ring-2 ring-brand' : 'bg-surface2'}`}>
+              <span className="rounded-full bg-ink" style={{ width: Math.min(l, 22), height: Math.min(l, 22) }} />
             </button>
           ))}
           <div className="flex-1" />
           <button onClick={desfazer} disabled={!tracos.length}
-            className="text-base font-bold text-slate-600 bg-slate-100 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer">↩️</button>
+            className="text-base font-bold text-muted bg-surface2 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer">↩️</button>
           <button onClick={limpar} disabled={!tracos.length}
             className="text-base font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Limpar">🗑️</button>
         </div>
         <div className="flex items-center gap-2">
           <input value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
             placeholder={`Legenda (ex.: ${tema})`}
-            className="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+            className="flex-1 min-w-0 rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
           <button onClick={enviar} disabled={!tracos.length || enviando}
             className="bg-purple-600 text-white font-extrabold rounded-xl px-4 py-2.5 disabled:opacity-50 shrink-0">
             {enviando ? '…' : '🎨 Publicar'}
@@ -456,11 +456,11 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
       <motion.form onClick={(e) => e.stopPropagation()} onSubmit={enviar}
         initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-full overflow-y-auto">
-        <h3 className="text-lg font-extrabold text-slate-800 mb-1">Adicionar foto</h3>
-        <p className="text-sm text-slate-500 mb-4">Álbum: <strong>{categoria.icon} {categoria.nome}</strong></p>
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-full overflow-y-auto">
+        <h3 className="text-lg font-extrabold text-ink mb-1">Adicionar foto</h3>
+        <p className="text-sm text-muted mb-4">Álbum: <strong>{categoria.icon} {categoria.nome}</strong></p>
 
-        <label className="block aspect-video rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden cursor-pointer grid place-items-center text-slate-400 mb-3 bg-slate-50">
+        <label className="block aspect-video rounded-2xl border-2 border-dashed border-line overflow-hidden cursor-pointer grid place-items-center text-faint mb-3 bg-surface2">
           {previa
             ? <img src={previa} alt="prévia" className="w-full h-full object-cover" />
             : <span className="text-sm">📷 Toque para escolher uma foto</span>}
@@ -469,12 +469,12 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
 
         <input type="text" value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
           placeholder="Legenda (opcional)"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30 mb-3" />
+          className="w-full rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
 
         {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
 
         <div className="flex gap-2">
-          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Cancelar</button>
+          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
           <motion.button type="submit" disabled={enviando} whileTap={{ scale: 0.97 }}
             className="flex-1 rounded-xl text-white font-semibold py-2.5 disabled:opacity-60" style={{ backgroundColor: categoria.cor }}>
             {enviando ? 'Enviando...' : 'Enviar foto'}

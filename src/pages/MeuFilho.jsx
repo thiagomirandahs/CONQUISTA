@@ -43,29 +43,29 @@ export default function MeuFilho() {
 
   const pendentes = pedidos.filter((p) => p.status === 'pendente')
 
-  if (carregando) return <p className="text-slate-400 text-sm">Carregando...</p>
+  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
 
   return (
     <div>
       <AvisoOffline />
       <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-slate-800">👨‍👩‍👧 Meu Filho</h2>
-        <p className="text-sm text-slate-500">Acompanhe seu(s) filho(s) no clube</p>
+        <h2 className="text-2xl font-extrabold text-ink">👨‍👩‍👧 Meu Filho</h2>
+        <p className="text-sm text-muted">Acompanhe seu(s) filho(s) no clube</p>
       </div>
 
       {filhos.map((c) => (
-        <div key={c.id} className="bg-white rounded-2xl shadow-sm overflow-hidden mb-3">
-          <div className="p-4 flex items-center gap-3 border-b border-slate-100">
+        <div key={c.id} className="bg-surface rounded-2xl shadow-soft overflow-hidden mb-3">
+          <div className="p-4 flex items-center gap-3 border-b border-line">
             <Avatar foto={c.foto} nome={c.nome || '?'} size="w-14 h-14" textSize="text-xl" />
             <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-slate-800 truncate">{c.nome}</div>
-              <div className="text-xs text-slate-400">{c.unidade || 'Sem unidade'}</div>
+              <div className="font-extrabold text-ink truncate">{c.nome}</div>
+              <div className="text-xs text-faint">{c.unidade || 'Sem unidade'}</div>
             </div>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-slate-100 text-center">
-            <div className="p-3"><div className="text-xl font-extrabold text-dourado">{c.pontos}</div><div className="text-[11px] text-slate-400">pontos</div></div>
-            <div className="p-3"><div className="text-xl font-extrabold text-green-600">{c.presencas}</div><div className="text-[11px] text-slate-400">presenças</div></div>
-            <div className="p-3"><div className="text-xl font-extrabold text-slate-400">{c.faltas}</div><div className="text-[11px] text-slate-400">faltas</div></div>
+          <div className="grid grid-cols-3 divide-x divide-line text-center">
+            <div className="p-3"><div className="text-xl font-extrabold text-gold">{c.pontos}</div><div className="text-[11px] text-faint">pontos</div></div>
+            <div className="p-3"><div className="text-xl font-extrabold text-green-600">{c.presencas}</div><div className="text-[11px] text-faint">presenças</div></div>
+            <div className="p-3"><div className="text-xl font-extrabold text-faint">{c.faltas}</div><div className="text-[11px] text-faint">faltas</div></div>
           </div>
           {(c.mensalidades_pendentes || []).length > 0 && (
             <div className="p-4 bg-amber-50 border-t border-amber-100">
@@ -74,9 +74,9 @@ export default function MeuFilho() {
                 {c.mensalidades_pendentes.map((m) => `${MESES[m.mes] || m.mes}/${String(m.ano).slice(2)}`).join(' · ')}
               </p>
               {pix ? (
-                <div className="mt-2 bg-white rounded-xl p-3">
-                  <p className="text-[11px] text-slate-400 mb-0.5">Chave PIX do clube (toque pra copiar)</p>
-                  <button onClick={copiarPix} className="text-sm font-bold text-azul break-all text-left w-full">{pix}</button>
+                <div className="mt-2 bg-surface rounded-xl p-3">
+                  <p className="text-[11px] text-faint mb-0.5">Chave PIX do clube (toque pra copiar)</p>
+                  <button onClick={copiarPix} className="text-sm font-bold text-brand break-all text-left w-full">{pix}</button>
                 </div>
               ) : (
                 <p className="text-[11px] text-amber-600 mt-1">Fale com a tesouraria pra acertar o pagamento.</p>
@@ -87,21 +87,21 @@ export default function MeuFilho() {
       ))}
 
       {/* Pedir vínculo */}
-      <div className="bg-white rounded-2xl shadow-sm p-4">
-        <p className="font-bold text-slate-800 mb-1">{filhos.length ? 'Vincular outro filho' : 'Vincular seu filho(a)'}</p>
-        <p className="text-xs text-slate-400 mb-3">Digite o nome do desbravador. A diretoria confirma o vínculo. 🙂</p>
+      <div className="bg-surface rounded-2xl shadow-soft p-4">
+        <p className="font-bold text-ink mb-1">{filhos.length ? 'Vincular outro filho' : 'Vincular seu filho(a)'}</p>
+        <p className="text-xs text-faint mb-3">Digite o nome do desbravador. A diretoria confirma o vínculo. 🙂</p>
         <form onSubmit={pedir} className="flex gap-2">
           <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} placeholder="Nome do seu filho(a)"
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-azul-claro focus:ring-2 focus:ring-azul-claro/30" />
+            className="flex-1 rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
           <button type="submit" disabled={enviando || !nome.trim()}
-            className="rounded-xl bg-azul text-white font-bold px-4 text-sm disabled:opacity-60">Pedir</button>
+            className="rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold px-4 text-sm disabled:opacity-60">Pedir</button>
         </form>
-        {msg && <p className="text-xs text-slate-500 mt-2">{msg}</p>}
+        {msg && <p className="text-xs text-muted mt-2">{msg}</p>}
 
         {pendentes.length > 0 && (
-          <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+          <div className="mt-3 space-y-1 border-t border-line pt-3">
             {pendentes.map((p) => (
-              <div key={p.id} className="text-xs text-slate-500 flex items-center gap-2">
+              <div key={p.id} className="text-xs text-muted flex items-center gap-2">
                 <span>⏳</span> <span className="truncate">"{p.nome_digitado}" — aguardando a diretoria</span>
               </div>
             ))}
