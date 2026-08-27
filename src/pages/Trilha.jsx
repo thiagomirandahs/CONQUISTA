@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -55,6 +55,10 @@ function ResultadoCard({ resultado }) {
   )
 }
 // Registro dos jogos que o app conhece (a chave bate com jogos_trilha)
+// A Corrida virou um jogo em Phaser (motor 2D de verdade) — carregada sob
+// demanda (lazy) pra o Phaser só entrar no bundle de quem abre ESTE jogo.
+const JogoCorridaPhaser = lazy(() => import('./jogos/CorridaPhaser.jsx'))
+
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
   genius: { nome: 'Siga a Sequência', curto: 'Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
@@ -77,7 +81,7 @@ const JOGOS = {
   socorro: { nome: 'Primeiros Socorros', curto: 'Socorros', emoji: '🚑', desc: 'O que fazer primeiro? Aprenda socorrendo de verdade', Comp: JogoSocorro },
   carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: JogoCarrinho },
   reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexo },
-  corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorrida },
+  corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorridaPhaser },
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
 const ARCADE = new Set(['reflexo', 'corrida'])
@@ -203,7 +207,9 @@ export default function Trilha() {
                   {JOGOS[jogoAtual]?.emoji} {JOGOS[jogoAtual]?.nome}
                 </span>
               </div>
-              <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+              <Suspense fallback={<p className="text-faint text-sm text-center py-10">Carregando o jogo…</p>}>
+                <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+              </Suspense>
             </motion.div>
           )
         })()
