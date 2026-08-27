@@ -151,7 +151,18 @@ function itemSeguro(id) {
 
 const ESCALA_ESTAGIO = { 1: 0.9, 2: 1.0, 3: 1.06 }
 
-export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio = 1, item = 'nenhum' } = {}) {
+// Animações "vivas" (só quando animar=true, no bichinho grande da tela):
+// respiração leve no corpo + piscadinha (pálpebras da cor da pele descem
+// sobre os olhos de tempos em tempos). Respeita "reduzir animações".
+const ANIM_STYLE = `<style>
+  @keyframes bicho-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes bicho-blink{0%,92%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
+  .bicho-body{transform-box:fill-box;transform-origin:center;animation:bicho-breathe 3.2s ease-in-out infinite}
+  .bicho-lid{transform-box:fill-box;transform-origin:top;animation:bicho-blink 4.6s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){.bicho-body,.bicho-lid{animation:none}}
+</style>`
+
+export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio = 1, item = 'nenhum', animar = false } = {}) {
   const e = especieInfo(especie)
   const morto = humor === 'morto'
   const corpo = morto ? '#cbd5e1' : e.cor
@@ -162,6 +173,10 @@ export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio 
   const e2 = { ...e, cor: corpo, cor2: corpo2 }
   const itemFn = ITEM_SVG[itemSeguro(item)] || ITEM_SVG.nenhum
   const escala = ESCALA_ESTAGIO[estagio] || 1
+  // pálpebras (piscadinha) — pele por cima dos olhos, só quando anima e vivo
+  const palpebras = (animar && !morto) ? `
+    <ellipse cx="40" cy="50" rx="5.4" ry="6" fill="${corpo}" class="bicho-lid"/>
+    <ellipse cx="60" cy="50" rx="5.4" ry="6" fill="${corpo}" class="bicho-lid"/>` : ''
   const conteudo = `
     ${pes}
     ${tracosEspecie(e2)}
@@ -169,8 +184,11 @@ export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio 
     <ellipse cx="50" cy="66" rx="18" ry="14" fill="#ffffff" opacity="0.25"/>
     ${especie === 'passaro' && !morto ? '<path d="M 46 60 L 54 60 L 50 66 Z" fill="#e0a800"/>' : ''}
     ${rostoHumor(morto ? 'morto' : humor)}
+    ${palpebras}
     ${morto ? '<ellipse cx="50" cy="30" rx="10" ry="3.4" fill="none" stroke="#f5c518" stroke-width="2"/>' : itemFn()}
   `
   // escala pelo estágio (filhote menor, adulto maior), centrado em (50,58)
-  return `<g transform="translate(50 58) scale(${escala}) translate(-50 -58)">${conteudo}</g>`
+  const corpoG = `<g transform="translate(50 58) scale(${escala}) translate(-50 -58)">${conteudo}</g>`
+  // quando anima, o corpo "respira" num grupo por fora (pra não brigar com o transform da escala)
+  return animar ? `${ANIM_STYLE}<g class="bicho-body">${corpoG}</g>` : corpoG
 }

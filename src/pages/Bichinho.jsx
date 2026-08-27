@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, ESPECIES, ITENS } from '../lib/bichinhoPecas.js'
@@ -13,8 +13,8 @@ function humorDe(b) {
   return 'ok'
 }
 
-function BichinhoImg({ especie, humor, estagio, item = 'nenhum', size = 190 }) {
-  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item }), [especie, humor, estagio, item])
+function BichinhoImg({ especie, humor, estagio, item = 'nenhum', animar = false, size = 190 }) {
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item, animar }), [especie, humor, estagio, item, animar])
   return <svg viewBox="0 0 100 100" width={size} height={size} dangerouslySetInnerHTML={{ __html: svg }} />
 }
 
@@ -38,6 +38,17 @@ export default function Bichinho() {
   const [cuidando, setCuidando] = useState('')
   const [flash, setFlash] = useState('') // +pts ou aviso rápido
   const [erro, setErro] = useState('')
+  const [hearts, setHearts] = useState([]) // coraçõezinhos que sobem ao cuidar
+  const petControls = useAnimationControls()
+
+  // Reação alegre ao cuidar: pulinho + coraçõezinhos subindo.
+  function reagir() {
+    petControls.start({ scale: [1, 1.14, 0.95, 1.03, 1], transition: { duration: 0.55 } })
+    const base = Date.now()
+    const novos = Array.from({ length: 5 }, (_, i) => ({ id: base + i, x: 18 + Math.random() * 64, e: ['💛', '✨', '🥰', '💫', '💚'][i % 5] }))
+    setHearts((h) => [...h, ...novos])
+    setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1400)
+  }
 
   async function carregar() {
     setCarregando(true)
@@ -55,6 +66,7 @@ export default function Bichinho() {
       // atualiza barrinhas na hora
       setBicho((b) => b ? { ...b, fome: r.fome, higiene: r.higiene, felicidade: r.felicidade,
         cuidados_total: (b.cuidados_total || 0) + 1, cuidou_hoje: true } : b)
+      reagir()
       if (r?.pontos_ganhos > 0) {
         setFlash(`+${r.pontos_ganhos} pts 🎉`)
         import('../lib/juice.js').then(({ vitoria }) => vitoria(2)).catch(() => {})
@@ -106,8 +118,15 @@ export default function Bichinho() {
               className="absolute left-1/2 -translate-x-1/2 top-3 text-sm font-extrabold text-green-600">{flash}</motion.div>
           )}
         </AnimatePresence>
+        {hearts.map((h) => (
+          <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.6 }} animate={{ opacity: [0, 1, 0], y: -84, scale: 1 }}
+            transition={{ duration: 1.3, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none"
+            style={{ left: `${h.x}%` }}>{h.e}</motion.span>
+        ))}
         <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-          <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} />
+          <motion.div animate={petControls}>
+            <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
+          </motion.div>
         </motion.div>
         {emPerigo && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
