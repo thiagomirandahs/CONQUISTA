@@ -1218,6 +1218,12 @@ export async function equiparBichinho(item) {
   if (error) throw new Error(error.message)
   return data
 }
+// Personalizar o visual: campo ∈ 'cenario' | 'cor' | 'olhos'
+export async function vestirBichinho(campo, valor) {
+  const { data, error } = await supabase.rpc('bichinho_vestir', { p_campo: campo, p_valor: valor })
+  if (error) throw new Error(error.message)
+  return data
+}
 export async function petsDoClube() {
   const { data, error } = await supabase.rpc('pets_do_clube')
   if (error) throw new Error(error.message)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
 import DevocionalPopup from './DevocionalPopup.jsx'
@@ -73,6 +73,7 @@ export default function AppLayout() {
     }`
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-full lg:flex">
       {!ehPai && <DevocionalPopup />}
       <AvisosPopup />
@@ -231,5 +232,6 @@ export default function AppLayout() {
         )}
       </AnimatePresence>
     </div>
+    </MotionConfig>
   )
 }

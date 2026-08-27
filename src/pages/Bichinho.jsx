@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho } from '../lib/dados.js'
-import { montarBichinhoSvg, ESPECIES, ITENS } from '../lib/bichinhoPecas.js'
+import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho } from '../lib/dados.js'
+import { montarBichinhoSvg, montarCenarioSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS } from '../lib/bichinhoPecas.js'
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -13,9 +13,28 @@ function humorDe(b) {
   return 'ok'
 }
 
-function BichinhoImg({ especie, humor, estagio, item = 'nenhum', animar = false, size = 190 }) {
-  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item, animar }), [especie, humor, estagio, item, animar])
+function BichinhoImg({ especie, humor, estagio, item = 'nenhum', cor = 'natural', olhos = 'padrao', animar = false, size = 190 }) {
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item, cor, olhos, animar }), [especie, humor, estagio, item, cor, olhos, animar])
   return <svg viewBox="0 0 100 100" width={size} height={size} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+// Cenário de fundo (o "mundinho"). Encaixa com o chão colado no rodapé do card.
+function CenarioBg({ cenario = 'quintal', className = '' }) {
+  const svg = useMemo(() => montarCenarioSvg(cenario), [cenario])
+  return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
+    className={className} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+// Botãozinho de opção (enfeite/cor/olhos): trava por nível, marca o ativo.
+function OpBtn({ bloq, ativo, nivel, nome, onClick, children }) {
+  return (
+    <button disabled={bloq} onClick={onClick}
+      className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-brand bg-surface2' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
+      {children}
+      <span className="text-[10px] font-semibold text-muted leading-none">{nome}</span>
+      {bloq && <span className="text-[9px] text-faint leading-none mt-0.5">nível {nivel}</span>}
+    </button>
+  )
 }
 
 function Barra({ icone, rotulo, valor }) {
@@ -39,6 +58,7 @@ export default function Bichinho() {
   const [flash, setFlash] = useState('') // +pts ou aviso rápido
   const [erro, setErro] = useState('')
   const [hearts, setHearts] = useState([]) // coraçõezinhos que sobem ao cuidar
+  const [aba, setAba] = useState('enfeite') // aba do painel Personalizar
   const petControls = useAnimationControls()
 
   // Reação alegre ao cuidar: pulão + balançada + chuva de coraçõezinhos.
@@ -52,7 +72,7 @@ export default function Bichinho() {
     const base = Date.now()
     const emojis = ['💛', '✨', '🥰', '💫', '💚', '⭐', '🎉']
     const novos = Array.from({ length: 7 }, (_, i) => ({
-      id: base + i, x: 14 + Math.random() * 70, drift: (Math.random() - 0.5) * 40, e: emojis[i % emojis.length],
+      id: base + i, x: 24 + Math.random() * 52, drift: (Math.random() - 0.5) * 36, e: emojis[i % emojis.length],
     }))
     setHearts((h) => [...h, ...novos])
     setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1500)
@@ -95,6 +115,15 @@ export default function Bichinho() {
     catch (e) { setBicho((b) => b ? { ...b, item: anterior } : b); setErro(e?.message || String(e)) }
   }
 
+  // Personalizar visual: campo ∈ 'cenario' | 'cor' | 'olhos' (otimista).
+  async function vestir(campo, valor) {
+    setErro('')
+    const anterior = bicho?.[campo]
+    setBicho((b) => b ? { ...b, [campo]: valor } : b)
+    try { await vestirBichinho(campo, valor) }
+    catch (e) { setBicho((b) => b ? { ...b, [campo]: anterior } : b); setErro(e?.message || String(e)) }
+  }
+
   if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
 
   // ---------- Sem bichinho, ou morreu → tela de adotar ----------
@@ -119,28 +148,31 @@ export default function Bichinho() {
         )}
       </div>
 
-      <div className="glass rounded-3xl shadow-soft p-5 text-center relative overflow-hidden">
-        <AnimatePresence>
-          {flash && (
-            <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
-              className="absolute left-1/2 -translate-x-1/2 top-3 text-sm font-extrabold text-green-600 z-10">{flash}</motion.div>
-          )}
-        </AnimatePresence>
-        {hearts.map((h) => (
-          <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: [0, 1, 0], y: -92, scale: 1.1, x: h.drift }}
-            transition={{ duration: 1.4, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
-            style={{ left: `${h.x}%` }}>{h.e}</motion.span>
-        ))}
-        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-          <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
-            <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} animar />
+      <div className="rounded-3xl border border-line shadow-soft p-5 text-center relative overflow-hidden">
+        <CenarioBg cenario={bicho.cenario} className="absolute inset-0 w-full h-full" />
+        <div className="relative z-10">
+          <AnimatePresence>
+            {flash && (
+              <motion.div key={flash} initial={{ opacity: 0, y: 10, scale: 0.8 }} animate={{ opacity: 1, y: -6, scale: 1 }} exit={{ opacity: 0 }}
+                className="absolute left-1/2 -translate-x-1/2 top-0 text-sm font-extrabold text-green-600 bg-white/85 rounded-full px-2 py-0.5 z-10">{flash}</motion.div>
+            )}
+          </AnimatePresence>
+          {hearts.map((h) => (
+            <motion.span key={h.id} initial={{ opacity: 0, y: 10, scale: 0.5 }} animate={{ opacity: [0, 1, 0], y: -92, scale: 1.1, x: h.drift }}
+              transition={{ duration: 1.4, ease: 'easeOut' }} className="absolute bottom-16 text-2xl pointer-events-none select-none z-10"
+              style={{ left: `${h.x}%` }}>{h.e}</motion.span>
+          ))}
+          <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+            <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
+              <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} cor={bicho.cor} olhos={bicho.olhos} animar />
+            </motion.div>
           </motion.div>
-        </motion.div>
-        {emPerigo && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
-            🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
-          </div>
-        )}
+          {emPerigo && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
+              🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-surface rounded-2xl shadow-soft p-4 mt-3 space-y-3">
@@ -162,24 +194,71 @@ export default function Bichinho() {
       </div>
 
       <div className="bg-surface rounded-2xl shadow-soft p-4 mt-3">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-ink text-sm">🎩 Enfeitar</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-ink text-sm">🎨 Personalizar</h3>
           <Link to="/pets-clube" className="text-xs font-semibold text-brand">Ver pets do clube →</Link>
         </div>
-        <div className="grid grid-cols-4 gap-2">
-          {ITENS.map((it) => {
-            const bloq = (bicho.nivel || 1) < it.nivel
-            const ativo = bicho.item === it.id
-            return (
-              <button key={it.id} disabled={bloq} onClick={() => equipar(it.id)}
-                className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-brand bg-surface2' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
-                <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item={it.id} size={46} />
-                <span className="text-[10px] font-semibold text-muted leading-none">{it.nome}</span>
-                {bloq && <span className="text-[9px] text-faint leading-none mt-0.5">nível {it.nivel}</span>}
-              </button>
-            )
-          })}
+
+        <div className="grid grid-cols-4 gap-1 bg-surface2 rounded-xl p-1 mb-3">
+          {[['enfeite', '🎩', 'Enfeite'], ['cor', '🎨', 'Cor'], ['olhos', '👀', 'Olhos'], ['cenario', '🌄', 'Cenário']].map(([id, ic, lbl]) => (
+            <button key={id} onClick={() => setAba(id)}
+              className={`rounded-lg py-1.5 text-[11px] font-bold flex flex-col items-center gap-0.5 transition ${aba === id ? 'bg-surface shadow-soft text-brand' : 'text-muted'}`}>
+              <span className="text-base leading-none">{ic}</span>{lbl}
+            </button>
+          ))}
         </div>
+
+        {aba === 'enfeite' && (
+          <div className="grid grid-cols-4 gap-2">
+            {ITENS.map((it) => (
+              <OpBtn key={it.id} bloq={(bicho.nivel || 1) < it.nivel} ativo={bicho.item === it.id} nivel={it.nivel} nome={it.nome} onClick={() => equipar(it.id)}>
+                <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item={it.id} cor={bicho.cor} olhos={bicho.olhos} size={46} />
+              </OpBtn>
+            ))}
+          </div>
+        )}
+
+        {aba === 'cor' && (
+          <div className="grid grid-cols-4 gap-2">
+            {CORES.map((c) => (
+              <OpBtn key={c.id} bloq={(bicho.nivel || 1) < c.nivel} ativo={(bicho.cor || 'natural') === c.id} nivel={c.nivel} nome={c.nome} onClick={() => vestir('cor', c.id)}>
+                <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item="nenhum" cor={c.id} olhos={bicho.olhos} size={46} />
+              </OpBtn>
+            ))}
+          </div>
+        )}
+
+        {aba === 'olhos' && (
+          <div className="grid grid-cols-3 gap-2">
+            {OLHOS.map((o) => (
+              <OpBtn key={o.id} bloq={(bicho.nivel || 1) < o.nivel} ativo={(bicho.olhos || 'padrao') === o.id} nivel={o.nivel} nome={o.nome} onClick={() => vestir('olhos', o.id)}>
+                <BichinhoImg especie={bicho.especie} humor="feliz" estagio={2} item="nenhum" cor={bicho.cor} olhos={o.id} size={56} />
+              </OpBtn>
+            ))}
+          </div>
+        )}
+
+        {aba === 'cenario' && (
+          <div className="grid grid-cols-4 gap-2">
+            {CENARIOS.map((c) => {
+              const bloq = (bicho.nivel || 1) < c.nivel
+              const ativo = (bicho.cenario || 'quintal') === c.id
+              return (
+                <button key={c.id} disabled={bloq} onClick={() => vestir('cenario', c.id)}
+                  className={`rounded-xl border-2 flex flex-col items-center overflow-hidden transition ${ativo ? 'border-brand' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
+                  <div className="relative w-full h-12">
+                    <CenarioBg cenario={c.id} className="absolute inset-0 w-full h-full" />
+                    <div className="absolute inset-0 flex items-end justify-center">
+                      <BichinhoImg especie={bicho.especie} humor="feliz" estagio={1} item="nenhum" cor={bicho.cor} olhos={bicho.olhos} size={34} />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted leading-none py-0.5">{c.nome}</span>
+                  {bloq && <span className="text-[9px] text-faint leading-none pb-0.5">nível {c.nivel}</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <p className="text-[11px] text-faint text-center mt-3">

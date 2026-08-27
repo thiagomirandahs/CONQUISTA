@@ -2,11 +2,16 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
 import { petsDoClube } from '../lib/dados.js'
-import { montarBichinhoSvg } from '../lib/bichinhoPecas.js'
+import { montarBichinhoSvg, montarCenarioSvg } from '../lib/bichinhoPecas.js'
 
-function PetImg({ especie, item, estagio, vivo }) {
-  const svg = useMemo(() => montarBichinhoSvg({ especie, humor: vivo ? 'feliz' : 'morto', estagio, item }), [especie, item, estagio, vivo])
+function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao' }) {
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor: vivo ? 'feliz' : 'morto', estagio, item, cor, olhos }), [especie, item, estagio, vivo, cor, olhos])
   return <svg viewBox="0 0 100 100" width={84} height={84} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+function CenarioBg({ cenario = 'quintal', className = '' }) {
+  const svg = useMemo(() => montarCenarioSvg(cenario), [cenario])
+  return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
+    className={className} dangerouslySetInnerHTML={{ __html: svg }} />
 }
 
 export default function PetsClube() {
@@ -37,10 +42,13 @@ export default function PetsClube() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {pets.map((p) => (
             <div key={p.dono_id} className={`bg-surface rounded-2xl shadow-soft p-3 text-center ${p.vivo ? '' : 'opacity-60'}`}>
-              <div className="bg-surface2 rounded-xl relative">
-                <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} />
+              <div className="bg-surface2 rounded-xl relative overflow-hidden">
+                <CenarioBg cenario={p.cenario} className="absolute inset-0 w-full h-full" />
+                <div className="relative flex justify-center">
+                  <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} cor={p.cor} olhos={p.olhos} />
+                </div>
                 {p.ofensiva > 0 && p.vivo && (
-                  <span className="absolute top-1 right-1 text-[10px] font-extrabold bg-orange-100 text-orange-600 rounded-full px-1.5">🔥{p.ofensiva}</span>
+                  <span className="absolute top-1 right-1 z-10 text-[10px] font-extrabold bg-orange-100 text-orange-600 rounded-full px-1.5">🔥{p.ofensiva}</span>
                 )}
               </div>
               <p className="font-bold text-ink text-sm mt-1 truncate">{p.pet_nome}</p>

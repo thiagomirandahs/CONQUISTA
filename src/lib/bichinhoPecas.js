@@ -32,6 +32,54 @@ export const ITENS = [
 ]
 export function nivelMinimoItem(id) { return ITENS.find((i) => i.id === id)?.nivel ?? 99 }
 
+// Cores do corpo (recolorir o bichinho) — DESBLOQUEIAM por nível. 'natural'
+// usa a cor da espécie. Guardamos só o NOME (chave), nunca um hex do usuário —
+// os mesmos níveis têm que bater com bichinho_vestir() no banco.
+export const CORES = [
+  { id: 'natural', nome: 'Natural', nivel: 1, cor: null, cor2: null },
+  { id: 'rosa', nome: 'Rosa', nivel: 2, cor: '#ff9ec4', cor2: '#f472b6' },
+  { id: 'azul', nome: 'Azul', nivel: 3, cor: '#7fb5ff', cor2: '#5b8def' },
+  { id: 'verde', nome: 'Verde', nivel: 4, cor: '#8fd694', cor2: '#5cb867' },
+  { id: 'roxo', nome: 'Roxo', nivel: 5, cor: '#b79cf0', cor2: '#9575e0' },
+  { id: 'laranja', nome: 'Laranja', nivel: 6, cor: '#ffb26b', cor2: '#f59440' },
+  { id: 'amarelo', nome: 'Amarelo', nivel: 7, cor: '#ffd95e', cor2: '#f4c430' },
+  { id: 'neve', nome: 'Neve', nivel: 8, cor: '#f4f6fb', cor2: '#d8deea' },
+]
+export function nivelMinimoCor(id) { return CORES.find((c) => c.id === id)?.nivel ?? 99 }
+function corInfo(id) {
+  const c = CORES.find((x) => x.id === id)
+  return (c && c.cor) ? { cor: c.cor, cor2: c.cor2 } : null
+}
+function corSegura(id) { return CORES.some((c) => c.id === id) ? id : 'natural' }
+
+// Estilos de olho — DESBLOQUEIAM por nível. Só valem quando o bicho está
+// feliz/ok e vivo; nos outros humores (triste/doente/dormindo/morto) o olhar
+// do humor manda, pra nunca esconder que ele está precisando de você.
+export const OLHOS = [
+  { id: 'padrao', nome: 'Padrão', nivel: 1 },
+  { id: 'aberto', nome: 'Abertos', nivel: 1 },
+  { id: 'fofo', nome: 'Fofo', nivel: 2 },
+  { id: 'pisca', nome: 'Piscando', nivel: 3 },
+  { id: 'estrela', nome: 'Estrela', nivel: 4 },
+  { id: 'coracao', nome: 'Coração', nivel: 6 },
+]
+export function nivelMinimoOlhos(id) { return OLHOS.find((o) => o.id === id)?.nivel ?? 99 }
+function olhosSeguro(id) { return OLHOS.some((o) => o.id === id) ? id : 'padrao' }
+
+// Cenários (o "mundinho" atrás do bichinho) — DESBLOQUEIAM por nível.
+export const CENARIOS = [
+  { id: 'quintal', nome: 'Quintal', nivel: 1 },
+  { id: 'parque', nome: 'Parque', nivel: 2 },
+  { id: 'praia', nome: 'Praia', nivel: 3 },
+  { id: 'acampamento', nome: 'Acampamento', nivel: 4 },
+  { id: 'floresta', nome: 'Floresta', nivel: 5 },
+  { id: 'neve', nome: 'Neve', nivel: 6 },
+  { id: 'noite', nome: 'Noite', nivel: 7 },
+  { id: 'espaco', nome: 'Espaço', nivel: 8 },
+]
+export function nivelMinimoCenario(id) { return CENARIOS.find((c) => c.id === id)?.nivel ?? 99 }
+function cenarioSeguro(id) { return CENARIOS.some((c) => c.id === id) ? id : 'quintal' }
+
 export function especieInfo(id) {
   return ESPECIES.find((e) => e.id === id) || ESPECIES[0]
 }
@@ -65,22 +113,56 @@ function tracosEspecie(e) {
   }
 }
 
+// ---- Olhos custom (desenhados nas posições padrão dos olhos) ----
+function estrelaOlho(cx, cy) {
+  return `<path d="M ${cx} ${cy - 5} l 1.4 3 3.3 .3 -2.5 2.2 .8 3.2 -3 -1.7 -3 1.7 .8 -3.2 -2.5 -2.2 3.3 -.3 z" fill="#f5b012"/>`
+}
+function coracaoOlho(cx, cy) {
+  return `<path d="M ${cx} ${cy + 3.4} q -4 -3.4 -4 -6 a 2.2 2.2 0 0 1 4 -1 a 2.2 2.2 0 0 1 4 1 q 0 2.6 -4 6 z" fill="#ff4d7d"/>`
+}
+function olhosCustom(estilo) {
+  const L = 40, R = 60, Y = 52
+  switch (estilo) {
+    case 'aberto':
+      return `<circle cx="${L}" cy="${Y}" r="5" fill="#2b2b2b"/><circle cx="${R}" cy="${Y}" r="5" fill="#2b2b2b"/>` +
+        `<circle cx="${L + 1.7}" cy="${Y - 1.7}" r="1.6" fill="#fff"/><circle cx="${R + 1.7}" cy="${Y - 1.7}" r="1.6" fill="#fff"/>`
+    case 'fofo':
+      return `<ellipse cx="${L}" cy="${Y}" rx="5.4" ry="6.4" fill="#2b2b2b"/><ellipse cx="${R}" cy="${Y}" rx="5.4" ry="6.4" fill="#2b2b2b"/>` +
+        `<circle cx="${L + 2}" cy="${Y - 2.4}" r="2" fill="#fff"/><circle cx="${R + 2}" cy="${Y - 2.4}" r="2" fill="#fff"/>` +
+        `<circle cx="${L - 1.6}" cy="${Y + 2}" r="0.9" fill="#fff"/><circle cx="${R - 1.6}" cy="${Y + 2}" r="0.9" fill="#fff"/>`
+    case 'pisca':
+      return `<circle cx="${L}" cy="${Y}" r="4.6" fill="#2b2b2b"/><circle cx="${L + 1.6}" cy="${Y - 1.6}" r="1.5" fill="#fff"/>` +
+        `<path d="M ${R - 5} ${Y + 1} Q ${R} ${Y + 5} ${R + 5} ${Y + 1}" stroke="#2b2b2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+    case 'estrela':
+      return estrelaOlho(L, Y) + estrelaOlho(R, Y)
+    case 'coracao':
+      return coracaoOlho(L, Y) + coracaoOlho(R, Y)
+    default:
+      return ''
+  }
+}
+
 // ---- Rosto por humor (olhos + boca + efeitos), centrado ~ (50,56) ----
-function rostoHumor(humor) {
+// olhos: só troca os olhos quando feliz/ok (nos outros humores o olhar do
+// humor é a mensagem de que o bicho precisa de você).
+function rostoHumor(humor, olhos = 'padrao') {
   const olhoL = 40, olhoR = 60, olhoY = 52
+  const custom = olhos !== 'padrao' ? olhosCustom(olhos) : ''
   switch (humor) {
     case 'feliz':
       return `
+        ${custom || `
         <path d="M 36 52 Q 40 47 44 52" stroke="#2b2b2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-        <path d="M 56 52 Q 60 47 64 52" stroke="#2b2b2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M 56 52 Q 60 47 64 52" stroke="#2b2b2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>`}
         <path d="M 42 62 Q 50 70 58 62" stroke="#2b2b2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
         <circle cx="32" cy="60" r="4" fill="#ff9db0" opacity="0.6"/>
         <circle cx="68" cy="60" r="4" fill="#ff9db0" opacity="0.6"/>
         <path d="M 78 30 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5 z" fill="#f5c518"/>`
     case 'ok':
       return `
+        ${custom || `
         <circle cx="${olhoL}" cy="${olhoY}" r="3.4" fill="#2b2b2b"/>
-        <circle cx="${olhoR}" cy="${olhoY}" r="3.4" fill="#2b2b2b"/>
+        <circle cx="${olhoR}" cy="${olhoY}" r="3.4" fill="#2b2b2b"/>`}
         <path d="M 44 63 Q 50 67 56 63" stroke="#2b2b2b" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
     case 'triste':
       return `
@@ -149,6 +231,68 @@ function itemSeguro(id) {
   return Object.prototype.hasOwnProperty.call(ITEM_SVG, id) ? id : 'nenhum'
 }
 
+// ---- Cenários: SVG de fundo (viewBox 0 0 100 100). Feito pra ser desenhado
+// com preserveAspectRatio="xMidYMax slice" — o CHÃO (y≈70+) fica colado no
+// rodapé do card e o bichinho parece pisar nele. Tudo é markup FIXO por id
+// (whitelist): nada vem do usuário, então não há injeção pela galeria. ----
+function ceuChao(ceu, chao) {
+  return `<rect x="-10" y="-10" width="120" height="130" fill="${ceu}"/>` +
+    `<rect x="-10" y="70" width="120" height="60" fill="${chao}"/>`
+}
+const nuvem = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})" fill="#ffffff" opacity="0.9"><ellipse cx="0" cy="0" rx="9" ry="6"/><ellipse cx="8" cy="2" rx="7" ry="5"/><ellipse cx="-8" cy="2" rx="7" ry="5"/></g>`
+const pinheiro = (x, y, s = 1, c = '#3f8f5b') => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2" y="0" width="4" height="8" fill="#7a5230"/><path d="M 0 -22 L 10 -4 L -10 -4 Z" fill="${c}"/><path d="M 0 -14 L 8 2 L -8 2 Z" fill="${c}"/></g>`
+const estrelinha = (x, y, r = 1.3) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff"/>`
+
+const CENARIO_SVG = {
+  quintal: () =>
+    ceuChao('#d5efff', '#b7e08f') +
+    `<circle cx="84" cy="52" r="9" fill="#ffe08a"/>` + nuvem(24, 44, 1) + nuvem(60, 34, 0.8) +
+    `<circle cx="13" cy="70" r="7" fill="#6cbf6c"/><circle cx="22" cy="70" r="6" fill="#7cd07c"/>`,
+  parque: () =>
+    ceuChao('#d5efff', '#a9dc86') +
+    `<circle cx="86" cy="50" r="8" fill="#ffe08a"/>` + nuvem(32, 42, 0.9) +
+    `<g transform="translate(15 52)"><rect x="-3" y="0" width="6" height="20" fill="#8a5a34"/><circle cx="0" cy="-6" r="14" fill="#5fb567"/><circle cx="-10" cy="0" r="9" fill="#6cbf6c"/><circle cx="10" cy="0" r="9" fill="#6cbf6c"/></g>`,
+  praia: () =>
+    `<rect x="-10" y="-10" width="120" height="130" fill="#cdefff"/>` +
+    `<rect x="-10" y="58" width="120" height="16" fill="#6fcbe8"/>` +
+    `<rect x="-10" y="72" width="120" height="58" fill="#f4e3b0"/>` +
+    `<circle cx="84" cy="46" r="8" fill="#ffdf7a"/>` +
+    `<path d="M -10 64 q 10 -4 20 0 t 20 0 t 20 0 t 20 0 t 20 0" stroke="#ffffff" stroke-width="1.6" fill="none" opacity="0.7"/>` +
+    `<circle cx="16" cy="82" r="4" fill="#ff8a8a"/><path d="M 12 82 h 8 M 16 78 v 8" stroke="#fff" stroke-width="1"/>`,
+  acampamento: () =>
+    ceuChao('#46528a', '#4e6b46') +
+    estrelinha(22, 42) + estrelinha(50, 46, 1) + estrelinha(66, 38) + estrelinha(90, 46) +
+    `<circle cx="82" cy="40" r="7" fill="#f2e9b0"/>` +
+    pinheiro(13, 70, 1.1, '#2f6b45') + pinheiro(30, 72, 0.8, '#2f6b45') +
+    `<path d="M 62 72 L 82 72 L 72 52 Z" fill="#e06a4a"/><path d="M 72 52 L 82 72 L 76 72 Z" fill="#c4553a"/><path d="M 69 72 L 72 60 L 75 72 Z" fill="#7a2f22"/>` +
+    `<path d="M 44 74 l 8 -3 M 44 71 l 8 3" stroke="#8a5a34" stroke-width="2.4" stroke-linecap="round"/><path d="M 48 70 q -3 -5 0 -8 q 3 4 3 6 q 2 -2 2 -4 q 3 5 -1 9 z" fill="#ffb02e"/><path d="M 48 70 q -1 -3 0 -5 q 2 3 0 5 z" fill="#ff6a2e"/>`,
+  floresta: () =>
+    ceuChao('#cfeaff', '#8fce78') +
+    nuvem(34, 42, 0.8) + `<circle cx="86" cy="48" r="7" fill="#ffe08a"/>` +
+    pinheiro(13, 72, 1.2) + pinheiro(30, 74, 0.9) + pinheiro(87, 72, 1.1) + pinheiro(72, 74, 0.85),
+  neve: () =>
+    `<rect x="-10" y="-10" width="120" height="130" fill="#e6f2ff"/>` +
+    `<rect x="-10" y="70" width="120" height="60" fill="#ffffff"/>` +
+    pinheiro(15, 74, 1.1, '#6aa88a') + pinheiro(85, 74, 1, '#6aa88a') +
+    estrelinha(30, 44, 1.6) + estrelinha(52, 52, 1.3) + estrelinha(68, 40, 1.6) + estrelinha(44, 62, 1.3) + estrelinha(76, 58, 1.4),
+  noite: () =>
+    ceuChao('#2a2f5e', '#3c5a48') +
+    estrelinha(18, 40) + estrelinha(34, 50) + estrelinha(52, 38, 1.5) + estrelinha(70, 48) + estrelinha(88, 40) + estrelinha(60, 56) +
+    `<circle cx="80" cy="38" r="8" fill="#f2e9b0"/><circle cx="76" cy="35" r="7" fill="#2a2f5e"/>`,
+  espaco: () =>
+    `<rect x="-10" y="-10" width="120" height="130" fill="#161a3a"/>` +
+    `<rect x="-10" y="76" width="120" height="54" fill="#6a4aa0"/>` +
+    estrelinha(16, 30) + estrelinha(40, 22, 1.5) + estrelinha(64, 34) + estrelinha(88, 26, 1.4) + estrelinha(28, 52) + estrelinha(78, 54) +
+    `<g transform="translate(80 42)"><circle cx="0" cy="0" r="8" fill="#7fd3f0"/><ellipse cx="0" cy="0" rx="14" ry="4" fill="none" stroke="#c9a6ff" stroke-width="1.6" transform="rotate(-18)"/></g>` +
+    `<circle cx="20" cy="40" r="4" fill="#ffb26b"/>`,
+}
+
+// Devolve o MIOLO do svg do cenário (sem a tag <svg>). id fora da lista → quintal.
+export function montarCenarioSvg(cenario = 'quintal') {
+  const fn = CENARIO_SVG[cenarioSeguro(cenario)] || CENARIO_SVG.quintal
+  return fn()
+}
+
 const ESCALA_ESTAGIO = { 1: 0.9, 2: 1.0, 3: 1.06 }
 
 // Animações "vivas" (só quando animar=true, no bichinho grande da tela):
@@ -168,28 +312,34 @@ const ANIM_STYLE = `<style>
   @media (prefers-reduced-motion:reduce){.bicho-body,.bicho-lid{animation:none}}
 </style>`
 
-export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio = 1, item = 'nenhum', animar = false } = {}) {
+export function montarBichinhoSvg({ especie = 'cachorro', humor = 'ok', estagio = 1, item = 'nenhum', cor = 'natural', olhos = 'padrao', animar = false } = {}) {
   const e = especieInfo(especie)
   const morto = humor === 'morto'
-  const corpo = morto ? '#cbd5e1' : e.cor
-  const corpo2 = morto ? '#94a3b8' : e.cor2
+  const cInfo = corInfo(corSegura(cor))
+  const corBase = cInfo ? cInfo.cor : e.cor
+  const cor2Base = cInfo ? cInfo.cor2 : e.cor2
+  const corpo = morto ? '#cbd5e1' : corBase
+  const corpo2 = morto ? '#94a3b8' : cor2Base
+  const olhosOk = olhosSeguro(olhos)
   const pes = `
     <ellipse cx="40" cy="86" rx="8" ry="5" fill="${corpo2}"/>
     <ellipse cx="60" cy="86" rx="8" ry="5" fill="${corpo2}"/>`
   const e2 = { ...e, cor: corpo, cor2: corpo2 }
   const itemFn = ITEM_SVG[itemSeguro(item)] || ITEM_SVG.nenhum
   const escala = ESCALA_ESTAGIO[estagio] || 1
-  // pálpebras (piscadinha) — pele por cima dos olhos, só quando anima e vivo
-  const palpebras = (animar && !morto) ? `
+  // pálpebras (piscadinha) — pele por cima dos olhos, só quando anima e vivo.
+  // olhos de estrela/coração ficam melhores parados (sem piscar por cima).
+  const podePiscar = !['estrela', 'coracao'].includes(olhosOk)
+  const palpebras = (animar && !morto && podePiscar) ? `
     <ellipse cx="40" cy="50" rx="5.4" ry="6" fill="${corpo}" class="bicho-lid"/>
     <ellipse cx="60" cy="50" rx="5.4" ry="6" fill="${corpo}" class="bicho-lid"/>` : ''
   const conteudo = `
     ${pes}
     ${tracosEspecie(e2)}
-    <ellipse cx="50" cy="56" rx="32" ry="30" fill="${corpo}"/>
+    <ellipse cx="50" cy="56" rx="32" ry="30" fill="${corpo}" stroke="rgba(17,26,61,0.16)" stroke-width="1.2"/>
     <ellipse cx="50" cy="66" rx="18" ry="14" fill="#ffffff" opacity="0.25"/>
     ${especie === 'passaro' && !morto ? '<path d="M 46 60 L 54 60 L 50 66 Z" fill="#e0a800"/>' : ''}
-    ${rostoHumor(morto ? 'morto' : humor)}
+    ${rostoHumor(morto ? 'morto' : humor, olhosOk)}
     ${palpebras}
     ${morto ? '<ellipse cx="50" cy="30" rx="10" ry="3.4" fill="none" stroke="#f5c518" stroke-width="2"/>' : itemFn()}
   `
