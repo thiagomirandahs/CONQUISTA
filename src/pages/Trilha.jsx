@@ -58,6 +58,7 @@ function ResultadoCard({ resultado }) {
 // A Corrida virou um jogo em Phaser (motor 2D de verdade) — carregada sob
 // demanda (lazy) pra o Phaser só entrar no bundle de quem abre ESTE jogo.
 const JogoCorridaPhaser = lazy(() => import('./jogos/CorridaPhaser.jsx'))
+const JogoCobraPhaser = lazy(() => import('./jogos/CobrinhaPhaser.jsx'))
 
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
@@ -70,7 +71,7 @@ const JOGOS = {
   contas: { nome: 'Conta Rápida', curto: 'Contas', emoji: '🔢', desc: 'Quantas contas você acerta em 30 segundos?', Comp: JogoContas },
   nos: { nome: 'Quiz dos Nós', curto: 'Nós', emoji: '🪢', desc: 'Qual nó serve pra quê? Teste seus nós e amarras', Comp: JogoNos },
   semaforo: { nome: 'Semáfora', curto: 'Semáfora', emoji: '🚩', desc: 'Leia a letra pela posição das bandeiras', Comp: JogoSemaforo },
-  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: JogoCobra },
+  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: JogoCobraPhaser },
   anagrama: { nome: 'Anagrama', curto: 'Anagrama', emoji: '🔤', desc: 'Desembaralhe a palavra do clube', Comp: JogoAnagrama },
   minado: { nome: 'Campo Minado', curto: 'Minado', emoji: '💣', desc: 'Abra o campo sem pisar nas minas', Comp: JogoCampoMinado },
   mudou: { nome: 'O Que Mudou?', curto: 'Mudou', emoji: '👀', desc: 'Memorize a grade e diga o que sumiu', Comp: JogoMudou },
