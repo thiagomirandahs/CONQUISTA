@@ -80,7 +80,7 @@ begin
       select sum(t.estrelas) as soma
       from public.trilha_jogos t
       join public.profiles p on p.id = t.usuario_id
-      where t.data >= v_ini and t.data < v_fim and t.tipo <> 'reflexo'
+      where t.data >= v_ini and t.data < v_fim and t.tipo not in ('reflexo', 'corrida')
         and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
         and (not v_so_desb or p.papel = 'desbravador')
       group by t.usuario_id
@@ -92,7 +92,7 @@ begin
         select t.usuario_id, min(p.nome) as nome
         from public.trilha_jogos t
         join public.profiles p on p.id = t.usuario_id
-        where t.data >= v_ini and t.data < v_fim and t.tipo <> 'reflexo'
+        where t.data >= v_ini and t.data < v_fim and t.tipo not in ('reflexo', 'corrida')
           and p.status = 'ativo' and p.papel <> 'pais' and coalesce(p.teste, false) = false
           and (not v_so_desb or p.papel = 'desbravador')
         group by t.usuario_id

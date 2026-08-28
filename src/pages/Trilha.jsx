@@ -5,7 +5,7 @@ import Avatar from '../components/Avatar.jsx'
 import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
 import FeedbackJogo from '../components/FeedbackJogo.jsx'
 import { suportaWebGL } from '../lib/webgl.js'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos, statusJogosDoDia, liberarJogo, trancarJogo } from '../lib/dados.js'
 import * as juice from '../lib/juice.js'
 
 const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
@@ -137,6 +137,9 @@ export default function Trilha() {
   const [pedidosAjuda, setPedidosAjuda] = useState([]) // pedidos de ajuda de amigos
   const [caixaAjuda, setCaixaAjuda] = useState(false)
   const [bonusDia, setBonusDia] = useState(0) // celebração ao completar todos os jogos do dia
+  // Rodízio 🥇 Jogos do Dia: { hoje: [chaves], liberados: [chaves], proximos: [{chave,data}] }.
+  // null = SQL do rodízio ainda não rodou → todos os jogos abertos (como antes).
+  const [rodizio, setRodizio] = useState(null)
 
   // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
   // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
@@ -149,7 +152,17 @@ export default function Trilha() {
       .catch(() => {})
     // Jogo da semana (o que vale +20 pro melhor no domingo). Se falhar, some.
     lerJogoDaSemana().then((c) => JOGOS[c] && setJogoSemana(c)).catch(() => {})
+    // Rodízio dos Jogos do Dia. Se falhar (SQL não rodado), fica tudo aberto.
+    statusJogosDoDia().then(setRodizio).catch(() => {})
   }, [])
+
+  // Liderança: abre/tranca um jogo fora do rodízio (vale só hoje)
+  async function alternarLiberacao(chave, liberar) {
+    try {
+      if (liberar) await liberarJogo(chave); else await trancarJogo(chave)
+      setRodizio(await statusJogosDoDia())
+    } catch (e) { alert(e?.message || String(e)) }
+  }
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
 
@@ -183,7 +196,7 @@ export default function Trilha() {
       setResultado({ estrelas: r.estrelas, pontos: r.pontos, extra: !!r.extra })
       setJogando(false)
       await recarregar()
-      // Completou TODOS os jogos do dia? O servidor confere e dá +50 (1x/dia).
+      // Completou os jogos do dia? O servidor confere e dá o bônus (1x/dia).
       try { const b = await bonusTodosJogos(); if (b?.ganhou > 0) { festa(3); setBonusDia(b.ganhou) } } catch { /* silencioso */ }
     } catch (e) {
       alert(e?.message || String(e))
@@ -201,12 +214,30 @@ export default function Trilha() {
   // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
   const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
-  // "Jogos do dia" (não conta arcade): progresso pro bônus de +50
-  const jogosDiarios = jogosAtivos.filter((c) => !ARCADE.has(c))
+  const ehAdmin = ['instrutor', 'diretoria'].includes(profile?.papel)
+  // Rodízio: um jogo comum só está aberto no SEU dia (ou liberado pela liderança).
+  // Sem o SQL do rodízio (rodizio === null), tudo fica aberto como antes.
+  const abertoHoje = (c) => !rodizio || ARCADE.has(c)
+    || (rodizio.hoje || []).includes(c) || (rodizio.liberados || []).includes(c)
+  const proximaData = (c) => (rodizio?.proximos || []).find((p) => p.chave === c)?.data
+  const fmtAbre = (iso) => {
+    if (!iso) return 'em breve'
+    const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+    const dt = new Date(a, m - 1, d)
+    return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][dt.getDay()] + ' ' + String(d).padStart(2, '0') + '/' + String(m).padStart(2, '0')
+  }
+
+  // Progresso pro bônus do dia: o conjunto EXIGIDO vem do servidor (exclui o
+  // que nem todo aparelho roda, ex. Pênaltis sem WebGL) — assim o contador e o
+  // pagamento sempre batem. Sem o SQL do rodízio, vale a regra antiga (+50).
+  const valorBonus = rodizio ? (rodizio.valor_bonus ?? 20) : 50
+  const jogosDiarios = rodizio
+    ? (rodizio.exigidos || rodizio.hoje || []).filter((c) => JOGOS[c])
+    : jogosAtivos.filter((c) => !ARCADE.has(c))
   const feitosHoje = jogosDiarios.filter((c) => jogadosHoje.includes(c))
   const completouDia = jogosDiarios.length > 0 && feitosHoje.length >= jogosDiarios.length
 
-  // Rede de segurança: se completou o dia mas o +50 não saiu (ex.: falhou a
+  // Rede de segurança: se completou o dia mas o bônus não saiu (ex.: falhou a
   // chamada no fim do último jogo), tenta de novo ao abrir (o servidor dá 1x/dia).
   useEffect(() => {
     if (completouDia) bonusTodosJogos().then((b) => { if (b?.ganhou > 0) { festa(3); setBonusDia(b.ganhou) } }).catch(() => {})
@@ -217,7 +248,9 @@ export default function Trilha() {
       <FeedbackJogo />
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos</h2>
-        <p className="text-sm text-muted">Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐</p>
+        <p className="text-sm text-muted">
+          {rodizio ? 'Cada dia 3 jogos abrem — jogue os de hoje e ganhe o bônus! 🎁' : 'Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐'}
+        </p>
       </div>
 
       <div className="bg-surface rounded-xl p-1 flex shadow-sm mb-4 max-w-xs">
@@ -281,9 +314,9 @@ export default function Trilha() {
             <div className={`rounded-2xl p-3 mb-3 border ${completouDia ? 'bg-green-50 border-green-200' : 'bg-brand/5 border-brand/20'}`}>
               <div className="flex items-center justify-between text-sm gap-2">
                 <span className="font-bold text-ink">
-                  {completouDia ? '✅ Jogos do dia completos! +50 🎁' : `🎮 Jogos do dia: ${feitosHoje.length}/${jogosDiarios.length}`}
+                  {completouDia ? `✅ Jogos do dia completos! +${valorBonus} 🎁` : `🎮 Jogos do dia: ${feitosHoje.length}/${jogosDiarios.length}`}
                 </span>
-                {!completouDia && <span className="text-[11px] text-muted shrink-0">complete todos = +50 🎁</span>}
+                {!completouDia && <span className="text-[11px] text-muted shrink-0">complete todos = +{valorBonus} 🎁</span>}
               </div>
               <div className="h-2 bg-surface2 rounded-full overflow-hidden mt-2">
                 <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${Math.round((100 * feitosHoje.length) / jogosDiarios.length)}%` }} />
@@ -308,25 +341,59 @@ export default function Trilha() {
               <div className="text-center mb-3">
                 <p className="font-bold text-ink">Escolha um jogo 🎮</p>
                 <p className="text-sm text-faint mt-1">
-                  Cada jogo, 1x por dia. Cada ⭐ vale 5 pontos: <b>1⭐=5</b> · <b>2⭐=10</b> · <b>3⭐=15</b>.
+                  {rodizio ? 'Os jogos com 🔒 abrem no dia deles. ' : 'Cada jogo, 1x por dia. '}
+                  Cada ⭐ vale 5 pontos: <b>1⭐=5</b> · <b>2⭐=10</b> · <b>3⭐=15</b>.
                 </p>
               </div>
 
-              {jogoSemana && JOGOS[jogoSemana] && (
-                <motion.button whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    if (jogosAtivos.includes(jogoSemana)) {
-                      setJogoAtual(jogoSemana); setJogando(true); setResultado(null)
-                    }
-                  }}
-                  className="w-full text-left rounded-2xl p-3.5 mb-3 bg-amber-50 border-2 border-gold flex items-center gap-3">
-                  <span className="text-3xl shrink-0">{JOGOS[jogoSemana].emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-extrabold text-gold uppercase tracking-wide">🎲 Jogo da semana</div>
-                    <div className="font-extrabold text-ink leading-tight">{JOGOS[jogoSemana].nome}</div>
-                    <div className="text-xs text-muted">Quem fizer mais estrelas nele até domingo leva <b>+20</b> 🏆</div>
+              {jogoSemana && JOGOS[jogoSemana] && (() => {
+                const semanaJogado = jogadosHoje.includes(jogoSemana)
+                const semanaAberto = abertoHoje(jogoSemana)
+                const semanaTravado = semanaJogado || !semanaAberto
+                return (
+                  <motion.button whileTap={semanaTravado ? undefined : { scale: 0.98 }} disabled={semanaTravado}
+                    onClick={() => {
+                      if (jogosAtivos.includes(jogoSemana)) {
+                        setJogoAtual(jogoSemana); setJogando(true); setResultado(null)
+                      }
+                    }}
+                    className={`w-full text-left rounded-2xl p-3.5 mb-3 bg-amber-50 border-2 border-gold flex items-center gap-3 ${semanaTravado ? 'opacity-70' : ''}`}>
+                    <span className={`text-3xl shrink-0 ${!semanaAberto ? 'grayscale' : ''}`}>{JOGOS[jogoSemana].emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-extrabold text-gold uppercase tracking-wide">🎲 Jogo da semana</div>
+                      <div className="font-extrabold text-ink leading-tight">{JOGOS[jogoSemana].nome}</div>
+                      <div className="text-xs text-muted">
+                        {semanaJogado ? '✓ Jogado hoje — volte amanhã! Quem fizer mais estrelas até domingo leva +20 🏆'
+                          : !semanaAberto ? <>🔒 Abre <b>{fmtAbre(proximaData(jogoSemana))}</b> — ou peça pra liderança liberar</>
+                          : <>Quem fizer mais estrelas nele até domingo leva <b>+20</b> 🏆</>}
+                      </div>
+                    </div>
+                  </motion.button>
+                )
+              })()}
+
+              {rodizio && (rodizio.hoje || []).some((c) => JOGOS[c]) && (
+                <div className="rounded-2xl p-3.5 mb-3 bg-brand/5 border-2 border-brand/30">
+                  <div className="text-[11px] font-extrabold text-brand uppercase tracking-wide">🥇 Jogos do dia</div>
+                  <p className="text-xs text-muted mt-0.5 mb-2">
+                    O melhor de cada um leva <b>+10</b> amanhã cedo (empate: quem jogou primeiro).
+                    Jogue os {jogosDiarios.length} e ganhe <b>+{valorBonus}</b> de bônus! 🎁
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(rodizio.hoje || []).map((chave) => {
+                      const j = JOGOS[chave]
+                      if (!j) return null
+                      const feito = jogadosHoje.includes(chave)
+                      return (
+                        <motion.button key={chave} whileTap={feito ? undefined : { scale: 0.95 }} disabled={feito}
+                          onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
+                          className={`text-sm font-bold rounded-full px-3.5 py-2 ${feito ? 'bg-surface2 text-faint' : 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow'}`}>
+                          {j.emoji} {j.curto}{feito ? ' ✓' : ''}
+                        </motion.button>
+                      )
+                    })}
                   </div>
-                </motion.button>
+                </div>
               )}
 
               <div className="grid sm:grid-cols-2 gap-2.5">
@@ -334,24 +401,42 @@ export default function Trilha() {
                   const j = JOGOS[chave]
                   if (!j) return null
                   const jogado = jogadosHoje.includes(chave) && !ARCADE.has(chave)
+                  const aberto = abertoHoje(chave)
+                  const doDia = (rodizio?.hoje || []).includes(chave)
+                  const liberado = (rodizio?.liberados || []).includes(chave)
+                  const travado = jogado || !aberto
                   return (
-                    <motion.button key={chave} disabled={jogado}
-                      whileTap={jogado ? undefined : { scale: 0.97 }} whileHover={jogado ? undefined : { y: -3 }}
-                      onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
-                      className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left ${jogado ? 'bg-surface2 opacity-70' : 'bg-surface'} ${ARCADE.has(chave) ? 'ring-2 ring-gold' : ''}`}>
-                      <span className={`w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0 ${jogado ? 'bg-surface2' : 'bg-gradient-to-br from-brand/10 to-gold/20'}`}>
-                        {j.emoji}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-ink leading-tight">{j.nome}</div>
-                        <div className="text-[11px] text-faint leading-snug mt-0.5">{j.desc}</div>
-                      </div>
-                      {ARCADE.has(chave)
-                        ? <span className="bg-gold text-brand font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">🚀 Recorde</span>
-                        : jogado
-                        ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
-                        : <span className="bg-brand text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 5-15</span>}
-                    </motion.button>
+                    <div key={chave} className="relative">
+                      <motion.button disabled={travado}
+                        whileTap={travado ? undefined : { scale: 0.97 }} whileHover={travado ? undefined : { y: -3 }}
+                        onClick={() => { setJogoAtual(chave); setJogando(true); setResultado(null) }}
+                        className={`w-full rounded-2xl p-3.5 shadow-sm flex items-center gap-3 text-left ${travado ? 'bg-surface2 opacity-70' : 'bg-surface'} ${ARCADE.has(chave) ? 'ring-2 ring-gold' : doDia ? 'ring-2 ring-brand/50' : ''}`}>
+                        <span className={`w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0 ${travado ? 'bg-surface2' : 'bg-gradient-to-br from-brand/10 to-gold/20'} ${!aberto ? 'grayscale' : ''}`}>
+                          {j.emoji}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-ink leading-tight">{doDia ? '🥇 ' : ''}{j.nome}</div>
+                          <div className="text-[11px] text-faint leading-snug mt-0.5">
+                            {aberto ? j.desc : <>🔒 Abre <b>{fmtAbre(proximaData(chave))}</b> — ou peça pra liderança liberar</>}
+                          </div>
+                        </div>
+                        {ARCADE.has(chave)
+                          ? <span className="bg-gold text-brand font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">🚀 Recorde</span>
+                          : jogado
+                          ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
+                          : !aberto
+                          ? <span className="text-faint font-extrabold shrink-0 text-base">🔒</span>
+                          : <span className="bg-brand text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 5-15</span>}
+                      </motion.button>
+                      {ehAdmin && rodizio && !aberto && (
+                        <button onClick={() => alternarLiberacao(chave, true)}
+                          className="absolute -top-2 -right-2 z-10 text-xs font-extrabold bg-gold text-ink rounded-full px-3 py-2 shadow">🔓 Liberar hoje</button>
+                      )}
+                      {ehAdmin && liberado && (
+                        <button onClick={() => alternarLiberacao(chave, false)}
+                          className="absolute -top-2 -right-2 z-10 text-xs font-extrabold bg-surface border border-line text-muted rounded-full px-3 py-2 shadow">🔒 Trancar</button>
+                      )}
+                    </div>
                   )
                 })}
               </div>

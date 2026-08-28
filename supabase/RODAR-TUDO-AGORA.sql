@@ -1,4 +1,8 @@
 -- =====================================================================
+--  ⛔ OBSOLETO desde 2026-08-28-jogos-do-dia.sql — NÃO RODAR DE NOVO!
+--  (contém versões antigas de bonus_todos_jogos/lembrar_jogos_do_dia que
+--  sobrescreveriam o rodízio dos Jogos do Dia e travariam o bônus.)
+-- =====================================================================
 --  RODAR TUDO DE UMA VEZ (missoes + lembretes + painel de atividade)
 --  Supabase -> SQL Editor -> New query -> cole TUDO -> Run.
 --  Idempotente. Se aparecer algum erro, me mande a mensagem exata.

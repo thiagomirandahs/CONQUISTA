@@ -726,7 +726,7 @@ export async function registrarJogo(tipo, estrelas) {
   if (error) throw new Error(error.message)
   return data
 }
-// Bônus de +50 por jogar TODOS os jogos do dia (o servidor confere e dá 1x/dia).
+// Bônus por completar os jogos do dia (o servidor confere o conjunto e o valor, 1x/dia).
 // Devolve { completo, total, feitos, ganhou }. Silencioso se o SQL não rodou.
 export async function bonusTodosJogos() {
   const { data, error } = await supabase.rpc('bonus_todos_jogos')
@@ -1221,6 +1221,23 @@ export async function equiparBichinho(item) {
 // Personalizar o visual: campo ∈ 'cenario' | 'cor' | 'olhos'
 export async function vestirBichinho(campo, valor) {
   const { data, error } = await supabase.rpc('bichinho_vestir', { p_campo: campo, p_valor: valor })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// 🥇 Jogos do Dia: trio de hoje + liberados manualmente + quando cada um abre
+export async function statusJogosDoDia() {
+  const { data, error } = await supabase.rpc('status_jogos_do_dia')
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function liberarJogo(chave) {
+  const { data, error } = await supabase.rpc('liberar_jogo', { p_chave: chave })
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function trancarJogo(chave) {
+  const { data, error } = await supabase.rpc('trancar_jogo', { p_chave: chave })
   if (error) throw new Error(error.message)
   return data
 }
