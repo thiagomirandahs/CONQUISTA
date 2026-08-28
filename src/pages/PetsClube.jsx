@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
 import { petsDoClube } from '../lib/dados.js'
-import { montarBichinhoSvg, montarCenarioSvg } from '../lib/bichinhoPecas.js'
+import { montarBichinhoSvg, montarCenarioSvg, montarMovelSvg } from '../lib/bichinhoPecas.js'
 
 function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao', dormindo = false }) {
   const humor = !vivo ? 'morto' : dormindo ? 'dormindo' : 'feliz'
@@ -11,6 +11,12 @@ function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao
 }
 function CenarioBg({ cenario = 'quintal', className = '' }) {
   const svg = useMemo(() => montarCenarioSvg(cenario), [cenario])
+  return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
+    className={className} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+function MovelBg({ movel = 'nenhum', className = '' }) {
+  const svg = useMemo(() => montarMovelSvg(movel), [movel])
+  if (!svg) return null
   return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
     className={className} dangerouslySetInnerHTML={{ __html: svg }} />
 }
@@ -45,6 +51,7 @@ export default function PetsClube() {
             <div key={p.dono_id} className={`bg-surface rounded-2xl shadow-soft p-3 text-center ${p.vivo ? '' : 'opacity-60'}`}>
               <div className="bg-surface2 rounded-xl relative overflow-hidden">
                 <CenarioBg cenario={p.cenario} className="absolute inset-0 w-full h-full" />
+                <MovelBg movel={p.movel} className="absolute inset-0 w-full h-full" />
                 <div className="relative flex justify-center">
                   <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} cor={p.cor} olhos={p.olhos} dormindo={p.dormindo} />
                 </div>

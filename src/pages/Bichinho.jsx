@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho, dormirBichinho, acordarBichinho } from '../lib/dados.js'
-import { montarBichinhoSvg, montarCenarioSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS } from '../lib/bichinhoPecas.js'
+import { montarBichinhoSvg, montarCenarioSvg, montarMovelSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS, MOVEIS } from '../lib/bichinhoPecas.js'
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -21,6 +21,15 @@ function BichinhoImg({ especie, humor, estagio, item = 'nenhum', cor = 'natural'
 // Cenário de fundo (o "mundinho"). Encaixa com o chão colado no rodapé do card.
 function CenarioBg({ cenario = 'quintal', className = '' }) {
   const svg = useMemo(() => montarCenarioSvg(cenario), [cenario])
+  return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
+    className={className} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+// Móvel no chão do mundinho (comedouro, caminha, casinha…). Fica ENTRE o
+// cenário e o bichinho. 'nenhum'/desconhecido → não desenha nada.
+function MovelBg({ movel = 'nenhum', className = '' }) {
+  const svg = useMemo(() => montarMovelSvg(movel), [movel])
+  if (!svg) return null
   return <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"
     className={className} dangerouslySetInnerHTML={{ __html: svg }} />
 }
@@ -216,6 +225,7 @@ export default function Bichinho() {
 
       <div className="rounded-3xl border border-line shadow-soft p-5 text-center relative overflow-hidden">
         <CenarioBg cenario={bicho.cenario} className="absolute inset-0 w-full h-full" />
+        <MovelBg movel={bicho.movel} className="absolute inset-0 w-full h-full" />
         <div className="relative z-10">
           <AnimatePresence>
             {flash && (
@@ -321,8 +331,8 @@ export default function Bichinho() {
           <Link to="/pets-clube" className="text-xs font-semibold text-brand">Ver pets do clube →</Link>
         </div>
 
-        <div className="grid grid-cols-4 gap-1 bg-surface2 rounded-xl p-1 mb-3">
-          {[['enfeite', '🎩', 'Enfeite'], ['cor', '🎨', 'Cor'], ['olhos', '👀', 'Olhos'], ['cenario', '🌄', 'Cenário']].map(([id, ic, lbl]) => (
+        <div className="grid grid-cols-5 gap-1 bg-surface2 rounded-xl p-1 mb-3">
+          {[['enfeite', '🎩', 'Enfeite'], ['cor', '🎨', 'Cor'], ['olhos', '👀', 'Olhos'], ['cenario', '🌄', 'Cenário'], ['movel', '🛋️', 'Móveis']].map(([id, ic, lbl]) => (
             <button key={id} onClick={() => setAba(id)}
               className={`rounded-lg py-1.5 text-[11px] font-bold flex flex-col items-center gap-0.5 transition ${aba === id ? 'bg-surface shadow-soft text-brand' : 'text-muted'}`}>
               <span className="text-base leading-none">{ic}</span>{lbl}
@@ -376,6 +386,29 @@ export default function Bichinho() {
                   </div>
                   <span className="text-[10px] font-semibold text-muted leading-none py-0.5">{c.nome}</span>
                   {bloq && <span className="text-[9px] text-faint leading-none pb-0.5">nível {c.nivel}</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {aba === 'movel' && (
+          <div className="grid grid-cols-4 gap-2">
+            {MOVEIS.map((m) => {
+              const bloq = (bicho.nivel || 1) < m.nivel
+              const ativo = (bicho.movel || 'nenhum') === m.id
+              return (
+                <button key={m.id} disabled={bloq} onClick={() => vestir('movel', m.id)}
+                  className={`rounded-xl border-2 flex flex-col items-center overflow-hidden transition ${ativo ? 'border-brand' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
+                  <div className="relative w-full h-12">
+                    <CenarioBg cenario={bicho.cenario} className="absolute inset-0 w-full h-full" />
+                    <MovelBg movel={m.id} className="absolute inset-0 w-full h-full" />
+                    <div className="absolute inset-0 flex items-end justify-center">
+                      <BichinhoImg especie={bicho.especie} humor="feliz" estagio={1} item="nenhum" cor={bicho.cor} olhos={bicho.olhos} size={34} />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted leading-none py-0.5">{m.nome}</span>
+                  {bloq && <span className="text-[9px] text-faint leading-none pb-0.5">nível {m.nivel}</span>}
                 </button>
               )
             })}

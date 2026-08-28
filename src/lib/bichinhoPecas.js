@@ -80,6 +80,21 @@ export const CENARIOS = [
 export function nivelMinimoCenario(id) { return CENARIOS.find((c) => c.id === id)?.nivel ?? 99 }
 function cenarioSeguro(id) { return CENARIOS.some((c) => c.id === id) ? id : 'quintal' }
 
+// Móveis do mundinho (as "coisas" do bichinho: comedouro, caminha, casinha…).
+// Ficam no CHÃO, atrás do bichinho, e DESBLOQUEIAM por nível igual ao resto.
+// Os níveis têm que bater com _bichinho_nivel_movel() no banco.
+export const MOVEIS = [
+  { id: 'nenhum', nome: 'Nenhum', nivel: 1 },
+  { id: 'comedouro', nome: 'Comedouro', nivel: 1 },
+  { id: 'caminha', nome: 'Caminha', nivel: 2 },
+  { id: 'bolinha', nome: 'Bolinha', nivel: 3 },
+  { id: 'casinha', nome: 'Casinha', nivel: 4 },
+  { id: 'tapete', nome: 'Tapete', nivel: 5 },
+  { id: 'arranhador', nome: 'Torre', nivel: 6 },
+  { id: 'fonte', nome: 'Fonte', nivel: 8 },
+]
+export function nivelMinimoMovel(id) { return MOVEIS.find((m) => m.id === id)?.nivel ?? 99 }
+
 export function especieInfo(id) {
   return ESPECIES.find((e) => e.id === id) || ESPECIES[0]
 }
@@ -290,6 +305,48 @@ const CENARIO_SVG = {
 // Devolve o MIOLO do svg do cenário (sem a tag <svg>). id fora da lista → quintal.
 export function montarCenarioSvg(cenario = 'quintal') {
   const fn = CENARIO_SVG[cenarioSeguro(cenario)] || CENARIO_SVG.quintal
+  return fn()
+}
+
+// ---- Móveis: SVG desenhado no CHÃO do mundinho (viewBox 0 0 100 100, mesmo
+// preserveAspectRatio="xMidYMax slice" do cenário, pra colar no rodapé). Ficam
+// à ESQUERDA, pra o bichinho passear em volta. Markup FIXO por id (whitelist):
+// nada vem do usuário, então não há injeção pela galeria dos outros. ----
+const sombraMovel = (cx, cy, rx) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="3" fill="#000000" opacity="0.12"/>`
+const MOVEL_SVG = {
+  nenhum: () => '',
+  comedouro: () => sombraMovel(22, 84, 11) +
+    `<path d="M 12 77 h 20 l -2.5 6 h -15 z" fill="#e07a3a"/>` +
+    `<ellipse cx="22" cy="77" rx="10" ry="2.8" fill="#c25f28"/>` +
+    `<circle cx="18" cy="76" r="1.7" fill="#a97037"/><circle cx="22" cy="75.4" r="1.7" fill="#8a5a2a"/><circle cx="25.6" cy="76.4" r="1.5" fill="#a97037"/>`,
+  caminha: () => sombraMovel(24, 85, 15) +
+    `<ellipse cx="24" cy="81" rx="15" ry="6" fill="#7c9ed6"/>` +
+    `<ellipse cx="24" cy="80" rx="10.5" ry="3.8" fill="#bcd0f2"/>`,
+  bolinha: () => sombraMovel(19, 84, 5) +
+    `<circle cx="19" cy="79.5" r="4.6" fill="#ef4444"/>` +
+    `<path d="M 14.6 79.5 h 8.8" stroke="#ffffff" stroke-width="1.2"/>` +
+    `<path d="M 19 74.9 a 4.6 4.6 0 0 1 0 9.2" fill="none" stroke="#ffffff" stroke-width="1"/>`,
+  casinha: () => sombraMovel(22, 85, 16) +
+    `<rect x="11" y="72" width="22" height="12" rx="1" fill="#dcb98d"/>` +
+    `<path d="M 8 72 L 22 59 L 36 72 Z" fill="#b5652f"/>` +
+    `<path d="M 17.5 84 v -7 a 4.5 4.5 0 0 1 9 0 v 7 z" fill="#6b4a2a"/>`,
+  tapete: () => sombraMovel(26, 84, 18) +
+    `<ellipse cx="26" cy="83" rx="18" ry="5.5" fill="#5fa79d"/>` +
+    `<ellipse cx="26" cy="83" rx="12.5" ry="3.7" fill="none" stroke="#c7e7e1" stroke-width="1.2"/>` +
+    `<ellipse cx="26" cy="83" rx="6.5" ry="1.9" fill="#e3f3f0"/>`,
+  arranhador: () => sombraMovel(20, 85, 9) +
+    `<rect x="12" y="81" width="16" height="4" rx="1.5" fill="#8a6a44"/>` +
+    `<rect x="18.4" y="65" width="3.2" height="17" fill="#b98d5a"/>` +
+    `<circle cx="20" cy="63.5" r="4" fill="#f0a030"/>`,
+  fonte: () => sombraMovel(22, 85, 13) +
+    `<path d="M 12 78 h 20 l -2 6 h -16 z" fill="#9fb0c0"/>` +
+    `<ellipse cx="22" cy="78" rx="10" ry="2.6" fill="#7fc7e8"/>` +
+    `<path d="M 22 70 q -2.4 3.4 0 4.6 q 2.4 -1.2 0 -4.6 z" fill="#7fc7e8"/>`,
+}
+function movelSeguro(id) { return Object.prototype.hasOwnProperty.call(MOVEL_SVG, id) ? id : 'nenhum' }
+// Devolve o MIOLO do svg do móvel (sem a tag <svg>). id fora da lista / 'nenhum' → ''.
+export function montarMovelSvg(movel = 'nenhum') {
+  const fn = MOVEL_SVG[movelSeguro(movel)] || MOVEL_SVG.nenhum
   return fn()
 }
 

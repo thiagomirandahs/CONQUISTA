@@ -1,32 +1,46 @@
 -- =====================================================================
---  Filhos da Conquista — Bichinho: 💤 Dormir / modo acampamento (2026-08-28)
+--  Filhos da Conquista — Bichinho: MÓVEIS do mundinho (2026-08-29)
 --
---  ⚠️ APOSENTADO: o 2026-08-29-bichinho-moveis.sql já EMBUTE tudo daqui (sono)
---  + o campo 'movel'. Rode o de móveis no lugar deste. NÃO re-rode este depois
---  do de móveis — ele reverteria o 'movel' de meu_bichinho/pets_do_clube.
+--  Pedido do dono: dar ao bichinho "as coisas que ele precisa" — comedouro,
+--  caminha, casinha, tapete... Móveis DECORATIVOS que ficam no CHÃO do mundinho,
+--  atrás do bichinho, e DESBLOQUEIAM por NÍVEL (igual a enfeite/cor/olhos/
+--  cenário — sem moeda). Aparecem também na galeria "Pets do clube".
+--
+--  SEGURANÇA (mesma dos outros): guarda só a CHAVE (ex.: 'caminha'), nunca
+--  markup digitado. Coluna com CHECK + bichinho_vestir() confere no SERVIDOR
+--  que o valor é da lista e já abriu pro nível de quem equipa. Níveis têm que
+--  bater com MOVEIS em src/lib/bichinhoPecas.js.
+--
+--  AUTO-SUFICIENTE: esta migration EMBUTE também o 💤 dormir (2026-08-28-
+--  bichinho-sono.sql) — rebaseando meu_bichinho/pets_do_clube na versão mais
+--  nova + o campo 'movel'. Assim, rode só ESTA e o bichinho fica completo
+--  (móveis + sono), sem risco de uma migration reverter a outra.
+--  ⚠️ Depois desta, NÃO re-rode o 2026-08-28-bichinho-sono.sql (ele reverteria
+--  o 'movel' de meu_bichinho/pets_do_clube).
 --
 --  COMO APLICAR: Supabase -> SQL Editor -> New query -> cole -> Run. Idempotente.
---  Depende de 2026-08-26-bichinho.sql + 2026-08-27-bichinho-visual.sql rodados.
---
---  Pedido do dono: dar um jeito do bichinho NÃO morrer quando a criança vai
---  acampar/fica sem celular. Solução: colocar pra DORMIR = congela TUDO:
---   * as barrinhas param de cair (ficam como estavam na hora de dormir);
---   * o relógio da morte (72h) e da ofensiva (48h) PAUSAM;
---   * dormindo não dá pra cuidar nem pontuar (nada de farm — é pausa neutra:
---     nem perde, nem ganha).
---  Ao ACORDAR, os relógios são deslocados pelo tempo dormido — como se o
---  sono não tivesse existido. Deslocar pra FRENTE só ADIA o próximo ponto
---  (gate de 20h), nunca antecipa — sem brecha de farm. Cuidar com ele
---  dormindo acorda primeiro, automaticamente.
---
---  As funções abaixo são REBASEADAS nas versões EM VIGOR (26/08 + 27/08) —
---  só entra a lógica do sono; nada mais muda.
+--  Depende de bichinho.sql + bichinho-itens.sql + bichinho-visual.sql +
+--  nivel_por_pontos()/meu_total_pontos() já rodados.
 -- =====================================================================
 
--- 0) Quando começou o sono (null = acordado)
+-- 0) Colunas: sono (dormindo_desde) + móvel (com lista fechada no banco)
 alter table public.bichinhos add column if not exists dormindo_desde timestamptz;
 
--- 1) 💤 Dormir: congela as barras no valor atual e marca o início do sono
+alter table public.bichinhos add column if not exists movel text not null default 'nenhum';
+alter table public.bichinhos drop constraint if exists bichinhos_movel_ok;
+alter table public.bichinhos add constraint bichinhos_movel_ok
+  check (movel in ('nenhum', 'comedouro', 'caminha', 'bolinha', 'casinha', 'tapete', 'arranhador', 'fonte'));
+
+-- Nível mínimo de cada móvel (tem que bater com MOVEIS em bichinhoPecas.js)
+create or replace function public._bichinho_nivel_movel(p_v text)
+returns int language sql immutable as $$
+  select case p_v
+    when 'nenhum' then 1 when 'comedouro' then 1 when 'caminha' then 2 when 'bolinha' then 3
+    when 'casinha' then 4 when 'tapete' then 5 when 'arranhador' then 6 when 'fonte' then 8
+    else null end;
+$$;
+
+-- 1) 💤 Dormir (congela as barras no valor atual e marca o início do sono)
 create or replace function public.bichinho_dormir()
 returns json language plpgsql security definer set search_path = '' as $$
 declare
@@ -38,7 +52,6 @@ begin
   select * into b from public.bichinhos where usuario_id = v_uid for update;
   if not found then raise exception 'Você ainda não tem um bichinho. Adote um! 🐾'; end if;
 
-  -- morte pendente aplica antes (mesma regra do cuidar)
   if b.vivo and b.dormindo_desde is null and b.pontuado_em is not null
      and now() - b.ultimo_cuidado_em > interval '72 hours' then
     update public.bichinhos set vivo = false, morto_em = b.ultimo_cuidado_em + interval '72 hours'
@@ -48,9 +61,6 @@ begin
   if not b.vivo then return json_build_object('morreu', true); end if;
   if b.dormindo_desde is not null then return json_build_object('ok', true, 'ja_dormia', true); end if;
 
-  -- congela: aplica o decaimento até AGORA. A base guarda a FRAÇÃO que o
-  -- floor descartou (senão dormir/acordar de 20 em 20min zeraria o resto e
-  -- as barras nunca cairiam — apontado na revisão).
   v_h := extract(epoch from (now() - b.atualizado_em)) / 3600.0;
   update public.bichinhos set
     fome       = greatest(0, b.fome       - floor(3 * v_h))::int,
@@ -66,7 +76,7 @@ $$;
 grant execute on function public.bichinho_dormir() to authenticated;
 revoke execute on function public.bichinho_dormir() from public, anon;
 
--- 2) ☀️ Acordar: desloca os relógios pelo tempo dormido (sono "não existiu")
+-- 2) ☀️ Acordar (desloca os relógios pelo tempo dormido — o sono "não existiu")
 create or replace function public.bichinho_acordar()
 returns json language plpgsql security definer set search_path = '' as $$
 declare
@@ -80,8 +90,6 @@ begin
   if b.dormindo_desde is null then return json_build_object('ok', true, 'ja_acordado', true); end if;
 
   v_sono := greatest(interval '0', now() - b.dormindo_desde);
-  -- todos os carimbos são <= dormindo_desde (dormindo não dá pra cuidar),
-  -- então carimbo + sono <= now() — nunca vai pro futuro.
   update public.bichinhos set
     dormindo_desde = null,
     atualizado_em = b.atualizado_em + v_sono,
@@ -95,7 +103,43 @@ $$;
 grant execute on function public.bichinho_acordar() to authenticated;
 revoke execute on function public.bichinho_acordar() from public, anon;
 
--- 3) meu_bichinho: dormindo = tudo congelado (base 27/08 + sono)
+-- 3) Vestir (cenário/cor/olhos/MÓVEL) — valida nível no servidor
+create or replace function public.bichinho_vestir(p_campo text, p_valor text)
+returns json language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  v_min int;
+  v_nivel int;
+begin
+  if v_uid is null then raise exception 'Não autenticado.'; end if;
+
+  if p_campo = 'cenario' then v_min := public._bichinho_nivel_cenario(p_valor);
+  elsif p_campo = 'cor' then v_min := public._bichinho_nivel_cor(p_valor);
+  elsif p_campo = 'olhos' then v_min := public._bichinho_nivel_olhos(p_valor);
+  elsif p_campo = 'movel' then v_min := public._bichinho_nivel_movel(p_valor);
+  else raise exception 'Campo inválido.'; end if;
+  if v_min is null then raise exception 'Opção inválida.'; end if;
+
+  v_nivel := public.nivel_por_pontos(public.meu_total_pontos());
+  if v_nivel < v_min then raise exception 'Isso abre no nível %. Continue juntando pontos! ✨', v_min; end if;
+
+  if p_campo = 'cenario' then
+    update public.bichinhos set cenario = p_valor where usuario_id = v_uid and vivo;
+  elsif p_campo = 'cor' then
+    update public.bichinhos set cor = p_valor where usuario_id = v_uid and vivo;
+  elsif p_campo = 'olhos' then
+    update public.bichinhos set olhos = p_valor where usuario_id = v_uid and vivo;
+  else
+    update public.bichinhos set movel = p_valor where usuario_id = v_uid and vivo;
+  end if;
+  if not found then raise exception 'Você não tem um bichinho vivo pra personalizar.'; end if;
+
+  return json_build_object('ok', true, 'campo', p_campo, 'valor', p_valor);
+end;
+$$;
+grant execute on function public.bichinho_vestir(text, text) to authenticated;
+
+-- 4) meu_bichinho: sono + cenário/cor/olhos + MÓVEL
 create or replace function public.meu_bichinho()
 returns json language plpgsql security definer set search_path = '' as $$
 declare
@@ -105,7 +149,7 @@ declare
   v_morto_em timestamptz;
   v_h numeric;
   v_sem numeric;
-  v_ref timestamptz;   -- "agora" do bichinho: se dorme, o tempo parou ali
+  v_ref timestamptz;
 begin
   if v_uid is null then raise exception 'Não autenticado.'; end if;
   select * into b from public.bichinhos where usuario_id = v_uid;
@@ -116,7 +160,6 @@ begin
   v_morto_em := b.morto_em;
   v_ref := coalesce(b.dormindo_desde, now());
   v_sem := extract(epoch from (v_ref - b.ultimo_cuidado_em)) / 3600.0;
-  -- morte por abandono só conta ACORDADO (dormindo congela o relógio)
   if v_vivo and b.dormindo_desde is null and b.pontuado_em is not null and v_sem > 72 then
     v_vivo := false;
     v_morto_em := b.ultimo_cuidado_em + interval '72 hours';
@@ -127,7 +170,7 @@ begin
 
   return json_build_object(
     'tem', true, 'especie', b.especie, 'nome', b.nome, 'vivo', v_vivo, 'item', b.item,
-    'cenario', b.cenario, 'cor', b.cor, 'olhos', b.olhos,
+    'cenario', b.cenario, 'cor', b.cor, 'olhos', b.olhos, 'movel', b.movel,
     'dormindo', b.dormindo_desde is not null,
     'nivel', public.nivel_por_pontos(public.meu_total_pontos()),
     'fome',       case when v_vivo then greatest(0, b.fome       - floor(3 * v_h))::int else 0 end,
@@ -145,7 +188,7 @@ end;
 $$;
 grant execute on function public.meu_bichinho() to authenticated;
 
--- 4) bichinho_cuidar: cuidar dormindo ACORDA primeiro (base 26/08 + sono)
+-- 5) bichinho_cuidar: cuidar dormindo ACORDA primeiro (base sono)
 create or replace function public.bichinho_cuidar(p_acao text)
 returns json language plpgsql security definer set search_path = '' as $$
 declare
@@ -165,7 +208,6 @@ begin
   select * into b from public.bichinhos where usuario_id = v_uid for update;
   if not found then raise exception 'Você ainda não tem um bichinho. Adote um! 🐾'; end if;
 
-  -- dormindo? acorda primeiro (desloca os relógios pelo tempo dormido)
   if b.dormindo_desde is not null then
     v_sono := greatest(interval '0', now() - b.dormindo_desde);
     update public.bichinhos set
@@ -177,7 +219,6 @@ begin
     returning * into b;
   end if;
 
-  -- morte por abandono (72h) — só conta depois do 1º cuidado (pontuado_em)
   if b.vivo and b.pontuado_em is not null and now() - b.ultimo_cuidado_em > interval '72 hours' then
     update public.bichinhos set vivo = false, morto_em = b.ultimo_cuidado_em + interval '72 hours'
       where usuario_id = v_uid;
@@ -220,11 +261,7 @@ end;
 $$;
 grant execute on function public.bichinho_cuidar(text) to authenticated;
 
--- 4b) bichinho_adotar (base 26/08 + sono, apontado na revisão): pet DORMINDO
---     conta como vivo e protegido (não dá pra "trocar" um pet que passou 72h
---     de relógio de parede dormindo), e a re-adoção zera dormindo_desde
---     (senão o pet novo nascia "dormindo" com carimbo velho e o acordar
---     jogaria os relógios pro futuro, inflando as barras).
+-- 6) bichinho_adotar (base sono): pet dormindo conta como vivo; re-adoção zera sono
 create or replace function public.bichinho_adotar(p_nome text, p_especie text)
 returns json language plpgsql security definer set search_path = '' as $$
 declare
@@ -261,18 +298,18 @@ end;
 $$;
 grant execute on function public.bichinho_adotar(text, text) to authenticated;
 
--- 5) pets_do_clube: mostra quem está dormindo (ganha 1 coluna → precisa DROP,
---    create or replace não muda o tipo de retorno; o grant abaixo restaura)
+-- 7) pets_do_clube: galeria mostra cenário/cor/olhos/MÓVEL + dormindo
+--    (ganha coluna 'movel' → precisa DROP antes; o grant abaixo restaura)
 drop function if exists public.pets_do_clube();
 create or replace function public.pets_do_clube()
 returns table (
   dono_id uuid, dono_nome text, dono_avatar jsonb, dono_avatar_tipo text, dono_foto text,
   especie text, pet_nome text, estagio int, item text, cenario text, cor text, olhos text,
-  vivo boolean, ofensiva int, dormindo boolean
+  movel text, vivo boolean, ofensiva int, dormindo boolean
 ) language sql stable security definer set search_path = '' as $$
   select p.id, p.nome, p.avatar, p.avatar_tipo, p.foto,
     b.especie, b.nome, public._bichinho_estagio(b.dias_cuidados), b.item, b.cenario, b.cor, b.olhos,
-    -- dormindo não morre de abandono (relógio pausado)
+    b.movel,
     (b.vivo and (b.pontuado_em is null or b.dormindo_desde is not null
                  or now() - b.ultimo_cuidado_em <= interval '72 hours')),
     b.ofensiva,
