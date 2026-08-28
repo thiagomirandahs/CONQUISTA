@@ -759,6 +759,19 @@ export async function salvarReflexoSoDesbravador(so) {
   if (error) throw new Error(error.message)
 }
 
+// Interruptor do rodízio 🥇 Jogos do Dia (3 abertos/dia + prêmio +10).
+// Desligado = todos os jogos abertos. A regra de verdade é aplicada no servidor.
+export async function lerRodizioJogos() {
+  const { data } = await supabase.from('config_clube').select('valor')
+    .eq('chave', 'rodizio_jogos').maybeSingle()
+  return (data?.valor ?? 'sim') === 'sim'
+}
+export async function salvarRodizioJogos(ligado) {
+  const { error } = await supabase.from('config_clube')
+    .upsert([{ chave: 'rodizio_jogos', valor: ligado ? 'sim' : 'nao' }], { onConflict: 'chave' })
+  if (error) throw new Error(error.message)
+}
+
 // Liderança: apaga o recorde DA SEMANA de alguém (ex.: valor forjado).
 // A pessoa pode cravar um novo jogando de verdade.
 export async function excluirRecorde(usuarioId, jogo) {

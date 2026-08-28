@@ -226,8 +226,10 @@ export default function Trilha() {
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
   const ehAdmin = ['instrutor', 'diretoria'].includes(profile?.papel)
   // Rodízio: um jogo comum só está aberto no SEU dia (ou liberado pela liderança).
-  // Sem o SQL do rodízio (rodizio === null), tudo fica aberto como antes.
-  const abertoHoje = (c) => !rodizio || ARCADE.has(c)
+  // rodizio === null (SQL não rodou) OU ativo === false (interruptor da liderança
+  // desligado em Gestão → 🎮) = tudo aberto, sem cadeados.
+  const rodizioOn = !!rodizio && rodizio.ativo !== false
+  const abertoHoje = (c) => !rodizioOn || ARCADE.has(c)
     || (rodizio.hoje || []).includes(c) || (rodizio.liberados || []).includes(c)
   const proximaData = (c) => (rodizio?.proximos || []).find((p) => p.chave === c)?.data
   const fmtAbre = (iso) => {
@@ -240,7 +242,7 @@ export default function Trilha() {
   // Progresso pro bônus do dia: o conjunto EXIGIDO vem do servidor (exclui o
   // que nem todo aparelho roda, ex. Pênaltis sem WebGL) — assim o contador e o
   // pagamento sempre batem. Sem o SQL do rodízio, vale a regra antiga (+50).
-  const valorBonus = rodizio ? (rodizio.valor_bonus ?? 20) : 50
+  const valorBonus = rodizio ? (rodizio.valor_bonus ?? (rodizioOn ? 20 : 50)) : 50
   const jogosDiarios = rodizio
     ? (rodizio.exigidos || rodizio.hoje || []).filter((c) => JOGOS[c])
     : jogosAtivos.filter((c) => !ARCADE.has(c))
@@ -259,7 +261,7 @@ export default function Trilha() {
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos</h2>
         <p className="text-sm text-muted">
-          {rodizio ? 'Cada dia 3 jogos abrem — jogue os de hoje e ganhe o bônus! 🎁' : 'Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐'}
+          {rodizioOn ? 'Cada dia 3 jogos abrem — jogue os de hoje e ganhe o bônus! 🎁' : 'Jogue e ganhe estrelas! Dá pra jogar todos, 1x cada por dia ⭐'}
         </p>
       </div>
 
@@ -351,7 +353,7 @@ export default function Trilha() {
               <div className="text-center mb-3">
                 <p className="font-bold text-ink">Escolha um jogo 🎮</p>
                 <p className="text-sm text-faint mt-1">
-                  {rodizio ? 'Os jogos com 🔒 abrem no dia deles. ' : 'Cada jogo, 1x por dia. '}
+                  {rodizioOn ? 'Os jogos com 🔒 abrem no dia deles. ' : 'Cada jogo, 1x por dia. '}
                   Cada ⭐ vale 5 pontos: <b>1⭐=5</b> · <b>2⭐=10</b> · <b>3⭐=15</b>.
                 </p>
               </div>
@@ -382,7 +384,7 @@ export default function Trilha() {
                 )
               })()}
 
-              {rodizio && (rodizio.hoje || []).some((c) => JOGOS[c]) && (
+              {rodizioOn && (rodizio.hoje || []).some((c) => JOGOS[c]) && (
                 <div className="rounded-2xl p-3.5 mb-3 bg-brand/5 border-2 border-brand/30">
                   <div className="text-[11px] font-extrabold text-brand uppercase tracking-wide">🥇 Jogos do dia</div>
                   <p className="text-xs text-muted mt-0.5 mb-2">
