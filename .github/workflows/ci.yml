@@ -1,0 +1,27 @@
+name: CI
+
+# Roda em todo push e em toda Pull Request. O deploy só deve ser considerado
+# seguro se este CI passar (lint + testes + build).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci
+      - name: Verificação completa (lint + testes + build)
+        run: npm run check
+        env:
+          # O build não precisa das chaves reais (o app cai no fallback);
+          # valores de teste bastam pra compilar.
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-teste-ci
