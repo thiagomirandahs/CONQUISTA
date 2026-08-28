@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense, Component } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { PedirAjuda, CaixaAjuda } from '../components/Ajuda.jsx'
 import FeedbackJogo from '../components/FeedbackJogo.jsx'
+import { suportaWebGL } from '../lib/webgl.js'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, registrarRecorde, carregarRecordesSemana, excluirRecorde, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos } from '../lib/dados.js'
 import * as juice from '../lib/juice.js'
 
@@ -65,6 +66,11 @@ const JogoCarrinhoPhaser = lazy(() => import('./jogos/CarrinhoPhaser.jsx'))
 const JogoReflexoPhaser = lazy(() => import('./jogos/ReflexoPhaser.jsx'))
 const JogoFutebolPhaser = lazy(() => import('./jogos/FutebolPhaser.jsx'))
 
+// O motor Phaser 4 SÓ renderiza com WebGL — em celular sem WebGL (antigo/fraco
+// ou WebView desatualizado) o jogo viraria TELA PRETA. Nesses aparelhos usamos
+// as versões clássicas (canvas 2D), que rodam em qualquer tela.
+const TEM_WEBGL = typeof document !== 'undefined' && suportaWebGL()
+
 const JOGOS = {
   memoria: { nome: 'Jogo da Memória', curto: 'Memória', emoji: '🧠', desc: 'Ache os pares dos itens do desbravador', Comp: JogoMemoria },
   genius: { nome: 'Siga a Sequência', curto: 'Sequência', emoji: '🎮', desc: 'Repita a ordem que os itens piscarem', Comp: JogoSequencia },
@@ -76,7 +82,7 @@ const JOGOS = {
   contas: { nome: 'Conta Rápida', curto: 'Contas', emoji: '🔢', desc: 'Quantas contas você acerta em 30 segundos?', Comp: JogoContas },
   nos: { nome: 'Quiz dos Nós', curto: 'Nós', emoji: '🪢', desc: 'Qual nó serve pra quê? Teste seus nós e amarras', Comp: JogoNos },
   semaforo: { nome: 'Semáfora', curto: 'Semáfora', emoji: '🚩', desc: 'Leia a letra pela posição das bandeiras', Comp: JogoSemaforo },
-  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: JogoCobraPhaser },
+  cobra: { nome: 'Cobrinha', curto: 'Cobrinha', emoji: '🐍', desc: 'Atravesse as paredes! Só não bata em você mesmo', Comp: TEM_WEBGL ? JogoCobraPhaser : JogoCobra },
   anagrama: { nome: 'Anagrama', curto: 'Anagrama', emoji: '🔤', desc: 'Desembaralhe a palavra do clube', Comp: JogoAnagrama },
   minado: { nome: 'Campo Minado', curto: 'Minado', emoji: '💣', desc: 'Abra o campo sem pisar nas minas', Comp: JogoCampoMinado },
   mudou: { nome: 'O Que Mudou?', curto: 'Mudou', emoji: '👀', desc: 'Memorize a grade e diga o que sumiu', Comp: JogoMudou },
@@ -85,13 +91,36 @@ const JOGOS = {
   proximo: { nome: 'Qual é o Próximo?', curto: 'Próximo', emoji: '➡️', desc: 'Complete a sequência lógica', Comp: JogoProximo },
   velha: { nome: 'Jogo da Velha', curto: 'Velha', emoji: '⭕', desc: 'Melhor de 3 contra o app — você é o ❌', Comp: JogoVelha },
   socorro: { nome: 'Primeiros Socorros', curto: 'Socorros', emoji: '🚑', desc: 'O que fazer primeiro? Aprenda socorrendo de verdade', Comp: JogoSocorro },
-  carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: JogoCarrinhoPhaser },
-  reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: JogoReflexoPhaser },
-  corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: JogoCorridaPhaser },
-  futebol: { nome: 'Pênaltis', curto: 'Pênaltis', emoji: '⚽', desc: 'Cobre 5 pênaltis: arraste pra mirar e engane o goleiro!', Comp: JogoFutebolPhaser },
+  carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: TEM_WEBGL ? JogoCarrinhoPhaser : JogoCarrinho },
+  reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: TEM_WEBGL ? JogoReflexoPhaser : JogoReflexo },
+  corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: TEM_WEBGL ? JogoCorridaPhaser : JogoCorrida },
+  // Pênaltis é 100% do motor (não tem versão clássica): só aparece com WebGL.
+  ...(TEM_WEBGL ? { futebol: { nome: 'Pênaltis', curto: 'Pênaltis', emoji: '⚽', desc: 'Cobre 5 pênaltis: arraste pra mirar e engane o goleiro!', Comp: JogoFutebolPhaser } } : {}),
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
 const ARCADE = new Set(['reflexo', 'corrida'])
+
+// Rede de segurança dos jogos do motor: se o componente Phaser quebrar ao abrir
+// (WebGL falhou no boot, chunk não baixou por cache velho...), renderiza a
+// versão clássica em vez de tela preta. Pênaltis não tem clássica → aviso + Sair.
+const RESERVAS = { cobra: JogoCobra, corrida: JogoCorrida, carrinho: JogoCarrinho, reflexo: JogoReflexo }
+class JogoBoundary extends Component {
+  constructor(props) { super(props); this.state = { quebrou: false } }
+  static getDerivedStateFromError() { return { quebrou: true } }
+  render() {
+    if (!this.state.quebrou) return this.props.children
+    const Reserva = this.props.Reserva
+    if (Reserva) return <Reserva onTerminar={this.props.onTerminar} onCancelar={this.props.onCancelar} />
+    return (
+      <div className="bg-surface rounded-3xl p-8 shadow-md text-center">
+        <div className="text-4xl mb-2">😢</div>
+        <p className="font-bold text-ink">Este jogo não abriu neste aparelho</p>
+        <p className="text-sm text-faint mt-1 mb-4">Tente atualizar o navegador (no Android, o "Android System WebView" na Play Store) e abrir de novo.</p>
+        <button onClick={this.props.onCancelar} className="bg-brand text-white font-bold rounded-xl px-6 py-2.5">Voltar</button>
+      </div>
+    )
+  }
+}
 
 export default function Trilha() {
   const { profile } = useAuth()
@@ -215,9 +244,11 @@ export default function Trilha() {
                   {JOGOS[jogoAtual]?.emoji} {JOGOS[jogoAtual]?.nome}
                 </span>
               </div>
-              <Suspense fallback={<p className="text-faint text-sm text-center py-10">Carregando o jogo…</p>}>
-                <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
-              </Suspense>
+              <JogoBoundary Reserva={RESERVAS[jogoAtual]} onTerminar={aoTerminar} onCancelar={() => setJogando(false)}>
+                <Suspense fallback={<p className="text-faint text-sm text-center py-10">Carregando o jogo…</p>}>
+                  <Jogo onTerminar={aoTerminar} onCancelar={() => setJogando(false)} />
+                </Suspense>
+              </JogoBoundary>
             </motion.div>
           )
         })()
