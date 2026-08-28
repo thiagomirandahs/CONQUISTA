@@ -5,9 +5,10 @@
 // bola passa longe da mão dele (ou alto demais pra ele). Marque o maximo de 5:
 // 5 gols = 3 estrelas, 3-4 = 2, senao 1. Jogo normal (da estrelas por onTerminar).
 // Lazy — o Phaser so entra no bundle de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import * as juice from '../../lib/juice.js'
+import * as juice from '../../../lib/juice.js'
 
 const W = 360, H = 560
 const GOL_L = 76, GOL_R = 284, GOL_TOP = 98, GOL_BOT = 176
@@ -221,29 +222,19 @@ class FutebolScene extends Phaser.Scene {
 }
 
 export default function FutebolPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [gols, setGols] = useState(0)
   const estrelasDe = (g) => (g >= 5 ? 3 : g >= 3 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#3fa34d', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: FutebolScene,
-    })
-    gameRef.current = game
-    const aoResultado = (tipo) => { if (tipo === 'gol') juice.acerto(2); else juice.erro() }
-    const aoFim = (g) => { setGols(g); setFase('fim') }
-    game.events.on('futebol:resultado', aoResultado)
-    game.events.on('futebol:fim', aoFim)
-    return () => { game.events.off('futebol:resultado', aoResultado); game.events.off('futebol:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#3fa34d', banner: false, fps: { target: 60 }, scene: FutebolScene },
+    {
+      'futebol:resultado': (tipo) => { if (tipo === 'gol') juice.acerto(2); else juice.erro() },
+      'futebol:fim': (g) => { setGols(g); setFase('fim') },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setGols(0); gameRef.current?.events.emit('futebol:start') }
+  function iniciar() { setFase('jogando'); setGols(0); emit('futebol:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -269,7 +260,7 @@ export default function FutebolPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(gols))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(gols))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(gols))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>

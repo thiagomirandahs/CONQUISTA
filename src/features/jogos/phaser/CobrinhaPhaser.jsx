@@ -6,7 +6,8 @@
 // Mesmo contrato do jogo antigo: recebe { onTerminar, onCancelar }. Fica num
 // arquivo próprio, carregado sob demanda (lazy) — o Phaser só entra no bundle
 // de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
 
 const N = 12, CELL = 38, PAD = 14
@@ -154,29 +155,19 @@ class CobraScene extends Phaser.Scene {
 }
 
 export default function CobrinhaPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto') // pronto | jogando | fim
   const [pontos, setPontos] = useState(0)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#04220f', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: CobraScene,
-    })
-    gameRef.current = game
-    const aoPontos = (n) => setPontos(n)
-    const aoFim = (n) => { setPontos(n); setFase('fim'); setTimeout(() => termRef.current(n >= 15 ? 3 : n >= 8 ? 2 : 1), 1100) }
-    game.events.on('cobra:pontos', aoPontos)
-    game.events.on('cobra:fim', aoFim)
-    return () => { game.events.off('cobra:pontos', aoPontos); game.events.off('cobra:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#04220f', banner: false, fps: { target: 60 }, scene: CobraScene },
+    {
+      'cobra:pontos': (n) => setPontos(n),
+      'cobra:fim': (n) => { setPontos(n); setFase('fim'); setTimeout(() => onTerminar(n >= 15 ? 3 : n >= 8 ? 2 : 1), 1100) },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setPontos(0); gameRef.current?.events.emit('cobra:start') }
-  const virar = (x, y) => gameRef.current?.events.emit('cobra:virar', { x, y })
+  function iniciar() { setFase('jogando'); setPontos(0); emit('cobra:start') }
+  const virar = (x, y) => emit('cobra:virar', { x, y })
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">

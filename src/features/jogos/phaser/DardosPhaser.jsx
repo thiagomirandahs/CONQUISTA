@@ -4,9 +4,10 @@
 // borda 1pt, meio 2pts, mosca vermelha 3pts (máx 15 em 5 dardos). 12+ = 3
 // estrelas, 7+ = 2, senão 1. Jogo normal (dá estrelas por onTerminar).
 // Lazy — o Phaser só entra no bundle de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import * as juice from '../../lib/juice.js'
+import * as juice from '../../../lib/juice.js'
 
 const W = 360, H = 560
 const ALVO_X = 180, ALVO_Y = 210
@@ -222,29 +223,19 @@ export class DardosScene extends Phaser.Scene {
 }
 
 export default function DardosPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [pontos, setPontos] = useState(0)
   const estrelasDe = (p) => (p >= 12 ? 3 : p >= 7 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#4a2f1c', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: DardosScene,
-    })
-    gameRef.current = game
-    const aoResultado = (pts) => { if (pts > 0) juice.acerto(pts); else juice.erro() }
-    const aoFim = (p) => { setPontos(p); setFase('fim') }
-    game.events.on('dardos:resultado', aoResultado)
-    game.events.on('dardos:fim', aoFim)
-    return () => { game.events.off('dardos:resultado', aoResultado); game.events.off('dardos:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#4a2f1c', banner: false, fps: { target: 60 }, scene: DardosScene },
+    {
+      'dardos:resultado': (pts) => { if (pts > 0) juice.acerto(pts); else juice.erro() },
+      'dardos:fim': (p) => { setPontos(p); setFase('fim') },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setPontos(0); gameRef.current?.events.emit('dardos:start') }
+  function iniciar() { setFase('jogando'); setPontos(0); emit('dardos:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -270,7 +261,7 @@ export default function DardosPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(pontos))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(pontos))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(pontos))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>

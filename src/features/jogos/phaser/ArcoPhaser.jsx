@@ -5,9 +5,10 @@
 // desafio da vez. Anéis: branco 1pt, azul 2pts, centro vermelho 3pts (máx 15).
 // 12+ = 3 estrelas, 7+ = 2, senão 1. Jogo normal (dá estrelas por onTerminar).
 // Lazy — o Phaser só entra no bundle de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import * as juice from '../../lib/juice.js'
+import * as juice from '../../../lib/juice.js'
 
 const W = 360, H = 520
 const CHAO = 468                 // linha do chão (grama começa aqui)
@@ -412,29 +413,19 @@ export class ArcoScene extends Phaser.Scene {
 }
 
 export default function ArcoPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [pontos, setPontos] = useState(0)
   const estrelasDe = (p) => (p >= 12 ? 3 : p >= 7 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#7dc4ea', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: ArcoScene,
-    })
-    gameRef.current = game
-    const aoResultado = (pts) => { if (pts > 0) juice.acerto(pts); else juice.erro() }
-    const aoFim = (p) => { setPontos(p); setFase('fim') }
-    game.events.on('arco:resultado', aoResultado)
-    game.events.on('arco:fim', aoFim)
-    return () => { game.events.off('arco:resultado', aoResultado); game.events.off('arco:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#7dc4ea', banner: false, fps: { target: 60 }, scene: ArcoScene },
+    {
+      'arco:resultado': (pts) => { if (pts > 0) juice.acerto(pts); else juice.erro() },
+      'arco:fim': (p) => { setPontos(p); setFase('fim') },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setPontos(0); gameRef.current?.events.emit('arco:start') }
+  function iniciar() { setFase('jogando'); setPontos(0); emit('arco:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -460,7 +451,7 @@ export default function ArcoPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(pontos))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(pontos))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(pontos))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>

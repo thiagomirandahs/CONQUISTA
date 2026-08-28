@@ -5,9 +5,10 @@
 // jogo antigo: recebe só onCancelar e reporta o placar por registrarRecorde('corrida').
 // Fica num arquivo próprio e é carregado sob demanda (lazy) — o Phaser só entra no
 // bundle quando a criança abre ESTE jogo.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import { registrarRecorde } from '../../lib/dados.js'
+import { registrarRecorde } from '../../../lib/dados.js'
 
 const W = 800, H = 300, GROUND_Y = 250, RUNNER_X = 150
 const OBST = ['🔥', '🪵', '⛺', '🪨', '🌵', '🎒']
@@ -199,31 +200,23 @@ class CorridaScene extends Phaser.Scene {
 }
 
 export default function CorridaPhaser({ onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
   const [fase, setFase] = useState('pronto') // pronto | jogando | fim
   const [pontos, setPontos] = useState(0)
   const [resultado, setResultado] = useState(null)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#2b3a67', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: CorridaScene,
-    })
-    gameRef.current = game
-    const aoFim = async (score) => {
-      setPontos(score); setFase('fim'); setResultado(null)
-      try { setResultado(await registrarRecorde('corrida', score)) } catch { setResultado('erro') }
-    }
-    game.events.on('corrida:fim', aoFim)
-    return () => { game.events.off('corrida:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#2b3a67', banner: false, fps: { target: 60 }, scene: CorridaScene },
+    {
+      'corrida:fim': async (score) => {
+        setPontos(score); setFase('fim'); setResultado(null)
+        try { setResultado(await registrarRecorde('corrida', score)) } catch { setResultado('erro') }
+      },
+    },
+  )
 
   function iniciar() {
     setFase('jogando'); setPontos(0); setResultado(null)
-    gameRef.current?.events.emit('corrida:start')
+    emit('corrida:start')
   }
 
   // Espaço/Enter começa (parado) ou joga de novo (fim) — só quando não está jogando
@@ -240,7 +233,7 @@ export default function CorridaPhaser({ onCancelar }) {
   // no ar, então não tem pulo duplo.
   useEffect(() => {
     if (fase !== 'jogando') return
-    const pular = () => gameRef.current?.events.emit('corrida:pular')
+    const pular = () => emit('corrida:pular')
     window.addEventListener('pointerdown', pular)
     return () => window.removeEventListener('pointerdown', pular)
   }, [fase])

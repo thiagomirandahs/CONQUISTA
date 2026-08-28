@@ -5,9 +5,10 @@
 // É "recorde": reporta o nível por registrarRecorde('reflexo', nível). Modernizado
 // com tabuleiro escuro, anel de tempo, partículas ao acertar e tremida ao errar.
 // Contrato igual ao antigo: { onTerminar, onCancelar }. Lazy (Phaser sob demanda).
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import { registrarRecorde } from '../../lib/dados.js'
+import { registrarRecorde } from '../../../lib/dados.js'
 
 const W = 340, H = 520
 const EMOJIS = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
@@ -127,31 +128,22 @@ class ReflexoScene extends Phaser.Scene {
 }
 
 export default function ReflexoPhaser({ onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
   const [fase, setFase] = useState('pronto') // pronto | jogando | fim
   const [nivel, setNivel] = useState(0)
   const [resultado, setResultado] = useState(null)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#0f172a', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: ReflexoScene,
-    })
-    gameRef.current = game
-    const aoNivel = (n) => setNivel(n)
-    const aoFim = async (n) => {
-      setNivel(n); setFase('fim'); setResultado(null)
-      try { setResultado(await registrarRecorde('reflexo', n)) } catch { setResultado('erro') }
-    }
-    game.events.on('reflexo:nivel', aoNivel)
-    game.events.on('reflexo:fim', aoFim)
-    return () => { game.events.off('reflexo:nivel', aoNivel); game.events.off('reflexo:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#0f172a', banner: false, fps: { target: 60 }, scene: ReflexoScene },
+    {
+      'reflexo:nivel': (n) => setNivel(n),
+      'reflexo:fim': async (n) => {
+        setNivel(n); setFase('fim'); setResultado(null)
+        try { setResultado(await registrarRecorde('reflexo', n)) } catch { setResultado('erro') }
+      },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setNivel(0); setResultado(null); gameRef.current?.events.emit('reflexo:start') }
+  function iniciar() { setFase('jogando'); setNivel(0); setResultado(null); emit('reflexo:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">

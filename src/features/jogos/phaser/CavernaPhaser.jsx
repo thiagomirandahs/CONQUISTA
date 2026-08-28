@@ -5,9 +5,10 @@
 // do próprio vagalume é a "lanterna" que revela o caminho. São 3 tentativas e
 // vale a MELHOR: >=15 vãos = 3 estrelas, >=8 = 2, senão 1 (dá estrelas por onTerminar).
 // Lazy — o Phaser só entra no bundle de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import * as juice from '../../lib/juice.js'
+import * as juice from '../../../lib/juice.js'
 
 const W = 360, H = 560
 const VAGA_X = 96                 // x fixo do vagalume (ele só sobe/desce)
@@ -345,36 +346,20 @@ export class CavernaScene extends Phaser.Scene {
 }
 
 export default function CavernaPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [melhor, setMelhor] = useState(0)
   const estrelasDe = (m) => (m >= 15 ? 3 : m >= 8 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#0a0f1e', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: CavernaScene,
-    })
-    gameRef.current = game
-    const aoPonto = (s) => juice.acerto(Math.min(s, 6)) // combo sobe o tom conforme avança
-    const aoBateu = () => juice.erro()
-    const aoFim = (m) => { setMelhor(m); setFase('fim') }
-    game.events.on('caverna:ponto', aoPonto)
-    game.events.on('caverna:bateu', aoBateu)
-    game.events.on('caverna:fim', aoFim)
-    return () => {
-      game.events.off('caverna:ponto', aoPonto)
-      game.events.off('caverna:bateu', aoBateu)
-      game.events.off('caverna:fim', aoFim)
-      game.destroy(true)
-    }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#0a0f1e', banner: false, fps: { target: 60 }, scene: CavernaScene },
+    {
+      'caverna:ponto': (s) => juice.acerto(Math.min(s, 6)), // combo sobe o tom conforme avança
+      'caverna:bateu': () => juice.erro(),
+      'caverna:fim': (m) => { setMelhor(m); setFase('fim') },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setMelhor(0); gameRef.current?.events.emit('caverna:start') }
+  function iniciar() { setFase('jogando'); setMelhor(0); emit('caverna:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -400,7 +385,7 @@ export default function CavernaPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(melhor))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(melhor))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(melhor))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>

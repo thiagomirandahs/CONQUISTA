@@ -4,7 +4,8 @@
 // desenhado por código, estrada rolando, faíscas ao pegar item bom e
 // fumaça + tremida de câmera ao bater. Portrait 360×520 (feito pra celular).
 // Contrato igual ao antigo: { onTerminar, onCancelar }. Lazy (Phaser sob demanda).
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
 
 const W = 360, H = 520, CARRO_Y = H - 78
@@ -133,27 +134,16 @@ class CarroScene extends Phaser.Scene {
 }
 
 export default function CarrinhoPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [placar, setPlacar] = useState(0)
   const estrelasDe = (s) => (s >= 25 ? 3 : s >= 12 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#334155', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: CarroScene,
-    })
-    gameRef.current = game
-    const aoFim = (n) => { setPlacar(n); setFase('fim') }
-    game.events.on('carro:fim', aoFim)
-    return () => { game.events.off('carro:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#334155', banner: false, fps: { target: 60 }, scene: CarroScene },
+    { 'carro:fim': (n) => { setPlacar(n); setFase('fim') } },
+  )
 
-  function iniciar() { setFase('jogando'); setPlacar(0); gameRef.current?.events.emit('carro:start') }
+  function iniciar() { setFase('jogando'); setPlacar(0); emit('carro:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -179,7 +169,7 @@ export default function CarrinhoPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(placar))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(placar))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(placar))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>

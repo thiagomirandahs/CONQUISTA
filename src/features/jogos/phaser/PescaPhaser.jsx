@@ -5,9 +5,10 @@
 // bota (🥾) é lixo e tira ponto. Rodada de 45s: >=10 peixes = 3 estrelas,
 // >=6 = 2, senão 1. Jogo normal (dá estrelas por onTerminar).
 // Lazy — o Phaser só entra no bundle de quem abre um jogo do motor.
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
-import * as juice from '../../lib/juice.js'
+import * as juice from '../../../lib/juice.js'
 
 const W = 360, H = 560
 const SUPERFICIE = 112               // linha d'água
@@ -323,29 +324,19 @@ export class PescaScene extends Phaser.Scene {
 }
 
 export default function PescaPhaser({ onTerminar, onCancelar }) {
-  const hostRef = useRef(null)
-  const gameRef = useRef(null)
-  const termRef = useRef(onTerminar); termRef.current = onTerminar
   const [fase, setFase] = useState('pronto')
   const [peixes, setPeixes] = useState(0)
   const estrelasDe = (n) => (n >= 10 ? 3 : n >= 6 ? 2 : 1)
 
-  useEffect(() => {
-    const game = new Phaser.Game({
-      type: Phaser.AUTO, parent: hostRef.current, width: W, height: H,
-      backgroundColor: '#0a468c', banner: false, fps: { target: 60 },
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: W, height: H },
-      scene: PescaScene,
-    })
-    gameRef.current = game
-    const aoResultado = (tipo, combo) => { if (tipo === 'peixe') juice.acerto(combo); else juice.erro() }
-    const aoFim = (n) => { setPeixes(n); setFase('fim') }
-    game.events.on('pesca:resultado', aoResultado)
-    game.events.on('pesca:fim', aoFim)
-    return () => { game.events.off('pesca:resultado', aoResultado); game.events.off('pesca:fim', aoFim); game.destroy(true) }
-  }, [])
+  const { hostRef, emit } = usePhaserGame(
+    { width: W, height: H, backgroundColor: '#0a468c', banner: false, fps: { target: 60 }, scene: PescaScene },
+    {
+      'pesca:resultado': (tipo, combo) => { if (tipo === 'peixe') juice.acerto(combo); else juice.erro() },
+      'pesca:fim': (n) => { setPeixes(n); setFase('fim') },
+    },
+  )
 
-  function iniciar() { setFase('jogando'); setPeixes(0); gameRef.current?.events.emit('pesca:start') }
+  function iniciar() { setFase('jogando'); setPeixes(0); emit('pesca:start') }
 
   return (
     <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
@@ -374,7 +365,7 @@ export default function PescaPhaser({ onTerminar, onCancelar }) {
               <p className="text-sm font-bold text-gold mt-1">{'⭐'.repeat(estrelasDe(peixes))}</p>
               <div className="flex gap-2 mt-4 max-w-[280px] mx-auto">
                 <button onClick={onCancelar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Sair</button>
-                <button onClick={() => termRef.current(estrelasDe(peixes))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
+                <button onClick={() => onTerminar(estrelasDe(peixes))} className="flex-1 rounded-xl bg-brand text-white font-extrabold py-2.5">Concluir 🎉</button>
               </div>
             </div>
           </div>
