@@ -65,6 +65,10 @@ const JogoCobraPhaser = lazy(() => import('./jogos/CobrinhaPhaser.jsx'))
 const JogoCarrinhoPhaser = lazy(() => import('./jogos/CarrinhoPhaser.jsx'))
 const JogoReflexoPhaser = lazy(() => import('./jogos/ReflexoPhaser.jsx'))
 const JogoFutebolPhaser = lazy(() => import('./jogos/FutebolPhaser.jsx'))
+const JogoBasquetePhaser = lazy(() => import('./jogos/BasquetePhaser.jsx'))
+const JogoPescaPhaser = lazy(() => import('./jogos/PescaPhaser.jsx'))
+const JogoCavernaPhaser = lazy(() => import('./jogos/CavernaPhaser.jsx'))
+const JogoArcoPhaser = lazy(() => import('./jogos/ArcoPhaser.jsx'))
 
 // O motor Phaser 4 SÓ renderiza com WebGL — em celular sem WebGL (antigo/fraco
 // ou WebView desatualizado) o jogo viraria TELA PRETA. Nesses aparelhos usamos
@@ -94,8 +98,14 @@ const JOGOS = {
   carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: TEM_WEBGL ? JogoCarrinhoPhaser : JogoCarrinho },
   reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: TEM_WEBGL ? JogoReflexoPhaser : JogoReflexo },
   corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: TEM_WEBGL ? JogoCorridaPhaser : JogoCorrida },
-  // Pênaltis é 100% do motor (não tem versão clássica): só aparece com WebGL.
-  ...(TEM_WEBGL ? { futebol: { nome: 'Pênaltis', curto: 'Pênaltis', emoji: '⚽', desc: 'Cobre 5 pênaltis: arraste pra mirar e engane o goleiro!', Comp: JogoFutebolPhaser } } : {}),
+  // Jogos 100% do motor (sem versão clássica): só aparecem com WebGL.
+  ...(TEM_WEBGL ? {
+    futebol: { nome: 'Pênaltis', curto: 'Pênaltis', emoji: '⚽', desc: 'Cobre 5 pênaltis: arraste pra mirar e engane o goleiro!', Comp: JogoFutebolPhaser },
+    basquete: { nome: 'Arremesso', curto: 'Basquete', emoji: '🏀', desc: 'Arraste pra arremessar e acerte a cesta — 5 bolas!', Comp: JogoBasquetePhaser },
+    pesca: { nome: 'Pescaria', curto: 'Pescaria', emoji: '🎣', desc: 'Toque pra soltar o anzol e pesque o máximo em 45s!', Comp: JogoPescaPhaser },
+    caverna: { nome: 'Caverna', curto: 'Caverna', emoji: '🔦', desc: 'Segure pra voar e desvie das pedras no escuro!', Comp: JogoCavernaPhaser },
+    arco: { nome: 'Arco e Flecha', curto: 'Arco', emoji: '🏹', desc: 'Puxe a corda, mire no alvo e cuidado com o vento!', Comp: JogoArcoPhaser },
+  } : {}),
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
 const ARCADE = new Set(['reflexo', 'corrida'])

@@ -37,6 +37,13 @@
 --    (Linhas antigas ganham o timestamp de agora — só importa daqui pra frente.)
 alter table public.trilha_jogos add column if not exists created_at timestamptz default now();
 
+-- 0b) Jogos que EXIGEM WebGL (motor Phaser, sem versão clássica) não podem ser
+--     EXIGIDOS no bônus de "completar o dia" — nem todo celular os roda. Eles
+--     continuam no rodízio (dão pontos e concorrem ao +10) normalmente.
+alter table public.jogos_trilha add column if not exists requer_webgl boolean not null default false;
+update public.jogos_trilha set requer_webgl = true
+  where chave in ('futebol', 'basquete', 'pesca', 'caverna', 'arco');
+
 -- 1) O trio do dia (determinístico, janela deslizante sobre a ordem fixa)
 create or replace function public.jogos_do_dia(p_data date default null)
 returns table (chave text, nome text, emoji text)
@@ -123,9 +130,8 @@ begin
   select coalesce(json_agg(l.chave), '[]'::json) into v_lib
   from public.jogos_liberados l where l.data = v_hoje;
 
-  -- conjunto EXIGIDO pro bônus do dia: os abertos MENOS jogos que nem todo
-  -- aparelho roda ('futebol' precisa de WebGL) — tem que bater com o
-  -- bonus_todos_jogos/lembrete lá embaixo
+  -- conjunto EXIGIDO pro bônus do dia: os abertos MENOS os requer_webgl —
+  -- tem que bater com o bonus_todos_jogos/lembrete lá embaixo
   select coalesce(json_agg(q.chave), '[]'::json) into v_exig
   from (
     select d.chave from public.jogos_do_dia(v_hoje) d
@@ -133,7 +139,9 @@ begin
     select l.chave from public.jogos_liberados l
     join public.jogos_trilha j on j.chave = l.chave
     where l.data = v_hoje and j.ativo and l.chave not in ('reflexo', 'corrida')
-  ) q where q.chave <> 'futebol';
+  ) q
+  join public.jogos_trilha jt on jt.chave = q.chave
+  where not jt.requer_webgl;
 
   -- próxima data em que cada jogo ativo do rodízio abre (até 21 dias à frente)
   select coalesce(json_agg(json_build_object('chave', s.chave, 'data', s.data)), '[]'::json)
@@ -321,15 +329,18 @@ begin
   -- jogos abertos hoje (trio do rodízio + liberados pela liderança, sem arcade)
   create temp table if not exists _abertos_hoje (chave text primary key) on commit drop;
   delete from _abertos_hoje;
-  -- 'futebol' fica FORA do exigido: precisa de WebGL e nem todo celular tem —
-  -- ele continua no trio (dá pontos e concorre ao +10), só não trava o bônus.
+  -- jogos requer_webgl ficam FORA do exigido (nem todo celular os roda) —
+  -- continuam no trio (dão pontos e concorrem ao +10), só não travam o bônus.
   insert into _abertos_hoje
-    select d.chave from public.jogos_do_dia(v_hoje) d where d.chave <> 'futebol'
-    union
-    select l.chave from public.jogos_liberados l
-    join public.jogos_trilha j on j.chave = l.chave
-    where l.data = v_hoje and j.ativo
-      and l.chave not in ('reflexo', 'corrida', 'futebol');
+    select q.chave from (
+      select d.chave from public.jogos_do_dia(v_hoje) d
+      union
+      select l.chave from public.jogos_liberados l
+      join public.jogos_trilha j on j.chave = l.chave
+      where l.data = v_hoje and j.ativo and l.chave not in ('reflexo', 'corrida')
+    ) q
+    join public.jogos_trilha jt on jt.chave = q.chave
+    where not jt.requer_webgl;
 
   select count(*) into v_total from _abertos_hoje;
 
@@ -379,14 +390,17 @@ begin
 
   create temp table if not exists _abertos_lembrete (chave text primary key) on commit drop;
   delete from _abertos_lembrete;
-  -- mesmo conjunto exigido do bônus (sem 'futebol', que exige WebGL)
+  -- mesmo conjunto exigido do bônus (sem os requer_webgl)
   insert into _abertos_lembrete
-    select d.chave from public.jogos_do_dia(v_hoje) d where d.chave <> 'futebol'
-    union
-    select l.chave from public.jogos_liberados l
-    join public.jogos_trilha j on j.chave = l.chave
-    where l.data = v_hoje and j.ativo
-      and l.chave not in ('reflexo', 'corrida', 'futebol');
+    select q.chave from (
+      select d.chave from public.jogos_do_dia(v_hoje) d
+      union
+      select l.chave from public.jogos_liberados l
+      join public.jogos_trilha j on j.chave = l.chave
+      where l.data = v_hoje and j.ativo and l.chave not in ('reflexo', 'corrida')
+    ) q
+    join public.jogos_trilha jt on jt.chave = q.chave
+    where not jt.requer_webgl;
 
   select count(*) into v_total from _abertos_lembrete;
   if v_total = 0 then return; end if;
