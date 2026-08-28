@@ -32,6 +32,9 @@ export class CavernaScene extends Phaser.Scene {
     fundo.fillStyle(0x0d1426, 1)
     fundo.fillEllipse(40, 120, 160, 300); fundo.fillEllipse(330, 420, 180, 340)
 
+    // PARALAXE: estalactites/estalagmites ao longe andando a ~40% das pedras — profundidade
+    this.paralaxe = this.add.tileSprite(W / 2, H / 2, W, H, 'parede').setDepth(1).setAlpha(0.8)
+
     // cristaizinhos que piscam: dão vida sem clarear a caverna
     for (let i = 0; i < 12; i++) {
       const c = this.add.circle(Phaser.Math.Between(10, W - 10), Phaser.Math.Between(30, H - 30), Phaser.Math.Between(1, 2), 0x8fd0f0, 0.18).setDepth(1)
@@ -46,6 +49,11 @@ export class CavernaScene extends Phaser.Scene {
       rocha.fillTriangle(x, 8, x + 24, 8, x + 12, 8 + Phaser.Math.Between(8, 16))
       rocha.fillTriangle(x, H - 8, x + 24, H - 8, x + 12, H - 8 - Phaser.Math.Between(8, 16))
     }
+
+    // GOTAS do teto: pinguinho reusado (nada nasce por gota) que cai de vez em quando
+    this.gota = this.add.circle(0, 0, 2, 0x9fd8ff, 0).setDepth(2)
+    this.plim = this.add.circle(0, 0, 3, 0x9fd8ff, 0).setDepth(2)
+    this.agendarGota()
 
     // EFEITO LANTERNA: dois círculos de luz (um grande fraco + um perto mais forte)
     // seguindo o vagalume — com ADD parece luz de verdade sobre as pedras
@@ -72,9 +80,12 @@ export class CavernaScene extends Phaser.Scene {
       this.faiscas.startFollow(this.vaga, -6, 8)
     } catch { this.faiscas = null }
 
+    // chips do HUD: pastilha escura atrás de cada texto (criado ANTES pra ficar por baixo)
+    this.chips = this.add.graphics().setDepth(9)
     this.tentTxt = this.add.text(12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setDepth(9).setShadow(0, 1, '#000a', 3)
     this.ptsTxt = this.add.text(W / 2, 8, '', { fontFamily: 'system-ui', fontSize: '24px', fontStyle: 'bold', color: '#ffe58a' }).setOrigin(0.5, 0).setDepth(9).setShadow(0, 1, '#000a', 3)
     this.melhorTxt = this.add.text(W - 12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(1, 0).setDepth(9).setShadow(0, 1, '#000a', 3)
+    this.bannerBg = this.add.graphics().setDepth(9).setAlpha(0) // pastilha do banner: faz pop junto com ele
     this.banner = this.add.text(W / 2, 220, '', { fontFamily: 'system-ui', fontSize: '30px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(9).setShadow(0, 2, '#0008', 4).setAlpha(0)
 
     // controle: dedo NA TELA = sobe, soltou = desce. Resposta imediata (zero atraso).
@@ -83,23 +94,44 @@ export class CavernaScene extends Phaser.Scene {
       if (this.estado === 'voando') {
         this.velY -= 60 // empurrãozinho instantâneo: o toque responde NA HORA
         this.tweens.add({ targets: this.vaga, scaleY: 0.86, scaleX: 1.1, yoyo: true, duration: 90 })
+        // segurou = subindo: a lanterninha dá uma piscada mais forte (camada extra, sem brigar com o pulso ambiente)
+        this.tweens.killTweensOf(this.brilhoForte)
+        this.tweens.add({ targets: this.brilhoForte, alpha: 0.45, scale: 1.2, duration: 120 })
       }
     })
-    this.input.on('pointerup', () => { this.segurando = false })
-    this.input.on('pointerupoutside', () => { this.segurando = false }) // dedo saiu do canvas: solta também
+    const soltar = () => {
+      this.segurando = false
+      this.tweens.killTweensOf(this.brilhoForte)
+      this.tweens.add({ targets: this.brilhoForte, alpha: 0, scale: 1, duration: 220 }) // brilho volta ao normal
+    }
+    this.input.on('pointerup', soltar)
+    this.input.on('pointerupoutside', soltar) // dedo saiu do canvas: solta também
 
     this.game.events.on('caverna:start', this.iniciar, this)
     this.resetVars()
   }
 
   criarTexturas() {
-    if (this.textures.exists('fagulha')) return
-    const g = this.add.graphics()
-    g.fillStyle(0xffe58a, 1); g.fillCircle(4, 4, 4); g.generateTexture('fagulha', 8, 8); g.destroy()
+    if (!this.textures.exists('fagulha')) {
+      const g = this.add.graphics()
+      g.fillStyle(0xffe58a, 1); g.fillCircle(4, 4, 4); g.generateTexture('fagulha', 8, 8); g.destroy()
+    }
+    if (!this.textures.exists('parede')) {
+      // paredão ao longe pro paralaxe: espinhos bem escuros, nenhum cruza a emenda (tile sem costura)
+      const p = this.add.graphics()
+      p.fillStyle(0x0e1626, 1)
+      for (let x = 0; x < W - 40; x += Phaser.Math.Between(34, 58)) {
+        p.fillTriangle(x, 0, x + 30, 0, x + 15, Phaser.Math.Between(50, 120))
+        p.fillTriangle(x + 8, H, x + 38, H, x + 23, H - Phaser.Math.Between(50, 120))
+      }
+      p.generateTexture('parede', W, H); p.destroy()
+    }
   }
 
   desenharVagalume() {
     const c = this.add.container(VAGA_X, H / 2).setDepth(7)
+    // brilho extra que só acende quando o jogador segura (piscada forte da subida)
+    this.brilhoForte = this.add.circle(0, 5, 20, 0xfff3c4, 0).setBlendMode(Phaser.BlendModes.ADD)
     // brilho pulsante: a "lanterninha" do bumbum dele
     this.brilho = this.add.circle(0, 5, 15, 0xffe58a, 0.35)
     // asinhas que batem rápido
@@ -112,7 +144,7 @@ export class CavernaScene extends Phaser.Scene {
     corpo.lineStyle(1.5, 0x4a3f63, 1)
     corpo.beginPath(); corpo.moveTo(-2, -9); corpo.lineTo(-5, -14); corpo.strokePath() // antenas
     corpo.beginPath(); corpo.moveTo(2, -9); corpo.lineTo(5, -14); corpo.strokePath()
-    c.add([this.brilho, this.asaE, this.asaD, corpo])
+    c.add([this.brilhoForte, this.brilho, this.asaE, this.asaD, corpo])
     this.tweens.add({ targets: [this.asaE, this.asaD], scaleY: 0.35, yoyo: true, repeat: -1, duration: 90, ease: 'Sine.inOut' })
     this.tweens.add({ targets: this.brilho, scale: 1.35, alpha: 0.5, yoyo: true, repeat: -1, duration: 600, ease: 'Sine.inOut' })
     return c
@@ -135,6 +167,33 @@ export class CavernaScene extends Phaser.Scene {
     this.tentTxt.setText('🔦 ' + Math.min(this.tentativa, 3) + '/3')
     this.ptsTxt.setText('✨ ' + this.score)
     this.melhorTxt.setText('🏆 ' + this.melhor)
+    // chips: redesenha só quando o placar muda (nunca por frame)
+    const g = this.chips
+    g.clear(); g.fillStyle(0x0f172a, 0.35)
+    for (const t of [this.tentTxt, this.ptsTxt, this.melhorTxt]) {
+      const b = t.getBounds()
+      g.fillRoundedRect(b.x - 10, b.y - 5, b.width + 20, b.height + 10, 12)
+    }
+  }
+
+  // gota do teto: timer aleatório encadeado — ambiente vivo sem pesar
+  agendarGota() {
+    this.time.delayedCall(Phaser.Math.Between(1400, 3600), () => { this.soltarGota(); this.agendarGota() })
+  }
+
+  soltarGota() {
+    const x = Phaser.Math.Between(20, W - 20)
+    this.tweens.killTweensOf([this.gota, this.plim])
+    this.gota.setPosition(x, 26).setAlpha(0.3).setScale(1)
+    this.tweens.add({
+      targets: this.gota, y: H - 14, alpha: 0.22, duration: Phaser.Math.Between(650, 950), ease: 'Quad.in',
+      onComplete: () => {
+        this.gota.setAlpha(0)
+        // plim minúsculo: anelzinho abre e some onde a gota bateu
+        this.plim.setPosition(x, H - 14).setAlpha(0.35).setScale(0.4)
+        this.tweens.add({ targets: this.plim, scale: 2, alpha: 0, duration: 260 })
+      },
+    })
   }
 
   novaTentativa() {
@@ -144,13 +203,25 @@ export class CavernaScene extends Phaser.Scene {
     this.distSpawn = 40 // primeira pedra chega rapidinho, mas dá tempo de sentir o controle
     this.segurando = false
     this.tweens.killTweensOf(this.vaga) // corta a queda da morte / flutuação do "pronto"
-    this.tweens.killTweensOf([this.luzFora, this.luzPerto])
-    this.vaga.setPosition(VAGA_X, H / 2).setRotation(0).setAlpha(1).setScale(1)
-    this.luzFora.setAlpha(0.07); this.luzPerto.setAlpha(0.12)
+    this.tweens.killTweensOf([this.luzFora, this.luzPerto, this.brilhoForte])
+    this.brilhoForte.setAlpha(0).setScale(1)
+    // ENTRADA: o vagalume "acorda" com um pop curtinho — sensação de rodada nova
+    this.vaga.setPosition(VAGA_X, H / 2).setRotation(0).setAlpha(1).setScale(0.92)
+    this.tweens.add({ targets: this.vaga, scale: 1, duration: 240, ease: 'Back.out' })
+    // a lanterninha acende suave em vez de já nascer ligada
+    this.luzFora.setAlpha(0).setScale(1); this.luzPerto.setAlpha(0).setScale(1)
+    this.tweens.add({ targets: this.luzFora, alpha: 0.07, duration: 300 })
+    this.tweens.add({ targets: this.luzPerto, alpha: 0.12, duration: 300 })
     this.atualizarHud()
     this.banner.setText(this.tentativa === 1 ? 'Voa, vagalume! 🔦' : 'Tentativa ' + this.tentativa + '/3').setAlpha(1).setScale(0.6)
-    this.tweens.add({ targets: this.banner, scale: 1, duration: 250, ease: 'Back.out' })
-    this.tweens.add({ targets: this.banner, alpha: 0, delay: 800, duration: 250 })
+    // pastilha atrás do banner: mesmo estilo dos chips, faz pop e some junto
+    const bg = this.bannerBg
+    bg.clear(); bg.fillStyle(0x0f172a, 0.35)
+    const bw = this.banner.width + 28, bh = this.banner.height + 14
+    bg.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 14)
+    bg.setPosition(this.banner.x, this.banner.y).setAlpha(1).setScale(0.6)
+    this.tweens.add({ targets: [this.banner, this.bannerBg], scale: 1, duration: 250, ease: 'Back.out' })
+    this.tweens.add({ targets: [this.banner, this.bannerBg], alpha: 0, delay: 800, duration: 250 })
     this.estado = 'voando' // já pode voar: o aviso não trava o controle
   }
 
@@ -175,12 +246,36 @@ export class CavernaScene extends Phaser.Scene {
       g.fillTriangle(LARG * 0.3, borda - 16, LARG * 0.72, borda - 16, LARG * 0.5, borda + 5) // dente maior no meio
       g.fillTriangle(LARG * 0.62, borda - 16, LARG, borda - 16, LARG * 0.81, borda)
       g.fillStyle(0x33405e, 1); g.fillRect(0, 0, 5, borda - 18) // borda "iluminada" discreta
+      // cara de pedra: flanco na sombra + facetas em tom claro quebram o "paredão liso"
+      g.fillStyle(0x1b2336, 1); g.fillRect(LARG - 7, 0, 7, borda - 18)
+      g.fillStyle(0x2c3752, 1)
+      for (let i = 0; i < 3; i++) {
+        const fx = Phaser.Math.Between(8, LARG - 22), fy = Phaser.Math.Between(10, borda - 30)
+        g.fillTriangle(fx, fy, fx + 12, fy + 3, fx + 4, fy + 12)
+      }
+      if (Phaser.Math.Between(0, 2) > 0) { // ~2/3 das colunas ganham um cristalzinho incrustado
+        const cx = Phaser.Math.Between(10, LARG - 10), cy = Phaser.Math.Between(14, borda - 32)
+        g.fillStyle(0x8fd0f0, 0.25)
+        g.fillTriangle(cx - 3, cy, cx + 3, cy, cx, cy - 6); g.fillTriangle(cx - 3, cy, cx + 3, cy, cx, cy + 6)
+      }
     } else {
       g.fillRect(0, borda + 16, LARG, H - borda - 16)
       g.fillTriangle(0, borda + 16, LARG * 0.38, borda + 16, LARG * 0.19, borda)
       g.fillTriangle(LARG * 0.3, borda + 16, LARG * 0.72, borda + 16, LARG * 0.5, borda - 5)
       g.fillTriangle(LARG * 0.62, borda + 16, LARG, borda + 16, LARG * 0.81, borda)
       g.fillStyle(0x33405e, 1); g.fillRect(0, borda + 18, 5, H - borda - 18)
+      // mesma textura de pedra da estalactite, espelhada pro chão
+      g.fillStyle(0x1b2336, 1); g.fillRect(LARG - 7, borda + 18, 7, H - borda - 18)
+      g.fillStyle(0x2c3752, 1)
+      for (let i = 0; i < 3; i++) {
+        const fx = Phaser.Math.Between(8, LARG - 22), fy = Phaser.Math.Between(borda + 30, H - 22)
+        g.fillTriangle(fx, fy, fx + 12, fy - 3, fx + 4, fy - 12)
+      }
+      if (Phaser.Math.Between(0, 2) > 0) {
+        const cx = Phaser.Math.Between(10, LARG - 10), cy = Phaser.Math.Between(borda + 32, H - 24)
+        g.fillStyle(0x8fd0f0, 0.25)
+        g.fillTriangle(cx - 3, cy, cx + 3, cy, cx, cy - 6); g.fillTriangle(cx - 3, cy, cx + 3, cy, cx, cy + 6)
+      }
     }
   }
 
@@ -193,6 +288,7 @@ export class CavernaScene extends Phaser.Scene {
     const t = this.add.text(this.vaga.x + 20, this.vaga.y - 14, '+1', { fontFamily: 'system-ui', fontSize: '16px', fontStyle: 'bold', color: '#ffe58a' }).setDepth(9).setShadow(0, 1, '#0008', 2)
     this.tweens.add({ targets: t, y: t.y - 26, alpha: 0, duration: 550, onComplete: () => t.destroy() })
     this.tweens.add({ targets: this.luzPerto, alpha: 0.22, scale: 1.25, yoyo: true, duration: 140 })
+    this.tweens.add({ targets: this.luzFora, alpha: 0.13, scale: 1.12, yoyo: true, duration: 140 }) // o clarão inteiro pulsa junto
   }
 
   morrer() {
@@ -219,6 +315,9 @@ export class CavernaScene extends Phaser.Scene {
     this.luzFora.setPosition(this.vaga.x, this.vaga.y)
     this.luzPerto.setPosition(this.vaga.x, this.vaga.y)
     if (this.estado !== 'voando') return
+
+    // paralaxe: o fundo anda a 40% da velocidade das pedras (para junto com elas na batida)
+    this.paralaxe.tilePositionX += this.velObst * 0.4 * dt
 
     // física suave: segurar acelera pra cima, soltar deixa a gravidade agir
     this.velY = Phaser.Math.Clamp(this.velY + (this.segurando ? SOBE : GRAV) * dt, -SUBIDA_MAX, QUEDA_MAX)

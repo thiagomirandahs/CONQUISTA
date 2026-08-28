@@ -43,11 +43,16 @@ export class ArcoScene extends Phaser.Scene {
       }).setDepth(8)
     } catch { this.faisca = null }
 
-    // HUD dentro do canvas (flechas, vento e pontos)
+    // HUD dentro do canvas (flechas, vento e pontos) — chips escuros atrás
+    // dão leitura garantida sobre o céu claro
+    this.hudBg = this.add.graphics().setDepth(8)
     this.flechaTxt = this.add.text(12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setDepth(9).setShadow(0, 1, '#0006', 2)
     this.ventoTxt = this.add.text(W / 2, 10, '', { fontFamily: 'system-ui', fontSize: '16px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5, 0).setDepth(9).setShadow(0, 1, '#0006', 2)
     this.ptsTxt = this.add.text(W - 12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(1, 0).setDepth(9).setShadow(0, 1, '#0006', 2)
-    this.banner = this.add.text(W / 2, 270, '', { fontFamily: 'system-ui', fontSize: '38px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(9).setShadow(0, 2, '#0008', 4).setAlpha(0)
+    // banner de resultado num container com pastilha atrás — pop e fade JUNTOS
+    this.bannerBg = this.add.graphics()
+    this.banner = this.add.text(0, 0, '', { fontFamily: 'system-ui', fontSize: '38px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setShadow(0, 2, '#0008', 4)
+    this.bannerBox = this.add.container(W / 2, 270, [this.bannerBg, this.banner]).setDepth(9).setAlpha(0)
 
     // arrastar pra trás = puxar a corda (começa de qualquer lugar da tela)
     this.input.on('pointerdown', (p) => { if (this.estado === 'mirando') this._aim = { x: p.x, y: p.y } })
@@ -59,9 +64,15 @@ export class ArcoScene extends Phaser.Scene {
   }
 
   criarTexturas() {
-    if (this.textures.exists('graozinho')) return
-    const g = this.add.graphics()
-    g.fillStyle(0xffffff, 1); g.fillCircle(3, 3, 3); g.generateTexture('graozinho', 6, 6); g.destroy()
+    if (!this.textures.exists('graozinho')) {
+      const g = this.add.graphics()
+      g.fillStyle(0xffffff, 1); g.fillCircle(3, 3, 3); g.generateTexture('graozinho', 6, 6); g.destroy()
+    }
+    if (!this.textures.exists('folhinha')) {
+      // oval branca: vira folha/pétala com o tint do emissor de vento
+      const f = this.add.graphics()
+      f.fillStyle(0xffffff, 1); f.fillEllipse(4, 3, 7, 4); f.generateTexture('folhinha', 8, 6); f.destroy()
+    }
   }
 
   desenharCenario() {
@@ -88,12 +99,16 @@ export class ArcoScene extends Phaser.Scene {
   }
 
   desenharArqueiro() {
+    // desenhado RELATIVO aos pés (pivô): assim o corpo pode inclinar de leve
+    // junto com a puxada sem redesenhar nada
     const g = this.add.graphics().setDepth(3)
-    g.fillStyle(0x1f2937, 1); g.fillRoundedRect(ARQ_X - 20, ARQ_Y + 26, 8, 26, 3); g.fillRoundedRect(ARQ_X - 8, ARQ_Y + 26, 8, 26, 3) // pernas
-    g.fillStyle(0x2563eb, 1); g.fillRoundedRect(ARQ_X - 24, ARQ_Y - 6, 26, 36, 8)   // túnica
-    g.fillStyle(0x2563eb, 1); g.fillRoundedRect(ARQ_X - 12, ARQ_Y - 2, 16, 7, 3)    // braço esticado segurando o arco
-    g.fillStyle(0xf2c795, 1); g.fillCircle(ARQ_X - 10, ARQ_Y - 18, 9)               // cabeça
-    g.fillStyle(0xef4444, 1); g.fillRoundedRect(ARQ_X - 19, ARQ_Y - 25, 18, 5, 2)   // faixa de campeão
+    g.setPosition(ARQ_X, ARQ_Y + 52)
+    g.fillStyle(0x1f2937, 1); g.fillRoundedRect(-20, -26, 8, 26, 3); g.fillRoundedRect(-8, -26, 8, 26, 3) // pernas
+    g.fillStyle(0x2563eb, 1); g.fillRoundedRect(-24, -58, 26, 36, 8)   // túnica
+    g.fillStyle(0x2563eb, 1); g.fillRoundedRect(-12, -54, 16, 7, 3)    // braço esticado segurando o arco
+    g.fillStyle(0xf2c795, 1); g.fillCircle(-10, -70, 9)                // cabeça
+    g.fillStyle(0xef4444, 1); g.fillRoundedRect(-19, -77, 18, 5, 2)    // faixa de campeão
+    this.corpo = g
   }
 
   // arco + corda ficam num container que GIRA pro ângulo da mira — o arqueiro
@@ -119,12 +134,23 @@ export class ArcoScene extends Phaser.Scene {
     if (comFlecha) {
       g.lineStyle(3, 0x8b5a2b, 1); g.beginPath(); g.moveTo(vx, 0); g.lineTo(vx + 30, 0); g.strokePath()
       g.fillStyle(0x94a3b8, 1); g.fillTriangle(vx + 35, 0, vx + 27, -4, vx + 27, 4)
+      g.fillStyle(0xe2e8f0, 1); g.fillTriangle(vx + 35, 0, vx + 27, -4, vx + 27, 0) // brilho metálico da ponta
       g.fillStyle(0xef4444, 1); g.fillTriangle(vx, 0, vx - 6, -5, vx + 2, -5); g.fillTriangle(vx, 0, vx - 6, 5, vx + 2, 5)
+      g.fillStyle(0xffffff, 1); g.fillTriangle(vx + 4, 0, vx - 1, -4, vx + 5, -4); g.fillTriangle(vx + 4, 0, vx - 1, 4, vx + 5, 4) // pena branca
     }
   }
 
   desenharAlvo() {
     const c = this.add.container(285, 160).setDepth(4)
+    // cavalete de madeira (2 pernas em A + travessa) — o alvo deixa de "flutuar"
+    // e balança junto no impacto, porque está no mesmo container
+    const sup = this.add.graphics()
+    sup.lineStyle(6, 0x7c3e10, 1)
+    sup.beginPath(); sup.moveTo(-16, 8); sup.lineTo(-30, R_FORA + 34); sup.strokePath()
+    sup.beginPath(); sup.moveTo(16, 8); sup.lineTo(30, R_FORA + 34); sup.strokePath()
+    sup.lineStyle(5, 0x5b2f0d, 1)
+    sup.beginPath(); sup.moveTo(-24, R_FORA + 14); sup.lineTo(24, R_FORA + 14); sup.strokePath()
+    c.add(sup)
     const g = this.add.graphics()
     g.fillStyle(0x000000, 0.15); g.fillCircle(3, 5, R_FORA + 2)      // sombra
     g.fillStyle(0xffffff, 1); g.fillCircle(0, 0, R_FORA)             // branco = 1pt
@@ -141,7 +167,9 @@ export class ArcoScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.lineStyle(3, 0x8b5a2b, 1); g.beginPath(); g.moveTo(-15, 0); g.lineTo(13, 0); g.strokePath() // haste
     g.fillStyle(0x94a3b8, 1); g.fillTriangle(17, 0, 9, -4, 9, 4)                                  // ponta
+    g.fillStyle(0xe2e8f0, 1); g.fillTriangle(17, 0, 9, -4, 9, 0)                                  // brilho metálico
     g.fillStyle(0xef4444, 1); g.fillTriangle(-15, 0, -21, -5, -13, -5); g.fillTriangle(-15, 0, -21, 5, -13, 5) // penas
+    g.fillStyle(0xffffff, 1); g.fillTriangle(-11, 0, -16, -4, -10, -4); g.fillTriangle(-11, 0, -16, 4, -10, 4) // pena branca
     c.add(g)
     return c
   }
@@ -163,6 +191,7 @@ export class ArcoScene extends Phaser.Scene {
   atualizarHud() {
     this.flechaTxt.setText('🏹 ' + Math.min(this.flechaN + (this.estado === 'fim' ? 0 : 1), 5) + '/5')
     this.ptsTxt.setText('🎯 ' + this.pontos)
+    this.desenharChips()
   }
 
   novaFlecha() {
@@ -171,8 +200,15 @@ export class ArcoScene extends Phaser.Scene {
     const tx = Phaser.Math.Between(238, 310), ty = Phaser.Math.Between(118, 208)
     this.tweens.add({ targets: this.alvo, x: tx, y: ty, duration: 320, ease: 'Quad.out' })
     this.sortearVento()
+    this.vibra?.remove(); this.vibra = null // corda para de vibrar antes de encaixar a próxima
     this.braco.rotation = -0.6
+    this.corpo.rotation = 0
     this.desenharCorda(0, true)
+    // entradinha da rodada: braço e alvo dão um "pop" curtinho — sensação de vivo
+    this.braco.setScale(0.92)
+    this.tweens.add({ targets: this.braco, scale: 1, duration: 240, ease: 'Back.out' })
+    this.alvo.setScale(0.92)
+    this.tweens.add({ targets: this.alvo, scale: 1, duration: 260, ease: 'Back.out' })
     this.estado = 'mirando'
     this.atualizarHud()
   }
@@ -185,6 +221,38 @@ export class ArcoScene extends Phaser.Scene {
     this.vento = forca * 45 * dir // empurrão horizontal (px/s²)
     const seta = forca === 0 ? '·' : (dir > 0 ? '→' : '←').repeat(forca)
     this.ventoTxt.setText('💨 ' + seta + ' ' + forca)
+    this.desenharChips()
+    this.atualizarVentoFx()
+  }
+
+  // chips escuros translúcidos atrás dos textos do HUD (redesenha só quando o
+  // texto muda — nunca por frame)
+  desenharChips() {
+    const g = this.hudBg; g.clear()
+    g.fillStyle(0x0f172a, 0.35)
+    ;[this.flechaTxt, this.ventoTxt, this.ptsTxt].forEach((t) => {
+      if (!t.text) return
+      const b = t.getBounds()
+      g.fillRoundedRect(b.x - 10, b.y - 5, b.width + 20, b.height + 10, 12)
+    })
+  }
+
+  // folhinhas flutuando na direção/força do vento — a criança VÊ o vento, não
+  // só a setinha; recriado 1x por flecha (nunca por frame)
+  atualizarVentoFx() {
+    try {
+      this.folhas?.destroy(); this.folhas = null
+      if (!this.vento) return // sem vento = ar parado
+      const forca = Math.abs(this.vento) / 45
+      const a = this.vento * 0.8, b = this.vento * 1.5
+      this.folhas = this.add.particles(0, 0, 'folhinha', {
+        x: this.vento > 0 ? -12 : W + 12, y: { min: 24, max: CHAO - 40 },
+        lifespan: { min: 4500, max: 8000 }, frequency: 520 - forca * 120, quantity: 1,
+        speedX: { min: Math.min(a, b), max: Math.max(a, b) }, speedY: { min: -10, max: 22 },
+        alpha: { start: 0.35, end: 0 }, scale: { min: 0.7, max: 1.3 },
+        rotate: { min: 0, max: 360 }, tint: [0x86efac, 0x4ade80, 0xfda4af],
+      }).setDepth(2)
+    } catch { this.folhas = null }
   }
 
   // arrasto -> mira: puxar pra trás atira pro lado OPOSTO (estilingue)
@@ -201,6 +269,7 @@ export class ArcoScene extends Phaser.Scene {
   previa(p) {
     const { ang, vel, forte, puxada } = this.miraDoArrasto(p)
     this.braco.rotation = ang
+    this.corpo.rotation = -0.05 - puxada * 0.12 // corpo inclina pra trás junto com a força da puxada
     this.desenharCorda(puxada * 16, true)
     // pontinhos de previsão SEM vento (de propósito — o vento é o desafio)
     const g = this.gAim; g.clear()
@@ -220,14 +289,23 @@ export class ArcoScene extends Phaser.Scene {
     const { ang, vel, forte } = this.miraDoArrasto(p)
     this._aim = null
     this.gAim.clear()
-    if (!forte) { this.desenharCorda(0, true); return } // puxou de leve: não gasta flecha
+    if (!forte) { this.corpo.rotation = 0; this.desenharCorda(0, true); return } // puxou de leve: não gasta flecha
     this.atirar(ang, vel)
   }
 
   atirar(ang, vel) {
     this.estado = 'voando'
-    this.desenharCorda(0, false) // corda estala de volta
+    this.desenharCorda(0, false) // corda estala de volta já neste frame…
+    // …e VIBRA: amplitude decai até parar (~250ms, 1 tween leve)
+    this.vibra?.remove()
+    const v = { t: 0 }
+    this.vibra = this.tweens.add({
+      targets: v, t: 1, duration: 250,
+      onUpdate: () => this.desenharCorda(Math.sin(v.t * Math.PI * 6) * 6 * (1 - v.t), false),
+      onComplete: () => { this.vibra = null; this.desenharCorda(0, false) },
+    })
     this.tweens.add({ targets: this.braco, scaleX: 0.88, scaleY: 1.1, yoyo: true, duration: 90 }) // recuo do arco
+    this.tweens.add({ targets: this.corpo, rotation: 0, duration: 120, ease: 'Quad.out' })        // corpo volta ao prumo
     this.flecha = this.criarFlecha()
     this.flecha.setPosition(ARQ_X + Math.cos(ang) * 18, ARQ_Y + Math.sin(ang) * 18)
     this.flecha.rotation = ang
@@ -272,6 +350,11 @@ export class ArcoScene extends Phaser.Scene {
     // squash do alvo = sentir o impacto
     this.alvo.setScale(1.12)
     this.tweens.add({ targets: this.alvo, scale: 1, duration: 220, ease: 'Back.out' })
+    // e balança no cavalete — as flechas espetadas vão junto (são filhas)
+    this.tweens.add({
+      targets: this.alvo, angle: Phaser.Math.Between(3, 5) * (Math.random() < 0.5 ? -1 : 1),
+      duration: 90, yoyo: true, repeat: 1, ease: 'Sine.inOut', onComplete: () => this.alvo.setAngle(0),
+    })
     // '+N' flutuando na cor do anel
     const cores = { 1: '#ffffff', 2: '#93c5fd', 3: '#fde047' }
     const t = this.add.text(px, py - 12, '+' + pts, { fontFamily: 'system-ui', fontSize: '26px', fontStyle: 'bold', color: cores[pts] }).setOrigin(0.5).setDepth(9).setShadow(0, 2, '#0008', 3)
@@ -296,10 +379,14 @@ export class ArcoScene extends Phaser.Scene {
     this.atualizarHud()
     const txt = pts === 3 ? 'Na mosca! 🎯' : pts === 2 ? 'Boa! 👏' : pts === 1 ? 'Pegou! 🏹' : 'Errou! 😬'
     const cor = pts === 3 ? '#fde047' : '#ffffff'
-    this.banner.setText(txt).setColor(cor).setScale(0).setAlpha(1)
-    this.tweens.add({ targets: this.banner, scale: 1, duration: 300, ease: 'Back.out' })
+    this.banner.setText(txt).setColor(cor)
+    // pastilha sob medida pro texto da vez — mesmo estilo dos chips do HUD
+    const bw = this.banner.width + 36, bh = this.banner.height + 16
+    this.bannerBg.clear(); this.bannerBg.fillStyle(0x0f172a, 0.35); this.bannerBg.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 14)
+    this.bannerBox.setScale(0).setAlpha(1)
+    this.tweens.add({ targets: this.bannerBox, scale: 1, duration: 300, ease: 'Back.out' })
     this.time.delayedCall(1050, () => {
-      this.tweens.add({ targets: this.banner, alpha: 0, duration: 200 })
+      this.tweens.add({ targets: this.bannerBox, alpha: 0, duration: 200 })
       this.flechaN++
       if (this.flechaN >= 5) { this.estado = 'fim'; this.game.events.emit('arco:fim', this.pontos) }
       else this.novaFlecha()

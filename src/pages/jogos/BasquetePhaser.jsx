@@ -27,11 +27,16 @@ export class BasqueteScene extends Phaser.Scene {
     fundo.fillGradientStyle(0x0f172a, 0x0f172a, 0x1e293b, 0x1e293b, 1)
     fundo.fillRect(0, 0, W, 380)
     fundo.fillStyle(0x334155, 1); fundo.fillRect(0, 300, W, 34) // arquibancada
-    // torcida: bolinhas coloridas (sem asset, só graphics)
+    // torcida "viva": bolinhas em 2 grupos que fazem uma onda sutil (2 graphics fixos + 2 tweens infinitos, custo ~zero)
+    const torcidaA = this.add.graphics(), torcidaB = this.add.graphics()
     for (let i = 0; i < 22; i++) {
       const cor = [0xf5c518, 0x60a5fa, 0xf87171, 0x4ade80][i % 4]
-      fundo.fillStyle(cor, 0.5); fundo.fillCircle(10 + i * 16.5, 310 + (i % 2) * 12, 5)
+      const gt = i % 2 ? torcidaB : torcidaA
+      gt.fillStyle(cor, 0.5); gt.fillCircle(10 + i * 16.5, 310 + (i % 2) * 12, 5)
     }
+    // grupos sobem/descem em contra-fase = "a onda" da arquibancada
+    this.tweens.add({ targets: torcidaA, y: 3, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' })
+    this.tweens.add({ targets: torcidaB, y: -3, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.inOut' })
     fundo.fillGradientStyle(0xb45309, 0xb45309, 0x92400e, 0x92400e, 1)
     fundo.fillRect(0, 334, W, H - 334)                          // quadra de madeira
     fundo.lineStyle(3, 0xffffff, 0.35)
@@ -40,6 +45,8 @@ export class BasqueteScene extends Phaser.Scene {
     this.aroX = 180
     this.montarCesta()
 
+    // sombra na quadra: imagem pronta (só muda x/escala/alpha por frame — barato)
+    this.sombra = this.add.image(BALL_X, 500, 'sombraBola').setDepth(2).setAlpha(0.26)
     this.ball = this.add.text(BALL_X, BALL_Y, '🏀', { fontSize: '34px' }).setOrigin(0.5).setDepth(5)
     this.gAim = this.add.graphics().setDepth(7)
 
@@ -51,9 +58,21 @@ export class BasqueteScene extends Phaser.Scene {
       }).setDepth(8)
     } catch { this.festa = null }
 
+    // trilha do voo: pontinhos que somem seguindo a bola (liga no soltar, desliga no resultado)
+    try {
+      this.trilha = this.add.particles(0, 0, 'pontinho', {
+        lifespan: 320, speed: 0, scale: { start: 0.9, end: 0 }, alpha: { start: 0.7, end: 0 },
+        frequency: 30, tint: 0xfcd34d, follow: this.ball, emitting: false,
+      }).setDepth(4)
+    } catch { this.trilha = null }
+
+    // HUD em chips: pastilha escura translúcida atrás dos textos (legibilidade sobre o ginásio)
+    this.hudChips = this.add.graphics().setDepth(8)
     this.arremessoTxt = this.add.text(12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setDepth(9).setShadow(0, 1, '#0006', 2)
     this.cestasTxt = this.add.text(W - 12, 10, '', { fontFamily: 'system-ui', fontSize: '18px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(1, 0).setDepth(9).setShadow(0, 1, '#0006', 2)
     this.banner = this.add.text(W / 2, 290, '', { fontFamily: 'system-ui', fontSize: '40px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setDepth(9).setShadow(0, 2, '#0008', 4).setAlpha(0)
+    // pastilha do banner: desenhada no tamanho do texto na hora, faz pop e some JUNTO com ele
+    this.bannerChip = this.add.graphics().setPosition(W / 2, 290).setDepth(8).setAlpha(0)
 
     // arrastar pra mirar (flick): começa em QUALQUER lugar da tela — alvo é a tela toda
     this.input.on('pointerdown', (p) => { if (this.estado === 'mirando') this._aim = { x: p.x, y: p.y } })
@@ -68,6 +87,11 @@ export class BasqueteScene extends Phaser.Scene {
     if (this.textures.exists('confete')) return
     const g = this.add.graphics()
     g.fillStyle(0xffffff, 1); g.fillRect(0, 0, 8, 5); g.generateTexture('confete', 8, 5); g.destroy()
+    // sombra elíptica e pontinho da trilha viram TEXTURA (1x) — nada de redesenhar por frame
+    const s = this.add.graphics()
+    s.fillStyle(0x000000, 1); s.fillEllipse(17, 6, 34, 12); s.generateTexture('sombraBola', 34, 12); s.destroy()
+    const d = this.add.graphics()
+    d.fillStyle(0xffffff, 1); d.fillCircle(3, 3, 3); d.generateTexture('pontinho', 6, 6); d.destroy()
   }
 
   // cesta em DOIS containers: o corpo (tabela + rede) fica ATRÁS da bola e o aro
@@ -93,6 +117,13 @@ export class BasqueteScene extends Phaser.Scene {
     }
     corpo.add(rede)
     this.rede = rede
+    // holofotes: 2 cones de luz bem sutis descendo do teto — no container, seguem a cesta
+    const luz = this.add.graphics()
+    luz.fillStyle(0xfffbe6, 0.05)
+    luz.fillTriangle(-16, -4, -64, ARO_Y + 46, 0, ARO_Y + 46)
+    luz.fillTriangle(16, -4, 0, ARO_Y + 46, 64, ARO_Y + 46)
+    luz.setBlendMode(Phaser.BlendModes.ADD) // ADD = soma de luz, não "mancha"
+    corpo.add(luz)
     this.cesta = corpo
 
     const frente = this.add.container(this.aroX, 0).setDepth(6)
@@ -108,15 +139,27 @@ export class BasqueteScene extends Phaser.Scene {
     this.arremesso = 0; this.cestas = 0
     this._aim = null
     this.vx = 0; this.vy = 0; this.prevY = BALL_Y
+    this.tocouAlgo = false
     this.atualizarHud()
   }
   iniciar() {
     this.arremesso = 0; this.cestas = 0
+    // entrada da rodada: HUD e cesta surgem com fade curto — sensação de "vivo"
+    const alvos = [this.hudChips, this.arremessoTxt, this.cestasTxt, this.cesta, this.aroFrente].filter(Boolean)
+    alvos.forEach((o) => o.setAlpha(0))
+    this.tweens.add({ targets: alvos, alpha: 1, duration: 260 })
     this.novoArremesso()
   }
   atualizarHud() {
     this.arremessoTxt.setText('🏀 ' + Math.min(this.arremesso + (this.estado === 'fim' ? 0 : 1), 5) + '/5')
     this.cestasTxt.setText('🎯 ' + this.cestas)
+    // chips: redesenha a pastilha no tamanho de cada texto (só quando o HUD muda, não por frame)
+    if (this.hudChips) {
+      const g = this.hudChips; g.clear(); g.fillStyle(0x0f172a, 0.35)
+      const a = this.arremessoTxt.getBounds(), c = this.cestasTxt.getBounds()
+      g.fillRoundedRect(a.x - 10, a.y - 5, a.width + 20, a.height + 10, 12)
+      g.fillRoundedRect(c.x - 10, c.y - 5, c.width + 20, c.height + 10, 12)
+    }
   }
 
   novoArremesso() {
@@ -124,11 +167,16 @@ export class BasqueteScene extends Phaser.Scene {
     let nx
     do { nx = Phaser.Math.Between(84, 276) } while (Math.abs(nx - this.aroX) < 70)
     this.aroX = nx
-    this.tweens.add({ targets: [this.cesta, this.aroFrente], x: nx, duration: 420, ease: 'Back.out' })
+    // entrada da rodada: cesta desliza E dá um leve pop de escala (0.94 -> 1)
+    this.cesta.setScale(0.94); this.aroFrente.setScale(0.94)
+    this.tweens.add({ targets: [this.cesta, this.aroFrente], x: nx, scaleX: 1, scaleY: 1, duration: 420, ease: 'Back.out' })
 
     // bola "nasce" com um pop (squash de chegada) pra chamar o olho pro lugar certo
     this.ball.setPosition(BALL_X, BALL_Y).setRotation(0).setAlpha(1).setScale(0)
     this.tweens.add({ targets: this.ball, scaleX: 1, scaleY: 1, duration: 260, ease: 'Back.out' })
+    // sombra volta pro pé da bola, aparecendo junto do pop
+    this.sombra.setPosition(BALL_X, 500).setScale(0.95).setAlpha(0)
+    this.tweens.add({ targets: this.sombra, alpha: 0.26, duration: 260 })
     this._aim = null
     this.estado = 'mirando'
     this.atualizarHud()
@@ -163,6 +211,8 @@ export class BasqueteScene extends Phaser.Scene {
     this._aim = null
     this.vx = vx; this.vy = vy
     this.prevY = this.ball.y
+    this.tocouAlgo = false // se chegar limpa (sem tabela/aro), vira "SPLASH!"
+    try { this.trilha?.start() } catch { /* sem particulas, segue o jogo */ }
     // squash de saída: a bola "estica" pra cima no impulso
     this.tweens.add({ targets: this.ball, scaleX: 0.8, scaleY: 1.2, yoyo: true, duration: 90 })
     this.estado = 'voando'
@@ -178,9 +228,15 @@ export class BasqueteScene extends Phaser.Scene {
     this.ball.setPosition(x, y)
     this.ball.rotation += this.vx * dt * 0.01 // giro acompanha a direção (game feel)
 
+    // sombra na quadra: segue o x da bola; mais alto = menor e mais clara (só sets, sem redraw)
+    const alt = Phaser.Math.Clamp((500 - y) / 440, 0, 1)
+    this.sombra.x = x
+    this.sombra.setScale(1 - alt * 0.55).setAlpha(0.28 * (1 - alt * 0.8))
+
     // tabela: subindo por trás do aro, rebate pra baixo de leve (dá segunda chance)
     if (this.vy < 0 && Math.abs(x - this.aroX) < 46 && y > TAB_TOP && y < TAB_BOT) {
       this.vy = -this.vy * 0.45
+      this.tocouAlgo = true // encostou na tabela: não é splash
       this.tweens.add({ targets: this.ball, scaleX: 1.15, scaleY: 0.85, yoyo: true, duration: 80 })
     }
 
@@ -190,6 +246,7 @@ export class BasqueteScene extends Phaser.Scene {
       if (Math.abs(dx) < ARO_MEIO) { this.cestou(); return }
       if (Math.abs(dx) < ARO_MEIO + 14) {
         this.vy = -this.vy * 0.5
+        this.tocouAlgo = true // bateu no ferro: não é splash
         this.vx += (dx > 0 ? 1 : -1) * 70 // ferro empurra pra fora
         this.cameras.main.shake(80, 0.004)
         this.tweens.add({ targets: this.ball, scaleX: 1.2, scaleY: 0.8, yoyo: true, duration: 80 })
@@ -206,6 +263,8 @@ export class BasqueteScene extends Phaser.Scene {
     // a bola desliza pelo vão e desce pela rede (squash de "swish")
     this.tweens.add({ targets: this.ball, x: this.aroX, y: ARO_Y + 54, scaleX: 0.8, scaleY: 1.15, alpha: 0.9, duration: 260, ease: 'Quad.in' })
     this.tweens.add({ targets: this.rede, x: 3, yoyo: true, repeat: 3, duration: 60 }) // rede balança
+    // rede "engole" a bola: estica rapidinho e volta (scaleX/scaleY yoyo)
+    this.tweens.add({ targets: this.rede, scaleX: 1.08, scaleY: 1.05, yoyo: true, repeat: 2, duration: 70 })
     this.resultado('cesta')
   }
 
@@ -213,16 +272,26 @@ export class BasqueteScene extends Phaser.Scene {
     this.estado = 'resultado'
     this.game.events.emit('basquete:resultado', tipo)
     this.atualizarHud()
-    this.banner.setText(tipo === 'cesta' ? 'CESTA! 🏀' : 'Errou! 😬')
+    try { this.trilha?.stop() } catch { /* ok */ }
+    this.tweens.add({ targets: this.sombra, alpha: 0, duration: 180 }) // bola parou: sombra sai de cena
+    // cesta LIMPA (sem tocar tabela nem aro) merece banner especial
+    const texto = tipo === 'cesta' ? (this.tocouAlgo ? 'CESTA! 🏀' : 'SPLASH! 🏀') : 'Errou! 😬'
+    this.banner.setText(texto)
       .setColor(tipo === 'cesta' ? '#fde047' : '#ffffff').setScale(0).setAlpha(1)
-    this.tweens.add({ targets: this.banner, scale: 1, duration: 300, ease: 'Back.out' })
+    // pastilha translúcida no tamanho do texto, faz pop junto com o banner
+    const bc = this.bannerChip
+    bc.clear(); bc.fillStyle(0x0f172a, 0.35)
+    const bw = this.banner.width + 36, bh = this.banner.height + 14
+    bc.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 16)
+    bc.setScale(0).setAlpha(1)
+    this.tweens.add({ targets: [this.banner, bc], scale: 1, duration: 300, ease: 'Back.out' })
     if (tipo === 'cesta') {
       try { this.festa?.explode(30, this.aroX, ARO_Y) } catch { /* ok */ }
     } else {
       this.cameras.main.shake(160, 0.006)
     }
     this.time.delayedCall(1100, () => {
-      this.tweens.add({ targets: this.banner, alpha: 0, duration: 200 })
+      this.tweens.add({ targets: [this.banner, this.bannerChip], alpha: 0, duration: 200 })
       this.arremesso++
       if (this.arremesso >= 5) { this.estado = 'fim'; this.game.events.emit('basquete:fim', this.cestas) }
       else this.novoArremesso()
