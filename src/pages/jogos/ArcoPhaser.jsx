@@ -311,6 +311,7 @@ export class ArcoScene extends Phaser.Scene {
     this.flecha.rotation = ang
     this.fvx = Math.cos(ang) * vel
     this.fvy = Math.sin(ang) * vel
+    this._px = null; this._py = null // posição da ponta no frame anterior (pro cruze do alvo)
   }
 
   // física da flecha frame a frame (gravidade + vento), girando com a velocidade
@@ -325,8 +326,24 @@ export class ArcoScene extends Phaser.Scene {
     // a PONTA (17px à frente do centro) é o que conta pra acertar
     const px = this.flecha.x + Math.cos(this.flecha.rotation) * 17
     const py = this.flecha.y + Math.sin(this.flecha.rotation) * 17
-    const d = Phaser.Math.Distance.Between(px, py, this.alvo.x, this.alvo.y)
-    if (d <= R_FORA) { this.cravar(px, py, d); return }
+    // O acerto é medido quando a ponta CRUZA a linha vertical do alvo: o anel
+    // vem da distância em ALTURA até o centro (alvo de verdade, visto de lado).
+    // Antes cravava no 1º toque na borda de FORA → era impossível passar do
+    // anel branco (bug apontado pelo dono). Interpola o ponto exato do cruze.
+    if (this.fvx > 0 && this._px != null && this._px < this.alvo.x && px >= this.alvo.x) {
+      const t = (this.alvo.x - this._px) / (px - this._px)
+      const pyCross = this._py + (py - this._py) * t
+      const dy = Math.abs(pyCross - this.alvo.y)
+      if (dy <= R_FORA) {
+        // encaixa a flecha com a ponta exatamente no ponto do impacto
+        this.flecha.x = this.alvo.x - Math.cos(this.flecha.rotation) * 17
+        this.flecha.y = pyCross - Math.sin(this.flecha.rotation) * 17
+        this._px = this._py = null
+        this.cravar(this.alvo.x, pyCross, dy)
+        return
+      }
+    }
+    this._px = px; this._py = py
     if (py >= CHAO) { this.espetarChao(px); return }
     if (this.flecha.x > W + 40 || this.flecha.x < -40 || this.flecha.y > H + 40) {
       const f = this.flecha; this.flecha = null; f.destroy()

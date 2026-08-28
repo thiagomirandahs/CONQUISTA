@@ -69,6 +69,7 @@ const JogoBasquetePhaser = lazy(() => import('./jogos/BasquetePhaser.jsx'))
 const JogoPescaPhaser = lazy(() => import('./jogos/PescaPhaser.jsx'))
 const JogoCavernaPhaser = lazy(() => import('./jogos/CavernaPhaser.jsx'))
 const JogoArcoPhaser = lazy(() => import('./jogos/ArcoPhaser.jsx'))
+const JogoDardosPhaser = lazy(() => import('./jogos/DardosPhaser.jsx'))
 
 // O motor Phaser 4 SÓ renderiza com WebGL — em celular sem WebGL (antigo/fraco
 // ou WebView desatualizado) o jogo viraria TELA PRETA. Nesses aparelhos usamos
@@ -105,6 +106,7 @@ const JOGOS = {
     pesca: { nome: 'Pescaria', curto: 'Pescaria', emoji: '🎣', desc: 'Toque pra soltar o anzol e pesque o máximo em 45s!', Comp: JogoPescaPhaser },
     caverna: { nome: 'Caverna', curto: 'Caverna', emoji: '🔦', desc: 'Segure pra voar e desvie das pedras no escuro!', Comp: JogoCavernaPhaser },
     arco: { nome: 'Arco e Flecha', curto: 'Arco', emoji: '🏹', desc: 'Puxe a corda, mire no alvo e cuidado com o vento!', Comp: JogoArcoPhaser },
+    dardos: { nome: 'Dardos', curto: 'Dardos', emoji: '🎯', desc: 'A mira dança sozinha — toque na hora certa e acerte a mosca!', Comp: JogoDardosPhaser },
   } : {}),
 }
 // Jogos "sem fim": repetição livre (não dão +10/+5; valem pelo recorde da semana)
