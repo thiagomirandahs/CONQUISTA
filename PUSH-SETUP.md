@@ -35,13 +35,30 @@ Vercel → seu projeto → **Settings → Environment Variables** → **Add**:
 
 Depois **Deployments → ⋯ do último deploy → Redeploy** (pra pegar a variável).
 
-## 3) Secrets no Supabase (as duas chaves)
+## 3) Secrets no Supabase (as duas chaves + o segredo do webhook)
 Supabase → **Edge Functions** → aba/botão **Secrets** (ou
-**Project Settings → Edge Functions → Secrets**) → **Add new secret**, crie os dois:
+**Project Settings → Edge Functions → Secrets**) → **Add new secret**, crie os TRÊS:
 - `VAPID_PUBLIC_KEY` = a pública
 - `VAPID_PRIVATE_KEY` = a privada
+- `PUSH_WEBHOOK_SECRET` = **invente uma senha longa e aleatória** (30+ caracteres,
+  tipo `k9Qz...`; um gerador de senhas serve). **Guarde esse valor** — ele vai
+  ser usado de novo no passo 5.
+
+> 🔒 **Pra que serve o `PUSH_WEBHOOK_SECRET`?** Como o "Verify JWT" da função
+> fica desligado (quem chama é o webhook do banco, não um usuário logado), a
+> função tem a **própria fechadura**: só atende quem mandar esse segredo no
+> header `x-push-webhook-secret`. Sem ele, responde **401** e não toca no banco.
+> Sem esse secret cadastrado, a função recusa TUDO (falha fechada) — então
+> este passo é obrigatório.
 
 > `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` o Supabase já injeta sozinho.
+
+> 🚦 **Seu push JÁ está funcionando hoje?** Então siga a ordem **3 → 5 → 4**:
+> cadastre o secret (3), **adicione o header no webhook que já existe** (5) —
+> a função antiga ignora header extra, nada quebra — e **só depois** faça o
+> deploy do novo `index.ts` (4). Assim não existe nenhum momento com o push
+> caído. (Se fizer 4 antes de 5, todo push morre com **401 em silêncio** até o
+> header ser adicionado.) Depois do deploy, teste na hora (seção *Como testar*).
 
 ## 4) Subir a função `enviar-push` (pelo navegador)
 Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**
@@ -54,13 +71,23 @@ Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**
 Depois, em **Edge Functions → enviar-push → Settings**, **desligue**
 “**Verify JWT**” (quem chama é o webhook do banco, não um usuário logado).
 
-## 5) Ligar o webhook (banco → função)
-Supabase → **Database → Webhooks** → **Create a new hook**:
+## 5) Ligar o webhook (banco → função) — COM o segredo
+Supabase → **Database → Webhooks** → **Create a new hook** (ou **edite** o que
+já existe):
 - **Name:** `push-notificacoes`
 - **Table:** `notificacoes`
 - **Events:** apenas **Insert**
 - **Type:** **Supabase Edge Functions** → função **enviar-push**
-- **Create webhook**.
+- **HTTP Headers** → **Add header**:
+  - **Name:** `x-push-webhook-secret`
+  - **Value:** o MESMO valor que você cadastrou em `PUSH_WEBHOOK_SECRET` (passo 3)
+- **Create webhook** (ou **Save**).
+
+> ⚠️ Sem esse header (ou com valor diferente do secret), a função responde
+> **401** e nenhum push sai — é a fechadura funcionando. Se os pushes pararem
+> depois desta mudança, confira se o header e o secret estão IGUAIS.
+> Dica: se a função já estava no ar antes, **re-deploy** dela (passo 4) depois
+> de cadastrar o secret, pra ela passar a enxergá-lo.
 
 Pronto — a partir daqui, cada linha nova em `notificacoes` (que o app cria
 sozinho quando você publica uma atividade) dispara o push.

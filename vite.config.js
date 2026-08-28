@@ -20,29 +20,28 @@ export default defineConfig({
         globIgnores: ['**/*-legacy*.js', '**/polyfills*.js'],
         // Carrega o handler de push (public/push-sw.js) dentro do service worker
         importScripts: ['/push-sw.js'],
-        // "Ver offline": guarda imagens e as listas já carregadas do Supabase.
+        // Cache em tempo de execução: SÓ conteúdo público.
+        //
+        // SEGURANÇA (hardening 28/08): o cache genérico de /rest/v1/ foi
+        // REMOVIDO. Aquelas respostas são AUTENTICADAS (variam por usuário) e o
+        // cache do service worker é compartilhado por URL no aparelho — num
+        // celular usado por duas contas, dados de um podiam "vazar" pro outro
+        // offline. (O push-sw.js apaga o cache antigo 'dados-conquista' que já
+        // existia nos aparelhos.)
+        //
+        // Se um dia quisermos "dados offline" de verdade: guardar por conta em
+        // IndexedDB com a chave separada por auth.uid() e LIMPAR no logout —
+        // nunca voltar a usar cache de service worker pra resposta autenticada.
         runtimeCaching: [
           {
-            // Fotos/avatares do Storage: guardar pra ver offline + carregar rápido.
-            // CacheFirst porque cada arquivo tem caminho único (nunca muda).
+            // Fotos/avatares do Storage PÚBLICO: guardar pra ver offline +
+            // carregar rápido. Seguro porque o bucket é público (mesmo conteúdo
+            // pra qualquer pessoa) e cada arquivo tem caminho único (imutável).
             urlPattern: /\/storage\/v1\/object\/public\//,
             handler: 'CacheFirst',
             options: {
               cacheName: 'imagens-conquista',
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Dados (listas) do Supabase: online busca o fresco; se a internet cair
-            // (ou demorar +4s), mostra a última versão vista. Só GET é guardado —
-            // enviar/jogar (POST/PATCH) passa direto, sem cache.
-            urlPattern: /\/rest\/v1\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'dados-conquista',
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

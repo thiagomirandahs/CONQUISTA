@@ -39,6 +39,12 @@ declare
 begin
   if v_uid is null then raise exception 'Não autenticado.'; end if;
 
+  -- HARDENING (28/08): só MEMBRO ATIVO joga — pendente/rejeitado/desativado/
+  -- pais não geram trilha nem pontos, nem chamando a API na mão.
+  if not public.eh_membro_ativo() then
+    raise exception 'Apenas membros ativos do clube podem jogar.';
+  end if;
+
   if not exists (select 1 from public.jogos_trilha where chave = v_tipo) then
     raise exception 'Jogo inválido.';
   end if;
@@ -84,6 +90,7 @@ exception when unique_violation then
   raise exception 'Você já jogou esse jogo hoje! Escolha outro 🙂';
 end;
 $$;
+revoke execute on function public.registrar_jogo(text, int) from public, anon;
 grant execute on function public.registrar_jogo(text, int) to authenticated;
 
 -- 2) status_jogos_do_dia: devolve 'ativo' (o app mostra/esconde os cadeados)

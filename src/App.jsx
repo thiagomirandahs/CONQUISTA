@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
+import RotaRestrita from './components/RotaRestrita.jsx'
 
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
 const Login = lazy(() => import('./pages/Login.jsx'))
@@ -74,34 +75,34 @@ export default function App() {
           <Route path="/" element={<InicioRedirect />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/meu-filho" element={<MeuFilho />} />
-          <Route path="/vinculos-pais" element={<VinculosPais />} />
+          <Route path="/vinculos-pais" element={<RotaRestrita><VinculosPais /></RotaRestrita>} />
           <Route path="/missoes" element={<Missoes />} />
           <Route path="/trilha" element={<Trilha />} />
-          <Route path="/aprovar-missoes" element={<AprovarMissoes />} />
-          <Route path="/atividade-jogos" element={<Atividade />} />
+          <Route path="/aprovar-missoes" element={<RotaRestrita><AprovarMissoes /></RotaRestrita>} />
+          <Route path="/atividade-jogos" element={<RotaRestrita><Atividade /></RotaRestrita>} />
           <Route path="/atividades" element={<Atividades />} />
           <Route path="/unidades" element={<Unidades />} />
           <Route path="/mural" element={<Mural />} />
           <Route path="/gestao" element={<Gestao />} />
-          <Route path="/aprovacoes" element={<Aprovacoes />} />
-          <Route path="/apontamentos" element={<Apontamentos />} />
-          <Route path="/mensalidades" element={<Mensalidades />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/pontos" element={<RemoverPontos />} />
+          <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />
+          <Route path="/apontamentos" element={<RotaRestrita><Apontamentos /></RotaRestrita>} />
+          <Route path="/mensalidades" element={<RotaRestrita><Mensalidades /></RotaRestrita>} />
+          <Route path="/usuarios" element={<RotaRestrita><Usuarios /></RotaRestrita>} />
+          <Route path="/pontos" element={<RotaRestrita><RemoverPontos /></RotaRestrita>} />
           <Route path="/perfil" element={<Perfil />} />
-          <Route path="/avisos" element={<Avisos />} />
-          <Route path="/conteudo" element={<Conteudo />} />
-          <Route path="/radar" element={<RadarFaltas />} />
-          <Route path="/temporada" element={<Temporada />} />
-          <Route path="/jogos-trilha" element={<JogosTrilha />} />
+          <Route path="/avisos" element={<RotaRestrita><Avisos /></RotaRestrita>} />
+          <Route path="/conteudo" element={<RotaRestrita><Conteudo /></RotaRestrita>} />
+          <Route path="/radar" element={<RotaRestrita><RadarFaltas /></RotaRestrita>} />
+          <Route path="/temporada" element={<RotaRestrita><Temporada /></RotaRestrita>} />
+          <Route path="/jogos-trilha" element={<RotaRestrita><JogosTrilha /></RotaRestrita>} />
           <Route path="/desafios" element={<DesafiosSemana />} />
           <Route path="/leilao" element={<Leilao />} />
-          <Route path="/modo-acampamento" element={<ModoAcampamento />} />
+          <Route path="/modo-acampamento" element={<RotaRestrita><ModoAcampamento /></RotaRestrita>} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/biblia" element={<Biblia />} />
           <Route path="/bichinho" element={<Bichinho />} />
           <Route path="/pets-clube" element={<PetsClube />} />
-          <Route path="/chat-moderacao" element={<ChatModeracao />} />
+          <Route path="/chat-moderacao" element={<RotaRestrita><ChatModeracao /></RotaRestrita>} />
           <Route path="/agenda" element={<Agenda />} />
         </Route>
       </Routes>

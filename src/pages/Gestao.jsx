@@ -3,26 +3,11 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarPainelDiretoria } from '../lib/dados.js'
+// Matriz de permissões centralizada (hardening 28/08): a MESMA lista alimenta
+// estes cards e a trava de rota <RotaRestrita> — muda num lugar, vale nos dois.
+import { FERRAMENTAS } from '../lib/permissoes.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
-
-const FERRAMENTAS = [
-  { to: '/aprovacoes', icon: '✅', titulo: 'Aprovações', desc: 'Liberar novos cadastros', papeis: ['diretoria', 'instrutor'] },
-  { to: '/apontamentos', icon: '✍️', titulo: 'Apontamentos', desc: 'Pontos da reunião por desbravador', papeis: ['conselheiro', 'instrutor', 'diretoria'] },
-  { to: '/mensalidades', icon: '💰', titulo: 'Mensalidades', desc: 'Controle de pagamentos', papeis: ['tesoureiro', 'diretoria'] },
-  { to: '/usuarios', icon: '👥', titulo: 'Usuários', desc: 'Resetar senha de quem não entra', papeis: ['diretoria', 'instrutor'] },
-  { to: '/pontos', icon: '➖', titulo: 'Remover pontos', desc: 'Apagar lançamentos errados', papeis: ['diretoria', 'instrutor'] },
-  { to: '/modo-acampamento', icon: '🏕️', titulo: 'Modo Acampamento', desc: 'Lançar colocação das unidades nas provas', papeis: ['diretoria', 'instrutor'] },
-  { to: '/chat-moderacao', icon: '💬', titulo: 'Moderação do chat', desc: 'Ver e apagar mensagens de qualquer conversa', papeis: ['diretoria', 'instrutor'] },
-  { to: '/aprovar-missoes', icon: '🎯', titulo: 'Aprovar missões', desc: 'Aprovar as fotos das missões', papeis: ['diretoria', 'instrutor'] },
-  { to: '/radar', icon: '📡', titulo: 'Radar de faltas', desc: 'Quem está sumindo do clube', papeis: ['diretoria', 'instrutor'] },
-  { to: '/temporada', icon: '🏁', titulo: 'Temporadas', desc: 'Zerar o ranking pra recomeçar', papeis: ['diretoria'] },
-  { to: '/avisos', icon: '📣', titulo: 'Enviar aviso', desc: 'Recado pro clube (aparece no sino)', papeis: ['diretoria', 'instrutor'] },
-  { to: '/conteudo', icon: '📖', titulo: 'Conteúdo', desc: 'Versículos e desafios das missões', papeis: ['diretoria', 'instrutor'] },
-  { to: '/jogos-trilha', icon: '🎮', titulo: 'Jogos da Trilha', desc: 'Ativar os jogos pra criançada', papeis: ['diretoria', 'instrutor'] },
-  { to: '/atividade-jogos', icon: '📊', titulo: 'Atividade dos jogos', desc: 'Quem jogou hoje e quem sumiu', papeis: ['diretoria', 'instrutor'] },
-  { to: '/vinculos-pais', icon: '👨‍👩‍👧', titulo: 'Vínculos dos pais', desc: 'Confirmar quem é filho de quem + PIX', papeis: ['diretoria', 'instrutor'] },
-]
 
 export default function Gestao() {
   const { profile } = useAuth()
