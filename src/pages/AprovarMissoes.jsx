@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarMissoesPendentes, avaliarMissao } from '../lib/dados.js'
+import Comprovacao from '../components/Comprovacao.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
@@ -70,9 +71,9 @@ export default function AprovarMissoes() {
                 <span className="text-xs text-faint shrink-0">{fmtData(m.data)}</span>
               </div>
               {m.foto_url && (
-                <button onClick={() => setAmpliar(m.foto_url)} className="block w-full">
-                  <img src={m.foto_url} alt="missão" loading="lazy" className="w-full max-h-64 object-cover rounded-lg" />
-                </button>
+                <Comprovacao valor={m.foto_url} alt="missão" onAmpliar={setAmpliar}
+                  classImg="w-full max-h-64 object-cover rounded-lg"
+                  classVideo="w-full max-h-64 rounded-lg bg-black" />
               )}
               <div className="flex gap-2 mt-3">
                 <button onClick={() => avaliar(m, false)} className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2">Reprovar</button>

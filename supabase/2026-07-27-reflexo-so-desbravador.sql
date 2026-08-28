@@ -1,6 +1,11 @@
 -- =====================================================================
 --  Filhos da Conquista — Barrar a liderança no Reflexo (2026-07-27)
 --
+--  ⚠️ Redefine registrar_recorde (2 args) e premiar_campeao_semana.
+--  APOSENTADO após o 2026-08-29-anticheat-partidas.sql — NÃO re-rode depois
+--  dele (recria a sobrecarga de 2 args e reverte o prêmio pra versão sem o
+--  filtro de arcade). Ver GUIA-MIGRATIONS.md.
+--
 --  COMO APLICAR: Supabase -> SQL Editor -> New query -> cole -> Run.
 --  Idempotente. Nada é apagado.
 --

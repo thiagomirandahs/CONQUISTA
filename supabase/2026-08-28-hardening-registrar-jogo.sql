@@ -2,6 +2,10 @@
 --  Filhos da Conquista — HARDENING: registrar_jogo exige membro ativo
 --  (2026-08-28)
 --
+--  ⚠️ APOSENTADO após o 2026-08-29-anticheat-partidas.sql (que redefine
+--  registrar_jogo com sessão de partida). NÃO re-rode depois do anticheat:
+--  recria a versão de 2 args e deixa a RPC ambígua. Ver GUIA-MIGRATIONS.md.
+--
 --  COMO APLICAR: Supabase -> SQL Editor -> New query -> cole -> Run.
 --  Idempotente. Rodar DEPOIS do 2026-08-28-rodizio-interruptor.sql (se ainda
 --  não rodou aquele, pode rodar este mesmo assim — ele inclui o rodizio_ligado()

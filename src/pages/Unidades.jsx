@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade } from '../lib/dados.js'
 import { comprimirImagem } from '../lib/imagem.js'
+import { validarImagem } from '../lib/upload.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
@@ -50,6 +51,7 @@ export default function Unidades() {
 
   // Sobe imagem da unidade: 'emblema' (logo redondo) ou 'bandeira' (banner).
   async function trocarImagem(u, file, campo = 'emblema') {
+    try { await validarImagem(file) } catch (e) { alert(e?.message || e); return } // tipo REAL + tamanho
     file = await comprimirImagem(file, { maxLado: campo === 'bandeira' ? 1024 : 512 })
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
     const path = `unidades/${u.id}-${campo}-${Date.now()}.${ext}`

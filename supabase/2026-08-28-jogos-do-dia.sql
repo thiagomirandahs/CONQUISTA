@@ -1,6 +1,10 @@
 -- =====================================================================
 --  Filhos da Conquista — 🥇 Jogos do Dia (rodízio diário + prêmio) 2026-08-28
 --
+--  ⚠️ Redefine registrar_jogo (2 args). APOSENTADO após o
+--  2026-08-29-anticheat-partidas.sql — NÃO re-rode depois dele (recria a
+--  sobrecarga de 2 args e a RPC fica ambígua). Ver GUIA-MIGRATIONS.md.
+--
 --  COMO APLICAR: Supabase -> SQL Editor -> New query -> cole -> Run.
 --  Idempotente. Nada é apagado. Usa o pg_cron (já ativo pelo ⚡ semanal).
 --

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarMissao, enviarMissao, classeDoUsuario } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
+import Comprovacao from '../components/Comprovacao.jsx'
 
 // Cores oficiais dos lenços das classes (ajustadas p/ contraste com texto branco)
 const corClasse = {
@@ -108,7 +109,7 @@ export default function Missoes() {
               <p className="text-sm text-faint">Volte amanhã pra uma nova missão 🙂</p>
             </>
           )}
-          {resumo.foto && <img src={resumo.foto} alt="sua foto" className="mt-3 mx-auto w-32 h-32 object-cover rounded-xl" />}
+          {resumo.foto && <Comprovacao valor={resumo.foto} alt="sua foto" classImg="mt-3 mx-auto w-32 h-32 object-cover rounded-xl" />}
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden shadow-soft">

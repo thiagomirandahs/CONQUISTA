@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
-import { comprimirImagem } from '../lib/imagem.js'
 import { hojeLocalISO } from '../lib/data.js'
+import { subirComprovacao } from '../lib/upload.js'
+import Comprovacao from '../components/Comprovacao.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -24,7 +25,6 @@ const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().jo
 // Compara no fuso de Brasília e recalcula a cada render (não "trava" o dia)
 const prazoEncerrado = (iso) => iso && String(iso).slice(0, 10) < hojeLocalISO()
 // Detecta se a comprovação enviada é um vídeo (pela extensão do arquivo no Storage)
-const ehVideo = (url = '') => /\.(mp4|mov|m4v|webm|ogg|3gp|3gpp|avi|mkv|qt)(\?|$)/i.test(url)
 const MAX_MB = 50 // limite amigável pra vídeo não estourar o upload
 function badgesCriterio(c = {}) {
   const arr = []
@@ -144,16 +144,11 @@ export default function Atividades() {
 
   async function confirmarEntrega(atividade, dados) {
     let fotoUrl = null
-    // Envia a comprovação de verdade para o Storage (bucket imagens).
-    // Foto é comprimida; vídeo passa direto (comprimirImagem só mexe em imagem).
+    // Hardening etapa 2: comprovação vai pro bucket PRIVADO 'comprovacoes'
+    // (validação do tipo REAL + tamanho; foto comprimida, vídeo permitido).
+    // O banco guarda o CAMINHO; quem vê gera signed URL (Comprovacao.jsx).
     if (dados.foto) {
-      const arquivo = await comprimirImagem(dados.foto)
-      const ext = (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
-      const path = `atividades/${atividade.id}-${profile?.id}-${Date.now()}.${ext}`
-      const { error: upErr } = await supabase.storage.from('imagens').upload(path, arquivo, { upsert: true })
-      if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
-      const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
-      fotoUrl = pub.publicUrl
+      fotoUrl = await subirComprovacao({ file: dados.foto, tipo: 'atividades', userId: profile?.id, permitirVideo: true })
     }
     // upsert: primeira entrega = insere; reenvio (após reprovar) = volta pra 'pendente'
     const { error } = await supabase.from('entregas').upsert({
@@ -393,18 +388,13 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
             <div className="text-gold font-extrabold shrink-0">+{e.atividade?.pontos || 0}</div>
           </div>
           {e.texto && <p className="text-sm text-muted mt-2 bg-surface2 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
-          {e.foto_url && (e.foto_url.startsWith('http') ? (
-            ehVideo(e.foto_url) ? (
-              <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-64 rounded-lg bg-black" />
-            ) : (
-              <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
-                <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-56 object-cover rounded-lg" />
-                <span className="text-[11px] text-faint">toque para ampliar 🔍</span>
-              </button>
-            )
-          ) : (
-            <p className="text-xs text-faint mt-1">📎 {e.foto_url}</p>
-          ))}
+          {e.foto_url && (
+            <div className="mt-2">
+              <Comprovacao valor={e.foto_url} onAmpliar={setAmpliar}
+                classVideo="w-full max-h-64 rounded-lg bg-black"
+                classImg="w-full max-h-56 object-cover rounded-lg" />
+            </div>
+          )}
           <input value={motivos[e.id] || ''} onChange={(ev) => setMotivos((m) => ({ ...m, [e.id]: ev.target.value }))}
             maxLength={200} placeholder="Motivo, se for reprovar (a criança vê e pode reenviar)"
             className="w-full mt-3 rounded-lg border border-line bg-surface2 px-3 py-2 text-xs text-ink outline-none placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30" />
@@ -472,14 +462,12 @@ function EntregasView({ entregas, onExcluir }) {
             <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
           </div>
           {e.texto && <p className="text-sm text-muted mt-2 bg-surface2 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
-          {e.foto_url && e.foto_url.startsWith('http') && (
-            ehVideo(e.foto_url) ? (
-              <video src={e.foto_url} controls playsInline preload="metadata" className="mt-2 w-full max-h-56 rounded-lg bg-black" />
-            ) : (
-              <button onClick={() => setAmpliar(e.foto_url)} className="mt-2 block w-full">
-                <img src={e.foto_url} alt="comprovação" loading="lazy" className="w-full max-h-48 object-cover rounded-lg" />
-              </button>
-            )
+          {e.foto_url && (
+            <div className="mt-2">
+              <Comprovacao valor={e.foto_url} onAmpliar={setAmpliar}
+                classVideo="w-full max-h-56 rounded-lg bg-black"
+                classImg="w-full max-h-48 object-cover rounded-lg" />
+            </div>
           )}
           <button onClick={() => onExcluir(e)}
             className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 py-2 text-sm font-semibold">

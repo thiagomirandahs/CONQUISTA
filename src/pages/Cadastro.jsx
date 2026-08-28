@@ -5,6 +5,7 @@ import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
 import { comprimirImagem } from '../lib/imagem.js'
+import { validarImagem } from '../lib/upload.js'
 import { CARGOS, precisaUnidade } from '../lib/cargos.js'
 
 const inputClass =
@@ -54,8 +55,9 @@ export default function Cadastro() {
     try {
       if (foto && data?.session?.user) {
         const uid = data.session.user.id
+        await validarImagem(foto) // tipo REAL + tamanho (hardening etapa 2)
         const arquivo = await comprimirImagem(foto, { maxLado: 640 })
-        const ext = (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
+        const ext = arquivo.type === 'image/jpeg' ? 'jpg' : (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `perfis/${uid}-${Date.now()}.${ext}`
         const { error: upErr } = await supabase.storage.from('imagens').upload(path, arquivo, { upsert: true })
         if (!upErr) {
