@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho } from '../lib/dados.js'
+import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho, dormirBichinho, acordarBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, montarCenarioSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS } from '../lib/bichinhoPecas.js'
 
 function humorDe(b) {
@@ -61,12 +61,16 @@ export default function Bichinho() {
   const [aba, setAba] = useState('enfeite') // aba do painel Personalizar
   const [fx, setFx] = useState(null) // efeito da ação (comida/bolhas/bolinha)
   const petControls = useAnimationControls()
+  const walkControls = useAnimationControls() // passeio pelo cenário
+  const [virado, setVirado] = useState(false) // olhando pra esquerda?
+  const ultimoCarinho = useRef(0)
 
   // Motion do corpo por ação: comer = mastigadinha, banho = tremidinha, brincar = pulão.
   const MOTION_ACAO = {
     alimentar: { y: [0, -4, 0, -4, 0], scale: [1, 1.05, 0.97, 1.05, 1], rotate: [0, -2, 3, -2, 0], transition: { duration: 0.9, ease: 'easeInOut' } },
     banho: { rotate: [0, -6, 6, -5, 5, 0], scale: [1, 1.03, 1, 1.03, 1], transition: { duration: 0.75, ease: 'easeInOut' } },
     brincar: { y: [0, -22, 0, -12, 0], scale: [1, 1.12, 0.94, 1.05, 1], rotate: [0, -6, 6, -3, 0], transition: { duration: 0.75, ease: 'easeOut' } },
+    carinho: { rotate: [0, -5, 5, -4, 4, 0], scale: [1, 1.08, 1.02, 1.06, 1], transition: { duration: 0.6, ease: 'easeInOut' } },
   }
   // Comida e brinquedo combinam com a espécie (osso pro cão, peixe pro gato...).
   const COMIDA_ESPECIE = {
@@ -82,12 +86,13 @@ export default function Bichinho() {
   function reagir(acao) {
     petControls.start(MOTION_ACAO[acao] || MOTION_ACAO.brincar)
     const base = Date.now()
-    const emojis = ['💛', '✨', '🥰', '💫', '💚', '⭐', '🎉']
-    const novos = Array.from({ length: 6 }, (_, i) => ({
+    const emojis = acao === 'carinho' ? ['💛', '🥰', '💕', '💛'] : ['💛', '✨', '🥰', '💫', '💚', '⭐', '🎉']
+    const novos = Array.from({ length: acao === 'carinho' ? 4 : 6 }, (_, i) => ({
       id: base + i, x: 24 + Math.random() * 52, drift: (Math.random() - 0.5) * 36, e: emojis[i % emojis.length],
     }))
     setHearts((h) => [...h, ...novos])
     setTimeout(() => setHearts((h) => h.filter((x) => !novos.some((n) => n.id === x.id))), 1500)
+    if (acao === 'carinho') return // carinho é só amor: sem comida/bolha/bolinha
 
     const fxId = base
     const bolhas = acao === 'banho' ? Array.from({ length: 6 }, (_, i) => ({ i, x: 26 + Math.random() * 48, d: i * 0.1 })) : []
@@ -98,12 +103,53 @@ export default function Bichinho() {
     setTimeout(() => setFx((f) => (f && f.id === fxId ? null : f)), 1400)
   }
 
+  // Carinho: tocar no bichinho — reação fofa, sem pontos (é só amor mesmo)
+  function carinho() {
+    if (!bicho?.vivo || bicho?.dormindo) return
+    if (Date.now() - ultimoCarinho.current < 700) return // sem metralhadora de toque
+    ultimoCarinho.current = Date.now()
+    reagir('carinho')
+    import('../lib/juice.js').then(({ acerto }) => acerto(0)).catch(() => {})
+  }
+
   async function carregar() {
     setCarregando(true)
     try { setBicho(await meuBichinho()) } catch (e) { setErro(e?.message || 'Erro') }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
+
+  // Passeio: o bichinho anda sozinho pelo cenário (escolhe um ponto, caminha
+  // até lá olhando pra direção certa, para um pouco, e vai de novo). Dormindo
+  // ou sem bichinho, fica quietinho no lugar.
+  const passeando = !carregando && !!bicho?.tem && !!bicho?.vivo && !bicho?.dormindo
+  useEffect(() => {
+    if (!passeando) { walkControls.start({ x: 0, transition: { duration: 0.8 } }); return }
+    let vivo = true
+    let x = 0
+    async function passear() {
+      await new Promise((r) => setTimeout(r, 1200))
+      while (vivo) {
+        const alvo = Math.round(Math.random() * 150 - 75)
+        setVirado(alvo < x)
+        const dist = Math.abs(alvo - x)
+        try { await walkControls.start({ x: alvo, transition: { duration: Math.max(0.8, dist / 34), ease: 'linear' } }) } catch { /* desmontou */ }
+        x = alvo
+        await new Promise((r) => setTimeout(r, 1500 + Math.random() * 3000))
+      }
+    }
+    passear()
+    return () => { vivo = false; walkControls.stop() }
+  }, [passeando]) // eslint-disable-line
+
+  // 💤 Dormir / ☀️ acordar (modo acampamento: congela tudo no servidor)
+  async function alternarSono(dormir) {
+    setErro('')
+    try {
+      await (dormir ? dormirBichinho() : acordarBichinho())
+      await carregar() // pega do servidor as barras congeladas/retomadas (fica tudo em sincronia)
+    } catch (e) { setErro(e?.message || String(e)) }
+  }
 
   async function cuidar(acao) {
     if (cuidando) return
@@ -151,7 +197,7 @@ export default function Bichinho() {
     return <Adotar morto={bicho?.tem && !bicho?.vivo} nomeAntigo={bicho?.nome} especieAntiga={bicho?.especie} onPronto={carregar} />
   }
 
-  const humor = humorDe(bicho)
+  const humor = bicho.dormindo ? 'dormindo' : humorDe(bicho)
   const emPerigo = !!bicho.em_perigo
   const horasParaMorte = Math.max(0, 72 - (bicho.horas_sem_cuidado || 0))
   const estagioNome = { 1: 'Filhote', 2: 'Jovem', 3: 'Adulto' }[bicho.estagio] || 'Filhote'
@@ -215,12 +261,22 @@ export default function Bichinho() {
               </motion.div>
             )}
           </AnimatePresence>
-          <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-            <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
-              <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} cor={bicho.cor} olhos={bicho.olhos} animar />
+          <motion.div animate={walkControls}>
+            <motion.div animate={{ y: bicho.dormindo ? 0 : [0, -6, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+              <motion.div animate={petControls} style={{ transformOrigin: '50% 85%' }}>
+                <motion.div animate={{ scaleX: virado ? -1 : 1 }} transition={{ duration: 0.2 }}
+                  onPointerDown={carinho} className="inline-block cursor-pointer select-none" title="Faça carinho!">
+                  <BichinhoImg especie={bicho.especie} humor={humor} estagio={bicho.estagio} item={bicho.item} cor={bicho.cor} olhos={bicho.olhos} animar={!bicho.dormindo} />
+                </motion.div>
+              </motion.div>
             </motion.div>
           </motion.div>
-          {emPerigo && (
+          {bicho.dormindo && (
+            <div className="bg-surface2 border border-line text-muted text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
+              💤 {bicho.nome} está dormindo — tudo pausado e seguro (barrinhas, ofensiva e o timer). Acorde quando voltar!
+            </div>
+          )}
+          {!bicho.dormindo && emPerigo && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl p-2 -mt-1 mb-1">
               🆘 {bicho.nome} está muito carente! Cuide hoje — faltam ~{horasParaMorte}h pra ele passar mal.
             </div>
@@ -236,15 +292,28 @@ export default function Bichinho() {
 
       {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mt-3">{erro}</div>}
 
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        {[['alimentar', '🍎', 'Alimentar'], ['banho', '🛁', 'Dar banho'], ['brincar', '🎾', 'Brincar']].map(([acao, ic, lbl]) => (
-          <motion.button key={acao} whileTap={{ scale: 0.94 }} disabled={!!cuidando} onClick={() => cuidar(acao)}
-            className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-2xl py-3 flex flex-col items-center gap-1 disabled:opacity-60">
-            <span className="text-2xl">{ic}</span>
-            <span className="text-xs">{lbl}</span>
-          </motion.button>
-        ))}
-      </div>
+      {bicho.dormindo ? (
+        <motion.button whileTap={{ scale: 0.97 }} onClick={() => alternarSono(false)}
+          className="w-full mt-3 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-extrabold rounded-2xl py-4">
+          ☀️ Acordar {bicho.nome}
+        </motion.button>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            {[['alimentar', '🍎', 'Alimentar'], ['banho', '🛁', 'Dar banho'], ['brincar', '🎾', 'Brincar']].map(([acao, ic, lbl]) => (
+              <motion.button key={acao} whileTap={{ scale: 0.94 }} disabled={!!cuidando} onClick={() => cuidar(acao)}
+                className="bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-2xl py-3 flex flex-col items-center gap-1 disabled:opacity-60">
+                <span className="text-2xl">{ic}</span>
+                <span className="text-xs">{lbl}</span>
+              </motion.button>
+            ))}
+          </div>
+          <button onClick={() => alternarSono(true)}
+            className="w-full mt-2 bg-surface2 text-muted font-bold rounded-2xl py-2.5 text-sm">
+            💤 Colocar pra dormir <span className="text-faint font-semibold">· modo acampamento</span>
+          </button>
+        </>
+      )}
 
       <div className="bg-surface rounded-2xl shadow-soft p-4 mt-3">
         <div className="flex items-center justify-between mb-3">
@@ -315,7 +384,7 @@ export default function Bichinho() {
       </div>
 
       <p className="text-[11px] text-faint text-center mt-3">
-        Fazer pelo menos <b>1 cuidado por dia</b> já mantém {bicho.nome} vivo e feliz, dá <b>+2 pontos</b> e mantém sua ofensiva 🔥. Se ficar <b>3 dias sem nenhum cuidado</b>, ele pode ir embora. 🥺
+        Toque em {bicho.nome} pra fazer carinho 💛. Fazer pelo menos <b>1 cuidado por dia</b> mantém ele vivo e feliz, dá <b>+2 pontos</b> e conta ofensiva 🔥. Se ficar <b>3 dias sem cuidado</b>, ele pode ir embora — <b>vai acampar ou ficar sem celular?</b> Coloque ele pra dormir 💤 que fica tudo pausado e seguro.
       </p>
     </div>
   )

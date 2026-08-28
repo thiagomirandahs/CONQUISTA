@@ -1231,6 +1231,18 @@ export async function equiparBichinho(item) {
   if (error) throw new Error(error.message)
   return data
 }
+// 💤 Dormir / ☀️ acordar (modo acampamento: congela barras, morte e ofensiva)
+export async function dormirBichinho() {
+  const { data, error } = await supabase.rpc('bichinho_dormir')
+  if (error) throw new Error(error.message)
+  return data
+}
+export async function acordarBichinho() {
+  const { data, error } = await supabase.rpc('bichinho_acordar')
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Personalizar o visual: campo ∈ 'cenario' | 'cor' | 'olhos'
 export async function vestirBichinho(campo, valor) {
   const { data, error } = await supabase.rpc('bichinho_vestir', { p_campo: campo, p_valor: valor })

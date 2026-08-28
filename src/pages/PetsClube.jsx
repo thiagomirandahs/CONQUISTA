@@ -4,8 +4,9 @@ import Avatar from '../components/Avatar.jsx'
 import { petsDoClube } from '../lib/dados.js'
 import { montarBichinhoSvg, montarCenarioSvg } from '../lib/bichinhoPecas.js'
 
-function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao' }) {
-  const svg = useMemo(() => montarBichinhoSvg({ especie, humor: vivo ? 'feliz' : 'morto', estagio, item, cor, olhos }), [especie, item, estagio, vivo, cor, olhos])
+function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao', dormindo = false }) {
+  const humor = !vivo ? 'morto' : dormindo ? 'dormindo' : 'feliz'
+  const svg = useMemo(() => montarBichinhoSvg({ especie, humor, estagio, item, cor, olhos }), [especie, humor, estagio, item, cor, olhos])
   return <svg viewBox="0 0 100 100" width={84} height={84} dangerouslySetInnerHTML={{ __html: svg }} />
 }
 function CenarioBg({ cenario = 'quintal', className = '' }) {
@@ -45,8 +46,11 @@ export default function PetsClube() {
               <div className="bg-surface2 rounded-xl relative overflow-hidden">
                 <CenarioBg cenario={p.cenario} className="absolute inset-0 w-full h-full" />
                 <div className="relative flex justify-center">
-                  <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} cor={p.cor} olhos={p.olhos} />
+                  <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} cor={p.cor} olhos={p.olhos} dormindo={p.dormindo} />
                 </div>
+                {p.dormindo && p.vivo && (
+                  <span className="absolute top-1 left-1 z-10 text-[10px] font-extrabold bg-surface/85 text-muted rounded-full px-1.5">💤</span>
+                )}
                 {p.ofensiva > 0 && p.vivo && (
                   <span className="absolute top-1 right-1 z-10 text-[10px] font-extrabold bg-orange-100 text-orange-600 rounded-full px-1.5">🔥{p.ofensiva}</span>
                 )}
