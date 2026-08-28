@@ -35,6 +35,7 @@ const ModoAcampamento = lazy(() => import('./pages/ModoAcampamento.jsx'))
 const Chat = lazy(() => import('./pages/Chat.jsx'))
 const Biblia = lazy(() => import('./pages/Biblia.jsx'))
 const Bichinho = lazy(() => import('./pages/Bichinho.jsx'))
+const Chefao = lazy(() => import('./pages/Chefao.jsx'))
 const PetsClube = lazy(() => import('./pages/PetsClube.jsx'))
 const ChatModeracao = lazy(() => import('./pages/ChatModeracao.jsx'))
 const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/biblia" element={<Biblia />} />
           <Route path="/bichinho" element={<Bichinho />} />
+          <Route path="/chefao" element={<Chefao />} />
           <Route path="/pets-clube" element={<PetsClube />} />
           <Route path="/chat-moderacao" element={<RotaRestrita><ChatModeracao /></RotaRestrita>} />
           <Route path="/agenda" element={<Agenda />} />

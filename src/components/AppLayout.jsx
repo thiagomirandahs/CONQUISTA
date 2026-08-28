@@ -10,6 +10,7 @@ import { useAuth } from '../context/Auth.jsx'
 const abasBase = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
   { to: '/desafios', label: 'Desafios', icon: '🏁' },
+  { to: '/chefao', label: 'Chefão', icon: '⚔️' },
   { to: '/missoes', label: 'Missões', icon: '🎯' },
   { to: '/trilha', label: 'Jogos', icon: '🎮' },
   { to: '/leilao', label: 'Leilão', icon: '🏛️' },
