@@ -12,7 +12,6 @@ import * as juice from '../../lib/juice.js'
 const W = 360, H = 560
 const GOL_L = 76, GOL_R = 284, GOL_TOP = 98, GOL_BOT = 176
 const BALL_X = 180, BALL_Y = 470, KEEPER_Y = 150
-const TERCOS = [116, 180, 244] // esquerda / meio / direita (onde o goleiro cai)
 
 class FutebolScene extends Phaser.Scene {
   constructor() { super('futebol') }
@@ -44,6 +43,8 @@ class FutebolScene extends Phaser.Scene {
     linha.lineStyle(3, 0xffffff, 0.5); linha.beginPath(); linha.arc(BALL_X, BALL_Y - 6, 46, Math.PI * 1.15, Math.PI * 1.85); linha.strokePath()
 
     this.keeper = this.desenharGoleiro()
+    // goleiro "vivo" enquanto você mira: quica nas pontas dos pés
+    this.bounce = this.tweens.add({ targets: this.keeper, scaleY: 0.93, yoyo: true, repeat: -1, duration: 420, ease: 'Sine.inOut' })
     this.ball = this.add.text(BALL_X, BALL_Y, '⚽', { fontSize: '34px' }).setOrigin(0.5)
     this.gAim = this.add.graphics().setDepth(5)
 
@@ -102,8 +103,10 @@ class FutebolScene extends Phaser.Scene {
   }
   novoChute() {
     this.ball.setPosition(BALL_X, BALL_Y).setScale(1)
-    this.tweens.add({ targets: this.keeper, x: 180, duration: 250, ease: 'Quad.out' })
+    // levanta do mergulho: volta pro meio, em pé, sem inclinação
+    this.tweens.add({ targets: this.keeper, x: 180, y: KEEPER_Y, rotation: 0, duration: 260, ease: 'Quad.out' })
     this.keeper.setScale(1)
+    this.bounce?.resume()
     this._aim = null
     this.estado = 'mirando'
     this.atualizarHud()
@@ -140,9 +143,28 @@ class FutebolScene extends Phaser.Scene {
 
   chutar(tx, ty) {
     this.estado = 'chutando'
-    this.keeperDiveX = TERCOS[Math.floor(Math.random() * TERCOS.length)]
-    const lean = this.keeperDiveX < 180 ? -0.25 : this.keeperDiveX > 180 ? 0.25 : 0
-    this.tweens.add({ targets: this.keeper, x: this.keeperDiveX, rotation: lean, duration: 420, ease: 'Quad.out' })
+    this.bounce?.pause(); this.keeper.setScale(1)
+
+    // Decisão do goleiro: 40% ele LÊ o canto (cai onde a bola vai, com errinho),
+    // 38% cai no canto errado, 22% fica no meio. Ler não garante defesa: chute
+    // bem no cantinho (ou alto) passa mesmo assim — precisão vence o goleiro.
+    const r = Math.random()
+    let diveX
+    if (r < 0.40) diveX = tx + (Math.random() * 36 - 18)
+    else if (r < 0.78) diveX = tx < 180 ? 210 + Math.random() * 34 : 150 - Math.random() * 34
+    else diveX = 180 + (Math.random() * 20 - 10)
+    diveX = Math.max(126, Math.min(234, diveX)) // alcance do mergulho (cantinho extremo é dele não chegar)
+    const diveY = Math.max(116, Math.min(162, ty + (Math.random() * 20 - 10)))
+    this.keeperDiveX = diveX; this.keeperDiveY = diveY
+
+    // Mergulho de verdade: deita na direção do canto (ou agacha, se ficou no meio)
+    const dx = diveX - 180
+    if (Math.abs(dx) < 16) {
+      this.tweens.add({ targets: this.keeper, x: diveX, y: diveY + 6, duration: 300, ease: 'Quad.out' })
+    } else {
+      const rot = (dx < 0 ? -1 : 1) * Math.min(1.15, 0.55 + Math.abs(dx) / 110)
+      this.tweens.add({ targets: this.keeper, x: diveX, y: diveY, rotation: rot, duration: 360, ease: 'Quad.out' })
+    }
     const bx0 = BALL_X, by0 = BALL_Y
     this.tweens.addCounter({
       from: 0, to: 1, duration: 440, ease: 'Sine.in',
@@ -160,8 +182,13 @@ class FutebolScene extends Phaser.Scene {
     const foraY = ty < GOL_TOP - 2
     let tipo
     if (foraX || foraY) tipo = 'fora'
-    else if (Math.abs(tx - this.keeperDiveX) < 52 && ty > 120) tipo = 'defesa'
-    else { tipo = 'gol'; this.gols++ }
+    else {
+      // defesa = a bola terminou no alcance das LUVAS (bola alta é mais difícil de pegar)
+      const alcance = ty < 122 ? 24 : 34
+      const dist = Math.hypot(tx - this.keeperDiveX, (ty - this.keeperDiveY) * 0.9)
+      if (dist < alcance) tipo = 'defesa'
+      else { tipo = 'gol'; this.gols++ }
+    }
     this.resultado(tipo)
   }
 
@@ -177,6 +204,11 @@ class FutebolScene extends Phaser.Scene {
       try { this.festa?.explode(30, W / 2, 150) } catch { /* ok */ }
       this.tweens.add({ targets: this.net, alpha: { from: 0.28, to: 0.1 }, duration: 300, yoyo: true })
     } else {
+      if (tipo === 'defesa') {
+        // AGARROU: a bola gruda nas luvas e o goleiro comemora com um "pump"
+        this.tweens.add({ targets: this.ball, x: this.keeper.x, y: this.keeper.y - 4, scale: 0.5, duration: 130, ease: 'Quad.out' })
+        this.tweens.add({ targets: this.keeper, scale: 1.12, yoyo: true, duration: 140 })
+      }
       this.cameras.main.shake(160, 0.006)
     }
     this.time.delayedCall(1150, () => {
