@@ -42,11 +42,15 @@
 insert into public.config_clube (chave, valor) values ('exigir_partida', 'nao')
 on conflict (chave) do nothing;
 
--- 1) A tabela de partidas (auditoria incluída)
+-- 1) A tabela de partidas (auditoria incluída).
+--    SEM chaves estrangeiras de propósito: criar FK pra profiles/jogos_trilha
+--    (tabelas que o app usa o tempo todo) pega trava exclusiva e causa DEADLOCK
+--    num banco ao vivo. As funções abaixo já validam o jogo e usam auth.uid(),
+--    então a integridade continua garantida na prática.
 create table if not exists public.partidas (
   id uuid primary key default gen_random_uuid(),
-  usuario_id uuid not null references public.profiles(id) on delete cascade,
-  jogo text not null references public.jogos_trilha(chave),
+  usuario_id uuid not null,
+  jogo text not null,
   iniciado_em timestamptz not null default now(),
   validade_em timestamptz not null,
   consumida_em timestamptz,           -- jogos de estrela: consumida 1x
@@ -96,6 +100,18 @@ returns int language sql immutable as $$
     when 'corrida' then ceil(p_segundos * 1.5)::int + 3   -- <= ~1,3 obstáculos/s
     else ceil(p_segundos * 2)::int + 5 end;
 $$;
+
+-- 2b) Dependência: reflexo_so_desbravador() (usada por registrar_recorde e pelo
+--     prêmio de domingo). Criada aqui pra o anticheat ser AUTO-SUFICIENTE mesmo
+--     se o 2026-07-27-reflexo-so-desbravador.sql ainda não tiver rodado. Nasce
+--     DESLIGADA (coalesce false = liderança conta nos recordes, como hoje);
+--     ligar o "só desbravador" é seedar config_clube.reflexo_so_desbravador='sim'.
+create or replace function public.reflexo_so_desbravador()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select coalesce((select valor = 'sim' from public.config_clube where chave = 'reflexo_so_desbravador'), false);
+$$;
+grant execute on function public.reflexo_so_desbravador() to authenticated;
+revoke execute on function public.reflexo_so_desbravador() from public, anon;
 
 -- 3) iniciar_jogo: abre a partida (validações NO MOMENTO DO INÍCIO)
 create or replace function public.iniciar_jogo(p_tipo text)
