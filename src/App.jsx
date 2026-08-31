@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, Component } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import AppLayout from './components/AppLayout.jsx'
@@ -65,8 +65,56 @@ function InicioRedirect() {
   return <Navigate to={profile?.papel === 'pais' ? '/meu-filho' : '/ranking'} replace />
 }
 
+// Nuke do service worker + caches e recarrega — pega a versão nova de vez.
+async function atualizarDeVez() {
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.()
+    if (regs) await Promise.all(regs.map((r) => r.unregister()))
+    const chaves = await caches?.keys?.()
+    if (chaves) await Promise.all(chaves.map((k) => caches.delete(k)))
+  } catch { /* ignora */ }
+  window.location.reload()
+}
+
+// Rede de segurança: se uma página falhar ao CARREGAR (chunk velho depois de um
+// deploy, com cache do PWA), em vez de tela branca a gente recarrega sozinho 1x
+// pra pegar a versão nova. Se persistir (ou for outro erro), mostra "Atualizar".
+class ErroApp extends Component {
+  constructor(props) { super(props); this.state = { erro: false } }
+  static getDerivedStateFromError() { return { erro: true } }
+  componentDidCatch(erro) {
+    const msg = String(erro?.message || erro || '')
+    const ehChunk = /dynamically imported module|module script failed|ChunkLoadError|Failed to fetch|Loading chunk|CSS chunk/i.test(msg)
+    let jaTentou = false
+    try { jaTentou = sessionStorage.getItem('recarregou_chunk') === '1' } catch { /* sem storage */ }
+    if (ehChunk && !jaTentou) {
+      try { sessionStorage.setItem('recarregou_chunk', '1') } catch { /* sem storage */ }
+      atualizarDeVez()
+    }
+  }
+  render() {
+    if (this.state.erro) {
+      return (
+        <div className="min-h-screen grid place-items-center p-6 text-center">
+          <div className="max-w-sm">
+            <div className="text-5xl mb-3">🔄</div>
+            <p className="font-extrabold text-ink text-lg">Precisamos atualizar o app</p>
+            <p className="text-sm text-muted mt-1 mb-5">Saiu uma versão nova. Toque abaixo pra atualizar — é rapidinho. 🙂</p>
+            <button onClick={atualizarDeVez}
+              className="w-full bg-gradient-to-r from-brand to-brand2 text-white font-extrabold rounded-2xl py-3.5 shadow-glow">
+              Atualizar agora
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function App() {
   return (
+    <ErroApp>
     <Suspense fallback={<Carregando />}>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -109,5 +157,6 @@ export default function App() {
         </Route>
       </Routes>
     </Suspense>
+    </ErroApp>
   )
 }
