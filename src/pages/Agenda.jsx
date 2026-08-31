@@ -16,6 +16,37 @@ function fmtDataLonga(iso) {
   const dt = new Date(a, m - 1, d)
   return `${DIAS[dt.getDay()]}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
 }
+const curto = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '')
+
+// Data/hora do evento em milissegundos (local). fimDoDia = 23:59 (fim do período).
+function msEvento(dataIso, hora, fimDoDia = false) {
+  if (!dataIso) return null
+  const [a, m, d] = String(dataIso).slice(0, 10).split('-').map(Number)
+  let hh = fimDoDia ? 23 : 0, mm = fimDoDia ? 59 : 0
+  if (!fimDoDia && hora && /^\d{1,2}:\d{2}/.test(hora)) { const [h, mi] = hora.split(':').map(Number); hh = h; mm = mi }
+  return new Date(a, m - 1, d, hh, mm, fimDoDia ? 59 : 0).getTime()
+}
+
+// Contagem regressiva pro INÍCIO (ou "acontecendo" durante o período 4→7).
+function contagem(ev, agora) {
+  const inicio = msEvento(ev.data, ev.hora)
+  const fim = msEvento(ev.data_fim || ev.data, null, true)
+  if (inicio == null || agora > fim) return null
+  if (agora >= inicio && agora <= fim) return { cor: 'verde', txt: '🔴 Acontecendo agora!' }
+  const hoje0 = new Date(); hoje0.setHours(0, 0, 0, 0)
+  const [a, m, d] = String(ev.data).slice(0, 10).split('-').map(Number)
+  const dias = Math.round((new Date(a, m - 1, d).getTime() - hoje0.getTime()) / 86400000)
+  if (dias <= 0) {
+    const ms = inicio - agora, h = Math.floor(ms / 3600000), mi = Math.floor((ms % 3600000) / 60000)
+    return { cor: 'vermelho', txt: h >= 1 ? `⏰ É HOJE! faltam ${h}h ${mi}min` : `⏰ É HOJE! faltam ${mi} min` }
+  }
+  if (dias === 1) return { cor: 'vermelho', txt: '🎉 É amanhã!' }
+  return { cor: dias <= 3 ? 'amarelo' : 'brand', txt: `⏳ faltam ${dias} dias` }
+}
+const CORES_CONT = {
+  verde: 'bg-green-100 text-green-700', vermelho: 'bg-red-100 text-red-600',
+  amarelo: 'bg-amber-100 text-amber-700', brand: 'bg-brand/10 text-brand',
+}
 
 // Agenda do clube: próximos eventos pra todo mundo; a liderança cria/edita.
 // O lembrete na véspera sai sozinho (pg_cron -> notificacoes -> push).
@@ -26,6 +57,7 @@ export default function Agenda() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [editando, setEditando] = useState(null)
+  const [agora, setAgora] = useState(Date.now())
 
   async function carregar() {
     setCarregando(true); setErro('')
@@ -33,6 +65,8 @@ export default function Agenda() {
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
+  // relógio pra contagem regressiva ficar ao vivo
+  useEffect(() => { const t = setInterval(() => setAgora(Date.now()), 1000); return () => clearInterval(t) }, [])
 
   async function excluir(ev) {
     if (!window.confirm(`Apagar "${ev.titulo}" da agenda?`)) return
@@ -75,8 +109,12 @@ export default function Agenda() {
                 <div className="text-[11px] font-bold text-brand2">{ev.tipo || 'Evento'}</div>
                 <div className="font-bold text-ink break-words">{ev.titulo}</div>
                 <div className="text-xs text-muted mt-0.5">
-                  📅 {fmtDataLonga(ev.data)}{ev.hora ? ` · ${ev.hora}` : ''}{ev.local ? ` · 📍 ${ev.local}` : ''}
+                  📅 {fmtDataLonga(ev.data)}{ev.data_fim ? ` a ${curto(ev.data_fim)}` : ''}{ev.hora ? ` · ${ev.hora}` : ''}{ev.local ? ` · 📍 ${ev.local}` : ''}
                 </div>
+                {(() => {
+                  const c = contagem(ev, agora)
+                  return c ? <span className={`inline-block mt-1.5 text-[11px] font-extrabold rounded-full px-2.5 py-1 ${CORES_CONT[c.cor]}`}>{c.txt}</span> : null
+                })()}
                 {ev.descricao && <div className="text-xs text-muted mt-1 break-words">{ev.descricao}</div>}
               </div>
               {ehAdmin && (
@@ -105,6 +143,7 @@ function FormEvento({ inicial, criadoPor, onFechar, onSalvo }) {
   const [form, setForm] = useState(() => ({
     titulo: inicial?.titulo || '', tipo: inicial?.tipo || 'Reunião',
     data: inicial?.data ? String(inicial.data).slice(0, 10) : '',
+    data_fim: inicial?.data_fim ? String(inicial.data_fim).slice(0, 10) : '',
     hora: inicial?.hora || '', local: inicial?.local || '', descricao: inicial?.descricao || '',
   }))
   const [salvando, setSalvando] = useState(false)
@@ -120,6 +159,7 @@ function FormEvento({ inicial, criadoPor, onFechar, onSalvo }) {
     try {
       await salvarEvento({
         titulo: form.titulo.trim(), tipo: form.tipo, data: form.data,
+        data_fim: form.data_fim || null,
         hora: form.hora.trim() || null, local: form.local.trim() || null,
         descricao: form.descricao.trim() || null,
         ...(inicial ? {} : { criado_por: criadoPor }),
@@ -156,9 +196,15 @@ function FormEvento({ inicial, criadoPor, onFechar, onSalvo }) {
               <input type="time" className={inputClass} value={form.hora} onChange={(e) => set('hora', e.target.value)} />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">Data</label>
-            <input type="date" className={inputClass} value={form.data} onChange={(e) => set('data', e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1">Data {form.data_fim ? '(início)' : ''}</label>
+              <input type="date" className={inputClass} value={form.data} onChange={(e) => set('data', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1">Fim <span className="text-faint font-normal">(opcional)</span></label>
+              <input type="date" className={inputClass} value={form.data_fim} min={form.data || undefined} onChange={(e) => set('data_fim', e.target.value)} />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-ink mb-1">Local (opcional)</label>
