@@ -165,7 +165,7 @@ export default function Chefao() {
       {venceu && (
         <div className="mt-3 bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
           <p className="font-extrabold text-green-700">🏆 O clube venceu junto!</p>
-          <p className="text-sm text-muted mt-0.5">Quem deu ao menos 1 golpe leva <b>+15</b>, e o time que mais golpeou leva <b>+30</b> — sai no domingo à noite. 🎉</p>
+          <p className="text-sm text-muted mt-0.5">Cada um leva pontos <b>proporcionais ao dano</b> que causou (quanto mais você jogou e golpeou, mais ganha) — sai no domingo à noite. 🎉</p>
         </div>
       )}
 
