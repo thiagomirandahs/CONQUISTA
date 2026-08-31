@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarEventos, salvarEvento, excluirEvento } from '../lib/dados.js'
+import { curto, contagem, CORES_CONT } from '../lib/eventos.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS = ['Reunião', 'Acampamento', 'Passeio', 'Culto', 'Evento']
@@ -15,37 +16,6 @@ function fmtDataLonga(iso) {
   const [a, m, d] = String(iso).slice(0, 10).split('-').map(Number)
   const dt = new Date(a, m - 1, d)
   return `${DIAS[dt.getDay()]}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`
-}
-const curto = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '')
-
-// Data/hora do evento em milissegundos (local). fimDoDia = 23:59 (fim do período).
-function msEvento(dataIso, hora, fimDoDia = false) {
-  if (!dataIso) return null
-  const [a, m, d] = String(dataIso).slice(0, 10).split('-').map(Number)
-  let hh = fimDoDia ? 23 : 0, mm = fimDoDia ? 59 : 0
-  if (!fimDoDia && hora && /^\d{1,2}:\d{2}/.test(hora)) { const [h, mi] = hora.split(':').map(Number); hh = h; mm = mi }
-  return new Date(a, m - 1, d, hh, mm, fimDoDia ? 59 : 0).getTime()
-}
-
-// Contagem regressiva pro INÍCIO (ou "acontecendo" durante o período 4→7).
-function contagem(ev, agora) {
-  const inicio = msEvento(ev.data, ev.hora)
-  const fim = msEvento(ev.data_fim || ev.data, null, true)
-  if (inicio == null || agora > fim) return null
-  if (agora >= inicio && agora <= fim) return { cor: 'verde', txt: '🔴 Acontecendo agora!' }
-  const hoje0 = new Date(); hoje0.setHours(0, 0, 0, 0)
-  const [a, m, d] = String(ev.data).slice(0, 10).split('-').map(Number)
-  const dias = Math.round((new Date(a, m - 1, d).getTime() - hoje0.getTime()) / 86400000)
-  if (dias <= 0) {
-    const ms = inicio - agora, h = Math.floor(ms / 3600000), mi = Math.floor((ms % 3600000) / 60000)
-    return { cor: 'vermelho', txt: h >= 1 ? `⏰ É HOJE! faltam ${h}h ${mi}min` : `⏰ É HOJE! faltam ${mi} min` }
-  }
-  if (dias === 1) return { cor: 'vermelho', txt: '🎉 É amanhã!' }
-  return { cor: dias <= 3 ? 'amarelo' : 'brand', txt: `⏳ faltam ${dias} dias` }
-}
-const CORES_CONT = {
-  verde: 'bg-green-100 text-green-700', vermelho: 'bg-red-100 text-red-600',
-  amarelo: 'bg-amber-100 text-amber-700', brand: 'bg-brand/10 text-brand',
 }
 
 // Agenda do clube: próximos eventos pra todo mundo; a liderança cria/edita.

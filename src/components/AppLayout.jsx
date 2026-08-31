@@ -5,6 +5,7 @@ import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
 import DevocionalPopup from './DevocionalPopup.jsx'
 import AvisosPopup from './AvisosPopup.jsx'
+import ProximoEventoPopup from './ProximoEventoPopup.jsx'
 import { useAuth } from '../context/Auth.jsx'
 
 const abasBase = [
@@ -78,6 +79,7 @@ export default function AppLayout() {
     <div className="min-h-full lg:flex">
       {!ehPai && <DevocionalPopup />}
       <AvisosPopup />
+      <ProximoEventoPopup />
 
       {/* ===== Menu lateral (PC) ===== */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 z-30 glass border-r border-line">
