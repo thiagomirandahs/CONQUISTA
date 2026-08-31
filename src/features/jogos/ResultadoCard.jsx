@@ -34,7 +34,7 @@ export default function ResultadoCard({ resultado }) {
             className="text-3xl inline-block" style={{ filter: 'drop-shadow(0 2px 6px rgba(245,197,24,0.55))' }}>⭐</motion.span>
         ))}
       </div>
-      <p className="text-xs text-muted mt-1">Cada ⭐ vale 5 pontos — mande bem pra ganhar mais! 🌟</p>
+      <p className="text-xs text-muted mt-1">Cada ⭐ vale 10 pontos — mande bem pra ganhar mais! 🌟</p>
     </motion.div>
   )
 }

@@ -242,7 +242,7 @@ export default function Trilha() {
                 <p className="font-bold text-ink">Escolha um jogo 🎮</p>
                 <p className="text-sm text-faint mt-1">
                   {rodizioOn ? 'Os jogos com 🔒 abrem no dia deles. ' : 'Cada jogo, 1x por dia. '}
-                  Cada ⭐ vale 5 pontos: <b>1⭐=5</b> · <b>2⭐=10</b> · <b>3⭐=15</b>.
+                  Cada ⭐ vale 10 pontos: <b>1⭐=10</b> · <b>2⭐=20</b> · <b>3⭐=30</b>.
                 </p>
               </div>
 
@@ -326,7 +326,7 @@ export default function Trilha() {
                           ? <span className="text-green-600 font-extrabold shrink-0 text-xs">✓ jogado</span>
                           : !aberto
                           ? <span className="text-faint font-extrabold shrink-0 text-base">🔒</span>
-                          : <span className="bg-brand text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 5-15</span>}
+                          : <span className="bg-brand text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 10-30</span>}
                       </motion.button>
                       {ehAdmin && rodizio && !aberto && (
                         <button onClick={() => alternarLiberacao(chave, true)}
