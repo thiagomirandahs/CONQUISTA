@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
-import { carregarUnidadesCompetidoras, lancarColocacaoAcampamento, carregarHistoricoAcampamento } from '../lib/dados.js'
+import { carregarUnidadesCompetidoras, lancarColocacaoAcampamento, carregarHistoricoAcampamento, carregarUsuarios, lancarPontosIndividual } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -37,12 +37,22 @@ export default function ModoAcampamento() {
   const [enviandoAjuste, setEnviandoAjuste] = useState(false)
   const [msgAjuste, setMsgAjuste] = useState('')
 
+  // Ajuste individual: tirar (penalidade) ou dar pontos direto pra um membro
+  const [membros, setMembros] = useState([])
+  const [ajusteMbId, setAjusteMbId] = useState('')
+  const [ajusteMbVal, setAjusteMbVal] = useState('')
+  const [ajusteMbMotivo, setAjusteMbMotivo] = useState('')
+  const [ajusteMbSinal, setAjusteMbSinal] = useState('tirar') // 'tirar' | 'dar'
+  const [enviandoMb, setEnviandoMb] = useState(false)
+  const [msgMb, setMsgMb] = useState('')
+
   async function carregar() {
     setCarregando(true); setErro('')
     try {
-      const [us, hist] = await Promise.all([carregarUnidadesCompetidoras(), carregarHistoricoAcampamento()])
+      const [us, hist, membrosRaw] = await Promise.all([carregarUnidadesCompetidoras(), carregarHistoricoAcampamento(), carregarUsuarios()])
       setUnidades(us)
       setHistorico(hist)
+      setMembros((membrosRaw || []).filter((m) => m.status === 'ativo' && (m.papel === 'desbravador' || m.papel === 'conselheiro')))
     } catch (e) { setErro(e?.message || 'Erro') }
     setCarregando(false)
   }
@@ -134,6 +144,30 @@ export default function ModoAcampamento() {
     } catch (e) { setMsgAjuste('❌ ' + (e?.message || String(e))) }
     setEnviandoAjuste(false)
   }
+
+  // Tira/dá pontos INDIVIDUAIS pra um membro (entra no ranking individual dele).
+  // No acampamento só entra diretoria/instrutor, então não há teto de ±100.
+  async function enviarAjusteMembro() {
+    setMsgMb('')
+    if (!ajusteMbId) { setMsgMb('Escolha o membro.'); return }
+    const n = Math.abs(parseInt(ajusteMbVal, 10))
+    if (!n) { setMsgMb('Digite quantos pontos.'); return }
+    const pontos = ajusteMbSinal === 'tirar' ? -n : n
+    const motivo = ajusteMbMotivo.trim() || (ajusteMbSinal === 'tirar' ? 'Penalidade (acampamento)' : 'Bônus (acampamento)')
+    setEnviandoMb(true)
+    try {
+      await lancarPontosIndividual({ userId: ajusteMbId, pontos, motivo, lancadoPor: profile?.id })
+      festa(2)
+      const nomeM = (membros.find((m) => m.id === ajusteMbId)?.nome || 'o membro').split(' ')[0]
+      setMsgMb(`✅ ${ajusteMbSinal === 'tirar' ? 'Tirados' : 'Dados'} ${n} pts ${ajusteMbSinal === 'tirar' ? 'de' : 'pra'} ${nomeM}.`)
+      setAjusteMbId(''); setAjusteMbVal(''); setAjusteMbMotivo('')
+    } catch (e) { setMsgMb('❌ ' + (e?.message || String(e))) }
+    setEnviandoMb(false)
+  }
+
+  const uniNome = Object.fromEntries(unidades.map((u) => [u.id, u.nome]))
+  const membrosOrd = [...membros].sort((a, b) =>
+    (uniNome[a.unidade_id] || '').localeCompare(uniNome[b.unidade_id] || '') || (a.nome || '').localeCompare(b.nome || ''))
 
   return (
     <div>
@@ -230,6 +264,45 @@ export default function ModoAcampamento() {
         <motion.button whileTap={{ scale: 0.97 }} disabled={enviandoAjuste} onClick={enviarAjuste}
           className={`mt-3 w-full text-white font-extrabold rounded-xl py-3 disabled:opacity-60 ${ajusteSinal === 'tirar' ? 'bg-red-500' : 'bg-green-600'}`}>
           {enviandoAjuste ? '...' : ajusteSinal === 'tirar' ? '➖ Tirar pontos' : '➕ Dar pontos'}
+        </motion.button>
+      </div>
+
+      {/* Tirar / dar pontos INDIVIDUAIS pra um membro (penalidade ou bônus pessoal) */}
+      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4">
+        <p className="text-sm font-extrabold text-ink mb-1">🎖️ Tirar / dar pontos de um membro</p>
+        <p className="text-xs text-faint mb-3">Ponto individual (entra no ranking da pessoa), ex.: penalizar ou premiar um desbravador específico.</p>
+
+        <div className="flex gap-1.5 mb-3">
+          <button type="button" onClick={() => setAjusteMbSinal('tirar')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${ajusteMbSinal === 'tirar' ? 'bg-red-500 text-white' : 'bg-surface2 text-muted'}`}>
+            ➖ Tirar
+          </button>
+          <button type="button" onClick={() => setAjusteMbSinal('dar')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${ajusteMbSinal === 'dar' ? 'bg-green-600 text-white' : 'bg-surface2 text-muted'}`}>
+            ➕ Dar
+          </button>
+        </div>
+
+        <label className="block text-[11px] text-faint mb-1">Membro</label>
+        <select value={ajusteMbId} onChange={(e) => setAjusteMbId(e.target.value)} className={`${inputClass} mb-2`}>
+          <option value="">Escolha o membro…</option>
+          {membrosOrd.map((m) => (
+            <option key={m.id} value={m.id}>{m.nome}{uniNome[m.unidade_id] ? ` — ${uniNome[m.unidade_id]}` : ''}</option>
+          ))}
+        </select>
+
+        <label className="block text-[11px] text-faint mb-1">Pontos {ajusteMbSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
+        <input type="number" min={1} value={ajusteMbVal} onChange={(e) => setAjusteMbVal(e.target.value)} placeholder="ex.: 20" className={`${inputClass} mb-2`} />
+
+        <label className="block text-[11px] text-faint mb-1">Motivo (opcional)</label>
+        <input value={ajusteMbMotivo} onChange={(e) => setAjusteMbMotivo(e.target.value)}
+          placeholder={ajusteMbSinal === 'tirar' ? 'ex.: saiu da fila' : 'ex.: destaque da prova'} className={inputClass} />
+
+        {msgMb && <p className="text-sm mt-3 font-semibold">{msgMb}</p>}
+
+        <motion.button whileTap={{ scale: 0.97 }} disabled={enviandoMb} onClick={enviarAjusteMembro}
+          className={`mt-3 w-full text-white font-extrabold rounded-xl py-3 disabled:opacity-60 ${ajusteMbSinal === 'tirar' ? 'bg-red-500' : 'bg-green-600'}`}>
+          {enviandoMb ? '...' : ajusteMbSinal === 'tirar' ? '➖ Tirar pontos' : '➕ Dar pontos'}
         </motion.button>
       </div>
 
