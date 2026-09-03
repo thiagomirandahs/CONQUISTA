@@ -29,6 +29,14 @@ export default function ModoAcampamento() {
   const [enviando, setEnviando] = useState(false)
   const [msg, setMsg] = useState('')
 
+  // Ajuste avulso: tirar (penalidade) ou dar pontos direto pra uma unidade
+  const [ajusteUni, setAjusteUni] = useState('')
+  const [ajusteVal, setAjusteVal] = useState('')
+  const [ajusteMotivo, setAjusteMotivo] = useState('')
+  const [ajusteSinal, setAjusteSinal] = useState('tirar') // 'tirar' | 'dar'
+  const [enviandoAjuste, setEnviandoAjuste] = useState(false)
+  const [msgAjuste, setMsgAjuste] = useState('')
+
   async function carregar() {
     setCarregando(true); setErro('')
     try {
@@ -105,6 +113,28 @@ export default function ModoAcampamento() {
     setEnviando(false)
   }
 
+  // Tira (penalidade) ou dá pontos avulsos direto pra uma unidade. Reusa a
+  // função do acampamento (item com posicao nula aceita valor negativo) — assim
+  // o lançamento aparece no mesmo histórico e conta no ranking geral.
+  async function enviarAjuste() {
+    setMsgAjuste('')
+    if (!ajusteUni) { setMsgAjuste('Escolha a unidade.'); return }
+    const n = Math.abs(parseInt(ajusteVal, 10))
+    if (!n) { setMsgAjuste('Digite quantos pontos.'); return }
+    const pontos = ajusteSinal === 'tirar' ? -n : n
+    const motivo = ajusteMotivo.trim() || (ajusteSinal === 'tirar' ? 'Penalidade' : 'Bônus')
+    setEnviandoAjuste(true)
+    try {
+      await lancarColocacaoAcampamento(motivo, [{ unidade_id: ajusteUni, posicao: null, pontos }])
+      festa(2)
+      const nomeU = unidades.find((u) => u.id === ajusteUni)?.nome || 'a unidade'
+      setMsgAjuste(`✅ ${ajusteSinal === 'tirar' ? 'Tirados' : 'Dados'} ${n} pts ${ajusteSinal === 'tirar' ? 'de' : 'pra'} ${nomeU}.`)
+      setAjusteUni(''); setAjusteVal(''); setAjusteMotivo('')
+      carregar()
+    } catch (e) { setMsgAjuste('❌ ' + (e?.message || String(e))) }
+    setEnviandoAjuste(false)
+  }
+
   return (
     <div>
       <div className="mb-4">
@@ -166,6 +196,43 @@ export default function ModoAcampamento() {
         </motion.button>
       </div>
 
+      {/* Tirar / dar pontos avulsos (penalidade ou bônus) direto pra uma unidade */}
+      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4">
+        <p className="text-sm font-extrabold text-ink mb-1">⚖️ Tirar / dar pontos de uma unidade</p>
+        <p className="text-xs text-faint mb-3">Penalidade ou bônus direto pra uma unidade, fora da colocação (ex.: tirar por bagunça).</p>
+
+        <div className="flex gap-1.5 mb-3">
+          <button type="button" onClick={() => setAjusteSinal('tirar')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${ajusteSinal === 'tirar' ? 'bg-red-500 text-white' : 'bg-surface2 text-muted'}`}>
+            ➖ Tirar
+          </button>
+          <button type="button" onClick={() => setAjusteSinal('dar')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition ${ajusteSinal === 'dar' ? 'bg-green-600 text-white' : 'bg-surface2 text-muted'}`}>
+            ➕ Dar
+          </button>
+        </div>
+
+        <label className="block text-[11px] text-faint mb-1">Unidade</label>
+        <select value={ajusteUni} onChange={(e) => setAjusteUni(e.target.value)} className={`${inputClass} mb-2`}>
+          <option value="">Escolha a unidade…</option>
+          {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+        </select>
+
+        <label className="block text-[11px] text-faint mb-1">Pontos {ajusteSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
+        <input type="number" min={1} value={ajusteVal} onChange={(e) => setAjusteVal(e.target.value)} placeholder="ex.: 50" className={`${inputClass} mb-2`} />
+
+        <label className="block text-[11px] text-faint mb-1">Motivo (opcional)</label>
+        <input value={ajusteMotivo} onChange={(e) => setAjusteMotivo(e.target.value)}
+          placeholder={ajusteSinal === 'tirar' ? 'ex.: bagunça no alojamento' : 'ex.: ajuda extra'} className={inputClass} />
+
+        {msgAjuste && <p className="text-sm mt-3 font-semibold">{msgAjuste}</p>}
+
+        <motion.button whileTap={{ scale: 0.97 }} disabled={enviandoAjuste} onClick={enviarAjuste}
+          className={`mt-3 w-full text-white font-extrabold rounded-xl py-3 disabled:opacity-60 ${ajusteSinal === 'tirar' ? 'bg-red-500' : 'bg-green-600'}`}>
+          {enviandoAjuste ? '...' : ajusteSinal === 'tirar' ? '➖ Tirar pontos' : '➕ Dar pontos'}
+        </motion.button>
+      </div>
+
       {historico.length > 0 && (
         <div>
           <h3 className="font-extrabold text-ink mb-2 text-sm">📋 Últimos lançamentos</h3>
@@ -179,7 +246,9 @@ export default function ModoAcampamento() {
                   <div className="text-sm text-ink truncate">{h.motivo}</div>
                   <div className="text-[11px] text-faint">{fmtData(h.data)}</div>
                 </div>
-                <span className="font-extrabold text-brand shrink-0">+{h.pontos}</span>
+                <span className={`font-extrabold shrink-0 ${h.pontos < 0 ? 'text-red-600' : 'text-brand'}`}>
+                  {h.pontos > 0 ? '+' : ''}{h.pontos}
+                </span>
               </div>
             ))}
           </div>
