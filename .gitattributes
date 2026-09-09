@@ -1,0 +1,7 @@
+# Scripts shell precisam de LF (senao quebram no CI Linux)
+*.sh text eol=lf
+gradlew text eol=lf
+# Binarios
+*.jar binary
+*.keystore binary
+*.png binary
