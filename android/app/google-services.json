@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1052158080863",
+    "project_id": "filhos-da-conquista",
+    "storage_bucket": "filhos-da-conquista.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052158080863:android:ec25cff45555e7b42228ea",
+        "android_client_info": {
+          "package_name": "app.filhosdaconquista"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHE2z2p5eMs2qAh8SM_ptuhiQSqrTHJ64"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

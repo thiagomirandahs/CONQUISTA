@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { registrarPushNativo } from '../lib/pushNativo.js'
 
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -31,6 +32,12 @@ export function AuthProvider({ children }) {
 
     return () => { vivo = false; sub.subscription.unsubscribe() }
   }, [])
+
+  // No app Android, registra o aparelho pra receber push nativo (FCM) assim que
+  // o perfil carrega. No web/iPhone isso não faz nada.
+  useEffect(() => {
+    if (profile?.id) registrarPushNativo(profile.id)
+  }, [profile?.id])
 
   async function carregarPerfil(id) {
     setPerfilPronto(false)
