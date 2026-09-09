@@ -104,3 +104,16 @@ button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* ===== Polimento do app nativo (Android/Capacitor) — só quando empacotado.
+   No web/iPhone a classe .app-nativo nunca é adicionada, então nada muda. ===== */
+html.app-nativo, html.app-nativo body {
+  -webkit-tap-highlight-color: transparent; /* sem flash cinza ao tocar */
+  overscroll-behavior: none;                /* sem "esticar" a rolagem */
+}
+/* Sem seleção de texto no app (cara de app), mas mantém em campos de digitação */
+html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;              /* sem menu de "copiar" no toque longo */
+}

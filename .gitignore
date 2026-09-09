@@ -7,3 +7,7 @@ dist-ssr
 .DS_Store
 dev-dist
 vapid-keys.txt
+
+# Chave de assinatura Android — NUNCA versionar
+*.keystore
+*.jks

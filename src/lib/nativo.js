@@ -29,6 +29,9 @@ export async function vibrar(intensidade = 'leve') {
 // do Android e esconde o splash quando o app já pintou.
 export async function iniciarNativo() {
   if (!ehNativo()) return
+  // Marca o documento como "app nativo" pra o CSS tirar seleção de texto, realce
+  // de toque e o efeito de esticar a rolagem — deixa com cara de app, não de site.
+  try { document.documentElement.classList.add('app-nativo') } catch { /* ok */ }
   try {
     const [{ SplashScreen }, { StatusBar, Style }, { App }] = await Promise.all([
       import('@capacitor/splash-screen'),

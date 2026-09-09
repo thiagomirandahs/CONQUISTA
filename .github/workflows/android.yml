@@ -1,13 +1,16 @@
 name: Montar APK Android
 
-# Roda quando você clicar em "Run workflow" no GitHub (aba Actions) OU quando
-# empurrar uma tag de versão (ex.: v1.0.0). Assim o APK não é montado a cada
-# commit à toa — só quando você quiser uma versão nova.
+# Roda ao clicar em "Run workflow" (aba Actions) OU ao empurrar uma tag de
+# versão (ex.: v1.0.0). Numa tag, além do APK nos Artifacts, cria uma RELEASE
+# com link PÚBLICO de download (bom pra mandar no grupo).
 on:
   workflow_dispatch: {}
   push:
     tags:
       - 'v*'
+
+permissions:
+  contents: write   # pra criar a Release com o APK
 
 jobs:
   apk:
@@ -44,15 +47,35 @@ jobs:
       - name: Aceitar licenças do Android SDK
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
-      - name: Montar o APK (debug)
+      - name: Preparar a chave de assinatura
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/conquista.keystore"
+
+      - name: Montar o APK (assinado)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/conquista.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Publicar o APK (baixe aqui nos "Artifacts")
         uses: actions/upload-artifact@v4
         with:
           name: filhos-da-conquista-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+      - name: Publicar Release com link público (só em tag v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Filhos da Conquista ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: android/app/build/outputs/apk/release/app-release.apk
+          body: |
+            📲 **APK do app Filhos da Conquista** (${{ github.ref_name }}).
+            Baixe o `app-release.apk` abaixo e instale no Android
+            (permita "instalar de fontes desconhecidas").
