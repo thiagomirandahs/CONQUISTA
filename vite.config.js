@@ -4,12 +4,18 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import legacy from '@vitejs/plugin-legacy'
 
+// CAP_BUILD=1 → build pro app nativo (Capacitor/Android): SEM service worker
+// (dentro da WebView o SW guardaria versão velha e daria tela em branco, o mesmo
+// problema que já tivemos no PWA) e SEM o modo legado (a WebView do Android é
+// moderna — corta ~centenas de KB de polyfill à toa).
+const forCap = process.env.CAP_BUILD === '1'
+
 // Configuração do projeto: React + Tailwind + PWA (instalável no celular)
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    !forCap && VitePWA({
       registerType: 'autoUpdate',
       workbox: {
         clientsClaim: true,
@@ -62,10 +68,11 @@ export default defineConfig({
       }
     }),
     // Modo de compatibilidade: faz o app rodar em celulares/navegadores antigos
-    legacy({
+    // (no web). No app nativo (forCap) não entra — a WebView já é moderna.
+    !forCap && legacy({
       targets: ['defaults', 'Android >= 6', 'Chrome >= 61', 'not dead'],
     }),
-  ],
+  ].filter(Boolean),
   build: {
     // Minifica com terser e tira console/debugger do bundle de produção
     minify: 'terser',

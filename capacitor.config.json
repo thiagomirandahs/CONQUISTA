@@ -1,0 +1,23 @@
+{
+  "appId": "app.filhosdaconquista",
+  "appName": "Filhos da Conquista",
+  "webDir": "dist",
+  "backgroundColor": "#1e3a8aff",
+  "android": {
+    "backgroundColor": "#1e3a8aff",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#1e3a8a",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#1e3a8a",
+      "overlaysWebView": false
+    }
+  }
+}

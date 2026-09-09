@@ -1,0 +1,58 @@
+name: Montar APK Android
+
+# Roda quando você clicar em "Run workflow" no GitHub (aba Actions) OU quando
+# empurrar uma tag de versão (ex.: v1.0.0). Assim o APK não é montado a cada
+# commit à toa — só quando você quiser uma versão nova.
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Montar o site (modo app nativo — sem service worker/legado)
+        run: npm run build:cap
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+
+      - name: Sincronizar Capacitor (Android)
+        run: npx cap sync android
+
+      - name: Preparar Java (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Aceitar licenças do Android SDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+
+      - name: Montar o APK (debug)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Publicar o APK (baixe aqui nos "Artifacts")
+        uses: actions/upload-artifact@v4
+        with:
+          name: filhos-da-conquista-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
