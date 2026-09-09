@@ -54,7 +54,9 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace \
+            -PappVersionCode=${{ github.run_number }} \
+            -PappVersionName=${{ github.ref_name }}
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/conquista.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
