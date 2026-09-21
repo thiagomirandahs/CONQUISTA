@@ -1,7 +1,7 @@
 # Scripts shell precisam de LF (senao quebram no CI Linux)
 *.sh text eol=lf
 gradlew text eol=lf
-# SQL (migrations, seed e testes) tambem: o psql gset/ir quebra com CRLF
+# SQL (migrations, seed e testes) tambem: os comandos do psql (\gset, \ir, \i) quebram com CRLF
 *.sql text eol=lf
 # Binarios
 *.jar binary

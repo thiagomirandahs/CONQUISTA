@@ -400,6 +400,9 @@ revoke execute on function public.sincronizar_vinculo_perfil() from authenticate
 -- sai pela forma GLOBAL (sem IN SCHEMA); a forma IN SCHEMA só retira o anon explícito.
 alter default privileges for role postgres revoke execute on functions from public;
 alter default privileges for role postgres in schema public revoke execute on functions from anon;
+-- O revoke global acima também valeria para extensões instaladas PELO postgres no schema extensions
+-- (as da plataforma são criadas por supabase_admin e não mudam): mantém lá o comportamento anterior.
+alter default privileges for role postgres in schema extensions grant execute on functions to public;
 
 -- ---------------------------------------------------------------------
 -- 9) Conserta os dados existentes (idempotente): perfis sem vínculo / fora de compasso
