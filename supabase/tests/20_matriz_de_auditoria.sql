@@ -15,6 +15,7 @@ insert into t.excecoes values
   ('push_subscriptions',       'dispositivo da PESSOA; a Edge Function só envia via push_destinatarios(club_id)'),
   ('push_tokens',              'dispositivo da PESSOA (APK); idem'),
   ('migracoes_aplicadas',      'ledger da plataforma (não tem dado de clube)'),
+  ('cron_falhas',              'registro INTERNO das falhas de cron (club_id só informativo, opcional; sem acesso de usuário)'),
   ('biblia_livros',           'conteúdo da Bíblia (plataforma)'),
   ('biblia_versiculos',        'conteúdo da Bíblia (plataforma)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',

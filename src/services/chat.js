@@ -3,13 +3,18 @@ import { supabase } from '../lib/supabase.js'
 
 
 // ------- Chat (grupo da unidade + conversas diretas; tudo auditável pela liderança) -------
+const LIMITE_MENSAGENS = 300
+
 async function carregarMensagensDaConversa(conversaId) {
   // Lê da VIEW (não da tabela direto): ela apaga o texto de verdade de
   // mensagens marcadas 'apagada' pra quem não é liderança — ver supabase/2026-08-24-chat.sql.
-  const { data, error } = await supabase
+  // as N mais RECENTES (ordem decrescente + limit) e depois na ordem de leitura: com o histórico grande o PostgREST
+  // devolve no máximo 1000 linhas e, sem isto, seriam as mais ANTIGAS.
+  const { data: recentes, error } = await supabase
     .from('chat_mensagens_visiveis').select('id,autor_id,texto,created_at,apagada')
-    .eq('conversa_id', conversaId).order('created_at')
+    .eq('conversa_id', conversaId).order('created_at', { ascending: false }).limit(LIMITE_MENSAGENS)
   if (error) throw new Error(error.message)
+  const data = (recentes || []).slice().reverse()
   const autorIds = [...new Set((data || []).map((m) => m.autor_id))]
   const { data: perfis } = autorIds.length
     ? await supabase.from('profiles').select('id,nome,foto').in('id', autorIds)

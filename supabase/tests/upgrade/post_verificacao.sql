@@ -91,6 +91,12 @@ select t.permitido('diretoria aprova o cadastro pendente', format($q$update publ
 select t.permitido('diretoria reativa o desativado', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('d3')));
 select t.permitido('diretoria redefine a senha do instrutor', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('ins')));
 select t.permitido('diretoria exclui o cadastro rejeitado', format('select public.excluir_usuario(%L)', t.id('rej')));
+select t.como('ins');
+select t.throws('instrutor NÃO promove a diretoria (erro claro, nada muda)', format($q$update public.profiles set papel = 'diretoria' where id = %L$q$, t.id('d1')), 'diretoria');
+select t.como('d1');
+select t.permitido('o aparelho de push segue quem está logado (RPC nova)', $q$select public.push_registrar('https://push.exemplo.test/prod-1', 'k', 'a')$q$);
+select t.como('dir');
+select t.bloqueado('diretoria NÃO lança ponto absurdo (teto de 1.000.000 por lançamento)', $q$insert into public.pontos (unidade_id, origem, pontos, motivo) values ((select id from public.unidades limit 1), 'unidade', 2147483000, 'x')$q$);
 select t.permitido('diretoria cria atividade', $q$insert into public.atividades (titulo, pontos) values ('Atividade nova', 5)$q$);
 select t.permitido('diretoria cria unidade', $q$insert into public.unidades (nome) values ('Nova Unidade')$q$);
 select t.permitido('diretoria cria evento', $q$insert into public.eventos (titulo, tipo, data) values ('Novo', 'Reunião', current_date + 1)$q$);

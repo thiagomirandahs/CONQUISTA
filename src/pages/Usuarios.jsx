@@ -33,6 +33,8 @@ export default function Usuarios() {
   const [excluindo, setExcluindo] = useState(null) // usuário no modal de exclusão
   const [erroCarregar, setErroCarregar] = useState('')
   const ehDiretoria = profile?.papel === 'diretoria'
+  // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
+  const CARGOS_DA_DIRETORIA = ['diretoria', 'instrutor', 'tesoureiro']
 
   // Desativar/reativar: bloqueia (ou libera) o acesso sem apagar o histórico.
   async function alternarAtivo(u) {
@@ -147,8 +149,11 @@ export default function Usuarios() {
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <select value={u.papel} onChange={(e) => trocarCargo(u, e.target.value)}
-                  className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none">
-                  {Object.entries(rotuloPapel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  disabled={!ehDiretoria && CARGOS_DA_DIRETORIA.includes(u.papel)}
+                  className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none disabled:opacity-60">
+                  {Object.entries(rotuloPapel)
+                    .filter(([k]) => ehDiretoria || !CARGOS_DA_DIRETORIA.includes(k) || k === u.papel)
+                    .map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
                 <select value={u.unidade_id || ''} onChange={(e) => trocarUnidade(u, e.target.value)}
                   className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none max-w-[9.5rem]">
@@ -159,10 +164,12 @@ export default function Usuarios() {
                   className="text-xs bg-gold/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
                 <button onClick={() => setAlvo(u)}
                   className="text-xs bg-brand/10 text-brand rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
-                <button onClick={() => alternarAtivo(u)}
-                  className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
-                  {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
-                </button>
+                {(ehDiretoria || !CARGOS_DA_DIRETORIA.includes(u.papel)) && (
+                  <button onClick={() => alternarAtivo(u)}
+                    className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
+                    {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
+                  </button>
+                )}
                 {ehDiretoria && (
                   <button onClick={() => alternarTeste(u)}
                     className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-surface2 text-muted'}`}>

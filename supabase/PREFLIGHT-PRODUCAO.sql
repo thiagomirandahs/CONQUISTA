@@ -1,6 +1,6 @@
 -- =====================================================================
 -- PRÉ-VOO da produção — SOMENTE LEITURA (não altera nada). Rode no SQL Editor ANTES de aplicar
--- as migrations 20260921000001..27 e só siga se a linha RESUMO disser "ok".
+-- as migrations 20260921000001..28 e só siga se a linha RESUMO disser "ok".
 --
 -- Por quê: as migrations novas dependem de tabelas/colunas/funções criadas pelos SQLs antigos
 -- (ajudas, partidas, bichinho-sono, rodizio, ledger...). Se algum SQL antigo nunca foi rodado em
@@ -56,6 +56,8 @@ tabelas(nome, arquivo) as (values
 ),
 colunas(tabela, coluna, arquivo) as (values
     ('bichinhos', 'dormindo_desde', '2026-08-28-bichinho-sono.sql'),
+    ('bichinhos', 'movel', '2026-08-29-bichinho-moveis.sql'),
+    ('eventos', 'data_fim', '2026-08-31-agenda-data-fim.sql'),
     ('profiles', 'teste', '2026-07-15-modo-teste.sql'),
     ('profiles', 'avatar_tipo', '2026-08-24-avatar.sql'),
     ('notificacoes', 'para_usuario', '2026-07-06-importantes.sql'),

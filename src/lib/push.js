@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { rpcInexistente } from '../services/config.js'
 
 // Chave pública VAPID (não é segredo). Vem do .env: VITE_VAPID_PUBLIC_KEY
 const VAPID_PUBLIC = import.meta.env.VITE_VAPID_PUBLIC_KEY
@@ -69,13 +70,41 @@ export async function ativarPush(userId) {
       applicationServerKey: chaveNova,
     })
   }
+  await gravarInscricao(userId, sub)
+  return true
+}
+
+// Grava a inscrição do aparelho PARA O USUÁRIO LOGADO (a RPC reatribui o aparelho se ele era de outra pessoa).
+// Num banco que ainda não recebeu o SQL (front novo antes do SQL) cai no upsert antigo.
+export async function gravarInscricao(userId, sub) {
   const json = sub.toJSON()
-  const { error } = await supabase.from('push_subscriptions').upsert(
+  const { error } = await supabase.rpc('push_registrar', { p_endpoint: sub.endpoint, p_p256dh: json.keys.p256dh, p_auth: json.keys.auth })
+  if (!error) return
+  if (!rpcInexistente(error)) throw error
+  const antigo = await supabase.from('push_subscriptions').upsert(
     { user_id: userId, endpoint: sub.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
     { onConflict: 'endpoint' }
   )
-  if (error) throw error
+  if (antigo.error) throw antigo.error
+}
+
+// Ao ENTRAR: se este aparelho já tem push ligado, ele passa a ser de quem entrou (senão os avisos do usuário
+// anterior — inclusive de OUTRO clube — continuariam chegando aqui e o novo usuário não receberia nada).
+export async function sincronizarPush(userId) {
+  if (!userId || !(await pushAtivo())) return false
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = reg && (await reg.pushManager.getSubscription())
+  if (!sub) return false
+  await gravarInscricao(userId, sub)
   return true
+}
+
+// Ao SAIR: o aparelho deixa de receber os avisos de quem saiu (a inscrição do navegador fica; o próximo login religa).
+export async function desassociarPush() {
+  if (!pushSuportado()) return
+  const reg = await navigator.serviceWorker.getRegistration()
+  const sub = reg && (await reg.pushManager.getSubscription())
+  if (sub) await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
 }
 
 // Cancela a inscrição neste aparelho.

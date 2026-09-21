@@ -16,7 +16,7 @@ tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplic
 - RPCs `SECURITY DEFINER` derivam o clube de `clube_atual_id()` e conferem TUDO contra ele. UUID de outro clube responde igual a
   "não encontrado" (sem oráculo). Rotinas internas/cron não são executáveis por usuário.
 - Cron: cada rotina é um laço por clube (`ordem created_at`), com a config e o prêmio/aviso do clube, isolando falhas
-  (`exception when others → warning`); idempotente por clube.
+  (`exception when others` → falha registrada em `cron_falhas` + warning); idempotente por clube.
 - **Clube novo** nasce completo por `provisionar_clube()` (registro `_prov_*`): config padrão, catálogo de jogos (só a memória
   ligada), desafios de unidade, chat geral e **uma cópia do conteúdo** (missões/versículos) do clube legado.
 
@@ -34,8 +34,8 @@ tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplic
 | Chat | `chat_conversas`, `chat_mensagens`, `chat_participantes` | geral = clube; unidade = a unidade; direta = os 2; liderança modera o clube | `chat_enviar_*`, `chat_apagar_mensagem`, `chat_todas_conversas`, view `chat_mensagens_visiveis` | Chat | 19 (73) |
 | Bichinho | `bichinhos` | o dono; "bichinhos do clube" só do clube | `bichinho_*`, `pets_do_clube` | Bichinho | 19 |
 | Bíblia | `biblia_leituras`, `biblia_leitura_atual` (conteúdo `biblia_livros/versiculos` = plataforma) | o dono; liderança do clube | `biblia_iniciar/confirmar_leitura` | Bíblia | 19 |
-| Storage | `comprovacoes` (**privado**), `imagens` (público por URL) | comprovante: dono ou liderança do clube do dono; imagens: sem listagem anônima, escrita só dono/liderança do clube | policies `storage.objects` | `upload.js` (sem fallback público p/ foto de criança) | 06, 11, 20 |
-| Push | `push_subscriptions`, `push_tokens` (por pessoa) | envio só via `push_destinatarios(club_id)` | Edge Function `enviar-push` | `push.js` | 07 |
+| Storage | `comprovacoes` (**privado**), `imagens` (público por URL; só imagem, até 15 MB) | comprovante: dono ou liderança do clube do dono; imagens: sem listagem anônima, escrita só dono/liderança do clube | policies `storage.objects` | `upload.js` (sem fallback público p/ foto de criança) | 06, 11, 20 |
+| Push | `push_subscriptions`, `push_tokens` (por pessoa; endpoint só https) | envio só via `push_destinatarios(club_id)`; o aparelho segue quem está logado | `push_registrar`, `push_token_registrar`, Edge Function `enviar-push` | `push.js`, `pushNativo.js` | 07, 21 |
 
 ## Exceções declaradas (tabelas sem `club_id`, com o motivo — teste 20)
 `organizational_units` (raiz) · `organization_memberships` (o clube é `organizational_unit_id`) · `profiles` (clube pelo vínculo) ·
@@ -53,8 +53,24 @@ a policy que mostra as unidades ao cadastro anônimo.
 - Painel **Conteúdo** (Gestão) edita `desafios`/`versiculos` por nome de tabela dinâmico e tinha perdido a escrita da liderança
   (migration 22) — achado na varredura do front; catálogos viraram do clube (migration 27; teste 15).
 - Regressões de desempenho e de "excluir usuário" da revisão anterior (migration 19; teste 12).
+- **Revisões independentes da rodada 2** (red-team + regressão do Tenant 001; nenhuma leitura/escrita cruzada direta foi achada):
+  um diretor de qualquer clube travava o cron de leilão de **todos** (ponto gigante estourava o int + laço sem isolamento por leilão);
+  bucket `imagens` aceitava qualquer arquivo; aparelho de push ficava ligado ao usuário anterior; endpoint de push aceitava `http://`;
+  `TRUNCATE` liberado ao usuário; cargo do instrutor revertido em silêncio; pré-voo sem 2 colunas; front-antes-do-SQL escondia o Leilão;
+  chat sem limite mostrava as mensagens mais antigas; SQL solto de missões de foto quebrava depois da migration 27.
+  Achados de BANCO: teste vermelho antes (21 e 22) e correção na migration 28. Achados de FRONT (Leilão antes do SQL, chat, push, tela de
+  Usuários): correção + testes unitários novos (Vitest). E um bug meu pego no caminho: `LEAST(sum(...), teto)` devolvia o teto
+  quando a soma era NULL (corrigido com `coalesce`, com asserts de "quem não tem ponto vê 0").
 
 ## Riscos residuais conhecidos
+- Texto de mensagem de chat **apagada** continua legível pela tabela `chat_mensagens` (a view do app o esconde): comportamento herdado do
+  legado (o texto foi visível antes de apagar); esconder de vez mudaria o "🗑️ apagada" do app e o realtime — decisão de produto.
+- Oráculos de UUID fracos nos gatilhos BEFORE INSERT (entrega/mensalidade/ponto/lance): mensagens diferentes para "existe em outro clube"
+  x "não existe" para quem tem sessão e adivinha um UUID (aleatório). `entregas.avaliado_por`/`mensalidades.registrado_por` aceitam
+  UUID de perfil de outro clube (só marca autoria na linha do próprio clube).
+- Cadastro público aceita `unidade_id` de qualquer clube (o UUID não é listável fora do clube legado); `anon` lê as unidades do
+  clube legado (id, nome, cor, conselheiro_id) porque o cadastro precisa.
+- `profiles.teste` é editável pelo próprio usuário (só o exime de pontuar).
 - Bucket `imagens` continua **público por URL** (avatar/mural/emblema): quem tem a URL exata vê a imagem; não há listagem anônima.
 - Front/APK **antigos em cache** não conhecem `config_gravar`: gravar PIX/popup/rodízio por eles falha até atualizar (leitura e o resto
   seguem). Por isso o front novo deve ir **antes** do SQL (ele cai no upsert antigo se a RPC ainda não existe).
