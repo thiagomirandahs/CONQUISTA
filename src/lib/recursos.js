@@ -1,4 +1,4 @@
-// Recursos opcionais do clube (club_features). Lógica pura (testável) usada pelo RecursosProvider.
+// Recursos opcionais do clube (club_features). Lógica pura (testável) usada pelo modo de compatibilidade do contexto do clube (services/clubes.js).
 
 // O banco ainda não recebeu o SQL do multi-clube (a tabela não existe): o front novo pode ir ANTES do SQL.
 export function tabelaAusente(error) {
