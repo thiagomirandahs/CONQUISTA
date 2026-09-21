@@ -344,3 +344,103 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
 7. Criar painel master da plataforma, auditoria e suporte.
 8. Só então criar planos, assinatura SaaS e gateway de pagamento.
 9. Executar testes de carga e decidir infraestrutura com métricas.
+
+
+## 12. Módulo Classes e Especialidades — caderno/cartão digital
+
+### Objetivo
+Criar um módulo curricular versionado que acompanhe Classes Regulares, Classes Avançadas, Classes Agrupadas quando aplicável e Especialidades. A experiência deve reproduzir a estrutura lógica do cartão/caderno oficial vigente, registrar evidências e aprovações requisito a requisito e, ao atingir 100%, gerar um dossiê/cartão de conclusão pronto para o fluxo final de validação/investidura.
+
+### Regra fundamental: conteúdo versionado
+- Nunca codificar requisitos diretamente nas telas.
+- Criar catálogo curricular com versão, vigência, fonte oficial e status (rascunho/publicado/arquivado).
+- Um desbravador iniciado numa versão mantém histórico daquela versão; alterações oficiais futuras não podem reescrever silenciosamente requisitos já cumpridos.
+- Manter referência da fonte/OMD que alterou cada requisito.
+- Atualizações oficiais devem entrar como nova versão curricular e passar por revisão antes de publicação.
+- Não tratar material gerado pelo sistema como substituto de registro oficial/SGC sem confirmação/autorização da organização responsável.
+
+### Estrutura proposta
+- `curriculum_versions`: versão, tipo, vigência, fonte, hash/controle.
+- `classes`: Amigo, Companheiro, Pesquisador, Pioneiro, Excursionista, Guia e avançadas/agrupadas.
+- `class_sections`: seções e ordem exatamente conforme currículo.
+- `class_requirements`: requisito, código, texto, tipo de comprovação, ordem, dependências e assinatura exigida.
+- `specialties`, `specialty_requirements` e categorias.
+- `member_classes`: matrícula do membro numa classe/versão.
+- `member_requirements`: progresso, resposta, evidência, data, status e observação.
+- `requirement_approvals`: quem avaliou, papel, data, decisão e assinatura.
+- `member_specialties` e progresso de requisitos de especialidades.
+- `investiture_reviews`: revisão final e aprovações exigidas.
+- Todos os registros operacionais devem conter `club_id` e obedecer RLS multi-tenant.
+
+### Fluxo do desbravador
+1. Sistema identifica/sugere a classe adequada conforme idade e regras vigentes; liderança confirma a matrícula.
+2. Tela “Minha Classe” mostra o cartão/caderno digital por seções, requisitos e percentual.
+3. Cada requisito pode aceitar, conforme configuração: confirmação presencial, texto, questionário, foto, arquivo, atividade vinculada, presença, especialidade concluída ou avaliação manual.
+4. Instrutor/conselheiro/diretoria avalia somente requisitos para os quais possui permissão.
+5. Requisitos que dependem de especialidade são concluídos automaticamente quando a especialidade correspondente for validada.
+6. O progresso deve mostrar pendências reais, sem permitir 100% apenas por manipulação do frontend.
+7. Ao concluir todos os requisitos, o registro entra em revisão final.
+8. Após as validações exigidas, fica “Apto para investidura”.
+
+### Caderno/cartão digital e PDF final
+- Criar renderer separado dos dados para permitir saída web e PDF.
+- O PDF deve seguir a ordem, seções, campos e paginação do modelo oficial aplicável, desde que haja autorização para reproduzir o layout/material.
+- Preencher automaticamente nome, clube, unidade, datas, requisitos concluídos, instrutores/avaliadores e demais campos disponíveis.
+- Incluir página/área de auditoria com ID verificável/QR Code sem alterar indevidamente o documento oficial.
+- Se assinatura externa ainda for obrigatória, gerar o documento pronto para assinatura do Diretor/Regional/Distrital conforme a regra vigente.
+- Guardar snapshot imutável da versão emitida para que mudanças posteriores no currículo não alterem um caderno já concluído.
+
+### Assinaturas
+Implementar dois níveis distintos:
+- **Aprovação eletrônica interna:** usuário autenticado confirma requisito com identidade, data/hora, papel, clube e trilha de auditoria.
+- **Assinatura eletrônica/digital formal:** módulo opcional para assinatura final, com hash do documento, signatário, data/hora, motivo e verificação. Integração com provedor de assinatura pode ser adicionada depois.
+- Não confundir desenho de assinatura na tela com assinatura digital criptográfica.
+- Antes de usar assinatura digital como substituta da assinatura física exigida para investidura, validar a aceitação do Campo/Associação/Missão responsável.
+
+### Especialidades
+- Catálogo oficial versionado e pesquisável por área.
+- Requisitos estruturados individualmente, não apenas PDF/texto único.
+- Instrutor responsável, turma, período, participantes e evidências.
+- Aprovação requisito a requisito ou em lote somente quando a regra permitir.
+- Histórico permanente de especialidades concluídas.
+- Relação automática entre especialidades obrigatórias/opcionais e requisitos das classes.
+- Dashboard da liderança mostrando quem precisa de qual especialidade para concluir a classe.
+
+### Gestão pedagógica
+Criar visão “Classes” para liderança com:
+- progresso por membro, unidade, classe e seção;
+- requisitos atrasados;
+- requisitos aguardando aprovação;
+- especialidades necessárias;
+- membros próximos de 100%;
+- inconsistências/documentos faltantes;
+- fila “Prontos para revisão/investidura”.
+
+### Segurança e auditoria
+- Evidências de menores ficam privadas por padrão.
+- Signed URLs para fotos/arquivos privados.
+- Toda alteração de conclusão/aprovação registra antes/depois, ator e timestamp.
+- Conclusões assinadas não podem ser editadas silenciosamente; correção exige evento de retificação.
+- RLS impede liderança do Clube A de consultar/assinar requisitos do Clube B.
+- PDF final deve possuir hash/snapshot e mecanismo de verificação.
+- Definir política de retenção de evidências e documentos conforme LGPD.
+
+### Integração com módulos existentes
+- Presença pode satisfazer requisitos configurados que dependam de frequência.
+- Agenda pode vincular eventos/campamentos a requisitos.
+- Atividades podem ser associadas a requisitos de classe.
+- Bíblia/Devocional pode fornecer evidência quando curricularmente aplicável.
+- Mural não deve ser usado como armazenamento de evidência privada.
+- Gamificação pode conceder conquistas por progresso, mas pontos nunca substituem aprovação curricular.
+- Notificações avisam requisito aprovado/reprovado, pendência e proximidade da conclusão.
+- Portal dos Pais pode mostrar progresso do filho sem expor evidências sensíveis desnecessárias.
+
+### Etapas de implementação
+1. Levantar e validar fontes oficiais vigentes e permissões de reprodução.
+2. Modelar currículo versionado e importar uma única classe piloto.
+3. Implementar progresso + evidências + aprovação + auditoria.
+4. Implementar especialidades e dependências.
+5. Criar PDF/renderer e comparar visualmente com o modelo autorizado.
+6. Implementar revisão final/assinaturas.
+7. Testar uma classe completa com Tenant 001.
+8. Importar as demais classes/especialidades após validação do piloto.
