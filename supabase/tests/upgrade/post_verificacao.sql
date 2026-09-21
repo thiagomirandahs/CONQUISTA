@@ -25,6 +25,8 @@ select t.eq('recordes arcade preservados, todos no Tenant 001', (select count(*)
 select t.eq('liberações de jogo preservadas, todas no Tenant 001', (select count(*) from public.jogos_liberados where club_id = public.clube_legado_id()), :pre_liberados::bigint);
 select t.eq('golpes do chefão e partidas preservados no Tenant 001', (select count(*) from public.chefao_golpes where club_id = public.clube_legado_id()) * 100 + (select count(*) from public.partidas where club_id = public.clube_legado_id()), (:pre_golpes::bigint * 100) + :pre_partidas::bigint);
 select t.eq('catálogo de jogos preservado (liga/desliga do Tenant 001 intacto), todo no clube legado', (select count(*) from public.jogos_trilha where club_id = public.clube_legado_id()), :pre_catalogo::bigint);
+select t.eq('chat preservado (mensagens e conversas), todo no Tenant 001', (select count(*) from public.chat_mensagens where club_id = public.clube_legado_id()) * 100 + (select count(*) from public.chat_conversas where club_id = public.clube_legado_id()), (:pre_chat_msgs::bigint * 100) + :pre_chat_conv::bigint);
+select t.eq('bichinhos e leituras da Bíblia preservados, todos no Tenant 001', (select count(*) from public.bichinhos where club_id = public.clube_legado_id()) * 100 + (select count(*) from public.biblia_leituras where club_id = public.clube_legado_id()), (:pre_bichinhos::bigint * 100) + :pre_biblia::bigint);
 select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
 select t.eq('mensalidades órfãs (sem dono) preservadas e no clube legado', (select count(*) from public.mensalidades where desbravador_id is null and club_id = public.clube_legado_id()), 2);
 select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);
@@ -99,6 +101,7 @@ select t.como('dir');
 select t.permitido('diretoria julga o duelo em andamento (prêmio para a unidade vencedora)', $q$select public.julgar_duelo((select id from public.duelos where titulo = 'Maratona de missões' and status = 'aberto'), 'a')$q$);
 select t.como('d1');
 select t.permitido('membro joga a memória hoje (fluxo de sempre; +1 lançamento de pontos)', $q$select public.registrar_jogo('memoria', 2)$q$);
+select t.eq('o membro lê o histórico do chat geral e vê o próprio bichinho', t.n($q$select count(*) from public.chat_mensagens where texto = 'oi geral (legado)'$q$) * 10 + t.n($q$select count(*) from public.pets_do_clube() where pet_nome = 'Rex'$q$), 11);
 select t.eq('o ranking dos jogos traz os dois jogadores de antes', t.txt($q$select json_array_length(public.ranking_trilha()->'geral')::text$q$), '2');
 select t.eq('o recorde da semana do reflexo continua lá', t.txt($q$select public.recordes_semana('reflexo')->0->>'pontos'$q$), '55');
 select t.como('dir');

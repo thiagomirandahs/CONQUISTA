@@ -37,7 +37,7 @@ select t.ok('A vê os pets do clube', t.n('select count(*) from public.pets_do_c
 -- ---------- atores do clube B: nada de leitura ----------
 select t.como('membro_b');
 select t.eq('B lê 0 mensagens de chat', t.nv('select count(*) from public.chat_mensagens'), 0);
-select t.eq('B lê 0 conversas de chat', t.nv('select count(*) from public.chat_conversas'), 0);
+select t.eq('B lê 0 conversas de chat do clube A', t.nv(format('select count(*) from public.chat_conversas where club_id = %L', t.id('clube_a'))), 0);
 select t.eq('B lê 0 participantes de chat', t.nv('select count(*) from public.chat_participantes'), 0);
 select t.eq('B lê 0 missões', t.nv('select count(*) from public.missoes_feitas'), 0);
 select t.eq('B lê 0 devocionais', t.nv('select count(*) from public.devocional'), 0);
@@ -58,11 +58,8 @@ select t.eq('B vê o chefão do clube legado como inativo (nada do chefão dele)
 select t.eq('B não vê jogadas de ninguém no rodízio de hoje (a config é catálogo global, sem dado de pessoa)', t.n($q$select json_array_length(public.status_jogos_do_dia()->'hoje')$q$), 0);
 
 -- ---------- atores do clube B: nada de escrita ----------
-select t.throws('B não escreve no chat geral', $q$select public.chat_enviar_geral('invasão')$q$);
-select t.throws('B não escreve no chat da unidade', $q$select public.chat_enviar_unidade('invasão')$q$);
 select t.throws('B não manda mensagem direta a membro do clube legado', format($q$select public.chat_enviar_direta(%L, 'invasão')$q$, t.id('membro_a')));
 -- (missão e devocional do clube B funcionam no PRÓPRIO clube — ver 15_missoes_e_devocional_por_clube)
-select t.throws('B não adota bichinho', $q$select public.bichinho_adotar('Invasor', 'gato')$q$);
 select t.throws('B não desafia unidade do clube legado', format($q$select public.criar_duelo((select id from public.desafios_unidade limit 1), %L)$q$, t.id('A1')));
 select t.throws('B não pede ajuda a membro do clube legado', format($q$select public.pedir_ajuda(%L, 'forca', '{}'::jsonb, 'x')$q$, t.id('membro_a')));
 select t.bloqueado('B não grava jogada direto', format($q$insert into public.trilha_jogos (usuario_id, data, tipo, estrelas) values (%L, current_date, 'memoria', 3)$q$, t.id('membro_b')));

@@ -73,6 +73,11 @@ select it.id, md5('up:d1')::uuid, 20, 'ativo' from public.leilao_itens it where 
 insert into public.leilao_lance_unidades (lance_id, unidade_id, confirmado)
 select l.id, (select id from public.unidades where nome = 'Águias'), true from public.leilao_lances l;
 
+-- chat (mensagem no geral), bichinho e leitura da Bíblia como estavam em produção
+insert into public.chat_mensagens (conversa_id, autor_id, texto) select id, md5('up:d1')::uuid, 'oi geral (legado)' from public.chat_conversas where tipo = 'geral';
+insert into public.bichinhos (usuario_id, especie, nome) values (md5('up:d1')::uuid, 'cachorro', 'Rex');
+insert into public.biblia_leituras (usuario_id, livro_abrev, capitulo) values (md5('up:d1')::uuid, 'gn', 1);
+
 -- jogos: jogadas de ontem, recorde arcade da semana, liberação de hoje, golpe no chefão e uma partida aberta
 insert into public.trilha_jogos (usuario_id, data, tipo, estrelas) values (md5('up:d1')::uuid, current_date - 1, 'memoria', 3), (md5('up:d2')::uuid, current_date - 1, 'memoria', 2);
 insert into public.recordes (usuario_id, jogo, semana, pontos) values (md5('up:d1')::uuid, 'reflexo', date_trunc('week', current_date)::date, 55);
@@ -90,7 +95,7 @@ select du.id, du.titulo, du.pontos, (select id from public.unidades where nome =
 from public.desafios_unidade du where du.titulo = 'Maratona de missões';
 
 -- fotografia do estado ANTES do upgrade (psql guarda nas variáveis pre_*)
-select (select count(*) from public.config_clube) as pre_config, (select count(*) from public.trilha_jogos) as pre_trilha, (select count(*) from public.recordes) as pre_recordes, (select count(*) from public.jogos_liberados) as pre_liberados, (select count(*) from public.chefao_golpes) as pre_golpes, (select count(*) from public.partidas) as pre_partidas, (select count(*) from public.jogos_trilha) as pre_catalogo, (select count(*) from public.missoes_feitas) as pre_missoes, (select count(*) from public.devocional) as pre_devocional, (select count(*) from public.duelos) as pre_duelos, (select count(*) from public.desafios_unidade) as pre_desafios, (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
+select (select count(*) from public.config_clube) as pre_config, (select count(*) from public.chat_mensagens) as pre_chat_msgs, (select count(*) from public.chat_conversas) as pre_chat_conv, (select count(*) from public.bichinhos) as pre_bichinhos, (select count(*) from public.biblia_leituras) as pre_biblia, (select count(*) from public.trilha_jogos) as pre_trilha, (select count(*) from public.recordes) as pre_recordes, (select count(*) from public.jogos_liberados) as pre_liberados, (select count(*) from public.chefao_golpes) as pre_golpes, (select count(*) from public.partidas) as pre_partidas, (select count(*) from public.jogos_trilha) as pre_catalogo, (select count(*) from public.missoes_feitas) as pre_missoes, (select count(*) from public.devocional) as pre_devocional, (select count(*) from public.duelos) as pre_duelos, (select count(*) from public.desafios_unidade) as pre_desafios, (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
        (select count(*) from public.fotos) as pre_fotos, (select count(*) from public.atividades) as pre_atividades,
        (select count(*) from public.entregas) as pre_entregas, (select count(*) from public.mensalidades) as pre_mensalidades,
        (select count(*) from public.eventos) as pre_eventos, (select count(*) from public.notificacoes) as pre_notificacoes,

@@ -37,9 +37,9 @@ set local session_replication_role = replica;
 insert into public.pontos (usuario_id, origem, pontos, motivo, club_id, data)
 select :'uid'::uuid, 'manual', 1, 'carga de desempenho', :'clube'::uuid, now() - make_interval(mins => g)
 from generate_series(1, 40000) g;
-insert into public.chat_conversas (tipo) select 'geral' where not exists (select 1 from public.chat_conversas where tipo = 'geral');
-insert into public.chat_mensagens (conversa_id, autor_id, texto)
-select (select id from public.chat_conversas where tipo = 'geral'), :'uid'::uuid, 'mensagem ' || g from generate_series(1, 5000) g;
+insert into public.chat_conversas (club_id, tipo) select :'clube'::uuid, 'geral' where not exists (select 1 from public.chat_conversas where tipo = 'geral' and club_id = :'clube'::uuid);
+insert into public.chat_mensagens (conversa_id, autor_id, texto, club_id)
+select (select id from public.chat_conversas where tipo = 'geral' and club_id = :'clube'::uuid), :'uid'::uuid, 'mensagem ' || g, :'clube'::uuid from generate_series(1, 5000) g;
 set local session_replication_role = origin;
 analyze public.pontos;
 analyze public.chat_mensagens;
