@@ -444,3 +444,73 @@ Criar visão “Classes” para liderança com:
 6. Implementar revisão final/assinaturas.
 7. Testar uma classe completa com Tenant 001.
 8. Importar as demais classes/especialidades após validação do piloto.
+
+
+## 13. Arquitetura institucional e expansão hierárquica
+
+### Princípio
+Preparar a plataforma para refletir a estrutura administrativa dos Desbravadores sem codificar a hierarquia em colunas fixas. Usar uma árvore organizacional genérica e memberships com papel, escopo, vigência e permissões. O objetivo é suportar Clube, Distrito, Região, Campo (Associação/Missão), União e Divisão, além de funções especiais autorizadas, sem conceder acesso excessivo por cargo.
+
+### Estrutura organizacional
+- `organizations`: organização raiz/entidade administrativa.
+- `organizational_units`: nós hierárquicos com `type`, `parent_id`, nome, código oficial, país/timezone, status e metadados.
+- Tipos inicialmente suportados: divisão, união, campo, região, distrito, igreja e clube; permitir extensão sem migration estrutural.
+- `organization_memberships`: usuário + unidade organizacional + papel + período + status.
+- `role_definitions`, `permissions`, `role_permissions`: RBAC configurável.
+- `scope_grants`: define alcance de leitura/gestão (somente nó atual, descendentes específicos, indicadores agregados etc.).
+- Histórico de nomeações/mandatos; nunca sobrescrever silenciosamente quem ocupava determinado cargo.
+- Possibilidade de uma pessoa possuir múltiplos papéis simultâneos em escopos diferentes.
+
+### Perfis/portais previstos
+- Clube: diretor, associados, secretário, tesoureiro, capelão, instrutores, conselheiros e demais funções internas.
+- Distrito/Região: distrital, regional/coordenador e equipes autorizadas.
+- Igreja/distrito pastoral: pastor com painel de acompanhamento e permissões explicitamente definidas.
+- Campo: departamental, associado quando aplicável, secretaria MDA e Coordenador do SGC/suporte autorizado.
+- União/Divisão: perfis institucionais futuros, inicialmente preparados no modelo, não necessariamente implementados na v1.
+- Plataforma: owner, suporte, billing e auditoria, totalmente separados dos cargos eclesiásticos/ministeriais.
+
+### Regra de acesso
+Cargo não equivale a acesso irrestrito. Toda autorização deve responder: quem é o usuário, qual papel possui, em qual unidade organizacional, durante qual vigência, qual permissão e qual escopo. Perfis superiores podem receber indicadores agregados sem acesso automático a conversas, documentos, finanças individuais, dados médicos ou evidências privadas de menores.
+
+### Módulos importantes para expansão
+- Classes e Especialidades versionadas, histórico curricular e investiduras.
+- Avaliação/visitas de clubes com formulários versionados e plano de ação.
+- Eventos e Camporis: inscrições, vagas, pagamentos, documentos, delegações, transporte, alojamento e check-in.
+- Relatórios oficiais/configuráveis por Campo, Região, Distrito e Clube.
+- Secretaria/cadastro: membros, funções, unidades, histórico e movimentações.
+- Transferência de membro entre clubes preservando currículo/conquistas institucionais e protegendo dados internos do clube de origem.
+- Patrimônio e empréstimo de bens.
+- Tesouraria do clube e relatórios, separada do billing SaaS.
+- Seguro anual: preparar modelo/relatórios/integração, sem afirmar integração oficial enquanto não houver API/autorização.
+- Documentos, autorizações e validade documental.
+- Formação/capacitação de líderes e certificados verificáveis.
+- Agenda hierárquica: eventos de Clube, Distrito, Região, Campo, União/Divisão com herança controlada.
+- Comunicados hierárquicos: um nível superior pode publicar para escopos autorizados, com segmentação e auditoria.
+- Central de relatórios/indicadores.
+- Histórico institucional do clube: diretorias, unidades, avaliações, investiduras, eventos e marcos.
+- Diretório institucional de clubes e contatos públicos configuráveis.
+- Suporte/tickets escaláveis Clube → coordenação autorizada → plataforma.
+
+### Avaliação e visitas
+- `evaluation_templates` e versões, permitindo modelos oficiais ou específicos de Campo quando autorizados.
+- Visita agendada, checklist, evidências, observações, responsáveis e plano de ação.
+- Assinatura/aprovação das partes quando aplicável.
+- Histórico longitudinal do clube.
+- Indicadores servem para acompanhamento; evitar exposição pública automática de avaliações internas.
+
+### Passaporte curricular
+- Classes, especialidades, investiduras e certificados pertencem ao histórico do membro e podem acompanhar transferência quando institucionalmente válido.
+- Dados operacionais/sensíveis do clube de origem não acompanham automaticamente a pessoa.
+- Toda transferência deve registrar origem, destino, autorizações, data e quais registros foram portados.
+
+### Integração oficial e interoperabilidade
+- Tratar SGC/Encontre um Clube como sistemas oficiais externos; não tentar substituí-los por alegação ou sincronização não autorizada.
+- Criar camada futura de adapters/import/export para SGC ou outros sistemas somente quando houver API, formato autorizado ou parceria.
+- Guardar códigos oficiais externos separadamente dos IDs internos.
+- Produzir exportações que reduzam retrabalho, mas sinalizar claramente o que ainda precisa ser registrado/validado no sistema oficial.
+
+### Privacidade por camadas
+Classificar dados em: público institucional, interno do clube, liderança, financeiro, curricular, evidência privada, dados de responsável/menor e dados altamente restritos. Acesso de níveis superiores deve ser mínimo e explicitamente concedido; hierarquia organizacional por si só não libera dados sensíveis.
+
+### Internacionalização e expansão
+Como a DSA cobre múltiplos países, preparar desde a fundação: idioma por usuário/clube, timezone por unidade organizacional, formatos de data/telefone/documento configuráveis, moeda no financeiro e textos curriculares por versão/idioma. Não codificar regras brasileiras como universais.
