@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase.js'
 
 
 // ------- Painel de conteúdo (versículos e desafios) — só liderança (RLS) -------
-// O RLS "ler/gerir versiculos|desafios" já limita tudo a pode_gerir(); a criança
-// nunca lê a tabela (a resposta certa continua secreta).
+// O RLS de versiculos/desafios (POR CLUBE) limita tudo à liderança DO PRÓPRIO clube: cada clube edita o seu
+// conteúdo; a criança nunca lê a tabela (a resposta certa continua secreta).
 const TABELAS_CONTEUDO = ['versiculos', 'desafios']
 
 function tabelaOk(tabela) {

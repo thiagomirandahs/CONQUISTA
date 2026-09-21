@@ -74,8 +74,8 @@ select t.throws('líder B não julga duelo', format($q$select public.julgar_duel
 select t.throws('líder B não cancela duelo', format($q$select public.cancelar_duelo(%L)$q$, :'duelo_id'));
 select t.bloqueado('líder B não liga/desliga jogos do clube A', format($q$update public.jogos_trilha set ativo = true where club_id = %L$q$, t.id('clube_a')));
 select t.bloqueado('líder B não mexe no catálogo de desafios do clube A', format($q$update public.desafios_unidade set pontos = 999 where club_id = %L$q$, t.id('clube_a')));
-select t.bloqueado('líder B não mexe no catálogo de missões (desafios)', $q$update public.desafios set ativo = false$q$);
-select t.bloqueado('líder B não mexe nos versículos', $q$update public.versiculos set ativo = false$q$);
+select t.bloqueado('líder B não mexe no catálogo de missões (desafios) do clube A', format($q$update public.desafios set ativo = false where club_id = %L$q$, t.id('clube_a')));
+select t.bloqueado('líder B não mexe nos versículos do clube A', format($q$update public.versiculos set ativo = false where club_id = %L$q$, t.id('clube_a')));
 -- (liberar jogo / painel de atividade: o líder B faz no PRÓPRIO clube — ver 17_jogos_por_clube)
 select t.throws('líder B não configura o chefão', $q$select public.chefao_config('X', 'x', 10, 'v', current_date, true)$q$);
 select t.throws('líder B não apaga mensagem de chat', format($q$select public.chat_apagar_mensagem(%L)$q$, gen_random_uuid()));

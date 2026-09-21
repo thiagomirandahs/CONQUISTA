@@ -97,10 +97,24 @@ select t.permitido('líder A apaga mensagem do PRÓPRIO clube', format($q$select
 select t.eq('a lista de conversas da liderança (chat_todas_conversas): só o clube A (geral, unidade A1, direta A/A2)', t.n('select count(*) from public.chat_todas_conversas()'), 3);
 select t.como('lider_b');
 select t.eq('a lista de conversas do líder B: só o clube B (geral, unidade B1, direta B/B2)', t.n('select count(*) from public.chat_todas_conversas()'), 3);
+-- a VIEW que o app lê (chat_mensagens_visiveis): mensagem apagada some para o membro e a liderança DO CLUBE ainda vê o texto
+select t.como('membro_a');
+select t.eq('membro A: a mensagem apagada vem SEM texto pela view do app', t.txt(format($q$select coalesce(texto, '(oculto)') from public.chat_mensagens_visiveis where id = %L$q$, t.id('msg_a'))), '(oculto)');
+select t.como('lider_a');
+select t.eq('líder A: a mesma mensagem apagada vem COM texto (moderação)', t.txt(format($q$select coalesce(texto, '(oculto)') from public.chat_mensagens_visiveis where id = %L$q$, t.id('msg_a'))), 'oi pessoal do A');
+reset role;
+select id as msg_b from public.chat_mensagens where texto = 'oi pessoal do B' \gset
+insert into t.ids values ('msg_b', :'msg_b');
+select t.como('lider_b');
+select t.permitido('líder B apaga mensagem do PRÓPRIO clube', format($q$select public.chat_apagar_mensagem(%L)$q$, t.id('msg_b')));
+select t.eq('líder B: a mensagem apagada do clube B vem COM texto (a liderança do B modera; o helper legado não vale mais)', t.txt(format($q$select coalesce(texto, '(oculto)') from public.chat_mensagens_visiveis where id = %L$q$, t.id('msg_b'))), 'oi pessoal do B');
+select t.eq('líder B NÃO enxerga a mensagem do clube A pela view', t.nv(format('select count(*) from public.chat_mensagens_visiveis where id = %L', t.id('msg_a'))), 0);
+select t.como('membro_b');
+select t.eq('membro B: a mensagem apagada do B vem SEM texto', t.txt(format($q$select coalesce(texto, '(oculto)') from public.chat_mensagens_visiveis where id = %L$q$, t.id('msg_b'))), '(oculto)');
 select t.como('membro_a');
 select t.eq('membro comum não recebe a lista de moderação', t.n('select count(*) from public.chat_todas_conversas()'), 0);
 reset role;
-select t.eq('a mensagem apagada é a do clube A e só ela', (select count(*) from public.chat_mensagens where apagada), 1);
+select t.eq('as mensagens apagadas são uma de cada clube (cada liderança apagou a do PRÓPRIO clube)', (select count(*) from public.chat_mensagens where apagada and ((id = t.id('msg_a') and club_id = t.id('clube_a')) or (id = t.id('msg_b') and club_id = t.id('clube_b')))), 2);
 
 -- ---------- bichinho ----------
 select t.como('membro_a');

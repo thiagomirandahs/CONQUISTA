@@ -3,7 +3,8 @@
 --   * o membro registra a missão/devocional NO PRÓPRIO clube, os pontos caem no clube dele;
 --   * a liderança do clube vê/avalia só as missões pendentes do PRÓPRIO clube (UUID de outro clube = "não encontrada");
 --   * cadastro pendente e responsável não pontuam; ninguém grava direto nas tabelas;
---   * catálogos (desafios/versículos) são conteúdo da PLATAFORMA: iguais para todos os clubes, só leitura pela API.
+--   * catálogos (desafios = missões do dia, versiculos = devocional) são do CLUBE: a liderança edita o do próprio clube (painel
+--     Conteúdo do app), clube novo nasce com uma CÓPIA do conteúdo do clube legado, e cada membro recebe a missão/versículo do clube dele.
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -12,13 +13,21 @@ select t.mk('membro_a2b', 'Membro A (foto)', 'desbravador', 'ativo', 'clube_a', 
 select t.mk('membro_b2', 'Membro B (foto)', 'desbravador', 'ativo', 'clube_b', 'B1', date '2014-09-09');
 select t.mk('pend_a', 'Pendente A', 'desbravador', 'pendente', 'clube_a', 'A1', date '2014-10-10');
 
--- catálogo controlado: 1 missão ativa, SEM foto (o quiz vale a pontuação) e 1 versículo ativo
-update public.desafios set ativo = false;
-insert into public.desafios (tema, texto, pergunta, opcoes, correta, classe, pede_foto, ativo)
-values ('Teste', 'texto da missão', 'Pergunta?', '["a","b"]'::jsonb, 0, null, false, true);
-update public.versiculos set ativo = false;
-insert into public.versiculos (texto, referencia, pergunta, opcoes, correta, ativo, livro_abrev, capitulo, versiculo_num)
-values ('texto do versículo', 'Gn 1:1', 'Quem?', '["x","y"]'::jsonb, 1, true, 'gn', 1, 1);
+-- clube novo (B) nasceu com uma CÓPIA do conteúdo do clube legado; o do clube A ficou como estava
+select t.eq('todo desafio/versículo tem clube', (select count(*) from public.desafios where club_id is null) + (select count(*) from public.versiculos where club_id is null), 0);
+select t.eq('o clube B ganhou a mesma quantidade de desafios do clube A', (select count(*) from public.desafios where club_id = t.id('clube_b')), (select count(*) from public.desafios where club_id = t.id('clube_a')));
+select t.eq('...e de versículos', (select count(*) from public.versiculos where club_id = t.id('clube_b')), (select count(*) from public.versiculos where club_id = t.id('clube_a')));
+select t.ok('o clube legado mantém o conteúdo que já tinha (100 desafios / 20 versículos no banco recém-criado)', (select count(*) from public.desafios where club_id = t.id('clube_a')) >= 100 and (select count(*) from public.versiculos where club_id = t.id('clube_a')) >= 20);
+
+-- catálogo controlado POR CLUBE: 1 missão ativa (SEM foto: o quiz vale a pontuação) e 1 versículo ativo em cada clube
+update public.desafios set ativo = false where club_id in (t.id('clube_a'), t.id('clube_b'));
+insert into public.desafios (club_id, tema, texto, pergunta, opcoes, correta, classe, pede_foto, ativo) values
+  (t.id('clube_a'), 'Teste', 'texto da missão A', 'Pergunta?', '["a","b"]'::jsonb, 0, null, false, true),
+  (t.id('clube_b'), 'Teste', 'texto da missão B', 'Pergunta?', '["a","b"]'::jsonb, 0, null, false, true);
+update public.versiculos set ativo = false where club_id in (t.id('clube_a'), t.id('clube_b'));
+insert into public.versiculos (club_id, texto, referencia, pergunta, opcoes, correta, ativo, livro_abrev, capitulo, versiculo_num) values
+  (t.id('clube_a'), 'versículo do A', 'Gn 1:1', 'Quem?', '["x","y"]'::jsonb, 1, true, 'gn', 1, 1),
+  (t.id('clube_b'), 'versículo do B', 'Gn 1:2', 'Quem?', '["x","y"]'::jsonb, 1, true, 'gn', 1, 2);
 
 -- ---------- estrutura ----------
 select t.eq('missoes_feitas e devocional têm club_id obrigatório',
@@ -125,22 +134,33 @@ select t.eq('meu_resumo_devocional(): feito hoje', t.txt($q$select public.meu_re
 select t.como('membro_b2');
 select t.eq('resumo do membro B2 reflete a reprovação da liderança do clube B', t.txt($q$select public.meu_resumo_missoes()->>'status'$q$), 'reprovada');
 
--- ---------- catálogos: conteúdo da plataforma ----------
+-- ---------- catálogos de conteúdo: POR CLUBE ----------
 select t.como('membro_a');
 select t.eq('membro NÃO lê o catálogo bruto de missões (tem a resposta certa)', t.nv('select count(*) from public.desafios'), 0);
-select t.eq('membro lê a missão do dia pela RPC', t.n('select count(*) from public.missao_do_dia()'), 1);
-select t.eq('membro lê o versículo do dia', t.n('select count(*) from public.versiculo_do_dia()'), 1);
+select t.eq('membro A recebe a missão do dia do clube A', t.txt($q$select texto from public.missao_do_dia()$q$), 'texto da missão A');
+select t.eq('membro A recebe o versículo do dia do clube A', t.txt($q$select texto from public.versiculo_do_dia()$q$), 'versículo do A');
 select t.como('membro_b');
-select t.eq('a missão do dia é a mesma para o clube B (conteúdo compartilhado)', t.n('select count(*) from public.missao_do_dia()'), 1);
+select t.eq('membro B recebe a missão do dia do clube B (não a do A)', t.txt($q$select texto from public.missao_do_dia()$q$), 'texto da missão B');
+select t.eq('membro B recebe o versículo do dia do clube B', t.txt($q$select texto from public.versiculo_do_dia()$q$), 'versículo do B');
 select t.como('lider_a');
-select t.ok('liderança do clube lê o catálogo bruto', t.n('select count(*) from public.desafios') >= 1);
-select t.bloqueado('líder A NÃO altera o catálogo da plataforma', $q$update public.desafios set correta = 1$q$);
-select t.bloqueado('líder A NÃO cria versículo', $q$insert into public.versiculos (texto, referencia, pergunta, opcoes, correta) values ('x', 'y', 'z', '[]'::jsonb, 0)$q$);
+select t.ok('líder A lê o catálogo do clube A (e nenhuma linha do B)', t.n('select count(*) from public.desafios') >= 100 and t.nv(format('select count(*) from public.desafios where club_id = %L', t.id('clube_b'))) = 0);
+select t.permitido('líder A edita um desafio do clube A (painel Conteúdo: update por id)', $q$update public.desafios set tema = 'editado' where texto = 'texto da missão A'$q$);
+select t.permitido('líder A cria um desafio (sem club_id, como o painel faz)', $q$insert into public.desafios (tema, texto, pergunta, opcoes, correta, pede_foto, ativo) values ('novo', 'desafio novo A', 'P?', '["a","b"]'::jsonb, 0, false, false)$q$);
+select t.permitido('líder A cria um versículo', $q$insert into public.versiculos (texto, referencia, pergunta, opcoes, correta, ativo, livro_abrev, capitulo, versiculo_num) values ('novo v', 'Gn 2:1', 'Q?', '["x","y"]'::jsonb, 0, false, 'gn', 2, 1)$q$);
+select t.permitido('líder A apaga o desafio que criou', $q$delete from public.desafios where texto = 'desafio novo A'$q$);
+select t.bloqueado('líder A NÃO altera o desafio do clube B', format($q$update public.desafios set correta = 1 where club_id = %L$q$, t.id('clube_b')));
+select t.bloqueado('líder A NÃO cria desafio no clube B (club_id forjado)', format($q$insert into public.desafios (club_id, tema, texto, pergunta, opcoes, correta) values (%L, 'x', 'invasor', 'P?', '[]'::jsonb, 0)$q$, t.id('clube_b')));
+select t.bloqueado('líder A NÃO apaga versículo do clube B', format($q$delete from public.versiculos where club_id = %L$q$, t.id('clube_b')));
 select t.como('lider_b');
-select t.bloqueado('líder B NÃO altera o catálogo da plataforma', $q$update public.desafios set correta = 1$q$);
-select t.bloqueado('líder B NÃO apaga versículos', $q$delete from public.versiculos$q$);
+select t.eq('líder B NÃO lê o catálogo do clube A', t.nv(format('select count(*) from public.desafios where club_id = %L', t.id('clube_a'))), 0);
+select t.permitido('líder B edita o versículo do clube B', $q$update public.versiculos set texto = 'versículo do B (editado)' where texto = 'versículo do B'$q$);
+select t.bloqueado('líder B NÃO altera o desafio do clube A', format($q$update public.desafios set correta = 1 where club_id = %L$q$, t.id('clube_a')));
+select t.como('membro_a');
+select t.bloqueado('membro NÃO cria desafio', $q$insert into public.desafios (tema, texto, pergunta, opcoes, correta) values ('x', 'hack', 'P?', '[]'::jsonb, 0)$q$);
+select t.bloqueado('membro NÃO apaga versículo', $q$delete from public.versiculos$q$);
 select t.como_anon();
 select t.throws('anon NÃO chama a missão do dia', $q$select * from public.missao_do_dia()$q$);
+select t.eq('anon não lê o catálogo', t.nv('select count(*) from public.desafios'), 0);
 reset role;
 
 select t.fim();
