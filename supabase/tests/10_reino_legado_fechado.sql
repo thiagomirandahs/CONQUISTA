@@ -46,7 +46,7 @@ select t.eq('B lê 0 jogadas', t.nv('select count(*) from public.trilha_jogos'),
 select t.eq('B lê 0 recordes', t.nv('select count(*) from public.recordes'), 0);
 select t.eq('B lê 0 duelos', t.nv('select count(*) from public.duelos'), 0);
 select t.eq('B lê 0 desafios de unidade', t.nv('select count(*) from public.desafios_unidade'), 0);
-select t.eq('B lê 0 config do clube', t.nv('select count(*) from public.config_clube'), 0);
+select t.eq('B lê 0 config do clube A (só a do próprio clube)', t.nv(format('select count(*) from public.config_clube where club_id = %L', t.id('clube_a'))), 0);
 select t.eq('B lê 0 pedidos de ajuda', t.nv('select count(*) from public.ajudas'), 0);
 select t.eq('B lê 0 partidas', t.nv('select count(*) from public.partidas'), 0);
 select t.eq('B não aparece nem enxerga o ranking dos jogos do clube legado', t.nv(format($q$select count(*) from json_each(public.ranking_trilha()) e cross join lateral json_array_elements(e.value) x where x->>'id' = %L$q$, t.id('membro_a'))), 0);

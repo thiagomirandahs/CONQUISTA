@@ -113,8 +113,8 @@ insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
 select t.id(k), 'https://push.teste/' || k, 'k', 'a'
 from unnest(array['lider_a','instrutor_a','membro_a','pais_a','lider_b','membro_b','pais_b']) k;
 
-insert into public.config_clube (chave, valor) values ('pix', 'PIX-DO-CLUBE-A')
-on conflict (chave) do update set valor = excluded.valor;
+insert into public.config_clube (club_id, chave, valor) values (t.id('clube_a'), 'pix', 'PIX-DO-CLUBE-A')
+on conflict (club_id, chave) do update set valor = excluded.valor;
 
 insert into storage.objects (bucket_id, name, owner)
 values ('comprovacoes', t.id('membro_a') || '/foto-a.jpg', t.id('membro_a')),

@@ -35,9 +35,9 @@ reset role;
 select t.eq('o aviso "Nova atividade" da atividade legítima do B ficou no clube B', (select count(*) from public.notificacoes where club_id = t.id('clube_b') and corpo like '%Atividade legítima B%'), 1);
 
 -- ==================== B) chefão só conta o clube legado ====================
-insert into public.config_clube (chave, valor) values
-  ('chefao_ativo', 'sim'), ('chefao_inicio', to_char((now() at time zone 'America/Sao_Paulo')::date, 'YYYY-MM-DD')), ('chefao_vida', '1000')
-on conflict (chave) do update set valor = excluded.valor;
+insert into public.config_clube (club_id, chave, valor) values
+  (t.id('clube_a'), 'chefao_ativo', 'sim'), (t.id('clube_a'), 'chefao_inicio', to_char((now() at time zone 'America/Sao_Paulo')::date, 'YYYY-MM-DD')), (t.id('clube_a'), 'chefao_vida', '1000')
+on conflict (club_id, chave) do update set valor = excluded.valor;
 insert into public.pontos (usuario_id, origem, pontos, motivo) values (t.id('membro_b'), 'manual', 100000, 'pontos do clube B');
 select t.como('membro_a');
 select t.ok('chefão do clube A não recebe dano do clube B (dano < 1000)', t.n($q$select (public.chefao_estado()->>'dano')::int$q$) between 0 and 999);
@@ -46,8 +46,8 @@ select t.ok('chefão do clube A não é vencido por pontos do clube B', t.txt($q
 select t.como_cron();  -- postgres SEM claim de usuário (o teto de ±100 pontos só vale para quem tem sessão)
 -- o evento do chefão (sáb-dom) já terminou e só o clube A causou dano suficiente (1500 >= 1000):
 -- o prêmio é proporcional ao dano e NÃO pode pagar ninguém do clube B (100000 de dano lá)
-update public.config_clube set valor = to_char((now() at time zone 'America/Sao_Paulo')::date - 3, 'YYYY-MM-DD') where chave = 'chefao_inicio';
-delete from public.config_clube where chave = 'chefao_pago';
+update public.config_clube set valor = to_char((now() at time zone 'America/Sao_Paulo')::date - 3, 'YYYY-MM-DD') where chave = 'chefao_inicio' and club_id = t.id('clube_a');
+delete from public.config_clube where chave = 'chefao_pago' and club_id = t.id('clube_a');
 insert into public.pontos (usuario_id, origem, pontos, motivo, data) values
   (t.id('membro_a'), 'manual', 1500, 'dano do A', now() - interval '60 hours'),
   (t.id('membro_b'), 'manual', 100000, 'dano do B', now() - interval '60 hours');

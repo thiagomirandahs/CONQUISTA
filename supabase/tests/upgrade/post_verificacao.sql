@@ -15,6 +15,7 @@ select t.eq('soma dos pontos preservada', (select coalesce(sum(pontos), 0) from 
 select t.eq('fotos preservadas', (select count(*) from public.fotos), :pre_fotos::bigint);
 select t.eq('atividades preservadas', (select count(*) from public.atividades), :pre_atividades::bigint);
 select t.eq('entregas preservadas', (select count(*) from public.entregas), :pre_entregas::bigint);
+select t.eq('config do clube preservada, toda no Tenant 001 (chave composta)', (select count(*) from public.config_clube where club_id = public.clube_legado_id()), :pre_config::bigint);
 select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
 select t.eq('mensalidades órfãs (sem dono) preservadas e no clube legado', (select count(*) from public.mensalidades where desbravador_id is null and club_id = public.clube_legado_id()), 2);
 select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);

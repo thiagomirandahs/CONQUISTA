@@ -74,7 +74,7 @@ insert into public.leilao_lance_unidades (lance_id, unidade_id, confirmado)
 select l.id, (select id from public.unidades where nome = 'Águias'), true from public.leilao_lances l;
 
 -- fotografia do estado ANTES do upgrade (psql guarda nas variáveis pre_*)
-select (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
+select (select count(*) from public.config_clube) as pre_config, (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
        (select count(*) from public.fotos) as pre_fotos, (select count(*) from public.atividades) as pre_atividades,
        (select count(*) from public.entregas) as pre_entregas, (select count(*) from public.mensalidades) as pre_mensalidades,
        (select count(*) from public.eventos) as pre_eventos, (select count(*) from public.notificacoes) as pre_notificacoes,

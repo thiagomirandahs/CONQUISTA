@@ -1,7 +1,8 @@
 // Serviço: unidades — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
+import { gravarConfig } from './config.js'
 
-// PIX do clube (config_clube). Todos leem; liderança salva.
+// PIX do clube (config_clube, POR CLUBE). Todos do clube leem; liderança salva.
 export async function lerPix() {
   const { data } = await supabase.from('config_clube').select('valor').eq('chave', 'pix').maybeSingle()
   return data?.valor || ''
@@ -9,8 +10,7 @@ export async function lerPix() {
 
 
 export async function salvarPix(valor) {
-  const { error } = await supabase.from('config_clube').update({ valor: (valor || '').trim() }).eq('chave', 'pix')
-  if (error) throw new Error(error.message)
+  await gravarConfig([{ chave: 'pix', valor: (valor || '').trim() }])
 }
 
 

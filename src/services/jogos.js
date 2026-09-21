@@ -1,5 +1,6 @@
 // Serviço: jogos — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
+import { gravarConfig } from './config.js'
 
 // Jogo da semana: a chave do jogo sorteado que vale +20 pro melhor no domingo.
 // É o agendador (SQL 2026-07-30-rodada-semana) que sorteia e grava. Aqui só lê.
@@ -10,8 +11,8 @@ export async function lerJogoDaSemana() {
 }
 
 // ------- Popup de aviso (a liderança escreve a mensagem que abre no app) -------
-// Guardado no config_clube (chave/valor). Se as chaves ainda não existem, o
-// upsert cria — por isso esta feature não precisa de SQL novo.
+// Guardado no config_clube (chave/valor, POR CLUBE). Se as chaves ainda não existem, a gravação
+// cria — por isso esta feature não precisa de SQL novo.
 const CHAVES_POPUP = ['popup_ativo', 'popup_titulo', 'popup_texto', 'popup_alvo']
 
 export async function lerConfigPopup() {
@@ -32,8 +33,7 @@ export async function salvarConfigPopup(cfg) {
     { chave: 'popup_texto', valor: (cfg.texto || '').trim() },
     { chave: 'popup_alvo', valor: cfg.alvo === 'devendo' ? 'devendo' : 'todos' },
   ]
-  const { error } = await supabase.from('config_clube').upsert(linhas, { onConflict: 'chave' })
-  if (error) throw new Error(error.message)
+  await gravarConfig(linhas)
 }
 
 
@@ -126,9 +126,7 @@ export async function lerReflexoSoDesbravador() {
 }
 
 export async function salvarReflexoSoDesbravador(so) {
-  const { error } = await supabase.from('config_clube')
-    .upsert([{ chave: 'reflexo_so_desbravador', valor: so ? 'sim' : 'nao' }], { onConflict: 'chave' })
-  if (error) throw new Error(error.message)
+  await gravarConfig([{ chave: 'reflexo_so_desbravador', valor: so ? 'sim' : 'nao' }])
 }
 
 
@@ -141,9 +139,7 @@ export async function lerRodizioJogos() {
 }
 
 export async function salvarRodizioJogos(ligado) {
-  const { error } = await supabase.from('config_clube')
-    .upsert([{ chave: 'rodizio_jogos', valor: ligado ? 'sim' : 'nao' }], { onConflict: 'chave' })
-  if (error) throw new Error(error.message)
+  await gravarConfig([{ chave: 'rodizio_jogos', valor: ligado ? 'sim' : 'nao' }])
 }
 
 

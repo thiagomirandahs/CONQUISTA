@@ -11,7 +11,7 @@ insert into t.ids select 'ent_b2', id from public.entregas where texto = 'Entreg
 
 -- guarda o estado do clube A para provar, no fim, que nada mudou
 select (select encrypted_password from auth.users where id = t.id('membro_a')) as hash_a,
-       (select valor from public.config_clube where chave = 'pix') as pix_a,
+       (select valor from public.config_clube where chave = 'pix' and club_id = t.id('clube_a')) as pix_a,
        (select count(*) from public.pontos where club_id = t.id('clube_a')) as pontos_a
 \gset
 insert into public.leiloes (titulo, fecha_em, criado_por) values ('Leilão do clube A', now() + interval '3 days', t.id('lider_a'));
@@ -69,9 +69,9 @@ select t.eq('líder B NÃO vê leilão do clube A', t.nv('select count(*) from p
 select t.eq('líder B NÃO vê itens do leilão do clube A', t.nv('select count(*) from public.leilao_itens'), 0);
 
 -- configuração do clube A (PIX etc.)
-select t.eq('líder B NÃO lê a config do clube A', t.nv($q$select count(*) from public.config_clube where chave = 'pix'$q$), 0);
-select t.bloqueado('líder B NÃO altera o PIX do clube A', $q$update public.config_clube set valor = 'PIX-DO-ATACANTE' where chave = 'pix'$q$);
-select t.bloqueado('líder B NÃO cria config nova', $q$insert into public.config_clube (chave, valor) values ('atacante', 'x')$q$);
+select t.eq('líder B NÃO lê a config do clube A', t.nv(format($q$select count(*) from public.config_clube where club_id = %L$q$, t.id('clube_a'))), 0);
+select t.bloqueado('líder B NÃO altera o PIX do clube A', format($q$update public.config_clube set valor = 'PIX-DO-ATACANTE' where chave = 'pix' and club_id = %L$q$, t.id('clube_a')));
+select t.bloqueado('líder B NÃO cria config nova NO CLUBE A', format($q$insert into public.config_clube (club_id, chave, valor) values (%L, 'atacante', 'x')$q$, t.id('clube_a')));
 
 -- comprovantes privados de menores do clube A
 select t.eq('líder B NÃO lê comprovante do clube A (storage)', t.nv(format($q$select count(*) from storage.objects where bucket_id = 'comprovacoes' and owner = %L$q$, t.id('membro_a'))), 0);
@@ -95,7 +95,7 @@ select t.throws('membro B NÃO registra missão do clube A', $q$select public.re
 -- ================= o clube A ficou exatamente como estava =================
 reset role;
 select t.eq('senha do membro_a intacta', (select encrypted_password = :'hash_a' from auth.users where id = t.id('membro_a')), true);
-select t.eq('PIX do clube A intacto', (select valor from public.config_clube where chave = 'pix'), :'pix_a');
+select t.eq('PIX do clube A intacto', (select valor from public.config_clube where chave = 'pix' and club_id = t.id('clube_a')), :'pix_a');
 select t.eq('aviso com club_id forjado NÃO foi parar no clube A', (select count(*) from public.notificacoes where titulo = 'invasão A' and club_id = t.id('clube_a')), 0);
 select t.eq('leilão do clube A segue aberto', (select status from public.leiloes where id = t.id('leilao_a')), 'aberto');
 select t.eq('membro_a e perfis do clube A intactos', (select papel from public.profiles where id = t.id('membro_a')), 'desbravador');
