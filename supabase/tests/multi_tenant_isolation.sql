@@ -69,6 +69,11 @@ begin
     raise exception 'Tenant 001 leu foto de outro clube: count=%, legenda=%', v_count, v_slug;
   end if;
 
+  select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
+  if v_count <> 1 then
+    raise exception 'Tenant 001 não recebeu o recurso de leilão esperado';
+  end if;
+
   select count(*) into v_count from public.organization_memberships;
   if v_count <> 1 then
     raise exception 'Tenant 001 leu vínculos de outro usuário: %', v_count;
@@ -138,6 +143,11 @@ begin
   select count(*), min(legenda) into v_count, v_slug from public.fotos;
   if v_count <> 1 or v_slug <> 'Foto Tenant 002' then
     raise exception 'Tenant 002 leu foto de outro clube: count=%, legenda=%', v_count, v_slug;
+  end if;
+
+  select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
+  if v_count <> 0 then
+    raise exception 'Tenant 002 recebeu leilão apesar do recurso estar desativado';
   end if;
 
   select count(*) into v_count from public.organization_memberships;
