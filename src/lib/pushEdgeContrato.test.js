@@ -46,3 +46,31 @@ describe('Edge Function enviar-push: destinatários sempre por clube', () => {
     expect(fonte).toMatch(/function linkSeguro/)
   })
 })
+
+// A função é colada à mão no painel (sem lockfile): o que fixa a versão é o próprio especificador.
+// `@2` no esm.sh (ou `^`/`~`/`latest`) faz o deploy de amanhã rodar código diferente do testado.
+describe('Edge Function enviar-push: dependências fixadas', () => {
+  const imports = [...fonte.matchAll(/^\s*import\s[^\n]*?from\s+['"]([^'"]+)['"]/gm)].map((m) => m[1])
+  const externos = imports.filter((s) => !s.startsWith('.') && !s.startsWith('node:'))
+
+  it('encontra as dependências externas (guarda contra o teste passar no vazio)', () => {
+    expect(externos.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('toda dependência externa vem do registro npm com versão EXATA (x.y.z)', () => {
+    for (const spec of externos) {
+      expect(spec, spec).toMatch(/^npm:(@[a-z0-9-]+\/)?[a-z0-9.-]+@\d+\.\d+\.\d+$/)
+    }
+  })
+
+  it('não usa esm.sh nem URL remota solta (versão flutuante, fora do npm)', () => {
+    expect(fonte).not.toMatch(/esm\.sh/)
+    expect(fonte).not.toMatch(/from\s+['"]https?:\/\//)
+  })
+
+  it('o supabase-js da função é a MESMA versão do package-lock do app (uma versão testada só)', () => {
+    const lock = JSON.parse(readFileSync(join(process.cwd(), 'package-lock.json'), 'utf8'))
+    const doLock = lock.packages['node_modules/@supabase/supabase-js'].version
+    expect(externos).toContain(`npm:@supabase/supabase-js@${doLock}`)
+  })
+})

@@ -16,8 +16,10 @@
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PUSH_WEBHOOK_SECRET
 // (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já são injetados automaticamente.)
 
+// Versões EXATAS de propósito (a função é colada no painel, não há lockfile): o supabase-js é o mesmo
+// do package-lock do app (src/lib/pushEdgeContrato.test.js confere). Para atualizar: mude aqui, teste, e cole de novo.
 import webpush from 'npm:web-push@3.6.7'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') ?? ''
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
