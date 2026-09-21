@@ -1,6 +1,6 @@
 -- =====================================================================
 -- PRÉ-VOO da produção — SOMENTE LEITURA (não altera nada). Rode no SQL Editor ANTES de aplicar
--- as migrations 20260921000001..19 e só siga se a linha RESUMO disser "ok".
+-- as migrations 20260921000001..27 e só siga se a linha RESUMO disser "ok".
 --
 -- Por quê: as migrations novas dependem de tabelas/colunas/funções criadas pelos SQLs antigos
 -- (ajudas, partidas, bichinho-sono, rodizio, ledger...). Se algum SQL antigo nunca foi rodado em

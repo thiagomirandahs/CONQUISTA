@@ -13,7 +13,10 @@
     "check": "npm run lint && npm run test && npm run build",
     "build:cap": "cross-env CAP_BUILD=1 vite build",
     "cap:sync": "npm run build:cap && cap sync android",
-    "test:db": "bash supabase/tests/run-tests.sh"
+    "test:db": "bash supabase/tests/run-tests.sh",
+    "test:db:upgrade": "bash supabase/tests/run-tests.sh --upgrade",
+    "db:reset": "npx --yes supabase@2.117.0 db reset --local",
+    "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
