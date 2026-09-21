@@ -19,6 +19,8 @@
 #  Uso:
 #    bash supabase/tests/run-tests.sh                 # replay do zero + todos os testes
 #    bash supabase/tests/run-tests.sh --keep          # mantém o banco replay_test p/ investigar
+#    bash supabase/tests/run-tests.sh --upgrade       # simula o UPGRADE de produção: schema legado + dados vivos,
+#                                                     # depois aplica 20260921000001..17 e verifica (tests/upgrade/)
 #    bash supabase/tests/run-tests.sh --no-replay     # só roda os testes no banco já pronto
 #    bash supabase/tests/run-tests.sh --db postgres --no-replay
 #                                                     # roda no banco de trabalho (ex.: depois
@@ -34,12 +36,14 @@ CONT="${SUPABASE_DB_CONTAINER:-supabase_db_CONQUISTA}"
 DB="${REPLAY_DB:-replay_test}"
 REPLAY=1
 KEEP=0
+UPGRADE=0
 ONLY=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-replay) REPLAY=0 ;;
     --replay) REPLAY=1 ;;
     --keep) KEEP=1 ;;
+    --upgrade) UPGRADE=1 ;;
     --db) DB="$2"; shift ;;
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) ONLY+=("$1") ;;
@@ -86,6 +90,33 @@ truncate storage.objects, storage.buckets cascade;
 truncate supabase_migrations.schema_migrations;
 delete from cron.job;
 SQL
+
+  if [ "$UPGRADE" = 1 ]; then
+    echo "==> [3/4] UPGRADE: migrations legadas -> dados de producao simulados -> 20260921000001..17 -> verificacao"
+    docker exec "$CONT" rm -rf /tmp/cq_migrations /tmp/cq_tests >/dev/null 2>&1
+    docker cp "$WROOT/supabase/migrations" "$CONT:/tmp/cq_migrations" >/dev/null || exit 2
+    docker cp "$WROOT/supabase/tests" "$CONT:/tmp/cq_tests" >/dev/null || exit 2
+    DRIVER="$(mktemp)"; carregou=0
+    {
+      echo '\set ON_ERROR_STOP on'
+      for f in "$ROOT"/supabase/migrations/*.sql; do
+        base="$(basename "$f")"; ver="${base%%_*}"
+        # 1ª migration do SaaS (20260921...): antes dela o banco é o "de produção"; carrega os dados vivos
+        if [ "$carregou" = 0 ] && [[ "$ver" > "20260909000001" ]]; then echo "\echo '   [dados de producao simulados]'"; echo "\i /tmp/cq_tests/upgrade/pre_dados.sql"; carregou=1; fi
+        echo "\echo '   migration $base'"; echo "begin;"; echo "\i /tmp/cq_migrations/$base"; echo "commit;"
+      done
+      echo "\echo '   [verificacao pos-upgrade]'"; echo "\i /tmp/cq_tests/upgrade/post_verificacao.sql"
+    } > "$DRIVER"
+    docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 < "$DRIVER" > "$DRIVER.log" 2>&1; rc=$?
+    if [ $rc -eq 0 ] && ! grep -qi "falhou" "$DRIVER.log"; then
+      echo "   OK     upgrade de producao simulado  ($(grep -oE 'ok  - [0-9]+ asserts' "$DRIVER.log" | tail -1))"; RESULT=0
+    else
+      echo "   FALHOU upgrade de producao simulado"; grep -iE "falhou|error|erro|detail|^  - " "$DRIVER.log" | sed 's/^/          /' | head -30; RESULT=1
+    fi
+    rm -f "$DRIVER" "$DRIVER.log"
+    if [ "$KEEP" = 0 ]; then "${ADMIN[@]}" -d template1 -c "drop database if exists $DB with (force)" >/dev/null 2>&1 || true; fi
+    exit $RESULT
+  fi
 
   echo "==> [3/4] Reaplicando TODAS as migrations em ordem + seed"
   docker exec "$CONT" rm -rf /tmp/cq_migrations /tmp/cq_seed.sql >/dev/null 2>&1

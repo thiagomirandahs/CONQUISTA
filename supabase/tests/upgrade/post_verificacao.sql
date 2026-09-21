@@ -1,0 +1,121 @@
+-- Depois de aplicar 20260921000001..17 sobre o estado de produção simulado (pre_dados.sql):
+-- nenhum dado se perdeu, todo mundo ganhou o vínculo certo e os fluxos do Tenant 001 seguem funcionando.
+begin;
+\ir ../_lib.sql
+
+insert into t.ids (chave, id)
+select k, md5('up:' || k)::uuid from unnest(array['dir','ins','tes','con','d1','d2','d3','pend','rej','pai']) k;
+insert into t.ids (chave, id) select 'clube', id from public.organizational_units where slug = 'filhos-da-conquista';
+insert into t.ids (chave, id) select 'aguias', id from public.unidades where nome = 'Águias';
+insert into t.ids (chave, id) select 'leoes', id from public.unidades where nome = 'Leões';
+
+-- ---------- 1) nenhum dado se perdeu ----------
+select t.eq('pontos preservados', (select count(*) from public.pontos where origem <> 'leilao'), :pre_pontos::bigint);
+select t.eq('soma dos pontos preservada', (select coalesce(sum(pontos), 0) from public.pontos where origem <> 'leilao'), :pre_soma_pontos::bigint);
+select t.eq('fotos preservadas', (select count(*) from public.fotos), :pre_fotos::bigint);
+select t.eq('atividades preservadas', (select count(*) from public.atividades), :pre_atividades::bigint);
+select t.eq('entregas preservadas', (select count(*) from public.entregas), :pre_entregas::bigint);
+select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
+select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);
+select t.eq('notificações preservadas', (select count(*) from public.notificacoes), :pre_notificacoes::bigint);
+select t.eq('perfis preservados', (select count(*) from public.profiles), :pre_perfis::bigint);
+select t.eq('unidades preservadas', (select count(*) from public.unidades), :pre_unidades::bigint);
+select t.eq('vínculos de responsável preservados', (select count(*) from public.responsaveis), :pre_responsaveis::bigint);
+select t.eq('lances de leilão preservados', (select count(*) from public.leilao_lances), :pre_lances::bigint);
+select t.eq('todo dado ganhou clube (nada órfão): pontos', (select count(*) from public.pontos where club_id is null), 0);
+select t.eq('todo dado ganhou o clube LEGADO: fotos', (select count(*) from public.fotos where club_id <> t.id('clube')), 0);
+select t.eq('todo dado ganhou o clube LEGADO: unidades', (select count(*) from public.unidades where club_id <> t.id('clube')), 0);
+select t.eq('todo dado ganhou o clube LEGADO: notificações', (select count(*) from public.notificacoes where club_id <> t.id('clube')), 0);
+select t.eq('todo dado ganhou o clube LEGADO: responsáveis', (select count(*) from public.responsaveis where club_id <> t.id('clube')), 0);
+
+-- ---------- 2) vínculos: um por pessoa, no clube legado, com papel/status certos ----------
+select t.eq('todo perfil tem exatamente 1 vínculo de clube', (select count(*) from public.profiles p where (select count(*) from public.organization_memberships m where m.user_id = p.id) <> 1), 0);
+select t.eq('todos no clube legado', (select count(*) from public.organization_memberships where organizational_unit_id <> t.id('clube')), 0);
+select t.eq('diretoria: vínculo diretoria ativo', (select role || '/' || status from public.organization_memberships where user_id = t.id('dir')), 'diretoria/ativo');
+select t.eq('instrutor: vínculo instrutor ativo', (select role || '/' || status from public.organization_memberships where user_id = t.id('ins')), 'instrutor/ativo');
+select t.eq('tesoureiro: vínculo tesoureiro ativo', (select role || '/' || status from public.organization_memberships where user_id = t.id('tes')), 'tesoureiro/ativo');
+select t.eq('conselheiro: vínculo conselheiro ativo', (select role || '/' || status from public.organization_memberships where user_id = t.id('con')), 'conselheiro/ativo');
+select t.eq('desbravador ativo', (select role || '/' || status from public.organization_memberships where user_id = t.id('d1')), 'desbravador/ativo');
+select t.eq('desativado vira suspenso', (select role || '/' || status from public.organization_memberships where user_id = t.id('d3')), 'desbravador/suspenso');
+select t.eq('cadastro pendente vira vínculo pendente (a diretoria passa a ver)', (select role || '/' || status from public.organization_memberships where user_id = t.id('pend')), 'desbravador/pendente');
+select t.eq('cadastro rejeitado vira vínculo encerrado', (select role || '/' || status from public.organization_memberships where user_id = t.id('rej')), 'desbravador/encerrado');
+select t.eq('responsável: papel padronizado em pais (nunca responsavel)', (select role || '/' || status from public.organization_memberships where user_id = t.id('pai')), 'pais/ativo');
+select t.eq('a reconciliação não tem mais nada a ajustar', t.n('select public.reconciliar_vinculos_perfis()'), 0);
+
+-- ---------- 3) cada papel enxerga o que deve ----------
+select t.como('dir');
+select t.eq('diretoria vê todos os perfis pela tela Usuários (inclusive pendente/rejeitado/inativo)', t.n('select count(*) from public.listar_usuarios()'), :pre_perfis::bigint);
+select t.eq('diretoria vê todos os pontos', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint));
+select t.eq('diretoria vê as fotos', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
+select t.eq('diretoria lê o PIX', t.txt($q$select valor from public.config_clube where chave = 'pix'$q$), 'PIX-DE-PRODUCAO');
+select t.eq('ranking: totais por pessoa iguais aos de antes do upgrade',
+  t.txt($q$select string_agg(x->>'id' || ':' || (x->>'total'), ',' order by x->>'id') from json_array_elements(public.ranking_totais()->'pessoas') x$q$), :'pre_totais_pessoas');
+select t.como('d1');
+select t.eq('membro vê os pontos do clube (como sempre)', t.n('select count(*) from public.pontos'), :pre_pontos::bigint);
+select t.eq('membro vê as fotos do clube', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
+select t.eq('membro vê o aviso pessoal e os gerais (2 gerais + 1 pessoal + avisos automáticos)', t.n($q$select count(*) from public.notificacoes where titulo in ('Aviso geral 1','Aviso geral 2','Recado do d1')$q$), 3);
+select t.eq('membro lê o PIX', t.txt($q$select valor from public.config_clube where chave = 'pix'$q$), 'PIX-DE-PRODUCAO');
+select t.como('pai');
+select t.eq('responsável: só o próprio perfil', t.n('select count(*) from public.profiles'), 1);
+select t.eq('responsável: nenhum ponto', t.nv('select count(*) from public.pontos'), 0);
+select t.eq('responsável: nenhuma foto', t.nv('select count(*) from public.fotos'), 0);
+select t.eq('responsável: nenhuma entrega', t.nv('select count(*) from public.entregas'), 0);
+select t.eq('responsável: Meus Filhos devolve o filho aprovado', t.txt('select public.meus_filhos()->0->>''nome'''), 'Desbravador 1');
+select t.eq('responsável: Meus Filhos traz os pontos do filho', t.txt('select public.meus_filhos()->0->>''pontos'''), '30');
+select t.eq('responsável ainda lê o PIX (paga a mensalidade)', t.txt($q$select valor from public.config_clube where chave = 'pix'$q$), 'PIX-DE-PRODUCAO');
+select t.como('pend');
+select t.eq('cadastro pendente: só o próprio perfil', t.n('select count(*) from public.profiles'), 1);
+select t.eq('cadastro pendente: nada do clube', t.nv('select count(*) from public.pontos') + t.nv('select count(*) from public.fotos'), 0);
+select t.como('d3');
+select t.eq('desativado: nada do clube', t.nv('select count(*) from public.pontos') + t.nv('select count(*) from public.fotos'), 0);
+select t.como('rej');
+select t.eq('rejeitado: nada do clube', t.nv('select count(*) from public.pontos') + t.nv('select count(*) from public.fotos'), 0);
+
+-- ---------- 4) os fluxos do dia a dia seguem funcionando ----------
+select t.como('dir');
+select t.permitido('diretoria aprova o cadastro pendente', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('pend')));
+select t.permitido('diretoria reativa o desativado', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('d3')));
+select t.permitido('diretoria redefine a senha do instrutor', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('ins')));
+select t.permitido('diretoria exclui o cadastro rejeitado', format('select public.excluir_usuario(%L)', t.id('rej')));
+select t.permitido('diretoria cria atividade', $q$insert into public.atividades (titulo, pontos) values ('Atividade nova', 5)$q$);
+select t.permitido('diretoria cria unidade', $q$insert into public.unidades (nome) values ('Nova Unidade')$q$);
+select t.permitido('diretoria cria evento', $q$insert into public.eventos (titulo, tipo, data) values ('Novo', 'Reunião', current_date + 1)$q$);
+select t.permitido('diretoria aprova a entrega pendente do d2', format($q$select public.aprovar_entrega(id) from public.entregas where usuario_id = %L$q$, t.id('d2')));
+select t.como('pend');
+select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint + 1));
+select t.como('d3');
+select t.eq('reativado: volta a ver as fotos', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
+select t.como('tes');
+select t.permitido('tesoureiro grava mensalidade com o onConflict do front PUBLICADO', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+   values (%L, 1, 2026, 55, 'pago', %L) on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor, status = excluded.status$q$, t.id('d2'), t.id('tes')));
+select t.como('con');
+select t.permitido('conselheiro aponta membro da própria unidade', format($q$select public.salvar_reuniao(current_date, 'Reunião prod', %L::jsonb)$q$, jsonb_build_array(jsonb_build_object('usuario_id', t.id('d1'), 'pontos', 3))::text));
+select t.como('d2');
+select t.permitido('membro posta foto', format($q$insert into public.fotos (url, legenda, autor_id) values ('https://x.test/n.jpg', 'nova', %L)$q$, t.id('d2')));
+select t.permitido('membro fala no chat geral', $q$select public.chat_enviar_geral('oi')$q$);
+
+-- ---------- 5) leilão em andamento: cron e "Encerrar agora" cobram exatamente o mesmo ----------
+reset role;
+create function t.cobrancas() returns text language sql as $$
+  select coalesce(string_agg(u.nome || ':' || x.s, ',' order by u.nome), '(nenhuma)')
+  from (select unidade_id, sum(pontos) s from public.pontos where origem = 'leilao' group by 1) x
+  join public.unidades u on u.id = x.unidade_id;
+$$;
+savepoint sp_cron;
+update public.leiloes set fecha_em = now() - interval '1 minute' where titulo = 'Leilão de produção';
+select t.como_cron();
+select public.fechar_leiloes_vencidos();
+reset role;
+select t.cobrancas() as up_cron \gset
+rollback to savepoint sp_cron;
+savepoint sp_manual;
+select t.como('dir');
+select public.encerrar_leilao(id) from public.leiloes where titulo = 'Leilão de produção';
+reset role;
+select t.cobrancas() as up_manual \gset
+rollback to savepoint sp_manual;
+select t.eq('leilão de produção: o cron cobra o lance (20 pts da Águias)', :'up_cron', 'Águias:-20');
+select t.eq('leilão de produção: cron == manual', :'up_cron', :'up_manual');
+
+select t.fim();
+rollback;
