@@ -110,6 +110,16 @@ insert into public.atividades (titulo, descricao, pontos, club_id)
 select 'Atividade Tenant 002', 'Dado de isolamento local', 20, id
 from public.organizational_units where slug = 'clube-teste-tenant-002';
 
+insert into public.eventos (titulo, tipo, data, criado_por, club_id)
+select 'Evento Tenant 001', 'Reunião', current_date + 7,
+       '00000000-0000-0000-0000-000000000001', id
+from public.organizational_units where slug = 'filhos-da-conquista';
+
+insert into public.eventos (titulo, tipo, data, criado_por, club_id)
+select 'Evento Tenant 002', 'Reunião', current_date + 7,
+       '00000000-0000-0000-0000-000000000002', id
+from public.organizational_units where slug = 'clube-teste-tenant-002';
+
 insert into public.entregas (atividade_id, usuario_id, texto, club_id)
 select a.id, '00000000-0000-0000-0000-000000000001', 'Entrega Tenant 001', a.club_id
 from public.atividades a where a.titulo = 'Atividade Tenant 001';

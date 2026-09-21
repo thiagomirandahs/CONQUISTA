@@ -44,6 +44,11 @@ begin
     raise exception 'Tenant 001 leu atividade de outro clube: count=%, titulo=%', v_count, v_slug;
   end if;
 
+  select count(*), min(titulo) into v_count, v_slug from public.eventos;
+  if v_count <> 1 or v_slug <> 'Evento Tenant 001' then
+    raise exception 'Tenant 001 leu evento de outro clube: count=%, titulo=%', v_count, v_slug;
+  end if;
+
   select count(*), min(texto) into v_count, v_slug from public.entregas;
   if v_count <> 1 or v_slug <> 'Entrega Tenant 001' then
     raise exception 'Tenant 001 leu entrega de outro clube: count=%, texto=%', v_count, v_slug;
@@ -128,6 +133,11 @@ begin
   select count(*), min(titulo) into v_count, v_slug from public.atividades;
   if v_count <> 1 or v_slug <> 'Atividade Tenant 002' then
     raise exception 'Tenant 002 leu atividade de outro clube: count=%, titulo=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(titulo) into v_count, v_slug from public.eventos;
+  if v_count <> 1 or v_slug <> 'Evento Tenant 002' then
+    raise exception 'Tenant 002 leu evento de outro clube: count=%, titulo=%', v_count, v_slug;
   end if;
 
   select count(*), min(texto) into v_count, v_slug from public.entregas;
