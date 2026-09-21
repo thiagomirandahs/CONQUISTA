@@ -207,7 +207,7 @@ begin
     end if;
   end if;
 
-  insert into public.config_clube (chave, valor) values
+  insert into public.config_clube (club_id, chave, valor) values
     (public.clube_atual_id(), 'chefao_nome', coalesce(trim(p_nome), 'Chefão')),
     (public.clube_atual_id(), 'chefao_emoji', coalesce(nullif(trim(p_emoji), ''), '🗿')),
     (public.clube_atual_id(), 'chefao_vida', coalesce(p_vida, 3000)::text),

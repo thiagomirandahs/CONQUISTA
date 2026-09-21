@@ -87,7 +87,7 @@ select t.eq('líder B NÃO lê missões feitas do clube A', t.nv('select count(*
 select t.eq('líder B NÃO vê conversas de moderação do chat', t.nv('select count(*) from public.chat_todas_conversas()'), 0);
 select t.eq('líder B NÃO vê pets do clube A', t.nv('select count(*) from public.pets_do_clube()'), 0);
 select t.eq('líder B NÃO lista missões pendentes do clube A', t.nv('select count(*) from public.missoes_pendentes()'), 0);
-select t.throws('líder B NÃO usa atividade_jogos (painel do clube A)', 'select public.atividade_jogos()');
+-- (painel de atividade dos jogos: o líder B vê o PRÓPRIO clube — ver 17_jogos_por_clube)
 select t.como('membro_b');
 select t.throws('membro B NÃO escreve no chat geral do clube A', $q$select public.chat_enviar_geral('invasão')$q$);
 -- (missão/devocional do clube B: agora funcionam no PRÓPRIO clube — ver 15_missoes_e_devocional_por_clube)

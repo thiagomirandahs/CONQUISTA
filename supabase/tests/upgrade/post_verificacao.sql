@@ -20,6 +20,11 @@ select t.eq('duelos preservados, todos no Tenant 001', (select count(*) from pub
 select t.eq('catálogo de desafios de unidade preservado, todo no Tenant 001', (select count(*) from public.desafios_unidade where club_id = public.clube_legado_id()), :pre_desafios::bigint);
 select t.eq('missões feitas preservadas, todas no Tenant 001', (select count(*) from public.missoes_feitas where club_id = public.clube_legado_id()), :pre_missoes::bigint);
 select t.eq('devocional preservado, todo no Tenant 001', (select count(*) from public.devocional where club_id = public.clube_legado_id()), :pre_devocional::bigint);
+select t.eq('jogadas da trilha preservadas, todas no Tenant 001', (select count(*) from public.trilha_jogos where club_id = public.clube_legado_id()), :pre_trilha::bigint);
+select t.eq('recordes arcade preservados, todos no Tenant 001', (select count(*) from public.recordes where club_id = public.clube_legado_id()), :pre_recordes::bigint);
+select t.eq('liberações de jogo preservadas, todas no Tenant 001', (select count(*) from public.jogos_liberados where club_id = public.clube_legado_id()), :pre_liberados::bigint);
+select t.eq('golpes do chefão e partidas preservados no Tenant 001', (select count(*) from public.chefao_golpes where club_id = public.clube_legado_id()) * 100 + (select count(*) from public.partidas where club_id = public.clube_legado_id()), (:pre_golpes::bigint * 100) + :pre_partidas::bigint);
+select t.eq('catálogo de jogos preservado (liga/desliga do Tenant 001 intacto), todo no clube legado', (select count(*) from public.jogos_trilha where club_id = public.clube_legado_id()), :pre_catalogo::bigint);
 select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
 select t.eq('mensalidades órfãs (sem dono) preservadas e no clube legado', (select count(*) from public.mensalidades where desbravador_id is null and club_id = public.clube_legado_id()), 2);
 select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);
@@ -92,11 +97,18 @@ select t.permitido('membro vê o duelo em andamento do clube', $q$select id from
 select t.permitido('membro desafia a outra unidade (fluxo de sempre)', format($q$select public.criar_duelo((select id from public.desafios_unidade where titulo = 'Presença total'), %L)$q$, t.id('leoes')));
 select t.como('dir');
 select t.permitido('diretoria julga o duelo em andamento (prêmio para a unidade vencedora)', $q$select public.julgar_duelo((select id from public.duelos where titulo = 'Maratona de missões' and status = 'aberto'), 'a')$q$);
+select t.como('d1');
+select t.permitido('membro joga a memória hoje (fluxo de sempre; +1 lançamento de pontos)', $q$select public.registrar_jogo('memoria', 2)$q$);
+select t.eq('o ranking dos jogos traz os dois jogadores de antes', t.txt($q$select json_array_length(public.ranking_trilha()->'geral')::text$q$), '2');
+select t.eq('o recorde da semana do reflexo continua lá', t.txt($q$select public.recordes_semana('reflexo')->0->>'pontos'$q$), '55');
+select t.como('dir');
+select t.permitido('diretoria libera um jogo do rodízio', $q$select public.liberar_jogo('memoria')$q$);
+select t.permitido('diretoria abre o painel de atividade dos jogos', $q$select public.atividade_jogos()$q$);
 select t.eq('a diretoria vê a missão de foto pendente', t.n('select count(*) from public.missoes_pendentes()'), 1);
 select t.permitido('diretoria aprova a missão de foto pendente (+10 pontos para o d2)', $q$select public.avaliar_missao((select id from public.missoes_feitas where status = 'pendente' limit 1), true)$q$);
 select t.como('pend');
--- +1 da aprovação da entrega do d2, +1 do prêmio do duelo e +1 da missão de foto aprovada acima
-select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint + 3));
+-- +1 da aprovação da entrega do d2, +1 do prêmio do duelo +1 da missão de foto aprovada e +1 da jogada de hoje acima
+select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint + 4));
 select t.como('d3');
 select t.eq('reativado: volta a ver as fotos', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
 select t.como('tes');
