@@ -73,7 +73,7 @@ export default function Mensalidades() {
       desbravador_id: d.id, mes, ano, valor: Number(valor) || 0, status: novo,
       data_pagamento: novo === 'pago' ? hojeLocalISO() : null,
       registrado_por: profile?.id,
-    }, { onConflict: 'club_id,desbravador_id,mes,ano' })
+    }, { onConflict: 'desbravador_id,mes,ano' }) // alvo LEGADO: funciona antes e depois da migration (cada pessoa é de 1 clube só)
     if (error) { alert('Erro: ' + error.message); recarregarMes() }
   }
 

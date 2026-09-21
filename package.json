@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "check": "npm run lint && npm run test && npm run build",
     "build:cap": "cross-env CAP_BUILD=1 vite build",
-    "cap:sync": "npm run build:cap && cap sync android"
+    "cap:sync": "npm run build:cap && cap sync android",
+    "test:db": "bash supabase/tests/run-tests.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
