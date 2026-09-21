@@ -1,5 +1,5 @@
 -- Estado de PRODUÇÃO simulado: schema legado (ainda sem club_id/vínculos) com dados vivos de um clube.
--- Roda ANTES das migrations 20260921000001..17. Chaves: md5('up:'||chave)::uuid (ver post_verificacao.sql).
+-- Roda ANTES das migrations 20260921000001..19. Chaves: md5('up:'||chave)::uuid (ver post_verificacao.sql).
 \set ON_ERROR_STOP on
 \o /dev/null
 
@@ -50,6 +50,10 @@ insert into public.fotos (url, legenda, autor_id) values ('https://x.test/1.jpg'
 insert into public.eventos (titulo, tipo, data, criado_por) values ('Reunião', 'Reunião', current_date + 5, md5('up:dir')::uuid), ('Acampamento', 'Acampamento', current_date + 30, md5('up:dir')::uuid);
 insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por) values
   (md5('up:d1')::uuid, 1, 2026, 50, 'pago', md5('up:tes')::uuid), (md5('up:d2')::uuid, 1, 2026, 50, 'pendente', md5('up:tes')::uuid);
+-- mensalidades ÓRFÃS (dono excluído no passado: FK ON DELETE SET NULL). Duas no mesmo mês NÃO são duplicata
+-- (NULL nunca colide na UNIQUE): o pré-check da migration 14 não pode abortar por causa delas.
+insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por) values
+  (null, 3, 2026, 50, 'pago', md5('up:tes')::uuid), (null, 3, 2026, 50, 'pago', md5('up:tes')::uuid);
 insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por) values
   ('Aviso geral 1', 'x', 'geral', '/', 'todos', md5('up:dir')::uuid), ('Aviso geral 2', 'x', 'geral', '/', 'todos', md5('up:dir')::uuid);
 insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por) values

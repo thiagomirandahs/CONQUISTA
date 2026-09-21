@@ -34,6 +34,14 @@ alter table public.unidades
   alter column club_id set default public.clube_legado_id(),
   alter column club_id set not null;
 
+do $chk$
+begin
+  if exists (select 1 from public.unidades group by club_id, nome having count(*) > 1) then
+    raise exception 'Há unidades com o MESMO nome no mesmo clube (%). Renomeie/una antes de aplicar esta migration: select nome, count(*) from public.unidades group by 1 having count(*) > 1;',
+      (select string_agg(nome, ', ') from (select nome from public.unidades group by club_id, nome having count(*) > 1) d);
+  end if;
+end $chk$;
+
 create unique index if not exists uq_unidades_club_nome
   on public.unidades(club_id, nome);
 create index if not exists idx_unidades_club

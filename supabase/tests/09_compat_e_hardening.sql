@@ -87,6 +87,8 @@ select count(*) as vinculos_antes, (select count(*) from public.club_features) a
 \i /tmp/cq_migrations/20260921000015_leilao-cron-e-escopo.sql
 \i /tmp/cq_migrations/20260921000016_isolamento-de-rpcs-e-storage.sql
 \i /tmp/cq_migrations/20260921000017_convites-e-push-por-clube.sql
+\i /tmp/cq_migrations/20260921000018_correcoes-da-revisao.sql
+\i /tmp/cq_migrations/20260921000019_regressoes-de-desempenho-e-compat.sql
 select t.eq('reaplicar as migrations não muda a quantidade de vínculos', (select count(*) from public.organization_memberships), :'vinculos_antes'::bigint);
 select t.eq('reaplicar as migrations não muda os recursos do clube', (select count(*) from public.club_features), :'feats_antes'::bigint);
 

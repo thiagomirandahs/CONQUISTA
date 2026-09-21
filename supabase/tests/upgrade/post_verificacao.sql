@@ -16,6 +16,7 @@ select t.eq('fotos preservadas', (select count(*) from public.fotos), :pre_fotos
 select t.eq('atividades preservadas', (select count(*) from public.atividades), :pre_atividades::bigint);
 select t.eq('entregas preservadas', (select count(*) from public.entregas), :pre_entregas::bigint);
 select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
+select t.eq('mensalidades órfãs (sem dono) preservadas e no clube legado', (select count(*) from public.mensalidades where desbravador_id is null and club_id = public.clube_legado_id()), 2);
 select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);
 select t.eq('notificações preservadas', (select count(*) from public.notificacoes), :pre_notificacoes::bigint);
 select t.eq('perfis preservados', (select count(*) from public.profiles), :pre_perfis::bigint);

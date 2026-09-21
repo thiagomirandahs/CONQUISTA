@@ -105,7 +105,9 @@ using (public.membro_ativo_no_clube(club_id) and (desbravador_id = auth.uid() or
 -- devolve o alvo antigo e mantém o novo. As duas formas de upsert funcionam antes e depois.
 do $$
 begin
-  if exists (select 1 from public.mensalidades group by desbravador_id, mes, ano having count(*) > 1) then
+  -- mensalidades ÓRFÃS (desbravador_id NULL, sobra de usuário excluído) não contam: NULL nunca colide na UNIQUE
+  if exists (select 1 from public.mensalidades where desbravador_id is not null
+             group by desbravador_id, mes, ano having count(*) > 1) then
     raise exception 'Há mensalidades duplicadas (mesmo desbravador, mês e ano). Resolva antes de aplicar esta migration.';
   end if;
 end $$;
