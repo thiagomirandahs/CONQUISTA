@@ -78,3 +78,15 @@ select
 from public.organizational_units
 where slug = 'clube-teste-tenant-002'
 on conflict do nothing;
+
+insert into public.unidades (nome, cor, club_id)
+select 'Unidade Tenant 001', '#1d4ed8', id
+from public.organizational_units
+where slug = 'filhos-da-conquista'
+on conflict (club_id, nome) do update set cor = excluded.cor;
+
+insert into public.unidades (nome, cor, club_id)
+select 'Unidade Tenant 002', '#7c3aed', id
+from public.organizational_units
+where slug = 'clube-teste-tenant-002'
+on conflict (club_id, nome) do update set cor = excluded.cor;

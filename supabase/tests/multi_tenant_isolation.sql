@@ -21,6 +21,14 @@ begin
     raise exception 'Tenant 001 atravessou isolamento: count=%, slug=%', v_count, v_slug;
   end if;
 
+  select count(*), min(nome)
+    into v_count, v_slug
+  from public.unidades;
+
+  if v_count <> 1 or v_slug <> 'Unidade Tenant 001' then
+    raise exception 'Tenant 001 leu unidade de outro clube: count=%, nome=%', v_count, v_slug;
+  end if;
+
   select count(*) into v_count from public.organization_memberships;
   if v_count <> 1 then
     raise exception 'Tenant 001 leu vínculos de outro usuário: %', v_count;
@@ -36,6 +44,14 @@ begin
 
   if v_count <> 1 or v_slug <> 'clube-teste-tenant-002' then
     raise exception 'Tenant 002 atravessou isolamento: count=%, slug=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(nome)
+    into v_count, v_slug
+  from public.unidades;
+
+  if v_count <> 1 or v_slug <> 'Unidade Tenant 002' then
+    raise exception 'Tenant 002 leu unidade de outro clube: count=%, nome=%', v_count, v_slug;
   end if;
 
   select count(*) into v_count from public.organization_memberships;
