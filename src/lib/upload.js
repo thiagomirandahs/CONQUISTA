@@ -75,6 +75,11 @@ export async function subirImagemPublica({ file, pasta, nomeBase }) {
   return { path, url: supabase.storage.from('imagens').getPublicUrl(path).data.publicUrl }
 }
 
+// Só "o bucket não existe" (404 / "Bucket not found") justifica o fallback para o bucket público.
+export function bucketPrivadoAusente(error) {
+  return /bucket not found/i.test(String(error?.message || '')) || String(error?.statusCode ?? error?.status ?? '') === '404'
+}
+
 // Bucket PRIVADO 'comprovacoes' (missões e entregas de atividade — Parte A):
 // valida, comprime imagem e devolve o CAMINHO (não URL) pra guardar no banco.
 // Quem for ver gera uma signed URL temporária (urlComprovacao em dados.js).
@@ -93,10 +98,12 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   const path = `${userId}/${tipo}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('comprovacoes').upload(path, pronta, { upsert: false })
   if (!error) return path
-  // TRANSIÇÃO: se o bucket privado ainda não existe (o SQL storage-comprovacoes
-  // não rodou), cai no bucket público antigo — o envio nunca quebra por causa da
-  // janela de deploy. Assim que o SQL rodar, os novos envios já vão pro privado.
+  // TRANSIÇÃO: se o bucket privado ainda NÃO EXISTE (o SQL storage-comprovacoes não rodou), cai no
+  // bucket público antigo — o envio não quebra por causa da janela de deploy. Qualquer OUTRA falha
+  // (permissão, tamanho, tipo, rede) NÃO pode mandar a foto de uma criança para um bucket público:
+  // o erro aparece para a pessoa tentar de novo.
   // Comprovacao.jsx/urlComprovacao tratam tanto o CAMINHO privado quanto a URL pública.
+  if (!bucketPrivadoAusente(error)) throw new Error('Não foi possível enviar: ' + error.message)
   const legacyPath = `${tipo}/${userId}-${Date.now()}.${ext}`
   const up2 = await supabase.storage.from('imagens').upload(legacyPath, pronta, { upsert: true })
   if (up2.error) throw new Error('Não foi possível enviar: ' + error.message)

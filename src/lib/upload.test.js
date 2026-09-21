@@ -1,5 +1,20 @@
 import { describe, it, expect } from 'vitest'
-import { validarImagem, validarMidia } from './upload.js'
+import { validarImagem, validarMidia, bucketPrivadoAusente } from './upload.js'
+
+describe('bucketPrivadoAusente — só "bucket não existe" cai no bucket público', () => {
+  it('reconhece bucket inexistente (mensagem e status 404)', () => {
+    expect(bucketPrivadoAusente({ message: 'Bucket not found' })).toBe(true)
+    expect(bucketPrivadoAusente({ message: 'x', statusCode: '404' })).toBe(true)
+    expect(bucketPrivadoAusente({ message: 'x', status: 404 })).toBe(true)
+  })
+  it('NÃO faz fallback para permissão negada, tamanho, tipo ou rede (foto de criança não vai pro público)', () => {
+    expect(bucketPrivadoAusente({ message: 'new row violates row-level security policy', statusCode: '403' })).toBe(false)
+    expect(bucketPrivadoAusente({ message: 'The object exceeded the maximum allowed size', statusCode: '413' })).toBe(false)
+    expect(bucketPrivadoAusente({ message: 'mime type image/x is not supported', statusCode: '415' })).toBe(false)
+    expect(bucketPrivadoAusente({ message: 'Failed to fetch' })).toBe(false)
+    expect(bucketPrivadoAusente(null)).toBe(false)
+  })
+})
 
 // Monta um File com bytes de cabeçalho controlados (o detector lê os 1ºs bytes).
 function arquivoComBytes(bytes, { nome = 'x', tipo = '', tamanho } = {}) {
