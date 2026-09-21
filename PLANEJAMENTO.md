@@ -281,3 +281,66 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
 6. Criar painel Master e gestão de clubes/recursos.
 7. Implementar planos, assinaturas e pagamentos.
 8. Executar testes de carga e ajustar infraestrutura com base em métricas reais.
+
+
+## 11. Auditoria consolidada — preparação para DesbravaClube
+
+### Bloqueadores antes do segundo clube
+- Tenantizar o banco com `clubs` + `club_memberships` e `club_id` nas entidades operacionais.
+- Reescrever RLS e todas as RPCs `SECURITY DEFINER` para validar o clube atual; nenhuma função pode agregar/alterar dados globalmente por acidente.
+- Tenantizar ranking, temporadas, unidades, pontos, atividades/entregas, missões, jogos/recordes, duelos, chefão, bichinho, leilão, chat, mural, agenda, mensalidades, responsáveis, conteúdo e configurações.
+- Alterar `config_clube` de chave global para configuração por clube, com unicidade `(club_id, chave)`.
+- Tenantizar notificações e Edge Function de push. Broadcast `todos` deve significar todos do clube da notificação, nunca todos da plataforma.
+- Chat geral, chats de unidade e conversas diretas precisam validar membership no mesmo clube.
+- Storage privado deve usar caminho com `club_id`; remover o fallback de comprovação sensível para bucket público.
+- Revisar o bucket público `imagens`: logos podem ser públicos; fotos de perfil/mural de menores exigem política de privacidade definida antes da comercialização.
+- Portal de responsáveis deve vincular pai e filho dentro do mesmo clube; aprovação de vínculo nunca pode selecionar criança de outro tenant.
+- Separar papel global de plataforma de papel/membership no clube.
+
+### Importantes antes da comercialização
+- Transformar navegação em módulos/features e reduzir telas permanentes. Core: pessoas, unidades, presença, atividades, agenda e comunicação; financeiro, engajamento, gamificação e conteúdo como módulos.
+- Criar `ClubContext` após autenticação, com seleção do clube atual, membership, papel e features.
+- Remover fallbacks temporários de versões antigas de RPC/schema depois da migração.
+- Remover fallback do ranking que baixa `pontos` e soma no cliente; agregações grandes ficam no PostgreSQL.
+- Levar radar de faltas e leituras pesadas de leilão para consultas/RPCs agregadas.
+- Migrar definitivamente o fluxo de banco para Supabase CLI + staging + migrations versionadas; não depender de SQL manual em produção.
+- Criar testes automáticos de isolamento Tenant A x Tenant B, inclusive RPC, Storage, Chat, Push e vínculos de responsáveis.
+- Criar auditoria de ações administrativas/suporte e fluxo seguro de impersonation temporária.
+- Definir LGPD: consentimento/base legal, responsáveis, fotos de menores, retenção, exportação, exclusão, suspensão e reativação.
+- Separar mensalidade membro→clube da futura assinatura clube→plataforma.
+
+### Escala e desempenho
+- Manter Vercel + Supabase enquanto métricas suportarem; não migrar para VPS por antecipação.
+- Testar progressivamente 100, 500, 1.000 e 3.000+ usuários simultâneos.
+- Medir RPS, latência p95/p99, CPU/IO do Postgres, queries lentas, Realtime, Storage, egress e taxa de erro.
+- Para push em massa da plataforma, evoluir para outbox/fila + processamento em lotes quando volume justificar.
+- Preservar transações/locks já usados em recursos concorrentes como Leilão e Bichinho.
+- Manter compressão e thumbnails; evitar originais gigantes no Storage.
+
+### Pontos positivos a preservar
+- RLS já é parte central da segurança.
+- Há funções com `SECURITY DEFINER` e `search_path` controlado, além de revogação/grants em várias rotas sensíveis.
+- Upload valida assinatura real do arquivo e rejeita SVG/HTML; comprovações novas já usam bucket privado.
+- Leilão usa bloqueios transacionais; Bichinho usa `FOR UPDATE`/advisory lock em pontos concorrentes.
+- Edge Function de push possui segredo próprio, valida payload/link e remove subscriptions expiradas.
+- Service Worker não cacheia respostas autenticadas do Supabase; cache antigo inseguro é apagado.
+- CSP/HSTS/X-Frame-Options e outros headers de segurança já estão configurados.
+- Serviços frontend foram separados por domínio e `dados.js` ficou como fachada de compatibilidade.
+- Lazy loading, CI com lint+test+build e testes utilitários existentes são uma boa fundação.
+
+### Branding a neutralizar
+- Trocar gradualmente `Filhos da Conquista`/Conquista no manifest, HTML, push, workflow Android, README, assets e textos globais pela marca de plataforma.
+- O tenant Filhos da Conquista mantém seu próprio nome, logo e cores.
+- Alterar o package Android `app.filhosdaconquista` somente quando a marca/plano de publicação estiverem definidos.
+- Nome provisório da plataforma continua **DesbravaClube** até nova decisão.
+
+### Ordem de execução recomendada após a auditoria
+1. Criar branch `saas-refactor`, staging e baseline/testes.
+2. Criar `clubs`, `club_memberships`, Tenant 001 e Tenant 002 de teste.
+3. Introduzir `ClubContext` e tenantizar dados/RLS/RPCs por domínio, começando pelo core.
+4. Tenantizar Storage, notificações/push, chat e responsáveis.
+5. Executar suíte de isolamento cruzado e corrigir qualquer vazamento.
+6. Reorganizar navegação em módulos/features e aplicar branding por tenant.
+7. Criar painel master da plataforma, auditoria e suporte.
+8. Só então criar planos, assinatura SaaS e gateway de pagamento.
+9. Executar testes de carga e decidir infraestrutura com métricas.
