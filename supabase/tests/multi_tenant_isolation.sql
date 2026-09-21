@@ -85,6 +85,9 @@ begin
     raise exception 'Tenant 001 leu notificação de outro clube: count=%, titulo=%', v_count, v_slug;
   end if;
 
+  select count(*) into v_count from public.mensalidades;
+  if v_count <> 1 then raise exception 'Tenant 001 leu mensalidade de outro clube: %', v_count; end if;
+
   select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
   if v_count <> 1 then
     raise exception 'Tenant 001 não recebeu o recurso de leilão esperado';
@@ -181,6 +184,9 @@ begin
   if v_count <> 1 or v_slug <> 'Aviso Tenant 002' then
     raise exception 'Tenant 002 leu notificação de outro clube: count=%, titulo=%', v_count, v_slug;
   end if;
+
+  select count(*) into v_count from public.mensalidades;
+  if v_count <> 1 then raise exception 'Tenant 002 leu mensalidade de outro clube: %', v_count; end if;
 
   select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
   if v_count <> 0 then

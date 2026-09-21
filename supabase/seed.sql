@@ -146,3 +146,8 @@ values ('Aviso Tenant 001', 'Dado de isolamento local', 'geral', '/', 'todos', '
 
 insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por)
 values ('Aviso Tenant 002', 'Dado de isolamento local', 'geral', '/', 'todos', '00000000-0000-0000-0000-000000000002');
+
+insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+values ('00000000-0000-0000-0000-000000000001', 1, 2026, 50, 'pago', '00000000-0000-0000-0000-000000000001');
+insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+values ('00000000-0000-0000-0000-000000000002', 1, 2026, 60, 'pendente', '00000000-0000-0000-0000-000000000002');
