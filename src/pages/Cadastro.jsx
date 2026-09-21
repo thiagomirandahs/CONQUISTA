@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
@@ -12,8 +13,10 @@ const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Cadastro() {
-  const [params] = useSearchParams()
-  const convite = params.get('convite') || ''
+  // O token vem no fragmento da URL (não vai pro servidor nem pros logs); guardamos em memória e
+  // tiramos da barra de endereço.
+  const [convite] = useState(() => lerTokenConvite(window.location))
+  useEffect(() => { if (convite) limparConviteDaUrl(window.location, window.history) }, [convite])
   const [unidades, setUnidades] = useState([])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '', cargo: 'Desbravador' })
   const [ehPai, setEhPai] = useState(Boolean(convite)) // cadastro de responsável (pai/mãe)

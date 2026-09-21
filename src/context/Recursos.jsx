@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from './Auth.jsx'
+import { recursosDaResposta } from '../lib/recursos.js'
 
 const RecursosContext = createContext({ carregandoRecursos: true, recursos: {} })
 
@@ -24,8 +25,7 @@ export function RecursosProvider({ children }) {
     setCarregandoRecursos(true)
     supabase.from('club_features').select('feature, enabled').then(({ data, error }) => {
       if (!vivo) return
-      if (error) setRecursos({})
-      else setRecursos(Object.fromEntries((data || []).map((item) => [item.feature, item.enabled === true])))
+      setRecursos(recursosDaResposta({ data, error }))
       setCarregandoRecursos(false)
     })
 

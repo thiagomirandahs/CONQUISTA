@@ -8,12 +8,18 @@
 // PUSH_WEBHOOK_SECRET. Sem ele (ou errado), respondemos 401 e NÃO tocamos no
 // banco. O payload também é validado e o `link` só pode ser caminho interno.
 //
+// MULTI-TENANT: os destinatários vêm de public.push_destinatarios(club_id, para, para_usuario),
+// criada pela migration 20260921000017 — APLIQUE ESSE SQL ANTES de publicar esta versão da
+// função (sem ele a função responde 500 e não envia nada, de propósito: falha fechada).
+//
 // Secrets necessários (painel Supabase → Edge Functions → Secrets):
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PUSH_WEBHOOK_SECRET
 // (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já são injetados automaticamente.)
 
+// Versões EXATAS de propósito (a função é colada no painel, não há lockfile): o supabase-js é o mesmo
+// do package-lock do app (src/lib/pushEdgeContrato.test.js confere). Para atualizar: mude aqui, teste, e cole de novo.
 import webpush from 'npm:web-push@3.6.7'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') ?? ''
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
@@ -82,24 +88,24 @@ Deno.serve(async (req) => {
       return new Response('ok (pessoal sem destinatario valido)', { status: 200 })
     }
 
-    // 3) Define quem recebe: pessoal (só 1 usuário) -> 'lideranca' -> todos
-    let subs: any[] = []
-    if (paraUsuario) {
-      const { data } = await sb.from('push_subscriptions').select('*').eq('user_id', paraUsuario)
-      subs = data ?? []
-    } else if (notif.para === 'lideranca') {
-      const { data: lideres } = await sb
-        .from('profiles').select('id')
-        .in('papel', ['instrutor', 'diretoria']).eq('status', 'ativo')
-      const ids = (lideres ?? []).map((l: any) => l.id)
-      if (ids.length) {
-        const { data } = await sb.from('push_subscriptions').select('*').in('user_id', ids)
-        subs = data ?? []
-      }
-    } else {
-      const { data } = await sb.from('push_subscriptions').select('*')
-      subs = data ?? []
+    // 3) Define quem recebe — SEMPRE dentro do CLUBE da notificação (multi-tenant).
+    //    A escolha é uma função SQL (push_destinatarios: só o service_role executa), testada no
+    //    banco (supabase/tests/07_push_por_clube.sql). Notificação sem clube válido, ou com
+    //    destino desconhecido, NUNCA vira broadcast (falha fechada). Antes: "todos" lia TODAS as
+    //    inscrições e "lideranca" pegava a liderança de todos os clubes.
+    const clubeId = typeof notif?.club_id === 'string' && UUID_RE.test(notif.club_id) ? notif.club_id : null
+    if (!clubeId) return new Response('ok (notificacao sem clube)', { status: 200 })
+    const para = typeof notif?.para === 'string' ? notif.para : ''
+    if (!paraUsuario && para !== 'todos' && para !== 'lideranca') {
+      return new Response('ok (destino desconhecido)', { status: 200 })
     }
+    const { data: destinatarios, error: erroDestinatarios } = await sb.rpc('push_destinatarios', {
+      p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario,
+    })
+    // Sem a função (SQL ainda não aplicado) ou erro de banco: não envia nada e devolve 500 (o webhook
+    // tenta de novo) — melhor atrasar o aviso do que mandar pro clube errado.
+    if (erroDestinatarios) return new Response('erro: ' + erroDestinatarios.message, { status: 500 })
+    const subs: any[] = destinatarios ?? []
 
     const payload = JSON.stringify({
       titulo,

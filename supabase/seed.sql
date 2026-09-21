@@ -36,8 +36,10 @@ set email = excluded.email,
     raw_user_meta_data = excluded.raw_user_meta_data,
     updated_at = now();
 
+-- Os dois usuários de teste são a liderança (diretoria) do seu clube. O gatilho de sincronia
+-- (perfil -> vínculo) cria o vínculo a partir do perfil; o cadastro de ambos caiu no clube legado.
 update public.profiles
-set status = 'ativo'
+set papel = 'diretoria', status = 'ativo'
 where id in (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000002'
@@ -68,6 +70,10 @@ select
 from public.organizational_units
 where slug = 'filhos-da-conquista'
 on conflict do nothing;
+
+-- O usuário 002 pertence ao clube de teste (não ao legado): troca o vínculo.
+delete from public.organization_memberships
+where user_id = '00000000-0000-0000-0000-000000000002';
 
 insert into public.organization_memberships (
   user_id, organizational_unit_id, role, status, metadata

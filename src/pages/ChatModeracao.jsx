@@ -101,8 +101,10 @@ function ConversaAberta({ conversaId, titulo, onVoltar }) {
 
   async function carregar() {
     setCarregando(true)
-    const { data } = await supabase.from('chat_mensagens')
-      .select('id,autor_id,texto,created_at,apagada,apagada_por').eq('conversa_id', conversaId).order('created_at')
+    // A VIEW (não a tabela): o texto original de mensagem apagada mora na trilha de moderação, e só a liderança do clube
+    // o recebe por ela (a tabela guarda só o marcador "(mensagem apagada)" — migration 29).
+    const { data } = await supabase.from('chat_mensagens_visiveis')
+      .select('id,autor_id,texto,created_at,apagada').eq('conversa_id', conversaId).order('created_at')
     const autorIds = [...new Set((data || []).map((m) => m.autor_id))]
     const { data: perfis } = autorIds.length
       ? await supabase.from('profiles').select('id,nome').in('id', autorIds)

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
-import { supabase } from '../lib/supabase.js'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarVinculosPendentes, buscarDesbravadores, aprovarVinculo, rejeitarVinculo, lerPix, salvarPix,
+  criarConviteResponsavel, listarConvitesResponsavel, revogarConviteResponsavel,
 } from '../lib/dados.js'
+import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
@@ -19,19 +20,6 @@ export default function VinculosPais() {
   const [pend, setPend] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [aprovando, setAprovando] = useState(null)
-  const [criandoConvite, setCriandoConvite] = useState(false)
-
-  async function criarConvite() {
-    setCriandoConvite(true)
-    try {
-      const { data, error } = await supabase.rpc('criar_convite_responsavel')
-      if (error) throw error
-      const link = `${window.location.origin}/cadastro?convite=${encodeURIComponent(data.token)}`
-      await navigator.clipboard?.writeText(link)
-      window.prompt('Envie este link ao responsável:', link)
-    } catch (e) { alert(e?.message || e) }
-    setCriandoConvite(false)
-  }
 
   async function carregar() {
     setCarregando(true)
@@ -59,8 +47,9 @@ export default function VinculosPais() {
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">👨‍👩‍👧 Vínculos dos pais</h2>
         <p className="text-sm text-muted">Confirme quem é filho de quem</p>
-        {ehDiretoria && <button onClick={criarConvite} disabled={criandoConvite} className="mt-3 rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold px-4 py-2 text-sm disabled:opacity-60">{criandoConvite ? 'Criando...' : '🔗 Gerar link para responsável'}</button>}
       </div>
+
+      {ehDiretoria && <ConvitesResponsavel />}
 
       <PixConfig ehDiretoria={ehDiretoria} />
 
@@ -100,6 +89,105 @@ export default function VinculosPais() {
           <ModalAprovar pedido={aprovando} onFechar={() => setAprovando(null)} onAprovado={() => { setAprovando(null); carregar() }} />
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+// Convites para responsáveis: gera o link (o token só aparece AQUI, uma vez), lista os do meu
+// clube com o estado de cada um e permite revogar os que ainda estão ativos.
+function ConvitesResponsavel() {
+  const [lista, setLista] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [criando, setCriando] = useState(false)
+  const [linkNovo, setLinkNovo] = useState('')
+  const [copiado, setCopiado] = useState(false)
+  const [erro, setErro] = useState('')
+
+  async function carregar() {
+    try { setLista(await listarConvitesResponsavel()); setErro('') }
+    catch (e) { setErro(e?.message || String(e)) }
+    setCarregando(false)
+  }
+  useEffect(() => { carregar() }, [])
+
+  async function criar() {
+    setCriando(true); setErro(''); setCopiado(false)
+    try {
+      const c = await criarConviteResponsavel()
+      const link = montarLinkConvite(window.location.origin, c.token)
+      setLinkNovo(link)
+      try { await navigator.clipboard?.writeText(link); setCopiado(true) } catch { /* sem permissão: o link segue na tela */ }
+      await carregar()
+    } catch (e) { setErro(e?.message || String(e)) }
+    setCriando(false)
+  }
+
+  async function copiar() {
+    try { await navigator.clipboard?.writeText(linkNovo); setCopiado(true) } catch { /* selecione e copie na mão */ }
+  }
+
+  async function revogar(c) {
+    if (!window.confirm('Revogar este convite? O link deixa de funcionar.')) return
+    try { await revogarConviteResponsavel(c.id); await carregar() } catch (e) { alert(e?.message || e) }
+  }
+
+  return (
+    <div className="bg-surface rounded-2xl shadow-soft p-4 mb-2">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="min-w-0">
+          <div className="font-bold text-ink text-sm">🔗 Convites para responsáveis</div>
+          <p className="text-xs text-faint">Cada link vale 14 dias e só pode ser usado uma vez.</p>
+        </div>
+        <button onClick={criar} disabled={criando}
+          className="shrink-0 rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold px-4 py-2.5 text-sm disabled:opacity-60">
+          {criando ? 'Criando...' : 'Gerar link'}
+        </button>
+      </div>
+
+      {linkNovo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+          <p className="text-xs text-amber-800 mb-2">
+            {copiado ? '✅ Link copiado. ' : ''}Envie agora ao responsável — por segurança ele não aparece de novo.
+          </p>
+          <input readOnly value={linkNovo} onFocus={(e) => e.target.select()}
+            className="w-full rounded-lg border border-amber-200 bg-white px-2 py-2 text-xs text-ink" />
+          <button onClick={copiar} className="mt-2 w-full rounded-lg bg-amber-600 text-white font-bold py-2 text-sm">Copiar link</button>
+        </div>
+      )}
+
+      {erro && <p className="text-xs text-red-600 mb-2">{erro}</p>}
+
+      {carregando ? (
+        <p className="text-faint text-xs">Carregando...</p>
+      ) : lista.length === 0 ? (
+        <p className="text-faint text-xs">Nenhum convite gerado ainda.</p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {lista.map((c) => {
+            const st = STATUS_CONVITE[c.status] || { rotulo: c.status, classe: 'bg-slate-100 text-slate-500' }
+            return (
+              <li key={c.id} className="py-2 flex items-center justify-between gap-2">
+                <div className="min-w-0 text-xs">
+                  <div className="text-ink">
+                    Criado em {fmt(c.criado_em)}{c.criado_por_nome ? ` por ${c.criado_por_nome}` : ''}
+                  </div>
+                  <div className="text-faint">
+                    {c.status === 'usado' ? `Usado em ${fmt(c.usado_em)}${c.usado_por_nome ? ` por ${c.usado_por_nome}` : ''}`
+                      : c.status === 'revogado' ? `Revogado em ${fmt(c.revogado_em)}`
+                      : `${c.status === 'expirado' ? 'Expirou' : 'Expira'} em ${fmt(c.expira_em)}`}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${st.classe}`}>{st.rotulo}</span>
+                  {c.status === 'ativo' && (
+                    <button onClick={() => revogar(c)} className="text-xs font-bold text-red-600 bg-red-50 rounded-lg px-2.5 py-1.5">Revogar</button>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

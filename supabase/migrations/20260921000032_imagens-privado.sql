@@ -1,0 +1,17 @@
+-- =====================================================================
+-- Hardening final (3/3, parte 2): a VIRADA — o bucket "imagens" deixa de ser público.
+-- Rodar DEPOIS da 20260921000031. Idempotente.
+--
+-- ⚠️ ESTE É O ÚNICO PASSO DO HARDENING QUE MUDA O QUE APARELHOS ANTIGOS ENXERGAM. Só aplique quando:
+--    1) o front NOVO já estiver publicado (ele lê as imagens por URL assinada; cai na URL pública se a assinatura falhar), e
+--    2) o APK NOVO estiver distribuído (o APK embute o front — `webDir: dist`, sem `server.url` — e NÃO se atualiza sozinho:
+--       um APK antigo mostra avatar/mural/emblema pela URL pública guardada no banco, que deixa de abrir depois desta migration).
+--    Sem o passo 1, TODA imagem some (avatar cai nas iniciais, mural/emblema ficam em branco). iPhone (web) atualiza sozinho.
+--
+-- Os dados NÃO mudam: as URLs guardadas em profiles.foto, fotos.url/thumb e unidades.emblema/bandeira continuam as mesmas
+-- (formato /object/public/imagens/<caminho>) — o front novo troca por URL assinada na hora de exibir. Nada a migrar no Tenant 001.
+--
+-- Reverter (se precisar, é um comando; as policies da 31 valem nos dois estados):
+--     update storage.buckets set public = true where id = 'imagens';
+-- =====================================================================
+update storage.buckets set public = false where id = 'imagens';

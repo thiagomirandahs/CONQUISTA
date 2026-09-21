@@ -7,7 +7,7 @@
 //  * tamanho máximo antes de subir; a extensão gravada vem do tipo DETECTADO
 //    (sempre coerente, mesmo que o arquivo venha com nome mentiroso);
 //  * vídeo só onde o app realmente aceita vídeo (comprovação de atividade).
-// Usado por: Cadastro, Perfil, Mural, Unidades (bucket público 'imagens') e
+// Usado por: Cadastro, Perfil, Mural, Unidades (bucket 'imagens' — PRIVADO depois da migration 32; a exibição é por URL assinada, lib/imagens.js) e
 // Missões/Atividades (bucket PRIVADO 'comprovacoes' — Parte A).
 import { supabase } from './supabase.js'
 import { comprimirImagem } from './imagem.js'
@@ -62,8 +62,9 @@ export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 60 } =
 }
 
 // ---- Uploads ----
-// Bucket PÚBLICO 'imagens' (avatar, mural, emblema...): valida + comprime e
-// devolve a URL pública (comportamento igual ao de antes, agora validado).
+// Bucket 'imagens' (avatar, mural, emblema...): valida + comprime e devolve a URL guardada no banco — o formato de sempre
+// (…/object/public/imagens/<caminho>), que front/APK antigos entendem; o bucket é privado depois da migration 32 e quem EXIBE
+// troca por URL assinada (lib/imagens.js). Só os caminhos perfis/, mural/ e unidades/ (com o id certo) passam na policy de envio.
 export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const tipo = await validarImagem(file)
   const pronta = await comprimirImagem(file)
@@ -73,6 +74,11 @@ export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const { error } = await supabase.storage.from('imagens').upload(path, pronta, { upsert: true })
   if (error) throw new Error('Não foi possível enviar: ' + error.message)
   return { path, url: supabase.storage.from('imagens').getPublicUrl(path).data.publicUrl }
+}
+
+// Só "o bucket não existe" (404 / "Bucket not found") justifica o fallback para o bucket público.
+export function bucketPrivadoAusente(error) {
+  return /bucket not found/i.test(String(error?.message || '')) || String(error?.statusCode ?? error?.status ?? '') === '404'
 }
 
 // Bucket PRIVADO 'comprovacoes' (missões e entregas de atividade — Parte A):
@@ -93,10 +99,12 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   const path = `${userId}/${tipo}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('comprovacoes').upload(path, pronta, { upsert: false })
   if (!error) return path
-  // TRANSIÇÃO: se o bucket privado ainda não existe (o SQL storage-comprovacoes
-  // não rodou), cai no bucket público antigo — o envio nunca quebra por causa da
-  // janela de deploy. Assim que o SQL rodar, os novos envios já vão pro privado.
+  // TRANSIÇÃO: se o bucket privado ainda NÃO EXISTE (o SQL storage-comprovacoes não rodou), cai no
+  // bucket público antigo — o envio não quebra por causa da janela de deploy. Qualquer OUTRA falha
+  // (permissão, tamanho, tipo, rede) NÃO pode mandar a foto de uma criança para um bucket público:
+  // o erro aparece para a pessoa tentar de novo.
   // Comprovacao.jsx/urlComprovacao tratam tanto o CAMINHO privado quanto a URL pública.
+  if (!bucketPrivadoAusente(error)) throw new Error('Não foi possível enviar: ' + error.message)
   const legacyPath = `${tipo}/${userId}-${Date.now()}.${ext}`
   const up2 = await supabase.storage.from('imagens').upload(legacyPath, pronta, { upsert: true })
   if (up2.error) throw new Error('Não foi possível enviar: ' + error.message)

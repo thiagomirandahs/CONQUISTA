@@ -1,6 +1,7 @@
 // Serviço: missoes — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
 import { subirComprovacao } from '../lib/upload.js'
+import { caminhoDaImagem, resolverImagem } from '../lib/imagens.js'
 
 
 // Missão do dia (devocional OU desafio da classe) + resumo (feito/sequência).
@@ -29,12 +30,14 @@ export async function enviarMissao({ foto, resposta, userId }) {
 
 
 // Resolve o valor guardado em foto_url pra algo exibível:
-//  * registro ANTIGO = URL pública completa → devolve como está (transição);
-//  * registro NOVO = caminho no bucket privado → gera signed URL de 1 hora
+//  * registro ANTIGO no bucket 'imagens' (URL pública completa, do tempo em que ele era público) → assinada por lib/imagens.js
+//    (o bucket é privado agora: o Storage só assina pra quem TEM acesso — o dono e a liderança do clube);
+//  * outra URL completa (fora do nosso bucket) → devolve como está;
+//  * registro NOVO = caminho no bucket privado 'comprovacoes' → gera signed URL de 1 hora
 //    (o Storage só assina pra quem TEM acesso: dono ou liderança).
 export async function urlComprovacao(valor) {
   if (!valor) return null
-  if (/^https?:\/\//i.test(valor)) return valor
+  if (/^https?:\/\//i.test(valor)) return caminhoDaImagem(valor) ? resolverImagem(valor) : valor
   const { data, error } = await supabase.storage.from('comprovacoes').createSignedUrl(valor, 3600)
   if (error) throw new Error(error.message)
   return data.signedUrl
