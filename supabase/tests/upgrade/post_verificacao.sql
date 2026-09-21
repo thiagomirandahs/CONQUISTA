@@ -18,6 +18,8 @@ select t.eq('entregas preservadas', (select count(*) from public.entregas), :pre
 select t.eq('config do clube preservada, toda no Tenant 001 (chave composta)', (select count(*) from public.config_clube where club_id = public.clube_legado_id()), :pre_config::bigint);
 select t.eq('duelos preservados, todos no Tenant 001', (select count(*) from public.duelos where club_id = public.clube_legado_id()), :pre_duelos::bigint);
 select t.eq('catálogo de desafios de unidade preservado, todo no Tenant 001', (select count(*) from public.desafios_unidade where club_id = public.clube_legado_id()), :pre_desafios::bigint);
+select t.eq('missões feitas preservadas, todas no Tenant 001', (select count(*) from public.missoes_feitas where club_id = public.clube_legado_id()), :pre_missoes::bigint);
+select t.eq('devocional preservado, todo no Tenant 001', (select count(*) from public.devocional where club_id = public.clube_legado_id()), :pre_devocional::bigint);
 select t.eq('mensalidades preservadas', (select count(*) from public.mensalidades), :pre_mensalidades::bigint);
 select t.eq('mensalidades órfãs (sem dono) preservadas e no clube legado', (select count(*) from public.mensalidades where desbravador_id is null and club_id = public.clube_legado_id()), 2);
 select t.eq('eventos preservados', (select count(*) from public.eventos), :pre_eventos::bigint);
@@ -90,9 +92,11 @@ select t.permitido('membro vê o duelo em andamento do clube', $q$select id from
 select t.permitido('membro desafia a outra unidade (fluxo de sempre)', format($q$select public.criar_duelo((select id from public.desafios_unidade where titulo = 'Presença total'), %L)$q$, t.id('leoes')));
 select t.como('dir');
 select t.permitido('diretoria julga o duelo em andamento (prêmio para a unidade vencedora)', $q$select public.julgar_duelo((select id from public.duelos where titulo = 'Maratona de missões' and status = 'aberto'), 'a')$q$);
+select t.eq('a diretoria vê a missão de foto pendente', t.n('select count(*) from public.missoes_pendentes()'), 1);
+select t.permitido('diretoria aprova a missão de foto pendente (+10 pontos para o d2)', $q$select public.avaliar_missao((select id from public.missoes_feitas where status = 'pendente' limit 1), true)$q$);
 select t.como('pend');
--- +1 da aprovação da entrega do d2 e +1 do prêmio do duelo julgado acima
-select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint + 2));
+-- +1 da aprovação da entrega do d2, +1 do prêmio do duelo e +1 da missão de foto aprovada acima
+select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) from public.pontos'), (:pre_pontos::bigint + 3));
 select t.como('d3');
 select t.eq('reativado: volta a ver as fotos', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
 select t.como('tes');

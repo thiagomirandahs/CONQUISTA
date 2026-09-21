@@ -73,13 +73,17 @@ select it.id, md5('up:d1')::uuid, 20, 'ativo' from public.leilao_itens it where 
 insert into public.leilao_lance_unidades (lance_id, unidade_id, confirmado)
 select l.id, (select id from public.unidades where nome = 'Águias'), true from public.leilao_lances l;
 
+-- missão de foto pendente (d2) e devocional de ontem (d1), como estavam em produção
+insert into public.missoes_feitas (usuario_id, data, foto_url, acertou_quiz, status, pontos_dados) values (md5('up:d2')::uuid, current_date - 1, 'x/foto-missao.jpg', false, 'pendente', 10);
+insert into public.devocional (usuario_id, data, acertou_quiz) values (md5('up:d1')::uuid, current_date - 1, true);
+
 -- duelo em andamento entre as duas unidades (catálogo padrão que o SQL legado semeou)
 insert into public.duelos (desafio_id, titulo, pontos, unidade_a, unidade_b, criado_por, prazo)
 select du.id, du.titulo, du.pontos, (select id from public.unidades where nome = 'Águias'), (select id from public.unidades where nome = 'Leões'), md5('up:d1')::uuid, current_date + 7
 from public.desafios_unidade du where du.titulo = 'Maratona de missões';
 
 -- fotografia do estado ANTES do upgrade (psql guarda nas variáveis pre_*)
-select (select count(*) from public.config_clube) as pre_config, (select count(*) from public.duelos) as pre_duelos, (select count(*) from public.desafios_unidade) as pre_desafios, (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
+select (select count(*) from public.config_clube) as pre_config, (select count(*) from public.missoes_feitas) as pre_missoes, (select count(*) from public.devocional) as pre_devocional, (select count(*) from public.duelos) as pre_duelos, (select count(*) from public.desafios_unidade) as pre_desafios, (select count(*) from public.pontos) as pre_pontos, (select coalesce(sum(pontos), 0) from public.pontos) as pre_soma_pontos,
        (select count(*) from public.fotos) as pre_fotos, (select count(*) from public.atividades) as pre_atividades,
        (select count(*) from public.entregas) as pre_entregas, (select count(*) from public.mensalidades) as pre_mensalidades,
        (select count(*) from public.eventos) as pre_eventos, (select count(*) from public.notificacoes) as pre_notificacoes,

@@ -61,8 +61,7 @@ select t.eq('B não vê jogadas de ninguém no rodízio de hoje (a config é cat
 select t.throws('B não escreve no chat geral', $q$select public.chat_enviar_geral('invasão')$q$);
 select t.throws('B não escreve no chat da unidade', $q$select public.chat_enviar_unidade('invasão')$q$);
 select t.throws('B não manda mensagem direta a membro do clube legado', format($q$select public.chat_enviar_direta(%L, 'invasão')$q$, t.id('membro_a')));
-select t.throws('B não registra missão', $q$select public.registrar_missao(null, 0)$q$);
-select t.throws('B não registra devocional', $q$select public.registrar_devocional(0)$q$);
+-- (missão e devocional do clube B funcionam no PRÓPRIO clube — ver 15_missoes_e_devocional_por_clube)
 select t.throws('B não adota bichinho', $q$select public.bichinho_adotar('Invasor', 'gato')$q$);
 select t.throws('B não desafia unidade do clube legado', format($q$select public.criar_duelo((select id from public.desafios_unidade limit 1), %L)$q$, t.id('A1')));
 select t.throws('B não pede ajuda a membro do clube legado', format($q$select public.pedir_ajuda(%L, 'forca', '{}'::jsonb, 'x')$q$, t.id('membro_a')));
@@ -71,9 +70,9 @@ select t.bloqueado('B não grava recorde direto', format($q$insert into public.r
 
 -- ---------- liderança do clube B: nenhuma ação de gestão dessas features ----------
 select t.como('lider_b');
-select t.eq('líder B lê 0 missões', t.nv('select count(*) from public.missoes_feitas'), 0);
+select t.eq('líder B lê 0 missões do clube A', t.nv(format('select count(*) from public.missoes_feitas where club_id = %L', t.id('clube_a'))), 0);
 select t.eq('líder B não lista missões pendentes do clube legado', t.nv('select count(*) from public.missoes_pendentes()'), 0);
-select t.throws('líder B não aprova missão', format($q$select public.avaliar_missao(%L, true)$q$, gen_random_uuid()), 'permiss');
+select t.throws('líder B não aprova missão', format($q$select public.avaliar_missao(%L, true)$q$, gen_random_uuid()), 'encontrada');
 select t.throws('líder B não julga duelo', format($q$select public.julgar_duelo(%L, 'a')$q$, :'duelo_id'));
 select t.throws('líder B não cancela duelo', format($q$select public.cancelar_duelo(%L)$q$, :'duelo_id'));
 select t.bloqueado('líder B não liga/desliga jogos', $q$update public.jogos_trilha set ativo = true$q$);

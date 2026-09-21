@@ -90,7 +90,7 @@ select t.eq('líder B NÃO lista missões pendentes do clube A', t.nv('select co
 select t.throws('líder B NÃO usa atividade_jogos (painel do clube A)', 'select public.atividade_jogos()');
 select t.como('membro_b');
 select t.throws('membro B NÃO escreve no chat geral do clube A', $q$select public.chat_enviar_geral('invasão')$q$);
-select t.throws('membro B NÃO registra missão do clube A', $q$select public.registrar_missao(null, 0)$q$);
+-- (missão/devocional do clube B: agora funcionam no PRÓPRIO clube — ver 15_missoes_e_devocional_por_clube)
 
 -- ================= o clube A ficou exatamente como estava =================
 reset role;
