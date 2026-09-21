@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
@@ -46,7 +47,8 @@ function comLinks(texto) {
 
 export default function Atividades() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [atividades, setAtividades] = useState([])
   const [entregues, setEntregues] = useState({})
   const [carregando, setCarregando] = useState(true)

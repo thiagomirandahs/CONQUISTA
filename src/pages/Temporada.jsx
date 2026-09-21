@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarRanking, carregarTemporadas, iniciarNovaTemporada } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 
@@ -14,8 +14,8 @@ const fmtData = (iso) => {
 // Só a diretoria: encerra a temporada atual (guardando os campeões) e zera o
 // ranking. Nada é apagado — os pontos antigos ficam no banco.
 export default function Temporada() {
-  const { profile } = useAuth()
-  const ehDiretoria = profile?.papel === 'diretoria'
+  const { papel: meuPapel } = useClube()
+  const ehDiretoria = meuPapel === 'diretoria'
   const [ranking, setRanking] = useState({ unidades: [], individual: [] })
   const [passadas, setPassadas] = useState([])
   const [carregando, setCarregando] = useState(true)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { enviarAviso, lerConfigPopup, salvarConfigPopup } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -11,7 +12,8 @@ const inputClass =
 // Aparece no sino de todo mundo e, com o push ligado, chega no celular.
 export default function Avisos() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [titulo, setTitulo] = useState('')
   const [corpo, setCorpo] = useState('')
   const [para, setPara] = useState('todos')

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import Avatar from '../components/Avatar.jsx'
 
@@ -22,13 +22,13 @@ function calcTotal(m) {
 }
 
 export default function Apontamentos() {
-  const { profile } = useAuth()
-  const ehAdmin = ADMIN.includes(profile?.papel)
-  const ehConselheiro = profile?.papel === 'conselheiro'
+  const { papel: meuPapel, unidadeId: minhaUnidadeId } = useClube()
+  const ehAdmin = ADMIN.includes(meuPapel)
+  const ehConselheiro = meuPapel === 'conselheiro'
   const podeApontar = ehAdmin || ehConselheiro
 
   const [unidades, setUnidades] = useState([])
-  const [unidadeId, setUnidadeId] = useState(ehConselheiro ? profile?.unidade_id || '' : '')
+  const [unidadeId, setUnidadeId] = useState(ehConselheiro ? minhaUnidadeId || '' : '')
   const [desbravadores, setDesbravadores] = useState([])
   const [marcas, setMarcas] = useState({})
   const [data, setData] = useState(hojeLocalISO())

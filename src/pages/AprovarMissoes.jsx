@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarMissoesPendentes, avaliarMissao } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 
@@ -8,8 +8,8 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
 
 export default function AprovarMissoes() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [lista, setLista] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')

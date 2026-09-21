@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
 import AvatarPersonagem from '../components/AvatarPersonagem.jsx'
@@ -21,6 +22,7 @@ const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().jo
 // Página "Meu perfil": mostra a foto atual e deixa o próprio usuário trocá-la.
 export default function Perfil() {
   const { profile, recarregarPerfil } = useAuth()
+  const { papel: meuPapel } = useClube()
   const [enviando, setEnviando] = useState(false)
   const [msg, setMsg] = useState('')
   const [erro, setErro] = useState('')
@@ -125,7 +127,7 @@ export default function Perfil() {
         </div>
 
         <div className="font-extrabold text-ink text-lg">{profile?.nome}</div>
-        <div className="text-sm text-faint mb-4">{rotuloPapel[profile?.papel] || profile?.papel}</div>
+        <div className="text-sm text-faint mb-4">{rotuloPapel[meuPapel] || meuPapel}</div>
 
         <div className="flex gap-2 justify-center flex-wrap">
           <label className={`inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold rounded-xl px-5 py-2.5 cursor-pointer ${enviando ? 'opacity-60 pointer-events-none' : ''}`}>

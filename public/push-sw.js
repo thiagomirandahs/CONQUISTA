@@ -29,7 +29,7 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     data = { titulo: event.data ? event.data.text() : '' }
   }
-  const titulo = data.titulo || 'Filhos da Conquista'
+  const titulo = data.titulo || 'Aviso do clube'
   const opcoes = {
     body: data.corpo || '',
     icon: '/icon-192.png',

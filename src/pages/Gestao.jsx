@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarPainelDiretoria } from '../lib/dados.js'
 // Matriz de permissões centralizada (hardening 28/08): a MESMA lista alimenta
 // estes cards e a trava de rota <RotaRestrita> — muda num lugar, vale nos dois.
@@ -10,9 +10,9 @@ import { FERRAMENTAS } from '../lib/permissoes.js'
 const PODE_GERIR = ['instrutor', 'diretoria']
 
 export default function Gestao() {
-  const { profile } = useAuth()
-  const disp = FERRAMENTAS.filter((f) => f.papeis.includes(profile?.papel))
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const disp = FERRAMENTAS.filter((f) => f.papeis.includes(meuPapel))
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
 
   return (
     <div>

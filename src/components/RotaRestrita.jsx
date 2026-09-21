@@ -2,19 +2,19 @@
 // O RLS e as funções do banco continuam sendo a segurança DE VERDADE; isto só
 // impede que um papel sem permissão sequer ABRA a tela digitando a URL.
 // A regra vem da MESMA matriz da Gestão (src/lib/permissoes.js) — nada duplicado.
+// O papel é o do VÍNCULO no clube em uso (ClubeContext), e a rota também respeita o recurso do clube (feature flag).
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/Auth.jsx'
-import { PAPEIS_POR_ROTA } from '../lib/permissoes.js'
+import { useClube } from '../context/Clube.jsx'
+import { PAPEIS_POR_ROTA, RECURSO_POR_ROTA } from '../lib/permissoes.js'
+import RecursoOpcional from './RecursoOpcional.jsx'
 
 export default function RotaRestrita({ children }) {
-  const { profile, session, carregando, perfilPronto } = useAuth()
+  const { papel, carregando } = useClube()
   const { pathname } = useLocation()
 
-  // Espera a BUSCA do perfil terminar antes de decidir (senão bloquearia
-  // liderança legítima no primeiro paint). perfilPronto=true com profile null
-  // = busca terminou sem perfil → cai no bloqueio (falha fechada), sem
-  // spinner eterno.
-  if (carregando || (session && !perfilPronto)) {
+  // Espera o contexto do clube terminar antes de decidir (senão bloquearia liderança legítima
+  // no primeiro paint). Sem vínculo ativo o papel é nulo => cai no bloqueio (falha fechada).
+  if (carregando) {
     return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
   }
 
@@ -23,7 +23,7 @@ export default function RotaRestrita({ children }) {
   const rota = pathname.replace(/\/+$/, '').toLowerCase() || '/'
   // Rota embrulhada mas fora da matriz = bloqueia (falha fechada)
   const papeis = PAPEIS_POR_ROTA[rota] || []
-  if (!papeis.includes(profile?.papel)) {
+  if (!papeis.includes(papel)) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft max-w-md mx-auto mt-6">
         <div className="text-4xl mb-2">🔒</div>
@@ -33,5 +33,6 @@ export default function RotaRestrita({ children }) {
       </div>
     )
   }
-  return children
+  const recurso = RECURSO_POR_ROTA[rota]
+  return recurso ? <RecursoOpcional recurso={recurso}>{children}</RecursoOpcional> : children
 }

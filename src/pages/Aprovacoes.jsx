@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { CARGOS_LIDERANCA } from '../lib/cargos.js'
 
 const ADMIN = ['diretoria', 'instrutor']
@@ -9,8 +9,8 @@ const fmtData = (iso) => (iso ? iso.split('-').reverse().join('/') : '—')
 const ehLideranca = (cargo) => CARGOS_LIDERANCA.includes(cargo)
 
 export default function Aprovacoes() {
-  const { profile } = useAuth()
-  const ehAdmin = ADMIN.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = ADMIN.includes(meuPapel)
   const [pendentes, setPendentes] = useState([])
   const [carregando, setCarregando] = useState(true)
 

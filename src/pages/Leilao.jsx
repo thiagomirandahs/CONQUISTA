@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import {
   carregarLeilao, saldoLeilaoUnidade, pontosTemporadaUnidade,
   darLance, confirmarLanceConjunto, recusarLanceConjunto, criarLeilao, encerrarLeilao, cancelarLeilao,
@@ -46,10 +46,10 @@ function tempoRel(iso) {
 }
 
 export default function Leilao() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
-  const podeLeiloar = PODE_LEILOAR.includes(profile?.papel)
-  const minhaUni = podeLeiloar ? (profile?.unidade_id || null) : null
+  const { papel: meuPapel, unidadeId: minhaUnidadeId } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
+  const podeLeiloar = PODE_LEILOAR.includes(meuPapel)
+  const minhaUni = podeLeiloar ? (minhaUnidadeId || null) : null
 
   const [dados, setDados] = useState({ leilao: null, itens: [], unidades: [] })
   const [carregando, setCarregando] = useState(true)

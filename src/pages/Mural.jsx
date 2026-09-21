@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import { carregarFotos, adicionarFoto, excluirFoto } from '../lib/dados.js'
@@ -26,6 +27,7 @@ const TEMAS_ATELIE = [
 
 export default function Mural() {
   const { profile } = useAuth()
+  const { papel: meuPapel } = useClube()
   const [fotos, setFotos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [categoria, setCategoria] = useState(null) // categoria aberta (álbum)
@@ -39,7 +41,7 @@ export default function Mural() {
     return () => { vivo = false }
   }, [])
 
-  const ehLideranca = ['instrutor', 'diretoria'].includes(profile?.papel)
+  const ehLideranca = ['instrutor', 'diretoria'].includes(meuPapel)
   const podeExcluir = (f) => f && (f.autor_id === profile?.id || ehLideranca)
   const fotosDe = (nome) => fotos.filter((f) => f.evento === nome)
 

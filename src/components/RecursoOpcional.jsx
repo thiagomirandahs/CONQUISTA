@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
-import { useRecursos } from '../context/Recursos.jsx'
+import { useClube } from '../context/Clube.jsx'
 
+// Tela de um recurso que o clube pode ligar/desligar (catálogo `recursos_catalogo`, escolha em `club_features`).
+// Clube que não usa o recurso vê o aviso, não a tela — mesmo digitando a URL. (Dados/RPCs seguem protegidos por clube e papel no banco.)
 export default function RecursoOpcional({ recurso, children }) {
-  const { carregandoRecursos, recursos } = useRecursos()
-  if (carregandoRecursos) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
-  if (recursos[recurso]) return children
+  const { carregando, temRecurso } = useClube()
+  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+  if (temRecurso(recurso)) return children
   return (
     <div className="bg-surface rounded-2xl p-8 text-center shadow-soft max-w-md mx-auto mt-6">
       <div className="text-4xl mb-2">🧩</div>

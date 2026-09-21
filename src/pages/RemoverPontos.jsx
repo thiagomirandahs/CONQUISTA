@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarLancamentos, removerLancamento } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -7,8 +7,8 @@ const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡�
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
 
 export default function RemoverPontos() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [lista, setLista] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [busca, setBusca] = useState('')

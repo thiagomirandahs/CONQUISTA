@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { baixarCSV } from '../lib/csv.js'
 import Avatar from '../components/Avatar.jsx'
@@ -11,7 +12,8 @@ const agora = new Date()
 
 export default function Mensalidades() {
   const { profile } = useAuth()
-  const podeVer = FINANCEIRO.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const podeVer = FINANCEIRO.includes(meuPapel)
   const [desbravadores, setDesbravadores] = useState([])
   const [pagamentos, setPagamentos] = useState({})
   const [mes, setMes] = useState(agora.getMonth() + 1)

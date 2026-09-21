@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarVinculosPendentes, buscarDesbravadores, aprovarVinculo, rejeitarVinculo, lerPix, salvarPix,
@@ -14,9 +14,9 @@ const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone
 // Diretoria confirma os pedidos de vínculo dos pais (escolhendo o desbravador
 // certo) e cadastra a chave PIX do clube que aparece pros responsáveis.
 export default function VinculosPais() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
-  const ehDiretoria = profile?.papel === 'diretoria'
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
+  const ehDiretoria = meuPapel === 'diretoria'
   const [pend, setPend] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [aprovando, setAprovando] = useState(null)

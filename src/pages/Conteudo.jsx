@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.js'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -11,8 +11,8 @@ const inputClass =
 // Painel pra liderança cadastrar o versículo do dia e os desafios das classes,
 // sem depender de rodar SQL. O RLS já limita tudo a quem pode gerir.
 export default function Conteudo() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [aba, setAba] = useState('versiculos')
   const [lista, setLista] = useState([])
   const [carregando, setCarregando] = useState(true)

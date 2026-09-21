@@ -1,6 +1,9 @@
 import { lazy, Suspense, Component } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
+import { useClube } from './context/Clube.jsx'
+import { rotaInicial } from './lib/clube.js'
+import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
@@ -41,6 +44,7 @@ const PetsClube = lazy(() => import('./pages/PetsClube.jsx'))
 const ChatModeracao = lazy(() => import('./pages/ChatModeracao.jsx'))
 const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
 const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
+const ClubeConfig = lazy(() => import('./pages/ClubeConfig.jsx'))
 
 function Carregando() {
   return (
@@ -57,13 +61,14 @@ function Protegido({ children }) {
   const { session, carregando } = useAuth()
   if (carregando) return <Carregando />
   if (!session) return <Navigate to="/login" replace />
-  return children
+  // só entra quem tem vínculo ATIVO com um clube em uso (o contexto do clube é resolvido aqui, uma vez por sessão)
+  return <ClubeGuard>{children}</ClubeGuard>
 }
 
 // O responsável cai direto no "Meu Filho"; os demais, no ranking.
 function InicioRedirect() {
-  const { profile } = useAuth()
-  return <Navigate to={profile?.papel === 'pais' ? '/meu-filho' : '/ranking'} replace />
+  const { papel } = useClube()
+  return <Navigate to={rotaInicial(papel)} replace />
 }
 
 // Nuke do service worker + caches e recarrega — pega a versão nova de vez.
@@ -126,13 +131,13 @@ export default function App() {
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/meu-filho" element={<MeuFilho />} />
           <Route path="/vinculos-pais" element={<RotaRestrita><VinculosPais /></RotaRestrita>} />
-          <Route path="/missoes" element={<Missoes />} />
-          <Route path="/trilha" element={<Trilha />} />
+          <Route path="/missoes" element={<RecursoOpcional recurso="missoes"><Missoes /></RecursoOpcional>} />
+          <Route path="/trilha" element={<RecursoOpcional recurso="jogos"><Trilha /></RecursoOpcional>} />
           <Route path="/aprovar-missoes" element={<RotaRestrita><AprovarMissoes /></RotaRestrita>} />
           <Route path="/atividade-jogos" element={<RotaRestrita><Atividade /></RotaRestrita>} />
-          <Route path="/atividades" element={<Atividades />} />
+          <Route path="/atividades" element={<RecursoOpcional recurso="atividades"><Atividades /></RecursoOpcional>} />
           <Route path="/unidades" element={<Unidades />} />
-          <Route path="/mural" element={<Mural />} />
+          <Route path="/mural" element={<RecursoOpcional recurso="mural"><Mural /></RecursoOpcional>} />
           <Route path="/gestao" element={<Gestao />} />
           <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />
           <Route path="/apontamentos" element={<RotaRestrita><Apontamentos /></RotaRestrita>} />
@@ -145,16 +150,17 @@ export default function App() {
           <Route path="/radar" element={<RotaRestrita><RadarFaltas /></RotaRestrita>} />
           <Route path="/temporada" element={<RotaRestrita><Temporada /></RotaRestrita>} />
           <Route path="/jogos-trilha" element={<RotaRestrita><JogosTrilha /></RotaRestrita>} />
-          <Route path="/desafios" element={<DesafiosSemana />} />
+          <Route path="/desafios" element={<RecursoOpcional recurso="desafios"><DesafiosSemana /></RecursoOpcional>} />
           <Route path="/leilao" element={<RecursoOpcional recurso="leilao"><Leilao /></RecursoOpcional>} />
           <Route path="/modo-acampamento" element={<RotaRestrita><ModoAcampamento /></RotaRestrita>} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/biblia" element={<Biblia />} />
-          <Route path="/bichinho" element={<Bichinho />} />
-          <Route path="/chefao" element={<Chefao />} />
-          <Route path="/pets-clube" element={<PetsClube />} />
+          <Route path="/chat" element={<RecursoOpcional recurso="chat"><Chat /></RecursoOpcional>} />
+          <Route path="/biblia" element={<RecursoOpcional recurso="biblia"><Biblia /></RecursoOpcional>} />
+          <Route path="/bichinho" element={<RecursoOpcional recurso="bichinho"><Bichinho /></RecursoOpcional>} />
+          <Route path="/chefao" element={<RecursoOpcional recurso="chefao"><Chefao /></RecursoOpcional>} />
+          <Route path="/pets-clube" element={<RecursoOpcional recurso="bichinho"><PetsClube /></RecursoOpcional>} />
           <Route path="/chat-moderacao" element={<RotaRestrita><ChatModeracao /></RotaRestrita>} />
-          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/agenda" element={<RecursoOpcional recurso="agenda"><Agenda /></RecursoOpcional>} />
+          <Route path="/clube" element={<RotaRestrita><ClubeConfig /></RotaRestrita>} />
         </Route>
       </Routes>
     </Suspense>

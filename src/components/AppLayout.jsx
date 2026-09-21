@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
@@ -7,47 +7,39 @@ import DevocionalPopup from './DevocionalPopup.jsx'
 import AvisosPopup from './AvisosPopup.jsx'
 import ProximoEventoPopup from './ProximoEventoPopup.jsx'
 import { useAuth } from '../context/Auth.jsx'
-import { useRecursos } from '../context/Recursos.jsx'
+import { useClube } from '../context/Clube.jsx'
+import { abasDoMenu, abasDoRodape } from '../lib/navegacao.js'
+import { CAMINHOS_DO_RESPONSAVEL } from '../lib/clube.js'
 
-const abasBase = [
-  { to: '/ranking', label: 'Ranking', icon: '🏆' },
-  { to: '/desafios', label: 'Desafios', icon: '🏁' },
-  { to: '/chefao', label: 'Chefão', icon: '⚔️' },
-  { to: '/missoes', label: 'Missões', icon: '🎯' },
-  { to: '/trilha', label: 'Jogos', icon: '🎮' },
-  { to: '/leilao', label: 'Leilão', icon: '🏛️' },
-  { to: '/chat', label: 'Chat', icon: '💬' },
-  { to: '/biblia', label: 'Bíblia', icon: '📖' },
-  { to: '/bichinho', label: 'Bichinho', icon: '🐾' },
-  { to: '/agenda', label: 'Agenda', icon: '📅' },
-  { to: '/atividades', label: 'Atividades', icon: '📋' },
-  { to: '/unidades', label: 'Unidades', icon: '🏠' },
-  { to: '/mural', label: 'Mural', icon: '📸' },
-]
-const TEM_GESTAO = ['conselheiro', 'instrutor', 'diretoria', 'tesoureiro']
-// Telas que o responsável (papel=pais) pode abrir. As demais o mandam pro Meu
-// Filho — reforço de UX; a proteção de dados de verdade é o RLS no banco.
-const CAMINHOS_PAI = ['/meu-filho', '/perfil']
-// Barra inferior do celular: as 5 telas que a criançada mais usa, sempre à mão.
-const ABAS_RODAPE = [
-  { to: '/ranking', label: 'Ranking', icon: '🏆' },
-  { to: '/desafios', label: 'Desafios', icon: '🏁' },
-  { to: '/trilha', label: 'Jogos', icon: '🎮' },
-  { to: '/biblia', label: 'Bíblia', icon: '📖' },
-  { to: '/bichinho', label: 'Bichinho', icon: '🐾' },
-]
+// Seletor de clube: só aparece para quem tem 2+ clubes UTILIZÁVEIS (vínculo ativo e o servidor age nele). Com 1 clube (o caso de hoje) some.
+function TrocaDeClube({ aoTrocar }) {
+  const { vinculos, clubeId, trocarClube } = useClube()
+  const navigate = useNavigate()
+  const opcoes = vinculos.filter((v) => v.status === 'ativo' && v.selecionavel)
+  if (opcoes.length < 2) return null
+  async function trocar(e) {
+    const r = await trocarClube(e.target.value)
+    if (r.ok) { navigate('/', { replace: true }); aoTrocar?.() }
+  }
+  return (
+    <label className="block px-4 pb-1">
+      <span className="sr-only">Clube em uso</span>
+      <select value={clubeId || ''} onChange={trocar}
+        className="w-full text-xs rounded-xl bg-surface2 text-ink px-3 py-2 border border-line font-semibold">
+        {opcoes.map((v) => <option key={v.clubeId} value={v.clubeId}>{v.marca.nome}</option>)}
+      </select>
+    </label>
+  )
+}
 
 // Moldura adaptável: menu lateral no PC, cabeçalho + barra inferior no celular.
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
-  const { recursos } = useRecursos()
-  const ehPai = profile?.papel === 'pais'
-  const temGestao = TEM_GESTAO.includes(profile?.papel)
-  const abasDoClube = abasBase.filter((aba) => aba.to !== '/leilao' || recursos.leilao)
-  const abas = ehPai
-    ? [{ to: '/meu-filho', label: 'Meu Filho', icon: '👨‍👩‍👧' }]
-    : temGestao ? [...abasDoClube, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasDoClube
+  // papel/permissões/recursos/marca são do VÍNCULO no clube em uso (não do perfil global)
+  const { ehPais: ehPai, temGestao, temRecurso, marca, clubeId } = useClube()
+  const abas = abasDoMenu({ ehPais: ehPai, temGestao }, temRecurso)
+  const abasRodape = abasDoRodape(temRecurso)
   const [menuAberto, setMenuAberto] = useState(false)
   const [tema, setTema] = useState(() =>
     (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') ? 'escuro' : 'claro')
@@ -67,7 +59,7 @@ export default function AppLayout() {
     window.location.reload()
   }
 
-  if (ehPai && !CAMINHOS_PAI.includes(location.pathname)) {
+  if (ehPai && !CAMINHOS_DO_RESPONSAVEL.includes(location.pathname)) {
     return <Navigate to="/meu-filho" replace />
   }
 
@@ -89,8 +81,8 @@ export default function AppLayout() {
         <div className="flex items-center gap-3 px-5 py-5 border-b border-line">
           <Logo className="w-11 h-11 rounded-2xl shadow-soft" />
           <div className="leading-tight flex-1 min-w-0">
-            <h1 className="font-extrabold text-ink truncate">Filhos da Conquista</h1>
-            <p className="text-[11px] text-faint">Desbravadores · 1994</p>
+            <h1 className="font-extrabold text-ink truncate">{marca.nome}</h1>
+            {marca.lema && <p className="text-[11px] text-faint">{marca.lema}</p>}
           </div>
           <div className="shrink-0 text-ink"><Notificacoes /></div>
         </div>
@@ -103,6 +95,7 @@ export default function AppLayout() {
           ))}
         </nav>
         <div className="p-3 space-y-1 border-t border-line">
+          <TrocaDeClube />
           {profile?.nome && <p className="px-4 pb-1 text-[11px] text-faint truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
           <NavLink to="/perfil" className="block w-full text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
             👤 Meu perfil
@@ -129,8 +122,8 @@ export default function AppLayout() {
               className="w-10 h-10 rounded-2xl grid place-items-center text-ink bg-surface2 text-xl leading-none">☰</button>
             <Logo className="w-9 h-9 rounded-xl shadow-soft" />
             <div className="leading-tight flex-1 min-w-0">
-              <h1 className="font-extrabold text-[15px] text-ink truncate">Filhos da Conquista</h1>
-              <p className="text-[10px] text-faint">Desbravadores · 1994</p>
+              <h1 className="font-extrabold text-[15px] text-ink truncate">{marca.nome}</h1>
+              {marca.lema && <p className="text-[10px] text-faint">{marca.lema}</p>}
             </div>
             <button onClick={alternarTema} aria-label="Alternar tema claro/escuro"
               className="w-9 h-9 rounded-xl grid place-items-center text-ink bg-surface2 text-lg leading-none">{tema === 'escuro' ? '☀️' : '🌙'}</button>
@@ -148,7 +141,7 @@ export default function AppLayout() {
         <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-28 lg:pb-10">
           <AnimatePresence mode="wait">
             <motion.div
-              key={location.pathname}
+              key={`${clubeId}:${location.pathname}`}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -164,8 +157,9 @@ export default function AppLayout() {
       {!ehPai && (
         <nav className="lg:hidden fixed z-30 left-3 right-3"
           style={{ bottom: 'calc(10px + env(safe-area-inset-bottom))' }}>
-          <div className="glass rounded-[24px] shadow-soft grid grid-cols-5 max-w-lg mx-auto px-1.5 py-1.5">
-            {ABAS_RODAPE.map((aba) => (
+          <div className="glass rounded-[24px] shadow-soft grid max-w-lg mx-auto px-1.5 py-1.5"
+            style={{ gridTemplateColumns: `repeat(${abasRodape.length}, minmax(0, 1fr))` }}>
+            {abasRodape.map((aba) => (
               <NavLink key={aba.to} to={aba.to}
                 className={({ isActive }) =>
                   `relative flex flex-col items-center gap-0.5 pt-2 pb-1.5 rounded-2xl transition-colors ${isActive ? 'text-brand' : 'text-faint'}`
@@ -201,8 +195,8 @@ export default function AppLayout() {
               <div className="flex items-center gap-3 px-5 py-5 border-b border-line">
                 <Logo className="w-11 h-11 rounded-2xl shadow-soft" />
                 <div className="leading-tight flex-1 min-w-0">
-                  <h1 className="font-extrabold text-ink truncate">Filhos da Conquista</h1>
-                  <p className="text-[11px] text-faint">Desbravadores · 1994</p>
+                  <h1 className="font-extrabold text-ink truncate">{marca.nome}</h1>
+                  {marca.lema && <p className="text-[11px] text-faint">{marca.lema}</p>}
                 </div>
                 <button onClick={() => setMenuAberto(false)} aria-label="Fechar menu"
                   className="w-9 h-9 rounded-full bg-surface2 text-ink grid place-items-center shrink-0">✕</button>
@@ -221,6 +215,7 @@ export default function AppLayout() {
                 ))}
               </nav>
               <div className="p-3 space-y-1 border-t border-line">
+                <TrocaDeClube aoTrocar={() => setMenuAberto(false)} />
                 {profile?.nome && <p className="px-4 pb-1 text-[11px] text-faint truncate">Olá, {profile.nome.split(' ')[0]} 👋</p>}
                 <NavLink to="/perfil" onClick={() => setMenuAberto(false)}
                   className="block w-full text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">

@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { CaixaAjuda } from '../components/Ajuda.jsx'
 import FeedbackJogo from '../components/FeedbackJogo.jsx'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos, statusJogosDoDia, liberarJogo, trancarJogo, iniciarPartida } from '../lib/dados.js'
@@ -14,6 +15,7 @@ const festa = juice.festa
 
 export default function Trilha() {
   const { profile } = useAuth()
+  const { papel: meuPapel } = useClube()
   const [carregando, setCarregando] = useState(true)
   const [prog, setProg] = useState({ feito: false, passos: 0, hoje: [] })
   const [jogando, setJogando] = useState(false)
@@ -112,7 +114,7 @@ export default function Trilha() {
   // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
   const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
-  const ehAdmin = ['instrutor', 'diretoria'].includes(profile?.papel)
+  const ehAdmin = ['instrutor', 'diretoria'].includes(meuPapel)
   // Rodízio: um jogo comum só está aberto no SEU dia (ou liberado pela liderança).
   // rodizio === null (SQL não rodou) OU ativo === false (interruptor da liderança
   // desligado em Gestão → 🎮) = tudo aberto, sem cadeados.
@@ -162,7 +164,7 @@ export default function Trilha() {
 
       {aba === 'ranking' ? (
         <RankingTrilha dados={ranking} carregando={carregandoRank} meuId={profile?.id}
-          ehAdmin={['instrutor', 'diretoria'].includes(profile?.papel)} />
+          ehAdmin={['instrutor', 'diretoria'].includes(meuPapel)} />
       ) : carregando ? (
         <p className="text-faint text-sm">Carregando...</p>
       ) : jogando ? (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Duelos from '../components/Duelos.jsx'
 import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } from '../lib/dados.js'
@@ -20,7 +21,8 @@ function fmtSemana(inicio) {
 
 export default function DesafiosSemana() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [dados, setDados] = useState({ inicio: null, unidades: [] })
   const [cartela, setCartela] = useState([])
   const [carregando, setCarregando] = useState(true)

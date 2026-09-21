@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { carregarRadarFaltas, enviarAvisoPessoal } from '../lib/dados.js'
 
@@ -11,7 +12,8 @@ const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().jo
 // toque pra mandar "Sentimos sua falta!" direto no celular do desbravador.
 export default function RadarFaltas() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [lista, setLista] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [enviados, setEnviados] = useState({})

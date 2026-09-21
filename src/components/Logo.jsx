@@ -1,27 +1,28 @@
 import { useState } from 'react'
+import { useClube } from '../context/Clube.jsx'
 
-// Mostra a logo do clube. Usa o icon-192 (56KB) em vez do logo.png de 319KB —
-// a logo nunca passa de ~96px na tela, então 192px sobra e economiza dados.
-// Se o arquivo não existir, mostra um emblema "FC" no lugar.
+// Logo do clube em uso (marca por clube — vem do servidor). O Tenant 001 segue com a logo leve de sempre (56KB: nunca passa de ~96px na tela).
+// Clube sem logo — ou com a imagem fora do ar — mostra o emblema com a SIGLA dele, nunca a logo de outro clube.
 export default function Logo({ className = 'w-12 h-12' }) {
-  const [erro, setErro] = useState(false)
+  const { marca } = useClube()
+  const [falhou, setFalhou] = useState(null)      // qual URL falhou (trocar de clube dá outra chance, sem efeito)
 
-  if (erro) {
+  if (!marca.logoUrl || falhou === marca.logoUrl) {
     return (
       <div className={`${className} grid place-items-center rounded-full bg-dourado text-azul font-extrabold`}>
-        FC
+        {marca.sigla}
       </div>
     )
   }
 
   return (
     <img
-      src="/icon-192.png"
-      alt="Filhos da Conquista"
+      src={marca.logoUrl}
+      alt={marca.nome}
       className={`${className} object-contain`}
       loading="lazy"
       decoding="async"
-      onError={() => setErro(true)}
+      onError={() => setFalhou(marca.logoUrl)}
     />
   )
 }

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
-import { RecursosProvider } from './context/Recursos.jsx'
+import { ClubeProvider } from './context/Clube.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
 
@@ -11,9 +11,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <RecursosProvider>
+        <ClubeProvider>
           <App />
-        </RecursosProvider>
+        </ClubeProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

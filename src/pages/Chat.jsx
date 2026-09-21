@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { supabase } from '../lib/supabase.js'
 import Avatar from '../components/Avatar.jsx'
 import {
@@ -24,8 +25,9 @@ function tempoRel(iso) {
 
 export default function Chat() {
   const { profile } = useAuth()
-  const ehMembro = MEMBRO.includes(profile?.papel)
-  const ehLideranca = LIDERANCA.includes(profile?.papel)
+  const { papel: meuPapel, unidadeId: minhaUnidadeId } = useClube()
+  const ehMembro = MEMBRO.includes(meuPapel)
+  const ehLideranca = LIDERANCA.includes(meuPapel)
   const podeUsar = ehMembro || ehLideranca
   // Todo mundo tem o Geral; membros ainda têm Unidade e Conversas diretas.
   const abas = ehMembro
@@ -68,7 +70,7 @@ export default function Chat() {
       {aba === 'geral' ? (
         <Thread key="geral" tipo="geral" meuId={profile?.id} />
       ) : aba === 'unidade' ? (
-        <Thread key="unidade" tipo="unidade" unidadeId={profile?.unidade_id} meuId={profile?.id} />
+        <Thread key="unidade" tipo="unidade" unidadeId={minhaUnidadeId} meuId={profile?.id} />
       ) : conversaDireta ? (
         <div>
           <button onClick={() => setConversaDireta(null)} className="text-sm text-brand font-semibold mb-2">← Voltar</button>

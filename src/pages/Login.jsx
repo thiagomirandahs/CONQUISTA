@@ -4,12 +4,14 @@ import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
+import { useClube } from '../context/Clube.jsx'
 
 const inputClass =
   'w-full rounded-lg border border-line px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { marca } = useClube()    // a marca do ÚLTIMO clube neste aparelho (ou a padrão): antes de entrar ainda não há clube em uso
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -58,8 +60,8 @@ export default function Login() {
             transition={{ type: 'spring', stiffness: 200, damping: 14, delay: 0.1 }}>
             <Logo className="w-24 h-24 mb-3" />
           </motion.div>
-          <h1 className="text-brand text-xl font-extrabold text-center leading-tight">Filhos da Conquista</h1>
-          <p className="text-muted text-sm">Clube de Desbravadores · 1994</p>
+          <h1 className="text-brand text-xl font-extrabold text-center leading-tight">{marca.nome}</h1>
+          {(marca.descricao || marca.lema) && <p className="text-muted text-sm">{marca.descricao || marca.lema}</p>}
         </div>
 
         <form onSubmit={entrar} className="space-y-4">
@@ -92,7 +94,7 @@ export default function Login() {
           Esqueceu a senha? Fale com um líder do clube — ele cria uma nova pra você.
         </p>
       </motion.div>
-      <p className="text-white/80 text-xs mt-6 relative z-10">⭐ Desde 1994</p>
+      {marca.desde && <p className="text-white/80 text-xs mt-6 relative z-10">⭐ Desde {marca.desde}</p>}
     </div>
   )
 }

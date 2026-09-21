@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarTodasConversasChat, apagarMensagemChat } from '../lib/dados.js'
 import { supabase } from '../lib/supabase.js'
 
@@ -13,8 +13,8 @@ function fmtData(iso) {
 }
 
 export default function ChatModeracao() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [conversas, setConversas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')

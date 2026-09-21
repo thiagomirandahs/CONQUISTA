@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarUnidadesCompetidoras, lancarColocacaoAcampamento, carregarHistoricoAcampamento, carregarUsuarios, lancarPontosIndividual } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 
@@ -16,7 +17,8 @@ const fmtData = (iso) => {
 
 export default function ModoAcampamento() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
 
   const [unidades, setUnidades] = useState([])
   const [historico, setHistorico] = useState([])

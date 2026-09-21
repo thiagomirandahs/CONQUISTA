@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
@@ -23,7 +24,8 @@ function gerarSenha() {
 
 export default function Usuarios() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [usuarios, setUsuarios] = useState([])
   const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -32,7 +34,7 @@ export default function Usuarios() {
   const [pontosPara, setPontosPara] = useState(null)
   const [excluindo, setExcluindo] = useState(null) // usuário no modal de exclusão
   const [erroCarregar, setErroCarregar] = useState('')
-  const ehDiretoria = profile?.papel === 'diretoria'
+  const ehDiretoria = meuPapel === 'diretoria'
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
   const CARGOS_DA_DIRETORIA = ['diretoria', 'instrutor', 'tesoureiro']
 

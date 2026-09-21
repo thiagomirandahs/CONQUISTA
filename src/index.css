@@ -39,8 +39,8 @@
 
 /* ---- Tema CLARO (padrão) ---- */
 :root {
-  --c-brand:   #3b5bfd;
-  --c-brand2:  #12c6ff;
+  --c-brand:   var(--marca-1, #3b5bfd);
+  --c-brand2:  var(--marca-2, #12c6ff);
   --c-ink:     #111a3d;
   --c-muted:   #5c6690;
   --c-faint:   #8a93bb;
@@ -59,8 +59,8 @@
 
 /* ---- Tema ESCURO (pronto; ativado quando as telas migrarem) ---- */
 :root[data-theme="dark"] {
-  --c-brand:   #5f7bff;
-  --c-brand2:  #38e1ff;
+  --c-brand:   var(--marca-1-dark, #5f7bff);
+  --c-brand2:  var(--marca-2-dark, #38e1ff);
   --c-ink:     #eaf0ff;
   --c-muted:   #9aa6d4;
   --c-faint:   #6b76a6;

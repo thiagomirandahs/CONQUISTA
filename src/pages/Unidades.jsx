@@ -5,6 +5,7 @@ import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade } from '.
 import { comprimirImagem } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
@@ -15,7 +16,8 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 
 export default function Unidades() {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [sel, setSel] = useState(null)

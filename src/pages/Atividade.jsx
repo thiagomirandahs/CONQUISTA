@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { atividadeJogos } from '../lib/dados.js'
 
@@ -7,8 +7,8 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 const fmt = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'nunca jogou')
 
 export default function Atividade() {
-  const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [d, setD] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import Avatar from './Avatar.jsx'
 import {
   carregarDuelos, criarDuelo, julgarDuelo, cancelarDuelo, progressoDuelo,
@@ -27,7 +28,8 @@ const inputClass =
 // recarregar o ranking depois de um duelo julgado.
 export default function Duelos({ onMudou }) {
   const { profile } = useAuth()
-  const ehAdmin = PODE_GERIR.includes(profile?.papel)
+  const { papel: meuPapel, unidadeId: minhaUnidadeId } = useClube()
+  const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [dados, setDados] = useState({ duelos: [], unidades: [], catalogo: [] })
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -43,7 +45,7 @@ export default function Duelos({ onMudou }) {
   }
   useEffect(() => { carregar() }, [])
 
-  const minhaUni = profile?.unidade_id || null
+  const minhaUni = minhaUnidadeId || null
   const ativos = (dados.catalogo || []).filter((d) => d.ativo)
   const podeDesafiar = !!minhaUni && ativos.length > 0
 
