@@ -54,6 +54,11 @@ begin
     raise exception 'Tenant 001 leu ponto de outro clube: count=%, motivo=%', v_count, v_slug;
   end if;
 
+  select json_array_length(public.ranking_totais() -> 'pessoas') into v_count;
+  if v_count <> 1 then
+    raise exception 'Ranking total do Tenant 001 cruzou clubes: % pessoas', v_count;
+  end if;
+
   select count(*), min(nome) into v_count, v_slug from public.profiles;
   if v_count <> 1 or v_slug <> 'Usuário Tenant 001' then
     raise exception 'Tenant 001 leu perfil de outro clube: count=%, nome=%', v_count, v_slug;
@@ -72,6 +77,11 @@ begin
   select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
   if v_count <> 1 then
     raise exception 'Tenant 001 não recebeu o recurso de leilão esperado';
+  end if;
+
+  select count(*) into v_count from public.temporadas where fim is null;
+  if v_count <> 1 then
+    raise exception 'Tenant 001 leu temporada de outro clube: %', v_count;
   end if;
 
   select count(*) into v_count from public.organization_memberships;
@@ -130,6 +140,11 @@ begin
     raise exception 'Tenant 002 leu ponto de outro clube: count=%, motivo=%', v_count, v_slug;
   end if;
 
+  select json_array_length(public.ranking_totais() -> 'pessoas') into v_count;
+  if v_count <> 1 then
+    raise exception 'Ranking total do Tenant 002 cruzou clubes: % pessoas', v_count;
+  end if;
+
   select count(*), min(nome) into v_count, v_slug from public.profiles;
   if v_count <> 1 or v_slug <> 'Usuário Tenant 002' then
     raise exception 'Tenant 002 leu perfil de outro clube: count=%, nome=%', v_count, v_slug;
@@ -148,6 +163,11 @@ begin
   select count(*) into v_count from public.club_features where feature = 'leilao' and enabled;
   if v_count <> 0 then
     raise exception 'Tenant 002 recebeu leilão apesar do recurso estar desativado';
+  end if;
+
+  select count(*) into v_count from public.temporadas where fim is null;
+  if v_count <> 1 then
+    raise exception 'Tenant 002 leu temporada de outro clube: %', v_count;
   end if;
 
   select count(*) into v_count from public.organization_memberships;

@@ -79,6 +79,17 @@ from public.organizational_units
 where slug = 'clube-teste-tenant-002'
 on conflict do nothing;
 
+-- Cada clube inicia com a própria temporada. O Tenant 001 já recebe a
+-- temporada histórica pela migration legada; esta linha cria só a do Tenant 002.
+insert into public.temporadas (club_id, numero, inicio)
+select id, 1, '-infinity'::timestamptz
+from public.organizational_units
+where slug = 'clube-teste-tenant-002'
+  and not exists (
+    select 1 from public.temporadas t
+    where t.club_id = public.organizational_units.id
+  );
+
 insert into public.unidades (nome, cor, club_id)
 select 'Unidade Tenant 001', '#1d4ed8', id
 from public.organizational_units
