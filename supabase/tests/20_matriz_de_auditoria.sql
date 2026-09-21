@@ -17,7 +17,8 @@ insert into t.excecoes values
   ('migracoes_aplicadas',      'ledger da plataforma (não tem dado de clube)'),
   ('cron_falhas',              'registro INTERNO das falhas de cron (club_id só informativo, opcional; sem acesso de usuário)'),
   ('biblia_livros',           'conteúdo da Bíblia (plataforma)'),
-  ('biblia_versiculos',        'conteúdo da Bíblia (plataforma)');
+  ('biblia_versiculos',        'conteúdo da Bíblia (plataforma)'),
+  ('recursos_catalogo',        'catálogo de recursos da PLATAFORMA (o que o app oferece + o padrão); a escolha de cada clube fica em club_features (club_id)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
