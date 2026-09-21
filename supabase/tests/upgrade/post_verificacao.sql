@@ -77,6 +77,7 @@ select t.eq('responsável: nenhuma entrega', t.nv('select count(*) from public.e
 select t.eq('responsável: Meus Filhos devolve o filho aprovado', t.txt('select public.meus_filhos()->0->>''nome'''), 'Desbravador 1');
 select t.eq('responsável: Meus Filhos traz os pontos do filho', t.txt('select public.meus_filhos()->0->>''pontos'''), '30');
 select t.eq('responsável ainda lê o PIX (paga a mensalidade)', t.txt($q$select valor from public.config_clube where chave = 'pix'$q$), 'PIX-DE-PRODUCAO');
+select t.eq('contexto do responsável: papel "pais" no vínculo do clube legado, sem unidade', t.txt('select (public.meu_contexto()->''vinculos''->0->>''papel'') || ''|'' || coalesce(public.meu_contexto()->''vinculos''->0->>''unidade_id'', ''sem-unidade'')'), 'pais|sem-unidade');
 select t.como('pend');
 select t.eq('cadastro pendente: só o próprio perfil', t.n('select count(*) from public.profiles'), 1);
 select t.eq('cadastro pendente: nada do clube', t.nv('select count(*) from public.pontos') + t.nv('select count(*) from public.fotos'), 0);
@@ -123,6 +124,15 @@ select t.eq('...mas a mensagem continua lá, marcada como apagada (o app mostra 
 select t.eq('o ranking dos jogos traz os dois jogadores de antes', t.txt($q$select json_array_length(public.ranking_trilha()->'geral')::text$q$), '2');
 select t.eq('o recorde da semana do reflexo continua lá', t.txt($q$select public.recordes_semana('reflexo')->0->>'pontos'$q$), '55');
 select t.como('dir');
+reset role;
+select t.como('d1');
+select t.eq('contexto (Tenant 001 de produção): 1 vínculo ativo, papel DO VÍNCULO, e o clube atual do servidor é o legado', (public.meu_contexto()->'vinculos'->0->>'club_id') || '|' || (public.meu_contexto()->'vinculos'->0->>'papel') || '|' || (public.meu_contexto()->>'clube_atual_id' = public.meu_contexto()->'vinculos'->0->>'club_id')::text || '|' || jsonb_array_length(public.meu_contexto()->'vinculos')::text, public.clube_legado_id()::text || '|desbravador|true|1');
+select t.eq('contexto: a unidade do vínculo é a do perfil de produção (Águias)', t.txt('select public.meu_contexto()->''vinculos''->0->>''unidade_nome'''), 'Águias');
+select t.eq('contexto: a marca de sempre vem do BANCO (nome, sigla FC, lema, ano e a logo do app), sem cor própria', t.txt('select concat_ws(''|'', public.meu_contexto()->''vinculos''->0->''marca''->>''nome'', public.meu_contexto()->''vinculos''->0->''marca''->>''sigla'', public.meu_contexto()->''vinculos''->0->''marca''->>''lema'', public.meu_contexto()->''vinculos''->0->''marca''->>''desde'', public.meu_contexto()->''vinculos''->0->''marca''->>''logo_url'', coalesce(public.meu_contexto()->''vinculos''->0->''marca''->>''cor_primaria'', ''padrao''))'), 'Filhos da Conquista|FC|Desbravadores · 1994|1994|/icon-192.png|padrao');
+select t.eq('contexto: o leilão que já usavam segue ligado e os módulos de sempre também (nada some para o Tenant 001)', t.txt('select concat_ws(''|'', public.meu_contexto()->''vinculos''->0->''recursos''->>''leilao'', public.meu_contexto()->''vinculos''->0->''recursos''->>''chat'', public.meu_contexto()->''vinculos''->0->''recursos''->>''jogos'', public.meu_contexto()->''vinculos''->0->''recursos''->>''mensalidades'')'), 'true|true|true|true');
+select t.como('dir');
+select t.eq('contexto da diretoria de produção: papel diretoria', t.txt('select public.meu_contexto()->''vinculos''->0->>''papel'''), 'diretoria');
+select t.permitido('diretoria de produção grava a identidade do clube (lema novo) e liga recurso pela RPC', $q$select public.clube_marca_gravar('{"lema":"Sempre prontos"}'::jsonb), public.recurso_definir('mural', true)$q$);
 reset role;
 select t.eq('imagens: depois do upgrade o bucket é PRIVADO e o bucket publico existe (migrations 31/32)', (select count(*) from storage.buckets where id = 'imagens' and not public) * 10 + (select count(*) from storage.buckets where id = 'publico' and public), 11);
 select t.eq('imagens (Tenant 001): a diretoria vê tudo do clube (4 objetos de produção, todos com dono em owner)', t.n($q$select count(*) from storage.objects where bucket_id = 'imagens'$q$), 4);

@@ -334,6 +334,12 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
 - Alterar o package Android `app.filhosdaconquista` somente quando a marca/plano de publicação estiverem definidos.
 - Nome provisório da plataforma continua **DesbravaClube** até nova decisão.
 
+### Andamento (21/09/2026) — tudo local, nada em produção
+- ✅ Fundação multi-tenant fechada e consolidada em `saas-refactor` (checkpoint `checkpoint/fundacao-multitenant-2026-09-21`): migrations 01–32, Tenant 001 × Tenant 002 nos testes, hardening final.
+- ✅ Camada de produto multi-clube, 1ª etapa (migration 33 + front): `ClubContext`/`ClubeContext` (vínculos, clube em uso, papel NO clube, permissões, recursos, marca), telas sem `profiles.papel`/`unidade_id`,
+  marca por clube, catálogo de recursos e feature flags, tela de identidade e recursos. Pendente desta camada: vários clubes por pessoa no servidor, navegação por módulos e painel Master.
+- ⏸️ **Classes e Especialidades (seção 12): ainda não iniciado** — decisão explícita.
+
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
 2. Criar `clubs`, `club_memberships`, Tenant 001 e Tenant 002 de teste.

@@ -18,6 +18,7 @@
     "db:reset": "npx --yes supabase@2.117.0 db reset --local",
     "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay",
     "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
+    "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:edge:bundle": "bash supabase/tests/e2e/edge-bundle.sh"
   },
   "dependencies": {
