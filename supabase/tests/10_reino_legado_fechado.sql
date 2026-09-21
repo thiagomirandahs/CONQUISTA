@@ -45,7 +45,7 @@ select t.eq('B lê 0 bichinhos', t.nv('select count(*) from public.bichinhos'), 
 select t.eq('B lê 0 jogadas', t.nv('select count(*) from public.trilha_jogos'), 0);
 select t.eq('B lê 0 recordes', t.nv('select count(*) from public.recordes'), 0);
 select t.eq('B lê 0 duelos', t.nv('select count(*) from public.duelos'), 0);
-select t.eq('B lê 0 desafios de unidade', t.nv('select count(*) from public.desafios_unidade'), 0);
+select t.eq('B lê 0 desafios de unidade do clube A (o catálogo dele é outro)', t.nv(format('select count(*) from public.desafios_unidade where club_id = %L', t.id('clube_a'))), 0);
 select t.eq('B lê 0 config do clube A (só a do próprio clube)', t.nv(format('select count(*) from public.config_clube where club_id = %L', t.id('clube_a'))), 0);
 select t.eq('B lê 0 pedidos de ajuda', t.nv('select count(*) from public.ajudas'), 0);
 select t.eq('B lê 0 partidas', t.nv('select count(*) from public.partidas'), 0);
@@ -77,7 +77,7 @@ select t.throws('líder B não aprova missão', format($q$select public.avaliar_
 select t.throws('líder B não julga duelo', format($q$select public.julgar_duelo(%L, 'a')$q$, :'duelo_id'));
 select t.throws('líder B não cancela duelo', format($q$select public.cancelar_duelo(%L)$q$, :'duelo_id'));
 select t.bloqueado('líder B não liga/desliga jogos', $q$update public.jogos_trilha set ativo = true$q$);
-select t.bloqueado('líder B não mexe no catálogo de desafios de unidade', $q$update public.desafios_unidade set pontos = 999$q$);
+select t.bloqueado('líder B não mexe no catálogo de desafios do clube A', format($q$update public.desafios_unidade set pontos = 999 where club_id = %L$q$, t.id('clube_a')));
 select t.bloqueado('líder B não mexe no catálogo de missões (desafios)', $q$update public.desafios set ativo = false$q$);
 select t.bloqueado('líder B não mexe nos versículos', $q$update public.versiculos set ativo = false$q$);
 select t.throws('líder B não libera jogo', $q$select public.liberar_jogo('memoria')$q$);

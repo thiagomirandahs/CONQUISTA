@@ -20,7 +20,7 @@
 #    bash supabase/tests/run-tests.sh                 # replay do zero + todos os testes
 #    bash supabase/tests/run-tests.sh --keep          # mantém o banco replay_test p/ investigar
 #    bash supabase/tests/run-tests.sh --upgrade       # simula o UPGRADE de produção: schema legado + dados vivos,
-#                                                     # depois aplica 20260921000001..20 e verifica (tests/upgrade/)
+#                                                     # depois aplica 20260921000001..(todas) e verifica (tests/upgrade/)
 #    bash supabase/tests/run-tests.sh --no-replay     # só roda os testes no banco já pronto
 #    bash supabase/tests/run-tests.sh --db postgres --no-replay
 #                                                     # roda no banco de trabalho (ex.: depois
@@ -92,7 +92,7 @@ delete from cron.job;
 SQL
 
   if [ "$UPGRADE" = 1 ]; then
-    echo "==> [3/4] UPGRADE: migrations legadas -> dados de producao simulados -> 20260921000001..20 -> verificacao"
+    echo "==> [3/4] UPGRADE: migrations legadas -> dados de producao simulados -> 20260921000001..(todas) -> verificacao"
     docker exec "$CONT" rm -rf /tmp/cq_migrations /tmp/cq_tests >/dev/null 2>&1
     docker cp "$WROOT/supabase/migrations" "$CONT:/tmp/cq_migrations" >/dev/null || exit 2
     docker cp "$WROOT/supabase/tests" "$CONT:/tmp/cq_tests" >/dev/null || exit 2
@@ -129,6 +129,8 @@ SQL
     echo '\set ON_ERROR_STOP on'
     for f in "$ROOT"/supabase/migrations/*.sql; do   # glob entre aspas: o caminho pode ter espaços
       base="$(basename "$f")"; ver="${base%%_*}"; nome="${base#*_}"; nome="${nome%.sql}"
+      # MAX_MIGRATION=20260921000020 reaplica só até essa versão (prova que o teste novo fica VERMELHO antes da migration)
+      if [ -n "${MAX_MIGRATION:-}" ] && [[ "$ver" > "$MAX_MIGRATION" ]]; then break; fi
       echo "\\echo '   migration $base'"
       echo "begin;"
       echo "\\i /tmp/cq_migrations/$base"

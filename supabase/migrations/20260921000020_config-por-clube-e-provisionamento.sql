@@ -104,13 +104,12 @@ revoke all on function public.config_gravar(jsonb) from public, anon;
 grant execute on function public.config_gravar(jsonb) to authenticated;
 
 -- ==================== E) provisionamento de clube novo ====================
--- O clube legado (Tenant 001) NÃO é tocado: mantém exatamente as chaves que já tem (ausente = padrão do código).
-create or replace function public.provisionar_clube(p_club_id uuid) returns void
+-- O clube legado (Tenant 001) NÃO é tocado: mantém exatamente o que já tem (ausente = padrão do código).
+-- REGISTRO: provisionar_clube() executa, em ordem de nome, toda função "_prov_<módulo>(uuid)" — cada módulo
+-- (config, duelos, jogos, chat...) cria a sua e o clube novo nasce completo sem editar esta função.
+create or replace function public._prov_config(p_club_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if p_club_id is null or p_club_id = public.clube_legado_id() then
-    return;
-  end if;
   -- mesmos valores que os SQLs legados semeavam no clube atual
   insert into public.config_clube (club_id, chave, valor) values
     (p_club_id, 'pix', ''),
@@ -122,6 +121,23 @@ begin
   on conflict (club_id, chave) do nothing;
 end;
 $$;
+
+create or replace function public.provisionar_clube(p_club_id uuid) returns void
+language plpgsql security definer set search_path = '' as $$
+declare r record;
+begin
+  if p_club_id is null or p_club_id = public.clube_legado_id() then
+    return;
+  end if;
+  for r in select p.proname from pg_proc p
+            where p.pronamespace = 'public'::regnamespace and p.proname like '\_prov\_%'
+              and pg_get_function_identity_arguments(p.oid) = 'p_club_id uuid'
+            order by p.proname loop
+    execute format('select public.%I($1)', r.proname) using p_club_id;
+  end loop;
+end;
+$$;
+revoke all on function public._prov_config(uuid) from public, anon, authenticated;
 revoke all on function public.provisionar_clube(uuid) from public, anon, authenticated;
 
 create or replace function public.trg_provisionar_clube() returns trigger

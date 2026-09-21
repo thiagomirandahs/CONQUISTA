@@ -82,14 +82,11 @@ select t.eq('todo vínculo tem papel do vocabulário oficial',
 
 -- ---------- idempotência: reaplicar as migrations novas não pode quebrar nem duplicar ----------
 select count(*) as vinculos_antes, (select count(*) from public.club_features) as feats_antes from public.organization_memberships \gset
-\i /tmp/cq_migrations/20260921000013_papeis-vinculos-e-escopo-legado.sql
-\i /tmp/cq_migrations/20260921000014_rls-por-clube-e-blindagem-de-responsaveis.sql
-\i /tmp/cq_migrations/20260921000015_leilao-cron-e-escopo.sql
-\i /tmp/cq_migrations/20260921000016_isolamento-de-rpcs-e-storage.sql
-\i /tmp/cq_migrations/20260921000017_convites-e-push-por-clube.sql
-\i /tmp/cq_migrations/20260921000018_correcoes-da-revisao.sql
-\i /tmp/cq_migrations/20260921000019_regressoes-de-desempenho-e-compat.sql
-\i /tmp/cq_migrations/20260921000020_config-por-clube-e-provisionamento.sql
+-- a lista sai da PASTA: da 13 em diante, toda migration nova entra sozinha neste teste
+\o /dev/null
+\! ls /tmp/cq_migrations/2026092100001[3-9]_*.sql /tmp/cq_migrations/202609210000[2-9][0-9]_*.sql | sort | sed 's/^/\\i /' > /tmp/cq_reapply.sql
+\o
+\i /tmp/cq_reapply.sql
 select t.eq('reaplicar as migrations não muda a quantidade de vínculos', (select count(*) from public.organization_memberships), :'vinculos_antes'::bigint);
 select t.eq('reaplicar as migrations não muda os recursos do clube', (select count(*) from public.club_features), :'feats_antes'::bigint);
 
