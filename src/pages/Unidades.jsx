@@ -7,6 +7,7 @@ import { validarImagem } from '../lib/upload.js'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
+import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
@@ -104,7 +105,7 @@ export default function Unidades() {
               <div className="h-2" style={{ backgroundColor: u.cor }} />
               <div className="p-4">
                 {u.emblema ? (
-                  <img src={u.emblema} alt={u.nome} className="w-11 h-11 rounded-full object-cover mb-2 shadow" />
+                  <ImagemPrivada src={u.emblema} alt={u.nome} className="w-11 h-11 rounded-full object-cover mb-2 shadow" />
                 ) : (
                   <div className="w-11 h-11 rounded-full grid place-items-center text-white font-bold text-lg mb-2 shadow"
                     style={{ backgroundColor: u.cor }}>
@@ -139,12 +140,12 @@ export default function Unidades() {
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
               className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               <div className="text-white relative overflow-hidden shrink-0" style={{ backgroundColor: sel.cor }}>
-                {sel.bandeira && <img src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                {sel.bandeira && <ImagemPrivada src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                 {sel.bandeira && <div className="absolute inset-0 bg-black/45" />}
                 <div className="relative p-5">
                   <button onClick={() => setSel(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
                   {sel.emblema ? (
-                    <img src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
+                    <ImagemPrivada src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
                   ) : (
                     <div className="w-14 h-14 rounded-full bg-white/20 grid place-items-center text-2xl font-extrabold mb-2">{sel.nome?.[0]?.toUpperCase()}</div>
                   )}
@@ -348,7 +349,7 @@ function FormIdentidade({ unidade, onFechar, onSalvar, onTrocarBandeira }) {
         <label className="block text-xs font-semibold text-muted mb-1">Bandeira</label>
         <div className="flex items-center gap-3 mb-5">
           {unidade.bandeira
-            ? <img src={unidade.bandeira} alt="bandeira" className="w-24 h-14 rounded-lg object-cover shadow" />
+            ? <ImagemPrivada src={unidade.bandeira} alt="bandeira" className="w-24 h-14 rounded-lg object-cover shadow" />
             : <div className="w-24 h-14 rounded-lg bg-surface2 grid place-items-center text-faint text-2xl">🚩</div>}
           <label className="text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl px-4 py-2 font-semibold cursor-pointer">
             {unidade.bandeira ? 'Trocar' : 'Enviar'} bandeira

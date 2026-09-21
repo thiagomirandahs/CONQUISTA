@@ -16,7 +16,9 @@
     "test:db": "bash supabase/tests/run-tests.sh",
     "test:db:upgrade": "bash supabase/tests/run-tests.sh --upgrade",
     "db:reset": "npx --yes supabase@2.117.0 db reset --local",
-    "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay"
+    "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay",
+    "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
+    "test:edge:bundle": "bash supabase/tests/e2e/edge-bundle.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

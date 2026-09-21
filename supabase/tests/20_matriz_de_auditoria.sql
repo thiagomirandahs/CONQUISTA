@@ -67,8 +67,10 @@ select t.eq('os 6 laços de cron dos jogos passam por TODOS os clubes',
 
 -- ---------- 5) storage ----------
 select t.eq('bucket "comprovacoes" (fotos de missão/atividade de MENORES) é PRIVADO', (select count(*) from storage.buckets where id = 'comprovacoes' and not public), 1);
-select t.eq('bucket "imagens" é público só para LEITURA por URL (avatar/mural/emblema); a listagem e a escrita são restritas por política',
-  (select count(*) from storage.buckets where id = 'imagens' and public), 1);
+select t.eq('bucket "imagens" (avatar/mural/emblema de menores) é PRIVADO: a leitura é por URL assinada, só de quem passa na policy do clube (teste 25)',
+  (select count(*) from storage.buckets where id = 'imagens' and not public), 1);
+select t.eq('bucket "publico" é o ÚNICO bucket público (asset realmente público; só a liderança do clube grava)',
+  (select count(*) from storage.buckets where public and id <> 'publico'), 0);
 select t.como('lider_a');
 select t.eq('líder A vê o comprovante do membro do clube A', t.n(format($q$select count(*) from storage.objects where bucket_id = 'comprovacoes' and name like %L$q$, t.id('membro_a') || '/%')), 1);
 select t.como('lider_b');
@@ -78,7 +80,7 @@ select t.eq('membro B NÃO vê o comprovante do membro do clube A', t.nv(format(
 select t.eq('membro B vê o PRÓPRIO comprovante', t.n(format($q$select count(*) from storage.objects where bucket_id = 'comprovacoes' and name like %L$q$, t.id('membro_b') || '/%')), 1);
 select t.como_anon();
 select t.eq('anon não lista comprovantes', t.nv($q$select count(*) from storage.objects where bucket_id = 'comprovacoes'$q$), 0);
-select t.eq('anon não lista o bucket público de imagens (só acessa por URL exata)', t.nv($q$select count(*) from storage.objects where bucket_id = 'imagens'$q$), 0);
+select t.eq('anon não lista o bucket de imagens (privado)', t.nv($q$select count(*) from storage.objects where bucket_id = 'imagens'$q$), 0);
 reset role;
 insert into storage.objects (bucket_id, name, owner) values ('imagens', 'mural/foto-do-a.jpg', t.id('membro_a'));
 select t.como('lider_b');

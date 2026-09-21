@@ -7,7 +7,7 @@
 //  * tamanho máximo antes de subir; a extensão gravada vem do tipo DETECTADO
 //    (sempre coerente, mesmo que o arquivo venha com nome mentiroso);
 //  * vídeo só onde o app realmente aceita vídeo (comprovação de atividade).
-// Usado por: Cadastro, Perfil, Mural, Unidades (bucket público 'imagens') e
+// Usado por: Cadastro, Perfil, Mural, Unidades (bucket 'imagens' — PRIVADO depois da migration 32; a exibição é por URL assinada, lib/imagens.js) e
 // Missões/Atividades (bucket PRIVADO 'comprovacoes' — Parte A).
 import { supabase } from './supabase.js'
 import { comprimirImagem } from './imagem.js'
@@ -62,8 +62,9 @@ export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 60 } =
 }
 
 // ---- Uploads ----
-// Bucket PÚBLICO 'imagens' (avatar, mural, emblema...): valida + comprime e
-// devolve a URL pública (comportamento igual ao de antes, agora validado).
+// Bucket 'imagens' (avatar, mural, emblema...): valida + comprime e devolve a URL guardada no banco — o formato de sempre
+// (…/object/public/imagens/<caminho>), que front/APK antigos entendem; o bucket é privado depois da migration 32 e quem EXIBE
+// troca por URL assinada (lib/imagens.js). Só os caminhos perfis/, mural/ e unidades/ (com o id certo) passam na policy de envio.
 export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const tipo = await validarImagem(file)
   const pronta = await comprimirImagem(file)

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js'
 import { sincronizarPush, desassociarPush } from '../lib/push.js'
+import { definirUsuarioImagens } from '../lib/imagens.js'
 
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -19,6 +20,7 @@ export function AuthProvider({ children }) {
 
     supabase.auth.getSession().then(async ({ data }) => {
       if (!vivo) return
+      definirUsuarioImagens(data.session?.user?.id)   // cache de URLs assinadas das imagens é POR usuário
       setSession(data.session)
       if (data.session) await carregarPerfil(data.session.user.id)
       setCarregando(false)
@@ -26,6 +28,7 @@ export function AuthProvider({ children }) {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, sess) => {
       if (!vivo) return
+      definirUsuarioImagens(sess?.user?.id)
       setSession(sess)
       if (sess) await carregarPerfil(sess.user.id)
       else setProfile(null)

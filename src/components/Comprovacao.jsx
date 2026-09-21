@@ -1,24 +1,28 @@
 // Exibe uma comprovação (foto/vídeo de missão ou atividade) — hardening etapa 2.
-//  * Registro ANTIGO: foto_url é uma URL pública completa → mostra direto
-//    (transição: nada antigo quebra).
+//  * Registro ANTIGO: foto_url é uma URL pública completa → mostra direto (transição: nada antigo quebra) — EXCETO se for do
+//    bucket 'imagens', que agora é privado: aí a URL é trocada por uma assinada (urlComprovacao).
 //  * Registro NOVO: foto_url é um CAMINHO no bucket privado 'comprovacoes' →
 //    gera uma signed URL temporária. O Storage só assina pra quem tem acesso
 //    (dono ou liderança) — quem não tem vê o aviso, nunca o arquivo.
 // Mantém o visual das telas: as classes de img/vídeo vêm por props.
 import { useState, useEffect } from 'react'
 import { urlComprovacao } from '../lib/dados.js'
+import { caminhoDaImagem } from '../lib/imagens.js'
+
+// URL completa de FORA do nosso bucket privado: abre direto. As do bucket 'imagens' precisam ser assinadas.
+const urlSolta = (v) => /^https?:\/\//i.test(v || '') && !caminhoDaImagem(v)
 
 const ehVideo = (s = '') => /\.(mp4|mov|m4v|webm|ogg|3gp|3gpp|avi|mkv|qt)(\?|$)/i.test(s)
 
 export default function Comprovacao({ valor, alt = 'comprovação', classImg, classVideo, onAmpliar }) {
-  const [url, setUrl] = useState(/^https?:\/\//i.test(valor || '') ? valor : null)
+  const [url, setUrl] = useState(urlSolta(valor) ? valor : null)
   const [erro, setErro] = useState(false)
 
   useEffect(() => {
     let vivo = true
     setErro(false)
     if (!valor) { setUrl(null); return }
-    if (/^https?:\/\//i.test(valor)) { setUrl(valor); return }
+    if (urlSolta(valor)) { setUrl(valor); return }
     setUrl(null)
     urlComprovacao(valor)
       .then((u) => { if (vivo) setUrl(u) })
