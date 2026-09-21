@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
+import { RecursosProvider } from './context/Recursos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
 
@@ -10,7 +11,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <RecursosProvider>
+          <App />
+        </RecursosProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

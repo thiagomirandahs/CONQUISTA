@@ -7,6 +7,7 @@ import DevocionalPopup from './DevocionalPopup.jsx'
 import AvisosPopup from './AvisosPopup.jsx'
 import ProximoEventoPopup from './ProximoEventoPopup.jsx'
 import { useAuth } from '../context/Auth.jsx'
+import { useRecursos } from '../context/Recursos.jsx'
 
 const abasBase = [
   { to: '/ranking', label: 'Ranking', icon: '🏆' },
@@ -40,11 +41,13 @@ const ABAS_RODAPE = [
 export default function AppLayout() {
   const location = useLocation()
   const { sair, profile } = useAuth()
+  const { recursos } = useRecursos()
   const ehPai = profile?.papel === 'pais'
   const temGestao = TEM_GESTAO.includes(profile?.papel)
+  const abasDoClube = abasBase.filter((aba) => aba.to !== '/leilao' || recursos.leilao)
   const abas = ehPai
     ? [{ to: '/meu-filho', label: 'Meu Filho', icon: '👨‍👩‍👧' }]
-    : temGestao ? [...abasBase, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasBase
+    : temGestao ? [...abasDoClube, { to: '/gestao', label: 'Gestão', icon: '⚙️' }] : abasDoClube
   const [menuAberto, setMenuAberto] = useState(false)
   const [tema, setTema] = useState(() =>
     (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') ? 'escuro' : 'claro')

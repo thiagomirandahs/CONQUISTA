@@ -4,6 +4,7 @@ import { useAuth } from './context/Auth.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
+import RecursoOpcional from './components/RecursoOpcional.jsx'
 
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
 const Login = lazy(() => import('./pages/Login.jsx'))
@@ -145,7 +146,7 @@ export default function App() {
           <Route path="/temporada" element={<RotaRestrita><Temporada /></RotaRestrita>} />
           <Route path="/jogos-trilha" element={<RotaRestrita><JogosTrilha /></RotaRestrita>} />
           <Route path="/desafios" element={<DesafiosSemana />} />
-          <Route path="/leilao" element={<Leilao />} />
+          <Route path="/leilao" element={<RecursoOpcional recurso="leilao"><Leilao /></RecursoOpcional>} />
           <Route path="/modo-acampamento" element={<RotaRestrita><ModoAcampamento /></RotaRestrita>} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/biblia" element={<Biblia />} />
