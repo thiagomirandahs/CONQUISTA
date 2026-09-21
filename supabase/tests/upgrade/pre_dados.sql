@@ -75,8 +75,17 @@ select l.id, (select id from public.unidades where nome = 'Águias'), true from 
 
 -- chat (mensagem no geral), bichinho e leitura da Bíblia como estavam em produção
 insert into public.chat_mensagens (conversa_id, autor_id, texto) select id, md5('up:d1')::uuid, 'oi geral (legado)' from public.chat_conversas where tipo = 'geral';
+-- ...e uma mensagem que a liderança JÁ tinha apagado (o texto original ficava na própria tabela, legível por qualquer membro)
+insert into public.chat_mensagens (conversa_id, autor_id, texto, apagada, apagada_por, apagada_em) select id, md5('up:d1')::uuid, 'mensagem ruim (legado)', true, md5('up:dir')::uuid, now() from public.chat_conversas where tipo = 'geral';
 insert into public.bichinhos (usuario_id, especie, nome) values (md5('up:d1')::uuid, 'cachorro', 'Rex');
 insert into public.biblia_leituras (usuario_id, livro_abrev, capitulo) values (md5('up:d1')::uuid, 'gn', 1);
+
+-- Storage como estava em produção: bucket "imagens" PÚBLICO e objetos com o dono em `owner` (Storage antigo)
+insert into storage.objects (bucket_id, name, owner) values
+  ('imagens', 'perfis/'  || md5('up:d1')::uuid || '-1.jpg', md5('up:d1')::uuid),
+  ('imagens', 'mural/'   || md5('up:d1')::uuid || '-1.jpg', md5('up:d1')::uuid),
+  ('imagens', 'perfis/'  || md5('up:d2')::uuid || '-1.jpg', md5('up:d2')::uuid),
+  ('imagens', 'missoes/' || md5('up:d2')::uuid || '-1.jpg', md5('up:d2')::uuid);
 
 -- jogos: jogadas de ontem, recorde arcade da semana, liberação de hoje, golpe no chefão e uma partida aberta
 insert into public.trilha_jogos (usuario_id, data, tipo, estrelas) values (md5('up:d1')::uuid, current_date - 1, 'memoria', 3), (md5('up:d2')::uuid, current_date - 1, 'memoria', 2);

@@ -1,4 +1,4 @@
-# Rollout — multi-tenant completo (migrations 01–28)
+# Rollout — multi-tenant completo (migrations 01–32)
 
 Nada aqui foi aplicado em produção. Este guia é para **quando** você decidir aplicar.
 Produção é manual (SQL Editor) e o front é automático (Vercel no push): a ordem importa.
@@ -15,10 +15,11 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`28`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31`.
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
+   **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
-   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`28` são idempotentes. (A `02` também: aplique uma vez.)
+   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`32` são idempotentes. (A `02` também: aplique uma vez.)
 
 ## Ordem
 | # | O quê | Onde |
@@ -26,16 +27,25 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 | 0 | `PREFLIGHT-PRODUCAO.sql` → `RESUMO = ok` | SQL Editor |
 | 1 | Merge do front (Vercel publica sozinho) | GitHub |
 | 2 | SQL `…000001` a `…000012` (na ordem) | SQL Editor, um por vez |
-| 3 | SQL `…000013` → … → `…000028` (na ordem) | SQL Editor, um por vez |
+| 3 | SQL `…000013` → … → `…000031` (na ordem) | SQL Editor, um por vez |
 | 4 | Verificações abaixo | SQL Editor |
-| 5 | **Edge Function `enviar-push`**: colar o novo `supabase/functions/enviar-push/index.ts` | Painel → Edge Functions (só **depois** do `…17`) |
+| 5 | **Edge Function `enviar-push`**: colar o novo `supabase/functions/enviar-push/index.ts` (dependências com versão exata) | Painel → Edge Functions (só **depois** do `…17`) |
+| 6 | **`…000032` — bucket `imagens` PRIVADO** (a virada). Só com o front novo no ar **e** o APK novo distribuído | SQL Editor |
 
 O que cada migration faz: `13` papéis/vínculos + escopo do legado · `14` RLS por clube + blindagem dos responsáveis ·
 `15` leilão (cron = "Encerrar agora") · `16` RPCs/storage isolados + responsáveis por clube · `17` convites e push por clube ·
 `18` correções da revisão de segurança · `19` correções da revisão de regressão (excluir usuário, foto do mural, `nova_temporada`, desempenho) ·
 **`20` config do clube por clube + provisionamento** · **`21` duelos** · **`22` missões/devocional** · **`23` leilão** ·
 **`24` jogos (trilha, rodízio, recordes, ajudas, chefão, catálogo, cron)** · **`25` chat, bichinho, bíblia** ·
-**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor).
+**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público**.
+
+## Passo 6 — a virada do bucket `imagens` (migration 32): quando e como
+Até aqui `imagens` continua **público** (as policies novas da `31` valem nos dois estados). A `32` faz `update storage.buckets set public = false where id = 'imagens'` e muda o que os aparelhos veem:
+- O banco **não muda**: `profiles.foto`, `fotos.url/thumb` e `unidades.emblema/bandeira` seguem com a URL de sempre. O front NOVO troca por URL assinada (24 h) na hora de exibir e, se a assinatura falhar, tenta a URL guardada.
+- **Front antigo em cache / APK antigo**: mostram a imagem pela URL pública — que deixa de abrir. Avatar cai nas iniciais; mural, emblema e bandeira ficam em branco. O **APK embute o front** (`webDir: dist`, sem `server.url`) e **não se atualiza sozinho**: gere o APK novo (Actions), distribua e só então aplique a `32`. iPhone (web/PWA) atualiza sozinho.
+- **Sequência segura**: merge do front → Vercel publica → (APK novo distribuído) → SQL `…000032`. Teste logo depois: avatar no ranking, mural, emblema em Unidades, foto do filho no portal do responsável.
+- **Reverter** (um comando; as policies da `31` servem aos dois estados): `update storage.buckets set public = true where id = 'imagens';`
+- Nada a migrar no Tenant 001: os objetos que já existem têm o dono em `owner` (Storage antigo) e continuam com dono; os novos, em `owner_id` — as policies leem os dois.
 
 ## Verificações depois do SQL
 ```sql
@@ -53,12 +63,21 @@ select (select count(*) from config_clube where club_id is null) + (select count
 
 -- 4) o Tenant 001 tem o chat geral, o catálogo de jogos e o conteúdo de antes
 select (select count(*) from chat_conversas where tipo = 'geral'), (select count(*) from jogos_trilha), (select count(*) from desafios);
+
+-- 5) (migration 29) nenhuma mensagem apagada guarda o texto na tabela: esperado 0
+select count(*) from chat_mensagens where apagada and texto <> '(mensagem apagada)';
+
+-- 6) (migrations 31/32) buckets: imagens privado (depois da 32), comprovacoes privado, publico é o único público
+select id, public from storage.buckets order by id;
 ```
 Teste manual rápido (logando como cada papel): liderança vê **Aprovações**; membro vê ranking/mural; **responsável** só vê "Meu Filho";
 leilão fecha pelo botão e pelo cron com a mesma cobrança; **Gestão → 🎮 Jogos** liga/desliga; **Gestão → Conteúdo** edita missões
 e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Ranking** e **Perfil** abrem rápido.
 
 ## Comportamentos novos que você vai notar (todos intencionais)
+- **Mensagem apagada no chat**: a liderança segue vendo o texto original (tela de moderação, agora lendo a view); os demais veem só "Mensagem removida pela liderança", inclusive se abrirem a API direto. Um front antigo em cache lendo a tabela na tela de moderação mostra o marcador `(mensagem apagada)` em vez do texto.
+- **Erros de escrita ficam genéricos para o cliente**: lançar ponto/enviar entrega/registrar mensalidade/avisar alguém com um id de pessoa, unidade ou atividade que não é do seu clube (ou não existe) responde só "violação de segurança de linha" (o texto da RLS). A mensagem específica continua no SQL Editor/cron. `avaliado_por`/`registrado_por` só aceitam você mesmo (é o que o app já grava).
+- **Envio de imagem** só nos caminhos que o app usa: avatar próprio (`perfis/<seu id>-…`), mural próprio (membro ativo), emblema/bandeira (liderança do clube da unidade). Qualquer outro caminho no bucket `imagens` é recusado.
 - **Responsável (`pais`)** só enxerga o portal "Meus Filhos". **Instrutor** não redefine senha de instrutor/diretoria nem abre nova temporada.
 - **INSERT manual no SQL Editor**: em `unidades`, `atividades`, `eventos`, `config_clube`, `jogos_trilha`, `desafios`, `versiculos`,
   `leiloes`… é preciso informar `club_id` (sem sessão de usuário não há clube "atual"); `update config_clube … where chave = 'x'`
@@ -89,13 +108,15 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 
 ## Testes (local, sem produção)
 ```bash
-npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 23 arquivos de teste
-npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..28 (96 asserts)
+npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 26 arquivos de teste
+npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..32 (107 asserts)
 npm run test:db:real     # `supabase db reset` DE VERDADE (CLI 2.117.0 via npx) + a suíte no banco resultante
 npm run check            # lint + vitest + build
+npm run test:storage:e2e # Storage REAL local: upload com upsert, URL pública bloqueada, URL assinada por clube, lote, listagem, bucket publico (48 asserts)
+npm run test:edge:bundle # Edge Function com dependências fixadas empacota no edge-runtime real
 ```
 `supabase db reset` recria o banco local de trabalho (só tem dados do seed). Nunca use `--linked`.
 
 ## O que ainda NÃO é por clube
 Nada de negócio. Restam só as exceções declaradas em `AUDITORIA-MULTITENANT.md` (conteúdo da Bíblia, dispositivos de push, ledger) e os
-riscos residuais listados lá (bucket `imagens` público por URL, front antigo em cache, esm.sh não fixado).
+riscos residuais listados lá (front/APK antigo em cache, validade de 24 h das URLs assinadas, avatar de ex-membro).
