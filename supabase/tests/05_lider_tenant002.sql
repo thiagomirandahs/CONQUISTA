@@ -57,7 +57,7 @@ select t.bloqueado('líder B NÃO edita perfil do clube A', format($q$update pub
 select t.bloqueado('líder B NÃO apaga foto do clube A', $q$delete from public.fotos where legenda = 'Foto A'$q$);
 select t.bloqueado('líder B NÃO edita mensalidade do clube A', format($q$update public.mensalidades set status = 'pago' where desbravador_id = %L$q$, t.id('membro_a')));
 select t.bloqueado('líder B NÃO cria evento no clube A', format($q$insert into public.eventos (titulo, data, club_id) values ('invasão', current_date, %L)$q$, t.id('clube_a')));
-select t.bloqueado('líder B NÃO cria aviso no clube A', format($q$insert into public.notificacoes (titulo, para, criado_por, club_id) values ('invasão', 'todos', %L, %L)$q$, t.id('lider_b'), t.id('clube_a')));
+select t.tenta(format($q$insert into public.notificacoes (titulo, para, criado_por, club_id) values ('invasão A', 'todos', %L, %L)$q$, t.id('lider_b'), t.id('clube_a')));
 select t.bloqueado('líder B NÃO manda aviso pessoal a membro do clube A', format($q$insert into public.notificacoes (titulo, para, para_usuario, criado_por) values ('invasão', 'pessoal', %L, %L)$q$, t.id('membro_a'), t.id('lider_b')));
 select t.bloqueado('líder B NÃO liga recurso no clube A', format($q$update public.club_features set metadata = '{"x":1}' where club_id = %L$q$, t.id('clube_a')));
 
@@ -96,6 +96,7 @@ select t.throws('membro B NÃO registra missão do clube A', $q$select public.re
 reset role;
 select t.eq('senha do membro_a intacta', (select encrypted_password = :'hash_a' from auth.users where id = t.id('membro_a')), true);
 select t.eq('PIX do clube A intacto', (select valor from public.config_clube where chave = 'pix'), :'pix_a');
+select t.eq('aviso com club_id forjado NÃO foi parar no clube A', (select count(*) from public.notificacoes where titulo = 'invasão A' and club_id = t.id('clube_a')), 0);
 select t.eq('leilão do clube A segue aberto', (select status from public.leiloes where id = t.id('leilao_a')), 'aberto');
 select t.eq('membro_a e perfis do clube A intactos', (select papel from public.profiles where id = t.id('membro_a')), 'desbravador');
 select t.eq('entrega A intacta (segue pendente)', (select status from public.entregas where id = t.id('ent_a')), 'pendente');

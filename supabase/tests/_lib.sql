@@ -9,6 +9,9 @@
 -- =============================================================================
 create schema t;
 grant usage on schema t to public;
+-- funções que os testes criarem depois também precisam ser executáveis por quem for "logado" no teste
+-- (o default privilege GLOBAL das migrations tira o PUBLIC implícito das funções novas)
+alter default privileges in schema t grant execute on functions to public;
 
 create table t.res (id serial primary key, nome text, ok boolean, detalhe text);
 grant all on t.res to public;
@@ -76,6 +79,12 @@ begin
   end;
   perform t.registrar(p_nome, v_msg is not null or v_n = 0,
     case when v_msg is not null then 'bloqueado por erro: ' || v_msg else 'linhas=' || coalesce(v_n::text, 'null') || ' (esperado 0 ou erro)' end);
+end $$;
+
+-- Executa e ENGOLE o erro (para tentativas de ataque cujo efeito conferimos depois, pelo ESTADO).
+create function t.tenta(p_sql text) returns void language plpgsql as $$
+begin
+  begin execute p_sql; exception when others then null; end;
 end $$;
 
 -- Espera que a operação FUNCIONE e afete/retorne pelo menos p_min linhas.

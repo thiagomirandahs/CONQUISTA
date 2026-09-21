@@ -6,6 +6,7 @@ begin;
 \ir _fixtures.sql
 
 select t.mk('temp_a', 'Temporário A', 'desbravador', 'ativo', 'clube_a', 'A2');
+select t.mk('temp_a2', 'Temporário A2 (desativado)', 'desbravador', 'inativo', 'clube_a', 'A2');
 insert into public.entregas (atividade_id, usuario_id, texto) values (t.id('atv_a'), t.id('membro_a2'), 'Entrega A2');
 insert into public.entregas (atividade_id, usuario_id, texto) values (t.id('atv_a'), t.id('conselheiro_a'), 'Entrega A3');
 insert into t.ids select 'ent_a2', id from public.entregas where texto = 'Entrega A2';
@@ -42,6 +43,8 @@ select t.permitido('líder A abre nova temporada do clube', $q$select public.nov
 select t.permitido('líder A cria convite de responsável', $q$select public.criar_convite_responsavel()$q$);
 select t.permitido('líder A edita a config do clube (PIX)', $q$update public.config_clube set valor = 'PIX-NOVO-A' where chave = 'pix'$q$);
 select t.permitido('líder A redefine a senha de membro do clube', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('membro_a')));
+select t.permitido('líder A redefine a senha de usuário DESATIVADO do clube', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('temp_a2')));
+select t.permitido('líder A exclui usuário DESATIVADO do clube', format('select public.excluir_usuario(%L)', t.id('temp_a2')));
 select t.permitido('líder A (diretoria) exclui usuário do clube', format('select public.excluir_usuario(%L)', t.id('temp_a')));
 reset role;
 select t.eq('senha do membro_a foi trocada', (select encrypted_password = extensions.crypt('senha-nova-123', encrypted_password) from auth.users where id = t.id('membro_a')), true);
@@ -63,6 +66,8 @@ select t.permitido('líder A religa o recurso', format($q$update public.club_fea
 -- ================= instrutor: opera, mas dentro dos limites do papel =================
 select t.como('instrutor_a');
 select t.eq('instrutor aprova entrega pendente do clube', t.txt(format('select (public.aprovar_entrega(%L))->>''ok''', t.id('ent_a2'))), 'true');
+select t.throws('instrutor NÃO redefine a senha da diretoria (senão assumiria a conta)', format($q$select public.resetar_senha_membro(%L, 'assumindo-conta')$q$, t.id('lider_a')), 'permiss');
+select t.permitido('instrutor redefine senha de membro comum', format($q$select public.resetar_senha_membro(%L, 'senha-ok-123')$q$, t.id('membro_a2')));
 select t.permitido('instrutor cria atividade', $q$insert into public.atividades (titulo, pontos) values ('Atividade do instrutor', 5)$q$);
 select t.throws('instrutor NÃO exclui usuário (só diretoria)', format('select public.excluir_usuario(%L)', t.id('membro_a2')), 'diretoria');
 select t.bloqueado('instrutor NÃO gere mensalidades (financeiro = tesoureiro/diretoria)', format($q$update public.mensalidades set status = 'pago' where desbravador_id = %L$q$, t.id('membro_a')));

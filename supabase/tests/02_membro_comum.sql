@@ -72,8 +72,8 @@ select t.permitido('líder A aprova o novo_a', format($q$update public.profiles 
 reset role;
 select t.eq('aprovado: vínculo vira ativo', (select status from public.organization_memberships where user_id = t.id('novo_a')), 'ativo');
 select t.como('novo_a');
-select t.eq('aprovado: passa a ver as fotos do clube A', t.n('select count(*) from public.fotos'), 1);
-select t.eq('aprovado: passa a ver as atividades do clube A', t.n('select count(*) from public.atividades'), 1);
+select t.eq('aprovado: passa a ver as fotos do clube A', t.n($q$select count(*) from public.fotos where legenda = 'Foto A'$q$), 1);
+select t.eq('aprovado: passa a ver as atividades do clube A', t.n($q$select count(*) from public.atividades where titulo = 'Atividade A'$q$), 1);
 select t.eq('aprovado: NÃO vê nada do clube B', t.nv($q$select count(*) from public.fotos where legenda = 'Foto B'$q$), 0);
 select t.eq('aprovado: recebe o aviso pessoal "Cadastro aprovado"', t.nv($q$select count(*) from public.notificacoes where titulo ilike '%Cadastro aprovado%'$q$), 1);
 select t.eq('aprovado: vê o aviso geral do clube A', t.nv($q$select count(*) from public.notificacoes where titulo = 'Aviso A'$q$), 1);
@@ -89,9 +89,11 @@ select t.ok('inativo: vínculo deixa de ser ativo', (select status from public.o
 select t.como('membro_a2');
 select t.eq('inativo: perde acesso aos dados do clube', t.nv('select count(*) from public.fotos'), 0);
 select t.como('lider_a');
+select t.eq('líder A AINDA vê o desativado em listar_usuarios', t.n(format($q$select count(*) from public.listar_usuarios() where id = %L and status = 'inativo'$q$, t.id('membro_a2'))), 1);
+select t.eq('líder A AINDA vê o rejeitado em listar_usuarios', t.n(format($q$select count(*) from public.listar_usuarios() where id = %L and status = 'rejeitado'$q$, t.id('novo_sem_unid'))), 1);
 select t.permitido('líder A reativa membro_a2', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('membro_a2')));
 select t.como('membro_a2');
-select t.eq('reativado: volta a ver o clube', t.n('select count(*) from public.fotos'), 1);
+select t.eq('reativado: volta a ver o clube', t.n($q$select count(*) from public.fotos where legenda = 'Foto A'$q$), 1);
 reset role;
 select t.eq('reativado: continua com 1 vínculo só', (select count(*) from public.organization_memberships where user_id = t.id('membro_a2')), 1);
 

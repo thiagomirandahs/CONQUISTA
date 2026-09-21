@@ -56,9 +56,10 @@ reset role;
 -- ---------- o clube da notificação é sempre o de quem a criou / de quem a recebe ----------
 select t.como('lider_a');
 select t.permitido('líder A cria aviso geral', format($q$insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por) values ('Aviso push A', 'x', 'geral', '/', 'todos', %L)$q$, t.id('lider_a')));
-select t.bloqueado('líder A não cria aviso no clube B (club_id forjado)', format($q$insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, club_id) values ('Aviso forjado', 'x', 'geral', '/', 'todos', %L, %L)$q$, t.id('lider_a'), t.id('clube_b')));
+select t.tenta(format($q$insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, club_id) values ('Aviso forjado', 'x', 'geral', '/', 'todos', %L, %L)$q$, t.id('lider_a'), t.id('clube_b')));
 select t.bloqueado('líder A não manda aviso pessoal a quem é do clube B', format($q$insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por) values ('Pessoal forjado', 'x', 'geral', '/', 'pessoal', %L, %L)$q$, t.id('membro_b'), t.id('lider_a')));
 reset role;
+select t.eq('aviso com club_id forjado NÃO foi parar no clube B', (select count(*) from public.notificacoes where titulo = 'Aviso forjado' and club_id = t.id('clube_b')), 0);
 select t.eq('aviso do líder A nasce no clube A', (select club_id from public.notificacoes where titulo = 'Aviso push A'), t.id('clube_a'));
 
 -- ---------- rotinas automáticas (cron, sem sessão): notificam SÓ o próprio clube ----------
