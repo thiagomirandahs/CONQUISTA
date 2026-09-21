@@ -248,3 +248,36 @@ Recomendação pensada pra um clube (baixo custo, fácil de manter, mobile + web
 - Ligar login/cadastro reais (com aprovação) e os **papéis/permissões** (desbravador, conselheiro, liderança).
 - Com a base pronta, ligar as telas por perfil: **visão do conselheiro** (presença/pontos), **gestão de atividades** e **mensalidades**.
 - Substituir os dados de exemplo pelos reais.
+
+
+---
+
+## 10. Evolução para plataforma SaaS multi-clube
+
+> **Nome provisório da plataforma: DesbravaClube.** O nome poderá ser revisto antes do lançamento comercial.
+
+O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (tenant) da nova plataforma. A marca, logo, cores e demais elementos do Filhos da Conquista deixarão de representar o produto inteiro e passarão a ser configurações específicas desse clube.
+
+### Diretrizes já definidas
+- Um único produto e código para múltiplos clubes, com isolamento por tenant/clube.
+- Nova identidade central **DesbravaClube**, mantendo identidade visual configurável por clube.
+- Estruturar `clubs` e `club_memberships`; evitar vincular permanentemente um usuário a apenas um clube.
+- Adicionar escopo de clube às entidades operacionais e reforçar o isolamento com RLS e constraints no PostgreSQL.
+- Separar papéis da plataforma (owner/suporte/billing) dos papéis internos de cada clube.
+- Auditar todas as funções `SECURITY DEFINER`, Storage, notificações, RPCs e permissões antes de liberar múltiplos clubes.
+- Separar mensalidades dos membros da futura cobrança de assinatura do SaaS.
+- Preparar personalização por clube: nome, logo, cores, configurações e recursos habilitados.
+- Criar futuramente painel Master para clubes, planos, assinaturas, recursos, suporte, auditoria e métricas.
+- Preservar React/Vite, Supabase/PostgreSQL, PWA, Capacitor e Vercel enquanto testes de carga e métricas não justificarem mudança de infraestrutura.
+- Projetar para crescimento e validar progressivamente carga de 100, 500, 1.000 e 3.000+ usuários simultâneos.
+- Tratar LGPD, consentimento, fotos de menores, retenção, exportação/exclusão e auditoria como requisitos de produto.
+
+### Ordem de transformação
+1. Auditoria completa e testes de regressão.
+2. Criar fundação multi-tenant e migrar Filhos da Conquista como tenant inicial.
+3. Criar um segundo clube de teste e validar isolamento integral de dados.
+4. Tornar marca, logo, cores e configurações dependentes do clube.
+5. Refatorar Storage, notificações, funções privilegiadas e autorizações para multi-tenant.
+6. Criar painel Master e gestão de clubes/recursos.
+7. Implementar planos, assinaturas e pagamentos.
+8. Executar testes de carga e ajustar infraestrutura com base em métricas reais.
