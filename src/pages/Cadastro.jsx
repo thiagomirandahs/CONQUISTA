@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -12,9 +12,11 @@ const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Cadastro() {
+  const [params] = useSearchParams()
+  const convite = params.get('convite') || ''
   const [unidades, setUnidades] = useState([])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '', cargo: 'Desbravador' })
-  const [ehPai, setEhPai] = useState(false) // cadastro de responsável (pai/mãe)
+  const [ehPai, setEhPai] = useState(Boolean(convite)) // cadastro de responsável (pai/mãe)
   const [foto, setFoto] = useState(null)
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -38,6 +40,7 @@ export default function Cadastro() {
       options: { data: {
         nome: form.nome,
         tipo: ehPai ? 'pais' : '',
+        convite_responsavel: ehPai ? convite : '',
         nascimento: ehPai ? '' : form.nascimento,
         cargo: ehPai ? '' : form.cargo,
         unidade_id: (!ehPai && precisaUnidade(form.cargo)) ? form.unidade_id : '',
@@ -107,14 +110,14 @@ export default function Cadastro() {
           <p className="text-faint text-xs text-center">Preencha seus dados para participar do clube</p>
         </div>
 
-        <div className="bg-surface2 rounded-xl p-1 flex mb-4">
+        {!convite && <div className="bg-surface2 rounded-xl p-1 flex mb-4">
           {[[false, '🧒 Sou membro'], [true, '👨‍👩‍👧 Sou responsável']].map(([v, lbl]) => (
             <button type="button" key={String(v)} onClick={() => setEhPai(v)}
               className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${ehPai === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
               {lbl}
             </button>
           ))}
-        </div>
+        </div>}
 
         <form onSubmit={cadastrar} className="space-y-3.5">
           <Campo label="Nome completo" type="text" value={form.nome} onChange={(v) => set('nome', v)} placeholder={ehPai ? 'Seu nome (do responsável)' : 'Seu nome'} />
@@ -150,7 +153,7 @@ export default function Cadastro() {
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3">
             {ehPai
-              ? <>👨‍👩‍👧 Depois de entrar, você <strong>pede o vínculo com seu filho(a)</strong> e a diretoria confirma.</>
+              ? <>👨‍👩‍👧 Você entrou pelo convite do clube. Depois de entrar, <strong>peça o vínculo com seu filho(a)</strong>.</>
               : <>⚠️ Seu cadastro passará pela <strong>aprovação da diretoria</strong> antes de liberar o acesso.</>}
           </div>
 

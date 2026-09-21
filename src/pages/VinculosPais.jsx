@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { supabase } from '../lib/supabase.js'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarVinculosPendentes, buscarDesbravadores, aprovarVinculo, rejeitarVinculo, lerPix, salvarPix,
@@ -18,6 +19,19 @@ export default function VinculosPais() {
   const [pend, setPend] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [aprovando, setAprovando] = useState(null)
+  const [criandoConvite, setCriandoConvite] = useState(false)
+
+  async function criarConvite() {
+    setCriandoConvite(true)
+    try {
+      const { data, error } = await supabase.rpc('criar_convite_responsavel')
+      if (error) throw error
+      const link = `${window.location.origin}/cadastro?convite=${encodeURIComponent(data.token)}`
+      await navigator.clipboard?.writeText(link)
+      window.prompt('Envie este link ao responsável:', link)
+    } catch (e) { alert(e?.message || e) }
+    setCriandoConvite(false)
+  }
 
   async function carregar() {
     setCarregando(true)
@@ -45,6 +59,7 @@ export default function VinculosPais() {
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">👨‍👩‍👧 Vínculos dos pais</h2>
         <p className="text-sm text-muted">Confirme quem é filho de quem</p>
+        {ehDiretoria && <button onClick={criarConvite} disabled={criandoConvite} className="mt-3 rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold px-4 py-2 text-sm disabled:opacity-60">{criandoConvite ? 'Criando...' : '🔗 Gerar link para responsável'}</button>}
       </div>
 
       <PixConfig ehDiretoria={ehDiretoria} />
