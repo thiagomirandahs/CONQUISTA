@@ -64,6 +64,11 @@ begin
     raise exception 'listar_usuarios atravessou clubes para Tenant 001: count=%, nome=%', v_count, v_slug;
   end if;
 
+  select count(*), min(legenda) into v_count, v_slug from public.fotos;
+  if v_count <> 1 or v_slug <> 'Foto Tenant 001' then
+    raise exception 'Tenant 001 leu foto de outro clube: count=%, legenda=%', v_count, v_slug;
+  end if;
+
   select count(*) into v_count from public.organization_memberships;
   if v_count <> 1 then
     raise exception 'Tenant 001 leu vínculos de outro usuário: %', v_count;
@@ -128,6 +133,11 @@ begin
   select count(*), min(nome) into v_count, v_slug from public.listar_usuarios();
   if v_count <> 1 or v_slug <> 'Usuário Tenant 002' then
     raise exception 'listar_usuarios atravessou clubes para Tenant 002: count=%, nome=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(legenda) into v_count, v_slug from public.fotos;
+  if v_count <> 1 or v_slug <> 'Foto Tenant 002' then
+    raise exception 'Tenant 002 leu foto de outro clube: count=%, legenda=%', v_count, v_slug;
   end if;
 
   select count(*) into v_count from public.organization_memberships;

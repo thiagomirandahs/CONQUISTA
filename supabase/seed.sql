@@ -113,3 +113,9 @@ values ('00000000-0000-0000-0000-000000000001', 'seed', 10, 'Ponto Tenant 001', 
 insert into public.pontos (usuario_id, origem, pontos, motivo, club_id)
 select '00000000-0000-0000-0000-000000000002', 'seed', 20, 'Ponto Tenant 002', id
 from public.organizational_units where slug = 'clube-teste-tenant-002';
+
+insert into public.fotos (url, legenda, autor_id)
+values ('https://example.test/tenant-001.jpg', 'Foto Tenant 001', '00000000-0000-0000-0000-000000000001');
+
+insert into public.fotos (url, legenda, autor_id)
+values ('https://example.test/tenant-002.jpg', 'Foto Tenant 002', '00000000-0000-0000-0000-000000000002');
