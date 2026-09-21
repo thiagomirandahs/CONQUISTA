@@ -90,3 +90,26 @@ select 'Unidade Tenant 002', '#7c3aed', id
 from public.organizational_units
 where slug = 'clube-teste-tenant-002'
 on conflict (club_id, nome) do update set cor = excluded.cor;
+
+insert into public.atividades (titulo, descricao, pontos, club_id)
+select 'Atividade Tenant 001', 'Dado de isolamento local', 10, id
+from public.organizational_units where slug = 'filhos-da-conquista';
+
+insert into public.atividades (titulo, descricao, pontos, club_id)
+select 'Atividade Tenant 002', 'Dado de isolamento local', 20, id
+from public.organizational_units where slug = 'clube-teste-tenant-002';
+
+insert into public.entregas (atividade_id, usuario_id, texto, club_id)
+select a.id, '00000000-0000-0000-0000-000000000001', 'Entrega Tenant 001', a.club_id
+from public.atividades a where a.titulo = 'Atividade Tenant 001';
+
+insert into public.entregas (atividade_id, usuario_id, texto, club_id)
+select a.id, '00000000-0000-0000-0000-000000000002', 'Entrega Tenant 002', a.club_id
+from public.atividades a where a.titulo = 'Atividade Tenant 002';
+
+insert into public.pontos (usuario_id, origem, pontos, motivo, club_id)
+values ('00000000-0000-0000-0000-000000000001', 'seed', 10, 'Ponto Tenant 001', public.clube_legado_id());
+
+insert into public.pontos (usuario_id, origem, pontos, motivo, club_id)
+select '00000000-0000-0000-0000-000000000002', 'seed', 20, 'Ponto Tenant 002', id
+from public.organizational_units where slug = 'clube-teste-tenant-002';
