@@ -11,6 +11,7 @@ export default [
     ignores: [
       'dist',
       'dev-dist',
+      'android/app/src/main/assets/public', // bundle gerado pelo Capacitor
       'node_modules',
       '.claude',         // worktrees temporárias de subagentes
       'coverage',
