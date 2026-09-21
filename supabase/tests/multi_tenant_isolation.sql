@@ -54,6 +54,16 @@ begin
     raise exception 'Tenant 001 leu ponto de outro clube: count=%, motivo=%', v_count, v_slug;
   end if;
 
+  select count(*), min(nome) into v_count, v_slug from public.profiles;
+  if v_count <> 1 or v_slug <> 'Usuário Tenant 001' then
+    raise exception 'Tenant 001 leu perfil de outro clube: count=%, nome=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(nome) into v_count, v_slug from public.listar_usuarios();
+  if v_count <> 1 or v_slug <> 'Usuário Tenant 001' then
+    raise exception 'listar_usuarios atravessou clubes para Tenant 001: count=%, nome=%', v_count, v_slug;
+  end if;
+
   select count(*) into v_count from public.organization_memberships;
   if v_count <> 1 then
     raise exception 'Tenant 001 leu vínculos de outro usuário: %', v_count;
@@ -108,6 +118,16 @@ begin
   select count(*), min(motivo) into v_count, v_slug from public.pontos;
   if v_count <> 1 or v_slug <> 'Ponto Tenant 002' then
     raise exception 'Tenant 002 leu ponto de outro clube: count=%, motivo=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(nome) into v_count, v_slug from public.profiles;
+  if v_count <> 1 or v_slug <> 'Usuário Tenant 002' then
+    raise exception 'Tenant 002 leu perfil de outro clube: count=%, nome=%', v_count, v_slug;
+  end if;
+
+  select count(*), min(nome) into v_count, v_slug from public.listar_usuarios();
+  if v_count <> 1 or v_slug <> 'Usuário Tenant 002' then
+    raise exception 'listar_usuarios atravessou clubes para Tenant 002: count=%, nome=%', v_count, v_slug;
   end if;
 
   select count(*) into v_count from public.organization_memberships;
