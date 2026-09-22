@@ -1,4 +1,4 @@
-# Rollout — multi-tenant completo (migrations 01–36)
+# Rollout — multi-tenant completo (migrations 01–37)
 
 Nada aqui foi aplicado em produção. Este guia é para **quando** você decidir aplicar.
 Produção é manual (SQL Editor) e o front é automático (Vercel no push): a ordem importa.
@@ -27,7 +27,7 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 | 0 | `PREFLIGHT-PRODUCAO.sql` → `RESUMO = ok` | SQL Editor |
 | 1 | Merge do front (Vercel publica sozinho) | GitHub |
 | 2 | SQL `…000001` a `…000012` (na ordem) | SQL Editor, um por vez |
-| 3 | SQL `…000013` → … → `…000031`, depois `…000033` → `…000036` (na ordem; a `32` fica de fora — passo 6) | SQL Editor, um por vez |
+| 3 | SQL `…000013` → … → `…000031`, depois `…000033` → `…000037` (na ordem; a `32` fica de fora — passo 6) | SQL Editor, um por vez |
 | 4 | Verificações abaixo | SQL Editor |
 | 5 | **Edge Function `enviar-push`**: colar o novo `supabase/functions/enviar-push/index.ts` (dependências com versão exata) | Painel → Edge Functions (só **depois** do `…17`) |
 | 6 | **`…000032` — bucket `imagens` PRIVADO** (a virada). Só com o front novo no ar **e** o APK novo distribuído | SQL Editor |
@@ -37,7 +37,7 @@ O que cada migration faz: `13` papéis/vínculos + escopo do legado · `14` RLS 
 `18` correções da revisão de segurança · `19` correções da revisão de regressão (excluir usuário, foto do mural, `nova_temporada`, desempenho) ·
 **`20` config do clube por clube + provisionamento** · **`21` duelos** · **`22` missões/devocional** · **`23` leilão** ·
 **`24` jogos (trilha, rodízio, recordes, ajudas, chefão, catálogo, cron)** · **`25` chat, bichinho, bíblia** ·
-**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`) · **`35` jogos/chefão/leilão/ranking sem `profiles.papel` — o motor de jogos passa a ler o vínculo, `pontos`/gameplay ganham `club_id` conferido (não mais adivinhado)** (a `35` não depende da `32`) · **`36` motor curricular versionado (Classes/Especialidades, fase 1): `curriculum_versions`→`classes`→`class_sections`→`class_requirements` (catálogo da plataforma) e `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (progresso por clube) + 1 classe PILOTO com dados de teste; recurso `classes` nasce desligado por padrão** (a `36` não depende da `32`).
+**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`) · **`35` jogos/chefão/leilão/ranking sem `profiles.papel` — o motor de jogos passa a ler o vínculo, `pontos`/gameplay ganham `club_id` conferido (não mais adivinhado)** (a `35` não depende da `32`) · **`36` motor curricular versionado (Classes/Especialidades, fase 1): `curriculum_versions`→`classes`→`class_sections`→`class_requirements` (catálogo da plataforma) e `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (progresso por clube) + 1 classe PILOTO com dados de teste; recurso `classes` nasce desligado por padrão** (a `36` não depende da `32`) · **`37` motor curricular fase 2: Especialidades (`specialties`/`specialty_requirements`/`specialty_offerings`/`member_specialties`/`member_specialty_requirements`) + dependência declarativa entre currículo (`curriculum_dependencies`), rastreabilidade de importação em `curriculum_versions`, ferramenta de diff entre versões (`comparar_versoes_curriculares`) e o recurso `classes` passa a bloquear ESCRITA de verdade nas RPCs de Classes E Especialidades (achado da auditoria: só escondia a rota) + 1 especialidade PILOTO com dados de teste, dependendo de um requisito novo da classe piloto** (a `37` não depende da `32`).
 
 ## Passo 6 — a virada do bucket `imagens` (migration 32): quando e como
 Até aqui `imagens` continua **público** (as policies novas da `31` valem nos dois estados). A `32` faz `update storage.buckets set public = false where id = 'imagens'` e muda o que os aparelhos veem:
@@ -105,6 +105,11 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 - **Motor curricular (`36`)**: nasce com o recurso `classes` DESLIGADO em todos os clubes (mesmo padrão do leilão) — ninguém vê
   "Minha Classe"/"Avaliar classes" até a liderança ligar em **Gestão → 🎨 Identidade e recursos**. A ÚNICA classe hoje é o
   piloto de TESTE (`[PILOTO/TESTE] Amigo`) — não ligue este recurso para membros de verdade antes do currículo oficial entrar.
+- **Especialidades (`37`)**: mesmo recurso `classes` (não é uma flag nova) — liga junto com Classes. Nasce com a ÚNICA
+  especialidade piloto de TESTE (`[PILOTO/TESTE] Primeiros Socorros`), que a classe piloto passa a exigir concluída num
+  requisito novo (dependência de teste, não oficial). O recurso `classes` agora bloqueia ESCRITA de verdade nas RPCs (antes
+  da `37`, só escondia a rota — quem chamasse a API direto passava reto mesmo com o recurso desligado; achado da auditoria
+  desta fase, corrigido retroativamente também nas RPCs de Classes da `36`).
 
 ## Notas das revisões independentes (o que mudou de comportamento e o que observar)
 - **Cargo de liderança**: o instrutor tentando promover a diretoria/instrutor/tesoureiro, ou desativar/rebaixar quem já tem esses cargos,
@@ -126,8 +131,8 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 
 ## Testes (local, sem produção)
 ```bash
-npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 33 arquivos de teste
-npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..36 (114 asserts)
+npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 35 arquivos de teste
+npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..37 (114 asserts)
 npm run test:db:real     # `supabase db reset` DE VERDADE (CLI 2.117.0 via npx) + a suíte no banco resultante
 npm run check            # lint + vitest + build
 npm run test:storage:e2e # Storage REAL local: upload com upsert, URL pública bloqueada, URL assinada por clube, lote, listagem, bucket publico (48 asserts)

@@ -39,18 +39,139 @@ tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplic
 | Storage | `comprovacoes` (**privado**), **`imagens` (privado; só imagem, até 15 MB)**, **`publico`** (reservado; asset realmente público) | comprovante: dono ou liderança do clube do dono; imagens: por CLUBE (colegas veem avatar/mural/emblema do próprio clube, responsável vê a foto do filho, comprovante antigo só dono+liderança; anon nunca); envio só no próprio escopo; `publico`: leitura por URL, escrita só da liderança do clube na pasta `<clube>/` | policies `storage.objects` (`pode_ver_imagem`, `pode_subir_imagem`, `pode_alterar_imagem`, `pode_gerir_pasta_publica`) | `lib/imagens.js` (URL assinada; cai na pública se falhar), `ImagemPrivada`, `Avatar`, `upload.js` (sem fallback público p/ foto de criança) | 06, 11, 20, 25 (62) + e2e real `npm run test:storage:e2e` (48) |
 | Produto multi-clube | `recursos_catalogo` (plataforma), `club_features` (`club_id`), marca em `organizational_units.metadata->'marca'` | cada pessoa lê só os PRÓPRIOS vínculos; a liderança do clube grava marca e recursos do PRÓPRIO clube | `meu_contexto()`, `clube_marca_gravar`, `recurso_definir` | `ClubeContext`, `ClubeGuard`, `RotaRestrita`, `RecursoOpcional`, menu por recurso, tela `/clube` (identidade e recursos) | 26 (93) + Vitest (contexto, guardas, serviço, tela, contrato) + e2e real `npm run test:contexto:e2e` (42) |
 | Push | `push_subscriptions`, `push_tokens` (por pessoa; endpoint só https) | envio só via `push_destinatarios(club_id)`; o aparelho segue quem está logado | `push_registrar`, `push_token_registrar`, Edge Function `enviar-push` | `push.js`, `pushNativo.js` | 07, 21 |
-| Motor curricular (Classes/Especialidades — piloto) | `curriculum_versions`/`classes`/`class_sections`/`class_requirements` (plataforma, sem `club_id`); `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (`club_id`) | catálogo publicado: qualquer autenticado lê; progresso: o dono (vínculo ativo no clube) ou `pode_gerir_no_clube(club_id)` avalia | `classes_disponiveis`, `classe_iniciar/atribuir`, `minha_classe`, `requisito_salvar/enviar/avaliar`, `classe_avaliacoes_pendentes`, `investidura_confirmar` | Minha Classe, Avaliar Classe (recurso opcional `classes`, desligado por padrão) | 31 (14), 32 (56) |
+| Motor curricular — Classes (piloto) | `curriculum_versions`/`classes`/`class_sections`/`class_requirements` (plataforma, sem `club_id`); `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (`club_id`) | catálogo publicado: qualquer autenticado lê; progresso: o dono (vínculo ativo no clube) ou `pode_gerir_no_clube(club_id)` avalia | `classes_disponiveis`, `classe_iniciar/atribuir`, `minha_classe`, `requisito_salvar/enviar/avaliar`, `classe_avaliacoes_pendentes`, `investidura_confirmar` | Minha Classe, Avaliar Classe (recurso opcional `classes`, desligado por padrão) | 31 (14), 32 (58) |
+| Motor curricular — Especialidades (piloto) | `specialties`/`specialty_requirements` (plataforma); `specialty_offerings`/`member_specialties`/`member_specialty_requirements` (`club_id`); `curriculum_dependencies` (plataforma — dependência declarativa entre classe/especialidade) | catálogo publicado: qualquer autenticado lê; progresso: o dono, `pode_gerir_no_clube(club_id)` OU o instrutor responsável DA OFERTA avalia | `especialidades_disponiveis`, `especialidade_iniciar/atribuir`, `oferta_especialidade_criar`, `ofertas_especialidade_do_clube`, `minha_especialidade`, `especialidade_requisito_salvar/enviar/avaliar`, `especialidade_avaliacoes_pendentes`, `comparar_versoes_curriculares` | Minhas Especialidades, Especialidades — avaliar/turma (mesmo recurso `classes`) | 33 (25), 34 (45) |
 
 ## Exceções declaradas (tabelas sem `club_id`, com o motivo — teste 20)
 `organizational_units` (raiz) · `organization_memberships` (o clube é `organizational_unit_id`) · `profiles` (clube pelo vínculo) ·
 `push_subscriptions`/`push_tokens` (dispositivo da pessoa) · `migracoes_aplicadas` (ledger) · `biblia_livros`/`biblia_versiculos`
 (conteúdo da Bíblia, igual para todos) · `recursos_catalogo` (catálogo de recursos da plataforma) · `curriculum_versions`/
-`classes`/`class_sections`/`class_requirements` (currículo oficial/versionado — plataforma; progresso é sempre por clube).
+`classes`/`class_sections`/`class_requirements`/`specialties`/`specialty_requirements`/`curriculum_dependencies` (currículo
+oficial/versionado, classes E especialidades — plataforma; progresso é sempre por clube).
 
 ## O que segue usando o clube legado — de propósito
 Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronização de vínculo; o catálogo-modelo que clube novo
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
+
+## Motor curricular — fase 2 (migration 37): Especialidades, dependências e auditoria de compatibilidade
+
+### Relatório de compatibilidade (o que foi auditado, antes de mexer em código)
+Comparei a estrutura da fase 1 (currículo → classe → seção → requisito) contra as necessidades REAIS de
+Classes Regulares, Classes Avançadas, Classes Agrupadas (quando aplicável) e Especialidades — sem fonte
+oficial ainda cadastrada (etapa 1 do plano segue pendente, de propósito). Conclusão por item:
+
+- **Classes Regulares**: o modelo da fase 1 já serve — é exatamente o que ele foi desenhado pra fazer.
+  Nenhuma mudança estrutural necessária.
+- **Especialidades**: o modelo de classe NÃO servia sem forçar. Especialidade não tem "seções" (a lista
+  real é sempre plana, às vezes com subitens DENTRO da própria descrição do requisito) — usar
+  `class_sections` como intermediário teria sido inventar estrutura que o currículo real não tem. Também
+  precisa de **categoria** (Natureza, Artes e Habilidades...), às vezes um **nível** (regular/avançada) e
+  frequentemente é feita **em grupo/turma** com um instrutor responsável específico — nada disso existia.
+  **Decisão**: `specialties`/`specialty_requirements` NOVOS (sem camada de seção) + `specialty_offerings`
+  (turma) + `member_specialties`/`member_specialty_requirements`, reusando `curriculum_versions` (mesma
+  tabela de classes, não uma versão paralela) e `requirement_approvals` (auditoria única, ver abaixo).
+- **Dependência entre currículo** (ex.: um requisito de classe exigir uma especialidade concluída; uma
+  classe avançada exigir a regular): o modelo da fase 1 não tinha NENHUMA forma de representar isso —
+  teria virado texto solto na descrição do requisito, exatamente o que foi pedido pra evitar. **Decisão**:
+  `curriculum_dependencies`, declarativa e validada no servidor (`dependencias_pendentes`/`_satisfeitas`),
+  no nível de classe/especialidade CONCLUÍDA (não de um requisito específico do outro lado — é o que o
+  pedido descreve e evita um grafo arbitrariamente fino sem fonte oficial que justifique mais que isso).
+  Serve tanto "requisito de classe depende de especialidade" quanto "classe avançada depende da regular"
+  quanto "especialidade depende de outra especialidade" com a MESMA estrutura.
+- **Classes Avançadas**: estruturalmente, o que se sabe SEM fonte oficial é que provavelmente exigem uma
+  classe regular concluída antes — isso já está coberto pela dependência genérica acima (`class` depende
+  de `class`). O que fica em aberto, HONESTAMENTE, por falta de fonte: se o processo de avaliação/revisão
+  de uma classe avançada precisa de um nível de aprovação diferente (ex.: regional, não só o clube) — o
+  modelo atual de `investiture_reviews` é só do clube. **Não inventei uma coluna "nível de investidura"
+  sem fonte que confirme o vocabulário certo** — fica como pergunta em aberto pra quando a fonte entrar.
+- **Classes Agrupadas** ("quando aplicável"): sem fonte oficial, não dá pra saber se "agrupada" significa
+  (a) administrativo — uma turma estuda 2 classes ao mesmo tempo, cada criança com progresso PRÓPRIO em
+  cada uma, ou (b) estrutural — um requisito conta pras duas classes ao mesmo tempo. O caso (a) **já
+  funciona hoje, sem mudança nenhuma** (nada impede `member_classes` ter 2 linhas ativas, uma por classe,
+  pra mesma pessoa no mesmo clube). O caso (b) exigiria uma tabela de equivalência de requisitos que eu
+  **não vou inventar sem a fonte confirmar que é isso mesmo** — risco real de modelar errado e depois
+  ter que migrar dado de progresso de gente de verdade.
+- **Achado à parte, fora da lista de Classes/Especialidades**: auditando as RPCs da fase 1 pra decidir o
+  que reusar, achei que o recurso `classes` (feature flag) só escondia a ROTA no front — nenhuma RPC
+  conferia `recurso_habilitado_no_clube` (migration 34 fez isso para os outros 11 recursos; a 36 não
+  tinha feito ainda para o motor curricular). Corrigido nesta migration (item abaixo) — quem chamar a
+  API direto com o recurso desligado agora recebe erro, não só quem digita a URL.
+
+### O que foi reusado (não duplicado) e por quê
+- **`curriculum_versions`**: a MESMA tabela para classes e especialidades — cada linha é uma "edição
+  publicada" (origem, identificador, versão, vigência, status, fonte), independente de ser currículo de
+  classe ou de especialidade. Evita uma tabela de versão paralela.
+- **`definir_escopo_progresso()`**: o gatilho que deriva `usuario_id`/`club_id` (nunca aceita do cliente)
+  virou GENÉRICO (mesmo idioma de `definir_club_por_usuario`, migration 22: tabela/coluna pai por
+  argumento do gatilho) — serve `member_requirements` E `member_specialty_requirements`, uma função só.
+- **`requirement_approvals`**: virou POLIMÓRFICO (`member_requirement_id`+`requirement_id` OU
+  `member_specialty_requirement_id`+`specialty_requirement_id`, nunca os dois — `check` garante isso) —
+  auditoria (quem avaliou, quando, em qual clube, com qual papel, sobre qual versão) reusada em vez de
+  duas tabelas gêmeas.
+- **O que NÃO foi forçado a reusar**: o gatilho de conclusão automática (`avaliar_conclusao_classe` vs.
+  `avaliar_conclusao_especialidade`) ficou em DUAS funções, de propósito — contar requisitos de uma
+  classe passa por seção (`class_requirements → class_sections → classes`), contar de uma especialidade é
+  direto (`specialty_requirements → specialties`); forçar uma função dinâmica única pras duas formas de
+  contar reduziria a legibilidade/segurança por um ganho de DRY questionável. Também especialidade **não
+  ganhou um equivalente a `investiture_reviews`** — uma especialidade concluída não passa por "revisão
+  para investidura" como uma classe (é reconhecida/entregue, não investida); a entrega física (pin) fica
+  fora do sistema por ora.
+
+### Turma/oferta e o instrutor responsável não-liderança
+`specialty_offerings` registra quem ensina (`instrutor_responsavel_id` — qualquer vínculo ATIVO no clube,
+não precisa ser instrutor/diretoria: um conselheiro com um hobby específico pode ser responsável por uma
+turma), o período e o status; `member_specialties.oferta_id` (opcional) liga o progresso individual à
+turma sem deixar de ser individual. `_pode_avaliar_especialidade`/`_e_responsavel_da_oferta` estendem
+quem avalia (liderança do clube OU o responsável DAQUELA oferta) — e a mesma checagem entrou na POLICY de
+leitura de `member_specialties`/`member_specialty_requirements` (achado ao testar: sem isso, o
+responsável não-liderança nem conseguia ENXERGAR a linha pra pegar o id e chamar a RPC — a subconsulta do
+cliente roda sob RLS, antes de entrar na função `security definer`).
+
+### Rastreabilidade de importação (preparação do catálogo oficial)
+`curriculum_versions` ganhou `fonte_hash` (sha256 do arquivo fonte), `fonte_arquivo` (nome), `importado_em`
+e `importado_por` — junto com `fonte_url`/`fonte_descricao` (já existiam), dá pra provar de onde veio um
+material oficial e detectar se o arquivo fonte mudou por baixo. Processo (documentado também na própria
+migration): nova versão sempre nasce `rascunho`, com a proveniência preenchida; só vira `publicado` depois
+de revisão humana comparando com a versão anterior (ferramenta abaixo); **nunca edita uma versão já
+publicada** — sempre uma linha nova, preservando o histórico de quem já iniciou/concluiu a antiga.
+
+### Ferramenta de comparação de versões
+`comparar_versoes_curriculares(versao_a, versao_b)` — compara os requisitos (de classe OU especialidade)
+de duas `curriculum_versions` pelo código de negócio (não pelo `id`, que sempre muda entre versões) e
+devolve `adicionados`/`removidos`/`alterados` (descrição, tipo de evidência, obrigatoriedade). Pensada pra
+rodar ANTES de publicar uma versão nova, revisando o que realmente mudou. Testada com um diff real (v1→v2
+de teste: 1 requisito novo, 1 removido, 1 com descrição alterada, 1 idêntico) — os 3 números batem exatos.
+
+### Especialidade PILOTO — dados de TESTE
+`[PILOTO/TESTE] Primeiros Socorros`, 3 requisitos (texto/nenhuma/foto), `origem='piloto_teste'`, mesmo
+aviso explícito de "não é o regulamento oficial" da classe piloto. Um requisito NOVO na classe piloto
+(`conhecimentos/3`) depende dela — prova a dependência ponta a ponta com dado de teste, sem inventar
+requisito oficial nenhum.
+
+### Testado
+`33_especialidades_estrutura.sql` (25 asserts — estrutural: tabelas, RLS, reuso de verdade do gatilho de
+escopo e de `requirement_approvals`/`curriculum_versions`, rastreabilidade de importação, dependências
+validadas, as RPCs com o grant certo, o gate de recurso citado nas 12 RPCs de escrita, a ferramenta de
+diff, a especialidade piloto marcada como teste) e `34_especialidades_multiclube_isolado.sql` (45 asserts
+— cenário completo: a MESMA pessoa (`multi_dois_papeis`) faz a MESMA especialidade nos clubes A e B com
+evidências independentes; `instrutor_2clubes` avalia corretamente em cada clube e é bloqueado na aprovação
+CRUZADA mesmo tendo permissão de gerir no clube errado; turma com `conselheiro_a` como responsável NÃO-
+liderança avaliando só a própria turma; requisito de classe dependente de especialidade só libera no MESMO
+clube — a conclusão em A não "importa" pra B, nem pra mesma pessoa; conclusão automática; histórico via
+`minha_especialidade()`; mudança de versão sem alterar histórico + o diff real; recurso `classes`
+desligado NUM clube só bloqueia lá, não no outro). Verificado também manualmente no navegador (login real,
+iniciar a especialidade piloto, enviar um requisito, aprovar pela fila da liderança, percentual
+atualizado 33%).
+
+### Limites honestos desta fase (fora do escopo, de propósito)
+PDF/cartão final, assinatura digital, catálogo completo de especialidades (a importação real só depois de
+validar a fonte oficial — etapa 1 do plano). Frontend: a tela de avaliação (`/avaliar-especialidades`)
+continua restrita a diretoria/instrutor — um instrutor responsável de turma que NÃO seja liderança (ex.:
+`conselheiro_a` do teste) tem a RPC funcionando (provado no SQL) mas ainda não tem uma tela própria pra
+chegar até ela; fica para quando a gestão de turma ganhar uma tela completa. Gestão de turma em si
+(criar oferta) está na tela, mas atribuir participantes em lote e editar/encerrar uma turma existente
+ainda não têm UI (a RPC `especialidade_atribuir` existe e funciona, só falta o botão).
 
 ## Motor curricular versionado — Classes/Especialidades, fase 1 (migration 36)
 Primeira peça da próxima fase do produto (Classes e Especialidades), construída DEPOIS da limpeza final (migration 35) — o

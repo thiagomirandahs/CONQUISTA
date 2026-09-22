@@ -357,10 +357,28 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   1 classe **piloto de dados de TESTE** (`[PILOTO/TESTE] Amigo`, 6 requisitos) — nenhum requisito oficial foi cadastrado
   (etapa 1 da implementação, "levantar fontes oficiais", segue pendente de propósito). Testado com Tenant 001/Tenant 002,
   pessoa em 2 clubes, avaliador com papéis diferentes em cada um e tentativa de aprovação cruzada.
-- ⏸️ **Classes e Especialidades — o que falta** (seção 12, etapas 4–8): especialidades e suas dependências; PDF/renderer do
-  cartão final; assinatura digital formal; catálogo completo de classes/especialidades (a importação real só depois de validar
-  a fonte oficial); navegação por módulos e painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por
-  "clube em uso" (por desenho, mesmo limite documentado desde a migration 34).
+- ✅ **Classes e Especialidades — motor curricular, fase 2 (migration 37, seção 12, etapa 4 da implementação)**: antes de
+  cadastrar conteúdo oficial, auditei o modelo da fase 1 contra Classes Regulares/Avançadas/Agrupadas e Especialidades (relatório
+  completo em AUDITORIA-MULTITENANT.md) — Especialidade não cabia no modelo de classe sem forçar (sem "seções", com categoria,
+  às vezes em turma com instrutor responsável não-liderança) e não existia dependência estruturada entre currículo (ex.: um
+  requisito de classe exigir uma especialidade concluída). Evoluí o modelo primeiro: `specialties`/`specialty_requirements`/
+  `specialty_offerings`/`member_specialties`/`member_specialty_requirements` NOVOS, `curriculum_dependencies` (declarativa,
+  validada no servidor — nunca texto interpretado no front), reusando `curriculum_versions` e `requirement_approvals`
+  (virou polimórfico) em vez de duplicar. De quebra, achei e corrigi um gap real: o recurso `classes` só escondia a rota,
+  não bloqueava a API — agora bloqueia escrita de verdade nas RPCs de Classes E Especialidades. Rastreabilidade de importação
+  (hash/arquivo/data/quem) e uma ferramenta de diff entre versões (`comparar_versoes_curriculares`) preparam a entrada do
+  catálogo oficial. 1 especialidade **piloto de dados de TESTE** (`[PILOTO/TESTE] Primeiros Socorros`), dependência de teste
+  ligada a um requisito novo da classe piloto. Telas **Minhas Especialidades** e **Especialidades — avaliar/criar turma**
+  (mesmo recurso `classes`). Testado: mesma pessoa fazendo a mesma especialidade em 2 clubes, instrutor em 2 clubes com
+  avaliação cruzada bloqueada, turma com instrutor responsável não-liderança, dependência só satisfeita no MESMO clube,
+  conclusão automática, histórico, mudança de versão com diff real, feature flag desligada por clube.
+- ⏸️ **Classes e Especialidades — o que falta** (seção 12, etapas 1, 5–8): fonte oficial ainda não levantada/validada (etapa 1,
+  de propósito); PDF/renderer do cartão final; assinatura digital formal; catálogo completo de classes/especialidades (só
+  depois da fonte oficial); gestão de turma completa (atribuir participantes em lote, editar/encerrar — a RPC existe, falta a
+  tela); avaliação por instrutor responsável não-liderança tem RPC pronta mas ainda sem tela própria; navegação por módulos e
+  painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por "clube em uso" (por desenho, mesmo limite
+  documentado desde a migration 34); nível de investidura regional/associação pra classes avançadas (pergunta em aberto, sem
+  fonte oficial que confirme se é necessário).
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
@@ -468,10 +486,14 @@ Criar visão “Classes” para liderança com:
 2. ✅ Modelar currículo versionado e importar **uma única classe piloto** (migration 36) — mas com dados de **TESTE**
    (`origem = 'piloto_teste'`), não a fonte oficial da etapa 1; substituir antes de qualquer uso real.
 3. ✅ Implementar progresso + evidências + aprovação + auditoria (migration 36 + telas Minha Classe/Avaliar Classe).
-4. ⏸️ Implementar especialidades e dependências.
+4. ✅ Implementar especialidades e dependências (migration 37) — `specialties`/`specialty_requirements`/`specialty_offerings`/
+   `member_specialties`/`member_specialty_requirements` + `curriculum_dependencies` (declarativa, validada no servidor) + 1
+   especialidade **piloto de TESTE** (`[PILOTO/TESTE] Primeiros Socorros`) com uma dependência de teste ligada à classe piloto.
 5. ⏸️ Criar PDF/renderer e comparar visualmente com o modelo autorizado.
-6. ⏸️ Implementar revisão final/assinaturas (a base de `investiture_reviews` e a confirmação já existem; falta PDF/assinatura formal).
-7. ✅ Testar uma classe completa com Tenant 001 (e Tenant 002, com isolamento cruzado — além do pedido original desta etapa).
+6. ⏸️ Implementar revisão final/assinaturas (a base de `investiture_reviews` e a confirmação já existem pra classes; falta
+   PDF/assinatura formal — especialidade não tem equivalente a investidura, é reconhecida/entregue).
+7. ✅ Testar uma classe completa com Tenant 001 (e Tenant 002, com isolamento cruzado) e uma especialidade completa nos dois,
+   incluindo turma com instrutor responsável não-liderança e dependência de classe→especialidade.
 8. ⏸️ Importar as demais classes/especialidades após validação do piloto (e da fonte oficial da etapa 1).
 
 
