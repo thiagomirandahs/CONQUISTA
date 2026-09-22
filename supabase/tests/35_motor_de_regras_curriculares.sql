@@ -143,8 +143,9 @@ reset role;
 select t.eq('X concluiu sozinha', (select status from public.member_specialties where id = t.id('ms_x_membro_a')), 'concluida');
 select t.eq('grupo 2-de-3: 1 satisfeita (X) — ainda não basta', (public.opcoes_satisfeitas_automaticamente(t.id('grupo_2de3'), t.id('membro_a')) ->> 'satisfeitas')::int, 1);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('EXPLICAÇÃO: escolha_n_de_m com 1/2 = NÃO satisfeita, resultado PENDENTE',
-  t.txt(format($q$select (r->>'satisfeito') || '/' || (public.explicar_requisito_classe(%L)->>'resultado') from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'escolha_n_de_m'$q$, t.id('mr_escolha_a'), t.id('mr_escolha_a'))), 'false/pendente');
+-- (fase 3.1, migration 41: regra estrutural não satisfeita BLOQUEIA — antes era só "pendente")
+select t.eq('EXPLICAÇÃO: escolha_n_de_m com 1/2 = NÃO satisfeita, resultado BLOQUEADO (enviar/aprovar recusam)',
+  t.txt(format($q$select (r->>'satisfeito') || '/' || (public.explicar_requisito_classe(%L)->>'resultado') from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'escolha_n_de_m'$q$, t.id('mr_escolha_a'), t.id('mr_escolha_a'))), 'false/bloqueado');
 reset role;
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('lider_a aprova o requisito único de Y', format($q$select public.especialidade_requisito_avaliar((select id from public.member_specialty_requirements where member_specialty_id = %L), 'aprovado', null)$q$, t.id('ms_y_membro_a')));
@@ -152,7 +153,7 @@ reset role;
 select t.eq('grupo 2-de-3: 2 satisfeitas (X e Y) — Z nem foi tocada e não precisa', (public.opcoes_satisfeitas_automaticamente(t.id('grupo_2de3'), t.id('membro_a')) ->> 'satisfeitas')::int, 2);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('EXPLICAÇÃO: escolha_n_de_m com 2/2 = satisfeita, origem = requirement_option_groups + requirement_options',
-  t.txt(format($q$select (r->>'satisfeito') || '|' || (r->>'origem') from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'escolha_n_de_m'$q$, t.id('mr_escolha_a'))), 'true|requirement_option_groups + requirement_options');
+  t.txt(format($q$select (r->>'satisfeito') || '|' || (r->>'origem') from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'escolha_n_de_m'$q$, t.id('mr_escolha_a'))), 'true|requirement_option_groups + requirement_options + member_requirement_options');
 select t.eq('...mas o resultado operacional continua PENDENTE até a liderança aprovar (a conta informa, não aprova sozinha)',
   t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_escolha_a'))), 'pendente');
 reset role;

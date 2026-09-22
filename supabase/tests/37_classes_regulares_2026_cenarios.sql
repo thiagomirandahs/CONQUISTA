@@ -91,7 +91,11 @@ select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('(4) sem valor cadastrado pro ano: minha_classe() entrega conteudo_dinamico com valor NULL (honesto) e a explicação diz BLOQUEADO',
   t.txt($q$select (r->'conteudo_dinamico'->>'chave') || '|' || coalesce(r->'conteudo_dinamico'->>'valor', 'NULL') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
   'curso_leitura_amigo|NULL|bloqueado');
+select t.throws('(4) BLOQUEADO de verdade: sem o conteúdo do período, ENVIAR é recusado (fase 3.1)', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.I.4')), 'ainda não está disponível');
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('(4) ...e APROVAR também é recusado — aprovação manual não contorna a regra', format($q$select public.requisito_avaliar(%L, 'aprovado', null)$q$, t.id('mr_amigo_I4')), 'ainda não está disponível');
 reset role;
+select t.eq('(4) o requisito continua nao_iniciado, sem avaliação registrada', (select status from public.member_requirements where id = t.id('mr_amigo_I4')) || '|' || (select count(*) from public.requirement_approvals where member_requirement_id = t.id('mr_amigo_I4')), 'nao_iniciado|0');
 -- o valor do ano entra DEPOIS, como dado com fonte (aqui, sintético de teste) — nunca dentro do requisito
 insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_descricao)
 select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'fixture do teste 37' from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
@@ -111,7 +115,7 @@ select t.eq('(5) Amigo V.1 chega na tela como regra declarativa: n_minimo=1, 4 o
   '1|4|false|Natação principiante I');
 select t.eq('(5) a explicação do requisito lista a regra escolha_n_de_m com origem nas tabelas da migration 38',
   t.txt(format($q$select r->>'origem' from jsonb_array_elements(public.explicar_requisito_classe((select id from public.member_requirements where usuario_id = %L and club_id = %L and requirement_id = %L))->'regras_aplicadas') r where r->>'regra' = 'escolha_n_de_m'$q$, t.id('membro_a'), t.id('clube_a'), t.req('amigo.V.1'))),
-  'requirement_option_groups + requirement_options');
+  'requirement_option_groups + requirement_options + member_requirement_options');
 select t.eq('(5) requisito simples NÃO carrega escolha nem conteúdo dinâmico (null, não objeto vazio)',
   t.txt($q$select ((r->'escolha') is null or json_typeof(r->'escolha') = 'null')::text || '|' || ((r->'conteudo_dinamico') is null or json_typeof(r->'conteudo_dinamico') = 'null')::text from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.1'$q$), 'true|true');
 reset role;
@@ -149,9 +153,30 @@ select t.eq('(10) B: 4% (1/25); A: 0% — progresso independente', public.classe
 select t.eq('(9) a aprovação ficou auditada no clube B, por lider_b',
   (select count(*) from public.requirement_approvals a where a.club_id = t.id('clube_b') and a.avaliado_por = t.id('lider_b') and a.member_requirement_id in (select id from public.member_requirements where member_class_id = t.id('mc_multi_b'))), 1);
 
+-- (5, fase 3.1) N-de-M NÃO passa por aprovação manual sem a escolha registrada
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('(5) aprovar Amigo V.1 de multi SEM escolha registrada é recusado ("Escolha pelo menos 1 das 4 opções")',
+  format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_multi_a'), t.req('amigo.V.1')), 'Escolha pelo menos 1 das 4');
+select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
+select t.throws('(5) enviar sem escolher também é recusado', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.V.1')), 'Escolha pelo menos 1');
+select t.throws('(5) escolher uma opção de OUTRO requisito é recusado', format($q$select public.requisito_escolher(%L, array[(select o.id from public.requirement_options o join public.requirement_option_groups g on g.id = o.grupo_id where g.alvo_id = %L limit 1)], '{}')$q$, t.req('amigo.V.1'), t.req('amigo.VII.1')), 'Opção inválida');
+select t.throws('(5) texto livre num requisito que TEM lista é recusado', format($q$select public.requisito_escolher(%L, '{}', array['qualquer coisa'])$q$, t.req('amigo.V.1')), 'escolha entre elas');
+select t.permitido('(5) multi registra a escolha em V.1 (1ª opção), VII.1 (2ª) e IX.1 (a única opção aberta)',
+  format($q$select public.requisito_escolher(r, array[(select o.id from public.requirement_options o join public.requirement_option_groups g on g.id = o.grupo_id where g.alvo_id = r order by o.ordem limit 1)], '{}')
+           from unnest(array[%L::uuid, %L::uuid, %L::uuid]) r$q$, t.req('amigo.V.1'), t.req('amigo.VII.1'), t.req('amigo.IX.1')), 3);
+select t.eq('(5) minha_classe() mostra a escolha registrada em V.1 e bloqueios vazios; o status virou em_andamento',
+  t.txt($q$select (r->'escolha'->'escolhidas'->0->>'rotulo') || '|' || json_array_length(r->'bloqueios') || '|' || (r->>'status') from json_array_elements(public.minha_classe()->'secoes'->4->'requisitos') r where r->>'manifesto_id' = 'amigo.V.1'$q$), 'Natação principiante I|0|em_andamento');
+select t.eq('(5) requisito simples de multi (I.1) nasce sem bloqueio', t.txt($q$select json_array_length(r->'bloqueios')::text from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.1'$q$), '0');
+reset role;
+select t.eq('(5) as 3 escolhas estão em member_requirement_options, com club_id = A derivado (nunca do cliente)',
+  (select count(*) from public.member_requirement_options mo where mo.usuario_id = t.id('multi_dois_papeis') and mo.club_id = t.id('clube_a') and mo.option_id is not null), 3);
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.eq('(9) lider_b NÃO vê as escolhas feitas no A', t.nv(format($q$select count(*) from public.member_requirement_options where usuario_id = %L$q$, t.id('multi_dois_papeis'))), 0);
+reset role;
+
 -- (7) concluir no A: lider_a aprova os 25 do A → concluída + revisão de investidura + conquista
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.permitido('(7) lider_a aprova os 25 requisitos de multi no A', format($q$select public.requisito_avaliar(mr.id, 'aprovado', null) from public.member_requirements mr where mr.member_class_id = %L$q$, t.id('mc_multi_a')), 25);
+select t.permitido('(7) lider_a aprova os 25 requisitos de multi no A (I.4 com o conteúdo do ano cadastrado; V.1/VII.1/IX.1 com escolha registrada)', format($q$select public.requisito_avaliar(mr.id, 'aprovado', null) from public.member_requirements mr where mr.member_class_id = %L$q$, t.id('mc_multi_a')), 25);
 reset role;
 select t.eq('(7) Amigo de multi no A: concluída, 100%, revisão de investidura aberta',
   (select status from public.member_classes where id = t.id('mc_multi_a')) || '|' || public.classe_percentual(t.id('mc_multi_a')) || '|' || (select status from public.investiture_reviews where member_class_id = t.id('mc_multi_a')), 'concluida|100|pendente');

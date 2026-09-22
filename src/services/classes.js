@@ -56,7 +56,17 @@ export async function salvarRequisito({ requirementId, texto = null, foto = null
   if (error) throw new Error(error.message)
 }
 
-// Envia pra avaliação (o servidor recusa se faltar evidência obrigatória).
+// Escolha N-de-M: registra QUAIS opções a pessoa cumpriu (ids das opções do cartão; texto livre só quando
+// o cartão não lista opções). O servidor valida e é ele quem decide se a regra ficou satisfeita.
+export async function escolherOpcoesRequisito(requirementId, optionIds = [], rotulosLivres = []) {
+  const { data, error } = await supabase.rpc('requisito_escolher', {
+    p_requirement_id: requirementId, p_option_ids: optionIds, p_rotulos_livres: rotulosLivres,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Envia pra avaliação (o servidor recusa se faltar evidência obrigatória ou se houver bloqueio de regra).
 export async function enviarRequisito(requirementId) {
   const { error } = await supabase.rpc('requisito_enviar', { p_requirement_id: requirementId })
   if (error) throw new Error(error.message)

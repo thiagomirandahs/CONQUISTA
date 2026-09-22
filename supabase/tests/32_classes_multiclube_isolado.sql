@@ -133,7 +133,7 @@ select t.permitido('aprova conhecimentos/2', format($q$select public.requisito_a
 -- tabela, como postgres) pra confirmar que a classe INTEGRA a dependência sem quebrar o resto do fluxo.
 select t.eq('conhecimentos/3 (com dependência) NÃO aprova enquanto a especialidade não está concluída',
   t.txt(format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)::text$q$, t.id('mc_a'), t.id('req_conhecimentos_3'))),
-  'ERRO: Falta concluir antes: [PILOTO/TESTE] Primeiros Socorros');
+  'ERRO: Requisito bloqueado: Falta concluir antes: [PILOTO/TESTE] Primeiros Socorros.');
 reset role;
 insert into public.member_specialties (usuario_id, club_id, specialty_id, status, concluida_em)
 values (t.id('membro_a'), t.id('clube_a'), '00000000-0000-4000-a000-000000000102'::uuid, 'concluida', now())
