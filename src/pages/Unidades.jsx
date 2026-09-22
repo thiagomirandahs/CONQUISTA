@@ -44,9 +44,8 @@ export default function Unidades() {
 
   async function excluirUnidade(u) {
     if (!window.confirm(`Excluir a unidade "${u.nome}"? Os membros dela ficarão sem unidade.`)) return
-    // tira os membros da unidade antes de apagar (evita erro de vínculo)
-    await supabase.from('profiles').update({ unidade_id: null }).eq('unidade_id', u.id)
-    const { error } = await supabase.from('unidades').delete().eq('id', u.id)
+    // solta os membros da unidade e apaga, tudo numa RPC só (unidade_id é do vínculo agora)
+    const { error } = await supabase.rpc('unidade_excluir', { p_unidade_id: u.id })
     if (error) { alert('Não foi possível excluir: ' + error.message); return }
     setSel(null)
     carregar()

@@ -35,8 +35,10 @@ export default function Aprovacoes() {
     setPendentes((p) => p.filter((x) => x.id !== id)) // some da lista na hora
     // Aprovar libera como DESBRAVADOR (nunca liderança pelo cadastro). Se for
     // líder, a diretoria promove depois em Usuários — decisão deliberada.
-    const { data, error } = await supabase.from('profiles').update({ status: novoStatus }).eq('id', id).select('id')
-    if (error || !data || data.length === 0) {
+    // status é do VÍNCULO (organization_memberships), não de profiles: vinculo_gerir aceita o
+    // mesmo vocabulário de sempre (ativo/rejeitado) e escreve no clube em uso.
+    const { error } = await supabase.rpc('vinculo_gerir', { p_user_id: id, p_status: novoStatus })
+    if (error) {
       alert('Não consegui salvar — recarregue a página e tente de novo.')
       if (alvo) setPendentes((p) => [alvo, ...p]) // devolve o card que tinha sumido
     }

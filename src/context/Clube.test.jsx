@@ -2,11 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { normalizarContexto, contextoLegado } from '../lib/clube.js'
 
-// ---- dublês: a sessão (quem está logado) e o serviço (o que o servidor responde) ----
+// ---- dublês: a sessão (quem está logado), o serviço (o que o servidor responde) e o "clube desta
+// aba" que vai no header x-clube-atual de toda chamada (lib/supabase.js) ----
 let sessao
 const carregarContexto = vi.fn()
+const definirClubeAtivoNoTransporte = vi.fn()
 vi.mock('./Auth.jsx', () => ({ useAuth: () => ({ session: sessao }) }))
 vi.mock('../services/clubes.js', () => ({ carregarContexto: (...a) => carregarContexto(...a) }))
+vi.mock('../lib/supabase.js', () => ({ definirClubeAtivoNoTransporte: (...a) => definirClubeAtivoNoTransporte(...a) }))
 
 const { ClubeProvider, useClube } = await import('./Clube.jsx')
 const wrapper = ({ children }) => <ClubeProvider>{children}</ClubeProvider>
@@ -34,6 +37,7 @@ async function montar() {
 
 beforeEach(() => {
   carregarContexto.mockReset()
+  definirClubeAtivoNoTransporte.mockClear()
   localStorage.clear()
   document.head.innerHTML = '<meta name="theme-color" content="#1e3a8a"><link rel="icon" href="/logo.png"><title>x</title>'
   document.documentElement.removeAttribute('style')
@@ -133,6 +137,14 @@ describe('troca de clube', () => {
     expect(JSON.parse(localStorage.getItem('cq.clube.v1'))).toEqual({ uid: 'u1', clubeId: 'B' })
   })
 
+  it('trocar de clube atualiza o header x-clube-atual (lib/supabase.js) — é o que faz o servidor honrar a troca', async () => {
+    responder(servidor([vinc(), vincB()], 'A'))
+    const { result } = await montar()
+    expect(definirClubeAtivoNoTransporte).toHaveBeenCalledWith('A')
+    await act(async () => { await result.current.trocarClube('B') })
+    expect(definirClubeAtivoNoTransporte).toHaveBeenLastCalledWith('B')
+  })
+
   it('voltar ao clube anterior remove a cor do outro (sem resto de marca)', async () => {
     responder(servidor([vinc(), vincB()], 'A'))
     const { result } = await montar()
@@ -162,7 +174,7 @@ describe('troca de clube', () => {
     expect(outra.result.current.clubeId).toBe('A')
   })
 
-  it('HOJE o servidor só age em um clube: trocar para o outro é recusado (indisponível) e nada muda', async () => {
+  it('vínculo não selecionável (ex.: servidor recusou por qualquer motivo): trocar é recusado (indisponível) e nada muda', async () => {
     responder(servidor([vinc(), vincB({ selecionavel: false })], 'A'))
     const { result } = await montar()
     let r

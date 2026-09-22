@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from './Auth.jsx'
 import { carregarContexto } from '../services/clubes.js'
+import { definirClubeAtivoNoTransporte } from '../lib/supabase.js'
 import {
   permissoesDoPapel, escolherClubeAtual, podeTrocarPara, temRecursoNoVinculo,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
@@ -49,6 +50,9 @@ export function ClubeProvider({ children }) {
   useEffect(() => {
     if (!uid) return undefined
     let vivo = true
+    // pede logo o clube guardado NESTA aba (se houver) — sem isso, a 1ª resposta viria no clube
+    // padrão do servidor e só corrigiria depois de um recarregar()
+    definirClubeAtivoNoTransporte(lerClubePreferido(uid))
     carregarContexto(uid)
       .then((contexto) => { if (vivo) setEstado({ uid, contexto, erro: null }) })
       .catch((erro) => { if (vivo) setEstado({ uid, contexto: null, erro }) })
@@ -72,6 +76,9 @@ export function ClubeProvider({ children }) {
   useEffect(() => { aplicarMarca(marca) }, [marca])
   useEffect(() => { if (vinculo && contexto && !contexto.legado) salvarMarca(vinculo.clubeId, vinculo.marca) }, [vinculo, contexto])
   useEffect(() => { if (!uid && estado.uid) esquecerClubePreferido() }, [uid, estado.uid])   // saiu: a escolha não fica no aparelho
+  // toda chamada ao servidor (desta aba) passa a pedir o clube EM USO — cobre a resolução inicial
+  // (preferidoId), uma troca de clube e a volta ao padrão quando a preferência deixa de valer
+  useEffect(() => { definirClubeAtivoNoTransporte(clubeId) }, [clubeId])
 
   const trocarClube = useCallback(async (id) => {
     const r = podeTrocarPara(vinculos, id)

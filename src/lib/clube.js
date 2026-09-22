@@ -105,7 +105,8 @@ export function escolherClubeAtual({ vinculos, servidorClubeId, preferidoId }) {
 // Pode trocar para este clube? Devolve { ok } ou { ok:false, motivo }:
 //   sem_vinculo   — a pessoa NÃO tem vínculo com esse clube (nunca vira acesso);
 //   vinculo_inativo — o vínculo existe mas está pendente/suspenso;
-//   indisponivel  — vínculo ativo, mas o servidor ainda não age nesse clube (só 1 clube por pessoa no banco de hoje).
+//   indisponivel  — o servidor não marcou esse vínculo como selecionável (não deveria acontecer
+//                   pra um vínculo ativo e vigente — falha fechada se algum dia acontecer).
 export function podeTrocarPara(vinculos, clubeId) {
   const v = (vinculos || []).find((x) => x.clubeId === clubeId)
   if (!v) return { ok: false, motivo: 'sem_vinculo' }

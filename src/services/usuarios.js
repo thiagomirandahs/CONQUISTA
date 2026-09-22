@@ -94,27 +94,26 @@ export async function resetarSenha(userId, novaSenha) {
 }
 
 
-// Muda o papel (cargo) de um membro — o RLS deixa a liderança atualizar perfis.
+// Muda o papel (cargo) de um membro NO CLUBE EM USO — via vinculo_gerir (papel/status/unidade
+// são do VÍNCULO, não de profiles; a coluna profiles.papel não é mais gravável direto).
 // Só desbravador/conselheiro pertencem a uma unidade: ao promover pra líder,
 // limpa a unidade pra pessoa não continuar contando na média do time antigo.
 export async function mudarCargo(userId, papel) {
   const mantemUnidade = papel === 'desbravador' || papel === 'conselheiro'
-  const patch = mantemUnidade ? { papel } : { papel, unidade_id: null }
-  const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+  const { error } = await supabase.rpc('vinculo_gerir', mantemUnidade
+    ? { p_user_id: userId, p_papel: papel }
+    : { p_user_id: userId, p_papel: papel, p_limpar_unidade: true })
   if (error) throw new Error(error.message)
   return { limpouUnidade: !mantemUnidade }
 }
 
 
-// Desativa/reativa uma pessoa. Desativada não entra no app e some do ranking
+// Desativa/reativa uma pessoa NO CLUBE EM USO. Desativada não entra no app e some do ranking
 // e das listas, mas o histórico dela (pontos, fotos) fica preservado.
-// Usa a permissão que a liderança já tem de editar perfil — sem SQL novo.
 export async function definirAtivoUsuario(userId, ativo) {
-  const { data, error } = await supabase.from('profiles')
-    .update({ status: ativo ? 'ativo' : 'inativo' }).eq('id', userId).select('id,status')
+  const { error } = await supabase.rpc('vinculo_gerir', { p_user_id: userId, p_status: ativo ? 'ativo' : 'inativo' })
   if (error) throw new Error(error.message)
-  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
-  return data[0]
+  return { id: userId, status: ativo ? 'ativo' : 'inativo' }
 }
 
 
@@ -142,10 +141,12 @@ export async function excluirUsuario(userId) {
 }
 
 
-// Muda a unidade (time) de um membro — passe null/'' pra deixar "sem unidade".
-// Mesmo RLS do cargo: só liderança (o trigger protege_campos_perfil não reverte pra pode_aprovar).
+// Muda a unidade (time) de um membro NO CLUBE EM USO — passe null/'' pra deixar "sem unidade".
+// Mesma RPC do cargo (vinculo_gerir): só liderança do clube desta pessoa.
 export async function mudarUnidade(userId, unidadeId) {
-  const { error } = await supabase.from('profiles').update({ unidade_id: unidadeId || null }).eq('id', userId)
+  const { error } = await supabase.rpc('vinculo_gerir', unidadeId
+    ? { p_user_id: userId, p_unidade_id: unidadeId }
+    : { p_user_id: userId, p_limpar_unidade: true })
   if (error) throw new Error(error.message)
 }
 
