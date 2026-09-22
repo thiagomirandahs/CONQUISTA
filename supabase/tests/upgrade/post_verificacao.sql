@@ -183,5 +183,14 @@ rollback to savepoint sp_manual;
 select t.eq('leilão de produção: o cron cobra o lance (20 pts da Águias)', :'up_cron', 'Águias:-20');
 select t.eq('leilão de produção: cron == manual', :'up_cron', :'up_manual');
 
+-- fase 3 (migrations 39/40): o upgrade publica o catálogo oficial das 6 Classes Regulares SEM matricular ninguém
+reset role;
+select t.eq('classes regulares 2026: 1 versão oficial publicada, 6 classes, 149 requisitos', (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'publicado') * 1000
+  + (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial') * 100
+  + (select count(*) from public.class_requirements where manifesto_id is not null) - 149, 1600);
+select t.eq('classes regulares 2026: a importação não criou progresso/conquista pra NENHUM usuário de produção',
+  (select count(*) from public.member_classes mc join public.classes c on c.id = mc.class_id join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial')
+  + (select count(*) from public.curriculum_achievements), 0);
+
 select t.fim();
 rollback;

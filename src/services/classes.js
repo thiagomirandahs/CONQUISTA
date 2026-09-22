@@ -26,8 +26,18 @@ export async function atribuirClasse(usuarioId, classId) {
 }
 
 // Progresso da PRÓPRIA pessoa no clube em uso (a mais recente em andamento, ou uma específica por id).
+// Cada requisito já vem com `escolha` (regra N-de-M declarativa: opções, n_minimo, sem_repeticao) e
+// `conteudo_dinamico` (o valor do ano resolvido pelo servidor) — a tela só apresenta.
 export async function carregarMinhaClasse(memberClassId = null) {
   const { data, error } = await supabase.rpc('minha_classe', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// "Origem do requisito": proveniência até o manifesto/OMD/página oficial (auditoria/administração —
+// não aparece em todo card; só quando alguém pede).
+export async function carregarOrigemRequisito(requirementId) {
+  const { data, error } = await supabase.rpc('requisito_origem', { p_requirement_id: requirementId })
   if (error) throw new Error(error.message)
   return data
 }

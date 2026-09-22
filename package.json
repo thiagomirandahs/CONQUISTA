@@ -21,7 +21,9 @@
     "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:edge:bundle": "bash supabase/tests/e2e/edge-bundle.sh",
     "curriculo:validar": "node supabase/curriculo-manifesto/validar.mjs",
-    "curriculo:autoteste": "node supabase/curriculo-manifesto/validar.autoteste.mjs"
+    "curriculo:autoteste": "node supabase/curriculo-manifesto/validar.autoteste.mjs",
+    "curriculo:importacao:gerar": "node supabase/curriculo-manifesto/gerar-importacao.mjs",
+    "curriculo:importacao:check": "node supabase/curriculo-manifesto/gerar-importacao.mjs --check"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

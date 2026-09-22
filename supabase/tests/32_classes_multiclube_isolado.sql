@@ -10,6 +10,10 @@ begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
+-- Este teste exercita o MOTOR com a classe PILOTO. Desde a fase 3 (migration 40) existe catálogo
+-- oficial publicado, e o piloto some do fluxo normal quando isso acontece (teste 37 prova) — aqui
+-- arquivamos o oficial (só nesta transação) pra continuar testando o motor com o dado pequeno.
+update public.curriculum_versions set status = 'arquivado' where origem = 'oficial';
 insert into t.ids (chave, id) values ('classe_piloto', '00000000-0000-4000-a000-000000000002'::uuid);
 insert into t.ids (chave, id)
   select 'req_' || s.codigo || '_' || r.codigo, r.id

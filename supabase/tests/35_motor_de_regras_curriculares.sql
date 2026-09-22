@@ -17,6 +17,9 @@ begin;
 
 insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'classes', true), (t.id('clube_b'), 'classes', true)
 on conflict (club_id, feature) do update set enabled = true;
+-- fixtures sintéticas são origem='piloto_teste' — somem do fluxo normal quando há catálogo oficial
+-- publicado (fase 3, teste 37). Arquiva o oficial só nesta transação pra testar o motor com elas.
+update public.curriculum_versions set status = 'arquivado' where origem = 'oficial';
 
 -- ==================== fixtures curriculares SINTÉTICAS desta fase ====================
 insert into public.curriculum_versions (id, origem, identificador, versao, vigente_desde, status, fonte_descricao)
