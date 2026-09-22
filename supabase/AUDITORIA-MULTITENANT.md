@@ -39,16 +39,77 @@ tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplic
 | Storage | `comprovacoes` (**privado**), **`imagens` (privado; só imagem, até 15 MB)**, **`publico`** (reservado; asset realmente público) | comprovante: dono ou liderança do clube do dono; imagens: por CLUBE (colegas veem avatar/mural/emblema do próprio clube, responsável vê a foto do filho, comprovante antigo só dono+liderança; anon nunca); envio só no próprio escopo; `publico`: leitura por URL, escrita só da liderança do clube na pasta `<clube>/` | policies `storage.objects` (`pode_ver_imagem`, `pode_subir_imagem`, `pode_alterar_imagem`, `pode_gerir_pasta_publica`) | `lib/imagens.js` (URL assinada; cai na pública se falhar), `ImagemPrivada`, `Avatar`, `upload.js` (sem fallback público p/ foto de criança) | 06, 11, 20, 25 (62) + e2e real `npm run test:storage:e2e` (48) |
 | Produto multi-clube | `recursos_catalogo` (plataforma), `club_features` (`club_id`), marca em `organizational_units.metadata->'marca'` | cada pessoa lê só os PRÓPRIOS vínculos; a liderança do clube grava marca e recursos do PRÓPRIO clube | `meu_contexto()`, `clube_marca_gravar`, `recurso_definir` | `ClubeContext`, `ClubeGuard`, `RotaRestrita`, `RecursoOpcional`, menu por recurso, tela `/clube` (identidade e recursos) | 26 (93) + Vitest (contexto, guardas, serviço, tela, contrato) + e2e real `npm run test:contexto:e2e` (42) |
 | Push | `push_subscriptions`, `push_tokens` (por pessoa; endpoint só https) | envio só via `push_destinatarios(club_id)`; o aparelho segue quem está logado | `push_registrar`, `push_token_registrar`, Edge Function `enviar-push` | `push.js`, `pushNativo.js` | 07, 21 |
+| Motor curricular (Classes/Especialidades — piloto) | `curriculum_versions`/`classes`/`class_sections`/`class_requirements` (plataforma, sem `club_id`); `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (`club_id`) | catálogo publicado: qualquer autenticado lê; progresso: o dono (vínculo ativo no clube) ou `pode_gerir_no_clube(club_id)` avalia | `classes_disponiveis`, `classe_iniciar/atribuir`, `minha_classe`, `requisito_salvar/enviar/avaliar`, `classe_avaliacoes_pendentes`, `investidura_confirmar` | Minha Classe, Avaliar Classe (recurso opcional `classes`, desligado por padrão) | 31 (14), 32 (56) |
 
 ## Exceções declaradas (tabelas sem `club_id`, com o motivo — teste 20)
 `organizational_units` (raiz) · `organization_memberships` (o clube é `organizational_unit_id`) · `profiles` (clube pelo vínculo) ·
 `push_subscriptions`/`push_tokens` (dispositivo da pessoa) · `migracoes_aplicadas` (ledger) · `biblia_livros`/`biblia_versiculos`
-(conteúdo da Bíblia, igual para todos).
+(conteúdo da Bíblia, igual para todos) · `recursos_catalogo` (catálogo de recursos da plataforma) · `curriculum_versions`/
+`classes`/`class_sections`/`class_requirements` (currículo oficial/versionado — plataforma; progresso é sempre por clube).
 
 ## O que segue usando o clube legado — de propósito
 Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronização de vínculo; o catálogo-modelo que clube novo
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
+
+## Motor curricular versionado — Classes/Especialidades, fase 1 (migration 36)
+Primeira peça da próxima fase do produto (Classes e Especialidades), construída DEPOIS da limpeza final (migration 35) — o
+motor, não o currículo oficial. Pipeline: currículo oficial/versionado → classe → seção → requisito → progresso do membro →
+evidência → avaliação/aprovação → conclusão → revisão para investidura.
+- **Catálogo curricular é conteúdo da PLATAFORMA** (`curriculum_versions` → `classes` → `class_sections` → `class_requirements`,
+  sem `club_id` — mesmo padrão de `desafios`/`versiculos`/`recursos_catalogo`): só o currículo com `status = 'publicado'` é
+  visível pela API; ninguém grava pela API (só migration/SQL direto, sem tela de autoria nesta fase). `curriculum_versions`
+  registra `origem` (`oficial` | `piloto_teste`), `identificador`/`versao`, `vigente_desde/ate`, `status` e a fonte
+  (`fonte_url`/`fonte_descricao`). **Mudar o currículo nunca edita uma versão publicada** — cria uma versão nova (com
+  classes/seções/requisitos NOVOS, `id`s novos); o histórico de quem já iniciou ou concluiu a versão antiga (`member_classes`/
+  `member_requirements`, que guardam o `class_id`/`requirement_id` da versão em que a pessoa realmente andou) nunca é reescrito
+  por baixo. Provado no teste 32 (seção 11): uma "v2" da classe piloto nasce com o MESMO código e versão diferente, e quem já
+  estava na v1 continua vendo a v1, ponta a ponta (`minha_classe()` incluído).
+- **Progresso operacional é SEMPRE por clube** (`member_classes`/`member_requirements`/`requirement_approvals`/
+  `investiture_reviews`, todas com `club_id not null → organizational_units`), nunca global: `organization_memberships` é a
+  ÚNICA fonte de papel/vínculo de quem avalia (`pode_gerir_no_clube`/`papel_no_clube`) — o contrato geral já travado no teste
+  29 cobre automaticamente as RPCs novas (nenhuma lê `profiles.papel/.status/.unidade_id`), sem precisar duplicar a checagem
+  aqui; o teste 31 confere as peças específicas desta fase (tabelas, grants, gatilhos, RPCs).
+- **`member_requirements.usuario_id`/`.club_id` são DERIVADOS de `member_class_id` por gatilho** (`definir_escopo_member_
+  requirement`), nunca aceitos do cliente — mesmo padrão de "explícito só se validado" das migrations 34/35.
+- **A guarda crítica de aprovação cruzada** (`requisito_avaliar`): exige `pode_gerir_no_clube(clube EM USO de quem chama)` E
+  que o `member_requirement_id` alvo pertença a ESSE MESMO `club_id` — um avaliador do clube A, mesmo sendo a mesma pessoa
+  desbravador/instrutor no clube B, só aprova progresso do clube em que está OPERANDO e cujo requisito é DESSE clube; tentar
+  aprovar um requisito de outro clube responde "não encontrado" (sem oráculo), mesmo quando o avaliador TEM permissão de gerir
+  no clube em que está — provado isolando as duas causas de recusa (falta de papel vs. clube errado) com pessoas diferentes.
+- **Percentual é SEMPRE calculado no servidor** (`classe_percentual`, dentro de `minha_classe()`): `member_classes` não tem
+  coluna de percentual nenhuma — não existe onde o cliente possa "mandar 100% concluído" por engano ou má-fé.
+- **Conclusão e investidura fecham o pipeline sozinhas**: um gatilho (`avaliar_conclusao_classe`) marca `member_classes` como
+  `concluida` e abre `investiture_reviews` (`pendente`) assim que TODOS os requisitos ativos da classe viram `aprovado` — sem
+  passo manual de "solicitar revisão". `investidura_confirmar` (liderança, mesma guarda de clube) fecha com `investido`/
+  `recusado`. Sem PDF/cartão final, assinatura digital nem tela própria de investidura nesta fase — só a estrutura e o
+  registro (quem revisou, quando, comentário), provando o pipeline inteiro ponta a ponta.
+- **Evidência de menor usa o mesmo hardening de sempre**: reaproveita o bucket privado `comprovacoes` (pasta `<uid>/
+  requisitos/...`, mesma policy `lideranca_gere_pasta`/`pode_gerir()` já usada por missões/atividades — nenhuma policy nova
+  de Storage precisou nascer) — signed URL só para o dono ou a liderança do clube em uso, nunca URL pública.
+- **Tipos de requisito/evidência são EXTENSÍVEIS de propósito** (`tipo_evidencia`: `nenhuma`/`texto`/`foto`/`arquivo`/
+  `presenca`/`atividade`/`biblia`/`evento`/`especialidade`/`externo`) — hoje só `texto` e `foto` têm envio real na tela; os
+  demais ficam DECLARADOS, prontos para um módulo futuro preencher/aprovar sozinho (ex.: presença batida em apontamentos
+  aprovando o requisito automaticamente) — essa automação **não está implementada** nesta fase, de propósito.
+- **Classe PILOTO, dados de TESTE claramente identificados** (nunca "oficial"): `origem = 'piloto_teste'`, nome/requisitos
+  prefixados `[PILOTO/TESTE]`/`[DADO DE TESTE]`, `fonte_descricao` avisando explicitamente que não é o regulamento oficial de
+  nenhuma classe de Desbravadores. 1 classe, 3 seções, 6 requisitos (3 com evidência obrigatória, 3 sem) — só para provar o
+  motor; **nenhum requisito oficial foi inventado**. Precisa ser substituída pela fonte oficial (uma versão nova, `origem =
+  'oficial'`) antes de qualquer uso real com membros. Recurso do catálogo `classes` nasce **desligado por padrão** (mesmo
+  padrão do leilão) — só quem habilitar por clube (`club_features`) vê a aba.
+- **Testado** (`31_motor_curricular_estrutura.sql`, 14 asserts — estrutural: catálogo sem `club_id`/API só lê, progresso
+  sempre com `club_id`/RLS/só RPC escreve, as 9 RPCs existem com o grant certo, os 2 gatilhos existem, o piloto continua
+  marcado como teste) e `32_classes_multiclube_isolado.sql` (56 asserts — o cenário completo pedido: Tenant 001/Tenant 002
+  compartilhando o catálogo; `membro_a`/`membro_b` com evidências e progresso independentes; `dir_a_membro_b` — diretoria no A,
+  desbravador no B — aprovando no A e sendo recusado por FALTA DE PAPEL no B; `instrutor_2clubes` — instrutor nos dois —
+  aprovando de verdade em cada clube e sendo recusado por CLUBE ERRADO ao mirar um requisito do outro clube mesmo tendo
+  permissão onde está; auditoria com clube/avaliador/papel corretos; percentual 33%/17% independentes; conclusão automática +
+  investidura só onde terminou; mudança de versão sem alterar o histórico de quem já andou na v1) + smoke test manual no
+  navegador (login real, iniciar a classe, enviar um requisito, aprovar pela fila da liderança, percentual atualizado — ver
+  relatório da fase).
+- Limite honesto, consciente e fora do escopo desta fase 1: só o motor e 1 classe piloto — catálogo completo de classes e
+  especialidades, PDF/cartão de investidura, assinatura digital e as automações de evidência (presença/atividade/bíblia/
+  evento) ficam para as próximas fases.
 
 ## Limpeza final da fase multi-clube (migration 35) — jogos, chefão, leilão e ranking sem profiles.papel
 Continuação da migration 34: aquela fechou AUTORIZAÇÃO (quem pode gerir, aprovar, editar); esta fecha o resto — o motor de

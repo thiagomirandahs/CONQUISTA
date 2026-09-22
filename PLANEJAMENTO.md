@@ -348,8 +348,19 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   adivinhado pelo "clube mais relevante" da pessoa (não pelo clube da requisição); a chave única de `recordes` e os limites
   diários de golpe do chefão/bônus de jogos eram por PESSOA, não por clube — um clube podia "gastar" o limite do outro. Testado
   com uma pessoa desbravador num clube e instrutor noutro, pontuando/jogando/premiando nos dois ao mesmo tempo.
-- ⏸️ **Classes e Especialidades (seção 12): ainda não iniciado** — decisão explícita. Pendente pra depois: navegação por
-  módulos e painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por "clube em uso" (por desenho).
+- ✅ **Classes e Especialidades — motor curricular, fase 1 (migration 36, seção 12, etapas 1–3 da implementação)**: as 8
+  tabelas do desenho (`curriculum_versions`→`classes`→`class_sections`→`class_requirements` como catálogo da plataforma;
+  `member_classes`/`member_requirements`/`requirement_approvals`/base de `investiture_reviews` sempre por clube), as RPCs de
+  matrícula/progresso/avaliação/investidura, e as telas **Minha Classe** e **Avaliar Classe** (recurso `classes`, desligado por
+  padrão). Percentual sempre calculado no servidor; mudar o currículo cria versão nova sem tocar no histórico de quem já
+  andou na antiga; avaliador nunca aprova progresso de um clube em que não está operando, mesmo tendo permissão lá.
+  1 classe **piloto de dados de TESTE** (`[PILOTO/TESTE] Amigo`, 6 requisitos) — nenhum requisito oficial foi cadastrado
+  (etapa 1 da implementação, "levantar fontes oficiais", segue pendente de propósito). Testado com Tenant 001/Tenant 002,
+  pessoa em 2 clubes, avaliador com papéis diferentes em cada um e tentativa de aprovação cruzada.
+- ⏸️ **Classes e Especialidades — o que falta** (seção 12, etapas 4–8): especialidades e suas dependências; PDF/renderer do
+  cartão final; assinatura digital formal; catálogo completo de classes/especialidades (a importação real só depois de validar
+  a fonte oficial); navegação por módulos e painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por
+  "clube em uso" (por desenho, mesmo limite documentado desde a migration 34).
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
@@ -453,14 +464,15 @@ Criar visão “Classes” para liderança com:
 - Portal dos Pais pode mostrar progresso do filho sem expor evidências sensíveis desnecessárias.
 
 ### Etapas de implementação
-1. Levantar e validar fontes oficiais vigentes e permissões de reprodução.
-2. Modelar currículo versionado e importar uma única classe piloto.
-3. Implementar progresso + evidências + aprovação + auditoria.
-4. Implementar especialidades e dependências.
-5. Criar PDF/renderer e comparar visualmente com o modelo autorizado.
-6. Implementar revisão final/assinaturas.
-7. Testar uma classe completa com Tenant 001.
-8. Importar as demais classes/especialidades após validação do piloto.
+1. ⏸️ Levantar e validar fontes oficiais vigentes e permissões de reprodução — **ainda pendente, de propósito**.
+2. ✅ Modelar currículo versionado e importar **uma única classe piloto** (migration 36) — mas com dados de **TESTE**
+   (`origem = 'piloto_teste'`), não a fonte oficial da etapa 1; substituir antes de qualquer uso real.
+3. ✅ Implementar progresso + evidências + aprovação + auditoria (migration 36 + telas Minha Classe/Avaliar Classe).
+4. ⏸️ Implementar especialidades e dependências.
+5. ⏸️ Criar PDF/renderer e comparar visualmente com o modelo autorizado.
+6. ⏸️ Implementar revisão final/assinaturas (a base de `investiture_reviews` e a confirmação já existem; falta PDF/assinatura formal).
+7. ✅ Testar uma classe completa com Tenant 001 (e Tenant 002, com isolamento cruzado — além do pedido original desta etapa).
+8. ⏸️ Importar as demais classes/especialidades após validação do piloto (e da fonte oficial da etapa 1).
 
 
 ## 13. Arquitetura institucional e expansão hierárquica

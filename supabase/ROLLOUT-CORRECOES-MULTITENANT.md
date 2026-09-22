@@ -1,4 +1,4 @@
-# Rollout — multi-tenant completo (migrations 01–35)
+# Rollout — multi-tenant completo (migrations 01–36)
 
 Nada aqui foi aplicado em produção. Este guia é para **quando** você decidir aplicar.
 Produção é manual (SQL Editor) e o front é automático (Vercel no push): a ordem importa.
@@ -15,7 +15,7 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`35`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`36`.
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
    **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
@@ -27,7 +27,7 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 | 0 | `PREFLIGHT-PRODUCAO.sql` → `RESUMO = ok` | SQL Editor |
 | 1 | Merge do front (Vercel publica sozinho) | GitHub |
 | 2 | SQL `…000001` a `…000012` (na ordem) | SQL Editor, um por vez |
-| 3 | SQL `…000013` → … → `…000031` e depois `…000033` (na ordem; a `32` fica de fora — passo 6) | SQL Editor, um por vez |
+| 3 | SQL `…000013` → … → `…000031`, depois `…000033` → `…000036` (na ordem; a `32` fica de fora — passo 6) | SQL Editor, um por vez |
 | 4 | Verificações abaixo | SQL Editor |
 | 5 | **Edge Function `enviar-push`**: colar o novo `supabase/functions/enviar-push/index.ts` (dependências com versão exata) | Painel → Edge Functions (só **depois** do `…17`) |
 | 6 | **`…000032` — bucket `imagens` PRIVADO** (a virada). Só com o front novo no ar **e** o APK novo distribuído | SQL Editor |
@@ -37,7 +37,7 @@ O que cada migration faz: `13` papéis/vínculos + escopo do legado · `14` RLS 
 `18` correções da revisão de segurança · `19` correções da revisão de regressão (excluir usuário, foto do mural, `nova_temporada`, desempenho) ·
 **`20` config do clube por clube + provisionamento** · **`21` duelos** · **`22` missões/devocional** · **`23` leilão** ·
 **`24` jogos (trilha, rodízio, recordes, ajudas, chefão, catálogo, cron)** · **`25` chat, bichinho, bíblia** ·
-**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`) · **`35` jogos/chefão/leilão/ranking sem `profiles.papel` — o motor de jogos passa a ler o vínculo, `pontos`/gameplay ganham `club_id` conferido (não mais adivinhado)** (a `35` não depende da `32`).
+**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`) · **`35` jogos/chefão/leilão/ranking sem `profiles.papel` — o motor de jogos passa a ler o vínculo, `pontos`/gameplay ganham `club_id` conferido (não mais adivinhado)** (a `35` não depende da `32`) · **`36` motor curricular versionado (Classes/Especialidades, fase 1): `curriculum_versions`→`classes`→`class_sections`→`class_requirements` (catálogo da plataforma) e `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (progresso por clube) + 1 classe PILOTO com dados de teste; recurso `classes` nasce desligado por padrão** (a `36` não depende da `32`).
 
 ## Passo 6 — a virada do bucket `imagens` (migration 32): quando e como
 Até aqui `imagens` continua **público** (as policies novas da `31` valem nos dois estados). A `32` faz `update storage.buckets set public = false where id = 'imagens'` e muda o que os aparelhos veem:
@@ -102,6 +102,9 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 - **Clube novo** (`insert into organizational_units … type='clube'`) já nasce com config, catálogo de jogos (só a memória ligada), desafios
   de unidade, chat geral e uma cópia do conteúdo do clube legado.
 - Sessões já abertas **não** são derrubadas ao resetar senha/excluir usuário (o token expira sozinho, ~1 h).
+- **Motor curricular (`36`)**: nasce com o recurso `classes` DESLIGADO em todos os clubes (mesmo padrão do leilão) — ninguém vê
+  "Minha Classe"/"Avaliar classes" até a liderança ligar em **Gestão → 🎨 Identidade e recursos**. A ÚNICA classe hoje é o
+  piloto de TESTE (`[PILOTO/TESTE] Amigo`) — não ligue este recurso para membros de verdade antes do currículo oficial entrar.
 
 ## Notas das revisões independentes (o que mudou de comportamento e o que observar)
 - **Cargo de liderança**: o instrutor tentando promover a diretoria/instrutor/tesoureiro, ou desativar/rebaixar quem já tem esses cargos,
@@ -123,8 +126,8 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 
 ## Testes (local, sem produção)
 ```bash
-npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 31 arquivos de teste
-npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..35 (114 asserts)
+npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 33 arquivos de teste
+npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..36 (114 asserts)
 npm run test:db:real     # `supabase db reset` DE VERDADE (CLI 2.117.0 via npx) + a suíte no banco resultante
 npm run check            # lint + vitest + build
 npm run test:storage:e2e # Storage REAL local: upload com upsert, URL pública bloqueada, URL assinada por clube, lote, listagem, bucket publico (48 asserts)
