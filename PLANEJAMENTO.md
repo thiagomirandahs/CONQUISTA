@@ -399,6 +399,22 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   requisito das 6 Classes Regulares ficou PENDENTE_DE_VALIDACAO (o único pendente do manifesto é da classe AVANÇADA
   Pesquisador de Campo e Bosque) — nada impede a publicação das 6 Regulares por falta de fonte; falta só evoluir o
   schema pras 4 lacunas antes de importar de verdade. Ainda NADA foi importado para `curriculum_versions`.
+- ✅ **Fase 2.6 — Motor de Regras Curriculares (migration 38)**: as 4 lacunas ganharam representação DECLARATIVA e
+  versionada no banco, sem coluna específica por regra: (1) conteúdo anual/dinâmico = catálogo temporal próprio
+  (`dynamic_content_definitions`/`dynamic_content_values`, vigência sem sobreposição, `conteudo_dinamico_resolver(chave, data)`)
+  — 2026 e 2027 resolvem sem duplicar a Classe; (2) escolha N-de-M = `requirement_option_groups(n_minimo)` +
+  `requirement_options`, o servidor conta (`opcoes_satisfeitas_automaticamente`); (3) não repetir especialidade = primeiro
+  o **histórico curricular PORTÁTIL** da pessoa (`curriculum_achievements`: identidade global + proveniência — clube emissor
+  imutável, versão, data, link ao registro operacional/avaliador; revogação SÓ pelo emissor, sempre soft, com autoria) —
+  `dependencias_pendentes/satisfeitas` passaram a consultar ele (evolução INTENCIONAL da migration 37, que era "só no
+  mesmo clube"): a conclusão reconhecida em A satisfaz regra curricular em B sem transferir pontos/presença/mensalidade/
+  mensagens/arquivos (provado); (4) prazo = `prazo_minimo_dias`/`prazo_maximo_dias` em `classes`/`specialties` +
+  `prazo_situacao()`; o gatilho de conclusão respeita o mínimo, o máximo é informativo; NULL nas 6 Regulares (a fonte não
+  determina). Motor de explicação: `explicar_requisito_classe/especialidade` → `{resultado: satisfeito|pendente|bloqueado,
+  regras_aplicadas: [{regra, satisfeito, origem, detalhe}]}`. Validador do manifesto ganhou `REPRESENTACAO_DAS_LACUNAS` e
+  rejeita `lacuna_schema` sem representação (autoteste: 16 casos). Testes: `35_motor_de_regras_curriculares.sql` (133
+  asserts, os 10 cenários pedidos) + 34 atualizado (46) + matriz 20 (5 exceções novas). As 6 Classes continuam NÃO
+  importadas; PDF/cartão/assinatura/Liderança/catálogo de Especialidades seguem fora.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
@@ -509,6 +525,8 @@ Criar visão “Classes” para liderança com:
 4. ✅ Implementar especialidades e dependências (migration 37) — `specialties`/`specialty_requirements`/`specialty_offerings`/
    `member_specialties`/`member_specialty_requirements` + `curriculum_dependencies` (declarativa, validada no servidor) + 1
    especialidade **piloto de TESTE** (`[PILOTO/TESTE] Primeiros Socorros`) com uma dependência de teste ligada à classe piloto.
+   4b. ✅ Motor de regras curriculares (migration 38, fase 2.6): conteúdo anual/dinâmico, escolha N-de-M, histórico curricular
+   portátil (`curriculum_achievements`) e prazo — as 4 lacunas do manifesto representadas sem achatar; motor de explicação.
 5. ⏸️ Criar PDF/renderer e comparar visualmente com o modelo autorizado.
 6. ⏸️ Implementar revisão final/assinaturas (a base de `investiture_reviews` e a confirmação já existem pra classes; falta
    PDF/assinatura formal — especialidade não tem equivalente a investidura, é reconhecida/entregue).

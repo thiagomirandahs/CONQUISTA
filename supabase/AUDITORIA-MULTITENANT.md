@@ -40,19 +40,106 @@ tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplic
 | Produto multi-clube | `recursos_catalogo` (plataforma), `club_features` (`club_id`), marca em `organizational_units.metadata->'marca'` | cada pessoa lê só os PRÓPRIOS vínculos; a liderança do clube grava marca e recursos do PRÓPRIO clube | `meu_contexto()`, `clube_marca_gravar`, `recurso_definir` | `ClubeContext`, `ClubeGuard`, `RotaRestrita`, `RecursoOpcional`, menu por recurso, tela `/clube` (identidade e recursos) | 26 (93) + Vitest (contexto, guardas, serviço, tela, contrato) + e2e real `npm run test:contexto:e2e` (42) |
 | Push | `push_subscriptions`, `push_tokens` (por pessoa; endpoint só https) | envio só via `push_destinatarios(club_id)`; o aparelho segue quem está logado | `push_registrar`, `push_token_registrar`, Edge Function `enviar-push` | `push.js`, `pushNativo.js` | 07, 21 |
 | Motor curricular — Classes (piloto) | `curriculum_versions`/`classes`/`class_sections`/`class_requirements` (plataforma, sem `club_id`); `member_classes`/`member_requirements`/`requirement_approvals`/`investiture_reviews` (`club_id`) | catálogo publicado: qualquer autenticado lê; progresso: o dono (vínculo ativo no clube) ou `pode_gerir_no_clube(club_id)` avalia | `classes_disponiveis`, `classe_iniciar/atribuir`, `minha_classe`, `requisito_salvar/enviar/avaliar`, `classe_avaliacoes_pendentes`, `investidura_confirmar` | Minha Classe, Avaliar Classe (recurso opcional `classes`, desligado por padrão) | 31 (14), 32 (58) |
-| Motor curricular — Especialidades (piloto) | `specialties`/`specialty_requirements` (plataforma); `specialty_offerings`/`member_specialties`/`member_specialty_requirements` (`club_id`); `curriculum_dependencies` (plataforma — dependência declarativa entre classe/especialidade) | catálogo publicado: qualquer autenticado lê; progresso: o dono, `pode_gerir_no_clube(club_id)` OU o instrutor responsável DA OFERTA avalia | `especialidades_disponiveis`, `especialidade_iniciar/atribuir`, `oferta_especialidade_criar`, `ofertas_especialidade_do_clube`, `minha_especialidade`, `especialidade_requisito_salvar/enviar/avaliar`, `especialidade_avaliacoes_pendentes`, `comparar_versoes_curriculares` | Minhas Especialidades, Especialidades — avaliar/turma (mesmo recurso `classes`) | 33 (25), 34 (45) |
+| Motor curricular — Especialidades (piloto) | `specialties`/`specialty_requirements` (plataforma); `specialty_offerings`/`member_specialties`/`member_specialty_requirements` (`club_id`); `curriculum_dependencies` (plataforma — dependência declarativa entre classe/especialidade) | catálogo publicado: qualquer autenticado lê; progresso: o dono, `pode_gerir_no_clube(club_id)` OU o instrutor responsável DA OFERTA avalia | `especialidades_disponiveis`, `especialidade_iniciar/atribuir`, `oferta_especialidade_criar`, `ofertas_especialidade_do_clube`, `minha_especialidade`, `especialidade_requisito_salvar/enviar/avaliar`, `especialidade_avaliacoes_pendentes`, `comparar_versoes_curriculares` | Minhas Especialidades, Especialidades — avaliar/turma (mesmo recurso `classes`) | 33 (25), 34 (46) |
+| Motor de regras curriculares (fase 2.6) | `dynamic_content_definitions`/`dynamic_content_values`, `requirement_option_groups`/`requirement_options` (plataforma, sem `club_id`); **`curriculum_achievements`** (histórico curricular PORTÁTIL da pessoa — `usuario_id` + `club_id_origem` imutável); `prazo_minimo/maximo_dias` em `classes`/`specialties` | catálogos: qualquer autenticado lê, ninguém grava; conquista: a pessoa, a liderança do clube EMISSOR, a liderança de clube onde ela tem vínculo ativo; só o emissor revoga (soft) | `conteudo_dinamico_resolver`, `opcoes_satisfeitas_automaticamente`, `especialidade_ja_concluida_pela_pessoa`, `curriculum_achievement_revogar`, `prazo_situacao`, `explicar_requisito_classe/especialidade`; `dependencias_pendentes` agora portátil | (sem tela nova — RPCs prontas pra Minha Classe) | 35 (133), 34 (46), 20 |
 
 ## Exceções declaradas (tabelas sem `club_id`, com o motivo — teste 20)
 `organizational_units` (raiz) · `organization_memberships` (o clube é `organizational_unit_id`) · `profiles` (clube pelo vínculo) ·
 `push_subscriptions`/`push_tokens` (dispositivo da pessoa) · `migracoes_aplicadas` (ledger) · `biblia_livros`/`biblia_versiculos`
 (conteúdo da Bíblia, igual para todos) · `recursos_catalogo` (catálogo de recursos da plataforma) · `curriculum_versions`/
 `classes`/`class_sections`/`class_requirements`/`specialties`/`specialty_requirements`/`curriculum_dependencies` (currículo
-oficial/versionado, classes E especialidades — plataforma; progresso é sempre por clube).
+oficial/versionado, classes E especialidades — plataforma; progresso é sempre por clube) · `dynamic_content_definitions`/
+`dynamic_content_values`/`requirement_option_groups`/`requirement_options` (regras curriculares declarativas — plataforma,
+fase 2.6) · **`curriculum_achievements`** (histórico curricular PORTÁTIL da PESSOA: `usuario_id` é o dono; `club_id_origem` é
+proveniência imutável de quem emitiu, não escopo — fase 2.6).
 
 ## O que segue usando o clube legado — de propósito
 Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronização de vínculo; o catálogo-modelo que clube novo
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
+
+## Motor curricular — fase 2.6 (migration 38): motor de regras curriculares
+
+O manifesto da fase 2.5 marcou 4 lacunas de schema (`AUDITORIA-CURRICULO-OFICIAL.md` §10). Esta migration dá a cada uma
+representação DECLARATIVA e VERSIONADA — sem coluna específica por regra (nada de `livro_2026`, `especialidade_nao_repetida`).
+O validador do manifesto (`validar.mjs`, `REPRESENTACAO_DAS_LACUNAS`) agora REJEITA qualquer `lacuna_schema` sem mecanismo no
+banco e imprime o mapa lacuna→mecanismo no relatório. As 6 Classes Regulares continuam NÃO importadas.
+
+### As 4 lacunas → como ficaram no banco
+- **Conteúdo anual/dinâmico** — `dynamic_content_definitions` (o "slot": `curso_leitura_do_ano`) + `dynamic_content_values`
+  (valor + `vigente_desde`/`vigente_ate`; gatilho recusa períodos que se sobrepõem — `daterange &&` nativo) +
+  `conteudo_dinamico_resolver(chave, data)` (determinístico: o valor vigente NA DATA, `null` quando nenhum período cobre — nunca
+  adivinha). O requisito aponta pro slot (`class_requirements.conteudo_dinamico_definicao_id`, idem em
+  `specialty_requirements`); 2026 e 2027 resolvem com UMA classe, UMA versão, UM requisito.
+- **Escolha N-de-M** — `requirement_option_groups` (polimórfico `alvo_tipo`/`alvo_id`, mesmo idioma de
+  `curriculum_dependencies`; `n_minimo`, extensível a 1-de-N, 2-de-N…; `sem_repeticao` declarado) + `requirement_options`
+  (rótulo, opcionalmente `specialty_id`). `opcoes_satisfeitas_automaticamente(grupo, pessoa)` conta no servidor as opções
+  ligadas a especialidade que a pessoa já tem (via o histórico portátil, abaixo); o front só apresenta. A conta INFORMA — a
+  aprovação continua sendo da liderança (a explicação diz "regra satisfeita, requisito pendente").
+- **Não repetir especialidade** — NÃO consulta `member_specialties` do clube atual. Primeiro nasceu o **histórico curricular
+  PORTÁTIL** da pessoa: `curriculum_achievements` — uma linha por classe/especialidade concluída, presa à identidade global
+  (`usuario_id`), com proveniência completa: `club_id_origem` (IMUTÁVEL, derivado pelo gatilho do registro operacional — nunca
+  aceito do cliente), `classe_id`/`specialty_id` (a versão exata), `concluida_em`, `member_class_id`/`member_specialty_id` (o
+  registro operacional, que por sua vez guarda em `requirement_approvals` quem avaliou cada requisito, quando e em qual clube).
+  NÃO tem pontos, presença, ranking, mensalidade, mensagem nem arquivo — só o fato curricular (o teste 35 confere a lista de
+  colunas). Emissão: gatilho em `member_classes` (→ `concluida`/`investida`) e `member_specialties` (→ `concluida`), por UPDATE
+  ou por INSERT já concluído; índices parciais únicos (um por `tipo`, porque `classe_id`/`specialty_id` são mutuamente NULL e
+  NULL nunca colide em UNIQUE) impedem duplicata ao reprocessar. **Revogação só pelo clube que emitiu**
+  (`curriculum_achievement_revogar` confere `pode_gerir_no_clube(club_id_origem)` — o header de clube em uso NÃO é a
+  autoridade), sempre SOFT (`status='revogada'`, `revogada_em/por/motivo`; INSERT/UPDATE/DELETE revogados de `authenticated`).
+  Quem vê (RLS, `_pode_ver_conquista_curricular`): a própria pessoa; a liderança do EMISSOR (autoridade permanente, mesmo depois
+  de a pessoa sair); a liderança de qualquer clube onde a pessoa tem vínculo ATIVO — é assim que "o novo clube consulta". A
+  primitiva do "não repetir" é `especialidade_ja_concluida_pela_pessoa(pessoa, especialidade)`; ela existe e está testada, mas
+  NÃO foi forçada dentro de `especialidade_iniciar` (mesma escolha das fases anteriores de não automatizar tudo sem tela e
+  fonte pedindo — fica declarada em `requirement_option_groups.sem_repeticao` e disponível ao motor de explicação).
+- **Prazo** — `prazo_minimo_dias`/`prazo_maximo_dias` em `classes` E `specialties` (colunas genéricas do próprio registro
+  versionado, não uma coluna por regra) + `prazo_situacao(inicio, min, max)` (calculado no servidor a partir de `iniciada_em`).
+  `avaliar_conclusao_classe`/`_especialidade` passaram a NÃO concluir enquanto o mínimo não foi atingido (todos aprovados,
+  status continua `em_andamento`, nenhuma conquista emitida); o máximo excedido é só explicável — sem automação destrutiva.
+  NULL nas classes/especialidades existentes (a fonte não determina prazo pras 6 Regulares) — só a capacidade existe.
+
+### Mudança de comportamento INTENCIONAL em relação à migration 37
+`dependencias_pendentes`/`dependencias_satisfeitas` deixaram de olhar `member_classes`/`member_specialties` do clube em uso e
+passaram a consultar `curriculum_achievements` (ativas, de qualquer clube). A migration 37 tinha decidido "só no mesmo clube"
+por não existir um mecanismo com proveniência — consultar o progresso operacional de outro clube seria a única exceção ao
+isolamento. Agora existe: o que atravessa clubes é SÓ o fato curricular reconhecido, com quem emitiu e quando, revogável só
+pelo emissor. O parâmetro `p_club_id` ficou na assinatura por compatibilidade (as RPCs já passam), mas não é mais usado. O
+teste 34 (seção 7) foi atualizado e explica a evolução; o teste 35 prova que nada operacional do A aparece no B.
+
+### Motor de explicação
+`explicar_requisito_classe(member_requirement_id)` / `explicar_requisito_especialidade(member_specialty_requirement_id)` →
+`jsonb { requisito: {tipo, id, status_operacional}, resultado: satisfeito | pendente | bloqueado, regras_aplicadas: [ {regra,
+satisfeito, origem, detalhe} ] }`. Regras: `dependencia_curricular` (origem `curriculum_dependencies + curriculum_achievements`),
+`conteudo_dinamico` (origem `dynamic_content_definitions + dynamic_content_values`, com o valor resolvido pra hoje),
+`escolha_n_de_m` (origem `requirement_option_groups + requirement_options`, com `satisfeitas/n_minimo/total_opcoes`).
+Mapeamento: `status='aprovado'` → `satisfeito`; senão dependência pendente ou conteúdo dinâmico sem valor pra hoje →
+`bloqueado`; senão `pendente`. Exemplo real do teste (requisito dinâmico antes de cadastrar o valor do ano):
+`{"resultado":"bloqueado","regras_aplicadas":[{"regra":"conteudo_dinamico","satisfeito":false,"origem":"dynamic_content_definitions + dynamic_content_values","detalhe":{"chave":"piloto_curso_leitura_do_ano","valor":null,...}}]}`.
+
+### Testado
+`35_motor_de_regras_curriculares.sql` (133 asserts, fixtures sintéticas `[PILOTO/TESTE]`): conteúdo 2025/2026/2027 numa classe
+só (resolver por data, sobreposição recusada, bloqueado→pendente na explicação); 2-de-3 (0→1→2 contadas no servidor, 1-de-2
+polimórfico em requisito de especialidade, por pessoa); especialidade concluída no A satisfazendo o req 3 da classe no B
+(envio e aprovação em B funcionam; explicação `satisfeito` com origem no histórico portátil); RLS de quem vê (dono, emissor,
+liderança com vínculo ativo — membro comum e anon não); B incapaz de revogar/alterar/apagar (RPC, UPDATE e DELETE); nem a
+própria pessoa; emissor revoga com motivo, 2ª revogação recusada, linha preservada, `club_id_origem` intacto, registro
+operacional intocado, outras conquistas intocadas; duas abas (progresso operacional por clube em `minha_classe()`, conquista
+única, visível sem aba); vínculo com A removido → conquista continua, dependência em B continua satisfeita, emissor mantém a
+autoridade (revoga) e aí a dependência volta a pendente sem desfazer o que B já avaliou; dado operacional do A invisível ao B
+(pontos, `member_specialties`, evidências, `requirement_approvals`, `member_classes`, Storage, mensalidade) + a estrutura de
+`curriculum_achievements` sem coluna operacional; prazo mínimo bloqueando (100% aprovado, `em_andamento`, sem conquista),
+400 dias depois conclui com máximo excedido só informado; prazo em classe (5000 dias) bloqueando e liberando; investidura não
+duplica a conquista; troca de versão (v2 da especialidade) sem mover a conquista da v1 + diff; forjar `club_id` (INSERT direto
+por pessoa e por liderança, UPDATE da origem, header de clube sem vínculo, revogar "de outro clube") — tudo recusado, e
+`club_id_origem` de toda conquista bate com o registro operacional. `34` atualizado (46) e `20` com 5 exceções novas (todas
+plataforma/pessoa, com o motivo). Suíte: 36 testes SQL, upgrade simulado (114), e2e Storage (48) e contexto (42), edge bundle,
+`curriculo:validar` (212 requisitos, nenhuma lacuna sem representação), `curriculo:autoteste` (16), Vitest (266), ESLint, build.
+
+### Limites honestos desta fase (fora do escopo, de propósito)
+Nenhuma tela nova (o motor de explicação é RPC, pronto pra "Minha Classe" consumir); `sem_repeticao` e
+`especialidade_ja_concluida_pela_pessoa` não bloqueiam `especialidade_iniciar` automaticamente; `prazo_maximo` não cancela
+nada; PDF/cartão, assinatura, Classes de Liderança e catálogo de Especialidades continuam fora; as 6 Classes Regulares NÃO
+foram importadas — próxima etapa, só depois de aprovação.
 
 ## Motor curricular — fase 2 (migration 37): Especialidades, dependências e auditoria de compatibilidade
 
@@ -157,8 +244,9 @@ diff, a especialidade piloto marcada como teste) e `34_especialidades_multiclube
 — cenário completo: a MESMA pessoa (`multi_dois_papeis`) faz a MESMA especialidade nos clubes A e B com
 evidências independentes; `instrutor_2clubes` avalia corretamente em cada clube e é bloqueado na aprovação
 CRUZADA mesmo tendo permissão de gerir no clube errado; turma com `conselheiro_a` como responsável NÃO-
-liderança avaliando só a própria turma; requisito de classe dependente de especialidade só libera no MESMO
-clube — a conclusão em A não "importa" pra B, nem pra mesma pessoa; conclusão automática; histórico via
+liderança avaliando só a própria turma; requisito de classe dependente de especialidade — nesta fase só liberava no
+MESMO clube (**revisto na fase 2.6, acima**: hoje a conclusão reconhecida em A satisfaz a regra em B via o histórico
+curricular portátil, e a seção 7 do teste 34 prova o comportamento novo); conclusão automática; histórico via
 `minha_especialidade()`; mudança de versão sem alterar histórico + o diff real; recurso `classes`
 desligado NUM clube só bloqueia lá, não no outro). Verificado também manualmente no navegador (login real,
 iniciar a especialidade piloto, enviar um requisito, aprovar pela fila da liderança, percentual
