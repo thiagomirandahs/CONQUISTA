@@ -167,3 +167,22 @@ manifesto → banco). Ninguém copia requisito pra SQL à mão. Regras que valem
 
 O que ainda NÃO é importado: Classes Avançadas (a pendência de Pesquisador de Campo e Bosque bloqueia),
 Liderança, catálogo de Especialidades.
+
+### Revisões do manifesto (histórico)
+
+Cada `classes/*.json` pode ter uma chave de topo `revisoes` (fora de `classe_regular`; o gerador não a
+inclui no pacote — é proveniência da revisão, não conteúdo): `versao`, `data`, `itens`, `fonte` e `motivo`.
+
+- **2026.2 (22/09/2026)** — revisão pontual de `amigo.IX.1` contra a página oficial (texto bruto): o oficial é
+  "Completar uma especialidade na área de Artes e habilidades manuais." — categoria **aberta**, sem lista.
+  A 2026.1 representava isso como uma opção artificial entre parênteses (erro de representação nosso). Passa
+  a `escolha: {n: 1}` **sem `opcoes`** (= o cartão não lista opções; a área está no texto; na tela vira
+  "qual especialidade você fez?"), como `companheiro.IX.1`. De quebra, `amigo.VII.1` alínea e) é
+  **"Aves de estimação"** (não "Aves"). A migration 43 (gerada) publica a 2026.2 e **arquiva** a 2026.1
+  (migration 40 fica intocada — história; quem começou nela continua nela). O importador (migration 42)
+  passou a aceitar `escolha_n_de_m` com `escolha.n` e sem `opcoes`, e a arquivar a publicada anterior do
+  mesmo identificador ao importar uma versão nova.
+- **2026.1 (22/09/2026)** — primeira importação (migration 40).
+
+Regra do gerador: uma migration POR versão (`..._importar-classes-regulares-<versão>.sql`); a da versão
+atual é encontrada pelo slug (e conferida por `--check`); versão nova ganha o próximo número livre.

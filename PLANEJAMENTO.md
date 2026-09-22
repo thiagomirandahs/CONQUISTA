@@ -443,6 +443,16 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   parênteses vs. Companheiro IX.1 sem lista. Uma Classe (Amigo) testada do início ao fim com dado sintético pro que ainda
   não tem conteúdo oficial (Curso de Leitura 2026 continua NÃO cadastrado). Gates: 39 testes SQL, upgrade 116, e2e, edge,
   Vitest 285, ESLint, build, validar/autoteste/importação:check.
+- ✅ **Fase 3.1b — Amigo IX.1 + Curso de Leitura 2026 (migrations 42/43)**: Amigo IX.1 conferido na página oficial =
+  "Completar uma especialidade na área de Artes e habilidades manuais." (categoria aberta, sem lista) — a 2026.1 tinha uma
+  opção artificial entre parênteses; `amigo.VII.1` e) é "Aves de estimação". Correção como **manifesto 2026.2**
+  (`revisoes[]` com fonte/motivo), importador aceitando escolha aberta sem `opcoes` e **arquivando** a versão publicada
+  anterior ao importar a nova; migration 43 gerada publica a 2026.2, a 2026.1 fica arquivada e intacta (teste 36). Curso
+  de Leitura 2026: nenhuma fonte primária DSA encontrada (página oficial parada em 2011, downloads sem nada, busca interna
+  vazia); só a CPB (loja, não normativa) lista "Servo de Deus e Amigo de Todos" pra Desbravadores 10–15 → **não
+  cadastrado**, requisito segue bloqueado; os 6 slots por classe já cobrem o modelo "um livro por público" sem mudança.
+  Matriz manifesto → banco → API → UI re-executada (36: 43, 38: 18, UI: 7, 37: 81 — dinâmico resolve 2026 e não reaproveita
+  em 2027).
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

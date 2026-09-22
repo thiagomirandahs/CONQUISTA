@@ -58,6 +58,50 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 3.1b (migrations 42/43): revisão pontual de Amigo IX.1 + Curso de Leitura 2026
+
+### Amigo IX.1 contra a fonte oficial
+Página oficial da classe (texto bruto, reconferido em 22/09/2026, carimbo 04/11/2017): **"Completar uma especialidade
+na área de Artes e habilidades manuais."** — categoria ABERTA, sem lista de opções, sem exemplos, sem "não realizada
+anteriormente". A 2026.1 representava isso como uma única opção artificial entre parênteses (erro de representação
+estrutural nosso — o texto oficial nunca esteve errado). De quebra, na mesma seção V/VII conferidas, `amigo.VII.1`
+alínea e) é **"Aves de estimação"** na fonte (a 2026.1 trazia "Aves") — nome de especialidade é identificador, foi
+corrigido literalmente. V.1 e VII.1 a)–d) batem.
+
+**O que foi feito** (sem editar a versão importada): manifesto **2026.2** (`amigo.json` com `revisoes[]` documentando
+itens, fonte e motivo; `manifesto_versao` subiu nos 6 arquivos) — `amigo.IX.1` = `escolha: {n: 1}` sem `opcoes`
+(mesma estrutura de `companheiro.IX.1`), descrição "Completar 1 especialidade na área de Artes e habilidades manuais.";
+`amigo.VII.1` opção "Aves de estimação". Migration **42**: o importador aceita `escolha_n_de_m` com `n` e sem `opcoes`
+(grupo aberto, 0 opções → texto livre na tela) e, ao importar uma versão nova do mesmo identificador, **arquiva** a
+publicada anterior (explícito em `arquivadas` no resultado). Migration **43** (gerada): publica a 2026.2 e arquiva a
+2026.1. A migration 40 fica intocada; a 2026.1 continua no banco, arquivada, com hash e 149 requisitos intactos (teste
+36 confere: `arquivado|b2430a…`, inclusive o `amigo.IX.1` antigo com a opção artificial). Quem começou na 2026.1
+continua nela (`member_classes` aponta pra classe da versão em que a pessoa andou); listagem/início novos só veem a
+2026.2. Os 6 slots dinâmicos (`curso_leitura_<classe>`) são compartilhados entre versões (6, não 12). Gerador: uma
+migration por versão, encontrada pelo slug; versão nova ganha o próximo número livre.
+
+### Curso de Leitura 2026 — pesquisa em fontes oficiais da DSA
+- `adventistas.org/pt/desbravadores/curso-de-leitura/`: artigo "Curso de leitura 2011" (carimbo 27/12/2017) — parado.
+- `adventistas.org/pt/desbravadores/projeto/clube-do-livro/` (aparece na busca como "Curso de Leitura"): **404**.
+- `downloads.adventistas.org/pt/departamento/desbravadores/`: nenhum item de Curso de Leitura/Clube do Livro/2026.
+- Busca interna do site dos Desbravadores por "curso de leitura": zero resultados.
+- Corroboração NÃO normativa (loja, excluída como autoridade por instrução): a CPB lista "Curso de Leitura 2026 —
+  Juvenis e Desbravadores (10 a 15 anos)" com o título **"Servo de Deus e Amigo de Todos"** (ISBN 978-85-345-3616-5),
+  um único livro pra toda a faixa; Aventureiros, Jovens e Adultos têm livros próprios.
+**Decisão: não cadastrado.** Não há fonte primária DSA (página, OMD ou comunicado) definindo o livro de 2026; o
+requisito I.4 das 6 classes continua **bloqueado** e honesto na tela. Pendência: obter a fonte DSA e então inserir
+`dynamic_content_values` (um valor por slot, com `fonte_url`/`fonte_descricao`, vigência 2026-01-01..2026-12-31).
+Sobre seleção contextual: o modelo da CPB é um livro por PÚBLICO (Desbravadores 10–15 = uma faixa só, todas as 6
+classes), não por classe — os 6 slots por classe já cobrem isso sem achatar (mesmo valor nos 6, ou valores distintos se
+a DSA um dia separar); `dynamic_content_values` não precisa mudar.
+
+### Matriz re-executada e o que provou
+36 (43 asserts): manifesto 2026.2 → banco = 0 divergências; 2026.1 arquivada intacta. 38 (18): API = manifesto 2026.2
+(149, 25 grupos, 73 opções). `MinhaClasse.matriz.test.jsx` (7): UI = manifesto (Amigo IX.1 agora "Qual especialidade
+você fez?"). 37 (81): fluxo real com a 2026.2 — IX.1 recusa id de opção e aceita texto livre; dinâmico resolve o valor
+sintético em 2026-06-01 e devolve NULL em 2027-06-01 (não reaproveita); texto do requisito intocado. Nenhuma correção
+de modelagem alterou texto oficial: só a representação de IX.1 e a grafia literal de uma opção.
+
 ## Motor curricular — fase 3.1 (migration 41): validação visual/funcional das 6 Classes + regra bloqueia de verdade
 
 ### Alteração no motor (achado da fase 3)
