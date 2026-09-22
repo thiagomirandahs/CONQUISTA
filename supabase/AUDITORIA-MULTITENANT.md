@@ -50,6 +50,48 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Limpeza final da fase multi-clube (migration 35) — jogos, chefão, leilão e ranking sem profiles.papel
+Continuação da migration 34: aquela fechou AUTORIZAÇÃO (quem pode gerir, aprovar, editar); esta fecha o resto — o motor de
+jogos/prêmios, chefão, leilão e ranking (o "limite honesto" que a migration 34 tinha deixado documentado). Reauditoria pega o
+texto LIVE de cada função no banco (`pg_get_functiondef`), não grep em arquivo — considera toda redefinição de migration anterior.
+- **11 + 14 funções corrigidas** (duas rodadas — ver "armadilha do \b" abaixo): `_chefao_premiar_clube`, `chefao_estado`,
+  `chefao_golpe`, `_lembrar_ausentes_clube`, `_lembrar_jogos_do_dia_clube`, `_premiar_campeao_semana_clube`,
+  `_premiar_melhores_do_dia_clube`, `_premiar_rodada_semana_clube`, `dar_lance`, `progresso_lado`, `ranking_trilha`,
+  `_pontos_temporada_unidade_interno`, `atividade_jogos`, `notif_aniversariantes_hoje`, `recordes_semana` e as RPCs que gravam
+  pontos/jogos (`registrar_jogo`, `avaliar_missao`, `biblia_confirmar_leitura`, `bichinho_cuidar`, `bonus_todos_jogos`,
+  `registrar_devocional`, `registrar_missao`, `resolver_ajuda`, `registrar_recorde`, `bichinho_adotar`, `biblia_iniciar_leitura`,
+  `iniciar_jogo`) — todas trocam `profiles.papel/.status/.unidade_id` por `organization_memberships` (papel/status/unidade do
+  VÍNCULO no clube certo), mantendo `profiles` só pra identidade (`nome`, `foto`, `teste`).
+- **Achado maior, além do papel**: `pontos.club_id` (e o de mais 9 tabelas de gameplay — `trilha_jogos`, `recordes`, `partidas`,
+  `chefao_golpes`, `bichinhos`, `biblia_leituras`, `biblia_leitura_atual`, `missoes_feitas`, `devocional`) era sempre INFERIDO por
+  `clube_vinculo_do_usuario(pessoa)` — "o" clube dela, nunca o clube da REQUISIÇÃO. Jogar/pontuar operando no clube B podia gravar
+  o dado no clube A (o clube "mais relevante" da pessoa). Corrigido nos dois gatilhos genéricos (`definir_club_ponto`,
+  `definir_club_por_usuario`): quem grava já sabendo o clube (toda RPC client-facing já resolve `clube_atual_id()` pra outras
+  checagens) passa `club_id` explícito; o gatilho CONFERE o vínculo (nunca confia cego) em vez de adivinhar. Sem `club_id`
+  explícito, o comportamento de sempre (inferir) continua — nada quebra pra quem ainda não foi migrado.
+- **Dois bugs de isolamento a mais, achados testando o cenário pedido** (pessoa membro no A e instrutor no B): a chave única de
+  `recordes` (`usuario_id, jogo, semana`) não tinha `club_id` — o recorde da semana no B sobrescrevia o do A; e o anti-flood "1
+  golpe de chefão por hora" e o "bônus do dia" (jogos) contavam por PESSOA, não por clube — golpear/completar no B "gastava" o
+  cooldown/bônus do A. Os três corrigidos (chave composta com `club_id`; os dois limites agora são por `usuario_id + club_id`).
+- **Armadilha desta migration, documentada pra não se repetir**: a 1ª auditoria usava `\b` (limite de palavra) — no dialeto de
+  regex do Postgres (ARE), `\b` é BACKSPACE literal, não limite de palavra (o certo é `\y`). Um padrão como `'\bp\.papel\b'`
+  NUNCA bate com nada (falso negativo silencioso — foi assim que `chefao_golpe` e mais 3 funções escaparam da 1ª rodada). E um
+  padrão largo tipo `'profiles[^,;()]*\.status'` sem rastrear o APELIDO de verdade pode casar por cima de um `JOIN` inteiro (ex.:
+  "profiles pr on pr.id=... where **m.status**" via um gap grande sem vírgula/parêntese no meio — falso positivo). O teste de
+  contrato (`29_sem_profiles_papel_operacional.sql`) usa `\y` e rastreia o apelido real de `profiles` antes de checar
+  `<apelido>.papel/.status/.unidade_id`.
+- **Teste de contrato** (`29`, 12 asserts): nenhuma função/view/policy do banco lê `profiles.papel/.status/.unidade_id` fora do
+  mecanismo do próprio espelho (`reconciliar_perfis_dos_vinculos`, declarado como exceção); as 9 tabelas de gameplay têm o
+  gatilho corrigido; a coluna continua travada por GRANT. Falha se código novo voltar a depender desses campos.
+- **Cenário explícito testado** (`30_jogos_premios_multiclube_isolados.sql`, 29 asserts): a MESMA pessoa é desbravador (unidade
+  A1) no clube A e instrutor (unidade B1) no clube B, com `reflexo_so_desbravador` ligado nos dois — joga jogos diferentes,
+  golpeia os dois chefões, bate recorde nos dois. Confere: cada jogo/ponto/recorde/golpe cai no `club_id` certo (nunca no outro);
+  o ranking e o placar "por unidade" de cada clube não citam nada do outro; o recorde de reflexo do B nem é gravado (lá ela é
+  instrutor, a mesma regra de sempre) enquanto o do A conta; o prêmio semanal de recorde paga no A mas não no B (papel do
+  VÍNCULO, não um só papel global); golpear no B não consome o cooldown do A nem altera o dano calculado do A.
+- Limite que fica, honesto: leitura de dados de TABELA (não RPC) pra quem tem vínculo genuíno em 2+ clubes continua sem escopo
+  por "clube em uso" (ver limite (2) da migration 34, inalterado) — não é vazamento, é visibilidade legítima.
+
 ## Multi-clube real (migration 34) — 1 clube por pessoa sai, entitlements entram
 Continuação direta da camada de produto (migration 33): agora o suporte a múltiplos clubes por pessoa é de VERDADE (não só o
 formato), a seleção de clube é explícita e validada por requisição, e os 11 recursos que só escondiam rota passam a bloquear
@@ -82,16 +124,12 @@ escrita também. Checkpoint anterior intocado; nada disto foi ao Supabase remoto
 - **`meus_filhos()`** passou a usar `clube_atual_id()` (antes: `clube_do_usuario(auth.uid())`, sem seleção possível) — um
   responsável com vínculo em 2 clubes agora troca entre "meus filhos daqui" e "meus filhos de lá" do mesmo jeito que qualquer
   outra tela troca de clube.
-- **Limites honestos desta fase** (documentados, não escondidos): (1) o motor de jogos/prêmios e a config por clube (migrations
-  20–24, dezenas de `profiles.papel`/`.unidade_id` inline) continuam lendo o ESPELHO em profiles — correto pro clube PRIMÁRIO de
-  cada pessoa (o caso comum), mas pode ficar impreciso pra alguém pontuando/participando de jogos num clube SECUNDÁRIO; reescrever
-  essas consultas pra ler o vínculo direto é a próxima leva, não incluída aqui por ser uma superfície grande (~100 pontos) de
-  lógica de pontuação já testada, e por ser um risco de dado (prêmio errado), não de segurança (nunca vaza clube alheio — o
-  escopo por `club_id`/`clube_atual_id()` continua correto). (2) Leitura de dados de tabela (não RPC) para quem tem vínculo ativo
-  GENUÍNO em 2+ clubes não é escopada por "clube em uso" — sempre foi assim (`membro_ativo_no_clube(club_id)` olha o `club_id` da
-  LINHA, não `clube_atual_id()`) e continua correto: não é vazamento, é visibilidade legítima de quem pertence aos dois clubes.
-  Só RPCs/telas operacionais (ranking, gestão, `meus_filhos`...) respeitam o clube em uso. (3) PWA/manifest/ícones/APK/título
-  inicial do HTML seguem os do Tenant 001 — branding dinâmico continua sendo só DEPOIS de autenticar.
+- **Limites desta fase, já resolvidos na "limpeza final" (migration 35, abaixo)**: (1) o motor de jogos/prêmios e a config por
+  clube liam o ESPELHO em profiles — resolvido; (2) leitura de dados de TABELA (não RPC) para quem tem vínculo ativo GENUÍNO em
+  2+ clubes não é escopada por "clube em uso" — continua assim de propósito (`membro_ativo_no_clube(club_id)` olha o `club_id` da
+  LINHA, não `clube_atual_id()`): não é vazamento, é visibilidade legítima de quem pertence aos dois clubes; só RPCs/telas
+  operacionais (ranking, gestão, `meus_filhos`...) respeitam o clube em uso. (3) PWA/manifest/ícones/APK/título inicial do HTML
+  seguem os do Tenant 001 — branding dinâmico continua sendo só DEPOIS de autenticar (sem mudança nesta fase).
 - Testado: SQL `27_multiclube_real.sql` (48 asserts — 1 clube, 2 clubes com papéis diferentes, diretor num e membro noutro,
   instrutor com unidades diferentes por clube, responsável com filhos em 2 clubes, vínculo suspenso só num, troca de clube,
   "duas abas", forjar `club_id`, remoção de vínculo com a sessão aberta) + `28_entitlements_recursos.sql` (23 asserts, estrutural

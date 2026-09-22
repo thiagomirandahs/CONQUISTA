@@ -342,9 +342,14 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   (`vinculo_gerir`); seleção de clube por requisição, sempre validada (`clube_atual_id()` lê o header `x-clube-atual`; duas abas do mesmo usuário operam em clubes diferentes ao mesmo tempo);
   11 recursos que só escondiam rota agora bloqueiam escrita nova (gatilho central, leitura/edição do que já existe continua liberada). Achado e corrigido nesta fase: autoridade de liderança
   usava o clube "mais relevante" do alvo em vez do clube em uso de quem chama — corrigido em `lideranca_gere_usuario`/`resetar_senha_membro`/`excluir_usuario`.
-  Pendente desta camada: o motor de jogos/prêmios e a config por clube ainda leem o espelho em `profiles` (correto pro clube primário; ver limites em AUDITORIA-MULTITENANT.md), navegação por
-  módulos e painel Master.
-- ⏸️ **Classes e Especialidades (seção 12): ainda não iniciado** — decisão explícita.
+- ✅ Limpeza final da fase multi-clube (migration 35): jogos, chefão, leilão, ranking, recordes, temporada e as RPCs de pontuação
+  param de ler o espelho em `profiles` — organization_memberships é a única fonte de papel/unidade/status em TODO código
+  operacional, sem exceção (teste de contrato reprova a volta). Achados extras corrigidos: `pontos`/gameplay tinham `club_id`
+  adivinhado pelo "clube mais relevante" da pessoa (não pelo clube da requisição); a chave única de `recordes` e os limites
+  diários de golpe do chefão/bônus de jogos eram por PESSOA, não por clube — um clube podia "gastar" o limite do outro. Testado
+  com uma pessoa desbravador num clube e instrutor noutro, pontuando/jogando/premiando nos dois ao mesmo tempo.
+- ⏸️ **Classes e Especialidades (seção 12): ainda não iniciado** — decisão explícita. Pendente pra depois: navegação por
+  módulos e painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por "clube em uso" (por desenho).
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

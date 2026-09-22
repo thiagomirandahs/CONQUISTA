@@ -1,4 +1,4 @@
-# Rollout — multi-tenant completo (migrations 01–34)
+# Rollout — multi-tenant completo (migrations 01–35)
 
 Nada aqui foi aplicado em produção. Este guia é para **quando** você decidir aplicar.
 Produção é manual (SQL Editor) e o front é automático (Vercel no push): a ordem importa.
@@ -15,11 +15,11 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`34`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`35`.
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
    **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
-   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`34` são idempotentes. (A `02` também: aplique uma vez.)
+   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`35` são idempotentes. (A `02` também: aplique uma vez.)
 
 ## Ordem
 | # | O quê | Onde |
@@ -37,7 +37,7 @@ O que cada migration faz: `13` papéis/vínculos + escopo do legado · `14` RLS 
 `18` correções da revisão de segurança · `19` correções da revisão de regressão (excluir usuário, foto do mural, `nova_temporada`, desempenho) ·
 **`20` config do clube por clube + provisionamento** · **`21` duelos** · **`22` missões/devocional** · **`23` leilão** ·
 **`24` jogos (trilha, rodízio, recordes, ajudas, chefão, catálogo, cron)** · **`25` chat, bichinho, bíblia** ·
-**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`).
+**`26` remove os helpers legados** (+ view do chat) · **`27` conteúdo (missões/versículos) por clube** · **`28` correções das revisões da rodada 2** (cron de leilão isolado por leilão + registro de falhas em `cron_falhas`, teto de pontos, limites do bucket `imagens`, push que segue o usuário logado, sem TRUNCATE para usuário, erro claro do instrutor) · **`29` texto de mensagem moderada só na trilha da liderança** · **`30` sem oráculo de UUID (mesma resposta para "outro clube" e "não existe") + `avaliado_por`/`registrado_por` só de quem faz** · **`31` imagens por clube (policies por clube, envio só no próprio escopo, dono = `owner` OU `owner_id`) + bucket `publico`** · **`32` `imagens` deixa de ser público** · **`33` contexto do clube: `meu_contexto()`, marca por clube, catálogo de recursos e as RPCs de escrita da liderança** (a `33` não depende da `32`) · **`34` multi-clube real: remove 1-clube-por-pessoa, papel/unidade/status viram do vínculo (`vinculo_gerir`), seleção de clube por requisição (`clube_atual_id()` lê o header `x-clube-atual`, sempre validado) e feature flags viram autorização de verdade nos 11 recursos que só escondiam rota** (a `34` não depende da `32`) · **`35` jogos/chefão/leilão/ranking sem `profiles.papel` — o motor de jogos passa a ler o vínculo, `pontos`/gameplay ganham `club_id` conferido (não mais adivinhado)** (a `35` não depende da `32`).
 
 ## Passo 6 — a virada do bucket `imagens` (migration 32): quando e como
 Até aqui `imagens` continua **público** (as policies novas da `31` valem nos dois estados). A `32` faz `update storage.buckets set public = false where id = 'imagens'` e muda o que os aparelhos veem:
@@ -49,9 +49,10 @@ Até aqui `imagens` continua **público** (as policies novas da `31` valem nos d
 
 ## Verificações depois do SQL
 ```sql
--- 1) todo perfil tem 1 vínculo de clube e o papel/status batem (esperado: 0 e 0)
+-- 1) todo perfil tem vínculo de clube e o espelho (profiles.papel/status/unidade_id) bate com o
+--    vínculo PRIMÁRIO (esperado: 0 e 0) — desde a 34/35, o vínculo é a fonte; profiles é só espelho
 select count(*) from profiles p where not exists (select 1 from organization_memberships m where m.user_id = p.id);
-select public.reconciliar_vinculos_perfis();   -- esperado: 0 (nada a ajustar)
+select public.reconciliar_perfis_dos_vinculos();   -- esperado: 0 (nada a ajustar)
 
 -- 2) ninguém sem login executa RPC (esperado: só clube_legado_id)
 select p.oid::regprocedure from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -122,8 +123,8 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 
 ## Testes (local, sem produção)
 ```bash
-npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 29 arquivos de teste
-npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..34 (114 asserts)
+npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 31 arquivos de teste
+npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..35 (114 asserts)
 npm run test:db:real     # `supabase db reset` DE VERDADE (CLI 2.117.0 via npx) + a suíte no banco resultante
 npm run check            # lint + vitest + build
 npm run test:storage:e2e # Storage REAL local: upload com upsert, URL pública bloqueada, URL assinada por clube, lote, listagem, bucket publico (48 asserts)
