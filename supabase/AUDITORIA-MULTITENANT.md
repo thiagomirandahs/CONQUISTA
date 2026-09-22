@@ -58,6 +58,81 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 3.1 (migration 41): validação visual/funcional das 6 Classes + regra bloqueia de verdade
+
+### Alteração no motor (achado da fase 3)
+O motor de explicação dizia "bloqueado" (dependência pendente, conteúdo dinâmico sem valor), mas `requisito_enviar`/
+`requisito_avaliar` só conferiam a dependência — dava pra enviar E aprovar um requisito anual sem o conteúdo do ano, e
+um "escolha 1 de 4" sem ninguém registrar qual opção foi feita. Migration 41:
+- **`member_requirement_options`** (`club_id` derivado pelo gatilho genérico, RLS dono/liderança, escrita só por RPC): a
+  ESCOLHA registrada num requisito N-de-M — ids das opções do cartão, ou texto livre SÓ quando o cartão não lista opções
+  (Companheiro IX.1). `requisito_escolher(requisito, opções[], textos[])` substitui o conjunto; valida que a opção pertence
+  ao grupo do requisito e recusa texto livre onde há lista (e vice-versa).
+- **`_requisito_bloqueios(member_requirement_id)` — UMA fonte** pra "por que não dá pra enviar/aprovar agora": dependência
+  pendente; conteúdo dinâmico sem valor pro período; N-de-M com menos opções válidas que `n_minimo` (escolhas registradas
+  ∪ opções cumpridas pelo histórico portátil); `sem_repeticao` violada — opção ligada a especialidade que a pessoa já tinha
+  ANTES de começar esta classe (e, com sem_repeticao, só conquistas DEPOIS de `iniciada_em` contam como cumpridas).
+- **`requisito_enviar` e `requisito_avaliar(aprovado)` recusam com a mesma lista** ("Requisito bloqueado: …"). Aprovação
+  manual não contorna regra estrutural. `explicar_requisito_classe` expõe `bloqueios`; `minha_classe()` entrega por
+  requisito `bloqueios` e `escolha` (estado completo: escolhidas, cumpridas pelo histórico, violações, `satisfeito`);
+  `classe_avaliacoes_pendentes()` entrega o mesmo pra fila da liderança (o botão Aprovar nasce desabilitado com o motivo).
+- Limite honesto: `sem_repeticao` só é verificável automaticamente quando a opção tem `specialty_id` — hoje as opções do
+  catálogo oficial são rótulos (Especialidades não importadas); a regra fica declarada e visível, e a escolha registrada
+  é o que a liderança confere.
+
+### Matriz automatizada manifesto → API → UI
+- `38_matriz_manifesto_api.sql` (18): `lider_a` inicia as 6 classes; `minha_classe()` de cada uma é achatada (classe, posição
+  da seção, posição do requisito) e comparada com o manifesto por `except` nos dois sentidos — 149 requisitos, nenhum
+  duplicado/sumido/fora de ordem, texto exato, `status_fonte` igual (7 ALTERADO_POR_OMD nas Regulares), dinâmico com a
+  chave certa, os 25 N-de-M como estrutura (n, sem_repeticao, pool, opções na ordem), estado inicial `nao_iniciado`,
+  bloqueios iniciais = exatamente os 6 dinâmicos + 25 de escolha (118 livres); observações e OMDs via `requisito_origem()`.
+- `src/pages/MinhaClasse.matriz.test.jsx` (7): monta o payload no formato de `minha_classe()` a partir do MESMO manifesto e
+  renderiza cada uma das 6 classes — seções (h4) e requisitos (h5) na ordem e com o texto exato, unicidade por (seção,
+  código), dinâmico bloqueado com aviso, N-de-M como fieldset com as opções na ordem do cartão (ou texto livre), nada
+  técnico no card (OMD/hash/id só na "Origem do requisito").
+- Elo manifesto → banco continua sendo o 36 (gate permanente).
+
+### Minha Classe — os 9 estados (Vitest `MinhaClasse.test.jsx`, 12)
+`situacaoDoRequisito()` (lógica pura, exportada): status final (aprovado/aguardando/correção) > bloqueado > cumprido pelo
+histórico > em andamento/não iniciado. Cada estado com ícone E texto (nunca só cor, `data-situacao` pra teste). Simples;
+com evidência (label "Sua resposta"/"Foto de evidência", rascunho); dinâmico com valor ("Conteúdo deste período") e sem
+valor (aviso claro, bloqueado, botão desabilitado com `aria-describedby` apontando pro motivo — o aviso não repete quando a
+lista de bloqueios já está visível); escolha N-de-M (fieldset/legend "Escolha N de M", checkboxes com `aria-label`, opções
+na ordem, "não vale repetir…", texto livre com label quando o cartão não lista, "Salvar escolha" só quando mudou);
+cumprido pelo histórico (opção marcada/desabilitada com ✨, envio liberado); aguardando; aprovado; correção solicitada
+(aviso + histórico com o comentário). Hierarquia h2 → h3 (classe) → h4 (seção) → h5 (requisito); `progressbar` com
+`aria-valuenow`; alvos ≥ 44px; nada sai da largura em 375px. "Origem do requisito" é um link por card, abre um `dialog`
+com OMD (título/data/documento), página oficial, carimbo ≠ vigência, versão/hash.
+
+### Validado no navegador (Supabase local, build com `.env.local` temporário, viewport 375×812)
+Desbravador sintético de 12 anos (Tenant 001): lista as 6 classes com "A partir de N anos", Pioneiro/Excursionista/Guia
+desabilitados com o motivo; inicia Amigo → 9 seções/25 requisitos na ordem; I.4 bloqueado ("conteúdo oficial deste
+período ainda não está disponível", botão desabilitado); V.1/VII.1/IX.1 bloqueados até escolher; marca "Natação
+principiante I" → "Salvar escolha" → Em andamento, sem bloqueio → envia (Aguardando avaliação); envia I.1; "Origem do
+requisito" de I.5 mostra OMD 012/2017 + confirmada por 021/2024, página oficial, carimbo 04/11/2017 ≠ vigente 01/01/2018,
+hash. Liderança (tenant001): fila mostra os 2 com a escolha registrada ("Escolha 1 de 4 — registrou: Natação…"), aprova I.1
+e pede correção em V.1 com comentário → desbravador vê 4%, ✅ Aprovado, ↺ Correção solicitada com o comentário no
+histórico e a escolha preservada, podendo reenviar.
+
+### Divergências encontradas (e o que foi feito)
+1. **UI**: "vigente desde 31/12/2017" (manifesto 2018-01-01) — `new Date('2018-01-01')` em UTC formatado no fuso local.
+   Corrigido em `fmtData` (data-sem-hora é calendário); teste unitário. Afetava também carimbo/vigência na Origem.
+2. **UI/a11y**: checkbox de opção sem nome acessível ("on") → `aria-label` com o rótulo.
+3. **UI**: aviso do conteúdo dinâmico repetido (aviso + lista de bloqueios) → aviso só quando a lista não está visível.
+4. **Manifesto (não alterado — fica registrado pra próxima versão)**: Amigo IX.1 modela "qualquer especialidade em Artes
+   e habilidades manuais" como UMA opção com rótulo entre parênteses — na tela vira um checkbox "(qualquer especialidade…)",
+   enquanto Companheiro IX.1 (mesma ideia) não lista opções e vira texto livre ("Qual especialidade você fez?"). A tela é
+   fiel ao manifesto nos dois casos; a forma de Companheiro é a mais útil. Sugestão: na próxima versão do manifesto,
+   Amigo IX.1 sem `opcoes` (como Companheiro). Também: Amigo V.1/VII.1 e Pesquisador VII.2/VIII.2 têm o MESMO texto
+   resumido ("Completar 1 especialidade à escolha") em seções diferentes — não é duplicata (opções e seção diferentes).
+5. **Motor**: enviar/aprovar contornavam "bloqueado" (dinâmico sem valor) e N-de-M sem escolha — corrigido (acima).
+Nenhuma divergência de conteúdo entre manifesto, banco e API (36/38 = 0 diferenças).
+
+### Regras que bloquearam corretamente (provado em SQL e no navegador)
+Enviar/aprovar Amigo I.4 sem conteúdo do ano (SQL 37 + UI); aprovar Amigo V.1 sem escolha; escolher opção de OUTRO
+requisito; texto livre onde há lista; iniciar classe abaixo da idade (12 → Pioneiro/Excursionista/Guia, UI e RPC); liderança
+atribuir abaixo da idade; iniciar/atribuir o piloto com catálogo oficial publicado; lider_a aprovar requisito do clube B.
+
 ## Motor curricular — fase 3 (migrations 39/40): as 6 Classes Regulares 2026 no catálogo oficial
 
 **Fonte única = o manifesto** (`supabase/curriculo-manifesto`). Ninguém recopiou requisito pra SQL nem pra React, e a

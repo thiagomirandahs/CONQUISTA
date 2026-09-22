@@ -430,6 +430,19 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   (escolha/dinâmico/origem do banco). Testes: 36 (integridade permanente manifesto→banco, 40 asserts, inclusive
   auto-adulteração detectada), 37 (12 cenários, 65), Vitest MinhaClasse (5); upgrade legado agora confere catálogo sem
   progresso. Não avançou pra PDF/cartão, assinatura, Liderança nem catálogo de Especialidades.
+- ✅ **Fase 3.1 — Validação visual e funcional das 6 Classes (migration 41)**: revisão requisito a requisito no navegador
+  (Supabase local, 375×812) e matriz automatizada manifesto → API (`38_matriz_manifesto_api.sql`, 18) → UI
+  (`MinhaClasse.matriz.test.jsx`, 7): 149 requisitos, nenhum sumido/duplicado/fora de ordem/texto diferente. Motor:
+  regra curricular passa a BLOQUEAR de verdade — `member_requirement_options` (a escolha N-de-M registrada,
+  `requisito_escolher`), `_requisito_bloqueios()` (dependência, conteúdo dinâmico sem valor, N-de-M sem escolhas válidas,
+  sem_repeticao violada) e `requisito_enviar`/`requisito_avaliar(aprovado)` recusando com a mesma lista que a tela mostra.
+  Minha Classe representa os 9 estados (ícone + texto, h2→h5, `progressbar`, labels, botão desabilitado com
+  `aria-describedby` do motivo, alvos ≥ 44px); OMD/hash/ids só na "Origem do requisito"; fila da liderança mostra a escolha
+  e desabilita Aprovar com o motivo. Divergências corrigidas: data-sem-hora exibida como "31/12/2017" (fuso), checkbox sem
+  nome acessível, aviso dinâmico duplicado. Registrado (sem alterar o manifesto): Amigo IX.1 como opção única entre
+  parênteses vs. Companheiro IX.1 sem lista. Uma Classe (Amigo) testada do início ao fim com dado sintético pro que ainda
+  não tem conteúdo oficial (Curso de Leitura 2026 continua NÃO cadastrado). Gates: 39 testes SQL, upgrade 116, e2e, edge,
+  Vitest 285, ESLint, build, validar/autoteste/importação:check.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
