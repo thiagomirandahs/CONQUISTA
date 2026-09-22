@@ -1,8 +1,8 @@
 -- Cenário explícito pedido (fase 2 — Especialidades, migration 37): a MESMA pessoa faz a
 -- MESMA especialidade em clubes diferentes; um instrutor em 2 clubes avalia cada um
 -- corretamente e é bloqueado na aprovação CRUZADA; um requisito de classe dependente de
--- especialidade só libera quando a especialidade está concluída NO MESMO CLUBE (nunca
--- "importada" de outro clube da mesma pessoa); turma/oferta com instrutor responsável que
+-- especialidade libera quando a especialidade está concluída pela PESSOA (desde a fase 2.6,
+-- via o histórico curricular portátil — ver seção 7); turma/oferta com instrutor responsável que
 -- não é liderança; conclusão automática; histórico de avaliação; mudança de versão sem
 -- alterar o histórico + a ferramenta de diff; feature flag "classes" desligada bloqueia
 -- escrita (não só a rota).
@@ -120,8 +120,17 @@ select t.throws('...mas conselheiro_a NÃO avalia a especialidade de multi_dois_
 reset role;
 select t.eq('req 2 de membro_a2 está aprovado (via responsável da turma)', (select status from public.member_specialty_requirements where member_specialty_id = t.id('ms_a2') and specialty_requirement_id = t.id('req_pri_2')), 'aprovado');
 
--- ==================== 7) dependência de Classe -> Especialidade: só no MESMO clube, nunca "importada" de outro ====================
-select t.ok('req_conhecimentos_3 (classe piloto) ainda tem dependência pendente pra multi_dois_papeis no clube A (especialidade não concluída lá ainda)',
+-- ==================== 7) dependência de Classe -> Especialidade ====================
+-- EVOLUÇÃO INTENCIONAL (fase 2.6, migration 38 — motor de regras curriculares). Até a fase 2
+-- (migration 37) dependencias_pendentes() olhava SÓ o clube em uso — a conclusão em A não "vazava"
+-- pra B, decisão deliberada da época. A fase 2.6 REVERTE isso de propósito: criou o histórico
+-- curricular PORTÁTIL da pessoa (curriculum_achievements, com proveniência: clube emissor, versão,
+-- data) e redefiniu dependencias_pendentes/dependencias_satisfeitas pra consultarem ELE, não mais
+-- member_classes/member_specialties do clube em uso. É exatamente o pedido "o novo clube pode
+-- consultar a conclusão reconhecida pra satisfazer regra curricular". O que NÃO mudou (provado em
+-- 35_motor_de_regras_curriculares.sql): pontos, presença, mensalidade, mensagens, arquivos e o
+-- PROGRESSO operacional (member_specialties/member_specialty_requirements) continuam 100% por clube.
+select t.ok('req_conhecimentos_3 (classe piloto) ainda tem dependência pendente pra multi_dois_papeis no clube A (especialidade não concluída em NENHUM clube ainda)',
   array_length(public.dependencias_pendentes('class_requirement', t.id('req_conhecimentos_3'), t.id('multi_dois_papeis'), t.id('clube_a')), 1) > 0);
 -- conclui a especialidade de multi_dois_papeis NO CLUBE A (falta só req 3; req 1 já aprovado acima)
 select t.como('instrutor_2clubes'); select t.pedir_clube('clube_a');
@@ -130,12 +139,17 @@ select t.permitido('aprova req 2 de A (o último — fecha 3/3)', format($q$sele
 reset role;
 select t.eq('especialidade de multi_dois_papeis no clube A: concluída sozinha (conclusão automática)', (select status from public.member_specialties where id = t.id('ms_a')), 'concluida');
 select t.eq('progresso de A: 100%', public.especialidade_percentual(t.id('ms_a')), 100);
-select t.eq('...e a de B CONTINUA em_andamento (só 1/3 aprovado lá)', (select status from public.member_specialties where id = t.id('ms_b')), 'em_andamento');
+select t.eq('...e a de B CONTINUA em_andamento (só 1/3 aprovado lá — o PROGRESSO operacional nunca é portátil, só o fato de conclusão)', (select status from public.member_specialties where id = t.id('ms_b')), 'em_andamento');
+
+select t.eq('a conclusão em A registrou uma curriculum_achievements ATIVA com club_id_origem = clube A (proveniência)',
+  (select count(*) from public.curriculum_achievements
+    where usuario_id = t.id('multi_dois_papeis') and tipo = 'especialidade' and specialty_id = t.id('especialidade_piloto')
+      and club_id_origem = t.id('clube_a') and status = 'ativa'), 1);
 
 select t.eq('AGORA a dependência de conhecimentos/3 está satisfeita pra multi_dois_papeis NO CLUBE A',
   array_length(public.dependencias_pendentes('class_requirement', t.id('req_conhecimentos_3'), t.id('multi_dois_papeis'), t.id('clube_a')), 1), null);
-select t.eq('...mas CONTINUA pendente NO CLUBE B — a conclusão em A não "vaza" pra B, mesma pessoa ou não',
-  array_length(public.dependencias_pendentes('class_requirement', t.id('req_conhecimentos_3'), t.id('multi_dois_papeis'), t.id('clube_b')), 1) > 0, true);
+select t.eq('...e TAMBÉM NO CLUBE B (fase 2.6: dependência é PORTÁTIL via curriculum_achievements — a conclusão reconhecida em A satisfaz a regra curricular em B, sem transferir nenhum dado operacional)',
+  array_length(public.dependencias_pendentes('class_requirement', t.id('req_conhecimentos_3'), t.id('multi_dois_papeis'), t.id('clube_b')), 1), null);
 
 -- ==================== 8) mudança de versão: v2 não mexe no histórico de quem já andou na v1 + ferramenta de diff ====================
 insert into public.curriculum_versions (id, origem, identificador, versao, status, fonte_descricao)

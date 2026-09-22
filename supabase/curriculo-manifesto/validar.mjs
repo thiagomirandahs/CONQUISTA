@@ -16,7 +16,11 @@
 //      (contraditório: não pode estar confirmado E pendente ao mesmo tempo);
 //   7) tenha código de requisito duplicado dentro da mesma seção, ou de seção
 //      duplicado dentro da mesma classe (mesma unicidade que o schema real
-//      vai exigir: unique(section_id, codigo) — ver migration 36).
+//      vai exigir: unique(section_id, codigo) — ver migration 36);
+//   8) (fase 2.6) marque um requisito com uma lacuna_schema que NÃO tenha
+//      representação suportada no banco (REPRESENTACAO_DAS_LACUNAS, abaixo).
+//      Desde a migration 38 as 4 lacunas da fase 2 têm mecanismo próprio; uma
+//      tag desconhecida significaria "conteúdo que o schema ainda achata".
 //
 // A lógica de validação (validarDados) é pura — recebe dados já carregados, não
 // lê disco — pra dar pra testar com fixtures sintéticas em validar.autoteste.mjs
@@ -32,6 +36,35 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const STATUS_VALIDOS = ['CONFIRMADO', 'ALTERADO_POR_OMD', 'PENDENTE_DE_VALIDACAO']
+
+// Fase 2.6 (migration 20260921000038_motor-de-regras-curriculares.sql): cada lacuna_schema
+// que o manifesto pode marcar → o mecanismo do banco que a representa SEM achatar. Toda
+// tag usada no manifesto PRECISA estar aqui (senão o validador rejeita — regra 8): uma
+// tag fora deste registro significaria conteúdo que o schema ainda não sabe modelar.
+// Fica no validador (não item a item no manifesto) porque a representação é propriedade
+// da lacuna, não de cada requisito que a exercita.
+export const REPRESENTACAO_DAS_LACUNAS = Object.freeze({
+  requisito_anual_dinamico: {
+    migration: '20260921000038',
+    mecanismo: 'dynamic_content_definitions + dynamic_content_values (catálogo temporal, vigência sem sobreposição) + conteudo_dinamico_resolver(chave, data); class_requirements.conteudo_dinamico_definicao_id',
+    resumo: 'conteúdo variável por período, resolvido pelo servidor pela data — sem nova curriculum_version por ano',
+  },
+  escolha_n_de_m: {
+    migration: '20260921000038',
+    mecanismo: 'requirement_option_groups(n_minimo) + requirement_options; opcoes_satisfeitas_automaticamente(grupo, pessoa)',
+    resumo: '"complete N das M opções", extensível a qualquer N — o servidor conta; o front só apresenta',
+  },
+  escolha_sem_repeticao: {
+    migration: '20260921000038',
+    mecanismo: 'requirement_option_groups.sem_repeticao + especialidade_ja_concluida_pela_pessoa(pessoa, especialidade) sobre curriculum_achievements (histórico curricular portátil, com proveniência)',
+    resumo: '"não realizada anteriormente" consulta o histórico da PESSOA em qualquer clube, nunca member_specialties do clube atual',
+  },
+  prazo_conclusao: {
+    migration: '20260921000038',
+    mecanismo: 'classes/specialties.prazo_minimo_dias + prazo_maximo_dias; prazo_situacao(inicio, min, max); gatilho de conclusão respeita o mínimo',
+    resumo: 'prazo declarado no próprio registro versionado, calculado no servidor a partir de iniciada_em (NULL nas 6 Classes Regulares: a fonte não determina)',
+  },
+})
 
 function erro(lista, msg) { lista.push(msg) }
 
@@ -180,6 +213,9 @@ export function validarDados({ omds, arquivosClasses }) {
         if (req.tipo === 'escolha_n_de_m_sem_repeticao' && !req.grupo_sem_repeticao) {
           avisos.push(`${onde}: tipo=escolha_n_de_m_sem_repeticao sem grupo_sem_repeticao — recomendado declarar o pool de especialidades já usadas que este item respeita.`)
         }
+        if (req.lacuna_schema && !Object.hasOwn(REPRESENTACAO_DAS_LACUNAS, req.lacuna_schema)) {
+          erro(erros, `${onde}: lacuna_schema "${req.lacuna_schema}" sem representação suportada no schema (não está em REPRESENTACAO_DAS_LACUNAS) — o banco ainda achataria este requisito.`)
+        }
       }
     }
 
@@ -261,6 +297,19 @@ if (ehCli) {
   console.log(formatarTabela(linhas))
   console.log('')
   console.log(`TOTAL GERAL — CONFIRMADO: ${totalGeral.CONFIRMADO}  ALTERADO_POR_OMD: ${totalGeral.ALTERADO_POR_OMD}  PENDENTE_DE_VALIDACAO: ${totalGeral.PENDENTE_DE_VALIDACAO}  (${totalGeral.CONFIRMADO + totalGeral.ALTERADO_POR_OMD + totalGeral.PENDENTE_DE_VALIDACAO} requisitos no manifesto)`)
+
+  console.log('\n=== Lacunas de schema × representação no banco (fase 2.6, migration 38) ===\n')
+  const usoPorLacuna = {}
+  for (const l of linhas) for (const [k, v] of Object.entries(l.lacunas)) usoPorLacuna[k] = (usoPorLacuna[k] || 0) + v
+  for (const [tag, rep] of Object.entries(REPRESENTACAO_DAS_LACUNAS)) {
+    console.log(`  ${tag}  (${usoPorLacuna[tag] || 0} requisito(s) no manifesto)`)
+    console.log(`    representação: ${rep.mecanismo}`)
+    console.log(`    o que resolve: ${rep.resumo}`)
+  }
+  const semRepresentacao = Object.keys(usoPorLacuna).filter((k) => !Object.hasOwn(REPRESENTACAO_DAS_LACUNAS, k))
+  console.log(semRepresentacao.length === 0
+    ? '\n  Nenhuma lacuna marcada no manifesto fica sem representação — nada precisa mais ser "achatado".'
+    : `\n  SEM REPRESENTAÇÃO: ${semRepresentacao.join(', ')}`)
 
   process.exit(erros.length === 0 ? 0 : 1)
 }

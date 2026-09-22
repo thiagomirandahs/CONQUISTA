@@ -158,6 +158,27 @@ console.log('=== Autoteste do validador (fixtures sintéticas) ===\n')
   esperar('rejeita classe_regular_ref apontando pra classe inexistente', r.erros.some((e) => e.includes('não corresponde a nenhuma classe_regular')))
 }
 
+// 10) (fase 2.6) lacuna_schema sem representação suportada no banco
+{
+  const dados = classeValidaBase()
+  dados.classe_regular.secoes[0].requisitos[0].lacuna_schema = 'lacuna_que_o_schema_nao_representa'
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita lacuna_schema desconhecida (sem representação no schema)', r.erros.some((e) => e.includes('sem representação suportada no schema')))
+}
+{
+  // ...e cada uma das 4 lacunas da fase 2 é aceita (todas têm mecanismo desde a migration 38)
+  const dados = classeValidaBase()
+  const reqs = dados.classe_regular.secoes[0].requisitos
+  reqs.length = 0
+  let i = 0
+  for (const tag of ['requisito_anual_dinamico', 'escolha_n_de_m', 'escolha_sem_repeticao', 'prazo_conclusao']) {
+    i++
+    reqs.push({ id: `teste.I.${i}`, codigo: String(i), ordem: i * 10, descricao_resumida: `Requisito de teste ${i}.`, lacuna_schema: tag })
+  }
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('aceita as 4 lacunas conhecidas (todas representadas: conteúdo dinâmico, N-de-M, sem repetição, prazo)', r.erros.length === 0, JSON.stringify(r.erros))
+}
+
 console.log('')
 if (falhas === 0) {
   console.log(`Todos os casos do autoteste passaram (o validador rejeita corretamente cada violação pedida).`)

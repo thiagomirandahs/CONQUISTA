@@ -97,8 +97,21 @@ Tags `lacuna_schema` usadas no manifesto (contagem real no relatório de cobertu
   então não há nenhuma instância real de `prazo_conclusao` nos dados das 6 Classes Regulares. O tipo
   fica definido aqui só como preparação de formato para quando Liderança entrar.
 
-Nenhuma dessas 4 lacunas foi corrigida no schema SQL nesta fase — são só marcadas. Corrigir o schema é
-trabalho de uma fase futura, só depois de aprovação.
+**Fase 2.6 (migration `20260921000038_motor-de-regras-curriculares.sql`)**: as 4 lacunas passaram a ter
+representação própria no banco — sem achatar nada. O validador carrega o registro
+`REPRESENTACAO_DAS_LACUNAS` (em `validar.mjs`) mapeando cada tag ao mecanismo que a representa, e
+**rejeita** qualquer `lacuna_schema` fora dele (regra 8): uma tag desconhecida significaria conteúdo que
+o schema ainda achataria. O relatório de cobertura imprime esse mapa no fim.
+
+| tag | representação no banco |
+|---|---|
+| `requisito_anual_dinamico` | `dynamic_content_definitions` + `dynamic_content_values` (vigência sem sobreposição) + `conteudo_dinamico_resolver(chave, data)`; `class_requirements.conteudo_dinamico_definicao_id` |
+| `escolha_n_de_m` | `requirement_option_groups(n_minimo)` + `requirement_options`; `opcoes_satisfeitas_automaticamente()` |
+| `escolha_sem_repeticao` | `requirement_option_groups.sem_repeticao` + `especialidade_ja_concluida_pela_pessoa()` sobre `curriculum_achievements` (histórico curricular **portátil**, com proveniência) |
+| `prazo_conclusao` | `classes/specialties.prazo_minimo_dias/prazo_maximo_dias` + `prazo_situacao()`; o gatilho de conclusão respeita o mínimo |
+
+O manifesto em si NÃO mudou e continua NÃO importado — a fase 2.6 só deu ao motor a capacidade de
+representá-lo. Importar é a próxima etapa, ainda dependente de aprovação.
 
 ## O que fica de fora deste manifesto (de propósito)
 
