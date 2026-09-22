@@ -16,6 +16,10 @@ insert into t.ids (chave, id)
   from public.class_requirements r join public.class_sections s on s.id = r.section_id
   where s.class_id = t.id('classe_piloto');
 
+-- migration 37: o recurso "classes" passa a bloquear ESCRITA nas RPCs (não só a rota) — liga nos dois clubes de teste.
+insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'classes', true), (t.id('clube_b'), 'classes', true)
+on conflict (club_id, feature) do update set enabled = true;
+
 -- ==================== 1) catálogo compartilhado: a MESMA classe piloto aparece nos dois clubes ====================
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.ok('classe piloto aparece em classes_disponiveis no clube A (catálogo é da plataforma)',
@@ -37,8 +41,8 @@ insert into t.ids (chave, id) select 'mc_b', id from public.member_classes where
 
 select t.eq('member_classes de A tem club_id = clube A', (select club_id from public.member_classes where id = t.id('mc_a')), t.id('clube_a'));
 select t.eq('member_classes de B tem club_id = clube B', (select club_id from public.member_classes where id = t.id('mc_b')), t.id('clube_b'));
-select t.eq('6 member_requirements nasceram pra A (um por requisito ativo)', (select count(*) from public.member_requirements where member_class_id = t.id('mc_a')), 6);
-select t.eq('6 member_requirements nasceram pra B', (select count(*) from public.member_requirements where member_class_id = t.id('mc_b')), 6);
+select t.eq('7 member_requirements nasceram pra A (um por requisito ativo — 6 da fase 1 + 1 com dependência, migration 37)', (select count(*) from public.member_requirements where member_class_id = t.id('mc_a')), 7);
+select t.eq('7 member_requirements nasceram pra B', (select count(*) from public.member_requirements where member_class_id = t.id('mc_b')), 7);
 select t.eq('todos nascem nao_iniciado', (select count(*) from public.member_requirements where member_class_id in (t.id('mc_a'), t.id('mc_b')) and status <> 'nao_iniciado'), 0);
 
 -- ==================== 3) preencher e enviar: evidências independentes em cada clube ====================
@@ -104,13 +108,13 @@ select t.eq('a aprovação de B ficou registrada com club_id=B, avaliador=instru
 -- ==================== 8) progresso: SEMPRE calculado no servidor, nunca recebido do cliente ====================
 select t.eq('member_classes NÃO tem coluna "percentual" (não existe onde o cliente possa "mandar 100%") — é sempre classe_percentual()',
   (select count(*) from pg_attribute where attrelid = 'public.member_classes'::regclass and attname = 'percentual' and not attisdropped), 0);
-select t.eq('progresso de A: 2 de 6 aprovados = 33% (espiritual/2 + ar_livre/1)', public.classe_percentual(t.id('mc_a')), 33);
-select t.eq('progresso de B: 1 de 6 aprovados = 17% (independente de A)', public.classe_percentual(t.id('mc_b')), 17);
+select t.eq('progresso de A: 2 de 7 aprovados = 29% (espiritual/2 + ar_livre/1)', public.classe_percentual(t.id('mc_a')), 29);
+select t.eq('progresso de B: 1 de 7 aprovados = 14% (independente de A)', public.classe_percentual(t.id('mc_b')), 14);
 
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('minha_classe() de A relata percentual=33 via RPC', t.n($q$select (public.minha_classe()->'member_class'->>'percentual')::int$q$), 33);
+select t.eq('minha_classe() de A relata percentual=29 via RPC', t.n($q$select (public.minha_classe()->'member_class'->>'percentual')::int$q$), 29);
 select t.como('membro_b'); select t.pedir_clube('clube_b');
-select t.eq('minha_classe() de B relata percentual=17 via RPC (não vaza o progresso de A)', t.n($q$select (public.minha_classe()->'member_class'->>'percentual')::int$q$), 17);
+select t.eq('minha_classe() de B relata percentual=14 via RPC (não vaza o progresso de A)', t.n($q$select (public.minha_classe()->'member_class'->>'percentual')::int$q$), 14);
 reset role;
 
 -- ==================== 9) conclusão automática + abertura da revisão de investidura (só onde de fato terminou) ====================
@@ -118,13 +122,26 @@ select t.como('dir_a_membro_b'); select t.pedir_clube('clube_a');
 select t.permitido('aprova espiritual/1 (o resto de A)', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_espiritual_1')));
 select t.permitido('aprova ar_livre/2', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_ar_livre_2')));
 select t.permitido('aprova conhecimentos/1 (sem envio prévio — avaliador pode aprovar direto, ex.: observado em reunião)', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_conhecimentos_1')));
-select t.permitido('aprova conhecimentos/2 (o último — fecha 6/6)', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_conhecimentos_2')));
+select t.permitido('aprova conhecimentos/2', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_conhecimentos_2')));
+
+-- conhecimentos/3 (migration 37) DEPENDE da especialidade piloto concluída — o motor de Especialidades
+-- é testado a fundo no teste 34; aqui só destrava a dependência pelo caminho mais curto (direto na
+-- tabela, como postgres) pra confirmar que a classe INTEGRA a dependência sem quebrar o resto do fluxo.
+select t.eq('conhecimentos/3 (com dependência) NÃO aprova enquanto a especialidade não está concluída',
+  t.txt(format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)::text$q$, t.id('mc_a'), t.id('req_conhecimentos_3'))),
+  'ERRO: Falta concluir antes: [PILOTO/TESTE] Primeiros Socorros');
+reset role;
+insert into public.member_specialties (usuario_id, club_id, specialty_id, status, concluida_em)
+values (t.id('membro_a'), t.id('clube_a'), '00000000-0000-4000-a000-000000000102'::uuid, 'concluida', now())
+on conflict (usuario_id, club_id, specialty_id) do update set status = 'concluida', concluida_em = now();
+select t.como('dir_a_membro_b'); select t.pedir_clube('clube_a');
+select t.permitido('...e agora que a especialidade está concluída, conhecimentos/3 aprova (fecha 7/7)', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_conhecimentos_3')));
 reset role;
 
-select t.eq('classe de A concluiu sozinha (6/6 aprovados)', (select status from public.member_classes where id = t.id('mc_a')), 'concluida');
+select t.eq('classe de A concluiu sozinha (7/7 aprovados)', (select status from public.member_classes where id = t.id('mc_a')), 'concluida');
 select t.eq('...e abriu a revisão de investidura sozinha, pendente', (select status from public.investiture_reviews where member_class_id = t.id('mc_a')), 'pendente');
 select t.eq('progresso de A agora é 100%', public.classe_percentual(t.id('mc_a')), 100);
-select t.eq('a classe de B CONTINUA em_andamento (só 1/6 aprovado lá — não terminou por engano)', (select status from public.member_classes where id = t.id('mc_b')), 'em_andamento');
+select t.eq('a classe de B CONTINUA em_andamento (só 1/7 aprovado lá — não terminou por engano)', (select status from public.member_classes where id = t.id('mc_b')), 'em_andamento');
 select t.eq('...e B não tem revisão de investidura (não concluiu)', (select count(*) from public.investiture_reviews where member_class_id = t.id('mc_b')), 0);
 
 -- ==================== 10) investidura: só resolve no clube CERTO ====================

@@ -22,7 +22,10 @@ insert into t.excecoes values
   ('curriculum_versions',      'currículo oficial/versionado é conteúdo da PLATAFORMA (compartilhado/global); progresso, evidência, avaliação e investidura SÃO por clube (member_classes/member_requirements/requirement_approvals/investiture_reviews, todas com club_id)'),
   ('classes',                  'catálogo de classes da PLATAFORMA (parte do currículo versionado, ver curriculum_versions)'),
   ('class_sections',           'catálogo de seções da PLATAFORMA (parte do currículo versionado)'),
-  ('class_requirements',       'catálogo de requisitos da PLATAFORMA (parte do currículo versionado)');
+  ('class_requirements',       'catálogo de requisitos da PLATAFORMA (parte do currículo versionado)'),
+  ('specialties',              'catálogo de especialidades da PLATAFORMA (parte do currículo versionado, ver curriculum_versions)'),
+  ('specialty_requirements',   'catálogo de requisitos de especialidade da PLATAFORMA'),
+  ('curriculum_dependencies',  'dependência declarativa entre itens do CATÁLOGO (classe/especialidade concluída); progresso da dependência é sempre checado por pessoa+clube, nunca a declaração em si');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

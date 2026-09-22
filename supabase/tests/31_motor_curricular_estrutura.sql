@@ -54,9 +54,11 @@ select t.eq('nenhuma delas é executável por anon',
       and has_function_privilege('anon', p.oid, 'execute')), 0);
 
 -- ---------- 4) os 2 gatilhos (escopo derivado + conclusão automática) existem ----------
+-- definir_escopo_progresso() é GENÉRICO desde a migration 37 (mesmo idioma de definir_club_por_usuario):
+-- reusado por member_requirements (classe) E member_specialty_requirements (especialidade) — ver teste 33.
 select t.eq('member_requirements deriva usuario_id/club_id de member_class_id (nunca aceita do cliente)',
   (select count(*) from pg_trigger tg join pg_class c on c.oid = tg.tgrelid join pg_proc p on p.oid = tg.tgfoid
-    where c.relname = 'member_requirements' and p.proname = 'definir_escopo_member_requirement' and not tg.tgisinternal), 1);
+    where c.relname = 'member_requirements' and p.proname = 'definir_escopo_progresso' and not tg.tgisinternal), 1);
 select t.eq('a classe conclui e abre a revisão de investidura sozinha (gatilho de conclusão)',
   (select count(*) from pg_trigger tg join pg_class c on c.oid = tg.tgrelid join pg_proc p on p.oid = tg.tgfoid
     where c.relname = 'member_requirements' and p.proname = 'avaliar_conclusao_classe' and not tg.tgisinternal), 1);
@@ -66,9 +68,9 @@ select t.eq('a versão curricular piloto é origem=''piloto_teste'', publicada, 
   (select count(*) from public.curriculum_versions
     where identificador = 'piloto-motor-curricular' and origem = 'piloto_teste' and status = 'publicado'
       and fonte_descricao ilike '%NÃO é o regulamento oficial%'), 1);
-select t.eq('a classe piloto tem 3 seções e 6 requisitos ativos (o tamanho do piloto, não do currículo real)',
+select t.eq('a classe piloto tem 3 seções e 7 requisitos ativos (6 da fase 1 + 1 novo com dependência de especialidade, migration 37)',
   (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id
-    where s.class_id = '00000000-0000-4000-a000-000000000002'::uuid and r.ativo), 6);
+    where s.class_id = '00000000-0000-4000-a000-000000000002'::uuid and r.ativo), 7);
 
 -- ---------- 6) o recurso "classes" existe no catálogo, desligado por padrão (como o leilão) ----------
 select t.eq('recursos_catalogo tem "classes", padrao=false', (select count(*) from public.recursos_catalogo where chave = 'classes' and padrao = false), 1);

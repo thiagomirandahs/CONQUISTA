@@ -47,6 +47,8 @@ const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 const ClubeConfig = lazy(() => import('./pages/ClubeConfig.jsx'))
 const MinhaClasse = lazy(() => import('./pages/MinhaClasse.jsx'))
 const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
+const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
+const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
 
 function Carregando() {
   return (
@@ -165,6 +167,8 @@ export default function App() {
           <Route path="/clube" element={<RotaRestrita><ClubeConfig /></RotaRestrita>} />
           <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
           <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />
+          <Route path="/minhas-especialidades" element={<RecursoOpcional recurso="classes"><MinhasEspecialidades /></RecursoOpcional>} />
+          <Route path="/avaliar-especialidades" element={<RotaRestrita><AvaliarEspecialidades /></RotaRestrita>} />
         </Route>
       </Routes>
     </Suspense>

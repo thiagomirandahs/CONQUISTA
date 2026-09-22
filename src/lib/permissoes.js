@@ -27,6 +27,7 @@ export const FERRAMENTAS = [
   { to: '/vinculos-pais', icon: '👨‍👩‍👧', titulo: 'Vínculos dos pais', desc: 'Confirmar quem é filho de quem + PIX', papeis: ['diretoria', 'instrutor'] },
   { to: '/clube', icon: '🎨', titulo: 'Identidade e recursos', desc: 'Nome, cores e logo do clube; o que o clube usa', papeis: ['diretoria', 'instrutor'] },
   { to: '/avaliar-classe', icon: '🎖️', titulo: 'Avaliar classes', desc: 'Aprovar ou pedir correção dos requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' },
+  { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' },
 ]
 
 // Índice rápido: rota -> papéis autorizados (derivado da lista acima)
@@ -48,5 +49,6 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/atividades': 'atividades',
   '/mural': 'mural',
   '/minha-classe': 'classes',
+  '/minhas-especialidades': 'classes',
   ...Object.fromEntries(FERRAMENTAS.filter((f) => f.recurso).map((f) => [f.to, f.recurso])),
 })
