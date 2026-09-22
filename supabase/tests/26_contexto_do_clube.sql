@@ -143,7 +143,7 @@ select t.eq('...nome do clube e sigla derivada, sem lema/cores/logo', t.ctx('->'
 reset role;
 
 -- ==================== 3) recursos (feature flags) por clube ====================
-select t.eq('o catálogo tem os recursos do app e SÓ o leilão nasce desligado', (select count(*) from public.recursos_catalogo) * 100 + (select count(*) from public.recursos_catalogo where not padrao), 1201);
+select t.eq('o catálogo tem os recursos do app e SÓ leilão e classes nascem desligados', (select count(*) from public.recursos_catalogo) * 100 + (select count(*) from public.recursos_catalogo where not padrao), 1302);
 select t.eq('padrão do catálogo quando o clube nunca escolheu; leilão desligado; recurso que não existe = desligado', (public.recurso_habilitado_no_clube(t.id('clube_b'), 'chat'))::text || '|' || (public.recurso_habilitado_no_clube(t.id('clube_b'), 'leilao'))::text || '|' || (public.recurso_habilitado_no_clube(t.id('clube_b'), 'nao_existe'))::text, 'true|false|false');
 select t.como('lider_a');
 select t.permitido('diretoria A desliga o chat do PRÓPRIO clube', $q$select public.recurso_definir('chat', false)$q$);
@@ -182,7 +182,7 @@ reset role;
 
 -- catálogo: leitura para quem está logado; ninguém grava
 select t.como('membro_a');
-select t.eq('membro lê o catálogo (para mostrar rótulos/ícones)', t.n('select count(*) from public.recursos_catalogo'), 12);
+select t.eq('membro lê o catálogo (para mostrar rótulos/ícones)', t.n('select count(*) from public.recursos_catalogo'), 13);
 select t.bloqueado('membro NÃO grava no catálogo', $q$insert into public.recursos_catalogo (chave, nome, padrao) values ('x', 'x', true)$q$);
 select t.bloqueado('membro NÃO altera o catálogo', $q$update public.recursos_catalogo set padrao = false$q$);
 select t.bloqueado('membro NÃO apaga do catálogo', $q$delete from public.recursos_catalogo$q$);

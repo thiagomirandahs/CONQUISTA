@@ -1,0 +1,74 @@
+// Serviço: motor curricular (Classes/Especialidades — fase piloto).
+// As seções/requisitos vêm SEMPRE do currículo versionado (minha_classe/classes_disponiveis) — nada
+// hardcoded aqui nem na tela. O percentual também vem pronto do servidor (classe_percentual, dentro
+// de minha_classe()) — o cliente nunca calcula nem envia "concluído".
+import { supabase } from '../lib/supabase.js'
+import { subirComprovacao } from '../lib/upload.js'
+
+// Classes publicadas que a pessoa ainda não iniciou no clube em uso.
+export async function carregarClassesDisponiveis() {
+  const { data, error } = await supabase.rpc('classes_disponiveis')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function iniciarClasse(classId) {
+  const { data, error } = await supabase.rpc('classe_iniciar', { p_class_id: classId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Liderança inicia a classe em nome de alguém do próprio clube (ex.: criança que ainda não navega sozinha).
+export async function atribuirClasse(usuarioId, classId) {
+  const { data, error } = await supabase.rpc('classe_atribuir', { p_usuario_id: usuarioId, p_class_id: classId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Progresso da PRÓPRIA pessoa no clube em uso (a mais recente em andamento, ou uma específica por id).
+export async function carregarMinhaClasse(memberClassId = null) {
+  const { data, error } = await supabase.rpc('minha_classe', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Salva rascunho (texto e/ou foto) sem enviar pra avaliação ainda. A foto vai pro MESMO bucket
+// privado das missões/atividades ('comprovacoes'), pasta 'requisitos' — mesmo hardening de sempre
+// (signed URL só pro dono ou pra liderança do clube em uso, ver urlComprovacao).
+export async function salvarRequisito({ requirementId, texto = null, foto = null, userId }) {
+  let evidenciaPath = null
+  if (foto) {
+    evidenciaPath = await subirComprovacao({ file: foto, tipo: 'requisitos', userId })
+  }
+  const { error } = await supabase.rpc('requisito_salvar', {
+    p_requirement_id: requirementId, p_texto: texto, p_evidencia_path: evidenciaPath,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// Envia pra avaliação (o servidor recusa se faltar evidência obrigatória).
+export async function enviarRequisito(requirementId) {
+  const { error } = await supabase.rpc('requisito_enviar', { p_requirement_id: requirementId })
+  if (error) throw new Error(error.message)
+}
+
+// ---- avaliação (liderança do clube em uso) ----
+export async function carregarAvaliacoesPendentesDeClasse() {
+  const { data, error } = await supabase.rpc('classe_avaliacoes_pendentes')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function avaliarRequisito(memberRequirementId, decisao, comentario = null) {
+  const { error } = await supabase.rpc('requisito_avaliar', {
+    p_member_requirement_id: memberRequirementId, p_decisao: decisao, p_comentario: comentario,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function confirmarInvestidura(memberClassId, aprovar, comentario = null) {
+  const { error } = await supabase.rpc('investidura_confirmar', {
+    p_member_class_id: memberClassId, p_aprovar: aprovar, p_comentario: comentario,
+  })
+  if (error) throw new Error(error.message)
+}

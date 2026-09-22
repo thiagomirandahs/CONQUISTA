@@ -45,6 +45,8 @@ const ChatModeracao = lazy(() => import('./pages/ChatModeracao.jsx'))
 const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
 const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 const ClubeConfig = lazy(() => import('./pages/ClubeConfig.jsx'))
+const MinhaClasse = lazy(() => import('./pages/MinhaClasse.jsx'))
+const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 
 function Carregando() {
   return (
@@ -161,6 +163,8 @@ export default function App() {
           <Route path="/chat-moderacao" element={<RotaRestrita><ChatModeracao /></RotaRestrita>} />
           <Route path="/agenda" element={<RecursoOpcional recurso="agenda"><Agenda /></RecursoOpcional>} />
           <Route path="/clube" element={<RotaRestrita><ClubeConfig /></RotaRestrita>} />
+          <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
+          <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />
         </Route>
       </Routes>
     </Suspense>

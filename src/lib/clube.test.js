@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   PAPEIS, RECURSOS_PADRAO, permissoesDoPapel, rotaInicial, CAMINHOS_DO_RESPONSAVEL,
@@ -182,11 +182,26 @@ describe('escolha guardada por usuário', () => {
 })
 
 describe('catálogo de recursos: o espelho do front não se afasta do banco', () => {
-  it('as chaves e os padrões de RECURSOS_PADRAO são exatamente as do catálogo da migration', () => {
-    const sql = readFileSync(join(process.cwd(), 'supabase', 'migrations', '20260921000033_contexto-do-clube.sql'), 'utf8')
-    const bloco = sql.slice(sql.indexOf('insert into public.recursos_catalogo'), sql.indexOf('on conflict (chave)'))
-    const linhas = [...bloco.matchAll(/\('([a-z0-9_]+)',\s*'[^']*',\s*'[^']*',\s*'[^']*',\s*(true|false),/g)].map((m) => [m[1], m[2] === 'true'])
+  it('as chaves e os padrões de RECURSOS_PADRAO são exatamente as do catálogo (somadas de TODAS as migrations que inserem em recursos_catalogo — o catálogo nasceu na 33 e pode ganhar recursos novos em migrations depois dela, ex.: "classes" na 36)', () => {
+    const dir = join(process.cwd(), 'supabase', 'migrations')
+    const linhas = []
+    for (const arquivo of readdirSync(dir).sort()) {
+      if (!arquivo.endsWith('.sql')) continue
+      const sql = readFileSync(join(dir, arquivo), 'utf8')
+      let desde = 0
+      for (;;) {
+        const ini = sql.indexOf('insert into public.recursos_catalogo', desde)
+        if (ini === -1) break
+        const fim = sql.indexOf('on conflict (chave)', ini)
+        const bloco = sql.slice(ini, fim === -1 ? undefined : fim)
+        for (const m of bloco.matchAll(/\('([a-z0-9_]+)',\s*'[^']*',\s*'[^']*',\s*'[^']*',\s*(true|false),/g)) {
+          linhas.push([m[1], m[2] === 'true'])
+        }
+        desde = fim === -1 ? sql.length : fim
+      }
+    }
     expect(linhas.length).toBeGreaterThanOrEqual(12)
+    // uma chave pode reaparecer (on conflict do update em migration posterior) — o valor que VALE é o da ÚLTIMA vez que apareceu, na ordem dos arquivos
     expect(Object.fromEntries(linhas)).toEqual({ ...RECURSOS_PADRAO })
   })
 })

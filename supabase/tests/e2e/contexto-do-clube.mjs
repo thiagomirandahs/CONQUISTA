@@ -176,7 +176,7 @@ async function principal() {
 
   console.log('\n== recursos: catálogo, liga/desliga por clube ==')
   const cat = await c.a1.from('recursos_catalogo').select('chave,nome,icone,padrao').order('ordem')
-  ok('membro lê o catálogo (12 recursos; só o leilão desligado por padrão)', !cat.error && cat.data.length === 12 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).join() === 'leilao', cat.error?.message)
+  ok('membro lê o catálogo (13 recursos; leilão e classes desligados por padrão)', !cat.error && cat.data.length === 13 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).sort().join() === 'classes,leilao', cat.error?.message)
   const catAnon = await anon.from('recursos_catalogo').select('chave')
   ok('anon não lê o catálogo', !!catAnon.error || (catAnon.data || []).length === 0)
   const catW = await c.lider_a.from('recursos_catalogo').update({ padrao: false }).eq('chave', 'chat')

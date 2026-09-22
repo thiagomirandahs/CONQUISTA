@@ -16,6 +16,7 @@ export const ABAS_BASE = [
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },
   { to: '/mural', label: 'Mural', icon: '📸' },
+  { to: '/minha-classe', label: 'Minha Classe', icon: '🎖️' },
 ]
 
 // Barra inferior do celular: as telas que a criançada mais usa, sempre à mão (as que o clube desligou saem da barra).
