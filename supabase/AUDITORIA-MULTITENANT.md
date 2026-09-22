@@ -5,8 +5,10 @@ Tenant 002 = clube de teste local. Esta matriz é **executável**: `supabase/tes
 tabela/rotina nova entrar sem decidir a que clube pertence. Nada disto foi aplicado em produção.
 
 ## Modelo (o que vale para tudo)
-- **Clube** = `organizational_units` (`type = 'clube'`). **Vínculo** = `organization_memberships` (1 clube por pessoa; papel
-  `desbravador | conselheiro | instrutor | diretoria | tesoureiro | pais`).
+- **Clube** = `organizational_units` (`type = 'clube'`). **Vínculo** = `organization_memberships` — uma pessoa pode ter vínculo em
+  QUANTOS clubes tiver (migration 34 removeu o "1 clube por pessoa"); papel, unidade e status são do VÍNCULO, um por clube
+  (`desbravador | conselheiro | instrutor | diretoria | tesoureiro | pais`). `profiles` é só identidade global (nome, foto, avatar) —
+  nunca duplicada por clube. Ver "Multi-clube real" abaixo.
 - Toda tabela de dados tem `club_id uuid not null → organizational_units(id)`. O clube **nasce do dado** (gatilho: do dono, do pai da
   linha ou da unidade), nunca do cliente; um `club_id` forjado é recusado pela policy/gatilho.
 - Permissões: `membro_ativo_no_clube(club)` (papel ≠ `pais`), `pode_gerir_no_clube(club)` (instrutor/diretoria),
@@ -48,6 +50,54 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Multi-clube real (migration 34) — 1 clube por pessoa sai, entitlements entram
+Continuação direta da camada de produto (migration 33): agora o suporte a múltiplos clubes por pessoa é de VERDADE (não só o
+formato), a seleção de clube é explícita e validada por requisição, e os 11 recursos que só escondiam rota passam a bloquear
+escrita também. Checkpoint anterior intocado; nada disto foi ao Supabase remoto.
+- **Fim do "1 clube por pessoa"**: `trg_um_clube_por_pessoa` saiu. `organization_memberships` ganhou `unidade_id` (valida contra o
+  clube do próprio vínculo) e virou a fonte de verdade de papel/unidade/status — `profiles.papel/status/unidade_id` são só um
+  ESPELHO do clube PRIMÁRIO (o vínculo mais antigo) e **não são mais graváveis direto** por ninguém, nem a liderança (coluna
+  revogada; só a RPC `vinculo_gerir`, escopada ao clube em uso de quem chama, escreve). `handle_new_user` cria perfil e vínculo
+  juntos; um espelho (gatilho `AFTER` em `organization_memberships`) mantém profiles em dia sempre que o vínculo PRIMÁRIO muda.
+- **Seleção explícita de clube, por REQUISIÇÃO, sempre validada**: `clube_atual_id()` lê um header (`x-clube-atual`, exposto pelo
+  PostgREST via a GUC `request.headers`) que o cliente manda dizendo em qual clube quer operar — mas só HONRA se corresponder a
+  um vínculo ATIVO e vigente de quem chama; um clube forjado (sem vínculo, ou vínculo suspenso/inexistente) cai, em silêncio, no
+  padrão de sempre (o vínculo mais antigo). Não há estado de "clube atual da sessão" no servidor — por isso duas abas do MESMO
+  usuário podem operar em clubes diferentes ao mesmo tempo sem se atropelar (o front guarda o clube da aba em memória do módulo,
+  nunca em localStorage/sessionStorage compartilhado, e manda no header de toda chamada — `lib/supabase.js`).
+- **Autoridade de liderança é sempre do clube EM USO de quem chama, nunca do clube "mais relevante" do alvo**: `lideranca_gere_usuario`,
+  `diretoria_gere_usuario`, `resetar_senha_membro` e `excluir_usuario` foram corrigidas (achado desta fase) — antes, usavam
+  `clube_vinculo_do_usuario(alvo)`, então um diretor do clube A que TAMBÉM fosse membro comum do clube B podia, sem querer,
+  usar a autoridade de A para mexer em gente do B, se a "prioridade" do alvo caísse para B. Agora é sempre `clube_atual_id()` de
+  quem chama, e o alvo precisa ter vínculo NESSE MESMO clube. `excluir_usuario` também mudou: se a pessoa tem vínculo em OUTRO
+  clube além do clube em uso, só o vínculo DESSE clube é apagado (identidade global e o outro clube nunca são tocados por uma
+  decisão de um único clube).
+- **Feature flags viram autorização de verdade**: um gatilho central (`exigir_recurso_habilitado`, reaproveitado — mesmo padrão do
+  leilão) cobre as 17 tabelas dos 11 recursos que só tinham gate de visibilidade (atividades/entregas, eventos, chat, jogos,
+  chefão, duelos/desafios_unidade, missões/devocional, mural, mensalidades, bíblia, bichinho); desligar o recurso bloqueia a
+  ESCRITA nova nessas tabelas (`raise exception`), mas nunca a leitura nem a edição do que já existe (a liderança segue
+  aprovando/pagando/editando pendências antigas com o recurso desligado — só não nasce coisa nova). `desafios` (o único recurso
+  do catálogo sem tabela própria) usa `duelos`/`desafios_unidade`. O leilão manteve seu gate específico (migration 15/23), mais
+  antigo e mais estrito (bloqueia direto no leilão aberto).
+- **`meus_filhos()`** passou a usar `clube_atual_id()` (antes: `clube_do_usuario(auth.uid())`, sem seleção possível) — um
+  responsável com vínculo em 2 clubes agora troca entre "meus filhos daqui" e "meus filhos de lá" do mesmo jeito que qualquer
+  outra tela troca de clube.
+- **Limites honestos desta fase** (documentados, não escondidos): (1) o motor de jogos/prêmios e a config por clube (migrations
+  20–24, dezenas de `profiles.papel`/`.unidade_id` inline) continuam lendo o ESPELHO em profiles — correto pro clube PRIMÁRIO de
+  cada pessoa (o caso comum), mas pode ficar impreciso pra alguém pontuando/participando de jogos num clube SECUNDÁRIO; reescrever
+  essas consultas pra ler o vínculo direto é a próxima leva, não incluída aqui por ser uma superfície grande (~100 pontos) de
+  lógica de pontuação já testada, e por ser um risco de dado (prêmio errado), não de segurança (nunca vaza clube alheio — o
+  escopo por `club_id`/`clube_atual_id()` continua correto). (2) Leitura de dados de tabela (não RPC) para quem tem vínculo ativo
+  GENUÍNO em 2+ clubes não é escopada por "clube em uso" — sempre foi assim (`membro_ativo_no_clube(club_id)` olha o `club_id` da
+  LINHA, não `clube_atual_id()`) e continua correto: não é vazamento, é visibilidade legítima de quem pertence aos dois clubes.
+  Só RPCs/telas operacionais (ranking, gestão, `meus_filhos`...) respeitam o clube em uso. (3) PWA/manifest/ícones/APK/título
+  inicial do HTML seguem os do Tenant 001 — branding dinâmico continua sendo só DEPOIS de autenticar.
+- Testado: SQL `27_multiclube_real.sql` (48 asserts — 1 clube, 2 clubes com papéis diferentes, diretor num e membro noutro,
+  instrutor com unidades diferentes por clube, responsável com filhos em 2 clubes, vínculo suspenso só num, troca de clube,
+  "duas abas", forjar `club_id`, remoção de vínculo com a sessão aberta) + `28_entitlements_recursos.sql` (23 asserts, estrutural
+  + 4 recursos ponta a ponta) + Vitest (`Clube.test.jsx`, `usuarios.test.js`) + e2e real contra o PostgREST local (42 asserts,
+  a unidade por vínculo incluída).
+
 ## Camada de produto multi-clube (migration 33 + front) — o que o app passa a saber por SESSÃO
 O app deixa de assumir "um clube, papel e unidade globais": `meu_contexto()` devolve, numa chamada, os vínculos DA PRÓPRIA pessoa (clube, papel NO clube, status, unidade NO clube,
 marca e recursos efetivos) e o clube em que o SERVIDOR age. O `ClubeContext` do front resolve o clube em uso e expõe papel, permissões, recursos e marca; toda tela pergunta a ele.
@@ -59,11 +109,10 @@ marca e recursos efetivos) e o clube em que o SERVIDOR age. O `ClubeContext` do 
 - **Recursos (feature flags)**: `recursos_catalogo` (12 recursos; só o leilão nasce desligado) + escolha do clube em `club_features` (que passou a aceitar QUALQUER recurso do catálogo, por FK).
   O menu, a barra de baixo, a Gestão e as rotas obedecem (mesma matriz `RECURSO_POR_ROTA`). `recurso_habilitado_no_clube` usa o padrão do catálogo, então o gate de dados do leilão
   segue igual. Desligar o leilão com leilão aberto é recusado.
-- **Limites honestos desta fase**: (1) as flags são de VISIBILIDADE — só o leilão tem gate de dados no banco; RLS/RPCs dos demais módulos seguem por clube e papel, não por flag;
-  (2) o banco ainda tem **1 clube por pessoa** (`um_clube_por_pessoa`, `profiles.papel`/`unidade_id` únicos): o contexto e o formato de `meu_contexto` já suportam N vínculos e a troca de clube
-  (testados com dublês e com vínculos forjados no SQL), mas o servidor só age em UM clube (`selecionavel`); trocar para outro é recusado ("indisponível") até a fase seguinte: papel e unidade por
-  vínculo, `clube_vinculo_do_usuario` por clube, escolha do clube atual no servidor e relaxar `um_clube_por_pessoa`; (3) manifest do PWA, ícones, APK e título inicial do HTML seguem os do
-  Tenant 001 (build white-label é outra fase); (4) antes de entrar, o login mostra a última marca vista no aparelho (ou a padrão) — o cadastro público segue pelo Tenant 001.
+- **Limites desta fase, já resolvidos na fase seguinte ("Multi-clube real" acima)**: as flags eram só de VISIBILIDADE (agora bloqueiam
+  escrita) e o banco só aceitava 1 clube por pessoa (agora aceita N, com seleção explícita por requisição). Ainda valem: (1)
+  manifest do PWA, ícones, APK e título inicial do HTML seguem os do Tenant 001 (build white-label é outra fase); (2) antes de
+  entrar, o login mostra a última marca vista no aparelho (ou a padrão) — o cadastro público segue pelo Tenant 001.
 - Front publicado ANTES do SQL 33 funciona (modo legado: papel/unidade do perfil, marca legada, recursos como sempre); a tela de identidade avisa que falta o SQL.
 
 ## Hardening final (migrations 29–32) — congelamento da base
@@ -104,8 +153,13 @@ Pedido: remover a exposição do bucket público `imagens` e — quando seguro �
 - Cadastro público aceita `unidade_id` de qualquer clube (o UUID não é listável fora do clube legado); `anon` lê as unidades do
   clube legado (id, nome, cor, conselheiro_id) porque o cadastro precisa.
 - `profiles.teste` é editável pelo próprio usuário (só o exime de pontuar).
-- Flags de recurso (fora o leilão) escondem a tela, não bloqueiam a API: um cliente que chame a RPC direto ainda acessa o módulo do PRÓPRIO clube (nunca de outro).
-- Papel/unidade continuam também em `profiles` (sincronizados com o vínculo pelo banco); o front não os lê mais, mas o banco ainda depende deles (ver limite 2 acima).
+- (**resolvido** na migration 34) flags de recurso escondiam a tela mas não bloqueavam a API. Agora um gatilho central bloqueia
+  a ESCRITA nova nas 17 tabelas dos 11 recursos (leitura e edição do que já existe continuam liberadas).
+- (**resolvido** na migration 34) papel/unidade/status são do VÍNCULO (`organization_memberships`), não de `profiles` — a coluna
+  não é mais gravável direto por ninguém. `profiles.papel/status/unidade_id` seguem existindo só como espelho do clube PRIMÁRIO,
+  para o motor de jogos/config que ainda não foi migrado pra ler o vínculo direto (risco de DADO, não de segurança — ver "Multi-clube real").
+- (**resolvido** na migration 34) 1 clube por pessoa: o banco agora aceita N vínculos, com seleção explícita e validada por
+  requisição (não confia em `club_id` do cliente).
 - (**resolvido** nas migrations 31+32) bucket `imagens` público. **Enquanto a 32 não for aplicada, `imagens` segue público por URL** (é de propósito — ver o rollout). Depois dela:
   a URL assinada vale **24 h** e o front a guarda (memória + localStorage, por usuário, apagada ao sair) para o cache HTTP funcionar; alguém com acesso ao aparelho desbloqueado
   poderia ler as URLs guardadas nesse período. **APK e front antigos em cache** perdem avatar/mural/emblema depois da 32 (o APK embute o front e não se atualiza sozinho).

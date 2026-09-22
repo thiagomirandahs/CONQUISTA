@@ -334,10 +334,16 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
 - Alterar o package Android `app.filhosdaconquista` somente quando a marca/plano de publicação estiverem definidos.
 - Nome provisório da plataforma continua **DesbravaClube** até nova decisão.
 
-### Andamento (21/09/2026) — tudo local, nada em produção
+### Andamento (22/09/2026) — tudo local, nada em produção
 - ✅ Fundação multi-tenant fechada e consolidada em `saas-refactor` (checkpoint `checkpoint/fundacao-multitenant-2026-09-21`): migrations 01–32, Tenant 001 × Tenant 002 nos testes, hardening final.
 - ✅ Camada de produto multi-clube, 1ª etapa (migration 33 + front): `ClubContext`/`ClubeContext` (vínculos, clube em uso, papel NO clube, permissões, recursos, marca), telas sem `profiles.papel`/`unidade_id`,
-  marca por clube, catálogo de recursos e feature flags, tela de identidade e recursos. Pendente desta camada: vários clubes por pessoa no servidor, navegação por módulos e painel Master.
+  marca por clube, catálogo de recursos e feature flags, tela de identidade e recursos.
+- ✅ Multi-clube REAL (migration 34, branch `saas-produto-multiclube`): banco aceita N vínculos por pessoa (1-clube-por-pessoa saiu); papel/unidade/status são do vínculo, não de `profiles`
+  (`vinculo_gerir`); seleção de clube por requisição, sempre validada (`clube_atual_id()` lê o header `x-clube-atual`; duas abas do mesmo usuário operam em clubes diferentes ao mesmo tempo);
+  11 recursos que só escondiam rota agora bloqueiam escrita nova (gatilho central, leitura/edição do que já existe continua liberada). Achado e corrigido nesta fase: autoridade de liderança
+  usava o clube "mais relevante" do alvo em vez do clube em uso de quem chama — corrigido em `lideranca_gere_usuario`/`resetar_senha_membro`/`excluir_usuario`.
+  Pendente desta camada: o motor de jogos/prêmios e a config por clube ainda leem o espelho em `profiles` (correto pro clube primário; ver limites em AUDITORIA-MULTITENANT.md), navegação por
+  módulos e painel Master.
 - ⏸️ **Classes e Especialidades (seção 12): ainda não iniciado** — decisão explícita.
 
 ### Ordem de execução recomendada após a auditoria
