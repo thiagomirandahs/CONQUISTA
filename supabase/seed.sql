@@ -36,14 +36,13 @@ set email = excluded.email,
     raw_user_meta_data = excluded.raw_user_meta_data,
     updated_at = now();
 
--- Os dois usuários de teste são a liderança (diretoria) do seu clube. O gatilho de sincronia
--- (perfil -> vínculo) cria o vínculo a partir do perfil; o cadastro de ambos caiu no clube legado.
-update public.profiles
-set papel = 'diretoria', status = 'ativo'
-where id in (
-  '00000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000002'
-);
+-- Os dois usuários de teste são a liderança (diretoria) do seu clube. O cadastro (handle_new_user,
+-- ao inserir em auth.users acima) já criou um vínculo desbravador/pendente no clube legado pra cada
+-- um (não tem unidade_id no raw_user_meta_data) — apaga esse vínculo automático antes de inserir o
+-- de verdade. profiles.papel/status são só um ESPELHO do clube primário agora (não são a fonte).
+delete from public.organization_memberships
+where user_id in ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002')
+  and metadata->>'source' = 'cadastro';
 
 insert into public.organizational_units (
   type, nome, slug, pais, timezone, metadata

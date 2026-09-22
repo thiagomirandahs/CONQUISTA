@@ -54,21 +54,26 @@ select t.eq('líder B NÃO vê pendente do clube A', t.nv(format($q$select count
 select t.eq('líder B recebeu o aviso "Novo cadastro" de novo_b', t.nv($q$select count(*) from public.notificacoes where titulo ilike '%Novo cadastro%' and corpo ilike '%Novo B %'$q$), 1);
 select t.eq('líder B NÃO recebeu aviso do cadastro do clube A', t.nv($q$select count(*) from public.notificacoes where corpo ilike '%Novo A %'$q$), 0);
 select t.bloqueado('líder B não aprova cadastro do clube A',
-                   format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('novo_a')));
+                   format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('novo_a')));
 reset role;
 select t.eq('novo_a continua pendente após tentativa do líder B', (select status from public.profiles where id = t.id('novo_a')), 'pendente');
 
 -- ---------- o pendente não se aprova sozinho nem se promove ----------
+-- (papel/status/unidade_id não são mais graváveis direto em profiles por ninguém — só
+-- por vinculo_gerir, que também recusa a própria pessoa alterar o próprio vínculo)
 select t.como('novo_sem_unid');
-update public.profiles set status = 'ativo', papel = 'diretoria' where id = t.id('novo_sem_unid');
+select t.bloqueado('auto-aprovação direto em profiles é recusada (coluna travada)',
+                   format($q$update public.profiles set status = 'ativo', papel = 'diretoria' where id = %L$q$, t.id('novo_sem_unid')));
+select t.bloqueado('auto-aprovação via vinculo_gerir também é recusada',
+                   format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('novo_sem_unid')));
 reset role;
 select t.eq('auto-aprovação não pega (perfil)', (select status from public.profiles where id = t.id('novo_sem_unid')), 'pendente');
 select t.eq('auto-promoção não pega (papel)', (select papel from public.profiles where id = t.id('novo_sem_unid')), 'desbravador');
 select t.eq('auto-aprovação não pega (vínculo)', (select status from public.organization_memberships where user_id = t.id('novo_sem_unid')), 'pendente');
 
--- ---------- aprovação pela liderança (do jeito que a tela faz: update do status) ----------
+-- ---------- aprovação pela liderança (agora via vinculo_gerir, escopado ao clube em uso) ----------
 select t.como('lider_a');
-select t.permitido('líder A aprova o novo_a', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('novo_a')));
+select t.permitido('líder A aprova o novo_a', format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('novo_a')));
 reset role;
 select t.eq('aprovado: vínculo vira ativo', (select status from public.organization_memberships where user_id = t.id('novo_a')), 'ativo');
 select t.como('novo_a');
@@ -81,8 +86,8 @@ select t.eq('aprovado: não vê o aviso do clube B', t.nv($q$select count(*) fro
 
 -- ---------- rejeição / desativação / reativação acompanham o vínculo ----------
 select t.como('lider_a');
-select t.permitido('líder A rejeita novo_sem_unid', format($q$update public.profiles set status = 'rejeitado' where id = %L$q$, t.id('novo_sem_unid')));
-select t.permitido('líder A desativa membro_a2', format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('membro_a2')));
+select t.permitido('líder A rejeita novo_sem_unid', format($q$select public.vinculo_gerir(%L, p_status := 'rejeitado')$q$, t.id('novo_sem_unid')));
+select t.permitido('líder A desativa membro_a2', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('membro_a2')));
 reset role;
 select t.ok('rejeitado: vínculo deixa de ser ativo/pendente', (select status from public.organization_memberships where user_id = t.id('novo_sem_unid')) not in ('ativo','pendente'));
 select t.ok('inativo: vínculo deixa de ser ativo', (select status from public.organization_memberships where user_id = t.id('membro_a2')) <> 'ativo');
@@ -91,7 +96,7 @@ select t.eq('inativo: perde acesso aos dados do clube', t.nv('select count(*) fr
 select t.como('lider_a');
 select t.eq('líder A AINDA vê o desativado em listar_usuarios', t.n(format($q$select count(*) from public.listar_usuarios() where id = %L and status = 'inativo'$q$, t.id('membro_a2'))), 1);
 select t.eq('líder A AINDA vê o rejeitado em listar_usuarios', t.n(format($q$select count(*) from public.listar_usuarios() where id = %L and status = 'rejeitado'$q$, t.id('novo_sem_unid'))), 1);
-select t.permitido('líder A reativa membro_a2', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('membro_a2')));
+select t.permitido('líder A reativa membro_a2', format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('membro_a2')));
 select t.como('membro_a2');
 select t.eq('reativado: volta a ver o clube', t.n($q$select count(*) from public.fotos where legenda = 'Foto A'$q$), 1);
 reset role;
@@ -99,30 +104,37 @@ select t.eq('reativado: continua com 1 vínculo só', (select count(*) from publ
 
 -- ---------- promoção de cargo acompanha o papel do vínculo ----------
 select t.como('lider_a');
-select t.permitido('líder A promove membro_a2 a conselheiro', format($q$update public.profiles set papel = 'conselheiro' where id = %L$q$, t.id('membro_a2')));
+select t.permitido('líder A promove membro_a2 a conselheiro', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')));
 reset role;
 select t.eq('promoção: papel do vínculo acompanha', (select role from public.organization_memberships where user_id = t.id('membro_a2')), 'conselheiro');
+select t.eq('promoção: espelho em profiles acompanha (clube primário)', (select papel from public.profiles where id = t.id('membro_a2')), 'conselheiro');
 
 -- ---------- coerência de unidade x clube ----------
 select t.como('lider_a');
 select t.bloqueado('líder A não coloca membro do A numa unidade do clube B',
-                   format('update public.profiles set unidade_id = %L where id = %L', t.id('B1'), t.id('membro_a')));
+                   format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('membro_a'), t.id('B1')));
 reset role;
-select t.eq('unidade do membro_a intacta', (select unidade_id from public.profiles where id = t.id('membro_a')), t.id('A1'));
+select t.eq('unidade do membro_a intacta', (select unidade_id from public.organization_memberships where user_id = t.id('membro_a') and organizational_unit_id = t.id('clube_a')), t.id('A1'));
 
--- ---------- 1 clube por pessoa ----------
-select t.throws('segundo clube ativo para a mesma pessoa é recusado',
+-- ---------- múltiplos clubes: a mesma pessoa pode ter um SEGUNDO vínculo ativo ----------
+-- (antes era recusado por 1-clube-por-pessoa; a restrição saiu nesta fase — ver 27_multiclube_real.sql
+-- para a cobertura completa de papel/unidade diferentes por clube, troca de clube, etc.)
+select t.permitido('membro_a pode ganhar um SEGUNDO vínculo ativo, em outro clube',
   format($q$insert into public.organization_memberships (user_id, organizational_unit_id, role, status) values (%L, %L, 'desbravador', 'ativo')$q$, t.id('membro_a'), t.id('clube_b')));
+select t.eq('membro_a agora tem 2 vínculos', (select count(*) from public.organization_memberships where user_id = t.id('membro_a')), 2);
+delete from public.organization_memberships where user_id = t.id('membro_a') and organizational_unit_id = t.id('clube_b');
 
--- ---------- reconciliação: corrige deriva perfil x vínculo (rede de segurança da migration) ----------
+-- ---------- reconciliação: corrige deriva vínculo -> perfil (rede de segurança da migration 34) ----------
 set local session_replication_role = replica;
-delete from public.organization_memberships where user_id = t.id('membro_a');
+update public.organization_memberships set unidade_id = null, role = 'desbravador' where user_id = t.id('membro_a');
+update public.profiles set papel = 'conselheiro', unidade_id = null where id = t.id('membro_a');
 update public.organization_memberships set status = 'pendente' where user_id = t.id('tesoureiro_a');
+update public.profiles set status = 'suspenso' where id = t.id('tesoureiro_a');
 set local session_replication_role = origin;
-select t.ok('reconciliar_vinculos_perfis corrige a deriva (>= 2 ajustes)', t.n('select public.reconciliar_vinculos_perfis()') >= 2);
-select t.eq('reconciliado: membro_a volta a ter vínculo ativo no clube A', (select organizational_unit_id from public.organization_memberships where user_id = t.id('membro_a') and status = 'ativo'), t.id('clube_a'));
-select t.eq('reconciliado: tesoureiro_a volta a ativo', (select status from public.organization_memberships where user_id = t.id('tesoureiro_a')), 'ativo');
-select t.eq('reconciliar é idempotente (2ª vez = 0 ajustes)', t.n('select public.reconciliar_vinculos_perfis()'), 0);
+select t.ok('reconciliar_perfis_dos_vinculos corrige a deriva (>= 2 ajustes)', t.n('select public.reconciliar_perfis_dos_vinculos()') >= 2);
+select t.eq('reconciliado: papel de membro_a no perfil volta a acompanhar o vínculo', (select papel from public.profiles where id = t.id('membro_a')), 'desbravador');
+select t.eq('reconciliado: status de tesoureiro_a no perfil volta a acompanhar o vínculo', (select status from public.profiles where id = t.id('tesoureiro_a')), 'pendente');
+select t.eq('reconciliar é idempotente (2ª vez = 0 ajustes)', t.n('select public.reconciliar_perfis_dos_vinculos()'), 0);
 
 select t.fim();
 rollback;

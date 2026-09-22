@@ -54,7 +54,7 @@ select t.eq('desativado vira suspenso', (select role || '/' || status from publi
 select t.eq('cadastro pendente vira vínculo pendente (a diretoria passa a ver)', (select role || '/' || status from public.organization_memberships where user_id = t.id('pend')), 'desbravador/pendente');
 select t.eq('cadastro rejeitado vira vínculo encerrado', (select role || '/' || status from public.organization_memberships where user_id = t.id('rej')), 'desbravador/encerrado');
 select t.eq('responsável: papel padronizado em pais (nunca responsavel)', (select role || '/' || status from public.organization_memberships where user_id = t.id('pai')), 'pais/ativo');
-select t.eq('a reconciliação não tem mais nada a ajustar', t.n('select public.reconciliar_vinculos_perfis()'), 0);
+select t.eq('a reconciliação não tem mais nada a ajustar', t.n('select public.reconciliar_perfis_dos_vinculos()'), 0);
 
 -- ---------- 3) cada papel enxerga o que deve ----------
 select t.como('dir');
@@ -88,12 +88,12 @@ select t.eq('rejeitado: nada do clube', t.nv('select count(*) from public.pontos
 
 -- ---------- 4) os fluxos do dia a dia seguem funcionando ----------
 select t.como('dir');
-select t.permitido('diretoria aprova o cadastro pendente', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('pend')));
-select t.permitido('diretoria reativa o desativado', format($q$update public.profiles set status = 'ativo' where id = %L$q$, t.id('d3')));
+select t.permitido('diretoria aprova o cadastro pendente', format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('pend')));
+select t.permitido('diretoria reativa o desativado', format($q$select public.vinculo_gerir(%L, p_status := 'ativo')$q$, t.id('d3')));
 select t.permitido('diretoria redefine a senha do instrutor', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('ins')));
 select t.permitido('diretoria exclui o cadastro rejeitado', format('select public.excluir_usuario(%L)', t.id('rej')));
 select t.como('ins');
-select t.throws('instrutor NÃO promove a diretoria (erro claro, nada muda)', format($q$update public.profiles set papel = 'diretoria' where id = %L$q$, t.id('d1')), 'diretoria');
+select t.throws('instrutor NÃO promove a diretoria (erro claro, nada muda)', format($q$select public.vinculo_gerir(%L, p_papel := 'diretoria')$q$, t.id('d1')), 'diretoria');
 select t.como('d1');
 select t.permitido('o aparelho de push segue quem está logado (RPC nova)', $q$select public.push_registrar('https://push.exemplo.test/prod-1', 'k', 'a')$q$);
 select t.como('dir');

@@ -61,26 +61,36 @@ select t.eq('toda tabela do public tem RLS ligado',
     where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity), 0);
 
 -- ---------- invariantes de dados ----------
-select t.eq('ninguém tem vínculo pendente/ativo em 2 clubes',
-  (select count(*) from (select m.user_id from public.organization_memberships m
-      join public.organizational_units u on u.id = m.organizational_unit_id and u.type = 'clube'
-      where m.status in ('pendente','ativo') group by m.user_id having count(distinct m.organizational_unit_id) > 1) x), 0);
+-- "1 vínculo por pessoa" saiu nesta fase (múltiplos clubes é o ponto da migration 34) — as 3
+-- checagens de perfil x vínculo agora comparam com o clube PRIMÁRIO da pessoa (o único que
+-- profiles espelha), não com QUALQUER vínculo (ver 27_multiclube_real.sql pra cobertura real
+-- de gente em 2+ clubes com papel/unidade diferentes).
 select t.eq('todo perfil tem vínculo de clube',
   (select count(*) from public.profiles p where not exists (select 1 from public.organization_memberships m where m.user_id = p.id)), 0);
-select t.eq('o papel do vínculo bate com o papel do perfil',
-  (select count(*) from public.profiles p join public.organization_memberships m on m.user_id = p.id
+select t.eq('o papel do vínculo PRIMÁRIO bate com o papel do perfil',
+  (select count(*) from public.profiles p join public.organization_memberships m
+     on m.user_id = p.id and m.organizational_unit_id = public.clube_primario_do_usuario(p.id)
     where m.status in ('pendente','ativo') and m.role <> p.papel), 0);
-select t.eq('o status do vínculo bate com o status do perfil (ativo/pendente)',
-  (select count(*) from public.profiles p join public.organization_memberships m on m.user_id = p.id
+select t.eq('o status do vínculo PRIMÁRIO bate com o status do perfil (ativo/pendente)',
+  (select count(*) from public.profiles p join public.organization_memberships m
+     on m.user_id = p.id and m.organizational_unit_id = public.clube_primario_do_usuario(p.id)
     where p.status in ('ativo','pendente') and m.status <> p.status), 0);
-select t.eq('a unidade de cada perfil é do mesmo clube do vínculo',
+select t.eq('a unidade de cada perfil é do mesmo clube do vínculo PRIMÁRIO',
   (select count(*) from public.profiles p join public.unidades u on u.id = p.unidade_id
-    join public.organization_memberships m on m.user_id = p.id and m.status in ('pendente','ativo')
+    join public.organization_memberships m
+      on m.user_id = p.id and m.organizational_unit_id = public.clube_primario_do_usuario(p.id) and m.status in ('pendente','ativo')
     where u.club_id <> m.organizational_unit_id), 0);
 select t.eq('todo vínculo tem papel do vocabulário oficial',
   (select count(*) from public.organization_memberships where role not in ('desbravador','conselheiro','instrutor','diretoria','tesoureiro','pais')), 0);
 
 -- ---------- idempotência: reaplicar as migrations novas não pode quebrar nem duplicar ----------
+-- Reaplicar a 13 (que recria o gatilho "1 clube por pessoa") DENTRO desta transação ressuscita
+-- por um instante uma regra que as migrations mais novas (34) já removeram; os fixtures de
+-- multi-clube (t.mk2) não existiam quando essa regra valia, então saem daqui antes do replay —
+-- a cobertura deles é 27_multiclube_real.sql, não este teste de idempotência.
+delete from public.organization_memberships m
+ using public.organization_memberships m2
+ where m.user_id = m2.user_id and m.organizational_unit_id <> m2.organizational_unit_id and m.ctid > m2.ctid;
 select count(*) as vinculos_antes, (select count(*) from public.club_features) as feats_antes from public.organization_memberships \gset
 -- a lista sai da PASTA: da 13 em diante, toda migration nova entra sozinha neste teste
 \o /dev/null

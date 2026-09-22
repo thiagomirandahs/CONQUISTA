@@ -83,13 +83,17 @@ select t.eq('responsável não lista imagens de menores', t.nv($q$select count(*
 reset role;
 
 -- ==================== E) instrutor não vira diretoria ====================
+-- papel/status/unidade_id não são mais graváveis direto em profiles por ninguém (a coluna é
+-- revogada) — confirma a defesa em profundidade, e também que a RPC vinculo_gerir (o único
+-- caminho de escrita real) recusa igual pela regra de papel.
 select t.como('instrutor_a');
 select t.tenta(format($q$update public.profiles set papel = 'diretoria' where id = %L$q$, t.id('membro_a')));
-select t.tenta(format($q$update public.profiles set papel = 'instrutor' where id = %L$q$, t.id('membro_a2')));
-select t.tenta(format($q$update public.profiles set papel = 'tesoureiro' where id = %L$q$, t.id('conselheiro_a')));
-select t.tenta(format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('tesoureiro_a')));
-select t.tenta(format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('lider_a')));
-select t.permitido('instrutor promove membro comum a conselheiro (continua podendo)', format($q$update public.profiles set papel = 'conselheiro' where id = %L$q$, t.id('membro_a2')));
+select t.throws('instrutor NÃO promove a diretoria (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_papel := 'diretoria')$q$, t.id('membro_a')), 'diretoria');
+select t.throws('instrutor NÃO promove a outro instrutor (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_papel := 'instrutor')$q$, t.id('membro_a2')), 'diretoria');
+select t.throws('instrutor NÃO promove a tesoureiro (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro')$q$, t.id('conselheiro_a')), 'diretoria');
+select t.throws('instrutor NÃO desativa o tesoureiro (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')), 'diretoria');
+select t.throws('instrutor NÃO desativa a diretoria (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('lider_a')), 'diretoria');
+select t.permitido('instrutor promove membro comum a conselheiro (continua podendo)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')));
 select t.throws('instrutor NÃO redefine a senha do tesoureiro', format($q$select public.resetar_senha_membro(%L, 'assumindo-conta')$q$, t.id('tesoureiro_a')), 'permiss');
 reset role;
 select t.eq('instrutor não criou diretoria', (select papel from public.profiles where id = t.id('membro_a')), 'desbravador');
@@ -99,8 +103,8 @@ select t.eq('instrutor não desativou o tesoureiro', (select status from public.
 select t.eq('instrutor não desativou a diretoria', (select status from public.profiles where id = t.id('lider_a')), 'ativo');
 select t.eq('instrutor conseguiu o que é permitido (conselheiro)', (select papel from public.profiles where id = t.id('membro_a2')), 'conselheiro');
 select t.como('lider_a');
-select t.permitido('diretoria promove a instrutor', format($q$update public.profiles set papel = 'instrutor' where id = %L$q$, t.id('membro_a')));
-select t.permitido('diretoria desativa o tesoureiro', format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('tesoureiro_a')));
+select t.permitido('diretoria promove a instrutor', format($q$select public.vinculo_gerir(%L, p_papel := 'instrutor')$q$, t.id('membro_a')));
+select t.permitido('diretoria desativa o tesoureiro', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')));
 select t.permitido('diretoria redefine a senha do tesoureiro', format($q$select public.resetar_senha_membro(%L, 'senha-ok-123')$q$, t.id('tesoureiro_a')));
 reset role;
 select t.eq('a diretoria promoveu de verdade (perfil e vínculo)', (select p.papel || '/' || m.role from public.profiles p join public.organization_memberships m on m.user_id = p.id where p.id = t.id('membro_a')), 'instrutor/instrutor');

@@ -11,7 +11,7 @@ create table t.excecoes (tabela text primary key, motivo text not null);
 insert into t.excecoes values
   ('organizational_units',     'raiz: o próprio clube/unidade organizacional'),
   ('organization_memberships', 'vínculo pessoa x clube (organizational_unit_id é o clube)'),
-  ('profiles',                 'perfil da pessoa; o clube vem do vínculo (organization_memberships), 1 clube por pessoa'),
+  ('profiles',                 'identidade global da pessoa (não é por clube); os clubes dela vêm de organization_memberships, que pode ter N vínculos'),
   ('push_subscriptions',       'dispositivo da PESSOA; a Edge Function só envia via push_destinatarios(club_id)'),
   ('push_tokens',              'dispositivo da PESSOA (APK); idem'),
   ('migracoes_aplicadas',      'ledger da plataforma (não tem dado de clube)'),

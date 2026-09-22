@@ -7,24 +7,33 @@ begin;
 \ir _fixtures.sql
 
 -- ---------- 1) instrutor: erro claro, sem efeito colateral ----------
+-- papel/status/unidade_id não são mais graváveis direto em profiles por NINGUÉM (coluna
+-- revogada) — a escrita real é só via vinculo_gerir, que tem a mesma regra (só a diretoria
+-- mexe em quem já é/vira diretoria, instrutor ou tesoureiro).
 select t.como('instrutor_a');
-select t.throws('instrutor NÃO promove desbravador a tesoureiro (erro claro, não silêncio)', format($q$update public.profiles set papel = 'tesoureiro', unidade_id = null where id = %L$q$, t.id('membro_a')), 'diretoria');
-select t.throws('instrutor NÃO promove a diretoria', format($q$update public.profiles set papel = 'diretoria' where id = %L$q$, t.id('membro_a')), 'diretoria');
-select t.throws('instrutor NÃO desativa o tesoureiro', format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('tesoureiro_a')), 'diretoria');
-select t.throws('instrutor NÃO rebaixa a diretoria', format($q$update public.profiles set papel = 'desbravador' where id = %L$q$, t.id('lider_a')), 'diretoria');
-select t.permitido('instrutor AINDA muda a unidade de um desbravador (operação de sempre)', format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('A2'), t.id('membro_a')));
-select t.permitido('instrutor AINDA promove desbravador a conselheiro (só os cargos de liderança são da diretoria)', format($q$update public.profiles set papel = 'conselheiro' where id = %L$q$, t.id('membro_a2')));
-select t.permitido('instrutor AINDA muda a unidade do tesoureiro (não mexe em cargo/status)', format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('A1'), t.id('tesoureiro_a')));
+select t.bloqueado('escrita direta em profiles.papel segue travada pra qualquer papel (defesa em profundidade)',
+                   format($q$update public.profiles set papel = 'tesoureiro' where id = %L$q$, t.id('membro_a')));
+select t.throws('instrutor NÃO promove desbravador a tesoureiro (erro claro, não silêncio)', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro', p_limpar_unidade := true)$q$, t.id('membro_a')), 'diretoria');
+select t.throws('instrutor NÃO promove a diretoria', format($q$select public.vinculo_gerir(%L, p_papel := 'diretoria')$q$, t.id('membro_a')), 'diretoria');
+select t.throws('instrutor NÃO desativa o tesoureiro', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')), 'diretoria');
+select t.throws('instrutor NÃO rebaixa a diretoria', format($q$select public.vinculo_gerir(%L, p_papel := 'desbravador')$q$, t.id('lider_a')), 'diretoria');
+select t.permitido('instrutor AINDA muda a unidade de um desbravador (operação de sempre)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('membro_a'), t.id('A2')));
+select t.permitido('instrutor AINDA promove desbravador a conselheiro (só os cargos de liderança são da diretoria)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')));
+select t.permitido('instrutor AINDA muda a unidade do tesoureiro (não mexe em cargo/status)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('tesoureiro_a'), t.id('A1')));
 reset role;
 select t.eq('nada mudou nas tentativas recusadas: o membro A segue desbravador (só a unidade mudou, como permitido)', (select papel || '/' || (unidade_id = t.id('A2'))::text from public.profiles where id = t.id('membro_a')), 'desbravador/true');
 select t.eq('o tesoureiro segue ativo e a diretoria segue diretoria', (select count(*) from public.profiles where (id = t.id('tesoureiro_a') and papel = 'tesoureiro' and status = 'ativo') or (id = t.id('lider_a') and papel = 'diretoria')), 2);
 select t.como('lider_a');
-select t.permitido('a DIRETORIA promove a tesoureiro normalmente', format($q$update public.profiles set papel = 'tesoureiro' where id = %L$q$, t.id('membro_a')));
-select t.permitido('a DIRETORIA desativa um instrutor normalmente', format($q$update public.profiles set status = 'inativo' where id = %L$q$, t.id('instrutor_a')));
+select t.permitido('a DIRETORIA promove a tesoureiro normalmente', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro')$q$, t.id('membro_a')));
+select t.permitido('a DIRETORIA desativa um instrutor normalmente', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('instrutor_a')));
 select t.como('membro_a');
-select t.permitido('o membro edita o próprio perfil (nome) sem erro, e o cargo não muda', format($q$update public.profiles set nome = 'Nome novo', papel = 'diretoria' where id = %L$q$, t.id('membro_a')));
+select t.permitido('o membro edita o próprio perfil (nome) sem erro', format($q$update public.profiles set nome = 'Nome novo' where id = %L$q$, t.id('membro_a')));
+select t.bloqueado('...e não consegue misturar um auto-cargo na mesma escrita (a coluna trava a escrita inteira)',
+                   format($q$update public.profiles set nome = 'Nome novo 2', papel = 'diretoria' where id = %L$q$, t.id('membro_a')));
+select t.throws('...nem tentando pela RPC (ninguém mexe no próprio vínculo)', format($q$select public.vinculo_gerir(%L, p_papel := 'diretoria')$q$, t.id('membro_a')), 'próprio');
 reset role;
 select t.eq('...o auto-cargo foi ignorado (segue o que a diretoria definiu)', (select papel from public.profiles where id = t.id('membro_a')), 'tesoureiro');
+select t.eq('...mas o nome mudou (coluna liberada)', (select nome from public.profiles where id = t.id('membro_a')), 'Nome novo');
 
 -- ---------- 2) falha de cron por clube fica REGISTRADA ----------
 select t.eq('a tabela cron_falhas existe, é interna (RLS ligado, sem acesso de usuário)',

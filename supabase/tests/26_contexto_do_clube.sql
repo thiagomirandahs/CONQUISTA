@@ -77,17 +77,16 @@ select t.como_anon();
 select t.ok('anon NÃO executa meu_contexto', t.ctx('') like 'ERRO:%');
 reset role;
 
--- ---------- vários vínculos (o banco de hoje impede; o formato já suporta e o servidor só age em UM clube) ----------
-select t.throws('regra de hoje: NÃO dá para ter 2 vínculos ativos em clubes diferentes (um_clube_por_pessoa)',
-  format($q$insert into public.organization_memberships (user_id, organizational_unit_id, role, status) values (%L, %L, 'desbravador', 'ativo')$q$, t.id('membro_b'), t.id('clube_a')), 'já pertence a outro clube');
-set local session_replication_role = replica;
-insert into public.organization_memberships (user_id, organizational_unit_id, role, status, created_at)
-values (t.id('membro_b'), t.id('clube_a'), 'instrutor', 'ativo', now() + interval '1 hour');
-set local session_replication_role = origin;
+-- ---------- vários vínculos: agora é suportado de verdade (migration 34 removeu o 1-clube-por-
+-- pessoa) ----------  cobertura completa (papel/unidade diferentes por clube, seleção via header,
+-- troca de clube, forjar club_id, responsável e liderança em 2 clubes) está em 27_multiclube_real.sql;
+-- aqui só a forma que meu_contexto() devolve quando a pessoa JÁ tem 2 vínculos.
+select t.permitido('múltiplos clubes ativos: agora é aceito sem erro',
+  format($q$insert into public.organization_memberships (user_id, organizational_unit_id, role, status, unidade_id, created_at) values (%L, %L, 'instrutor', 'ativo', null, now() + interval '1 hour')$q$, t.id('membro_b'), t.id('clube_a')));
 select t.como('membro_b');
 select t.eq('pessoa em 2 clubes: o contexto lista os DOIS, o do servidor primeiro', t.ctx('->''vinculos''->0->>''club_id''') || '|' || t.ctx('->''vinculos''->1->>''club_id'''), t.id('clube_b')::text || '|' || t.id('clube_a')::text);
 select t.eq('pessoa em 2 clubes: papel DIFERENTE em cada (o papel é do vínculo, não da pessoa)', t.ctx('->''vinculos''->0->>''papel''') || '|' || t.ctx('->''vinculos''->1->>''papel'''), 'desbravador|instrutor');
-select t.eq('pessoa em 2 clubes: só o clube em que o SERVIDOR age é selecionável (não dá para "fingir" o outro)', t.ctx('->''vinculos''->0->>''selecionavel''') || '|' || t.ctx('->''vinculos''->1->>''selecionavel'''), 'true|false');
+select t.eq('pessoa em 2 clubes: os DOIS vínculos ativos são selecionáveis (a troca de clube é real agora)', t.ctx('->''vinculos''->0->>''selecionavel''') || '|' || t.ctx('->''vinculos''->1->>''selecionavel'''), 'true|true');
 select t.eq('pessoa em 2 clubes: a unidade só vale no clube dela (B1 no B; nenhuma no A)', t.ctx('->''vinculos''->0->>''unidade_id''') || '|' || coalesce(t.ctx('->''vinculos''->1->>''unidade_id'''), 'sem-unidade'), t.id('B1')::text || '|sem-unidade');
 reset role;
 delete from public.organization_memberships where user_id = t.id('membro_b') and organizational_unit_id = t.id('clube_a');

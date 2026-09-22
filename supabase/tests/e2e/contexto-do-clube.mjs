@@ -75,9 +75,10 @@ function preparar() {
       extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false from ctx_p;
     insert into public.profiles (id, nome, papel, status, unidade_id)
     select md5('ctx:' || p.k)::uuid, 'CTX ' || p.k, p.papel, p.status, (select id from public.unidades where nome = p.unidade) from ctx_p p;
-    insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
+    insert into public.organization_memberships (user_id, organizational_unit_id, role, status, unidade_id)
     select md5('ctx:' || p.k)::uuid, (select id from public.organizational_units where slug = p.clube), p.papel,
-           case p.status when 'ativo' then 'ativo' else 'pendente' end from ctx_p p where p.clube is not null;
+           case p.status when 'ativo' then 'ativo' else 'pendente' end,
+           (select id from public.unidades where nome = p.unidade) from ctx_p p where p.clube is not null;
   `)
 }
 

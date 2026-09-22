@@ -5,10 +5,18 @@ begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
--- pessoas de cada clube, calculado como postgres (o ator não enxerga vínculos alheios)
+-- pessoas de cada clube, calculado como postgres (o ator não enxerga vínculos alheios).
+-- Exclui quem tem vínculo em MAIS de um clube: essas pessoas são, por desenho, visíveis
+-- para a liderança de QUALQUER clube a que pertencem (não é vazamento) — a isolação real
+-- delas é coberta em 27_multiclube_real.sql.
 create function t.pessoas_do_clube(p_clube text) returns uuid[]
 language sql stable security definer set search_path = '' as $$
-  select coalesce(array_agg(user_id), '{}') from public.organization_memberships where organizational_unit_id = t.id(p_clube);
+  select coalesce(array_agg(user_id), '{}')
+  from public.organization_memberships
+  where organizational_unit_id = t.id(p_clube)
+    and user_id not in (
+      select user_id from public.organization_memberships group by user_id having count(distinct organizational_unit_id) > 1
+    );
 $$;
 
 -- ---------- leitura: cada ator x cada tabela com club_id, contra o OUTRO clube ----------
@@ -72,9 +80,10 @@ select t.bloqueado('membro B não cria vínculo próprio no clube A (auto-promo�
 select t.bloqueado('membro B não promove o próprio vínculo', format($q$update public.organization_memberships set role = 'diretoria' where user_id = %L$q$, t.id('membro_b')));
 select t.bloqueado('membro B não apaga o próprio vínculo para trocar de clube', format($q$delete from public.organization_memberships where user_id = %L$q$, t.id('membro_b')));
 select t.bloqueado('membro B não envia entrega numa atividade do clube A', format($q$insert into public.entregas (atividade_id, usuario_id, texto) values (%L, %L, 'invasão')$q$, t.id('atv_a'), t.id('membro_b')));
--- (estado, não contagem de linhas: o gatilho pode reverter o valor em silêncio; conferimos abaixo como postgres)
-update public.profiles set unidade_id = t.id('A1') where id = t.id('membro_b');
-update public.profiles set papel = 'diretoria', status = 'ativo' where id = t.id('membro_b');
+-- (papel/status/unidade_id não são mais graváveis direto em profiles por ninguém: a coluna
+-- é revogada, então isso já nem chega a rodar — conferimos o estado abaixo como postgres)
+select t.tenta(format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('A1'), t.id('membro_b')));
+select t.tenta(format($q$update public.profiles set papel = 'diretoria', status = 'ativo' where id = %L$q$, t.id('membro_b')));
 select t.bloqueado('membro B não cria convite de responsável', $q$insert into public.club_invites (club_id, token_hash, expires_at) values (gen_random_uuid(), 'x', now() + interval '1 day')$q$);
 select t.bloqueado('membro B não grava inscrição de push de outra pessoa', format($q$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (%L, 'https://push.teste/invasao', 'k', 'a')$q$, t.id('membro_a')));
 select t.bloqueado('membro B não sobe comprovante na pasta de outra pessoa', format($q$insert into storage.objects (bucket_id, name, owner) values ('comprovacoes', %L, %L)$q$, t.id('membro_a') || '/invasao.jpg', t.id('membro_b')));

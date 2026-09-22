@@ -202,7 +202,7 @@ select t.sem_oraculo_igual('Tenant002->001: a liderança põe um membro na unida
   format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('A1'), t.id('membro_b')),
   format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('rnd'), t.id('membro_b')));
 select t.como('membro_a');
-select t.permitido('controle: o membro troca para outra unidade do PRÓPRIO clube', format($q$update public.profiles set unidade_id = %L where id = %L$q$, t.id('A2'), t.id('membro_a')));
+select t.permitido('controle: o membro troca para outra unidade do PRÓPRIO clube', format($q$select public.minha_unidade_definir(%L)$q$, t.id('A2')));
 
 -- ---------- RPCs com 2 ou mais UUIDs (a varredura da parte 2 só cobre as de UM uuid) ----------
 select t.como('membro_a');
@@ -239,7 +239,15 @@ begin
   loop
     execute format('insert into t.pool select %L, id, %L from public.%I where club_id = %L limit 3', p_clube, r.table_name, r.table_name, v_club);
   end loop;
-  insert into t.pool select p_clube, user_id, 'pessoa' from public.organization_memberships where organizational_unit_id = v_club;
+  -- exclui quem tem vínculo em MAIS de um clube: pra essas pessoas, funções como
+  -- compartilha_clube_com/lideranca_gere_usuario/excluir_usuario respondem diferente de
+  -- propósito (elas DE VERDADE compartilham o outro clube) — não é oráculo, é o vínculo real.
+  insert into t.pool
+  select p_clube, user_id, 'pessoa' from public.organization_memberships
+  where organizational_unit_id = v_club
+    and user_id not in (
+      select user_id from public.organization_memberships group by user_id having count(distinct organizational_unit_id) > 1
+    );
   insert into t.pool values (p_clube, v_club, 'o próprio clube');
 end $$;
 select t.montar_pool('clube_a');

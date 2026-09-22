@@ -10,6 +10,13 @@
 --    A: lider_a (diretoria) instrutor_a tesoureiro_a conselheiro_a (unid A1)
 --       membro_a (desbravador, unid A1)  membro_a2 (desbravador, unid A2)  pais_a
 --    B: lider_b (diretoria) membro_b (desbravador, unid B1)  pais_b
+--    Multi-clube (t.mk + t.mk2 — vínculo em A E B; ver 27_multiclube_real.sql):
+--      multi_dois_papeis (desbravador/A1 no A, conselheiro/B1 no B)
+--      dir_a_membro_b (diretoria no A, desbravador/B1 no B)
+--      instrutor_2clubes (instrutor/A1 no A, instrutor/B1 no B)
+--      pais_2clubes (pais nos dois — responsaveis aprovados: membro_a no A, membro_b no B)
+--      suspenso_so_b (desbravador/A1 ATIVO no A, desbravador/B1 SUSPENSO no B)
+--    (as 5 pessoas de multi-clube têm profiles.teste = true — não contam em rankings/lembretes)
 --  Unidades: A1 A2 (clube A)  B1 (clube B)
 -- =============================================================================
 \set ON_ERROR_STOP on
@@ -43,13 +50,65 @@ begin
     '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
   insert into public.profiles (id, nome, papel, status, unidade_id, nascimento)
   values (v_id, p_nome, p_papel, p_status, case when p_unidade is null then null else t.id(p_unidade) end, p_nasc);
-  insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
+  -- starts_at um instante ANTES de now(): now() é fixo pra transação inteira (não avança entre
+  -- statements), então um eventual 2º vínculo da MESMA pessoa (t.mk2, sempre com now() puro) nunca
+  -- empata nem "ganha" o desempate de qual clube é o padrão sem pedir nada — só este 1º aqui.
+  insert into public.organization_memberships (user_id, organizational_unit_id, role, status, unidade_id, starts_at, created_at)
   values (v_id, t.id(p_clube), p_papel,
-          case p_status when 'ativo' then 'ativo' when 'pendente' then 'pendente' else 'suspenso' end);
+          case p_status when 'ativo' then 'ativo' when 'pendente' then 'pendente' else 'suspenso' end,
+          case when p_unidade is null then null else t.id(p_unidade) end,
+          now() - interval '1 second', now() - interval '1 second');
   set local session_replication_role = origin;
   insert into t.ids (chave, id) values (p_chave, v_id);
   return v_id;
 end $$;
+
+-- Segundo vínculo (ou mais) para uma pessoa que t.mk já criou, em OUTRO clube
+-- (ou no mesmo, com outro papel) — cenários de multi-clube de verdade. Nunca
+-- mexe em profiles (identidade global, criada uma vez só por t.mk).
+-- Ao contrário de t.mk (que cria auth.users+profiles+vínculo juntos, com os gatilhos desligados),
+-- t.mk2 SÓ insere o vínculo novo numa pessoa que já existe — os gatilhos reais (valida a unidade,
+-- espelha em profiles) rodam normalmente, exatamente como uma aprovação de verdade rodaria.
+-- t.mk grava o PRIMEIRO vínculo com starts_at levemente ANTERIOR (ver comentário lá) só pra isso
+-- aqui poder usar now() sem se preocupar: o vínculo de t.mk2 nunca empata (nem "ganha") o desempate
+-- de qual clube é o padrão — só é honrado quando alguém PEDE esse clube explicitamente.
+create function t.mk2(p_chave_pessoa text, p_papel text, p_status text, p_clube text, p_unidade text default null)
+returns uuid language plpgsql as $$
+declare v_id uuid := t.id(p_chave_pessoa);
+begin
+  insert into public.organization_memberships (user_id, organizational_unit_id, role, status, unidade_id)
+  values (v_id, t.id(p_clube), p_papel,
+          case p_status when 'ativo' then 'ativo' when 'pendente' then 'pendente' else 'suspenso' end,
+          case when p_unidade is null then null else t.id(p_unidade) end);
+  return v_id;
+end $$;
+
+-- ---------- pessoas com vínculo em MAIS DE UM clube (multi-clube de verdade) ----------
+-- multi_dois_papeis: desbravador no clube A (unid A1), conselheiro no clube B (unid B1).
+select t.mk('multi_dois_papeis', 'Multi Dois Papeis', 'desbravador', 'ativo', 'clube_a', 'A1', date '2013-01-01');
+select t.mk2('multi_dois_papeis', 'conselheiro', 'ativo', 'clube_b', 'B1');
+
+-- dir_a_membro_b: diretoria no clube A, desbravador comum no clube B.
+select t.mk('dir_a_membro_b', 'Diretor A Membro B', 'diretoria', 'ativo', 'clube_a');
+select t.mk2('dir_a_membro_b', 'desbravador', 'ativo', 'clube_b', 'B1');
+
+-- instrutor_2clubes: instrutor nos dois clubes, cada um com uma unidade diferente.
+select t.mk('instrutor_2clubes', 'Instrutor Dois Clubes', 'instrutor', 'ativo', 'clube_a', 'A1');
+select t.mk2('instrutor_2clubes', 'instrutor', 'ativo', 'clube_b', 'B1');
+
+-- pais_2clubes: responsável nos dois clubes, cada vínculo aprovado para o filho daquele clube.
+select t.mk('pais_2clubes', 'Pais Dois Clubes', 'pais', 'ativo', 'clube_a');
+select t.mk2('pais_2clubes', 'pais', 'ativo', 'clube_b');
+
+-- suspenso_so_b: ativo no clube A, SUSPENSO só no clube B (o vínculo do A não é afetado).
+select t.mk('suspenso_so_b', 'Suspenso So B', 'desbravador', 'ativo', 'clube_a', 'A1');
+select t.mk2('suspenso_so_b', 'desbravador', 'suspenso', 'clube_b', 'B1');
+
+-- Essas 5 pessoas de multi-clube não podem contaminar contagens EXATAS de outros testes
+-- (lembretes de ausência, rankings...): a flag teste já existe pra isso (rotinas de cron/jogo já
+-- excluem quem tem profiles.teste = true).
+update public.profiles set teste = true
+ where id in (t.id('multi_dois_papeis'), t.id('dir_a_membro_b'), t.id('instrutor_2clubes'), t.id('pais_2clubes'), t.id('suspenso_so_b'));
 
 select t.mk('lider_a',       'Lider A',       'diretoria',   'ativo', 'clube_a');
 select t.mk('instrutor_a',   'Instrutor A',   'instrutor',   'ativo', 'clube_a');
@@ -108,6 +167,18 @@ insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, 
 values (t.id('pais_a'), t.id('membro_a'), 'Membro A', 'aprovado');
 insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status)
 values (t.id('pais_b'), t.id('membro_b'), 'Membro B', 'aprovado');
+-- pais_2clubes: um vínculo aprovado em CADA clube. Sem auth.uid() nos fixtures,
+-- definir_club_responsavel só sabe resolver "o" clube do responsável (ambíguo com
+-- 2 vínculos) — grava os dois direto, com os gatilhos desligados, como t.mk faz.
+do $$
+begin
+  set local session_replication_role = replica;
+  insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status, club_id)
+  values (t.id('pais_2clubes'), t.id('membro_a'), 'Membro A (via pais 2 clubes)', 'aprovado', t.id('clube_a'));
+  insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status, club_id)
+  values (t.id('pais_2clubes'), t.id('membro_b'), 'Membro B (via pais 2 clubes)', 'aprovado', t.id('clube_b'));
+  set local session_replication_role = origin;
+end $$;
 
 insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
 select t.id(k), 'https://push.teste/' || k, 'k', 'a'

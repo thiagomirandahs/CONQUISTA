@@ -123,9 +123,23 @@ begin
   perform set_config('request.jwt.claim.sub', p_uid::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.headers', '{}', true);  -- cada troca de "quem está logado" começa sem clube pedido
   set local role authenticated;
 end $$;
 create function t.como(p_chave text) returns void language sql as $$ select t.como(t.id(p_chave)); $$;
+
+-- ---------- clube pedido pelo cliente (simula o header x-clube-atual do PostgREST) ----------
+-- Representa uma REQUISIÇÃO pedindo pra agir num clube específico (a "aba" que escolheu esse
+-- clube). clube_atual_id() só HONRA se corresponder a um vínculo ativo real de quem chama.
+create function t.pedir_clube(p_club_id uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.headers', json_build_object('x-clube-atual', p_club_id::text)::text, true);
+end $$;
+create function t.pedir_clube(p_chave text) returns void language sql as $$ select t.pedir_clube(t.id(p_chave)); $$;
+create function t.esquecer_clube_pedido() returns void language plpgsql as $$
+begin
+  perform set_config('request.headers', '{}', true);
+end $$;
 
 create function t.como_anon() returns void language plpgsql as $$
 begin
