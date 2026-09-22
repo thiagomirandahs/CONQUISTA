@@ -18,7 +18,7 @@
 //   node supabase/curriculo-manifesto/gerar-importacao.mjs --check   # só confere: os arquivos em disco
 //                                                                     # batem com o que o manifesto gera hoje?
 //                                                                     # (gate: manifesto editado sem regerar = FALHA)
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
@@ -125,10 +125,21 @@ export function gerarArquivos() {
     '',
   ].join('\n')
 
+  // Uma migration POR VERSÃO do manifesto: a da versão atual é encontrada pelo slug (se já existe, é
+  // ela que --check confere); senão ganha o próximo número livre. As migrations de versões anteriores
+  // (ex.: ..._2026-1.sql) ficam intocadas — são história (o importador arquiva a versão anterior ao
+  // importar a nova; nunca a edita).
+  const dirMig = join(raiz, 'supabase', 'migrations')
+  const existente = readdirSync(dirMig).find((f) => f.endsWith(`_${slug}.sql`))
+  let nomeMigration = existente
+  if (!nomeMigration) {
+    const maior = readdirSync(dirMig).map((f) => /^(\d{14})_/.exec(f)?.[1]).filter(Boolean).sort().pop()
+    nomeMigration = `${String(BigInt(maior) + 1n)}_${slug}.sql`
+  }
   return {
     hash, resumo: r, versao: pacote.manifesto_versao,
     arquivos: [
-      { caminho: join(raiz, 'supabase', 'migrations', `20260921000040_${slug}.sql`), conteudo: migration },
+      { caminho: join(dirMig, nomeMigration), conteudo: migration },
       { caminho: join(raiz, 'supabase', 'tests', '_curriculo_regular_2026.sql'), conteudo: fixture },
     ],
   }

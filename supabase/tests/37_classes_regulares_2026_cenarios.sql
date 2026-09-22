@@ -25,18 +25,20 @@ create function t.classe(p_manifesto_id text) returns uuid language sql stable a
   select c.id from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id
   where v.origem = 'oficial' and v.status = 'publicado' and c.manifesto_id = p_manifesto_id $$;
 create function t.req(p_manifesto_id text) returns uuid language sql stable as $$
-  select r.id from public.class_requirements r where r.manifesto_id = p_manifesto_id $$;
+  select r.id from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
+  join public.curriculum_versions v on v.id = c.curriculum_version_id
+  where r.manifesto_id = p_manifesto_id and v.origem = 'oficial' and v.status = 'publicado' $$;
 insert into t.ids (chave, id) values ('classe_piloto', '00000000-0000-4000-a000-000000000002'::uuid), ('especialidade_piloto', '00000000-0000-4000-a000-000000000102'::uuid);
 
 -- ==================== 1 + 11) as 6 existem uma vez só; nenhuma Avançada ====================
 select t.eq('(1) 6 classes oficiais publicadas, uma por manifesto_id', (select count(distinct manifesto_id) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado'), 6);
 select t.eq('(1) ...exatamente Amigo, Companheiro, Pesquisador, Pioneiro, Excursionista e Guia',
-  (select string_agg(nome, ',' order by ordem) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial'),
+  (select string_agg(nome, ',' order by ordem) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado'),
   'Amigo,Companheiro,Pesquisador,Pioneiro,Excursionista,Guia');
 select t.eq('(11) nenhuma Classe Avançada no banco (nem publicada, nem rascunho)',
   (select count(*) from public.classes where nome ~* 'natureza|excursionismo|campo e bosque|fronteiras|na mata|exploração' or manifesto_id ~ '_'), 0);
 select t.eq('(2) 149 requisitos oficiais (banco = manifesto; a comparação campo a campo é o teste 36)',
-  (select count(*) from public.class_requirements where manifesto_id is not null), (select count(*) from jsonb_array_elements((select texto::jsonb from t.manifesto) -> 'classes') c, jsonb_array_elements(c -> 'secoes') s, jsonb_array_elements(s -> 'requisitos')));
+  (select count(*) from public.class_requirements r where r.id = t.req(r.manifesto_id)), (select count(*) from jsonb_array_elements((select texto::jsonb from t.manifesto) -> 'classes') c, jsonb_array_elements(c -> 'secoes') s, jsonb_array_elements(s -> 'requisitos')));
 
 -- ==================== 12) piloto preservado mas INVISÍVEL; elegibilidade só por idade ====================
 -- membro_a nasceu em 2014-05-05 → 12 anos em 2026: elegível a Amigo(10)/Companheiro(11)/Pesquisador(12), não a Pioneiro(13)/Excursionista(14)/Guia(15)
@@ -59,20 +61,23 @@ reset role;
 select t.eq('(12) o piloto continua EXISTINDO (preservado, separado: origem piloto_teste, versão própria)',
   (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where c.id = t.id('classe_piloto') and v.origem = 'piloto_teste' and v.status = 'publicado'), 1);
 select t.eq('nenhuma sequência/pré-requisito entre classes foi inventada (0 dependências class→class)', (select count(*) from public.curriculum_dependencies where alvo_tipo = 'class' and depende_de_tipo = 'class'), 0);
--- a regra é condicional: sem catálogo oficial, o piloto volta a aparecer
-update public.curriculum_versions set status = 'arquivado' where origem = 'oficial';
+-- a regra é condicional: sem catálogo oficial, o piloto volta a aparecer (arquiva SÓ a publicada e devolve SÓ ela —
+-- a 2026.1 já está arquivada de verdade e tem que continuar assim)
+insert into t.ids (chave, id) select 'versao_publicada', id from public.curriculum_versions where origem = 'oficial' and status = 'publicado';
+update public.curriculum_versions set status = 'arquivado' where id = t.id('versao_publicada');
 select t.como('membro_a2'); select t.pedir_clube('clube_a');
 select t.eq('(12) sem catálogo oficial publicado, o piloto volta ao fluxo normal (a regra é condicional, não um apagamento)', t.txt($q$select public.classes_disponiveis()::text$q$) like '%PILOTO%', true);
 reset role;
-update public.curriculum_versions set status = 'publicado' where origem = 'oficial';
+update public.curriculum_versions set status = 'publicado' where id = t.id('versao_publicada');
+select t.eq('(1) continua UMA versão oficial publicada (a 2026.1 segue arquivada)', (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'publicado'), 1);
 
 -- ==================== 3) requisito alterado por OMD = versão vigente + "Origem do requisito" ====================
 select t.eq('(3) Companheiro I.5 é o livro VIGENTE (OMD 021/2024, obrigatório desde 2026): "Um Simples Lanche", não "Caminho a Cristo"',
-  (select count(*) from public.class_requirements where manifesto_id = 'companheiro.I.5' and descricao ilike '%Um Simples Lanche%' and descricao not ilike '%Caminho a Cristo%' and status_fonte = 'ALTERADO_POR_OMD' and alterado_por_omd = 'OMD-021-2024'), 1);
+  (select count(*) from public.class_requirements where id = t.req('companheiro.I.5') and descricao ilike '%Um Simples Lanche%' and descricao not ilike '%Caminho a Cristo%' and status_fonte = 'ALTERADO_POR_OMD' and alterado_por_omd = 'OMD-021-2024'), 1);
 select t.eq('(3) os 4 livros trocados pela OMD 021/2024 estão todos ALTERADO_POR_OMD por ela (Companheiro, Pioneiro, Excursionista, Guia I.5)',
-  (select count(*) from public.class_requirements where manifesto_id in ('companheiro.I.5', 'pioneiro.I.5', 'excursionista.I.5', 'guia.I.5') and alterado_por_omd = 'OMD-021-2024'), 4);
+  (select count(*) from public.class_requirements where id in (t.req('companheiro.I.5'), t.req('pioneiro.I.5'), t.req('excursionista.I.5'), t.req('guia.I.5')) and alterado_por_omd = 'OMD-021-2024'), 4);
 select t.eq('(3) Amigo I.5 confirmado sem alteração pela mesma OMD (confirmado_por_omd), livro "Vaso de Barro" (OMD 012/2017)',
-  (select count(*) from public.class_requirements where manifesto_id = 'amigo.I.5' and alterado_por_omd = 'OMD-012-2017' and confirmado_por_omd = 'OMD-021-2024' and descricao ilike '%Vaso de Barro%'), 1);
+  (select count(*) from public.class_requirements where id = t.req('amigo.I.5') and alterado_por_omd = 'OMD-012-2017' and confirmado_por_omd = 'OMD-021-2024' and descricao ilike '%Vaso de Barro%'), 1);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('Origem do requisito (RPC, qualquer autenticado): OMD resolvida com título/URL/status, status_fonte, hash da versão, página oficial da classe',
   t.txt(format($q$select (o->'requisito'->>'status_fonte') || '|' || (o->'requisito'->'alterado_por_omd'->>'id') || '|' || ((o->'requisito'->'alterado_por_omd'->>'url') is not null)::text || '|' || (o->'requisito'->'alterado_por_omd'->>'status') || '|' || (o->'versao'->>'fonte_hash') || '|' || ((o->'classe'->>'fonte_url') like 'https://www.adventistas.org/%%')::text from public.requisito_origem(%L) o$q$, t.req('companheiro.I.5'))),
@@ -86,7 +91,7 @@ reset role;
 -- ==================== 4) dinâmico: referencia o mecanismo; 2026 resolve o valor cadastrado ====================
 insert into t.ids (chave, id) select 'mr_amigo_I4', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.req('amigo.I.4');
 select t.eq('(4) Amigo I.4 referencia o slot curso_leitura_amigo (não tem "2026" no texto)',
-  (select count(*) from public.class_requirements r join public.dynamic_content_definitions d on d.id = r.conteudo_dinamico_definicao_id where r.manifesto_id = 'amigo.I.4' and d.chave = 'curso_leitura_amigo' and r.descricao !~ '20[0-9][0-9]'), 1);
+  (select count(*) from public.class_requirements r join public.dynamic_content_definitions d on d.id = r.conteudo_dinamico_definicao_id where r.id = t.req('amigo.I.4') and d.chave = 'curso_leitura_amigo' and r.descricao !~ '20[0-9][0-9]'), 1);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('(4) sem valor cadastrado pro ano: minha_classe() entrega conteudo_dinamico com valor NULL (honesto) e a explicação diz BLOQUEADO',
   t.txt($q$select (r->'conteudo_dinamico'->>'chave') || '|' || coalesce(r->'conteudo_dinamico'->>'valor', 'NULL') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
@@ -105,7 +110,7 @@ select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('(4) minha_classe() agora entrega o valor de 2026 no requisito, e a explicação passa a PENDENTE',
   t.txt($q$select r->'conteudo_dinamico'->>'valor' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
   'Livro do Curso de Leitura 2026 [DADO DE TESTE]|pendente');
-select t.eq('(4) o texto do requisito NÃO mudou (o ano vive no catálogo dinâmico)', t.txt($q$select r->>'descricao' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$), (select descricao from public.class_requirements where manifesto_id = 'amigo.I.4'));
+select t.eq('(4) o texto do requisito NÃO mudou (o ano vive no catálogo dinâmico)', t.txt($q$select r->>'descricao' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$), (select descricao from public.class_requirements where id = t.req('amigo.I.4')));
 reset role;
 
 -- ==================== 5) N-de-M real: Amigo V.1 (1 de 4) e sem_repeticao ====================
@@ -161,15 +166,21 @@ select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
 select t.throws('(5) enviar sem escolher também é recusado', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.V.1')), 'Escolha pelo menos 1');
 select t.throws('(5) escolher uma opção de OUTRO requisito é recusado', format($q$select public.requisito_escolher(%L, array[(select o.id from public.requirement_options o join public.requirement_option_groups g on g.id = o.grupo_id where g.alvo_id = %L limit 1)], '{}')$q$, t.req('amigo.V.1'), t.req('amigo.VII.1')), 'Opção inválida');
 select t.throws('(5) texto livre num requisito que TEM lista é recusado', format($q$select public.requisito_escolher(%L, '{}', array['qualquer coisa'])$q$, t.req('amigo.V.1')), 'escolha entre elas');
-select t.permitido('(5) multi registra a escolha em V.1 (1ª opção), VII.1 (2ª) e IX.1 (a única opção aberta)',
+select t.permitido('(5) multi registra a escolha em V.1 e VII.1 (1ª opção de cada)',
   format($q$select public.requisito_escolher(r, array[(select o.id from public.requirement_options o join public.requirement_option_groups g on g.id = o.grupo_id where g.alvo_id = r order by o.ordem limit 1)], '{}')
-           from unnest(array[%L::uuid, %L::uuid, %L::uuid]) r$q$, t.req('amigo.V.1'), t.req('amigo.VII.1'), t.req('amigo.IX.1')), 3);
+           from unnest(array[%L::uuid, %L::uuid]) r$q$, t.req('amigo.V.1'), t.req('amigo.VII.1')), 2);
+-- amigo.IX.1 (revisão 2026.2): categoria aberta, SEM lista — a pessoa informa qual especialidade fez (texto livre)
+select t.throws('(5) IX.1 não aceita id de opção (o cartão não lista opções)', format($q$select public.requisito_escolher(%L, array[%L::uuid], '{}')$q$, t.req('amigo.IX.1'), t.req('amigo.V.1')), 'informe qual foi');
+select t.permitido('(5) multi informa em IX.1 qual especialidade da área fez (texto livre)', format($q$select public.requisito_escolher(%L, '{}', array['Cestaria [DADO DE TESTE]'])$q$, t.req('amigo.IX.1')));
+select t.eq('(5) IX.1 chega na tela como grupo aberto: n_minimo=1, 0 opções, aceita_texto_livre, escolha registrada, sem bloqueio',
+  t.txt($q$select (r->'escolha'->>'n_minimo') || '|' || (r->'escolha'->>'total_opcoes') || '|' || (r->'escolha'->>'aceita_texto_livre') || '|' || (r->'escolha'->'escolhidas'->0->>'rotulo_livre') || '|' || json_array_length(r->'bloqueios') from json_array_elements(public.minha_classe()->'secoes'->8->'requisitos') r where r->>'manifesto_id' = 'amigo.IX.1'$q$), '1|0|true|Cestaria [DADO DE TESTE]|0');
 select t.eq('(5) minha_classe() mostra a escolha registrada em V.1 e bloqueios vazios; o status virou em_andamento',
   t.txt($q$select (r->'escolha'->'escolhidas'->0->>'rotulo') || '|' || json_array_length(r->'bloqueios') || '|' || (r->>'status') from json_array_elements(public.minha_classe()->'secoes'->4->'requisitos') r where r->>'manifesto_id' = 'amigo.V.1'$q$), 'Natação principiante I|0|em_andamento');
 select t.eq('(5) requisito simples de multi (I.1) nasce sem bloqueio', t.txt($q$select json_array_length(r->'bloqueios')::text from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.1'$q$), '0');
 reset role;
-select t.eq('(5) as 3 escolhas estão em member_requirement_options, com club_id = A derivado (nunca do cliente)',
-  (select count(*) from public.member_requirement_options mo where mo.usuario_id = t.id('multi_dois_papeis') and mo.club_id = t.id('clube_a') and mo.option_id is not null), 3);
+select t.eq('(5) as 3 escolhas estão em member_requirement_options (2 por opção do cartão + 1 texto livre), com club_id = A derivado (nunca do cliente)',
+  (select count(*) filter (where option_id is not null) * 10 + count(*) filter (where rotulo_livre is not null)
+     from public.member_requirement_options mo where mo.usuario_id = t.id('multi_dois_papeis') and mo.club_id = t.id('clube_a')), 21);
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.eq('(9) lider_b NÃO vê as escolhas feitas no A', t.nv(format($q$select count(*) from public.member_requirement_options where usuario_id = %L$q$, t.id('multi_dois_papeis'))), 0);
 reset role;
@@ -184,9 +195,10 @@ select t.eq('(10) ...e a do B continua em_andamento, 4%', (select status from pu
 
 -- ==================== 8) a conquista é PORTÁTIL, com proveniência ====================
 insert into t.ids (chave, id) select 'ach_amigo', id from public.curriculum_achievements where usuario_id = t.id('multi_dois_papeis') and tipo = 'classe' and classe_id = t.classe('amigo');
-select t.eq('(8) conquista de CLASSE emitida: Amigo (versão oficial 2026.1), club_id_origem = A, ativa, ligada à matrícula do A',
+select t.eq('(8) conquista de CLASSE emitida: Amigo (a versão oficial PUBLICADA do manifesto), club_id_origem = A, ativa, ligada à matrícula do A',
   (select count(*) from public.curriculum_achievements a join public.classes c on c.id = a.classe_id join public.curriculum_versions v on v.id = c.curriculum_version_id
-    where a.id = t.id('ach_amigo') and a.club_id_origem = t.id('clube_a') and a.status = 'ativa' and a.member_class_id = t.id('mc_multi_a') and v.origem = 'oficial' and v.versao = '2026.1'), 1);
+    where a.id = t.id('ach_amigo') and a.club_id_origem = t.id('clube_a') and a.status = 'ativa' and a.member_class_id = t.id('mc_multi_a') and v.origem = 'oficial'
+      and v.versao = (select texto::jsonb ->> 'manifesto_versao' from t.manifesto)), 1);
 select t.eq('(8) só UMA conquista (a matrícula do B não gera outra enquanto não concluir lá)', (select count(*) from public.curriculum_achievements where usuario_id = t.id('multi_dois_papeis') and tipo = 'classe'), 1);
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.eq('(8) lider_b VÊ a conquista (pessoa com vínculo ativo no B)', t.nv(format($q$select count(*) from public.curriculum_achievements where id = %L$q$, t.id('ach_amigo'))), 1);

@@ -1,6 +1,13 @@
 {
-  "manifesto_versao": "2026.1",
+  "manifesto_versao": "2026.2",
   "gerado_em": "2026-09-22",
+  "revisoes": [
+    {
+      "versao": "2026.2", "data": "2026-09-22", "itens": ["amigo.VII.1", "amigo.IX.1"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/ (página oficial da classe, texto bruto reconferido em 22/09/2026; carimbo 04/11/2017)",
+      "motivo": "Revisão pontual contra a fonte oficial (fase 3.1). amigo.IX.1: o texto oficial \"Completar uma especialidade na área de Artes e habilidades manuais.\" é categoria ABERTA, sem lista — a 2026.1 representava isso como uma única opção artificial entre parênteses (erro de representação estrutural nosso, não da fonte); passa a escolha {n: 1} sem opcoes, como companheiro.IX.1. amigo.VII.1: alínea e) é \"Aves de estimação\" na fonte, não \"Aves\". Nenhum outro item de Amigo divergiu (V.1 e VII.1 a)-d) conferidos). Conteúdo oficial preservado; só a nossa representação mudou. A versão 2026.1 já importada NÃO é editada: a 2026.2 entra como curriculum_version nova e a 2026.1 é arquivada (quem começou nela continua nela)."
+    }
+  ],
   "classe_regular": {
     "id": "amigo",
     "nome": "Amigo",
@@ -72,7 +79,8 @@
         "requisitos": [
           {"id": "amigo.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade à escolha.",
             "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Felinos", "Cães", "Mamíferos", "Sementes", "Aves"]}},
+            "escolha": {"n": 1, "opcoes": ["Felinos", "Cães", "Mamíferos", "Sementes", "Aves de estimação"]},
+            "observacao": "Revisão 2026.2: a alínea e) na página oficial é \"Aves de estimação\" (a 2026.1 trazia \"Aves\"). Nome de especialidade é identificador — copiado literalmente."},
           {"id": "amigo.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Aprender a purificar água; escrever sobre Jesus como água da vida."},
           {"id": "amigo.VII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender a montar barraca."}
         ]
@@ -89,9 +97,10 @@
       {
         "id": "amigo.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
         "requisitos": [
-          {"id": "amigo.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade em Artes e habilidades manuais.",
+          {"id": "amigo.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade na área de Artes e habilidades manuais.",
             "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["(qualquer especialidade da categoria Artes e habilidades manuais)"]}}
+            "escolha": {"n": 1},
+            "observacao": "Revisão 2026.2: o texto oficial é \"Completar uma especialidade na área de Artes e habilidades manuais.\" — categoria ABERTA, sem lista de opções (a 2026.1 modelava uma opção artificial entre parênteses, que na tela virava um checkbox sem sentido). Sem opcoes, a pessoa informa qual especialidade fez (texto livre) e a liderança confere se é da área. Mesma estrutura de companheiro.IX.1."}
         ]
       }
     ]

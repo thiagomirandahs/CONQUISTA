@@ -19,7 +19,7 @@ select t.eq('o hash gravado no fixture é o sha256 do próprio texto do pacote (
   (select encode(extensions.digest(texto, 'sha256'), 'hex') = hash from t.manifesto), true);
 select t.eq('existe EXATAMENTE uma curriculum_version oficial de Classes Regulares, publicada',
   (select count(*) from public.curriculum_versions where origem = 'oficial' and identificador = 'classes-regulares-dsa' and status = 'publicado'), 1);
-select t.eq('...com o id determinístico da versão do manifesto', (select id from public.curriculum_versions where origem = 'oficial' and identificador = 'classes-regulares-dsa'), t.versao_id());
+select t.eq('...com o id determinístico da versão do manifesto', (select id from public.curriculum_versions where origem = 'oficial' and identificador = 'classes-regulares-dsa' and status = 'publicado'), t.versao_id());
 select t.eq('...e fonte_hash = sha256 do pacote canônico do manifesto', (select fonte_hash from public.curriculum_versions where id = t.versao_id()), (select hash from t.manifesto));
 select t.eq('...manifesto_versao/gerado_em preservados em fonte_detalhes',
   (select (fonte_detalhes ->> 'manifesto_versao') || '|' || (fonte_detalhes ->> 'gerado_em') from public.curriculum_versions where id = t.versao_id()),
@@ -33,8 +33,19 @@ select t.eq('vigência da versão = a última vigente_desde entre as 6 classes (
 -- ==================== 1) classes: 6, exatamente uma vez, campos iguais ====================
 select t.eq('6 classes na versão oficial', (select count(*) from public.classes where curriculum_version_id = t.versao_id()), 6);
 select t.eq('6 manifesto_id distintos (nenhuma duplicada)', (select count(distinct manifesto_id) from public.classes where curriculum_version_id = t.versao_id()), 6);
-select t.eq('só existem essas 6 classes oficiais no banco inteiro (nenhuma avançada, nenhuma repetida em outra versão)',
-  (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial'), 6);
+select t.eq('só existem essas 6 classes oficiais PUBLICADAS (nenhuma avançada, nenhuma outra versão publicada ao mesmo tempo)',
+  (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado'), 6);
+-- a versão anterior (2026.1, migration 40) NÃO foi editada nem apagada pela revisão 2026.2: está ARQUIVADA, intacta
+select t.eq('a versão 2026.1 continua no banco, arquivada, com o hash original (não foi alterada silenciosamente)',
+  (select status || '|' || fonte_hash from public.curriculum_versions where id = public.curriculo_uuid('version:classes-regulares-dsa:2026.1')),
+  'arquivado|b2430a5117859466e581999d0633636eb4efee1e268384bd70be119be0646e53');
+select t.eq('...com as 6 classes e os 149 requisitos dela intactos (inclusive o amigo.IX.1 antigo, com a opção artificial)',
+  (select count(*) from public.classes where curriculum_version_id = public.curriculo_uuid('version:classes-regulares-dsa:2026.1')) * 1000
+  + (select count(*) from public.class_requirements where id = public.curriculo_uuid('req:2026.1:amigo.IX.1')) * 100
+  + (select count(*) from public.requirement_options where id = public.curriculo_uuid('option:2026.1:amigo.IX.1:1')) * 10
+  + (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
+      where c.curriculum_version_id = public.curriculo_uuid('version:classes-regulares-dsa:2026.1')) - 149, 6110);
+select t.eq('as duas versões compartilham os MESMOS slots dinâmicos (curso_leitura_<classe>: 6, não 12)', (select count(*) from public.dynamic_content_definitions where chave like 'curso_leitura_%'), 6);
 select t.eq('classes: manifesto → banco sem diferença (manifesto_id, nome, idade_minima, vigente_desde, fonte_url, publicado_em, id determinístico)',
   (select count(*) from (
     (select c ->> 'id', c ->> 'nome', (c ->> 'idade_minima')::int, (c ->> 'vigente_desde')::date, c -> 'fonte_base' ->> 'url', (c -> 'fonte_base' ->> 'publicado_em')::date,
