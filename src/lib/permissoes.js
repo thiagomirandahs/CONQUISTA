@@ -27,6 +27,7 @@ export const FERRAMENTAS = [
   { to: '/vinculos-pais', icon: '👨‍👩‍👧', titulo: 'Vínculos dos pais', desc: 'Confirmar quem é filho de quem + PIX', papeis: ['diretoria', 'instrutor'] },
   { to: '/clube', icon: '🎨', titulo: 'Identidade e recursos', desc: 'Nome, cores e logo do clube; o que o clube usa', papeis: ['diretoria', 'instrutor'] },
   { to: '/avaliar-classe', icon: '🎖️', titulo: 'Avaliar classes', desc: 'Aprovar ou pedir correção dos requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' },
+  { to: '/investiduras', icon: '🏅', titulo: 'Revisão final e investidura', desc: 'Revisar conclusões de classe e registrar investiduras', papeis: ['diretoria', 'instrutor'], recurso: 'classes' },
   { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' },
 ]
 

@@ -30,7 +30,8 @@ insert into t.excecoes values
   ('dynamic_content_values',    'valores versionados por período de vigência do catálogo acima — conteúdo da PLATAFORMA, mesma resposta pra todo clube na mesma data'),
   ('requirement_option_groups', 'regra "N de M" declarada sobre um requisito do CATÁLOGO curricular (plataforma) — a mesma regra vale em qualquer clube; a satisfação é calculada por pessoa'),
   ('requirement_options',       'opções de um grupo N-de-M do catálogo (plataforma)'),
-  ('curriculum_achievements',   'HISTÓRICO CURRICULAR PORTÁTIL da PESSOA (fase 2.6): pertence à identidade global (usuario_id), não a um clube. club_id_origem é PROVENIÊNCIA imutável de quem emitiu (só ele revoga), não escopo de acesso. Só o fato curricular — nunca pontos/presença/mensalidade/mensagem/arquivo (teste 35)');
+  ('curriculum_achievements',   'HISTÓRICO CURRICULAR PORTÁTIL da PESSOA (fase 2.6): pertence à identidade global (usuario_id), não a um clube. club_id_origem é PROVENIÊNCIA imutável de quem emitiu (só ele revoga), não escopo de acesso. Só o fato curricular — nunca pontos/presença/mensalidade/mensagem/arquivo (teste 35)'),
+  ('class_completion_snapshots', 'SNAPSHOT IMUTÁVEL da conclusão de classe (fase 4): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é proveniência de quem selou (só ele revoga). Gatilho recusa UPDATE de conteúdo e DELETE (teste 39)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

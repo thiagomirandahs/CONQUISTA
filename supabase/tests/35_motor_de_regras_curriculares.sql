@@ -370,13 +370,19 @@ update public.classes set prazo_minimo_dias = null where id = t.id('classe_regra
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('sem prazo, reavaliar 1 requisito reprocessa a conclusão', format($q$select public.requisito_avaliar(%L, 'aprovado', null)$q$, t.id('mr_anual_a')));
 reset role;
-select t.eq('agora a classe concluiu e a conquista de CLASSE foi emitida (tipo=classe, classe_id, club_id_origem=A)',
-  (select count(*) from public.curriculum_achievements a join public.member_classes mc on mc.id = a.member_class_id
-    where a.usuario_id = t.id('membro_a') and a.tipo = 'classe' and a.classe_id = t.id('classe_regras') and a.club_id_origem = t.id('clube_a') and a.status = 'ativa' and mc.status = 'concluida'), 1);
+-- (fase 4, migration 44: a conclusão sela um snapshot e abre a revisão final; a conquista de CLASSE só nasce na INVESTIDURA)
+select t.eq('agora a classe está AGUARDANDO REVISÃO FINAL, com snapshot selado — e ainda SEM conquista de classe',
+  (select status from public.member_classes where usuario_id = t.id('membro_a') and club_id = t.id('clube_a') and class_id = t.id('classe_regras')) || '|'
+  || (select count(*) from public.class_completion_snapshots s join public.member_classes mc on mc.id = s.member_class_id where mc.usuario_id = t.id('membro_a') and mc.class_id = t.id('classe_regras') and s.status = 'selado') || '|'
+  || (select count(*) from public.curriculum_achievements where usuario_id = t.id('membro_a') and tipo = 'classe'), 'aguardando_revisao|1|0');
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.permitido('investidura confirmada', format($q$select public.investidura_confirmar((select id from public.member_classes where usuario_id = %L and club_id = %L and class_id = %L), true, null)$q$, t.id('membro_a'), t.id('clube_a'), t.id('classe_regras')));
+select t.permitido('revisão final aprovada', format($q$select public.revisao_final_decidir((select id from public.member_classes where usuario_id = %L and club_id = %L and class_id = %L), 'aprovado', null)$q$, t.id('membro_a'), t.id('clube_a'), t.id('classe_regras')));
+select t.permitido('investidura registrada', format($q$select public.investidura_registrar((select id from public.member_classes where usuario_id = %L and club_id = %L and class_id = %L))$q$, t.id('membro_a'), t.id('clube_a'), t.id('classe_regras')));
+select t.throws('investidura repetida é recusada (idempotência)', format($q$select public.investidura_registrar((select id from public.member_classes where usuario_id = %L and club_id = %L and class_id = %L))$q$, t.id('membro_a'), t.id('clube_a'), t.id('classe_regras')), 'já registrada');
 reset role;
-select t.eq('investir (concluida→investida) NÃO duplica a conquista de classe', (select count(*) from public.curriculum_achievements where usuario_id = t.id('membro_a') and tipo = 'classe'), 1);
+select t.eq('na investidura a conquista de CLASSE foi emitida (tipo=classe, classe_id, club_id_origem=A, com snapshot_id) — uma só',
+  (select count(*) from public.curriculum_achievements a join public.member_classes mc on mc.id = a.member_class_id
+    where a.usuario_id = t.id('membro_a') and a.tipo = 'classe' and a.classe_id = t.id('classe_regras') and a.club_id_origem = t.id('clube_a') and a.status = 'ativa' and mc.status = 'investida' and a.snapshot_id is not null), 1);
 
 -- ==================== 10) tentativa de forjar club_id ====================
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_b');

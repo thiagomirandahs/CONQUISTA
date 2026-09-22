@@ -131,8 +131,15 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
 }
 
 function Progresso({ dados, userId, onMudou }) {
-  const { member_class: mc, classe, curriculum_version: versao, investidura, secoes } = dados
+  const { member_class: mc, classe, curriculum_version: versao, conclusao, secoes } = dados
   const ehTeste = versao?.origem === 'piloto_teste'
+  // fase 4: 100% aprovado NÃO é "investido" — os estados são separados e vêm do servidor
+  const ETAPAS = {
+    requisitos_concluidos: { icon: '🧩', texto: 'Todos os requisitos aprovados! A conclusão está sendo validada pela liderança.' },
+    aguardando_revisao: { icon: '🔎', texto: 'Todos os requisitos aprovados! Aguardando a revisão final da liderança.' },
+    apto_investidura: { icon: '🎉', texto: 'Revisão final aprovada — você está apto(a) para a investidura. A liderança registra quando ela acontecer.' },
+  }
+  const etapa = ETAPAS[mc.status]
 
   return (
     <div className="space-y-4">
@@ -157,14 +164,22 @@ function Progresso({ dados, userId, onMudou }) {
         </div>
         <p className="text-sm text-muted mt-1.5">{mc.percentual}% concluído · iniciada em {fmtData(mc.iniciada_em)}</p>
 
-        {mc.status === 'concluida' && investidura?.status === 'pendente' && (
-          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-800">
-            🎉 Todos os requisitos concluídos! Aguardando a liderança revisar para a investidura.
+        {etapa && (
+          <div data-testid="etapa" data-etapa={mc.status} className="mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-800">
+            <span aria-hidden="true">{etapa.icon}</span> {etapa.texto}
+            {mc.status === 'apto_investidura' && conclusao?.revisao?.revisado_em && (
+              <div className="text-xs mt-1">Revisão final aprovada em {fmtData(conclusao.revisao.revisado_em)}{conclusao.revisao.revisado_por_nome ? ` por ${conclusao.revisao.revisado_por_nome}` : ''}.</div>
+            )}
+          </div>
+        )}
+        {mc.status === 'em_andamento' && conclusao?.revisao?.status === 'correcao_solicitada' && conclusao.revisao.comentario && (
+          <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm text-red-800">
+            ↺ A revisão final pediu correção: "{conclusao.revisao.comentario}" — os requisitos reabertos estão marcados abaixo.
           </div>
         )}
         {mc.status === 'investida' && (
-          <div className="mt-3 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 text-sm text-green-800 font-semibold">
-            🏅 Investido(a) nesta classe!
+          <div data-testid="etapa" data-etapa="investida" className="mt-3 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 text-sm text-green-800 font-semibold">
+            🏅 Investido(a) nesta classe{conclusao?.investidura?.data ? ` em ${fmtData(conclusao.investidura.data)}` : ''}!
           </div>
         )}
       </div>

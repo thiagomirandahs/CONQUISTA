@@ -53,7 +53,7 @@ const MINHA = {
   member_class: { id: 'mc1', status: 'em_andamento', iniciada_em: '2026-09-01', percentual: 11 },
   classe: { id: 'c1', nome: 'Classe Teste 1', idade_minima: 10, vigente_desde: '2026-01-01' },
   curriculum_version: { origem: 'oficial', identificador: 'teste', versao: '9.9' },
-  investidura: null,
+  conclusao: { snapshot: null, revisao: null, investidura: null },
   secoes: [{
     id: 's1', codigo: 'I', nome: 'Seção de Teste', ordem: 10,
     requisitos: [

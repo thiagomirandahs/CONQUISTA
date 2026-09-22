@@ -46,11 +46,11 @@ select t.eq('authenticated NÃO grava direto nas 4 tabelas de progresso (só RPC
 select t.eq('as 9 RPCs do motor curricular existem',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname in ('classes_disponiveis', 'classe_iniciar', 'classe_atribuir', 'minha_classe',
-      'requisito_salvar', 'requisito_enviar', 'classe_avaliacoes_pendentes', 'requisito_avaliar', 'investidura_confirmar')), 9);
+      'requisito_salvar', 'requisito_enviar', 'classe_avaliacoes_pendentes', 'requisito_avaliar', 'investidura_registrar')), 9);
 select t.eq('nenhuma delas é executável por anon',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname in ('classes_disponiveis', 'classe_iniciar', 'classe_atribuir', 'minha_classe',
-      'requisito_salvar', 'requisito_enviar', 'classe_avaliacoes_pendentes', 'requisito_avaliar', 'investidura_confirmar')
+      'requisito_salvar', 'requisito_enviar', 'classe_avaliacoes_pendentes', 'requisito_avaliar', 'investidura_registrar')
       and has_function_privilege('anon', p.oid, 'execute')), 0);
 
 -- ---------- 4) os 2 gatilhos (escopo derivado + conclusão automática) existem ----------

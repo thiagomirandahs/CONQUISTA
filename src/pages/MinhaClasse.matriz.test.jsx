@@ -31,7 +31,7 @@ function payload(classe) {
     member_class: { id: 'mc', status: 'em_andamento', iniciada_em: '2026-09-01', percentual: 0 },
     classe: { id: classe.id, nome: classe.nome, idade_minima: classe.idade_minima, manifesto_id: classe.id, vigente_desde: classe.vigente_desde },
     curriculum_version: { origem: 'oficial', identificador: 'classes-regulares-dsa', versao: '2026.1' },
-    investidura: null,
+    conclusao: { snapshot: null, revisao: null, investidura: null },
     secoes: classe.secoes.map((s) => ({
       id: s.id, codigo: s.codigo, nome: s.nome, ordem: s.ordem,
       requisitos: s.requisitos.map((r) => {

@@ -189,9 +189,15 @@ reset role;
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('(7) lider_a aprova os 25 requisitos de multi no A (I.4 com o conteúdo do ano cadastrado; V.1/VII.1/IX.1 com escolha registrada)', format($q$select public.requisito_avaliar(mr.id, 'aprovado', null) from public.member_requirements mr where mr.member_class_id = %L$q$, t.id('mc_multi_a')), 25);
 reset role;
-select t.eq('(7) Amigo de multi no A: concluída, 100%, revisão de investidura aberta',
-  (select status from public.member_classes where id = t.id('mc_multi_a')) || '|' || public.classe_percentual(t.id('mc_multi_a')) || '|' || (select status from public.investiture_reviews where member_class_id = t.id('mc_multi_a')), 'concluida|100|pendente');
+select t.eq('(7) Amigo de multi no A: 100%, snapshot selado, AGUARDANDO REVISÃO FINAL (fase 4: não é "concluída/investida" ainda)',
+  (select status from public.member_classes where id = t.id('mc_multi_a')) || '|' || public.classe_percentual(t.id('mc_multi_a')) || '|' || (select status from public.investiture_reviews where member_class_id = t.id('mc_multi_a') order by solicitado_em desc limit 1), 'aguardando_revisao|100|pendente');
 select t.eq('(10) ...e a do B continua em_andamento, 4%', (select status from public.member_classes where id = t.id('mc_multi_b')) || '|' || public.classe_percentual(t.id('mc_multi_b')), 'em_andamento|4');
+select t.eq('(8) ainda NENHUMA conquista de classe (só na investidura)', (select count(*) from public.curriculum_achievements where usuario_id = t.id('multi_dois_papeis') and tipo = 'classe'), 0);
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.permitido('(7) lider_a aprova a revisão final', format($q$select public.revisao_final_decidir(%L, 'aprovado', 'Tudo certo')$q$, t.id('mc_multi_a')));
+select t.permitido('(7) lider_a registra a investidura', format($q$select public.investidura_registrar(%L)$q$, t.id('mc_multi_a')));
+reset role;
+select t.eq('(7) investida, com evento de investidura registrado por lider_a (diretoria)', (select status from public.member_classes where id = t.id('mc_multi_a')) || '|' || (select registrado_papel from public.class_investitures where member_class_id = t.id('mc_multi_a') and status = 'registrada'), 'investida|diretoria');
 
 -- ==================== 8) a conquista é PORTÁTIL, com proveniência ====================
 insert into t.ids (chave, id) select 'ach_amigo', id from public.curriculum_achievements where usuario_id = t.id('multi_dois_papeis') and tipo = 'classe' and classe_id = t.classe('amigo');

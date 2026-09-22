@@ -142,20 +142,24 @@ select t.como('dir_a_membro_b'); select t.pedir_clube('clube_a');
 select t.permitido('...e agora que a especialidade está concluída, conhecimentos/3 aprova (fecha 7/7)', format($q$select public.requisito_avaliar((select id from public.member_requirements where member_class_id = %L and requirement_id = %L), 'aprovado', null)$q$, t.id('mc_a'), t.id('req_conhecimentos_3')));
 reset role;
 
-select t.eq('classe de A concluiu sozinha (7/7 aprovados)', (select status from public.member_classes where id = t.id('mc_a')), 'concluida');
-select t.eq('...e abriu a revisão de investidura sozinha, pendente', (select status from public.investiture_reviews where member_class_id = t.id('mc_a')), 'pendente');
+-- (fase 4, migration 44: 100% aprovado NÃO é "concluída/investida" — é requisitos concluídos → snapshot selado → aguardando revisão final)
+select t.eq('classe de A: 7/7 aprovados → snapshot selado e AGUARDANDO REVISÃO FINAL (não "investida")', (select status from public.member_classes where id = t.id('mc_a')), 'aguardando_revisao');
+select t.eq('...e abriu a revisão final sozinha, pendente, apontando pro snapshot', (select count(*) from public.investiture_reviews ir join public.class_completion_snapshots s on s.id = ir.snapshot_id where ir.member_class_id = t.id('mc_a') and ir.status = 'pendente' and s.status = 'selado'), 1);
 select t.eq('progresso de A agora é 100%', public.classe_percentual(t.id('mc_a')), 100);
 select t.eq('a classe de B CONTINUA em_andamento (só 1/7 aprovado lá — não terminou por engano)', (select status from public.member_classes where id = t.id('mc_b')), 'em_andamento');
-select t.eq('...e B não tem revisão de investidura (não concluiu)', (select count(*) from public.investiture_reviews where member_class_id = t.id('mc_b')), 0);
+select t.eq('...e B não tem revisão final (não concluiu)', (select count(*) from public.investiture_reviews where member_class_id = t.id('mc_b')), 0);
 
--- ==================== 10) investidura: só resolve no clube CERTO ====================
+-- ==================== 10) revisão final + investidura: só resolvem no clube CERTO ====================
 select t.como('instrutor_2clubes'); select t.pedir_clube('clube_b');
-select t.throws('instrutor_2clubes, operando no clube B, NÃO confirma a investidura de A (é de outro clube)',
-  format($q$select public.investidura_confirmar(%L, true, null)$q$, t.id('mc_a')), 'não encontrada');
+select t.throws('instrutor_2clubes, operando no clube B, NÃO revisa a conclusão de A (é de outro clube)',
+  format($q$select public.revisao_final_decidir(%L, 'aprovado', null)$q$, t.id('mc_a')), 'não encontrada');
+select t.throws('...nem registra a investidura de A', format($q$select public.investidura_registrar(%L)$q$, t.id('mc_a')), 'não encontrada');
 select t.como('dir_a_membro_b'); select t.pedir_clube('clube_a');
-select t.permitido('dir_a_membro_b confirma a investidura de A, operando no clube certo', format($q$select public.investidura_confirmar(%L, true, 'Parabéns!')$q$, t.id('mc_a')));
+select t.throws('investidura ANTES da revisão final aprovada é recusada', format($q$select public.investidura_registrar(%L)$q$, t.id('mc_a')), 'revisão final');
+select t.permitido('dir_a_membro_b aprova a revisão final de A, operando no clube certo', format($q$select public.revisao_final_decidir(%L, 'aprovado', 'Parabéns!')$q$, t.id('mc_a')));
+select t.permitido('...e registra a investidura', format($q$select public.investidura_registrar(%L, current_date, 'Cerimônia de teste')$q$, t.id('mc_a')));
 reset role;
-select t.eq('investiture_reviews de A: investido', (select status from public.investiture_reviews where member_class_id = t.id('mc_a')), 'investido');
+select t.eq('investiture_reviews de A: investido, revisado por dir_a_membro_b como diretoria', (select status || '|' || revisado_papel from public.investiture_reviews where member_class_id = t.id('mc_a') and revisado_por = t.id('dir_a_membro_b')), 'investido|diretoria');
 select t.eq('member_classes de A: investida', (select status from public.member_classes where id = t.id('mc_a')), 'investida');
 select t.eq('member_classes de B continua intocada (em_andamento)', (select status from public.member_classes where id = t.id('mc_b')), 'em_andamento');
 

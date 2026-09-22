@@ -82,7 +82,7 @@ select t.eq('nenhuma RPC de especialidade é executável por anon', (select coun
 -- ---------- 7) o recurso "classes" agora bloqueia ESCRITA de verdade (achado da auditoria: só escondia a rota) ----------
 select t.eq('classe_iniciar/requisito_avaliar/especialidade_iniciar citam o gate de recurso habilitado',
   (select count(*) from pg_proc p where p.pronamespace = 'public'::regnamespace
-    and p.proname in ('classe_iniciar', 'classe_atribuir', 'requisito_salvar', 'requisito_enviar', 'requisito_avaliar', 'investidura_confirmar',
+    and p.proname in ('classe_iniciar', 'classe_atribuir', 'requisito_salvar', 'requisito_enviar', 'requisito_avaliar', 'investidura_registrar',
                        'especialidade_iniciar', 'especialidade_atribuir', 'oferta_especialidade_criar',
                        'especialidade_requisito_salvar', 'especialidade_requisito_enviar', 'especialidade_requisito_avaliar')
     and pg_get_functiondef(p.oid) ~ '_exigir_classes_habilitado'), 12);

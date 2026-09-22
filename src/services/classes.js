@@ -86,9 +86,40 @@ export async function avaliarRequisito(memberRequirementId, decisao, comentario 
   if (error) throw new Error(error.message)
 }
 
-export async function confirmarInvestidura(memberClassId, aprovar, comentario = null) {
-  const { error } = await supabase.rpc('investidura_confirmar', {
-    p_member_class_id: memberClassId, p_aprovar: aprovar, p_comentario: comentario,
+// ---- conclusão / revisão final / investidura (fase 4) — liderança do clube em uso ----
+// Conclusões do clube em requisitos_concluidos / aguardando_revisao / apto_investidura, com snapshot, revisão,
+// bloqueios atuais e a lista de requisitos (pra pedir correção de um específico).
+export async function carregarRevisoesPendentes() {
+  const { data, error } = await supabase.rpc('classe_revisoes_pendentes')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+// Tenta selar de novo uma conclusão parada em "requisitos concluídos" (ex.: bloqueio resolvido).
+export async function solicitarRevisaoFinal(memberClassId) {
+  const { data, error } = await supabase.rpc('classe_revisao_solicitar', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// 'aprovado' → apto para investidura; 'correcao_solicitada' reabre os requisitos indicados (obrigatório indicar).
+export async function decidirRevisaoFinal(memberClassId, decisao, observacao = null, requisitosParaCorrigir = []) {
+  const { data, error } = await supabase.rpc('revisao_final_decidir', {
+    p_member_class_id: memberClassId, p_decisao: decisao, p_observacao: observacao, p_requisitos_para_corrigir: requisitosParaCorrigir,
   })
   if (error) throw new Error(error.message)
+  return data
+}
+
+// Evento de investidura (data, clube, quem registrou, snapshot). O servidor recusa se algo bloqueia ou se já existe.
+export async function registrarInvestidura(memberClassId, data, observacao = null) {
+  const { data: r, error } = await supabase.rpc('investidura_registrar', { p_member_class_id: memberClassId, p_data: data, p_observacao: observacao })
+  if (error) throw new Error(error.message)
+  return r
+}
+
+export async function verificarSnapshot(snapshotId) {
+  const { data, error } = await supabase.rpc('snapshot_verificar', { p_snapshot_id: snapshotId })
+  if (error) throw new Error(error.message)
+  return data
 }
