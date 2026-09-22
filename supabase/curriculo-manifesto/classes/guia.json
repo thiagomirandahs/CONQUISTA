@@ -1,0 +1,145 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "guia",
+    "nome": "Guia",
+    "idade_minima": 15,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/guia-e-guia-de-exploracao/",
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Carimbo da página — NÃO é a vigência real (ver amigo.json §nota). Confirmado lendo a página ao vivo, texto bruto, item a item."
+    },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "A OMD 021/2024 foi publicada em 17/12/2024, mas 2025 foi ano de transição (livro antigo OU novo aceito); o livro novo só se torna OBRIGATÓRIO em 01/01/2026 — ver omds.json#OMD-021-2024.",
+    "cobertura": "completa",
+    "secoes": [
+      {
+        "id": "guia.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "guia.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 15 anos."},
+          {"id": "guia.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "guia.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto de Fidelidade à Bíblia."},
+          {"id": "guia.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
+          {"id": "guia.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"O Livro Amargo\".",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
+            "observacao": "Livro anterior (pré-2026): \"Nossa herança\". Confirmado literalmente na página viva."}
+        ]
+      },
+      {
+        "id": "guia.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "guia.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as 3 Mensagens Angélicas, as 7 Igrejas e as 12 Pedras Preciosas do Apocalipse."},
+          {"id": "guia.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 6 versículos indicados."},
+          {"id": "guia.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Descrever os dons espirituais nos escritos de Paulo."},
+          {"id": "guia.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudar a estrutura do santuário no AT e relacionar ao ministério de Jesus."},
+          {"id": "guia.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler e resumir 3 histórias de pioneiros adventistas; contá-las publicamente."},
+          {"id": "guia.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica extensa (Atos a Apocalipse, trechos indicados)."}
+        ]
+      },
+      {
+        "id": "guia.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "guia.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ajudar a organizar 1 atividade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Visita a pessoa doente", "Adotar pessoa/família em necessidade", "Projeto de escolha própria aprovado pelo líder"]}},
+          {"id": "guia.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir métodos de evangelismo pessoal e praticar princípios."}
+        ]
+      },
+      {
+        "id": "guia.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "guia.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Examinar atitudes em 2 de 4 temas à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 2, "opcoes": ["Escolha profissional", "Relacionamento com pais", "Escolha de namoro", "Plano de Deus para o sexo"]}}
+        ]
+      },
+      {
+        "id": "guia.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "guia.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentação sobre os 8 remédios naturais."},
+          {"id": "guia.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 atividade de saúde à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Poesia/artigo sobre saúde", "Organizar corrida com programa de treino", "Ler Temperança p.102-125 (Ellen White)", "Especialidade de Nutrição ou liderar Cultura física"]}}
+        ]
+      },
+      {
+        "id": "guia.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "guia.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Preparar organograma da estrutura administrativa da Divisão."},
+          {"id": "guia.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 1 item à escolha (curso/convenção/reuniões de diretoria).",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Curso para conselheiros", "Convenção de liderança da Associação/Missão", "2 reuniões de diretoria do Clube"]}},
+          {"id": "guia.VI.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Planejar e ensinar 2 requisitos de uma especialidade para um grupo/Unidade."}
+        ]
+      },
+      {
+        "id": "guia.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "guia.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ler cap. 7 de \"O Desejado de Todas as Nações\"; apresentar lições."},
+          {"id": "guia.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Ecologia", "Conservação ambiental"]}}
+        ]
+      },
+      {
+        "id": "guia.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "guia.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Acampamento com estrutura de pioneiria, com a Unidade."},
+          {"id": "guia.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Planejar, preparar e cozinhar 3 refeições ao ar livre."},
+          {"id": "guia.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Construir e utilizar móvel de acampamento em tamanho real."},
+          {"id": "guia.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, contável para 1 mestrado.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa",
+            "escolha": {"n": 1, "opcoes": ["Aquática", "Esportes", "Atividades recreativas", "Vida campestre"]}}
+        ]
+      },
+      {
+        "id": "guia.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "guia.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, em área à escolha.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa",
+            "escolha": {"n": 1, "opcoes": ["Atividades recreativas", "Ciência e saúde", "Habilidades domésticas", "Atividades profissionais"]}}
+        ]
+      }
+    ],
+    "observacao_estrutural": "\"Orçamento familiar\" e \"Liderança campestre\" (que existiam na Seção VI desta classe regular numa versão anterior) foram TRANSFERIDOS para a classe avançada Guia de Exploração pela OMD 001/2013 — confirmado: ausentes aqui (Seção VI hoje tem só 3 itens), presentes na avançada (itens 9 e 10)."
+  },
+  "classe_avancada": {
+    "id": "guia_de_exploracao",
+    "nome": "Guia de Exploração",
+    "classe_regular_ref": "guia",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/guia-e-guia-de-exploracao/",
+      "publicado_em": "2017-11-04"
+    },
+    "cobertura": "completa",
+    "secao_unica": {
+      "id": "guia_de_exploracao.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "guia_de_exploracao.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Mordomia."},
+        {"id": "guia_de_exploracao.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler \"O maior discurso de Cristo\"; escrever sobre o efeito da leitura."},
+        {"id": "guia_de_exploracao.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Cumprir 1 item à escolha (trazer amigos ou série de evangelismo jovem).",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Trazer 2 amigos a 2 reuniões da igreja", "Ajudar em 4+ domingos de série de evangelismo jovem"]}},
+        {"id": "guia_de_exploracao.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escrever/apresentar sobre como influenciar amigos para Cristo."},
+        {"id": "guia_de_exploracao.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Observar trabalho dos diáconos por 2 meses; relatório detalhado."},
+        {"id": "guia_de_exploracao.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, para o mestrado em Vida campestre.",
+          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+          "grupo_sem_repeticao": "guia_de_exploracao.especialidades_ja_concluidas_pela_pessoa"},
+        {"id": "guia_de_exploracao.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Projetar 3 tipos de abrigo; usar 1 em acampamento."},
+        {"id": "guia_de_exploracao.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Seminário/palestra sobre 2 de 5 temas à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 2, "opcoes": ["Aborto", "Bullying", "Violência", "Drogas", "Infecções sexualmente transmissíveis"]}},
+        {"id": "guia_de_exploracao.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar a especialidade de Liderança campestre.",
+          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
+          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui."},
+        {"id": "guia_de_exploracao.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Orçamento familiar.",
+          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
+          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui."}
+      ]
+    }
+  }
+}

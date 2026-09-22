@@ -1,0 +1,129 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "amigo",
+    "nome": "Amigo",
+    "idade_minima": 10,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/",
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Carimbo da página (autor/data do artigo) — NÃO é a vigência real. A página é viva e é atualizada in-place pela DSA conforme novas OMDs entram em vigor, sem trocar esse carimbo (ver AUDITORIA-CURRICULO-OFICIAL.md §3.1). vigente_desde abaixo é derivado das OMDs aplicadas, não deste carimbo."
+    },
+    "vigente_desde": "2018-01-01",
+    "vigente_desde_nota": "Data de entrada em vigor da última alteração estrutural conhecida (OMD 012/2017, que passou a valer em 2018 conforme o próprio texto da OMD).",
+    "secoes": [
+      {
+        "id": "amigo.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "amigo.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 10 anos."},
+          {"id": "amigo.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "amigo.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto e a Lei do Desbravador."},
+          {"id": "amigo.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico",
+            "observacao": "O título correto deste item muda todo ano civil — é DIFERENTE do item I.5 (o \"livro da classe\", que só muda por OMD)."},
+          {"id": "amigo.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Vaso de Barro\".",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017", "confirmado_por_omd": "OMD-021-2024"},
+          {"id": "amigo.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica."}
+        ]
+      },
+      {
+        "id": "amigo.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "amigo.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar Criação, 10 Pragas, 12 Tribos de Israel e os 39 livros do Antigo Testamento."},
+          {"id": "amigo.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar versículos indicados (João 3:16, Efésios 6:1-3, II Timóteo 3:16, Salmo 1)."},
+          {"id": "amigo.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica de Gênesis até Êxodo (trechos indicados)."}
+        ]
+      },
+      {
+        "id": "amigo.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "amigo.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dedicar 2 horas ajudando a comunidade."},
+          {"id": "amigo.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Escrever redação sobre ser bom cidadão."}
+        ]
+      },
+      {
+        "id": "amigo.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "amigo.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Mencionar 10 qualidades de um amigo; situações da Regra Áurea."},
+          {"id": "amigo.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Saber cantar o Hino Nacional e conhecer sua história/autores."}
+        ]
+      },
+      {
+        "id": "amigo.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "amigo.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Natação principiante I", "Cultura física", "Nós e amarras", "Segurança básica na água"]},
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017",
+            "observacao": "Opção \"Nós e amarras\" veio da OMD 007/2014; \"Segurança básica na água\" veio da OMD 012/2017."},
+          {"id": "amigo.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Explicar os princípios de temperança de Daniel."},
+          {"id": "amigo.V.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender princípios de dieta saudável."}
+        ]
+      },
+      {
+        "id": "amigo.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "amigo.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Acompanhar planejamento e execução de caminhada de 5 km."}
+        ]
+      },
+      {
+        "id": "amigo.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "amigo.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Felinos", "Cães", "Mamíferos", "Sementes", "Aves"]}},
+          {"id": "amigo.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Aprender a purificar água; escrever sobre Jesus como água da vida."},
+          {"id": "amigo.VII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender a montar barraca."}
+        ]
+      },
+      {
+        "id": "amigo.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "amigo.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Demonstrar cuidado com corda e fazer 14 nós específicos."},
+          {"id": "amigo.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar a especialidade de Acampamento I."},
+          {"id": "amigo.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Apresentar 10 regras para caminhada."},
+          {"id": "amigo.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Aprender sinais de pista."}
+        ]
+      },
+      {
+        "id": "amigo.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "amigo.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade em Artes e habilidades manuais.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["(qualquer especialidade da categoria Artes e habilidades manuais)"]}}
+        ]
+      }
+    ]
+  },
+  "classe_avancada": {
+    "id": "amigo_da_natureza",
+    "nome": "Amigo da Natureza",
+    "classe_regular_ref": "amigo",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/",
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Mesma página viva da classe regular Amigo."
+    },
+    "cobertura": "resumo_fonte_oficial",
+    "cobertura_nota": "Lida via extração automatizada da página oficial (não conferida item a item, palavra por palavra, contra o texto bruto como foi feito para Companheiro/Pioneiro/Excursionista/Guia). Conteúdo confiável (mesma fonte primária), granularidade de confiança um degrau abaixo.",
+    "secao_unica": {
+      "id": "amigo_da_natureza.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "amigo_da_natureza.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar, cantar ou tocar o Hino dos Desbravadores."},
+        {"id": "amigo_da_natureza.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Conversar sobre um personagem do Antigo Testamento à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["José", "Jonas", "Ester", "Rute"]}},
+        {"id": "amigo_da_natureza.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Levar 2 amigos não adventistas à Escola Sabatina ou ao Clube."},
+        {"id": "amigo_da_natureza.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conhecer higiene, boas maneiras à mesa e comportamento social."},
+        {"id": "amigo_da_natureza.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Completar a especialidade de Arte de acampar."},
+        {"id": "amigo_da_natureza.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Identificar 10 flores silvestres e 10 insetos da região."},
+        {"id": "amigo_da_natureza.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Começar uma fogueira com materiais naturais."},
+        {"id": "amigo_da_natureza.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Usar corretamente faca/facão/machadinha; conhecer 10 regras de segurança."},
+        {"id": "amigo_da_natureza.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar 1 especialidade à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Atividades missionárias", "Atividades agrícolas"]}}
+      ]
+    }
+  }
+}

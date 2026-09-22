@@ -103,7 +103,7 @@ diretamente da fonte oficial linkada aqui, não reconstruído de memória.
 | Amigo | I. Gerais | Item 5 (livro) | Cartão Amigo (pré-2017) | Livro fixado como "Vaso de Barro" | OMD 012/2017 | 30/03/2017 | Vigente desde 2018, **confirmado vigente em 2026** (OMD 021/2024 = "sem alteração") | [OMD 012](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_012-2017.pdf), [página viva](https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/) | Confirmado lendo a página viva |
 | Amigo | V. Saúde e Aptidão Física | Item 1 (especialidade) | Cartão Amigo (pré-2014) | 3→4 opções: adiciona "Nós e amarras" (2014) e "Segurança básica na água" (2017) | OMD 007/2014, OMD 012/2017 | 02/05/2014, 30/03/2017 | Vigente 2026 | [OMD 007](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_007-2014.pdf), [OMD 012](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_012-2017.pdf) | 4 opções confirmadas na página viva |
 | Companheiro | I. Gerais | Item 5 (livro) | Cartão Companheiro (pré-2024): "Caminho a Cristo" | Livro trocado para "Um simples lanche" | **OMD 021/2024** | 17/12/2024 | **2025 = transição (livro antigo OU novo); a partir de 2026 SÓ o novo vale** | [OMD 021](https://files.adventistas.org/institucional/pt/sites/20/2025/05/OMD_021-2024.pdf), [página viva](https://www.adventistas.org/pt/desbravadores/classes/companheiro-e-companheiro-de-excursionismo/) | Confirmado verbatim na página viva |
-| Companheiro (avançada) | Companheiro de Excursionismo | Item 11 (Excursionismo pedestre) | "Excursionismo pedestre" | Alterado para "Excursionismo pedestre com mochila (AR 056)" | OMD 005/2013 | 20/10/2013 | Vigente 2026 | [OMD 005](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_005-2013.pdf) | Não recontei o item 11 na página viva (pendente de checagem item a item — ver §9) |
+| Companheiro (avançada) | Companheiro de Excursionismo | Item 11 (Excursionismo pedestre) | "Excursionismo pedestre" | Alterado para "Excursionismo pedestre com mochila (AR 056)" | OMD 005/2013 | 20/10/2013 | Vigente 2026 | [OMD 005](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_005-2013.pdf) | **RESOLVIDO na fase 2.5**: reconferido item a item na página viva (texto bruto) — item 11 = "Completar a especialidade de Excursionismo pedestre com mochila." Confirmado, não mais pendente. |
 | Pesquisador | I. Gerais | Item 5 (livro) | "Além da magia" | **Sem alteração** pela OMD 021/2024 | OMD 021/2024 (confirma que NÃO muda) | 17/12/2024 | Vigente 2026 | [OMD 021](https://files.adventistas.org/institucional/pt/sites/20/2025/05/OMD_021-2024.pdf) | Confirmado verbatim na página viva |
 | Pesquisador (avançada) | Pesquisador de Campo e Bosque | Item 11 | Item numerado 11 (texto anterior desconhecido) | "Item 11: excluído" + inclusão de "Completar a especialidade de Excursionismo pedestre com mochila" | OMD 007/2014 | 02/05/2014 | **PENDENTE_DE_VALIDACAO** | [OMD 007](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_007-2014.pdf) | Texto da OMD é ambíguo sobre se é uma exclusão simples ou uma substituição; a página viva atual não tem um item explicitamente chamado "Excursionismo pedestre com mochila" na Pesquisador de Campo e Bosque — precisa reler o PDF original da OMD com atenção antes de modelar |
 | Pioneiro | I. Gerais | Item 5 (livro) | "A história da vida" | Livro trocado para "Expedição Galápagos" | **OMD 021/2024** | 17/12/2024 | **A partir de 2026 só o novo vale** | [OMD 021](https://files.adventistas.org/institucional/pt/sites/20/2025/05/OMD_021-2024.pdf) | Confirmado verbatim na página viva |
@@ -112,7 +112,7 @@ diretamente da fonte oficial linkada aqui, não reconstruído de memória.
 | Excursionista (regular) | VI. Organização e Liderança | "Ordem Unida" (item 4 antigo) | Item presente na seção VI | Transferido para a Classe Avançada – Excursionista na Mata | OMD 001/2013 | 05/08/2013 | Vigente 2026 | [OMD 001](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_001-2013.pdf) | Confirmado: ausente na seção VI regular; presente como item 10 (especialidade "Ordem unida") na avançada |
 | Excursionista (regular) | VIII. Arte de Acampar | Item 2 ("Pioneirismo") | "Pioneirismo" | Renomeado "Pioneirias (AR101)"; item 3 transferido pra avançada | OMD 001/2013 | 05/08/2013 | Vigente 2026 | [OMD 001](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_001-2013.pdf) | Confirmado: página viva mostra "Completar a especialidade de Pioneirias" |
 | Guia | I. Gerais | Item 5 (livro) | "Nossa herança" | Livro trocado para "O livro amargo" | **OMD 021/2024** | 17/12/2024 | **A partir de 2026 só o novo vale** | [OMD 021](https://files.adventistas.org/institucional/pt/sites/20/2025/05/OMD_021-2024.pdf) | Confirmado verbatim na página viva |
-| Guia (regular) | VI. Organização e Liderança / VIII. Arte de Acampar | Itens 4 e 5 (numeração antiga) | Itens presentes na classe regular | Transferidos para a Classe Avançada – Guia de Exploração | OMD 001/2013 | 05/08/2013 | **PENDENTE_DE_VALIDACAO** | [OMD 001](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_001-2013.pdf) | Não reconferi item a item na página viva de Guia (só confirmei o livro) — mesma ressalva do §9 |
+| Guia (regular) | VI. Organização e Liderança | "Orçamento familiar" e "Liderança campestre" | Itens presentes na classe regular | Transferidos para a Classe Avançada – Guia de Exploração | OMD 001/2013 | 05/08/2013 | Vigente 2026 | [OMD 001](http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_001-2013.pdf) | **RESOLVIDO na fase 2.5**: reconferido item a item — Seção VI regular hoje tem só 3 itens (sem esses dois); a avançada Guia de Exploração tem "Completar a especialidade de Liderança campestre" (item 9) e "Completar a especialidade de Orçamento familiar" (item 10). Confirmado, não mais pendente. |
 | Todas as 6 | (geral) | "Ler o livro do Curso de Leitura do ano" | — | **Requisito que MUDA todo ano**, por desenho (não é um "livro da classe" fixo) | — (não é OMD; é um requisito estruturalmente anual) | — | Recorrente | páginas vivas de cada classe | Ver lacuna de schema §10.1 — é DIFERENTE do "livro da classe" (item 5) que só muda por OMD |
 
 ## 5. Classes Avançadas
@@ -229,29 +229,49 @@ em sistema, não assinatura criptográfica). **PENDENTE_DE_VALIDACAO**: se o flu
 
 ## 9. Divergências e pendências (PENDENTE_DE_VALIDACAO — resumo consolidado)
 
+**Atualização (fase 2.5 — Consolidação Curricular)**: os itens 3 e 4 abaixo foram **resolvidos**
+durante a montagem do manifesto (`supabase/curriculo-manifesto/`), relendo as páginas vivas texto
+bruto, item a item — ficam marcados RESOLVIDO, com a evidência encontrada. Os outros 7 continuam
+PENDENTE_DE_VALIDACAO exatamente como antes; nenhum foi resolvido por inferência.
+
 1. **Numeração dupla de OMD** entre `adventistas.org` (021 OMDs, até 2024) e `downloads.adventistas.org`
    (14 OMDs, até 2018, números e datas diferentes a partir da 011) — tratado como o segundo sendo um
-   espelho obsoleto (§3.2), mas sem confirmação formal da DSA.
+   espelho obsoleto (§3.2), mas sem confirmação formal da DSA. **PENDENTE_DE_VALIDACAO.**
 2. **OMD 022/2026**: referência não-oficial encontrada (Instagram); não confirmada em nenhuma fonte
-   primária; não usada neste relatório.
-3. **OMD 007/2014 sobre o item 11 da Pesquisador de Campo e Bosque**: texto da OMD é ambíguo
-   (exclusão simples vs. substituição); não bate de forma óbvia com o que a página viva mostra hoje.
-4. **Guia avançada — itens transferidos pela OMD 001/2013**: não reconferi item a item na página viva
-   (só o livro foi verificado); mesma ressalva para o item 11 avançado da Companheiro de Excursionismo.
+   primária; não usada neste relatório nem no manifesto (o validador da fase 2.5 rejeita ativamente
+   qualquer requisito que tente se apoiar nela). **PENDENTE_DE_VALIDACAO.**
+3. ~~**OMD 007/2014 sobre o item 11 da Pesquisador de Campo e Bosque**~~ — **CONTINUA PENDENTE.**
+   Reconferido na fase 2.5 (texto bruto da página viva): o item 11 atual é "Completar especialidade em
+   Habilidades domésticas, Ciência/saúde, Atividades missionárias ou Agrícolas" — NÃO menciona
+   "Excursionismo pedestre com mochila" em lugar nenhum. O texto da OMD 007/2014 continua ambíguo
+   (exclusão simples vs. substituição) e não bate, sem reinterpretação, com o que a página mostra hoje.
+   Modelado como `PENDENTE_DE_VALIDACAO` em `pesquisador.json`.
+4. ~~**Guia avançada — itens transferidos pela OMD 001/2013; item 11 avançado da Companheiro de
+   Excursionismo**~~ — **RESOLVIDO na fase 2.5.** Reconferido texto bruto de ambas as páginas vivas:
+   Guia (Seção VI regular tem só 3 itens, sem "Orçamento familiar"/"Liderança campestre"; a avançada
+   Guia de Exploração tem os dois, itens 9 e 10) e Companheiro de Excursionismo (item 11 = "Completar a
+   especialidade de Excursionismo pedestre com mochila", batendo com a OMD 005/2013). Ambos marcados
+   `CONFIRMADO`/`ALTERADO_POR_OMD` no manifesto, não mais pendentes.
 5. **Manual Administrativo — OMD 013/2018 (proibição de venda de emblemas a desbravadores)**: não
    encontrei essa frase especificamente no PDF da edição 2020 (confirmei a edição pela ficha técnica
    interna do PDF: "Edição 2020", não pela data da página) — pode ainda valer como adenda separada, ou
    ter sido reformulada de outro jeito na edição 2020; recomendo confirmar antes de modelar essa regra.
+   **PENDENTE_DE_VALIDACAO** (não afeta o manifesto da fase 2.5: é regra administrativa, não conteúdo
+   de classe regular).
 6. **Dependência classe-avançada→classe-regular**: não confirmada como pré-requisito FORMAL nas
    páginas vivas de classe avançada (diferente das Classes de Liderança, que confirmam isso
-   explicitamente).
+   explicitamente). **PENDENTE_DE_VALIDACAO** — por isso o manifesto da fase 2.5 não modela nenhuma
+   dependência real entre uma classe avançada e sua regular correspondente.
 7. **Líder Máster Avançado**: página consultada não detalhou idade mínima nem pré-requisito explícito.
+   **PENDENTE_DE_VALIDACAO** (Liderança fora do escopo da fase 2.5).
 8. **Manual de Especialidades — edição corrente**: última revisão geral confirmada é 2012; não achei
    confirmação de revisão geral mais nova (pode haver uma não publicada como página web).
+   **PENDENTE_DE_VALIDACAO** (catálogo de Especialidades fora do escopo da fase 2.5).
 9. **Cartão Virtual — diferença de fluxo entre os 3 níveis de liderança**: não especificada na fonte
-   consultada.
+   consultada. **PENDENTE_DE_VALIDACAO** (Liderança fora do escopo da fase 2.5).
 
-Nenhum destes 9 pontos foi resolvido "no escuro" — todos ficam PENDENTE_DE_VALIDACAO até confirmação
+Nenhum destes pontos foi resolvido "no escuro" — os 2 marcados RESOLVIDO têm evidência nova, direta,
+de fonte primária, registrada acima; os 7 restantes continuam PENDENTE_DE_VALIDACAO até confirmação
 direta com o Ministério de Desbravadores da DSA ou leitura mais profunda do PDF original de cada OMD
 citada.
 
@@ -332,3 +352,12 @@ Fora do escopo desta etapa por pedido explícito; a pesquisa não trouxe nada qu
 
 Este documento fica em `supabase/AUDITORIA-CURRICULO-OFICIAL.md` para consulta antes de qualquer
 importação futura. Nenhuma migration foi criada nem alterada nesta etapa.
+
+## 12. Atualização — fase 2.5 (Consolidação Curricular)
+
+Esta seção 4 foi transformada num manifesto versionado e validável por máquina, com o mesmo grau de
+rigor (proveniência, `publicado_em` ≠ `vigente_desde`, PENDENTE_DE_VALIDACAO nunca resolvido por
+inferência) — ver [`supabase/curriculo-manifesto/`](curriculo-manifesto/README.md). O manifesto
+também RESOLVEU 2 dos 9 pontos da seção 9 (itens 3 e 4, marcados acima) relendo as páginas vivas texto
+bruto item a item — os outros 7 continuam exatamente como estavam. Ainda nenhum conteúdo foi
+importado para `curriculum_versions`/`classes`/`class_requirements`.

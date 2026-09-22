@@ -1,0 +1,78 @@
+{
+  "_comentario": "Registro das OMDs (Orientações do Ministério de Desbravadores, DSA) referenciadas pelo manifesto curricular das 6 Classes Regulares. Fonte primária única: https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/ (ver AUDITORIA-CURRICULO-OFICIAL.md secao 3.2 sobre a divergencia com o indice de downloads.adventistas.org). Uma OMD só pode ser referenciada por um requisito (alterado_por_omd / confirmado_por_omd) se o campo status abaixo for CONFIRMADO — o validador rejeita qualquer requisito que aponte para uma OMD com status PENDENTE_DE_VALIDACAO.",
+  "omds": [
+    {
+      "id": "OMD-001-2013",
+      "numero": "001",
+      "ano": 2013,
+      "data": "2013-08-05",
+      "titulo": "Alteração – Cartões de Classes",
+      "url": "http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_001-2013.pdf",
+      "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
+      "status": "CONFIRMADO",
+      "resumo": "Remove/transfere itens dos cartões Pioneiro (avançada), Excursionista (regular/avançada) e Guia (regular/avançada)."
+    },
+    {
+      "id": "OMD-005-2013",
+      "numero": "005",
+      "ano": 2013,
+      "data": "2013-10-20",
+      "titulo": "Cartão de Classe — Companheiro",
+      "url": "http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_005-2013.pdf",
+      "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
+      "status": "CONFIRMADO",
+      "resumo": "Companheiro de Excursionismo (avançada), item 11: \"Excursionismo pedestre\" alterado para \"Excursionismo pedestre com mochila (AR 056)\"."
+    },
+    {
+      "id": "OMD-007-2014",
+      "numero": "007",
+      "ano": 2014,
+      "data": "2014-05-02",
+      "titulo": "Cartão – Amigo e Pesquisador",
+      "url": "http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_007-2014.pdf",
+      "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
+      "status": "CONFIRMADO",
+      "resumo": "Amigo Seção V item 1 ganha 3ª opção de especialidade (Nós e amarras). Pesquisador de Campo e Bosque (avançada) item 11: texto da OMD é ambíguo — ver PENDENTE_DE_VALIDACAO em pesquisador.json."
+    },
+    {
+      "id": "OMD-012-2017",
+      "numero": "012",
+      "ano": 2017,
+      "data": "2017-03-30",
+      "titulo": "Cartão de Amigo",
+      "url": "http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_012-2017.pdf",
+      "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
+      "status": "CONFIRMADO",
+      "resumo": "Amigo: livro fixado como \"Vaso de Barro\"; Seção V item 1 ganha 4ª opção (Segurança básica na água)."
+    },
+    {
+      "id": "OMD-021-2024",
+      "numero": "021",
+      "ano": 2024,
+      "data": "2024-12-17",
+      "titulo": "Atualização dos Livros das Classes",
+      "url": "https://files.adventistas.org/institucional/pt/sites/20/2025/05/OMD_021-2024.pdf",
+      "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
+      "status": "CONFIRMADO",
+      "resumo": "Troca o livro-base de Companheiro (\"Um simples lanche\"), Pioneiro (\"Expedição Galápagos\"), Excursionista (\"O fim do começo\") e Guia (\"O livro amargo\"); confirma SEM ALTERAÇÃO os de Amigo (\"Vaso de barro\") e Pesquisador (\"Além da magia\"). 2025 = ano de transição (livro antigo OU novo aceito); a partir de 2026, SÓ o novo livro vale.",
+      "vigencia": {
+        "entra_em_vigor": "2024-12-17",
+        "transicao_ate": "2025-12-31",
+        "obrigatorio_desde": "2026-01-01",
+        "nota": "É esta regra de transição, e não a data de publicação isolada, que determina a vigência 2026 — ver AUDITORIA-CURRICULO-OFICIAL.md."
+      }
+    },
+    {
+      "id": "OMD-022-2026",
+      "numero": "022",
+      "ano": 2026,
+      "data": null,
+      "titulo": null,
+      "url": null,
+      "fonte_indice": "rede social (não oficial) — NÃO aparece no índice oficial adventistas.org consultado nesta auditoria",
+      "status": "PENDENTE_DE_VALIDACAO",
+      "resumo": "Referência encontrada apenas em post de rede social. Não confirmada em nenhuma fonte primária DSA. Registrada aqui só para rastreabilidade da dúvida — nenhum requisito deste manifesto pode referenciar esta OMD como alterado_por_omd/confirmado_por_omd (o validador rejeita isso).",
+      "_regra_de_uso": "NUNCA usar para justificar status CONFIRMADO ou ALTERADO_POR_OMD de nenhum requisito. Existe só para o validador saber que esta OMD é conhecida-porém-pendente, e recusar explicitamente qualquer tentativa de citá-la como fonte de uma regra."
+    }
+  ]
+}

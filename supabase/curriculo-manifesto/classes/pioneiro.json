@@ -1,0 +1,134 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "pioneiro",
+    "nome": "Pioneiro",
+    "idade_minima": 13,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/pioneiro-e-pioneiro-de-novas-fronteiras/",
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Carimbo da página — NÃO é a vigência real (ver amigo.json §nota). Confirmado lendo a página ao vivo, texto bruto, item a item."
+    },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "A OMD 021/2024 foi publicada em 17/12/2024, mas 2025 foi ano de transição (livro antigo OU novo aceito); o livro novo só se torna OBRIGATÓRIO em 01/01/2026 — ver omds.json#OMD-021-2024.",
+    "cobertura": "completa",
+    "secoes": [
+      {
+        "id": "pioneiro.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "pioneiro.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 13 anos."},
+          {"id": "pioneiro.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "pioneiro.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e entender o Alvo e o Lema JA."},
+          {"id": "pioneiro.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
+          {"id": "pioneiro.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Expedição Galápagos\".",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
+            "observacao": "Livro anterior (pré-2026): \"A história da vida\". Confirmado literalmente na página viva."}
+        ]
+      },
+      {
+        "id": "pioneiro.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "pioneiro.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as Bem-Aventuranças (Sermão da Montanha)."},
+          {"id": "pioneiro.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 7 versículos indicados."},
+          {"id": "pioneiro.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Conversar sobre o que é cristianismo / características de um discípulo."},
+          {"id": "pioneiro.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudo especial sobre inspiração da Bíblia com um pastor."},
+          {"id": "pioneiro.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Convidar 3+ pessoas para Classe Bíblica ou Pequeno Grupo."},
+          {"id": "pioneiro.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica extensa (Eclesiastes, Isaías, Jeremias, Daniel, Mateus, entre outros)."}
+        ]
+      },
+      {
+        "id": "pioneiro.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "pioneiro.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de 2 projetos missionários definidos pelo Clube."},
+          {"id": "pioneiro.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Trabalhar em projeto comunitário (igreja/escola/comunidade)."}
+        ]
+      },
+      {
+        "id": "pioneiro.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "pioneiro.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Debate/autoavaliação sobre 2 de 4 temas à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 2, "opcoes": ["Autoestima", "Amizade", "Relacionamentos", "Otimismo e pessimismo"]}}
+        ]
+      },
+      {
+        "id": "pioneiro.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "pioneiro.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Programa pessoal de exercícios; compromisso assinado."},
+          {"id": "pioneiro.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir vantagens do estilo de vida adventista."}
+        ]
+      },
+      {
+        "id": "pioneiro.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "pioneiro.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Assistir a seminário/treinamento (Ministério Pessoal ou Evangelismo).",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Ministério Pessoal", "Evangelismo"]}},
+          {"id": "pioneiro.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de atividade social da igreja."}
+        ]
+      },
+      {
+        "id": "pioneiro.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "pioneiro.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Estudar a história do dilúvio e o processo de fossilização."},
+          {"id": "pioneiro.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade de Estudo da natureza não realizada anteriormente.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa"}
+        ]
+      },
+      {
+        "id": "pioneiro.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "pioneiro.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Fazer fogo refletor e demonstrar seu uso."},
+          {"id": "pioneiro.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Acampamento de fim de semana; arrumar mochila com equipamento pessoal."},
+          {"id": "pioneiro.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Resgate básico."}
+        ]
+      },
+      {
+        "id": "pioneiro.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "pioneiro.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, em área à escolha.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa",
+            "escolha": {"n": 1, "opcoes": ["Atividades missionárias e comunitárias", "Atividades profissionais", "Atividades agrícolas"]}}
+        ]
+      }
+    ]
+  },
+  "classe_avancada": {
+    "id": "pioneiro_de_novas_fronteiras",
+    "nome": "Pioneiro de Novas Fronteiras",
+    "classe_regular_ref": "pioneiro",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/pioneiro-e-pioneiro-de-novas-fronteiras/",
+      "publicado_em": "2017-11-04"
+    },
+    "cobertura": "completa",
+    "cobertura_nota": "10 itens (renumerados de 1 a 10) — os itens 5 e 12 da numeração ANTERIOR foram removidos pela OMD 001/2013; confirmado contando os itens da página viva (exatamente 10, sem lacuna na sequência).",
+    "secao_unica": {
+      "id": "pioneiro_de_novas_fronteiras.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "pioneiro_de_novas_fronteiras.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Cidadania cristã (se ainda não tiver)."},
+        {"id": "pioneiro_de_novas_fronteiras.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Encenar a história do bom samaritano; ajudar 3+ pessoas."},
+        {"id": "pioneiro_de_novas_fronteiras.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Praticar 1 atividade física à escolha, com relatório.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Caminhar 10 km", "Cavalgar 2 km", "Canoa 2h", "Ciclismo 15 km", "Nadar 200m", "Correr 1500m", "Patins/roller 2 km"]}},
+        {"id": "pioneiro_de_novas_fronteiras.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar a especialidade de Mapa e bússola."},
+        {"id": "pioneiro_de_novas_fronteiras.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Demonstrar habilidade no uso correto de machadinha."},
+        {"id": "pioneiro_de_novas_fronteiras.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Acender fogueira em dia de chuva; conseguir lenha seca."},
+        {"id": "pioneiro_de_novas_fronteiras.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Completar 1 item à escolha (identificação/comunicação).",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["10 plantas silvestres comestíveis", "Semáforo 35 lpm", "Código náutico 35 lpm", "Mateus 24 em Libras", "Salmo 23 em braille"]}},
+        {"id": "pioneiro_de_novas_fronteiras.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Completar 1 especialidade de Atividades recreativas não realizada anteriormente.",
+          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+          "grupo_sem_repeticao": "pioneiro_de_novas_fronteiras.especialidades_ja_concluidas_pela_pessoa"},
+        {"id": "pioneiro_de_novas_fronteiras.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Identificar 25 itens de 1 categoria à escolha (fotografia/exposição/ao vivo).",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["25 folhas de árvores", "25 rochas e minerais", "25 flores silvestres", "25 borboletas e mariposas", "25 conchas"]}},
+        {"id": "pioneiro_de_novas_fronteiras.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Fogueiras e cozinha ao ar livre."}
+      ]
+    }
+  }
+}

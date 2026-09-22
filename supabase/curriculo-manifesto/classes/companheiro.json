@@ -1,0 +1,140 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "companheiro",
+    "nome": "Companheiro",
+    "idade_minima": 11,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/companheiro-e-companheiro-de-excursionismo/",
+      "publicado_em": "2017-11-03",
+      "nota_publicado_em": "Carimbo da página — NÃO é a vigência real (ver amigo.json e AUDITORIA-CURRICULO-OFICIAL.md §3.1). Confirmado lendo a página ao vivo, texto bruto, item a item."
+    },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "A OMD 021/2024 foi publicada em 17/12/2024, mas 2025 foi ano de transição (livro antigo OU novo aceito); o livro novo só se torna OBRIGATÓRIO em 01/01/2026 — é essa data, não a de publicação da OMD, que representa a vigência real desta versão da classe. Ver omds.json#OMD-021-2024.",
+    "secoes": [
+      {
+        "id": "companheiro.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "companheiro.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 11 anos."},
+          {"id": "companheiro.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "companheiro.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Ilustrar de forma criativa o significado do Voto do Desbravador."},
+          {"id": "companheiro.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico",
+            "observacao": "Muda todo ano civil — DIFERENTE do item I.5 (livro da classe)."},
+          {"id": "companheiro.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Um Simples Lanche\".",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
+            "observacao": "Livro anterior (pré-2026): \"Caminho a Cristo\". Confirmado literalmente na página viva: \"Ler o livro Um simples lanche.\""},
+          {"id": "companheiro.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica."}
+        ]
+      },
+      {
+        "id": "companheiro.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "companheiro.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar os 10 Mandamentos e os 27 livros do Novo Testamento."},
+          {"id": "companheiro.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 5 versículos indicados."},
+          {"id": "companheiro.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica extensa (trechos de Levítico a 2 Samuel)."},
+          {"id": "companheiro.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escolher 1 tema sobre Jesus e demonstrar conhecimento de 1 forma à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Uma parábola de Jesus", "Um milagre de Jesus", "O Sermão da Montanha", "Um sermão sobre a Segunda Vinda"]}}
+        ]
+      },
+      {
+        "id": "companheiro.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "companheiro.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dedicar 2 horas servindo a comunidade."},
+          {"id": "companheiro.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de projeto que beneficie a comunidade/igreja."}
+        ]
+      },
+      {
+        "id": "companheiro.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "companheiro.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conversar sobre respeito a pessoas de diferentes culturas, raça e sexo."}
+        ]
+      },
+      {
+        "id": "companheiro.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "companheiro.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar e explicar I Coríntios 9:24-27."},
+          {"id": "companheiro.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Conversar sobre aptidão física e exercícios regulares."},
+          {"id": "companheiro.V.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender sobre prejuízos do cigarro; escrever compromisso de não fumar."},
+          {"id": "companheiro.V.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Natação principiante II", "Acampamento II"]}}
+        ]
+      },
+      {
+        "id": "companheiro.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "companheiro.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dirigir ou colaborar em meditação criativa para Unidade/Clube."},
+          {"id": "companheiro.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ajudar a planejar excursão/acampamento com pelo menos 1 pernoite."}
+        ]
+      },
+      {
+        "id": "companheiro.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "companheiro.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de jogos na natureza ou caminhada ecológica (1h)."},
+          {"id": "companheiro.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Anfíbios", "Aves", "Aves domésticas", "Pecuária", "Répteis", "Moluscos", "Árvores", "Arbustos"]}},
+          {"id": "companheiro.VII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Recapitular a Criação; diário de observação de 7 dias."}
+        ]
+      },
+      {
+        "id": "companheiro.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "companheiro.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Descobrir pontos cardeais sem bússola; desenhar Rosa dos Ventos."},
+          {"id": "companheiro.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de acampamento de fim de semana; relatório."},
+          {"id": "companheiro.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender/recapitular 9 nós específicos."}
+        ]
+      },
+      {
+        "id": "companheiro.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "companheiro.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade em Artes e habilidades manuais, não realizada anteriormente.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "companheiro.especialidades_ja_concluidas_pela_pessoa",
+            "observacao": "\"Não realizada anteriormente\" refere-se ao HISTÓRICO INTEIRO da pessoa (qualquer classe anterior), não só a este item — ver README.md sobre a lacuna de schema."}
+        ]
+      }
+    ]
+  },
+  "classe_avancada": {
+    "id": "companheiro_de_excursionismo",
+    "nome": "Companheiro de Excursionismo",
+    "classe_regular_ref": "companheiro",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/companheiro-e-companheiro-de-excursionismo/",
+      "publicado_em": "2017-11-03",
+      "nota_publicado_em": "Mesma página viva da classe regular Companheiro."
+    },
+    "cobertura": "completa",
+    "cobertura_nota": "Lida integralmente, texto bruto, direto da página oficial (não resumo automatizado).",
+    "secao_unica": {
+      "id": "companheiro_de_excursionismo.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "companheiro_de_excursionismo.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Composição, significado e uso correto da Bandeira Nacional."},
+        {"id": "companheiro_de_excursionismo.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler a primeira visão de Ellen White; discutir o papel dos profetas."},
+        {"id": "companheiro_de_excursionismo.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Participar de atividade missionária/comunitária com um amigo."},
+        {"id": "companheiro_de_excursionismo.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conversar sobre respeito aos pais/responsáveis; listar como cuidam de você."},
+        {"id": "companheiro_de_excursionismo.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Caminhada de 6 km com relatório de 1 página."},
+        {"id": "companheiro_de_excursionismo.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Escolher 1 atividade sobre saúde/tabagismo.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Curso como deixar de fumar", "2 filmes sobre saúde", "Cartaz sobre prejuízo das drogas", "Material para exposição/passeata sobre saúde", "Pesquisa na internet sobre saúde"]}},
+        {"id": "companheiro_de_excursionismo.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar e descrever 12 aves nativas e 12 árvores nativas."},
+        {"id": "companheiro_de_excursionismo.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Participar de 1 cerimônia (Investidura, Admissão em lenço ou Dia Mundial).",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Investidura", "Admissão em lenço", "Dia Mundial do Desbravador"]}},
+        {"id": "companheiro_de_excursionismo.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Preparar refeição em fogueira durante acampamento."},
+        {"id": "companheiro_de_excursionismo.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Preparar quadro com 15 nós diferentes."},
+        {"id": "companheiro_de_excursionismo.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Excursionismo pedestre com mochila (AR056).",
+          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-005-2013",
+          "observacao": "Texto anterior: \"Excursionismo pedestre\" (sem mochila). Confirmado literalmente na página viva: item 11 = \"Completar a especialidade de Excursionismo pedestre com mochila.\""},
+        {"id": "companheiro_de_excursionismo.12", "codigo": "12", "ordem": 120, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente.",
+          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+          "grupo_sem_repeticao": "companheiro_de_excursionismo.especialidades_ja_concluidas_pela_pessoa",
+          "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias e comunitárias", "Atividades agrícolas"]}}
+      ]
+    }
+  }
+}

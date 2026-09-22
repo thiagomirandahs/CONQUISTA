@@ -388,6 +388,17 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   de repetição, prazo de conclusão, aprovação hierárquica) — **documentadas, nada alterado**. 9 pontos ficaram
   PENDENTE_DE_VALIDACAO (inclusive uma possível OMD 022/2026 não confirmada). Aguardando aprovação antes de importar
   qualquer conteúdo oficial de verdade.
+- ✅ **Fase 2.5 — Consolidação Curricular**: `supabase/curriculo-manifesto/` — as 6 Classes Regulares (+ as 6 avançadas
+  pareadas) viraram manifesto JSON versionado e validável por máquina (212 requisitos), com `publicado_em` ≠
+  `vigente_desde` explícito em cada classe, proveniência (fonte + OMD) em todo item, e as 4 lacunas de schema marcadas
+  via `lacuna_schema` (ainda NÃO no banco). Validador (`npm run curriculo:validar`) + autoteste com fixtures sintéticas
+  (`npm run curriculo:autoteste`, 14 casos) provando que rejeita fonte ausente, ID duplicado, dependência inexistente,
+  vigência copiada do carimbo da página, e item pendente apresentado como confirmado (inclusive a OMD 022/2026, travada
+  no registro). Relendo as páginas oficiais texto bruto, resolveu 2 dos 9 PENDENTE_DE_VALIDACAO da etapa 1 (Guia
+  avançada, Companheiro avançada item 11) — os outros 7 continuam pendentes, nenhum resolvido por inferência. Nenhum
+  requisito das 6 Classes Regulares ficou PENDENTE_DE_VALIDACAO (o único pendente do manifesto é da classe AVANÇADA
+  Pesquisador de Campo e Bosque) — nada impede a publicação das 6 Regulares por falta de fonte; falta só evoluir o
+  schema pras 4 lacunas antes de importar de verdade. Ainda NADA foi importado para `curriculum_versions`.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

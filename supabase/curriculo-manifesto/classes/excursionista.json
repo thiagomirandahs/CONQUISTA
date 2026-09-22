@@ -1,0 +1,132 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "excursionista",
+    "nome": "Excursionista",
+    "idade_minima": 14,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/excursionista-e-excursionista-na-mata/",
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Carimbo da página — NÃO é a vigência real (ver amigo.json §nota). Confirmado lendo a página ao vivo, texto bruto, item a item."
+    },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "A OMD 021/2024 foi publicada em 17/12/2024, mas 2025 foi ano de transição (livro antigo OU novo aceito); o livro novo só se torna OBRIGATÓRIO em 01/01/2026 — ver omds.json#OMD-021-2024.",
+    "cobertura": "completa",
+    "secoes": [
+      {
+        "id": "excursionista.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "excursionista.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 14 anos."},
+          {"id": "excursionista.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "excursionista.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o significado do Objetivo JA."},
+          {"id": "excursionista.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
+          {"id": "excursionista.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"O Fim do Começo\".",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
+            "observacao": "Livro anterior (pré-2026): \"Nos bastidores da mídia\". Confirmado literalmente na página viva."}
+        ]
+      },
+      {
+        "id": "excursionista.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "excursionista.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar os 12 apóstolos e o fruto do Espírito."},
+          {"id": "excursionista.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 6 versículos indicados."},
+          {"id": "excursionista.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Estudar a pessoa do Espírito Santo e seu papel no crescimento espiritual."},
+          {"id": "excursionista.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudar os eventos finais e a segunda vinda de Cristo."},
+          {"id": "excursionista.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Descobrir o significado da observância do sábado."},
+          {"id": "excursionista.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica extensa (Mateus a Atos, trechos indicados)."}
+        ]
+      },
+      {
+        "id": "excursionista.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "excursionista.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Convidar amigo para atividade social da igreja/Associação."},
+          {"id": "excursionista.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de projeto comunitário do planejamento à execução."},
+          {"id": "excursionista.III.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Discutir relacionamento com pessoas em diferentes situações do dia a dia."}
+        ]
+      },
+      {
+        "id": "excursionista.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "excursionista.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Examinar atitudes em 2 de 4 temas à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 2, "opcoes": ["Autoestima", "Relacionamento familiar", "Finanças pessoais", "Pressão de grupo"]}},
+          {"id": "excursionista.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Preparar 5 sugestões recreativas para pessoas com necessidades específicas."}
+        ]
+      },
+      {
+        "id": "excursionista.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "excursionista.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Temperança."}
+        ]
+      },
+      {
+        "id": "excursionista.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "excursionista.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Preparar organograma da igreja local."},
+          {"id": "excursionista.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 2 programas de departamentos da igreja local."},
+          {"id": "excursionista.VI.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Aventuras com Cristo."}
+        ]
+      },
+      {
+        "id": "excursionista.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "excursionista.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Relacionar a história de Nicodemos ao ciclo da lagarta/borboleta."},
+          {"id": "excursionista.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade de Estudo da natureza não realizada anteriormente.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "excursionista.especialidades_ja_concluidas_pela_pessoa"}
+        ]
+      },
+      {
+        "id": "excursionista.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "excursionista.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Caminhada de 20 km com pernoite, em grupo, com conselheiro adulto."},
+          {"id": "excursionista.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar a especialidade de Pioneirias.",
+            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
+            "observacao": "Nome anterior: \"Pioneirismo\". Renomeado para \"Pioneirias (AR101)\" pela OMD 001/2013. Confirmado literalmente na página viva."}
+        ]
+      },
+      {
+        "id": "excursionista.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "excursionista.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, em área à escolha.",
+            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
+            "grupo_sem_repeticao": "excursionista.especialidades_ja_concluidas_pela_pessoa",
+            "escolha": {"n": 1, "opcoes": ["Atividades missionárias e comunitárias", "Atividades agrícolas e afins", "Ciência e saúde", "Habilidades domésticas"]}}
+        ]
+      }
+    ],
+    "observacao_estrutural": "\"Ordem Unida\" (que existia na Seção VI desta classe regular numa versão anterior) foi TRANSFERIDA para a classe avançada Excursionista na Mata pela OMD 001/2013 — confirmado: ausente aqui, presente como especialidade obrigatória na avançada (item 10)."
+  },
+  "classe_avancada": {
+    "id": "excursionista_na_mata",
+    "nome": "Excursionista na Mata",
+    "classe_regular_ref": "excursionista",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/excursionista-e-excursionista-na-mata/",
+      "publicado_em": "2017-11-04"
+    },
+    "cobertura": "completa",
+    "secao_unica": {
+      "id": "excursionista_na_mata.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "excursionista_na_mata.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentação sobre respeito à Lei de Deus e autoridades civis (10 princípios)."},
+        {"id": "excursionista_na_mata.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Acompanhar pastor/ancião em visita missionária ou estudo bíblico."},
+        {"id": "excursionista_na_mata.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Testemunho juvenil."},
+        {"id": "excursionista_na_mata.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Apresentar 5 atividades na natureza para o sábado à tarde."},
+        {"id": "excursionista_na_mata.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Construir móvel de acampamento e portal para o Clube, com a Unidade."},
+        {"id": "excursionista_na_mata.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Conversar sobre 1 tema à escolha, supervisionado pelo líder.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Modéstia cristã", "Recreação", "Saúde", "Observância do sábado"]}},
+        {"id": "excursionista_na_mata.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Encontrar alimento por plantas silvestres; diferenciar de plantas tóxicas."},
+        {"id": "excursionista_na_mata.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Procedimentos para ferimentos por animais peçonhentos/não peçonhentos."},
+        {"id": "excursionista_na_mata.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Técnicas para percorrer trilhas em terrenos diferentes."},
+        {"id": "excursionista_na_mata.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Ordem Unida.",
+          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
+          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado: ausente na regular, presente aqui como item 10."},
+        {"id": "excursionista_na_mata.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Vida silvestre."}
+      ]
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "manifesto_versao": "2026.1",
+  "gerado_em": "2026-09-22",
+  "classe_regular": {
+    "id": "pesquisador",
+    "nome": "Pesquisador",
+    "idade_minima": 12,
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/pesquisador-e-pesquisador-de-campo-e-bosque/",
+      "publicado_em": "2017-11-03",
+      "nota_publicado_em": "Carimbo da página — NÃO é a vigência real (ver amigo.json §nota). Lida via extração automatizada (resumo), não texto bruto item a item."
+    },
+    "vigente_desde": "2024-12-17",
+    "vigente_desde_nota": "OMD 021/2024 (17/12/2024) CONFIRMOU sem alteração o livro desta classe — não houve mudança estrutural mais recente conhecida.",
+    "cobertura": "resumo_fonte_oficial",
+    "secoes": [
+      {
+        "id": "pesquisador.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
+        "requisitos": [
+          {"id": "pesquisador.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 12 anos."},
+          {"id": "pesquisador.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
+          {"id": "pesquisador.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Demonstrar compreensão da Lei do Desbravador."},
+          {"id": "pesquisador.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
+            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
+          {"id": "pesquisador.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Além da magia\".",
+            "status": "CONFIRMADO", "confirmado_por_omd": "OMD-021-2024",
+            "observacao": "A OMD 021/2024 confirma explicitamente \"sem alteração\" para esta classe."},
+          {"id": "pesquisador.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica."}
+        ]
+      },
+      {
+        "id": "pesquisador.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
+        "requisitos": [
+          {"id": "pesquisador.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar Levítico 11 (alimentos comestíveis/não comestíveis)."},
+          {"id": "pesquisador.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 6 passagens bíblicas indicadas."},
+          {"id": "pesquisador.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica extensa do Antigo Testamento."},
+          {"id": "pesquisador.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escolher 1 de 5 histórias de Jesus e demonstrar compreensão por 1 método à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["(5 histórias de Jesus, conforme cartão)"]},
+            "observacao": "Resumo automatizado não capturou a lista literal das 5 histórias — pendente refinar quando a fonte for lida bruta."}
+        ]
+      },
+      {
+        "id": "pesquisador.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
+        "requisitos": [
+          {"id": "pesquisador.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer projetos comunitários e participar de 1."},
+          {"id": "pesquisador.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 3 atividades missionárias."}
+        ]
+      },
+      {
+        "id": "pesquisador.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
+        "requisitos": [
+          {"id": "pesquisador.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de debate/representação sobre pressão de grupo."},
+          {"id": "pesquisador.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Visitar órgão público da cidade."}
+        ]
+      },
+      {
+        "id": "pesquisador.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
+        "requisitos": [
+          {"id": "pesquisador.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Escolher atividade sobre estilo de vida livre de álcool."}
+        ]
+      },
+      {
+        "id": "pesquisador.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
+        "requisitos": [
+          {"id": "pesquisador.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dirigir cerimônia de abertura ou programa."},
+          {"id": "pesquisador.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ajudar a organizar a Classe Bíblica."}
+        ]
+      },
+      {
+        "id": "pesquisador.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
+        "requisitos": [
+          {"id": "pesquisador.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Identificar Alfa de Centauro e a constelação de Órion."},
+          {"id": "pesquisador.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Astronomia", "Cactos", "Climatologia", "Flores", "Rastreio"]}}
+        ]
+      },
+      {
+        "id": "pesquisador.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
+        "requisitos": [
+          {"id": "pesquisador.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentar 6 segredos de bom acampamento; planejar 2 refeições."},
+          {"id": "pesquisador.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["Acampamento III", "Primeiros Socorros Básico"]}},
+          {"id": "pesquisador.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender bússola/GPS; demonstrar habilidade em zona urbana."}
+        ]
+      },
+      {
+        "id": "pesquisador.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
+        "requisitos": [
+          {"id": "pesquisador.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade em Artes e habilidades manuais.",
+            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+            "escolha": {"n": 1, "opcoes": ["(qualquer especialidade da categoria Artes e habilidades manuais)"]}}
+        ]
+      }
+    ]
+  },
+  "classe_avancada": {
+    "id": "pesquisador_de_campo_e_bosque",
+    "nome": "Pesquisador de Campo e Bosque",
+    "classe_regular_ref": "pesquisador",
+    "fonte_base": {
+      "url": "https://www.adventistas.org/pt/desbravadores/classes/pesquisador-e-pesquisador-de-campo-e-bosque/",
+      "publicado_em": "2017-11-03"
+    },
+    "cobertura": "resumo_fonte_oficial",
+    "secao_unica": {
+      "id": "pesquisador_de_campo_e_bosque.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "requisitos": [
+        {"id": "pesquisador_de_campo_e_bosque.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer e usar adequadamente bandeira/bandeirim de Unidade."},
+        {"id": "pesquisador_de_campo_e_bosque.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler história de J.N. Andrews ou pioneiro adventista do país."},
+        {"id": "pesquisador_de_campo_e_bosque.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Convidar pessoa para programa do Clube."},
+        {"id": "pesquisador_de_campo_e_bosque.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Asseio e cortesia cristã", "Vida familiar"]}},
+        {"id": "pesquisador_de_campo_e_bosque.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Caminhada de 10 km com lista de equipamentos."},
+        {"id": "pesquisador_de_campo_e_bosque.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar da organização de evento especial (Investidura/Admissão/Dia Mundial)."},
+        {"id": "pesquisador_de_campo_e_bosque.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar 6 pegadas de animais/aves; molde em gesso de 3."},
+        {"id": "pesquisador_de_campo_e_bosque.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Aprender 4 amarras básicas; construir móvel de acampamento."},
+        {"id": "pesquisador_de_campo_e_bosque.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Planejar cardápio vegetariano para 3 dias."},
+        {"id": "pesquisador_de_campo_e_bosque.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Enviar/receber mensagem à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Semáforo", "Morse", "Libras", "Braille"]}},
+        {"id": "pesquisador_de_campo_e_bosque.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar 1 especialidade à escolha.",
+          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
+          "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias", "Atividades agrícolas"]},
+          "status": "PENDENTE_DE_VALIDACAO",
+          "proveniencia_pendente": {
+            "motivo_pendencia": "A OMD 007/2014 diz textualmente: \"Pesquisador de Campo e Bosque — Item 11: excluído. Completar a especialidade de Excursionismo pedestre com mochila.\" — texto ambíguo (não fica claro se é uma exclusão simples seguida de OUTRA alteração em item diferente, ou uma substituição direta do item 11). O item 11 atual da página viva (lido via resumo automatizado) NÃO menciona \"Excursionismo pedestre com mochila\" em nenhum lugar. Não bate com o texto da OMD sem reinterpretação — não resolvido por inferência, conforme instruído.",
+            "omd_referida": "OMD-007-2014",
+            "acao_recomendada": "Reler o PDF original da OMD 007/2014 com atenção (não o resumo já extraído) e comparar contra o texto BRUTO (não resumido) da página viva antes de decidir."
+          }}
+      ]
+    }
+  }
+}
