@@ -58,6 +58,65 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 4 (migration 44): snapshot curricular imutável + conclusão / revisão final / investidura
+
+### Estados formais (100% aprovado ≠ investido)
+`member_classes.status`: `em_andamento → requisitos_concluidos → aguardando_revisao → apto_investidura → investida`
+(+ `cancelada`; `concluida` deixou de existir — migrada). `requisitos_concluidos` é o gatilho (todos aprovados, prazo
+mínimo ok); em seguida o sistema tenta **selar**: reconfere TODA regra em todos os requisitos (`_requisito_bloqueios`:
+dependência, conteúdo dinâmico, N-de-M, sem_repeticao) e o prazo. Bloqueado → fica em `requisitos_concluidos` com evento
+`conclusao_bloqueada` (motivos) e a liderança pode tentar de novo (`classe_revisao_solicitar`). Livre → snapshot selado +
+`investiture_reviews` pendente → `aguardando_revisao`. Revisão final (`revisao_final_decidir`, liderança do clube em uso,
+papel via `organization_memberships`): `aprovado` → `apto_investidura`; `correcao_solicitada` reabre requisitos
+específicos (com `requirement_approvals` "Revisão final: …") e volta a `em_andamento` — ao concluir de novo nasce o
+snapshot N+1 e o N vira `substituido`. `investidura_registrar` (evento próprio em `class_investitures`: data ≤ hoje,
+clube, quem registrou + papel, snapshot) exige `apto_investidura`, revisão aprovada, snapshot selado e **reconfere
+agora** (requisito não aprovado, bloqueio, dinâmico sem valor, N-de-M) → `investida` + conquista portátil de CLASSE
+(só aqui; antes era na conclusão) com `snapshot_id`. Idempotente: 2ª investidura → "já registrada"; reprocessar
+não duplica snapshot (versão por matrícula) nem conquista (índice parcial).
+
+### Snapshot (`class_completion_snapshots`) — imutável, reproduzível sem o catálogo
+`conteudo` jsonb canônico (`formato: conquista.snapshot_classe/1`): pessoa (id/nome), clube de origem, matrícula,
+classe (manifesto_id, nome, idade, vigência, página oficial, carimbo, proveniência, prazo), `curriculum_version`
+(identificador/versão/status, `fonte_hash` = hash do manifesto, `manifesto_versao`, `gerado_em`, arquivos + sha256,
+documentos-base, **só as OMDs citadas** pela classe, com URL), seções/requisitos exatamente como usados (texto,
+`status_fonte`, OMDs, observação, status, escolhas registradas, opções do cartão, cumpridas pelo histórico, conteúdo
+dinâmico **resolvido** com valor/período/fonte, dependências e a conquista que as satisfez, aprovações com avaliador/
+papel/clube/data/comentário), prazo, percentual, `gerado_em`. **Não copia evidência** (texto/foto): só
+`evidencia.{member_requirement_id, tem_texto, tem_arquivo}` — o cartão futuro não vira vitrine de dado de menor.
+`hash` = sha256 do `conteudo::text` (jsonb canônico); `snapshot_verificar()` recalcula. Gatilho genérico
+`_proteger_registro_imutavel`: UPDATE só nas colunas de status/revogação (ou FK indo a NULL por cascata) e DELETE
+nunca — vale pra qualquer papel, inclusive quem roda SQL como dono; API: INSERT/UPDATE/DELETE revogados de
+`authenticated`. RLS de snapshot e investidura = a da conquista portátil (dono, liderança do emissor, liderança de
+clube com vínculo ativo); eventos (`class_completion_events`, também imutáveis) são operacionais do clube.
+Correção posterior = `snapshot_revogar(motivo)` (só liderança do clube de ORIGEM): revoga snapshot → investidura →
+conquista (soft, com autor/motivo/data e eventos), matrícula volta a `em_andamento`; nada é apagado.
+
+### Achado corrigido no motor
+`requisito_avaliar` gravava a aprovação DEPOIS de mudar o status — o gatilho de conclusão selava o snapshot sem a
+última aprovação. Agora a auditoria entra antes do status (migration 44, G).
+
+### Tela
+`/investiduras` (liderança; recurso `classes`): lista as conclusões do clube em `requisitos_concluidos` (bloqueios +
+"tentar selar de novo"), `aguardando_revisao` (observação; aprovar; pedir correção marcando requisitos — obrigatório
+marcar e escrever) e `apto_investidura` (data ≤ hoje + observação → registrar; botão desabilitado com o motivo se houver
+bloqueio). Minha Classe mostra a etapa (validando / aguardando revisão / apto ≠ investido / investida em DD/MM/AAAA) e
+o pedido de correção da revisão. Sem PDF/cartão.
+
+### Testado
+`39_snapshot_e_investidura.sql` (62 asserts, Amigo 2026.2 com fixture SINTÉTICA do Curso de Leitura marcada como
+teste): conclusão válida → estados + eventos; snapshot v1 (pessoa/clube/classe/versão+hash do manifesto, 9 seções/25
+requisitos, OMDs com URL, escolhas, dinâmico congelado com período/fonte, aprovações com avaliador/papel/clube/data,
+evidência só como referência, prazo/proveniência); hash íntegro; catálogo arquivado + texto editado + valor do ano
+trocado → snapshot intacto; ninguém edita/apaga (liderança, dono, SQL como dono, eventos); investidura antes da
+revisão recusada; correção na revisão reabre I.2 com auditoria, v2 sela e v1 vira substituído (hashes diferentes,
+ambos íntegros, v2 com o histórico de 3 avaliações); apto ≠ investido; investidura reconfere (valor do ano removido →
+recusada); data futura recusada; investidura válida (evento, revisão "investido", conquista com snapshot_id) e
+duplicada recusada; lider_b vê conquista/snapshot/investidura e verifica integridade, mas não revoga/edita nada e não
+vê eventos do A; avaliador/revisor sai do clube e a autoria fica (27 avaliações, investidura e revisão assinadas);
+revogação auditada em cascata sem apagar (2 snapshots, 1 investidura, 1 conquista, 13 eventos). Testes 32/35/37
+migrados ao fluxo novo; Vitest `Investiduras.test.jsx` (7) e `MinhaClasse.etapas.test.jsx` (5).
+
 ## Motor curricular — fase 3.1b (migrations 42/43): revisão pontual de Amigo IX.1 + Curso de Leitura 2026
 
 ### Amigo IX.1 contra a fonte oficial

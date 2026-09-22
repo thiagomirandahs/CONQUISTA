@@ -453,6 +453,17 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   cadastrado**, requisito segue bloqueado; os 6 slots por classe já cobrem o modelo "um livro por público" sem mudança.
   Matriz manifesto → banco → API → UI re-executada (36: 43, 38: 18, UI: 7, 37: 81 — dinâmico resolve 2026 e não reaproveita
   em 2027).
+- ✅ **Fase 4 — Snapshot curricular e fluxo de conclusão/investidura (migration 44)**: estados formais
+  `em_andamento → requisitos_concluidos → aguardando_revisao → apto_investidura → investida` (100% aprovado ≠ investido);
+  ao selar a conclusão (reconferindo TODA regra) nasce um **snapshot imutável** (`class_completion_snapshots`: pessoa, clube,
+  classe, versão + hash do manifesto, seções/requisitos exatos, escolhas, dinâmico resolvido com período/fonte, dependências
+  e conquistas usadas, aprovações/avaliadores/datas, percentual; sem copiar evidências) com hash canônico, gatilho que recusa
+  UPDATE/DELETE pra qualquer papel, reproduzível sem o catálogo; eventos imutáveis (`class_completion_events`); revisão final
+  (`revisao_final_decidir`: aprovar ou pedir correção reabrindo requisitos); investidura como evento (`class_investitures`,
+  `investidura_registrar` reconfere bloqueios, idempotente) que emite a conquista portátil com `snapshot_id`; correção
+  posterior só por `snapshot_revogar` auditado em cascata (nada apagado). Tela `/investiduras` pra liderança; Minha Classe
+  mostra a etapa. Achado corrigido: `requisito_avaliar` gravava a aprovação depois do status (última aprovação ficava fora
+  do snapshot). Testes: 39 (62), 32/35/37 migrados, Vitest 297. Sem PDF/cartão ainda.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
