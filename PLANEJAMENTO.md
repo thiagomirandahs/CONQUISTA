@@ -379,6 +379,15 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   painel Master; leitura de tabela pra quem tem 2+ clubes ainda não é escopada por "clube em uso" (por desenho, mesmo limite
   documentado desde a migration 34); nível de investidura regional/associação pra classes avançadas (pergunta em aberto, sem
   fonte oficial que confirme se é necessário).
+- ✅ **Auditoria curricular oficial — etapa 1 (fontes DSA), sem importar nada**: `supabase/AUDITORIA-CURRICULO-OFICIAL.md`.
+  Confirmou (com fonte oficial, cruzando cartão-base + OMD + vigência) o livro atual das 6 classes regulares — inclusive
+  os 4 trocados pela OMD 021/2024, com vigência plena só a partir de **2026**; esclareceu oficialmente que Classes Agrupadas
+  NÃO são currículo próprio; mapeou a fonte/metodologia de versão das Especialidades (Manual comprado + OMDs pontuais); e o
+  fluxo de aprovação hierárquica das Classes de Liderança (Clube → Regional/Campo → SGC), que exige hierarquia acima do
+  clube que o modelo ainda não tem. Achou 4 lacunas reais de schema (requisito anual/dinâmico, escolha N-de-M com exclusão
+  de repetição, prazo de conclusão, aprovação hierárquica) — **documentadas, nada alterado**. 9 pontos ficaram
+  PENDENTE_DE_VALIDACAO (inclusive uma possível OMD 022/2026 não confirmada). Aguardando aprovação antes de importar
+  qualquer conteúdo oficial de verdade.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
