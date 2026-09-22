@@ -24,13 +24,16 @@ supabase/curriculo-manifesto/
     guia.json                 idem, Guia / Guia de Exploração
   validar.mjs                validador + relatório de cobertura (CLI)
   validar.autoteste.mjs      autoteste do validador, com fixtures SINTÉTICAS
+  gerar-importacao.mjs       (fase 3) gera a migration 40 + a fixture de teste A PARTIR deste manifesto
   README.md                  este arquivo
 ```
 
 Rodar:
 ```bash
-npm run curriculo:validar      # valida o manifesto real + imprime o relatório de cobertura
-npm run curriculo:autoteste    # prova que o validador rejeita cada violação pedida (fixtures fake)
+npm run curriculo:validar           # valida o manifesto real + imprime o relatório de cobertura
+npm run curriculo:autoteste         # prova que o validador rejeita cada violação pedida (fixtures fake)
+npm run curriculo:importacao:check  # a migration 40 e tests/_curriculo_regular_2026.sql batem com o manifesto? (gate)
+npm run curriculo:importacao:gerar  # regera os dois (só depois de mudar o manifesto — e aí é VERSÃO NOVA, ver abaixo)
 ```
 
 ## Por que `publicado_em` ≠ `vigente_desde` (a regra mais importante daqui)
@@ -144,10 +147,23 @@ extraído automaticamente da mesma página oficial (`cobertura: "resumo_fonte_of
 (mesma fonte primária), mas não conferido item a item contra o texto bruto. As 6 Classes Regulares
 (o pedido explícito desta fase) foram todas lidas de forma completa.
 
-## Próximo passo (não fazer sem aprovação)
+## Fase 3 — este manifesto É a fonte do catálogo oficial (migrations 39/40)
 
-Depois de aprovado, o caminho natural é: (1) evoluir o schema pras 4 lacunas (ou decidir
-conscientemente não representá-las ainda, documentando a perda), (2) escrever um importador que leia
-este manifesto e gere as linhas de `curriculum_versions`/`classes`/`class_sections`/
-`class_requirements` com `origem='oficial'`, preenchendo `fonte_hash`/`fonte_arquivo`/`importado_em`/
-`importado_por` (migration 37) a partir da proveniência já capturada aqui. Esta fase 2.5 não faz isso.
+As 6 Classes Regulares foram importadas pro banco **exclusivamente daqui**: `gerar-importacao.mjs` valida o
+manifesto (mesmo `validarDados`), monta o pacote canônico (só `classe_regular` das 6 — as avançadas ficam
+de fora), calcula o sha256 e gera `supabase/migrations/20260921000040_importar-classes-regulares-2026-1.sql`
+(uma chamada a `curriculo_importar_classes_regulares(pacote, hash)`, definida na migration 39) e
+`supabase/tests/_curriculo_regular_2026.sql` (o mesmo pacote, pro teste de integridade 36 comparar
+manifesto → banco). Ninguém copia requisito pra SQL à mão. Regras que valem daqui pra frente:
+
+- **Mudou o manifesto? É versão nova.** O importador recusa a MESMA `manifesto_versao` com outro conteúdo
+  (hash diferente) — uma versão publicada nunca é editada. Suba `manifesto_versao` (e `gerado_em`) em todos
+  os `classes/*.json`, regere (`curriculo:importacao:gerar`) e a migration nova cria outra `curriculum_version`;
+  a anterior fica, com o histórico de quem andou nela.
+- **`curriculo:importacao:check` é gate**: manifesto editado sem regerar = falha.
+- **`36_curriculo_oficial_integridade.sql` é gate permanente**: requisito editado à mão no SQL = falha.
+- O valor anual do Curso de Leitura NÃO está aqui nem na migration — entra como `dynamic_content_values`
+  com fonte, por ano, por classe (`curso_leitura_<classe>`).
+
+O que ainda NÃO é importado: Classes Avançadas (a pendência de Pesquisador de Campo e Bosque bloqueia),
+Liderança, catálogo de Especialidades.

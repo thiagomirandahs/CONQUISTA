@@ -58,6 +58,82 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 3 (migrations 39/40): as 6 Classes Regulares 2026 no catálogo oficial
+
+**Fonte única = o manifesto** (`supabase/curriculo-manifesto`). Ninguém recopiou requisito pra SQL nem pra React, e a
+migration não raspa nada: `gerar-importacao.mjs` (1) roda o mesmo `validarDados` do `curriculo:validar`, (2) monta o pacote
+canônico — só `classe_regular` das 6 (as avançadas ficam de fora; a pendente de Pesquisador de Campo e Bosque continua
+bloqueando a publicação delas), o registro de OMDs e o sha256 de cada arquivo lido —, (3) calcula o sha256 do pacote
+(chaves ordenadas) e (4) GERA a migration 40 (uma chamada a `curriculo_importar_classes_regulares(pacote, hash)`) e a
+fixture `tests/_curriculo_regular_2026.sql`. `npm run curriculo:importacao:check` regera em memória e compara byte a byte:
+manifesto editado sem regerar = gate vermelho.
+
+### O importador (migration 39) — determinístico, idempotente, sem aproximação
+- **Ids determinísticos**: `curriculo_uuid('req:2026.1:amigo.I.4')` etc. (md5 de `tipo:versão:id do manifesto`). Rodar de
+  novo com o mesmo manifesto = mesmo hash = no-op (`ja_importado`). A MESMA versão com outro conteúdo é **recusada** (versão
+  publicada nunca é editada — gera-se versão nova). Nada duplica: classe, seção, requisito, grupo, opção, slot dinâmico.
+- **Falha, não aproxima**: chave desconhecida em qualquer nível (whitelist por objeto), tipo fora de
+  `simples|anual_dinamico|escolha_n_de_m|escolha_n_de_m_sem_repeticao`, status `PENDENTE_DE_VALIDACAO`, `lacuna_schema`
+  incoerente com o tipo, OMD ausente do registro ou não CONFIRMADO, escolha sem opções/`n` fora de 1..M, sem_repeticao sem
+  pool, conjunto de classes ≠ as 6 → `raise exception` com o id do item.
+- **Sem mexer no texto/semântica**: `descricao` = `descricao_resumida` literal; `tipo_evidencia='nenhuma'`/não obrigatória
+  (o manifesto não declara evidência — nada foi inventado); notas (`vigente_desde_nota`, `nota_publicado_em`, `cobertura`,
+  `observacao_estrutural`) preservadas em `classes.proveniencia`; `observacao` do requisito em `observacao_fonte`.
+- **Anual/dinâmico**: o requisito referencia o slot `curso_leitura_<classe>` (`dynamic_content_definitions`, um por classe —
+  independente da versão, o conceito persiste). NENHUM valor anual é materializado: hoje não há `dynamic_content_values`
+  pros 6 slots (o manifesto não traz o livro de 2026 do Curso de Leitura); `minha_classe()` entrega `valor: null` e a
+  explicação diz `bloqueado` até alguém cadastrar o valor do ano COM fonte (dado, não migration). Isso não impede enviar/
+  aprovar o requisito — só é honesto na tela.
+- **N-de-M / sem_repeticao**: `requirement_option_groups(n_minimo, sem_repeticao, pool_sem_repeticao)` +
+  `requirement_options` (rótulo na ordem do cartão; `specialty_id` nulo — o catálogo de Especialidades não foi importado).
+  Os dois formatos do cartão são representados sem perda: com lista (ex.: Amigo V.1, 1 de 4) e sem lista (ex.:
+  Companheiro IX.1 — "1 em Artes e habilidades manuais, não realizada anteriormente" → grupo n=1, sem_repeticao, 0 opções).
+- **Proveniência**: `curriculum_versions` `classes-regulares-dsa 2026.1` (origem oficial, publicado, `vigente_desde =
+  max(vigente_desde das classes) = 2026-01-01` — a OMD 021/2024 obrigatória; `fonte_hash`, `fonte_arquivo`,
+  `importado_em`, `importado_por` nulo = migration, `fonte_detalhes` com `manifesto_versao`, `gerado_em`, `arquivos` +
+  sha256, `omds` completo — inclusive a 022/2026 pendente, só pra rastreabilidade — e `documentos_base`). Por classe:
+  `manifesto_id`, `idade_minima`, `vigente_desde`, `fonte_url`, `fonte_publicado_em` (carimbo ≠ vigência, os dois guardados).
+  Por requisito: `manifesto_id`, `status_fonte`, `alterado_por_omd`, `confirmado_por_omd`, `observacao_fonte`.
+  `requisito_origem(id)` resolve tudo isso (OMD com título/URL/status) — a tela mostra sob demanda ("Origem do requisito").
+- **Não matricula ninguém**: a importação só escreve catálogo; a verificação pós-upgrade confere 0 `member_classes`/
+  conquistas em classe oficial depois do upgrade de produção simulado.
+
+### Piloto, elegibilidade, Minha Classe
+- `[PILOTO/TESTE]` preservado (versão própria, `origem='piloto_teste'`) e **invisível no fluxo normal** quando existe
+  catálogo oficial publicado do mesmo tipo (`catalogo_oficial_publicado`): some de `classes_disponiveis()` e
+  `classe_iniciar/atribuir` respondem "não encontrada". A regra é condicional — arquivado o oficial, o piloto volta (os
+  testes 32/35 fazem isso na própria transação pra seguir exercitando o motor com dado pequeno). Mesma regra nas RPCs de
+  Especialidade, mas como não há especialidade oficial o piloto continua lá.
+- **Elegibilidade só com respaldo**: `idade_minima` é o único critério que a fonte declara → `_classe_motivo_inelegivel`
+  bloqueia (iniciar e atribuir) quando o nascimento é conhecido e a idade é menor; sem nascimento não bloqueia (não
+  inventa). Nenhuma sequência entre classes nem pré-requisito foi criado (0 `curriculum_dependencies` class→class) — o
+  manifesto não declara, e a auditoria §6 confirma que quem entra depois da idade faz várias classes ao mesmo tempo.
+- `minha_classe()` entrega por requisito `escolha` (grupo, n, opções, sem_repeticao, contagem automática) e
+  `conteudo_dinamico` (resolvido pra hoje) — Minha Classe só apresenta; `classes_disponiveis()` traz `idade_minima`,
+  `elegivel`, `motivo_inelegivel`. Nenhum nome/seção/requisito no React.
+
+### Testado
+`36_curriculo_oficial_integridade.sql` (40 asserts — **gate permanente**: hash do texto = hash do fixture = `fonte_hash`;
+classes/seções/requisitos manifesto→banco por `except` nos dois sentidos — texto exato, tipo, status, OMDs, observação,
+n, opções em ordem, pool; ids determinísticos; nenhum "20xx" em requisito anual e nenhum valor anual cadastrado; 0
+dependências; 0 prazo; OMDs citadas CONFIRMADO com URL; 6 documentos-base; 7 arquivos com sha256; reimportar = no-op;
+mesma versão com outro conteúdo recusada; e o próprio teste adultera um texto, apaga uma opção e desliga um
+sem_repeticao pra provar que a comparação pega — 2, 4, 6 divergências). `37_classes_regulares_2026_cenarios.sql`
+(65 asserts — os 12 cenários pedidos: 6 classes uma vez só e nenhuma avançada; banco = manifesto; Companheiro I.5 é "Um
+Simples Lanche" (OMD 021/2024) e não "Caminho a Cristo", os 4 livros trocados + Amigo confirmado; dinâmico referencia o
+slot, resolve 2026 quando cadastrado, 2027 não reaproveita, texto intocado; Amigo V.1 chega como regra declarativa 1 de 4
+na ordem do cartão; Companheiro IX.1 sem lista e Excursionista IX.1 com lista; a primitiva do não-repetir lê
+`curriculum_achievements`; `multi_dois_papeis` faz Amigo em A e B com progresso independente (25 requisitos cada), lider_a
+não vê/aprova o de B, conclusão em A → conquista portátil com origem A visível ao lider_b e não revogável por ele;
+elegibilidade por idade (12 anos: 3 elegíveis/3 não, Pioneiro recusado, lider sem nascimento não bloqueado); piloto
+invisível e preservado; "Origem do requisito" com OMD/URL/hash/carimbo≠vigência; importação sem progresso). Vitest
+`MinhaClasse.test.jsx` (5). Upgrade simulado passou a 116 asserts.
+
+### Limites honestos desta fase
+Valor anual do Curso de Leitura NÃO cadastrado (não está no manifesto; entra como dado com fonte). Classes Avançadas,
+Liderança e catálogo de Especialidades NÃO importados (as opções N-de-M são rótulos, `specialty_id` nulo — a contagem
+automática só passa a valer quando o catálogo de Especialidades existir). PDF/cartão/assinatura fora. Nada em produção.
+
 ## Motor curricular — fase 2.6 (migration 38): motor de regras curriculares
 
 O manifesto da fase 2.5 marcou 4 lacunas de schema (`AUDITORIA-CURRICULO-OFICIAL.md` §10). Esta migration dá a cada uma

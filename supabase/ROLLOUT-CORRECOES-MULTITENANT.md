@@ -15,11 +15,13 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`38`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`40`.
+   (A `40` é GERADA do manifesto curricular — `npm run curriculo:importacao:check` tem que passar antes; ela publica o catálogo
+   oficial das 6 Classes Regulares 2026 sem matricular ninguém, e reaplicá-la é no-op.)
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
    **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
-   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`38` são idempotentes. (A `02` também: aplique uma vez.)
+   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`40` são idempotentes. (A `02` também: aplique uma vez.)
 
 ## Ordem
 | # | O quê | Onde |
@@ -132,7 +134,8 @@ e versículos; **PIX e popup** salvam; chat geral e da unidade funcionam; **Rank
 ## Testes (local, sem produção)
 ```bash
 npm run test:db          # replay do zero de TODAS as migrations + seed num banco isolado + 35 arquivos de teste
-npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..38 (114 asserts)
+npm run test:db:upgrade  # simula o upgrade de produção: schema legado + dados vivos + pré-voo → 01..40 (116 asserts)
+npm run curriculo:importacao:check # a migration 40 (catálogo oficial) bate byte a byte com o manifesto? (manifesto editado sem regerar = FALHA)
 npm run test:db:real     # `supabase db reset` DE VERDADE (CLI 2.117.0 via npx) + a suíte no banco resultante
 npm run check            # lint + vitest + build
 npm run test:storage:e2e # Storage REAL local: upload com upsert, URL pública bloqueada, URL assinada por clube, lote, listagem, bucket publico (48 asserts)

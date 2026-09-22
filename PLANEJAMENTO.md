@@ -415,6 +415,21 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   rejeita `lacuna_schema` sem representação (autoteste: 16 casos). Testes: `35_motor_de_regras_curriculares.sql` (133
   asserts, os 10 cenários pedidos) + 34 atualizado (46) + matriz 20 (5 exceções novas). As 6 Classes continuam NÃO
   importadas; PDF/cartão/assinatura/Liderança/catálogo de Especialidades seguem fora.
+- ✅ **Fase 3 — Importação oficial das 6 Classes Regulares 2026 (migrations 39/40)**: catálogo publicado a partir
+  EXCLUSIVAMENTE do manifesto — `gerar-importacao.mjs` valida o manifesto, monta o pacote canônico (só `classe_regular`
+  das 6; avançadas fora), calcula o sha256 e GERA a migration 40 (`curriculo_importar_classes_regulares(pacote, hash)`) e
+  a fixture de teste; `npm run curriculo:importacao:check` falha se o manifesto mudar sem regerar. Importador determinístico
+  (ids = md5 de `versão:item`), idempotente (mesmo hash = no-op; mesma versão com outro conteúdo = RECUSADO) e sem
+  aproximação (chave/tipo/status/OMD/escolha fora do schema = falha). `curriculum_version` `classes-regulares-dsa 2026.1`
+  (origem oficial, vigente desde 2026-01-01, `fonte_hash`, `fonte_detalhes` com OMDs, documentos-base e sha256 de cada
+  arquivo). Anual/dinâmico → slot `curso_leitura_<classe>` (nada de "2026" no requisito; o valor do ano entra depois, com
+  fonte — hoje NENHUM cadastrado); N-de-M e sem_repeticao → `requirement_option_groups`/`requirement_options` (+ `pool_sem_repeticao`).
+  Proveniência por requisito (`manifesto_id`, `status_fonte`, OMDs, observação) + RPC `requisito_origem()` e "Origem do
+  requisito" na tela. Piloto preservado e invisível no fluxo normal quando há oficial. Elegibilidade SÓ por `idade_minima`
+  (o que a fonte declara; sem nascimento não bloqueia); nenhuma sequência inventada. Minha Classe consome o oficial
+  (escolha/dinâmico/origem do banco). Testes: 36 (integridade permanente manifesto→banco, 40 asserts, inclusive
+  auto-adulteração detectada), 37 (12 cenários, 65), Vitest MinhaClasse (5); upgrade legado agora confere catálogo sem
+  progresso. Não avançou pra PDF/cartão, assinatura, Liderança nem catálogo de Especialidades.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
@@ -532,7 +547,9 @@ Criar visão “Classes” para liderança com:
    PDF/assinatura formal — especialidade não tem equivalente a investidura, é reconhecida/entregue).
 7. ✅ Testar uma classe completa com Tenant 001 (e Tenant 002, com isolamento cruzado) e uma especialidade completa nos dois,
    incluindo turma com instrutor responsável não-liderança e dependência de classe→especialidade.
-8. ⏸️ Importar as demais classes/especialidades após validação do piloto (e da fonte oficial da etapa 1).
+8. 🔶 Importar as demais classes/especialidades: ✅ as 6 Classes Regulares 2026 (fase 3, migration 40, gerada do manifesto);
+   ⏸️ Classes Avançadas (bloqueadas pelo PENDENTE_DE_VALIDACAO de Pesquisador de Campo e Bosque), Liderança, catálogo de
+   Especialidades e o valor anual do Curso de Leitura (dado com fonte, não migration).
 
 
 ## 13. Arquitetura institucional e expansão hierárquica
