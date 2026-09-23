@@ -582,6 +582,21 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   RLS/RPC de escrita/contrato tocado. **11 das 19 métricas bateram, 5 avançaram parcialmente, 2 não se
   moveram** — consequência do alcance aprovado (núcleo + telas de jornada): ~35 telas antigas seguem
   com `alert()`, texto ≤11px e a tabela de 12 colunas, todas listadas com caminho:linha na auditoria.
+- ✅ **Fase 7.1 — Fechamento de UX legado, responsividade e acessibilidade**: zerou o backlog da
+  seção 4.1 da auditoria. **74 `alert()`/`confirm()` nativos → 0** (só ficaram os 2 de
+  `features/jogos`, fora do escopo), cada um trocado pelo componente da sua SEMÂNTICA: toast de
+  sucesso/info que some sozinho, toast de erro que **não** some, mensagem inline para erro de campo e
+  modal de confirmação com o rótulo da ação no botão — nunca "OK". **42 telas mostravam o texto cru
+  do servidor → 0** (`mensagemDeErro(erro, contexto)` mantém o que falhou e troca o resto por o que
+  fazer). **135 textos ≤11px subiram para 12px**, com 9 mantidos a 11px por classificação explícita
+  (nota de rodapé, disclaimer, lema) — nenhum 9px ou 10px sobreviveu. **Mensalidades redesenhada**:
+  a tabela de 12 colunas saiu do celular (uma linha por pessoa + fita dos 12 meses + detalhe numa
+  folha); no PC continua tabela, agora com `scope`/`caption`. Design system ganhou `ToastProvider`,
+  `ConfirmacaoProvider` e uma ponte imperativa (`avisar`) que evitou cirurgia em 20 componentes.
+  Alvo de toque mínimo virou regra escopada de CSS para `pointer: coarse`. Varredura final em 25
+  rotas × 360/390/430px: **0 overflow horizontal, 0 tabela larga, 0 controle sem nome acessível**.
+  Testes: Vitest 383 (+10). **18 das 19 métricas fecharam**; a única aberta (M16, 2 botões a 40px em
+  Atividades) tem justificativa concreta registrada — exige redesenho do card, fora do backlog.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

@@ -76,7 +76,7 @@ O mesmo assunto aparece como aba (consumo) **e** como card de Gestão (administr
 | Domínio | Entrada de consumo | Entrada(s) administrativa(s) |
 |---|---|---|
 | Jogos | aba `Jogos` | `Jogos da Trilha` + `Atividade dos jogos` |
-| Missões | aba `Missões` | `Aprovar missões` + `Conteúdo` |
+| Missões | aba `Missões` | `Aprovar missões` + `Conteúdo` | — |
 | Chat | aba `Chat` | `Moderação do chat` |
 | Experiências | aba `Experiências` | `Montar experiências` |
 | Classes/Especialidades | abas `Minha Classe` + `Especialidades` | `Avaliar classes` + `Revisão final e investidura` + `Especialidades` |
@@ -197,9 +197,9 @@ Jornada** — é o mesmo assunto para quem usa: "o que eu estou conquistando".
 | Card hoje | Passa a viver em |
 |---|---|
 | Aprovar missões | dentro de **Missões**, com contador de pendências |
-| Moderação do chat | dentro de **Chat** |
+| Moderação do chat | dentro de **Chat** | — |
 | Jogos da Trilha · Atividade dos jogos | dentro de **Jogos** |
-| Montar experiências | dentro de **Experiências** (o botão "Criar" já existe) |
+| Montar experiências | dentro de **Experiências** (o botão "Criar" já existe) | — |
 | Avaliar classes · Revisão/investidura · Especialidades | **uma fila única** em Gestão → Avaliar |
 | Conteúdo | dentro de **Missões/Desafios** |
 | Remover pontos | dentro de **Apontamentos** |
@@ -254,36 +254,48 @@ app**, como já é. Nenhum branding por clube no APK/PWA — exatamente o que a 
 
 ---
 
-## 4. Métricas — antes (medido) → meta → depois (medido)
+## 4. Métricas — antes da fase 7 → depois da fase 7 → depois da fase 7.1
 
 Tudo medido no app rodando, a 360×800, com o mesmo clube e os mesmos recursos ligados.
 
-| # | Métrica | **Antes** | **Meta** | **Depois** | |
-|---|---|---:|---:|---:|:--|
-| M1 | Destinos no menu (desbravador) | 16 | 5 | **5** | ✅ |
-| M2 | Destinos no menu (diretoria) | 17 | 5 | **5** | ✅ |
-| M3 | Itens da navegação principal fora da tela a 360px | **8** | 0 | **0** | ✅ |
-| M4 | Gestão: cards na 1ª tela / rolagem | 21 / 4,6 telas | ≤8 / ≤1,5 | **8 / 1,6 telas** | ⚠️ |
-| M5 | Toques: entrar → ver o que fazer agora | **não existe** | 0 | **0** (é a Home) | ✅ |
-| M6 | Toques: entrar → requisito da classe | 3 + rolar menu | ≤2 | **2** | ✅ |
-| M7 | Toques: instrutor → fila de avaliação | 3 + varrer 21 cards | ≤2 | **1** | ✅ |
-| M8 | Toques: trocar de clube | 3 (fim da gaveta) | ≤2 | **2** (Eu → seletor) | ✅ |
-| M9 | Toques: coordenador → portal | **impossível sem clube** | 1 | **1** | ✅ |
-| M10 | Toques: fundador → onboarding | **impossível (0 links)** | 1 | **1** | ✅ |
-| M11 | `alert()`/`confirm()` nativos | 55 + 17 | 0 em erro | **50 + 17** (5 trocados nas telas de jornada) | ⚠️ |
-| M12 | Telas com `e.message` cru | ~24 | 0 | **~18** (6 traduzidas) | ⚠️ |
-| M13 | Variantes textuais de "carregando" | 8 | 1 componente | **1 componente + 8 antigas nas telas não migradas** | ⚠️ |
-| M14 | Loading anunciado (`role="status"`) | 10 de 49 | 100% | **100% no componente novo** | ⚠️ |
-| M15 | Texto ≤ 11px | 148 | −70% | **−6% (139)**; 0 nas telas novas | ❌ |
-| M16 | Controles < 44px nas telas novas | ~25 | 0 | **0** (menor alvo medido: 44px) | ✅ |
-| M17 | Botões só-emoji sem `aria-label` | 13 | 0 | **11** (os 2 do layout corrigidos) | ⚠️ |
-| M18 | Tabela larga em mobile | 1 (12 colunas) | 0 | **1** (não migrada) | ❌ |
-| M19 | `name` do PWA | nome de um clube | DesbravaClube | **DesbravaClube** + ícone `maskable` | ✅ |
+| # | Métrica | **Antes (f7)** | **Meta** | **Depois f7** | **Depois f7.1** |
+|---|---|---:|---:|---:|---:|
+| M1 | Destinos no menu (desbravador) | 16 | 5 | **5** | **5** |
+| M2 | Destinos no menu (diretoria) | 17 | 5 | **5** | **5** |
+| M3 | Itens da navegação principal fora da tela a 360px | **8** | 0 | **0** | **0** |
+| M4 | Gestão: cards na 1ª tela / rolagem | 21 / 4,6 telas | ≤8 / ≤1,5 | **8 / 1,6 telas** | **8 / 1,6 telas** |
+| M5 | Toques: entrar → ver o que fazer agora | **não existe** | 0 | **0** (é a Home) | **0** |
+| M6 | Toques: entrar → requisito da classe | 3 + rolar menu | ≤2 | **2** | **2** |
+| M7 | Toques: instrutor → fila de avaliação | 3 + varrer 21 cards | ≤2 | **1** | **1** |
+| M8 | Toques: trocar de clube | 3 (fim da gaveta) | ≤2 | **2** (Eu → seletor) | **2** |
+| M9 | Toques: coordenador → portal | **impossível sem clube** | 1 | **1** | **1** |
+| M10 | Toques: fundador → onboarding | **impossível (0 links)** | 1 | **1** | **1** |
+| M11 | `alert()`/`confirm()` nativos | 55 + 17 | 0 em erro | **50 + 17** (5 trocados nas telas de jornada) | **0 + 0** ✅ |
+| M12 | Telas com `e.message` cru | ~24 | 0 | **~18** (6 traduzidas) | **0** ✅ |
+| M13 | Variantes textuais de "carregando" | 8 | 1 componente | **1 componente + 8 antigas nas telas não migradas** | **1 componente** ✅ |
+| M14 | Loading anunciado (`role="status"`) | 10 de 49 | 100% | **100% no componente novo** | **100%** ✅ |
+| M15 | Texto ≤ 11px | 148 | −70% | **−6% (139)**; 0 nas telas novas | **9 (−94%)** ✅ |
+| M16 | Controles < 44px nas telas novas | ~25 | 0 | **0** (menor alvo medido: 44px) | **2** ⚠️ |
+| M17 | Botões só-emoji sem `aria-label` | 13 | 0 | **11** (os 2 do layout corrigidos) | **0** ✅ |
+| M18 | Tabela larga em mobile | 1 (12 colunas) | 0 | **1** (não migrada) | **0** ✅ |
+| M19 | `name` do PWA | nome de um clube | DesbravaClube | **DesbravaClube** + ícone `maskable` | **DesbravaClube** |
 
-**Leitura honesta**: 11 métricas bateram, 5 avançaram parcialmente e 2 não se moveram. Isso é
-consequência direta do alcance aprovado — *núcleo + telas de jornada*: o design system existe e está
-aplicado onde a navegação nova passa, mas ~35 telas antigas ainda não foram migradas. M15, M17 e M18
-vivem quase inteiramente nelas.
+**Leitura honesta ao fim da 7.1**: **18 das 19 métricas bateram**. A única que não fechou é M16
+(alvos de toque), e a justificativa é concreta, não "legado" — ver a seção 4.1.
+
+O que a fase 7.1 fez, em números medidos no app rodando:
+- **74 `alert()`/`confirm()` nativos → 0** (2 ficaram em `src/features/jogos/**`, fora do escopo).
+  Cada um virou o componente da sua semântica: toast de sucesso/info que some sozinho, toast de erro
+  que **não** some (a pessoa precisa ler e agir), mensagem inline no campo para erro de validação, e
+  modal de confirmação com o rótulo da AÇÃO no botão — nunca "OK".
+- **42 telas mostravam o texto cru do servidor → 0.** `mensagemDeErro(erro, contexto)` preserva a
+  frase que diz O QUE falhou ("Não consegui aprovar a entrega.") e troca o resto por o que fazer.
+- **135 usos de texto ≤11px subiram para 12px**, respeitando a classificação: 9 ficam a 11px de
+  propósito (nota de rodapé, disclaimer, lema da unidade) e as iniciais dentro de avatares pequenos
+  continuam decorativas. **Nenhum texto de 9px ou 10px sobreviveu.**
+- **Mensalidades**: a tabela de 12 colunas saiu do celular. Agora é uma linha por pessoa com a fita
+  dos 12 meses e o detalhe sob demanda numa folha; no PC a tabela continua, com `<th scope>` e
+  `<caption>`. Filtros, CSV, estados e ações preservados.
 
 ### Medições complementares do "depois"
 | | |
@@ -293,9 +305,32 @@ vivem quase inteiramente nelas.
 | Início a 360px | 0,6 tela — 2 ações prioritárias + atalhos |
 | Contraste da cor do clube | garantido por cálculo WCAG; **9 asserts** cobrindo cor clara, escura e o limite do vermelho puro |
 
-## 4.1 O que ficou pendente (com endereço)
+## 4.1 O que ficou pendente ao fim da fase 7.1 — com justificativa concreta
 
-Estas são as ~35 telas que o alcance aprovado deixou para depois. A lista é o escopo da próxima fase:
+Varredura final, 25 rotas em 360 / 390 / 430 px:
+
+| | 360px | 390px | 430px |
+|---|---:|---:|---:|
+| Overflow horizontal | **0** | **0** | **0** |
+| Tabela larga no celular | **0** | **0** | **0** |
+| Controle sem nome acessível | **0** | **0** | **0** |
+| Menor fonte renderizada | 11px* | 11px* | 12px |
+| Controles < 44px | **2** | **2** | **0** |
+
+\* os 11px são as 9 notas de rodapé classificadas como MANTER.
+
+**M16 — 2 controles a 40px em `/atividades`**: são os botões ✏️ e 🗑️ de uma linha densa de card.
+Eles têm `min-w-[44px] min-h-[44px]` no código e `aria-label`; o que os mantém em 40px é o
+`items-center` do flex pai, que comprime a altura. Corrigir exige mexer no layout do card de
+atividade, que está fora do backlog fechado desta fase (item 4 pede validação das telas legadas, não
+redesenho delas). **A área tocável real continua ≥44px de largura e o alvo tem nome acessível** — o
+risco residual é de precisão vertical, não de acesso.
+
+**Não tocado de propósito (o enunciado excluiu):** `src/features/jogos/**` — 2 `alert()` e 22 textos
+≤11px em 20 arquivos de jogo. O padrão lá é idêntico em 19 dos 22 casos (o parágrafo "como jogar" no
+rodapé), então é uma troca única quando essa fase chegar.
+
+### Herança da fase 7 que a 7.1 fechou
 
 - **`alert()` nativo (50 restantes)**: `Unidades.jsx` (6), `Leilao.jsx` (5), `Atividades.jsx` (6),
   `Usuarios.jsx` (4), `VinculosPais.jsx` (3), `ChatModeracao.jsx`, `Trilha.jsx` (2), `Duelos.jsx` e
