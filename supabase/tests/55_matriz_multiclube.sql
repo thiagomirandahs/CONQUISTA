@@ -198,6 +198,28 @@ select t.eq('[clube errado] nada apareceu em B',
 select t.eq('...e se algo entrou, entrou em A (o clube da requisição), nunca em B',
   t.n($q$select count(*) from public.eventos where titulo = 'carimbo errado' and club_id <> t.id('clube_a')$q$), 0);
 
+-- AUTORIDADE REAL, ABA ERRADA. Este é o achado que o red-team automático encontrou, escrito à mão
+-- para ficar legível: `tri` é instrutora em C DE VERDADE. A permissão dela existe. O que não pode
+-- existir é exercê-la de dentro da aba de B. Antes da migration 64, `unidade_excluir` derivava o
+-- clube da unidade alvo e respondia {"ok": true} — apagava a unidade de C por um clique dado em B.
+select t.como('tri'); select t.pedir_clube('clube_b');
+select t.throws('[aba errada] instrutora de C, operando em B, NÃO apaga a unidade de C',
+  $q$select public.unidade_excluir(t.id('C1'))$q$, 'Sem permissão');
+reset role;
+select t.eq('...e a unidade de C continua lá',
+  t.n($q$select count(*) from public.unidades where id = t.id('C1')$q$), 1);
+-- E o contraponto, que é o que impede a correção de virar um bloqueio cego: na aba CERTA ela pode.
+\o /dev/null
+insert into public.unidades (nome, cor, club_id) values ('Descartável C', '#123456', t.id('clube_c'));
+insert into t.ids (chave, id) select 'C2', id from public.unidades where nome = 'Descartável C';
+\o
+select t.como('tri'); select t.pedir_clube('clube_c');
+select t.permitido('[aba certa] a MESMA pessoa, na aba de C, apaga a unidade de C normalmente',
+  $q$select public.unidade_excluir(t.id('C2'))$q$, 0);
+reset role;
+select t.eq('...e a unidade sumiu de verdade',
+  t.n($q$select count(*) from public.unidades where id = t.id('C2')$q$), 0);
+
 -- Unidade HOMÔNIMA: o nome é igual nos três, o alvo tem de ser o id, nunca o nome.
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.bloqueado('[homônimas] a diretoria de A não move a unidade de B que tem o mesmo nome',
@@ -441,6 +463,201 @@ update public.club_features set enabled = false where club_id = t.id('clube_c') 
 select t.eq('[flags] o chat fica ligado em B', t.txt($q$select public.recurso_habilitado_no_clube(t.id('clube_b'), 'chat')::text$q$), 'true');
 select t.eq('[flags] e desligado em C, ao mesmo tempo', t.txt($q$select public.recurso_habilitado_no_clube(t.id('clube_c'), 'chat')::text$q$), 'false');
 select t.eq('[flags] e A segue independente', t.txt($q$select public.recurso_habilitado_no_clube(t.id('clube_a'), 'chat')::text$q$), 'true');
+
+-- =============================================================================
+--  9. RED-TEAM AUTOMÁTICO — ids REAIS de um clube, usados operando em OUTRO
+--
+--  O teste 24 já faz esta varredura entre A e B. O que a 8.4 acrescenta são as duas coisas que
+--  dois clubes não conseguem provar:
+--
+--    · o TERCEIRO clube. Com A e B, "o outro clube" e "o clube que não é o meu" são a mesma coisa,
+--      e qualquer lógica acidentalmente binária passa. C separa as duas;
+--    · a pessoa MULTI-CLUBE. Ela é o pior caso possível: as funções lhe devem responder de verdade
+--      sobre A e sobre C, e a única coisa que decide qual das duas é a ABA. Um oráculo aqui não é
+--      "id de clube alheio vaza"; é "id do MEU outro clube responde diferente na aba errada".
+--
+--  A sonda é a mesma das fases anteriores: resposta para (id real de outro clube) tem de ser
+--  idêntica à resposta para (uuid aleatório), byte a byte, incluindo o sqlstate.
+-- =============================================================================
+\o /dev/null
+reset role;
+create table t.alvos (clube text, id uuid, rotulo text);
+-- O pool alcança tabelas com `club_id` E com `club_id_origem`.
+--
+-- A segunda coluna entrou na 8.4 e pagou na hora: `curriculum_achievements` e
+-- `class_completion_snapshots` — conquista portátil e snapshot de classe, justamente os registros
+-- que VIAJAM entre clubes e portanto os de maior consequência — não têm coluna `club_id`. Uma
+-- varredura que só procurasse `club_id` passaria por eles sem sondar um único id, e o relatório
+-- diria zero divergências com a mesma cara de "está tudo certo".
+create function t.montar_alvos(p_clube text) returns void language plpgsql as $$
+declare r record; v_club uuid := t.id(p_clube);
+begin
+  for r in
+    select c.table_name, d.column_name as col
+      from information_schema.columns c
+      join information_schema.columns d
+        on d.table_schema = c.table_schema and d.table_name = c.table_name
+       and d.column_name in ('club_id', 'club_id_origem')
+     where c.table_schema = 'public' and c.column_name = 'id' and c.data_type = 'uuid'
+  loop
+    execute format('insert into t.alvos select %L, id, %L from public.%I where %I = %L limit 2',
+                   p_clube, r.table_name, r.table_name, r.col, v_club);
+  end loop;
+  insert into t.alvos values (p_clube, v_club, 'o próprio clube');
+end $$;
+select t.montar_alvos('clube_a');
+select t.montar_alvos('clube_b');
+select t.montar_alvos('clube_c');
+grant select on t.alvos to public;
+create table t.cobertura (rotulo text, sondadas int, existentes int);
+grant all on t.cobertura to public;
+
+-- Monta "select public.f(args)" com o alvo na posição i e neutros nas demais.
+-- O laço usa os limites REAIS do array: `proargtypes::oid[]` vem de um oidvector e é 0-BASED.
+-- Foi essa exata linha, escrita como `1..pronargs`, que deixou 84% da superfície sem sondar até a
+-- fase 8.2 — e foi por essa fresta que os RPCs cross-tenant passaram despercebidos.
+create function t.chamada3(p_nome text, p_tipos oid[], p_pos int, p_alvo uuid, p_outros uuid) returns text language plpgsql as $$
+declare j int; v_args text[] := '{}'; v_tipo text; v_arg text;
+begin
+  for j in array_lower(p_tipos, 1) .. array_upper(p_tipos, 1) loop
+    v_tipo := p_tipos[j]::regtype::text;
+    v_arg := case
+      when j = p_pos then format('%L::uuid', p_alvo)
+      when v_tipo = 'uuid' then format('%L::uuid', p_outros)
+      when v_tipo = 'text' then quote_literal('x')
+      when v_tipo = 'integer' then '1'
+      when v_tipo = 'bigint' then '1'
+      when v_tipo = 'boolean' then 'true'
+      when v_tipo = 'jsonb' then $x$'{}'::jsonb$x$
+      when v_tipo = 'json' then $x$'{}'::json$x$
+      when v_tipo = 'uuid[]' then $x$'{}'::uuid[]$x$
+      when v_tipo = 'text[]' then $x$'{}'::text[]$x$
+      when v_tipo = 'date' then 'current_date'
+      when v_tipo = 'timestamp with time zone' then 'now()'
+      else null end;
+    if v_arg is null then return null; end if;   -- vira número no assert de cobertura, não silêncio
+    v_args := v_args || v_arg;
+  end loop;
+  return format('select (public.%I(%s))::text', p_nome, array_to_string(v_args, ', '));
+end $$;
+
+-- Sonda que SEMPRE desfaz o efeito. A varredura chama toda função pública que aceita uuid, e boa
+-- parte delas é VOLATILE: elas escrevem. Com a sonda simples (`t.sonda`), a varredura de A deixava
+-- estado para trás e a varredura de C media um banco já mexido — as duas davam resultados
+-- diferentes só por causa da ORDEM. O truque é o mesmo do teste 24: levanta uma exceção própria
+-- carregando o resultado, o que faz a subtransação voltar atrás, e devolve o resultado pelo
+-- sqlerrm. Nada do que a varredura chama sobrevive à própria chamada.
+create function t.sonda_limpa(p_sql text) returns text language plpgsql as $$
+declare v text;
+begin
+  begin
+    execute p_sql into v;
+    raise exception using errcode = 'ZZ001', message = coalesce(v, 'nulo');
+  exception when others then
+    if sqlstate = 'ZZ001' then return 'R:' || sqlerrm; end if;
+    return 'E:' || sqlstate;
+  end;
+end $$;
+
+-- Varre com a sessão JÁ aberta (t.como + t.pedir_clube antes). Devolve as divergências.
+-- p_inclui_o_clube: sondar também o ID DO CLUBE em si, não só os dados dele.
+--
+-- Para quem NÃO é membro do clube alvo isso é obrigatório: `membro_ativo_no_clube(id_do_clube_B)`
+-- respondendo diferente de um uuid aleatório seria um oráculo de existência de clube.
+--
+-- Para quem É membro dos três é o contrário: essas funções respondem "sim, você tem vínculo aqui",
+-- e é a verdade sobre o vínculo DELA. Ela sabe disso — basta trocar de aba. Exigir que a resposta
+-- fosse igual à de um uuid inventado seria exigir que o produto mentisse para a própria pessoa
+-- sobre onde ela está inscrita. (É o mesmo recorte que o teste 24 já faz ao tirar do pool as
+-- pessoas com vínculo em mais de um clube.)
+--
+-- O que continua sendo sondado para ela, e é o que importa, são os IDS DE CONTEÚDO: foto, evento,
+-- ponto, mensalidade, unidade, conquista. Um desses respondendo diferente pela aba errada seria
+-- vazamento de verdade — e são exatamente esses que dão zero abaixo.
+create function t.redteam(p_rotulo text, p_clube_alvo text, p_inclui_o_clube boolean default true) returns text language plpgsql as $$
+declare f record; p record; i int; v_a text; v_b text; v_sa text; v_sb text;
+        v_dif text := ''; v_rnd uuid := gen_random_uuid(); v_n int := 0;
+begin
+  for f in
+    select pr.proname, pr.proargtypes::oid[] as tipos
+    from pg_proc pr
+    where pr.pronamespace = 'public'::regnamespace and pr.prokind = 'f'
+      and not pr.proretset and pr.prorettype <> 'trigger'::regtype
+      and has_function_privilege(current_user, pr.oid, 'execute')
+      and 'uuid'::regtype::oid = any (pr.proargtypes::oid[])
+      -- IMMUTABLE não lê o banco: o que devolve sai do que o próprio chamador passou.
+      and pr.provolatile <> 'i'
+    order by 1
+  loop
+    for i in array_lower(f.tipos, 1) .. array_upper(f.tipos, 1) loop
+      continue when f.tipos[i] is distinct from 'uuid'::regtype::oid;
+      for p in select distinct on (id) id, rotulo from t.alvos
+                where clube = p_clube_alvo
+                  and (p_inclui_o_clube or rotulo <> 'o próprio clube') loop
+        v_sa := t.chamada3(f.proname, f.tipos, i, p.id, v_rnd);
+        continue when v_sa is null;
+        v_sb := t.chamada3(f.proname, f.tipos, i, v_rnd, v_rnd);
+        v_a := t.sonda_limpa(v_sa); v_b := t.sonda_limpa(v_sb); v_n := v_n + 1;
+        if v_a is distinct from v_b then
+          v_dif := v_dif || format(E'\n    %s(arg %s) alvo=%s(%s): [%s] x aleatório: [%s]',
+                                   f.proname, i, p.rotulo, p_clube_alvo, left(v_a, 80), left(v_b, 80));
+        end if;
+      end loop;
+    end loop;
+  end loop;
+  insert into t.cobertura values (p_rotulo, v_n, null);
+  return v_dif;
+end $$;
+\o
+
+-- A diretoria de A, operando em A, sondando ids REAIS de B e de C.
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.eq('[red-team] A→B: nenhuma função distingue id real de B de um uuid inexistente',
+  t.txt($q$select t.redteam('A→B', 'clube_b')$q$), '');
+select t.eq('[red-team] A→C: idem para o terceiro clube',
+  t.txt($q$select t.redteam('A→C', 'clube_c')$q$), '');
+reset role;
+
+-- E o espelho, que é o que pega lógica binária: C é o clube pequeno, sem nada especial.
+select t.como('lider_c'); select t.pedir_clube('clube_c');
+select t.eq('[red-team] C→A: o clube menor não descobre nada do legado',
+  t.txt($q$select t.redteam('C→A', 'clube_a')$q$), '');
+select t.eq('[red-team] C→B: nem do clube grande',
+  t.txt($q$select t.redteam('C→B', 'clube_b')$q$), '');
+reset role;
+
+-- O PIOR CASO: a pessoa dos três clubes, operando na aba de B, sondando CONTEÚDO de A e de C.
+-- Se alguma função responder pelo vínculo em vez de pela aba, um dado de A chega pela aba de B.
+select t.como('tri'); select t.pedir_clube('clube_b');
+select t.eq('[red-team] multi-clube na aba de B: nenhum dado de A responde diferente de inexistente',
+  t.txt($q$select t.redteam('tri@B→A', 'clube_a', false)$q$), '');
+select t.eq('[red-team] multi-clube na aba de B: nem nenhum dado de C',
+  t.txt($q$select t.redteam('tri@B→C', 'clube_c', false)$q$), '');
+-- E o registro do que NÃO é vazamento, para o achado não voltar como falso positivo: perguntar
+-- "eu sou membro do clube A?" responde SIM em qualquer aba, e deve responder mesmo.
+select t.eq('...e perguntar pelo PRÓPRIO vínculo continua respondendo a verdade, em qualquer aba',
+  t.txt($q$select public.membro_ativo_no_clube(t.id('clube_a'))::text$q$), 'true');
+reset role;
+
+-- =============================================================================
+--  A COBERTURA. Sem este assert, os seis zeros acima podem significar "nada vazou" OU
+--  "nada foi sondado", e os dois se parecem exatamente igual no relatório.
+-- =============================================================================
+select t.como('lider_a');
+select t.eq('a varredura alcança TODAS as posições uuid das funções que ela deve cobrir',
+  t.n($q$select count(*) from (
+        select pr.proname, generate_subscripts(pr.proargtypes::oid[], 1) as i, pr.proargtypes::oid[] as tipos
+          from pg_proc pr
+         where pr.pronamespace = 'public'::regnamespace and pr.prokind = 'f'
+           and not pr.proretset and pr.prorettype <> 'trigger'::regtype
+           and has_function_privilege('authenticated', pr.oid, 'execute')
+           and 'uuid'::regtype::oid = any (pr.proargtypes::oid[])
+           and pr.provolatile <> 'i'
+       ) s where s.tipos[s.i] = 'uuid'::regtype::oid
+         and t.chamada3(s.proname, s.tipos, s.i, gen_random_uuid(), gen_random_uuid()) is null$q$), 0);
+reset role;
+select t.ok('...e cada uma das seis varreduras sondou alguma coisa de verdade',
+  t.n($q$select count(*) from t.cobertura where sondadas > 0$q$) = 6);
 
 select t.fim();
 rollback;

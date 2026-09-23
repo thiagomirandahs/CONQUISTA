@@ -430,8 +430,21 @@ select t.eq('...e a conquista saiu com club_id_origem = B (proveniência real), 
   (select club_id_origem from public.curriculum_achievements where usuario_id = t.id('membro_b') and specialty_id = t.id('esp_z')), t.id('clube_b'));
 insert into t.ids (chave, id) select 'ach_z_membro_b', id from public.curriculum_achievements where usuario_id = t.id('membro_b') and specialty_id = t.id('esp_z');
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.throws('lider_a, operando no A, NÃO revoga a conquista emitida por B (o header não é a autoridade; club_id_origem é)',
-  format($q$select public.curriculum_achievement_revogar(%L, 'forjando')$q$, t.id('ach_z_membro_b')), 'clube que emitiu');
+select t.throws('lider_a, operando no A, NÃO revoga a conquista emitida por B (a autoridade é club_id_origem, e tem de ser a aba dele)',
+  format($q$select public.curriculum_achievement_revogar(%L, 'forjando')$q$, t.id('ach_z_membro_b')), 'não encontrada ou sem permissão');
+-- MUDOU NA 8.4: antes, "conquista que não existe" e "conquista de outro clube" davam mensagens
+-- DIFERENTES — o que transformava a própria recusa num oráculo de existência. Agora é uma só, e o
+-- assert compara sqlstate E mensagem, não um pedaço delas.
+\o /dev/null
+reset role;
+create function t.recusa(p_sql text) returns text language plpgsql as $$
+begin execute p_sql; return 'SEM ERRO';
+exception when others then return sqlstate || ':' || sqlerrm; end $$;
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+\o
+select t.eq('...e um id inventado responde exatamente a mesma coisa (a recusa não é um oráculo)',
+  t.txt(format('select t.recusa(%L)', format($q$select public.curriculum_achievement_revogar(%L, 'x')$q$, t.id('ach_z_membro_b')))),
+  t.txt(format('select t.recusa(%L)', $q$select public.curriculum_achievement_revogar('11111111-2222-3333-4444-555555555555'::uuid, 'x')$q$)));
 select t.eq('lider_a nem ENXERGA a conquista de membro_b (não emitiu, e membro_b não tem vínculo no A)', t.nv(format($q$select count(*) from public.curriculum_achievements where id = %L$q$, t.id('ach_z_membro_b'))), 0);
 reset role;
 select t.eq('...continua ativa', (select status from public.curriculum_achievements where id = t.id('ach_z_membro_b')), 'ativa');
