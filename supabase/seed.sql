@@ -146,11 +146,11 @@ values ('https://example.test/tenant-001.jpg', 'Foto Tenant 001', '00000000-0000
 insert into public.fotos (url, legenda, autor_id)
 values ('https://example.test/tenant-002.jpg', 'Foto Tenant 002', '00000000-0000-0000-0000-000000000002');
 
-insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por)
-values ('Aviso Tenant 001', 'Dado de isolamento local', 'geral', '/', 'todos', '00000000-0000-0000-0000-000000000001');
+insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, chave_push)
+values ('Aviso Tenant 001', 'Dado de isolamento local', 'geral', '/', 'todos', '00000000-0000-0000-0000-000000000001', '');
 
-insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por)
-values ('Aviso Tenant 002', 'Dado de isolamento local', 'geral', '/', 'todos', '00000000-0000-0000-0000-000000000002');
+insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, chave_push)
+values ('Aviso Tenant 002', 'Dado de isolamento local', 'geral', '/', 'todos', '00000000-0000-0000-0000-000000000002', '');
 
 insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
 values ('00000000-0000-0000-0000-000000000001', 1, 2026, 50, 'pago', '00000000-0000-0000-0000-000000000001');

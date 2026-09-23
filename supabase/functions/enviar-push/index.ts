@@ -193,34 +193,66 @@ Deno.serve(async (req) => {
     if (!paraUsuario && para !== 'todos' && para !== 'lideranca') {
       return new Response('ok (destino desconhecido)', { status: 200 })
     }
-    const argumentos = { p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario }
+    // ------------------------------------------------------------------
+    // RESERVA (fase 8.2) — a idempotência acontece aqui, ANTES de qualquer envio.
+    //
+    // Antes, a função recalculava o público a cada invoke e mandava para todo mundo. Um retry,
+    // um timeout do pg_net ou um reprocessamento manual reenviavam tudo: o celular tocava de
+    // novo. Agora o banco decide o que ESTE invoke tem direito de enviar, e devolve só isso.
+    //
+    // Um segundo invoke do mesmo evento recebe lista VAZIA — não por tentar e falhar, mas porque
+    // as linhas de entrega já estão reservadas por índice único. A garantia não depende desta
+    // função ser correta, o que é o ponto: código de entrega é onde retry mora.
+    // ------------------------------------------------------------------
+    const eventoId = typeof notif?.push_evento_id === 'string' && UUID_RE.test(notif.push_evento_id)
+      ? notif.push_evento_id : null
+    if (!eventoId) {
+      // Sem evento não há intenção de despacho. É assim que seed, fixture, backfill e RESTORE
+      // DE BACKUP deixam de acordar o clube inteiro — a linha existe, o push não sai.
+      return new Response('ok (sem evento de push)', { status: 200 })
+    }
 
-    const { data: destinatarios, error: erroDestinatarios } = await sb.rpc('push_destinatarios', argumentos)
-    // Sem a função (SQL ainda não aplicado) ou erro de banco: não envia nada e devolve 500 (para
-    // o chamador tentar de novo) — melhor atrasar o aviso do que mandar pro clube errado.
-    if (erroDestinatarios) return new Response('erro: ' + erroDestinatarios.message, { status: 500 })
-    const subs: any[] = destinatarios ?? []
-
-    // A rota nativa segue a MESMA regra de público, na mesma transação lógica. Se esta falhar,
-    // o web ainda sai: um canal quebrado não pode calar o outro.
-    const { data: nativos, error: erroNativos } = await sb.rpc('push_destinatarios_nativos', argumentos)
-    if (erroNativos) await registrarFalha('push_destinatarios_nativos: ' + erroNativos.message, clubeId)
-    const tokens: any[] = nativos ?? []
+    const { data: reservadas, error: erroReserva } = await sb.rpc('push_reservar', { p_evento_id: eventoId })
+    if (erroReserva) return new Response('erro: ' + erroReserva.message, { status: 500 })
+    const entregas: any[] = reservadas ?? []
+    if (entregas.length === 0) {
+      // Caminho normal de um retry. Não é erro, e é exatamente o que se queria.
+      return new Response(JSON.stringify({ enviados: 0, jaEntregue: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
 
     const link = linkSeguro(notif.link)
     const payload = JSON.stringify({ titulo, corpo, link })
+    // Última linha de defesa, no aparelho: duas notificações com a mesma `tag` se SUBSTITUEM em
+    // vez de empilhar. Não substitui a idempotência do servidor — protege contra a rajada de
+    // eventos legítimos e distintos (dois lances seguidos) virar duas tarjas idênticas na mão
+    // de quem está olhando.
+    const tag = `cq-${eventoId.slice(0, 8)}`
+    const resultados: Array<{ id: number; ok: boolean; codigo: string; ms: number }> = []
+
+    const subs = entregas.filter((e) => e.canal === 'web')
+    const tokens = entregas.filter((e) => e.canal === 'fcm')
 
     // ---- rota 1: Web Push ----
     const enviadosWeb = await emLotes(subs, LOTE, async (s) => {
+      const t0 = Date.now()
       try {
         await comPrazo(webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload), TIMEOUT_MS)
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify({ titulo, corpo, link, tag })), TIMEOUT_MS)
+        resultados.push({ id: s.tentativa_id, ok: true, codigo: '200', ms: Date.now() - t0 })
         return true
       } catch (e: any) {
         // Inscrição expirada/cancelada -> remove do banco
         if (e?.statusCode === 404 || e?.statusCode === 410) {
           await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
         }
+        resultados.push({
+          id: s.tentativa_id, ok: false,
+          codigo: String(e?.statusCode ?? (e?.message === 'timeout' ? 'timeout' : 'rede')),
+          ms: Date.now() - t0,
+        })
         return false
       }
     })
@@ -231,12 +263,14 @@ Deno.serve(async (req) => {
       if (!FCM_SERVICE_ACCOUNT) {
         // Falha declarada, não silenciosa: há aparelho Android esperando e falta configuração.
         await registrarFalha(`FCM_SERVICE_ACCOUNT ausente; ${tokens.length} aparelho(s) sem aviso`, clubeId)
+        for (const k of tokens) resultados.push({ id: k.tentativa_id, ok: false, codigo: 'oauth', ms: 0 })
       } else {
         try {
           const conta = JSON.parse(FCM_SERVICE_ACCOUNT)
           const acesso = await acessoFcm(conta)
           const urlFcm = `https://fcm.googleapis.com/v1/projects/${conta.project_id}/messages:send`
           enviadosApp = await emLotes(tokens, LOTE, async (k) => {
+            const t0 = Date.now()
             try {
               const resp = await comPrazo(fetch(urlFcm, {
                 method: 'POST',
@@ -247,24 +281,45 @@ Deno.serve(async (req) => {
                     notification: { title: titulo, body: corpo },
                     // o app usa isto para abrir na tela certa ao tocar no aviso
                     data: { link },
-                    android: { priority: 'high', notification: { click_action: 'FLUTTER_NOTIFICATION_CLICK' } },
+                    android: {
+                      priority: 'high',
+                      // `collapse_key` é o equivalente FCM da `tag` do Web Push
+                      collapse_key: tag,
+                      notification: { tag, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+                    },
                   },
                 }),
               }), TIMEOUT_MS)
+              resultados.push({ id: k.tentativa_id, ok: resp.ok, codigo: String(resp.status), ms: Date.now() - t0 })
               if (resp.ok) return true
               // 404 = token não existe mais (app desinstalado); 403 = projeto errado.
               // Só o 404 significa "limpe este aparelho".
               if (resp.status === 404) await sb.from('push_tokens').delete().eq('token', k.token)
               return false
-            } catch { return false }
+            } catch (e: any) {
+              resultados.push({
+                id: k.tentativa_id, ok: false,
+                codigo: e?.message === 'timeout' ? 'timeout' : 'rede', ms: Date.now() - t0,
+              })
+              return false
+            }
           })
         } catch (e: any) {
           await registrarFalha('FCM: ' + (e?.message ?? e), clubeId)
+          for (const k of tokens) resultados.push({ id: k.tentativa_id, ok: false, codigo: 'oauth', ms: 0 })
         }
       }
     }
 
-    return new Response(JSON.stringify({ enviados: enviadosWeb, enviadosApp, aparelhosWeb: subs.length, aparelhosApp: tokens.length }), {
+    // Fecha o ciclo. Toda tentativa reservada precisa terminar com um estado: o que ficar em
+    // 'enviando' é um invoke que morreu no meio, e a reserva seguinte o libera por tempo.
+    // O que vai daqui é só id, sucesso, CÓDIGO e duração — nada do conteúdo.
+    if (resultados.length > 0) {
+      const { error: erroConcluir } = await sb.rpc('push_concluir', { p_resultados: resultados })
+      if (erroConcluir) await registrarFalha('push_concluir: ' + erroConcluir.message, clubeId)
+    }
+
+    return new Response(JSON.stringify({ enviados: enviadosWeb, enviadosApp, reservadas: entregas.length }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (e: any) {

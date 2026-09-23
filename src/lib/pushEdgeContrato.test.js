@@ -9,10 +9,35 @@ import { describe, it, expect } from 'vitest'
 const fonte = readFileSync(join(process.cwd(), 'supabase', 'functions', 'enviar-push', 'index.ts'), 'utf8')
 
 describe('Edge Function enviar-push: destinatários sempre por clube', () => {
-  it('escolhe os destinatários pela função SQL do clube, passando o club_id da notificação', () => {
-    expect(fonte).toMatch(/\.rpc\('push_destinatarios'/)
-    expect(fonte).toMatch(/p_club_id:\s*clubeId/)
-    expect(fonte).toMatch(/p_para_usuario:\s*paraUsuario/)
+  // Fase 8.2: a função não escolhe mais o público — ela RESERVA entregas de um evento cujo
+  // público já foi congelado no banco. O isolamento por clube continua sendo do banco, e agora
+  // é ainda mais forte: a função sequer recebe club_id para errar.
+  it('reserva as entregas de um evento; não recalcula público nenhum', () => {
+    expect(fonte).toMatch(/\.rpc\('push_reservar', \{ p_evento_id: eventoId \}\)/)
+    expect(fonte).not.toMatch(/\.rpc\('push_destinatarios'/)
+    expect(fonte).not.toMatch(/\.rpc\('push_destinatarios_nativos'/)
+  })
+
+  it('sem evento de push, não envia nada (é assim que seed, fixture e RESTORE não acordam o clube)', () => {
+    expect(fonte).toMatch(/sem evento de push/)
+    expect(fonte).toMatch(/UUID_RE\.test\(notif\.push_evento_id\)/)
+  })
+
+  it('lista de reserva vazia é o caminho NORMAL de um retry, não erro', () => {
+    expect(fonte).toMatch(/entregas\.length === 0/)
+    expect(fonte).toMatch(/jaEntregue: true/)
+  })
+
+  it('toda tentativa reservada é concluída — nada fica preso em "enviando"', () => {
+    expect(fonte).toMatch(/\.rpc\('push_concluir', \{ p_resultados: resultados \}\)/)
+  })
+
+  it('o que volta ao banco é id, sucesso, CÓDIGO e duração — nunca o conteúdo', () => {
+    const blocos = [...fonte.matchAll(/resultados\.push\(\{[\s\S]*?\}\)/g)].map((m) => m[0])
+    expect(blocos.length).toBeGreaterThanOrEqual(4)
+    for (const b of blocos) {
+      expect(b).not.toMatch(/titulo|corpo|payload|endpoint|token:|link/)
+    }
   })
 
   it('nunca lê push_subscriptions sem filtro (o "para todos" global de antes)', () => {
@@ -33,8 +58,8 @@ describe('Edge Function enviar-push: destinatários sempre por clube', () => {
     expect(fonte).toMatch(/destino desconhecido/)
   })
 
-  it('erro ao escolher destinatários responde 500 e não envia (falha fechada)', () => {
-    expect(fonte).toMatch(/if \(erroDestinatarios\) return new Response\('erro: '/)
+  it('erro ao reservar responde 500 e não envia (falha fechada)', () => {
+    expect(fonte).toMatch(/if \(erroReserva\) return new Response\('erro: '/)
   })
 
   it('continua removendo inscrições expiradas (só delete, sem select amplo)', () => {
@@ -79,13 +104,15 @@ describe('Edge Function enviar-push: dependências fixadas', () => {
 // nativo no Android não funcionava. Estes testes travam a rota nova para ela não se perder de
 // novo numa refatoração, e travam o teto de concorrência que a acompanha.
 describe('Edge Function enviar-push: rota nativa (APK/FCM)', () => {
-  it('busca os tokens do APK pela função SQL do clube — o mesmo público da rota web', () => {
-    expect(fonte).toMatch(/\.rpc\('push_destinatarios_nativos'/)
-    // as duas rotas recebem EXATAMENTE os mesmos argumentos; se divergirem, web e Android
-    // passam a ter públicos diferentes e ninguém percebe
-    expect(fonte).toMatch(/const argumentos = \{ p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario \}/)
-    expect(fonte).toMatch(/rpc\('push_destinatarios', argumentos\)/)
-    expect(fonte).toMatch(/rpc\('push_destinatarios_nativos', argumentos\)/)
+  it('as duas rotas saem da MESMA reserva — não há como web e Android divergirem de público', () => {
+    expect(fonte).toMatch(/const subs = entregas\.filter\(\(e\) => e\.canal === 'web'\)/)
+    expect(fonte).toMatch(/const tokens = entregas\.filter\(\(e\) => e\.canal === 'fcm'\)/)
+  })
+
+  it('a notificação carrega tag/collapse_key — duas iguais se substituem no aparelho', () => {
+    expect(fonte).toMatch(/const tag = `cq-/)
+    expect(fonte).toMatch(/collapse_key: tag/)
+    expect(fonte).toMatch(/notification: \{ tag,/)
   })
 
   it('nunca lê push_tokens sem filtro (o mesmo erro que o broadcast global foi)', () => {

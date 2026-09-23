@@ -41,6 +41,14 @@ self.addEventListener('push', (event) => {
     // deixa explícito que o som PADRÃO do aparelho toca (não dá pra usar um
     // som customizado em push web; quem manda é o volume/toque do sistema).
     silent: false,
+    // Fase 8.2 — a última linha de defesa contra duplicata, no APARELHO.
+    // A idempotência de verdade é do servidor (push_eventos/push_tentativas), e ela impede o
+    // mesmo evento de ser enviado duas vezes. `tag` resolve o problema vizinho: uma rajada de
+    // eventos LEGÍTIMOS e distintos (dois lances seguidos no leilão) empilhava duas tarjas
+    // idênticas na mão de quem está olhando. Com a mesma tag, a segunda substitui a primeira.
+    // Sem tag, o navegador empilha — e foi assim até agora.
+    tag: data.tag || undefined,
+    renotify: true,
   }
   event.waitUntil(self.registration.showNotification(titulo, opcoes))
 })

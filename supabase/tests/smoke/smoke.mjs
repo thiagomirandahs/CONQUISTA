@@ -206,18 +206,27 @@ ok(`...em tempo razoável (${msVerif} ms)`, msVerif < 3000, `${msVerif} ms`)
 // ---------------------------------------------------------------------------
 if (ESCREVER) {
   console.log('\n-- 8. escrita (opcional) --')
-  const texto = `${MARCA} verificação automática de deploy`
-  const env = await comClube.rpc('chat_enviar_geral', { p_texto: texto })
-  if (ok('consegue escrever no chat geral', !env.error, env.error?.message)) {
-    // apaga o que acabou de escrever — a moderação do próprio clube é o caminho previsto
-    const id = typeof env.data === 'string' ? env.data : env.data?.id
-    if (id) {
-      const apg = await comClube.rpc('chat_apagar_mensagem', { p_mensagem_id: id })
+  // Selo ÚNICO desta execução: é por ele que a limpeza encontra a PRÓPRIA mensagem. Sem isso,
+  // duas execuções ao mesmo tempo apagariam a mensagem uma da outra.
+  const selo = `${MARCA} ${uid.slice(0, 8)}-${msLogin}${msCtx}${msHome}`
+  const env = await comClube.rpc('chat_enviar_geral', { p_texto: `${selo} verificação de deploy` })
+  if (ok('consegue escrever no chat geral', !env.error && env.data?.ok === true, env.error?.message)) {
+    // `chat_enviar_geral` devolve { ok, conversa_id } — NÃO o id da mensagem. Daí a busca pelo selo.
+    const { data: recentes } = await comClube.from('chat_mensagens')
+      .select('id,texto').eq('conversa_id', env.data.conversa_id)
+      .order('created_at', { ascending: false }).limit(10)
+    const alvo = (recentes || []).find((m) => (m.texto || '').startsWith(selo))
+    if (alvo) {
+      // A moderação do próprio clube é o caminho previsto para remover — o smoke não inventa um
+      // caminho de exclusão só dele.
+      const apg = await comClube.rpc('chat_apagar_mensagem', { p_mensagem_id: alvo.id })
       if (!ok('...e limpa o que escreveu', !apg.error, apg.error?.message)) {
         aviso('sobrou uma mensagem de smoke no chat', `procure por "${MARCA}" e apague à mão`)
       }
     } else {
-      aviso('não consegui identificar a mensagem criada', `procure por "${MARCA}" no chat e apague à mão`)
+      // Chegar aqui costuma significar que a conta de smoke não é liderança e não tem permissão
+      // de apagar — o que já é uma informação útil sobre como ela foi configurada.
+      aviso('não encontrei a mensagem para limpar', `procure por "${MARCA}" no chat e apague à mão`)
     }
   }
 } else {

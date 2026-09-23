@@ -393,7 +393,11 @@ select t.eq('a migration 48 NÃO criou policy nenhuma que cite eh_admin_platafor
                                 'subscriptions','subscription_events','subscription_clubs','billing_invoices',
                                 'billing_events','billing_providers','platform_admins','platform_admin_audit',
                                 'support_grants','club_provisioning_status',
-                                'app_erros','infra_falhas')$q$), 0);
+                                'app_erros','infra_falhas',
+                                -- fase 8.2: telemetria de ENTREGA de push. Mesmo desenho das duas
+                                -- acima — sem coluna de conteudo, so metadado de falha. O admin
+                                -- ve "quantas entregas falharam, em que clube", nunca o que dizia.
+                                'push_eventos','push_evento_destinatarios','push_tentativas')$q$), 0);
 
 -- E a prova de que a exceção não abriu porta: a telemetria que o admin lê não tem como carregar
 -- conteúdo de clube nenhum, porque as colunas para isso não existem.
@@ -401,6 +405,12 @@ select t.eq('as duas tabelas de operação novas não têm coluna capaz de guard
   t.n($q$select count(*) from information_schema.columns
         where table_schema='public' and table_name in ('app_erros','infra_falhas')
           and column_name in ('mensagem','texto','payload','corpo','conteudo','url','foto','nome','email')$q$), 0);
+-- As tabelas de push seguem a mesma regra, e uma a mais: nem a CREDENCIAL de entrega entra.
+-- `push_tentativas` aponta para o aparelho por um uuid derivado, nunca pelo token/endpoint.
+select t.eq('as tabelas de push não guardam conteúdo nem credencial de entrega',
+  t.n($q$select count(*) from information_schema.columns
+        where table_schema='public' and table_name in ('push_eventos','push_evento_destinatarios','push_tentativas')
+          and column_name in ('titulo','corpo','texto','payload','link','token','endpoint','p256dh','auth')$q$), 0);
 
 select t.como('lider_a');
 select t.eq('diretor de clube não é admin da plataforma', t.txt($q$select public.eh_admin_plataforma()::text$q$), 'false');

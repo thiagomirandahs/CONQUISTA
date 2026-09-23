@@ -152,12 +152,12 @@ values (t.id('membro_a'), 1, 2026, 50, 'pendente', t.id('lider_a'));
 insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
 values (t.id('membro_b'), 1, 2026, 60, 'pendente', t.id('lider_b'));
 
-insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por)
-values ('Aviso A', 'todos do A', 'geral', '/', 'todos', t.id('lider_a'));
-insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por)
-values ('Aviso B', 'todos do B', 'geral', '/', 'todos', t.id('lider_b'));
-insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por)
-values ('Recado membro A', 'só do membro A', 'geral', '/', 'pessoal', t.id('membro_a'), t.id('lider_a'));
+insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, chave_push)
+values ('Aviso A', 'todos do A', 'geral', '/', 'todos', t.id('lider_a'), '');
+insert into public.notificacoes (titulo, corpo, tipo, link, para, criado_por, chave_push)
+values ('Aviso B', 'todos do B', 'geral', '/', 'todos', t.id('lider_b'), '');
+insert into public.notificacoes (titulo, corpo, tipo, link, para, para_usuario, criado_por, chave_push)
+values ('Recado membro A', 'só do membro A', 'geral', '/', 'pessoal', t.id('membro_a'), t.id('lider_a'), '');
 
 insert into public.temporadas (club_id, numero, inicio)
 select t.id('clube_b'), 1, '-infinity'::timestamptz
