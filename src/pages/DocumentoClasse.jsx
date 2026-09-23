@@ -70,7 +70,12 @@ export default function DocumentoClasse() {
             <h1 className="doc-titulo">{ehAcomp ? 'Caderno de acompanhamento de classe' : 'Documento de conclusão de classe'}</h1>
             {ehAcomp && <div className="doc-sub-aviso">Acompanhamento curricular — não é comprovante de investidura.</div>}
           </div>
-          <div className="qr" aria-hidden="false" dangerouslySetInnerHTML={{ __html: qrSvg(urlVerificacao) }} />
+          {/* QR SÓ no documento final. No Caderno de acompanhamento ele seria um selo de autenticidade
+              onde não há autenticidade a atestar — e é justamente o que faria o acompanhamento parecer
+              comprovante. Sem QR, sobra só o aviso de que não é comprovante de investidura. */}
+          {!ehAcomp
+            ? <div className="qr" dangerouslySetInnerHTML={{ __html: qrSvg(urlVerificacao) }} />
+            : <div className="qr-ausente" aria-hidden="true" />}
         </header>
 
         <section className="ident">
@@ -115,7 +120,8 @@ export default function DocumentoClasse() {
           <div className="conf">
             <div><strong>Conferência:</strong> <code>{fmtConf(doc.conferencia)}</code> · <strong>Estado:</strong> {ESTADO_ROTULO[doc.estado] || '—'}{doc.integro === false ? ' · ⚠ integridade não confirmada' : ''}</div>
             <div><strong>Emitido em:</strong> {fmtData(doc.emitido_em)} · <strong>Modelo:</strong> {doc.template?.chave}/{doc.template?.versao}</div>
-            <div className="verif-url">Verifique em: {urlVerificacao}</div>
+            {/* mesma razão do QR: só o documento final tem o que verificar publicamente */}
+            {!ehAcomp && <div className="verif-url">Verifique em: {urlVerificacao}</div>}
           </div>
           <div className="disclaimer">
             Registro interno do clube para acompanhamento curricular. <strong>Não substitui</strong> o cartão ou o

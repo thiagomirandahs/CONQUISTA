@@ -17,10 +17,20 @@ export function definirClubeAtivoNoTransporte(clubeId) {
   clubeAtivoDaAba = clubeId && clubeId !== 'legado' ? clubeId : null
 }
 
+// ESCOPO institucional em uso NESTA ABA (distrito/região/campo/união/divisão) — header próprio, mesma
+// mecânica e mesmas garantias do clube: cada aba tem a sua cópia, e o servidor (escopo_atual_id()) só
+// honra se bater com um vínculo ativo numa unidade NÃO-clube. As duas jornadas convivem: a mesma
+// requisição pode levar clube E escopo sem uma virar a outra.
+let escopoAtivoDaAba = null
+export function definirEscopoAtivoNoTransporte(escopoId) {
+  escopoAtivoDaAba = escopoId || null
+}
+
 function fetchComClubeAtivo(input, init) {
   const opcoes = { ...(init || {}) }
   const cabecalhos = new Headers(opcoes.headers || (input && typeof input !== 'string' ? input.headers : undefined))
   if (clubeAtivoDaAba) cabecalhos.set('x-clube-atual', clubeAtivoDaAba)
+  if (escopoAtivoDaAba) cabecalhos.set('x-escopo-atual', escopoAtivoDaAba)
   opcoes.headers = cabecalhos
   return fetch(input, opcoes)
 }

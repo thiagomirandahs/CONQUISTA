@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
 import { ClubeProvider } from './context/Clube.jsx'
+import { EscopoProvider } from './context/Escopo.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
 
@@ -12,7 +13,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <ClubeProvider>
-          <App />
+          {/* jornada institucional (distrito/região/campo): contexto próprio, ao lado do clube — nunca dentro dele */}
+          <EscopoProvider>
+            <App />
+          </EscopoProvider>
         </ClubeProvider>
       </AuthProvider>
     </BrowserRouter>

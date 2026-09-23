@@ -39,7 +39,8 @@ insert into t.excecoes values
   ('investiture_workflows',      'catálogo de WORKFLOWS de investidura da PLATAFORMA (fase 4.2): versionado (chave+versão), declarativo. Sem club_id — a mesma definição vale pra qualquer clube'),
   ('investiture_workflow_stages','etapas declarativas de um workflow do catálogo acima (fase 4.2): escopo/papéis/ordem são dado da PLATAFORMA, não de um clube'),
   ('investiture_workflow_runs',  'execução do workflow para UM snapshot (fase 4.2): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é o clube da conclusão (proveniência), não escopo — hierarquia pode envolver mais de um clube/unidade'),
-  ('workflow_stage_decisions',   'decisão IMUTÁVEL de uma etapa (fase 4.2): segue a visibilidade da conquista; escopo_organizational_unit_id é a unidade RESOLVIDA pela hierarquia (clube, distrito, região...) — pode não ser o clube da pessoa. Gatilho recusa UPDATE/DELETE (teste 41)');
+  ('workflow_stage_decisions',   'decisão IMUTÁVEL de uma etapa (fase 4.2): segue a visibilidade da conquista; escopo_organizational_unit_id é a unidade RESOLVIDA pela hierarquia (clube, distrito, região...) — pode não ser o clube da pessoa. Gatilho recusa UPDATE/DELETE (teste 41)'),
+  ('document_signatures',        'INTERFACE DE DADOS preparada pra futura assinatura eletrônica (fase 4.3): nasce e fica VAZIA — nenhuma RPC escreve nela; hoje só existe aprovacao_sistema (que não é assinatura digital). Segue a visibilidade da conquista (usuario_id + club_id_origem); club_id_origem é proveniência do emissor, não escopo (teste 42)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

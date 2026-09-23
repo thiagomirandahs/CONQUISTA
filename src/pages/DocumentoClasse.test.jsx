@@ -68,6 +68,15 @@ describe('DocumentoClasse (imprimível)', () => {
     expect(screen.getByText(/não é comprovante de investidura/)).toBeInTheDocument()
   })
 
+  it('acompanhamento NÃO tem QR nem URL de verificação (fase 4.3: selo de autenticidade só no final)', async () => {
+    conteudoDocumento.mockResolvedValue({ ...CONTEUDO, documento: { ...CONTEUDO.documento, tipo: 'acompanhamento', estado: 'acompanhamento' }, periodo: { ...CONTEUDO.periodo, investidura: null } })
+    renderT()
+    await screen.findByRole('heading', { name: 'Caderno de acompanhamento de classe' })
+    expect(document.querySelector('.qr svg')).toBeNull()
+    expect(screen.queryByText(/Verifique em:/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('QR code de verificação')).not.toBeInTheDocument()
+  })
+
   it('revogado/substituído mostram faixa de estado no topo', async () => {
     conteudoDocumento.mockResolvedValue({ ...CONTEUDO, documento: { ...CONTEUDO.documento, estado: 'revogado' } })
     const { unmount } = renderT()

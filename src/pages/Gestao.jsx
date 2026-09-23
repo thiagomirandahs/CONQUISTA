@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
+import { useEscopo } from '../context/Escopo.jsx'
 import { carregarPainelDiretoria } from '../lib/dados.js'
 // Matriz de permissões centralizada (hardening 28/08): a MESMA lista alimenta
 // estes cards e a trava de rota <RotaRestrita> — muda num lugar, vale nos dois.
@@ -11,6 +12,7 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 
 export default function Gestao() {
   const { papel: meuPapel } = useClube()
+  const { temEscopo, escopos } = useEscopo()
   const disp = FERRAMENTAS.filter((f) => f.papeis.includes(meuPapel))
   const ehAdmin = PODE_GERIR.includes(meuPapel)
 
@@ -20,6 +22,21 @@ export default function Gestao() {
         <h2 className="text-2xl font-extrabold text-ink">⚙️ Gestão</h2>
         <p className="text-sm text-muted">Ferramentas da liderança</p>
       </div>
+
+      {/* Troca de JORNADA (não de conta): quem também tem vínculo institucional chega ao portal por aqui.
+          O app do clube continua o app do clube — nada vira dashboard administrativo. */}
+      {temEscopo && (
+        <Link to="/institucional" data-testid="ir-portal"
+          className="flex items-center gap-3 bg-surface rounded-2xl p-4 shadow-soft mb-4 border border-line">
+          <span className="text-2xl" aria-hidden="true">🏛️</span>
+          <span className="min-w-0">
+            <span className="block font-bold text-ink text-sm">Portal institucional</span>
+            <span className="block text-xs text-faint truncate">
+              {escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} · acompanhar os clubes do seu escopo
+            </span>
+          </span>
+        </Link>
+      )}
 
       {ehAdmin && <PainelDiretoria />}
 

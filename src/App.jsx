@@ -49,6 +49,7 @@ const MinhaClasse = lazy(() => import('./pages/MinhaClasse.jsx'))
 const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
 const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
+const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
 const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
@@ -70,6 +71,15 @@ function Protegido({ children }) {
   if (!session) return <Navigate to="/login" replace />
   // só entra quem tem vínculo ATIVO com um clube em uso (o contexto do clube é resolvido aqui, uma vez por sessão)
   return <ClubeGuard>{children}</ClubeGuard>
+}
+
+// Só exige sessão — sem ClubeGuard. É o que a jornada institucional precisa: a autoridade
+// distrital/regional pode não ter (e normalmente não tem) vínculo de clube nenhum.
+function SessaoObrigatoria({ children }) {
+  const { session, carregando } = useAuth()
+  if (carregando) return <Carregando />
+  if (!session) return <Navigate to="/login" replace />
+  return children
 }
 
 // O responsável cai direto no "Meu Filho"; os demais, no ranking.
@@ -134,6 +144,10 @@ export default function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         {/* Verificação PÚBLICA de documento (sem login): só o resumo mínimo, via RPC anônima */}
         <Route path="/verificar/:token" element={<VerificarDocumento />} />
+
+        {/* Jornada INSTITUCIONAL: exige sessão, mas NÃO passa pelo ClubeGuard — quem é só coordenador
+            distrital/regional não tem vínculo de clube nenhum e ficaria trancado do lado de fora. */}
+        <Route path="/institucional" element={<SessaoObrigatoria><PortalInstitucional /></SessaoObrigatoria>} />
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />
