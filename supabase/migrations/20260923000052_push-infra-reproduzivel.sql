@@ -100,7 +100,13 @@ create table if not exists public.infra_falhas (
   quando timestamptz not null default now(),
   origem text not null,
   detalhe text not null,
-  club_id uuid
+  -- Opcional de propósito: há falha que não pertence a clube nenhum (o Vault vazio, por exemplo).
+  -- `on delete set null` porque o registro do PROBLEMA precisa sobreviver ao clube: se um clube
+  -- for apagado, continua valendo saber que o push estava quebrado naquela semana.
+  -- A FK existe para satisfazer a matriz de auditoria (teste 20): toda coluna club_id do schema
+  -- aponta para organizational_units, sem exceção — é isso que impede um "club_id" solto que
+  -- ninguém sabe de onde veio.
+  club_id uuid references public.organizational_units(id) on delete set null
 );
 alter table public.infra_falhas enable row level security;
 -- Ninguém lê pelo app: é operação. O acesso é do administrador da plataforma (fase 5) e do

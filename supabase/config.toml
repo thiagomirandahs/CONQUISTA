@@ -155,11 +155,15 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
+# LOCAL. Em producao isto precisa ser o dominio real do app — e o que o Supabase usa para montar
+# os links de confirmacao e de recuperacao de senha. Apontando para 127.0.0.1, o link que chega no
+# e-mail da pessoa aponta para a maquina DELA e nao abre nada.
 site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# /nova-senha precisa estar na lista em producao: e para onde o link de recuperacao volta.
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://127.0.0.1:4173", "http://localhost:4173", "http://127.0.0.1:4173/nova-senha", "http://localhost:4173/nova-senha"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -178,10 +182,13 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+# Fase 8.1 — 6 -> 8. Seis caracteres sem exigencia nenhuma e forca bruta trivial.
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+# Fase 8.1 — exige letra E numero. Nao pedimos simbolo de proposito: o publico inclui criancas
+# de 10 anos digitando no celular, e regra dificil demais empurra pra senha anotada no caderno.
+password_requirements = "letters_digits"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -222,9 +229,15 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Fase 8.1 — LIGADA. Sem isto, o e-mail de qualquer terceiro vira conta ativa: bastava digitar
+# o endereco de outra pessoa no cadastro. Com contas de menores de idade envolvidas, isso e
+# blocker de producao (B5 do PRODUCTION-READINESS.md). O app ja lidava bem: Cadastro.jsx faz
+# signOut logo apos o signUp e mostra "cadastro enviado", entao a experiencia nao muda.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+# Fase 8.1 — LIGADA. Exige sessao recente para trocar a senha: um aparelho deixado destravado
+# nao vira troca de senha (e sequestro de conta) por quem pegar o celular.
+secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.

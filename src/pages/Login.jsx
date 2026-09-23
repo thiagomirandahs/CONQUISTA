@@ -90,8 +90,8 @@ export default function Login() {
           Ainda não tem conta?{' '}
           <Link to="/cadastro" className="text-brand font-semibold hover:underline">Cadastre-se</Link>
         </p>
-        <p className="text-center text-xs mt-2 text-faint">
-          Esqueceu a senha? Fale com um líder do clube — ele cria uma nova pra você.
+        <p className="text-center text-sm mt-2 text-muted">
+          <Link to="/recuperar" className="text-brand font-semibold hover:underline">Esqueci minha senha</Link>
         </p>
       </motion.div>
       {marca.desde && <p className="text-white/80 text-xs mt-6 relative z-10">⭐ Desde {marca.desde}</p>}

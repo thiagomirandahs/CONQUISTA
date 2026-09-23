@@ -12,6 +12,8 @@ import RecursoOpcional from './components/RecursoOpcional.jsx'
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
+const Recuperar = lazy(() => import('./pages/Recuperar.jsx'))
+const NovaSenha = lazy(() => import('./pages/Recuperar.jsx').then((m) => ({ default: m.NovaSenha })))
 const Ranking = lazy(() => import('./pages/Ranking.jsx'))
 const Atividades = lazy(() => import('./pages/Atividades.jsx'))
 const Unidades = lazy(() => import('./pages/Unidades.jsx'))
@@ -152,6 +154,11 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        {/* Recuperacao de senha: as duas pernas sao PUBLICAS. /nova-senha recebe quem volta pelo
+            link do e-mail, e nesse momento a sessao de recuperacao ainda esta sendo montada pelo
+            supabase-js — passar por SessaoObrigatoria jogaria a pessoa de volta pro login. */}
+        <Route path="/recuperar" element={<Recuperar />} />
+        <Route path="/nova-senha" element={<NovaSenha />} />
         {/* Verificação PÚBLICA de documento (sem login): só o resumo mínimo, via RPC anônima */}
         <Route path="/verificar/:token" element={<VerificarDocumento />} />
 

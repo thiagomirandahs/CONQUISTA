@@ -60,7 +60,9 @@ insert into t.excecoes values
   -- ----- fase 6: motor de experiências. TUDO que é do clube tem club_id (experiences, stages,
   -- audiences, participations, submissions, rewards, seasons, events, reports, badges). Só o CATÁLOGO
   -- de modelos da plataforma fica de fora, pela mesma razão do currículo oficial.
-  ('experience_templates',       'catálogo de MODELOS de experiência da PLATAFORMA (fase 6): versionado (chave+versão) e igual pra todo clube. O clube COPIA pra uma instância dele (experiences.club_id) — mudar o modelo depois não altera a cópia publicada (teste 44)');
+  ('experience_templates',       'catálogo de MODELOS de experiência da PLATAFORMA (fase 6): versionado (chave+versão) e igual pra todo clube. O clube COPIA pra uma instância dele (experiences.club_id) — mudar o modelo depois não altera a cópia publicada (teste 44)'),
+  -- ----- fase 8.1: observabilidade de infraestrutura. Mesma razão de cron_falhas.
+  ('infra_falhas',               'registro INTERNO de falha de INFRAESTRUTURA (fase 8.1: push sem configuração, Edge Function sem segredo). club_id é opcional e só informativo — há falha que não pertence a clube nenhum (ex.: o Vault vazio). Sem policy de leitura pra authenticated: é operação, não app');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
