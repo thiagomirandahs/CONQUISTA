@@ -375,6 +375,16 @@ select t.eq('admin NÃO vê mensalidades', t.nv($q$select count(*) from public.m
 select t.eq('admin NÃO vê responsáveis', t.nv($q$select count(*) from public.responsaveis$q$), 0);
 select t.eq('admin NÃO vê evidências/entregas', t.nv($q$select count(*) from public.entregas$q$), 0);
 select t.eq('admin NÃO vê eventos da agenda dos clubes', t.nv($q$select count(*) from public.eventos$q$), 0);
+-- A lista abaixo é a fronteira do que a operação da plataforma pode alcançar. Ela cresce com
+-- MUITA parcimônia: cada nome novo aqui é uma decisão de produto, não um detalhe técnico.
+-- Fase 8.1 acrescentou duas, as duas de OPERAÇÃO e deliberadamente sem conteúdo:
+--   app_erros    telemetria de erro. Tem club_id e user_id (é o que permite responder "isso
+--                atingiu quantas pessoas, de quantos clubes?" diante de um relato), mas nenhuma
+--                coluna capaz de guardar conteúdo — sem mensagem do servidor, sem texto, sem
+--                foto, sem nome. O teste 48 trava a lista de colunas exatamente por isso.
+--   infra_falhas falha de infraestrutura (push sem configuração). Mesmo desenho.
+-- A regra da fase 5 — "não conceda acesso a fotos, chat, evidências, responsáveis ou conteúdo
+-- privado" — continua valendo inteira: os asserts logo acima provam que o admin não lê nada disso.
 select t.eq('a migration 48 NÃO criou policy nenhuma que cite eh_admin_plataforma em tabela de dado de clube',
   t.n($q$select count(*) from pg_policy p join pg_class c on c.oid = p.polrelid
         where c.relnamespace = 'public'::regnamespace
@@ -382,7 +392,15 @@ select t.eq('a migration 48 NÃO criou policy nenhuma que cite eh_admin_platafor
           and c.relname not in ('billing_accounts','billing_account_contacts','billing_plans','billing_prices',
                                 'subscriptions','subscription_events','subscription_clubs','billing_invoices',
                                 'billing_events','billing_providers','platform_admins','platform_admin_audit',
-                                'support_grants','club_provisioning_status')$q$), 0);
+                                'support_grants','club_provisioning_status',
+                                'app_erros','infra_falhas')$q$), 0);
+
+-- E a prova de que a exceção não abriu porta: a telemetria que o admin lê não tem como carregar
+-- conteúdo de clube nenhum, porque as colunas para isso não existem.
+select t.eq('as duas tabelas de operação novas não têm coluna capaz de guardar conteúdo',
+  t.n($q$select count(*) from information_schema.columns
+        where table_schema='public' and table_name in ('app_erros','infra_falhas')
+          and column_name in ('mensagem','texto','payload','corpo','conteudo','url','foto','nome','email')$q$), 0);
 
 select t.como('lider_a');
 select t.eq('diretor de clube não é admin da plataforma', t.txt($q$select public.eh_admin_plataforma()::text$q$), 'false');

@@ -62,6 +62,7 @@ insert into t.excecoes values
   -- de modelos da plataforma fica de fora, pela mesma razão do currículo oficial.
   ('experience_templates',       'catálogo de MODELOS de experiência da PLATAFORMA (fase 6): versionado (chave+versão) e igual pra todo clube. O clube COPIA pra uma instância dele (experiences.club_id) — mudar o modelo depois não altera a cópia publicada (teste 44)'),
   -- ----- fase 8.1: observabilidade de infraestrutura. Mesma razão de cron_falhas.
+  ('app_erros',                  'TELEMETRIA de erro do cliente (fase 8.1). club_id e user_id sao opcionais e vem do SERVIDOR (JWT + header), nunca do cliente — servem pra responder "esse erro atingiu quantas pessoas, de quantos clubes?". Nenhuma coluna guarda conteudo; leitura so da operacao da plataforma'),
   ('infra_falhas',               'registro INTERNO de falha de INFRAESTRUTURA (fase 8.1: push sem configuração, Edge Function sem segredo). club_id é opcional e só informativo — há falha que não pertence a clube nenhum (ex.: o Vault vazio). Sem policy de leitura pra authenticated: é operação, não app');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
