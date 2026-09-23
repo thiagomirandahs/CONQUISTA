@@ -58,6 +58,89 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 4.3 (migration 47): escopo institucional, portal enxuto e verificação pública
+
+### Princípio: hierarquia NÃO é acesso
+Estar acima na árvore não abre chat, fotos, mensagens, financeiro, evidências, avaliações nem dados de
+responsáveis dos clubes abaixo. Por isso a migration 47 **não cria uma única policy de RLS nova**: nada em
+`profiles`, `member_*`, `fotos`, `chat_*`, `mensalidades`, `responsaveis`, `requirement_approvals`,
+`class_documents` etc. passa a enxergar "quem está acima". Tudo que o portal mostra sai de RPCs SECURITY
+DEFINER que devolvem **agregado** (contagens), nunca linha pessoal — com uma exceção justificada: quando uma
+etapa de workflow EXIGE a decisão daquela autoridade, aparece o nome de quem depende dela, porque sem isso não
+há como decidir. Um coordenador sem vínculo de clube continua sem `clube_atual_id()` — ou seja, sem acesso a
+absolutamente nada do app operacional. Testado ponta a ponta (teste 42): ele lê 0 linhas de `profiles` dos
+clubes abaixo, 0 de `member_classes`, 0 de `member_requirements`, 0 de `requirement_approvals`, 0 de
+`fotos`/`chat`/`mensalidades`/`responsaveis`, 0 de snapshot/documento/decisões.
+
+### Escopo em uso: contexto próprio, não "clube"
+`escopo_atual_id()` lê o header **`x-escopo-atual`** (mesma mecânica de duas abas do `clube_atual_id()`, header
+separado) e só honra se houver vínculo ATIVO numa unidade **NÃO-clube**. Duas diferenças deliberadas: (1) pedir
+um clube como escopo institucional é ignorado — os contextos não se misturam; (2) **não há padrão**: sem header
+válido devolve NULL, porque entrar no portal é um ato explícito (ao contrário do clube, que precisa de um
+padrão pra sessão funcionar). Pedido inválido/forjado nunca vira erro nem vazamento: simplesmente não há escopo.
+`meu_contexto_institucional()` é paralelo ao `meu_contexto()` (que segue filtrando só `type='clube'` — nada
+quebrou) e devolve vínculos institucionais + capacidades (`_capacidades_institucionais`). Testado: a MESMA
+requisição carrega clube A **e** distrito A sem um virar o outro.
+
+### Portal (`/institucional`)
+Fora do `ClubeGuard` — achado desta fase: o guard exige vínculo de clube, então um coordenador distrital puro
+ficaria trancado do lado de fora do próprio app. A rota usa `SessaoObrigatoria` (só sessão). Mostra: escopo em
+uso, o que depende daquela autoridade, e os clubes descendentes com **contagens** (membros ativos, classes em
+andamento, aguardando revisão, aptos, investidos). `escopo_painel()` desce a árvore por `parent_id`
+(`_clubes_descendentes`), então uma regional enxerga os clubes por baixo dos distritos dela. Um escopo único é
+selecionado automaticamente; com mais de um, a escolha é explícita. Troca de **jornada** (não de conta): quem é
+diretor E coordenador tem um card pro portal em Gestão, e o app do clube continua o app do clube — nada vira
+dashboard administrativo.
+
+### "Nada exige sua atuação" — sem inventar aprovação distrital
+`escopo_investiduras_pendentes()` só devolve corridas paradas numa etapa cujo escopo resolve EXATAMENTE neste
+escopo em uso E cujo papel exigido a pessoa tem aqui. Para o workflow ativo (Classes Regulares, 2 etapas ambas
+no clube) isso é **sempre vazio** — e o portal diz isso com todas as letras, explicando que Amigo–Guia são
+revisadas e investidas pelo próprio clube. Quando um workflow com etapa distrital existe (provado no teste com
+um workflow fictício criado só na transação), a pendência aparece com o mínimo pra decidir e **sem** evidências
+ou comentários internos.
+
+### Verificação pública — red-team
+Token já era imprevisível desde a 4.1 (20 bytes aleatórios em base32 Crockford, ~100 bits; não é UUID, não é
+sequencial). O red-team desta fase (teste 42) cobre: token inexistente, tokens curtos/vizinhos, token válido com
+1 caractere trocado, injeção (`' or 1=1 --`, `%`, `_`), leitura direta da tabela por anon (bloqueada — a
+verificação é só por RPC), e RPCs do portal inacessíveis a anon. O resumo público revela só status/tipo/titular/
+classe/datas/emissora/integridade; asserção explícita de que **não** vazam nascimento, e-mail, evidência,
+comentário interno, avaliações, seções/requisitos nem IDs internos (member_class, clube, usuário).
+
+### QR: só no documento final
+Achado da análise pedida no item 5: o Caderno de acompanhamento **tinha** QR desde a 4.1 — e um selo de
+autenticidade num documento que não atesta autenticidade é exatamente o que o faz parecer comprovante. O QR e a
+URL de verificação passam a existir **só no tipo `final`**; no acompanhamento sobra o aviso de que não é
+comprovante de investidura. (A verificação pública do token de acompanhamento continua funcionando pra quem já
+tenha o link, e mostra "Caderno de acompanhamento", nunca "válido".)
+
+### Revogação
+Sem mudanças de modelo (a 4.1/4.2 já faziam): revogar não apaga — grava motivo, autoridade, data e eventos, e a
+URL continua respondendo, agora com **DOCUMENTO REVOGADO**. Verificado visualmente nesta fase.
+
+### Assinatura: só interface de dados
+Continua existindo **apenas** `aprovacao_sistema` (decisão autenticada no sistema = autoria e auditoria), e em
+nenhum lugar isso é chamado de assinatura digital. `document_signatures` nasce como interface de dados preparada
+(documento/snapshot, signatário, papel, escopo, método, referência externa, payload, status), **vazia**, imutável,
+sem nenhuma RPC que escreva nela — para que amanhã uma assinatura eletrônica seja associada sem remodelar nada.
+Testado: tabela vazia, escrita pela API bloqueada, e nenhuma decisão com método diferente de `aprovacao_sistema`.
+
+### Testado
+`42_portal_institucional_e_verificacao.sql` (54 asserts) — escopo explícito/validado/sem padrão; manipulação de
+header; contextos que não se misturam na mesma requisição; painel só agregado e só dos clubes abaixo; outro
+tenant não vê o clube alheio; hierarquia sem acesso a nada operacional/pessoal; "nada exige sua atuação" e o caso
+em que exige; red-team completo da rota pública; revogado pela URL; interface de assinatura vazia e bloqueada.
+Vitest: `PortalInstitucional.test.jsx` (7) e um caso novo em `DocumentoClasse.test.jsx` (acompanhamento sem QR).
+Inspeção visual: página pública (válido / acompanhamento / não encontrado / **revogado**), portal com escopo
+único, documento final com QR + faixa de revogado, acompanhamento sem QR, e coordenadora barrada ao tentar abrir
+o documento de um clube abaixo.
+
+### Limites honestos desta fase
+O portal é só leitura: não há ainda tela pra a autoridade DECIDIR uma etapa (a RPC existe desde a 4.2 e está
+testada em SQL). Nenhum processo real exige aprovação distrital hoje — o portal existe pronto pra quando as
+Classes de Liderança forem importadas. Sem assinatura eletrônica/ICP-Brasil.
+
 ## Motor curricular — fase 4.2 (migration 46): hierarquia institucional + workflow declarativo de investidura
 
 ### Pesquisa institucional (antes de fixar qualquer regra)

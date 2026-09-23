@@ -494,6 +494,23 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   mesmos efeitos) — agora autorizados pelo motor por baixo. Testes: 41 (62 asserts, workflow de teste de 4 etapas
   criado só na transação, nunca ativado de verdade) + inspeção visual do fluxo real completo. Sem tela pra atores
   fora do clube (não existe "unidade em uso" não-clube no front ainda); sem assinatura digital/ICP-Brasil.
+- ✅ **Fase 4.3 — Portal institucional + verificação pública (migration 47)**: resolve a lacuna de front da 4.2.
+  Escopo institucional ganha contexto PRÓPRIO (`escopo_atual_id()` pelo header `x-escopo-atual`, mesma mecânica de
+  duas abas do clube, sem padrão — entrar no portal é explícito; pedir um clube como escopo é ignorado) e
+  `meu_contexto_institucional()` ao lado do `meu_contexto()` (que segue só de clube — nada quebrou). Portal
+  `/institucional` FORA do `ClubeGuard` (achado: o guard trancaria um coordenador distrital puro pra fora do app),
+  enxuto: clubes descendentes com **contagens** (`escopo_painel()` desce por `parent_id`) e o que exige a decisão
+  daquela autoridade (`escopo_investiduras_pendentes()`) — que pras Classes Regulares é SEMPRE vazio, e o portal diz
+  isso em vez de inventar aprovação distrital. **Hierarquia não é acesso**: nenhuma policy nova de RLS; tudo vem de
+  RPC agregada; testado que o coordenador lê 0 linhas de profiles/member_*/fotos/chat/mensalidades/responsáveis/
+  evidências/documentos dos clubes abaixo. Troca de JORNADA (não de conta) por um card em Gestão. QR e URL de
+  verificação passam a existir só no documento FINAL — o Caderno de acompanhamento tinha QR desde a 4.1 e isso o
+  fazia parecer comprovante. Red-team da rota pública (token inexistente/vizinho/1 char trocado/injeção/leitura
+  direta) e asserção de que o resumo não vaza nascimento, e-mail, evidência, comentário, avaliações nem IDs.
+  `document_signatures` criada como interface de dados VAZIA pra futura assinatura eletrônica (nenhuma RPC escreve).
+  Testes: 42 (54 asserts), Vitest 317 (+8). Inspeção visual: público válido/acompanhamento/não encontrado/revogado,
+  portal, documento final com QR e faixa de revogado, acompanhamento sem QR. Portal é só leitura (a tela pra a
+  autoridade DECIDIR fica pra quando houver processo real que exija); sem assinatura eletrônica/ICP-Brasil.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
