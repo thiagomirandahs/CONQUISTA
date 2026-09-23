@@ -136,7 +136,7 @@ export default function ExperienciaEditor() {
               <li key={m.chave} className="flex items-center justify-between gap-2 border border-line rounded-xl p-3">
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-ink truncate">{m.titulo}</div>
-                  <div className="text-[11px] text-faint">{TIPO_ROTULO[m.tipo] || m.tipo}</div>
+                  <div className="text-xs text-faint">{TIPO_ROTULO[m.tipo] || m.tipo}</div>
                 </div>
                 <button type="button" disabled={ocupado}
                   onClick={async () => { const n = await agir(() => copiarModelo(m.chave)); if (n) setExp(await carregarExperiencia(n.id)) }}
@@ -224,7 +224,7 @@ export default function ExperienciaEditor() {
                 className="w-full min-h-[48px] rounded-xl bg-brand text-white font-bold disabled:opacity-60">
                 Publicar
               </button>
-              <p className="text-[11px] text-faint leading-snug">
+              <p className="text-xs text-faint leading-snug">
                 Depois de publicada, a estrutura não muda mais (etapas, regras, recompensa e período):
                 isso protege o histórico de quem participou. Precisando mudar, crie uma versão nova.
               </p>

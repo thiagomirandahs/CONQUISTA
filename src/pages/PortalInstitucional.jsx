@@ -114,7 +114,7 @@ export default function PortalInstitucional() {
         )}
       </section>
 
-      <p className="text-[11px] text-faint mt-6 leading-snug">
+      <p className="text-xs text-faint mt-6 leading-snug">
         Este portal mostra apenas números gerais dos clubes e o que exige a sua decisão. Conversas, fotos,
         mensagens, mensalidades, evidências dos requisitos e dados de responsáveis pertencem a cada clube e
         não são acessíveis aqui.
@@ -160,7 +160,7 @@ function CardClube({ c }) {
     <li className="bg-surface rounded-2xl p-4 shadow-soft">
       <div className="flex items-center justify-between gap-2">
         <div className="font-bold text-ink truncate">{c.nome}</div>
-        <span className="text-[11px] text-faint shrink-0">{num(c.membros_ativos)} membros</span>
+        <span className="text-xs text-faint shrink-0">{num(c.membros_ativos)} membros</span>
       </div>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
         <Numero rotulo="Classes em andamento" valor={num(c.classes_em_andamento)} />

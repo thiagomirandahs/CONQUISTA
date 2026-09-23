@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { enviarAviso, lerConfigPopup, salvarConfigPopup } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const inputClass =
@@ -108,7 +109,7 @@ function PopupAviso() {
   async function salvar() {
     setSalvando(true)
     try { await salvarConfigPopup(cfg); setOk(true) }
-    catch (e) { alert('Não deu pra salvar: ' + (e?.message || e)) }
+    catch (e) { avisar.erro(e, 'Não consegui salvar o aviso.') }
     setSalvando(false)
   }
 
@@ -150,7 +151,7 @@ function PopupAviso() {
         className="w-full bg-gradient-to-r from-brand to-brand2 text-white font-bold rounded-xl py-3 shadow-glow disabled:opacity-60">
         {salvando ? 'Salvando...' : 'Salvar popup'}
       </button>
-      <p className="text-[11px] text-faint">
+      <p className="text-xs text-faint">
         Aparece 1x por dia pra cada pessoa. Se você mudar o texto, ele reaparece na hora — mesmo pra quem já tinha fechado.
       </p>
     </div>

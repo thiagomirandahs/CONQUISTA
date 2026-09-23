@@ -288,7 +288,7 @@ export default function Biblia() {
             <div className="h-2.5 bg-surface2 rounded-full overflow-hidden">
               <motion.div className="h-full bg-gold" initial={{ width: 0 }} animate={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[11px] text-faint mt-2">Cada capítulo lido vale +2 pontos (até 20 por dia). Fique um tempinho lendo pra contar 🙂</p>
+            <p className="text-xs text-faint mt-2">Cada capítulo lido vale +2 pontos (até 20 por dia). Fique um tempinho lendo pra contar 🙂</p>
           </div>
 
           {[{ titulo: 'Antigo Testamento', lista: antigo }, { titulo: 'Novo Testamento', lista: novo }].map((grupo) => (

@@ -7,6 +7,7 @@ import {
   carregarDuelos, criarDuelo, julgarDuelo, cancelarDuelo, progressoDuelo,
   salvarDesafioUnidade, excluirDesafioUnidade,
 } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS_ACOMP = [
@@ -50,8 +51,8 @@ export default function Duelos({ onMudou }) {
   const podeDesafiar = !!minhaUni && ativos.length > 0
 
   async function cancelar(d) {
-    if (!window.confirm('Cancelar este duelo?')) return
-    try { await cancelarDuelo(d.id); carregar() } catch (e) { alert(e?.message || e) }
+    if (!(await avisar.confirmar({ titulo: 'Cancelar este duelo?', descricao: 'O duelo sai da lista e o progresso registrado nele se perde.', rotulo: 'Cancelar o duelo' }))) return
+    try { await cancelarDuelo(d.id); carregar() } catch (e) { avisar.erro(e, 'Não consegui cancelar o duelo.') }
   }
 
   if (carregando) return <p className="text-slate-400 text-sm">Carregando duelos...</p>
@@ -168,11 +169,11 @@ function CardDuelo({ d, ehAdmin, meuId, onJulgar, onCancelar, onProgresso }) {
           {d.desafio.titulo} · +{d.desafio.pontos}
         </span>
         {aberto ? (
-          <span className={`text-[11px] font-bold shrink-0 ${encerrado ? 'text-amber-600' : 'text-slate-400'}`}>
+          <span className={`text-xs font-bold shrink-0 ${encerrado ? 'text-amber-600' : 'text-slate-400'}`}>
             {encerrado ? '⏰ prazo encerrado' : `até ${fmtData(d.prazo)}`}
           </span>
         ) : (
-          <span className="text-[11px] font-bold text-green-600 shrink-0">✓ julgado</span>
+          <span className="text-xs font-bold text-green-600 shrink-0">✓ julgado</span>
         )}
       </div>
 
@@ -425,7 +426,7 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
   }
 
   async function apagar() {
-    if (!window.confirm('Apagar este desafio do catálogo?')) return
+    if (!(await avisar.confirmar({ titulo: 'Apagar este desafio do catálogo?', descricao: 'Ele deixa de aparecer para novas unidades. Isso não pode ser desfeito.', rotulo: 'Apagar o desafio' }))) return
     try { await excluirDesafioUnidade(inicial.id); onSalvo() }
     catch (err) { setErro(err?.message || String(err)) }
   }

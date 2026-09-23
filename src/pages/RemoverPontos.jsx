@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarLancamentos, removerLancamento } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯', trilha: '🗺️', manual: '🎖️', acampamento: '🏕️', leilao: '🏛️' }
@@ -38,13 +39,13 @@ export default function RemoverPontos() {
   })
 
   async function remover(p) {
-    if (!window.confirm(`Remover ${p.pontos} pts de ${nomeDe(p)}${p.motivo ? ` (${p.motivo})` : ''}?`)) return
+    if (!(await avisar.confirmar({ titulo: `Remover ${p.pontos} pontos de ${nomeDe(p)}?`, descricao: `O lançamento${p.motivo ? ` "${p.motivo}"` : ''} sai do ranking. Isso não pode ser desfeito.`, rotulo: 'Remover os pontos' }))) return
     setRemovendo(p.id)
     try {
       await removerLancamento(p.id)
       setLista((l) => l.filter((x) => x.id !== p.id))
     } catch (e) {
-      alert('Não foi possível remover: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui remover o lançamento.')
     }
     setRemovendo(null)
   }
@@ -78,7 +79,7 @@ export default function RemoverPontos() {
                 <div className="font-semibold text-ink text-sm truncate">
                   {p.unidade_id ? '🛡️ ' : ''}{nomeDe(p)}
                 </div>
-                <div className="text-[11px] text-faint truncate">{p.motivo || p.origem} · {fmtData(p.data)}</div>
+                <div className="text-xs text-faint truncate">{p.motivo || p.origem} · {fmtData(p.data)}</div>
               </div>
               <span className={`font-extrabold shrink-0 ${p.pontos < 0 ? 'text-red-500' : 'text-brand'}`}>{p.pontos > 0 ? '+' : ''}{p.pontos}</span>
               <button onClick={() => remover(p)} disabled={removendo === p.id}

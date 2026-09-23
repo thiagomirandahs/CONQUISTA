@@ -245,10 +245,13 @@ const TRADUCOES = [
   [/Failed to fetch|NetworkError|network/i, 'Parece que a internet caiu. Confira a conexão e tente de novo.'],
   [/JWT|token|expired|401/i, 'Sua sessão expirou. Entre de novo para continuar.'],
 ]
-export function mensagemDeErro(erro) {
+// `contexto` é a frase que a tela já dizia ("Não consegui aprovar a entrega"): ela é preservada,
+// porque diz O QUE falhou. O que nunca vai para a tela é o texto do servidor.
+export function mensagemDeErro(erro, contexto) {
   const bruto = typeof erro === 'string' ? erro : (erro?.message || '')
-  for (const [regra, texto] of TRADUCOES) if (regra.test(bruto)) return texto
-  return 'Não deu certo agora. Tente de novo em instantes — nada do que você fez foi perdido.'
+  for (const [regra, texto] of TRADUCOES) if (regra.test(bruto)) return contexto ? `${contexto} ${texto}` : texto
+  const generico = 'Tente de novo em instantes — nada do que você fez foi perdido.'
+  return contexto ? `${contexto} ${generico}` : `Não deu certo agora. ${generico}`
 }
 
 export { variaveisDeContraste, corDeTextoSobre, corDeMarcaLegivel, razaoDeContraste } from './contraste.js'

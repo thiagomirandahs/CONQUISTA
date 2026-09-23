@@ -7,6 +7,7 @@ import {
   criarConviteResponsavel, listarConvitesResponsavel, revogarConviteResponsavel,
 } from '../lib/dados.js'
 import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
@@ -38,8 +39,8 @@ export default function VinculosPais() {
   }
 
   async function rejeitar(p) {
-    if (!window.confirm(`Rejeitar o pedido de "${p.nome_digitado}"?`)) return
-    try { await rejeitarVinculo(p.id); carregar() } catch (e) { alert(e?.message || e) }
+    if (!(await avisar.confirmar({ titulo: `Rejeitar o pedido de "${p.nome_digitado}"?`, descricao: 'O responsável não vai conseguir acompanhar essa criança. Ele pode pedir de novo depois.', rotulo: 'Rejeitar o pedido' }))) return
+    try { await rejeitarVinculo(p.id); carregar() } catch (e) { avisar.erro(e) }
   }
 
   return (
@@ -70,7 +71,7 @@ export default function VinculosPais() {
                 <span className="text-faint"> diz ser responsável de</span>
               </div>
               <div className="text-base font-extrabold text-brand">"{p.nome_digitado}"</div>
-              <div className="text-[11px] text-faint mb-3">pedido em {fmt(p.criado_em)}</div>
+              <div className="text-xs text-faint mb-3">pedido em {fmt(p.criado_em)}</div>
               {ehDiretoria ? (
                 <div className="flex gap-2">
                   <button onClick={() => setAprovando(p)} className="flex-1 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold rounded-xl py-2 text-sm">Confirmar vínculo</button>
@@ -127,8 +128,8 @@ function ConvitesResponsavel() {
   }
 
   async function revogar(c) {
-    if (!window.confirm('Revogar este convite? O link deixa de funcionar.')) return
-    try { await revogarConviteResponsavel(c.id); await carregar() } catch (e) { alert(e?.message || e) }
+    if (!(await avisar.confirmar({ titulo: 'Revogar este convite?', descricao: 'O link para de funcionar na hora. Quem já usou continua com o acesso.', rotulo: 'Revogar o convite' }))) return
+    try { await revogarConviteResponsavel(c.id); await carregar() } catch (e) { avisar.erro(e) }
   }
 
   return (
@@ -178,7 +179,7 @@ function ConvitesResponsavel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${st.classe}`}>{st.rotulo}</span>
+                  <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${st.classe}`}>{st.rotulo}</span>
                   {c.status === 'ativo' && (
                     <button onClick={() => revogar(c)} className="text-xs font-bold text-red-600 bg-red-50 rounded-lg px-2.5 py-1.5">Revogar</button>
                   )}
@@ -256,7 +257,7 @@ function PixConfig({ ehDiretoria }) {
 
   async function salvar() {
     setSalvando(true); setOk(false)
-    try { await salvarPix(editando); setPix(editando.trim()); setOk(true) } catch (e) { alert(e?.message || e) }
+    try { await salvarPix(editando); setPix(editando.trim()); setOk(true) } catch (e) { avisar.erro(e) }
     setSalvando(false)
   }
 

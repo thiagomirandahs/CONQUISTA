@@ -83,12 +83,12 @@ function Card({ e, onAbrir }) {
             <div className="font-bold text-ink">{e.titulo}</div>
             <div className="text-xs text-muted">{TIPO_ROTULO[e.tipo] || e.tipo} · {e.etapas} etapa{e.etapas === 1 ? '' : 's'}</div>
           </div>
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${STATUS_CLASSE[e.status] || ''}`}>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border shrink-0 ${STATUS_CLASSE[e.status] || ''}`}>
             {STATUS_ROTULO[e.status] || e.status}
           </span>
         </div>
         {e.descricao && <p className="text-sm text-faint mt-1 leading-snug line-clamp-2">{e.descricao}</p>}
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-faint">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-faint">
           <span>🎁 {recompensaTexto(e.recompensa)}</span>
           {e.temporada && <span>📅 {e.temporada.titulo}</span>}
           {e.alvo === 'unidade' && <span>👥 Por unidade</span>}
@@ -195,14 +195,14 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="font-bold text-ink text-sm">{s.ordem}. {s.titulo}</div>
-          <div className="text-[11px] text-faint">
+          <div className="text-xs text-faint">
             {EVIDENCIA_ROTULO[s.evidencia] || s.evidencia}
             {s.exige_aprovacao && ' · a liderança valida'}
             {s.pontos > 0 && ` · ${s.pontos} pts`}
           </div>
         </div>
         {feito && <span className="text-emerald-700 text-sm font-bold shrink-0">✅</span>}
-        {aguardando && <span className="text-amber-700 text-[11px] font-bold shrink-0">aguardando</span>}
+        {aguardando && <span className="text-amber-700 text-xs font-bold shrink-0">aguardando</span>}
       </div>
       {s.descricao && <p className="text-sm text-faint mt-1 leading-snug">{s.descricao}</p>}
       {env?.observacao && <p className="text-xs text-amber-800 mt-1">Liderança: {env.observacao}</p>}
@@ -233,7 +233,7 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
                   aria-label={`Arquivo da etapa ${s.titulo}`} onChange={escolherArquivo}
                   className="mt-1 w-full text-sm text-ink" />
               </label>
-              <p className="text-[11px] text-faint">
+              <p className="text-xs text-faint">
                 {subindo ? 'Enviando o arquivo…'
                   : valor.arquivo_path ? '✅ Arquivo pronto para enviar.'
                   : 'Vai para a sua pasta privada de comprovações — a mesma das atividades.'}

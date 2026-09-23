@@ -63,9 +63,9 @@ export default function MeuFilho() {
             </div>
           </div>
           <div className="grid grid-cols-3 divide-x divide-line text-center">
-            <div className="p-3"><div className="text-xl font-extrabold text-gold">{c.pontos}</div><div className="text-[11px] text-faint">pontos</div></div>
-            <div className="p-3"><div className="text-xl font-extrabold text-green-600">{c.presencas}</div><div className="text-[11px] text-faint">presenças</div></div>
-            <div className="p-3"><div className="text-xl font-extrabold text-faint">{c.faltas}</div><div className="text-[11px] text-faint">faltas</div></div>
+            <div className="p-3"><div className="text-xl font-extrabold text-gold">{c.pontos}</div><div className="text-xs text-faint">pontos</div></div>
+            <div className="p-3"><div className="text-xl font-extrabold text-green-600">{c.presencas}</div><div className="text-xs text-faint">presenças</div></div>
+            <div className="p-3"><div className="text-xl font-extrabold text-faint">{c.faltas}</div><div className="text-xs text-faint">faltas</div></div>
           </div>
           {(c.mensalidades_pendentes || []).length > 0 && (
             <div className="p-4 bg-amber-50 border-t border-amber-100">
@@ -75,11 +75,11 @@ export default function MeuFilho() {
               </p>
               {pix ? (
                 <div className="mt-2 bg-surface rounded-xl p-3">
-                  <p className="text-[11px] text-faint mb-0.5">Chave PIX do clube (toque pra copiar)</p>
+                  <p className="text-xs text-faint mb-0.5">Chave PIX do clube (toque pra copiar)</p>
                   <button onClick={copiarPix} className="text-sm font-bold text-brand break-all text-left w-full">{pix}</button>
                 </div>
               ) : (
-                <p className="text-[11px] text-amber-600 mt-1">Fale com a tesouraria pra acertar o pagamento.</p>
+                <p className="text-xs text-amber-600 mt-1">Fale com a tesouraria pra acertar o pagamento.</p>
               )}
             </div>
           )}

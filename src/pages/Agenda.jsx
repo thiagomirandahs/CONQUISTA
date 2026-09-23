@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarEventos, salvarEvento, excluirEvento } from '../lib/dados.js'
 import { curto, contagem, CORES_CONT } from '../lib/eventos.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS = ['Reunião', 'Acampamento', 'Passeio', 'Culto', 'Evento']
@@ -41,9 +42,9 @@ export default function Agenda() {
   useEffect(() => { const t = setInterval(() => setAgora(Date.now()), 1000); return () => clearInterval(t) }, [])
 
   async function excluir(ev) {
-    if (!window.confirm(`Apagar "${ev.titulo}" da agenda?`)) return
+    if (!(await avisar.confirmar({ titulo: `Apagar "${ev.titulo}" da agenda?`, descricao: 'O evento some da agenda de todo mundo. Isso não pode ser desfeito.', rotulo: 'Apagar o evento' }))) return
     try { await excluirEvento(ev.id); carregar() }
-    catch (e) { alert('Não foi possível: ' + (e?.message || e)) }
+    catch (e) { avisar.erro(e, 'Não consegui apagar o evento.') }
   }
 
   return (
@@ -78,20 +79,20 @@ export default function Agenda() {
             <motion.div key={ev.id} variants={{ hide: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }} className="bg-surface rounded-2xl p-4 shadow-soft flex gap-3">
               <div className="text-3xl shrink-0">{iconeTipo[ev.tipo] || '📅'}</div>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold text-brand2">{ev.tipo || 'Evento'}</div>
+                <div className="text-xs font-bold text-brand2">{ev.tipo || 'Evento'}</div>
                 <div className="font-bold text-ink break-words">{ev.titulo}</div>
                 <div className="text-xs text-muted mt-0.5">
                   📅 {fmtDataLonga(ev.data)}{ev.data_fim ? ` a ${curto(ev.data_fim)}` : ''}{ev.hora ? ` · ${ev.hora}` : ''}{ev.local ? ` · 📍 ${ev.local}` : ''}
                 </div>
                 {(() => {
                   const c = contagem(ev, agora)
-                  return c ? <span className={`inline-block mt-1.5 text-[11px] font-extrabold rounded-full px-2.5 py-1 ${CORES_CONT[c.cor]}`}>{c.txt}</span> : null
+                  return c ? <span className={`inline-block mt-1.5 text-xs font-extrabold rounded-full px-2.5 py-1 ${CORES_CONT[c.cor]}`}>{c.txt}</span> : null
                 })()}
                 {ev.descricao && <div className="text-xs text-muted mt-1 break-words">{ev.descricao}</div>}
               </div>
               {ehAdmin && (
                 <div className="flex flex-col gap-2 shrink-0">
-                  <button onClick={() => setEditando(ev)} title="Editar" className="text-base text-muted hover:bg-surface2 rounded-lg p-2">✏️</button>
+                  <button onClick={() => setEditando(ev)} title="Editar" aria-label="Editar este evento" className="text-base text-muted hover:bg-surface2 rounded-lg p-2">✏️</button>
                   <button onClick={() => excluir(ev)} title="Apagar" className="text-base text-red-500 hover:bg-red-50 rounded-lg p-2">🗑️</button>
                 </div>
               )}
@@ -149,7 +150,7 @@ function FormEvento({ inicial, criadoPor, onFechar, onSalvo }) {
         className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         <div className="bg-gradient-to-r from-brand to-brand2 text-white px-5 py-4 flex items-center justify-between shrink-0">
           <h3 className="font-extrabold">{inicial ? 'Editar evento' : 'Novo evento'}</h3>
-          <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+          <button aria-label="Fechar" onClick={onFechar} className="w-11 h-11 rounded-full bg-white/20 grid place-items-center">✕</button>
         </div>
         <form onSubmit={salvar} className="p-5 space-y-3 overflow-y-auto">
           <div>

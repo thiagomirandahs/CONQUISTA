@@ -6,6 +6,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -144,7 +145,7 @@ function Item({ it, onFeito }) {
       await avaliarRequisitoEspecialidade(it.member_specialty_requirement_id, decisao, comentario.trim() || null)
       onFeito(it.member_specialty_requirement_id)
     } catch (e) {
-      alert(mensagemDeErro(e))
+      avisar.erro(e)
       setOcupado(false)
     }
   }
@@ -153,7 +154,7 @@ function Item({ it, onFeito }) {
     <div className="bg-surface rounded-2xl p-4 shadow-soft">
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="font-bold text-ink truncate">{it.usuario_nome}</div>
-        <span className="text-[11px] text-faint shrink-0">{it.especialidade_nome}</span>
+        <span className="text-xs text-faint shrink-0">{it.especialidade_nome}</span>
       </div>
       <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
       {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}

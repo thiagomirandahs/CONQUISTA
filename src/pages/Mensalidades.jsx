@@ -5,14 +5,18 @@ import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { baixarCSV } from '../lib/csv.js'
 import Avatar from '../components/Avatar.jsx'
+import { Cabecalho, Card, Carregando, Vazio, Selo, Botao, Selecao, Campo, Folha, Abas } from '../ui/index.jsx'
+import { useAvisos } from '../ui/avisos.jsx'
 
 const FINANCEIRO = ['tesoureiro', 'diretoria']
 const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const abrevs = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const agora = new Date()
 
 export default function Mensalidades() {
   const { profile } = useAuth()
   const { papel: meuPapel } = useClube()
+  const { sucesso, erro: avisarErro, confirmar } = useAvisos()
   const podeVer = FINANCEIRO.includes(meuPapel)
   const [desbravadores, setDesbravadores] = useState([])
   const [pagamentos, setPagamentos] = useState({})
@@ -43,7 +47,7 @@ export default function Mensalidades() {
     return () => { vivo = false }
   }, [mes, ano, podeVer]) // eslint-disable-line
 
-  // Carrega o ANO inteiro (grade membro x 12 meses) quando a aba "Ano" abre
+  // Carrega o ANO inteiro quando a aba "Ano" abre
   useEffect(() => {
     if (!podeVer || aba !== 'ano') return
     let vivo = true
@@ -68,7 +72,16 @@ export default function Mensalidades() {
 
   async function alternar(d) {
     const pago = pagamentos[d.id]?.status === 'pago'
-    if (pago && !window.confirm(`Desmarcar o pagamento de ${(d.nome || 'membro').split(' ')[0]}? A data registrada será perdida.`)) return
+    const primeiroNome = (d.nome || 'esta pessoa').split(' ')[0]
+    if (pago) {
+      // desmarcar perde a data registrada: é decisão, não aviso — vai para o modal do design system
+      const ok = await confirmar({
+        titulo: `Desmarcar o pagamento de ${primeiroNome}?`,
+        descricao: `A data em que ${primeiroNome} pagou ${meses[mes - 1]} será apagada. Isso não pode ser desfeito.`,
+        rotulo: 'Desmarcar o pagamento',
+      })
+      if (!ok) return
+    }
     const novo = pago ? 'pendente' : 'pago'
     setPagamentos((p) => ({ ...p, [d.id]: { status: novo, valor } }))
     const { error } = await supabase.from('mensalidades').upsert({
@@ -76,17 +89,12 @@ export default function Mensalidades() {
       data_pagamento: novo === 'pago' ? hojeLocalISO() : null,
       registrado_por: profile?.id,
     }, { onConflict: 'desbravador_id,mes,ano' }) // alvo LEGADO: funciona antes e depois da migration (cada pessoa é de 1 clube só)
-    if (error) { alert('Erro: ' + error.message); recarregarMes() }
+    if (error) { avisarErro(error); recarregarMes(); return }
+    sucesso(novo === 'pago' ? `${primeiroNome} pagou ${meses[mes - 1]}.` : `${primeiroNome} voltou para pendente.`)
   }
 
   if (!podeVer) {
-    return (
-      <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
-        <div className="text-4xl mb-2">🔒</div>
-        <p className="font-semibold text-ink">Área do tesoureiro e diretoria</p>
-        <p className="text-sm text-faint">Aqui se controlam as mensalidades.</p>
-      </div>
-    )
+    return <Vazio icone="🔒" titulo="Área do tesoureiro e da diretoria">Aqui se controlam as mensalidades do clube.</Vazio>
   }
 
   const qtdPagos = desbravadores.filter((d) => pagamentos[d.id]?.status === 'pago').length
@@ -94,79 +102,73 @@ export default function Mensalidades() {
   const anos = [agora.getFullYear() - 1, agora.getFullYear(), agora.getFullYear() + 1]
 
   return (
-    <div>
-      <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-ink">💰 Mensalidades</h2>
-        <p className="text-sm text-muted">Controle de pagamentos (desbravadores e conselheiros)</p>
-      </div>
+    <div className="max-w-2xl mx-auto">
+      <Cabecalho icone="💰" titulo="Mensalidades" descricao="Pagamentos dos desbravadores e conselheiros" />
 
-      <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-4 max-w-xs">
-        {[['mes', '📅 Por mês'], ['ano', '🗓️ Ano inteiro']].map(([k, lbl]) => (
-          <button key={k} onClick={() => setAba(k)}
-            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
-        ))}
-      </div>
+      <Abas rotulo="Ver por" ativa={aba} aoTrocar={setAba}
+        abas={[{ chave: 'mes', icone: '📅', rotulo: 'Por mês' }, { chave: 'ano', icone: '🗓️', rotulo: 'Ano inteiro' }]} />
 
       {aba === 'ano' ? (
-        <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} meses={meses} />
+        <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} />
       ) : (
-      <>
-      <div className="bg-surface rounded-2xl p-4 shadow-soft mb-4 grid grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-muted mb-1">Mês</label>
-          <select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
-            {meses.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-muted mb-1">Ano</label>
-          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
-            {anos.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-muted mb-1">Valor (R$)</label>
-          <input type="number" min="0" value={valor} onChange={(e) => setValor(e.target.value)} className="w-full rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint focus:border-brand px-2 py-2 text-sm" />
-        </div>
-      </div>
+        <>
+          <Card className="mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3">
+              <Selecao id="m-mes" rotulo="Mês" value={mes} onChange={(e) => setMes(Number(e.target.value))}
+                opcoes={meses.map((m, i) => [i + 1, m])} />
+              <Selecao id="m-ano" rotulo="Ano" value={ano} onChange={(e) => setAno(Number(e.target.value))}
+                opcoes={anos.map((a) => [a, String(a)])} />
+              <Campo id="m-valor" rotulo="Valor (R$)" tipo="number" min="0" value={valor}
+                onChange={(e) => setValor(e.target.value)} className="sm:col-span-1 col-span-2" />
+            </div>
+          </Card>
 
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <Resumo rotulo="Pagos" valor={`${qtdPagos}/${desbravadores.length}`} cor="text-green-600" />
-        <Resumo rotulo="Pendentes" valor={desbravadores.length - qtdPagos} cor="text-amber-600" />
-        <Resumo rotulo="Arrecadado" valor={`R$ ${total}`} cor="text-brand" />
-      </div>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <Resumo rotulo="Pagos" valor={`${qtdPagos}/${desbravadores.length}`} cor="text-emerald-600" />
+            <Resumo rotulo="Pendentes" valor={desbravadores.length - qtdPagos} cor="text-amber-600" />
+            <Resumo rotulo="Arrecadado" valor={`R$ ${total}`} cor="text-brand" />
+          </div>
 
-      {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
-      ) : desbravadores.length === 0 ? (
-        <p className="text-faint text-sm">Ninguém cadastrado ainda.</p>
-      ) : (
-        <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
-          {desbravadores.map((d) => {
-            const pago = pagamentos[d.id]?.status === 'pago'
-            return (
-              <div key={d.id} className="flex items-center gap-3 px-4 py-3">
-                <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
-                <span className="flex-1 min-w-0 font-medium text-ink truncate">
-                  {d.nome}
-                  {d.papel === 'conselheiro' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle">Conselheiro</span>}
-                </span>
-                <button onClick={() => alternar(d)}
-                  className={`text-xs font-bold rounded-lg px-3.5 py-2.5 transition-colors ${pago ? 'bg-green-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
-                  {pago ? '✅ Pago' : '⏳ Pendente'}
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      )}
-      </>
+          {carregando ? <Carregando linhas={3} texto="Carregando as mensalidades" />
+            : desbravadores.length === 0 ? <Vazio icone="👥" titulo="Ninguém cadastrado ainda">Quando houver desbravadores e conselheiros no clube, eles aparecem aqui.</Vazio>
+            : (
+              <ul className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
+                {desbravadores.map((d) => {
+                  const pago = pagamentos[d.id]?.status === 'pago'
+                  return (
+                    <li key={d.id} className="flex items-center gap-3 px-4 py-3">
+                      <Avatar foto={d.foto} nome={d.nome} size="w-10 h-10" textSize="text-sm" />
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-semibold text-ink truncate">{d.nome}</span>
+                        {d.papel === 'conselheiro' && <span className="block text-xs text-brand font-semibold">Conselheiro</span>}
+                      </span>
+                      <button type="button" onClick={() => alternar(d)}
+                        aria-label={`${d.nome}: ${pago ? 'pago, tocar para desmarcar' : 'pendente, tocar para marcar como pago'}`}
+                        className={`shrink-0 text-sm font-bold rounded-xl px-3.5 min-h-[44px] transition-colors ${
+                          pago ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}`}>
+                        {pago ? '✅ Pago' : '⏳ Pendente'}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+        </>
       )}
     </div>
   )
 }
 
-function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses }) {
+// ---------------------------------------------------------------------------
+// Ano inteiro. Antes era UMA tabela de 12 colunas com scroll horizontal, nome truncado em 110px e
+// texto a 12px — ilegível no celular e a única tabela larga do app.
+// Agora: no celular, uma linha por pessoa com a fita dos 12 meses (toque abre o detalhe do ano);
+// no PC (lg:), a tabela continua, porque ali ela é mesmo a forma mais eficiente de comparar.
+// Nada foi removido: filtro de ano, CSV, estados e contagem seguem iguais.
+// ---------------------------------------------------------------------------
+function AnualView({ desbravadores, anual, carregando, ano, setAno, anos }) {
+  const [aberto, setAberto] = useState(null)
+
   function baixar() {
     const cab = ['Membro', ...meses, 'Meses pagos']
     const linhas = desbravadores.map((d) => {
@@ -176,54 +178,112 @@ function AnualView({ desbravadores, anual, carregando, ano, setAno, anos, meses 
     })
     baixarCSV(`mensalidades-${ano}.csv`, cab, linhas)
   }
-  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
+
+  if (carregando) return <Carregando linhas={4} texto="Carregando o ano inteiro" />
+
   return (
     <div>
-      <div className="mb-3 flex items-end justify-between gap-2">
-        <div className="max-w-[140px]">
-          <label className="block text-xs font-semibold text-muted mb-1">Ano</label>
-          <select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-full rounded-lg border border-line bg-surface2 text-ink focus:border-brand px-2 py-2 text-sm">
-            {anos.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
+      <div className="flex items-end justify-between gap-2 mb-3">
+        <div className="w-36">
+          <Selecao id="a-ano" rotulo="Ano" value={ano} onChange={(e) => setAno(Number(e.target.value))}
+            opcoes={anos.map((a) => [a, String(a)])} />
         </div>
         {desbravadores.length > 0 && (
-          <button onClick={baixar} className="text-sm bg-surface border border-line text-ink rounded-lg px-3 py-2 font-semibold shadow-soft hover:bg-surface2">
-            📥 Baixar CSV
-          </button>
+          <Botao variacao="secundario" aoTocar={baixar} className="mb-3">📥 Baixar CSV</Botao>
         )}
       </div>
+
       {desbravadores.length === 0 ? (
-        <p className="text-faint text-sm">Ninguém cadastrado ainda.</p>
+        <Vazio icone="👥" titulo="Ninguém cadastrado ainda">Quando houver membros no clube, o ano deles aparece aqui.</Vazio>
       ) : (
-        <div className="bg-surface rounded-2xl shadow-soft p-2 overflow-x-auto">
-          <table className="text-xs w-full border-collapse">
-            <thead>
-              <tr className="text-faint">
-                <th className="text-left font-semibold px-2 py-1.5 sticky left-0 bg-surface">Membro</th>
-                {meses.map((m, i) => <th key={i} className="px-1 py-1.5 font-semibold" title={m}>{m[0]}</th>)}
-                <th className="px-1.5 py-1.5 font-semibold">Pgs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {desbravadores.map((d) => {
-                const linha = anual[d.id] || {}
-                const pagos = Object.values(linha).filter((s) => s === 'pago').length
+        <>
+          {/* ---------- celular: uma pessoa por linha, detalhe sob demanda ---------- */}
+          <ul className="lg:hidden bg-surface rounded-2xl shadow-soft divide-y divide-line">
+            {desbravadores.map((d) => {
+              const linha = anual[d.id] || {}
+              const pagos = Object.values(linha).filter((s) => s === 'pago').length
+              return (
+                <li key={d.id}>
+                  <button type="button" onClick={() => setAberto(d)}
+                    className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-surface2"
+                    aria-label={`${d.nome}: ${pagos} de 12 meses pagos em ${ano}. Tocar para ver mês a mês.`}>
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 min-w-0 font-semibold text-ink truncate">{d.nome}</span>
+                      <Selo tom={pagos === 12 ? 'ok' : pagos === 0 ? 'atencao' : 'info'}>{pagos}/12</Selo>
+                      <span className="text-faint shrink-0" aria-hidden="true">›</span>
+                    </div>
+                    <div className="flex gap-1 mt-2" aria-hidden="true">
+                      {meses.map((_, i) => (
+                        <span key={i} title={meses[i]}
+                          className={`h-2.5 flex-1 rounded-full ${linha[i + 1] === 'pago' ? 'bg-emerald-500' : 'bg-surface2'}`} />
+                      ))}
+                    </div>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="lg:hidden text-xs text-faint mt-2 px-1">
+            Cada barrinha é um mês do ano. Toque em alguém para ver mês a mês.
+          </p>
+
+          {/* ---------- PC: a tabela continua, que aqui é mesmo a forma mais eficiente ---------- */}
+          <div className="hidden lg:block bg-surface rounded-2xl shadow-soft p-3">
+            <table className="text-sm w-full border-collapse">
+              <caption className="sr-only">Mensalidades de {ano}, mês a mês, por membro</caption>
+              <thead>
+                <tr className="text-muted">
+                  <th scope="col" className="text-left font-semibold px-2 py-2">Membro</th>
+                  {meses.map((m, i) => <th key={i} scope="col" className="px-1 py-2 font-semibold"><abbr title={m}>{abrevs[i]}</abbr></th>)}
+                  <th scope="col" className="px-2 py-2 font-semibold">Pagos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {desbravadores.map((d) => {
+                  const linha = anual[d.id] || {}
+                  const pagos = Object.values(linha).filter((s) => s === 'pago').length
+                  return (
+                    <tr key={d.id} className="border-t border-line">
+                      <th scope="row" className="text-left px-2 py-2 font-medium text-ink">{d.nome}</th>
+                      {meses.map((_, i) => (
+                        <td key={i} className="px-1 py-2 text-center">
+                          {linha[i + 1] === 'pago'
+                            ? <span title={`${meses[i]}: pago`}>✅</span>
+                            : <span className="text-faint" title={`${meses[i]}: em aberto`}>·</span>}
+                        </td>
+                      ))}
+                      <td className="px-2 py-2 text-center font-bold text-brand">{pagos}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            <p className="text-xs text-faint mt-2 px-1">✅ pago · <span className="text-faint">·</span> em aberto</p>
+          </div>
+        </>
+      )}
+
+      <Folha aberta={!!aberto} aoFechar={() => setAberto(null)} titulo={aberto?.nome || ''}>
+        {aberto && (
+          <>
+            <p className="text-sm text-muted mb-3">Mensalidades de {ano}</p>
+            <ul className="divide-y divide-line">
+              {meses.map((m, i) => {
+                const pago = (anual[aberto.id] || {})[i + 1] === 'pago'
                 return (
-                  <tr key={d.id} className="border-t border-line">
-                    <td className="text-left px-2 py-1.5 font-medium text-ink truncate max-w-[110px] sticky left-0 bg-surface">{d.nome}</td>
-                    {meses.map((_, i) => {
-                      const s = linha[i + 1]
-                      return <td key={i} className="px-1 py-1.5 text-center">{s === 'pago' ? '✅' : <span className="text-faint">·</span>}</td>
-                    })}
-                    <td className="px-1.5 py-1.5 text-center font-bold text-brand">{pagos}</td>
-                  </tr>
+                  <li key={i} className="flex items-center justify-between gap-3 py-3">
+                    <span className="text-sm font-semibold text-ink">{m}</span>
+                    <Selo tom={pago ? 'ok' : 'atencao'}>{pago ? '✅ Pago' : '⏳ Em aberto'}</Selo>
+                  </li>
                 )
               })}
-            </tbody>
-          </table>
-          <p className="text-[11px] text-faint mt-2 px-1">✅ pago · <span className="text-faint">·</span> em aberto — deslize pra ver todos os meses.</p>
-        </div>
-      )}
+            </ul>
+            <p className="text-xs text-faint mt-3">
+              Para marcar ou desmarcar um pagamento, use a aba <strong>Por mês</strong>.
+            </p>
+          </>
+        )}
+      </Folha>
     </div>
   )
 }
@@ -232,7 +292,7 @@ function Resumo({ rotulo, valor, cor }) {
   return (
     <div className="bg-surface rounded-xl p-3 text-center shadow-soft">
       <div className={`font-extrabold ${cor}`}>{valor}</div>
-      <div className="text-[10px] text-faint">{rotulo}</div>
+      <div className="text-xs text-faint">{rotulo}</div>
     </div>
   )
 }

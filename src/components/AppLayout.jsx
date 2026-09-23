@@ -166,7 +166,7 @@ export default function AppLayout() {
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className="text-xl leading-none" aria-hidden="true"
                     style={isActive ? { filter: 'drop-shadow(0 4px 10px var(--c-brand))' } : undefined}>{d.icon}</motion.span>
-                  <span className={`text-[11px] leading-none ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{d.label}</span>
+                  <span className={`text-xs leading-none ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{d.label}</span>
                 </>
               )}
             </NavLink>

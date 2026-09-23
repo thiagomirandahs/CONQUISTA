@@ -8,6 +8,7 @@ import {
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const STATUS_INFO = {
   nao_iniciado: { label: 'Não iniciado', badge: 'bg-surface2 text-muted border border-line', icon: '⚪' },
@@ -47,7 +48,7 @@ export default function MinhasEspecialidades() {
       await iniciarEspecialidade(specialtyId)
       await recarregar()
     } catch (e) {
-      alert(mensagemDeErro(e))
+      avisar.erro(e)
     }
   }
 
@@ -83,12 +84,12 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
                 <div className="font-bold text-ink truncate">{sp.nome}</div>
                 <div className="text-xs text-faint truncate">{[sp.categoria, sp.nivel].filter(Boolean).join(' · ')}</div>
                 {sp.curriculum_version?.origem === 'piloto_teste' && (
-                  <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                  <span className="inline-block mt-1 text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                     Dados de teste
                   </span>
                 )}
                 {bloqueada && (
-                  <p className="text-[11px] text-red-700 mt-1">🔒 Falta concluir antes: {sp.dependencias_pendentes.join(', ')}</p>
+                  <p className="text-xs text-red-700 mt-1">🔒 Falta concluir antes: {sp.dependencias_pendentes.join(', ')}</p>
                 )}
               </div>
               <button onClick={() => onIniciar(sp.specialty_id)} disabled={bloqueada}
@@ -113,7 +114,7 @@ function Progresso({ dados, userId, onMudou }) {
         <div className="flex items-center justify-between gap-2 mb-1">
           <h3 className="font-extrabold text-ink text-lg">{especialidade?.nome}</h3>
           {ehTeste && (
-            <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
+            <span className="text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
               Dados de teste
             </span>
           )}
@@ -185,7 +186,7 @@ function Requisito({ r, userId, onMudou }) {
     <div className="p-4">
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <p className="text-sm font-semibold text-ink leading-snug">{r.codigo}. {r.descricao}</p>
-        <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-0.5 ${info.badge}`}>{info.icon} {info.label}</span>
+        <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`}>{info.icon} {info.label}</span>
       </div>
 
       {r.status === 'aprovado' ? (
@@ -232,7 +233,7 @@ function Requisito({ r, userId, onMudou }) {
 
       {(r.avaliacoes || []).length > 0 && (
         <div className="mt-2">
-          <button onClick={() => setMostrarHistorico((v) => !v)} className="text-[11px] font-semibold text-faint underline">
+          <button onClick={() => setMostrarHistorico((v) => !v)} className="text-xs font-semibold text-faint underline">
             {mostrarHistorico ? 'Esconder' : 'Ver'} histórico de avaliação ({r.avaliacoes.length})
           </button>
           {mostrarHistorico && (

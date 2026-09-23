@@ -6,6 +6,7 @@ import {
   lerReflexoSoDesbravador, salvarReflexoSoDesbravador,
   lerRodizioJogos, salvarRodizioJogos,
 } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -39,7 +40,7 @@ export default function JogosTrilha() {
     try {
       await alternarJogoTrilha(j.chave, !j.ativo)
       setLista((l) => l.map((x) => (x.chave === j.chave ? { ...x, ativo: !x.ativo } : x)))
-    } catch (e) { alert('Não foi possível: ' + (e?.message || e)) }
+    } catch (e) { avisar.erro(e, 'Não consegui aplicar a mudança.') }
   }
 
   return (
@@ -96,9 +97,9 @@ function RodizioJogos() {
     setSalvando(true)
     try { await salvarRodizioJogos(novo); setLigado(novo) }
     catch (e) {
-      alert(/config_clube|does not exist|schema cache/i.test(e?.message || '')
-        ? 'Rode o SQL supabase/2026-08-28-rodizio-interruptor.sql primeiro.'
-        : 'Não foi possível: ' + (e?.message || e))
+      // falta de coluna/SQL não é erro do usuário: o texto diz o que a liderança precisa fazer
+      avisar.erro(e, /config_clube|does not exist|schema cache/i.test(e?.message || '')
+        ? 'O rodízio de jogos ainda não foi liberado neste clube.' : 'Não consegui mudar o rodízio.')
     }
     setSalvando(false)
   }
@@ -136,9 +137,8 @@ function SoDesbravador() {
     setSalvando(true)
     try { await salvarReflexoSoDesbravador(novo); setLigado(novo) }
     catch (e) {
-      alert(/config_clube|does not exist|schema cache/i.test(e?.message || '')
-        ? 'Rode o SQL supabase/2026-07-27-reflexo-so-desbravador.sql primeiro.'
-        : 'Não foi possível: ' + (e?.message || e))
+      avisar.erro(e, /config_clube|does not exist|schema cache/i.test(e?.message || '')
+        ? 'Esta opção ainda não foi liberada neste clube.' : 'Não consegui mudar a opção.')
     }
     setSalvando(false)
   }

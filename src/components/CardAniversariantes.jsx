@@ -60,7 +60,7 @@ export default function CardAniversariantes() {
               <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-800 text-sm truncate">{p.nome}{ehHoje && ' 🎉'}</div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-xs text-slate-400">
                   dia {p.dia}{faz > 0 && faz < 120 ? ` · faz ${faz} anos` : ''}
                 </div>
               </div>

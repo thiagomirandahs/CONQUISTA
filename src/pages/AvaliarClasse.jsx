@@ -3,6 +3,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -66,7 +67,7 @@ function Item({ it, onFeito }) {
       await avaliarRequisito(it.member_requirement_id, decisao, comentario.trim() || null)
       onFeito(it.member_requirement_id)
     } catch (e) {
-      alert(mensagemDeErro(e))
+      avisar.erro(e)
       setOcupado(false)
     }
   }
@@ -80,7 +81,7 @@ function Item({ it, onFeito }) {
     <article className="bg-surface rounded-2xl p-4 shadow-soft" aria-label={`${it.usuario_nome}: requisito ${it.requisito_codigo}`}>
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="font-bold text-ink truncate">{it.usuario_nome}</div>
-        <span className="text-[11px] text-faint shrink-0">{it.classe_nome} · {it.secao_nome}</span>
+        <span className="text-xs text-faint shrink-0">{it.classe_nome} · {it.secao_nome}</span>
       </div>
       <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
       {it.conteudo_dinamico && (

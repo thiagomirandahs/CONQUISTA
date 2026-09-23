@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
 import { CARGOS_LIDERANCA } from '../lib/cargos.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const ADMIN = ['diretoria', 'instrutor']
 const fmtData = (iso) => (iso ? iso.split('-').reverse().join('/') : '—')
@@ -39,7 +40,7 @@ export default function Aprovacoes() {
     // mesmo vocabulário de sempre (ativo/rejeitado) e escreve no clube em uso.
     const { error } = await supabase.rpc('vinculo_gerir', { p_user_id: id, p_status: novoStatus })
     if (error) {
-      alert('Não consegui salvar — recarregue a página e tente de novo.')
+      avisar.erro(null, 'Não consegui salvar o cadastro.')
       if (alvo) setPendentes((p) => [alvo, ...p]) // devolve o card que tinha sumido
     }
   }
@@ -87,12 +88,12 @@ export default function Aprovacoes() {
                       {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
                     </div>
                     {p.cargo && (
-                      <span className={`inline-block mt-1 text-[11px] font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-surface2 text-muted'}`}>
+                      <span className={`inline-block mt-1 text-xs font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-surface2 text-muted'}`}>
                         {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
                       </span>
                     )}
                     {ehLideranca(p.cargo) && (
-                      <div className="text-[10px] text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
+                      <div className="text-xs text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
                     )}
                   </div>
                 </div>

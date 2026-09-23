@@ -10,6 +10,7 @@ import * as juice from '../lib/juice.js'
 import { JOGOS, ARCADE, RESERVAS, JogoBoundary, JogoMemoria } from '../features/jogos/registry.jsx'
 import ResultadoCard from '../features/jogos/ResultadoCard.jsx'
 import RankingTrilha from '../features/jogos/RankingTrilha.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const festa = juice.festa
 
@@ -61,7 +62,7 @@ export default function Trilha() {
     try {
       if (liberar) await liberarJogo(chave); else await trancarJogo(chave)
       setRodizio(await statusJogosDoDia())
-    } catch (e) { alert(e?.message || String(e)) }
+    } catch (e) { avisar.erro(e) }
   }
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
@@ -99,7 +100,7 @@ export default function Trilha() {
       // Completou os jogos do dia? O servidor confere e dá o bônus (1x/dia).
       try { const b = await bonusTodosJogos(); if (b?.ganhou > 0) { festa(3); setBonusDia(b.ganhou) } } catch { /* silencioso */ }
     } catch (e) {
-      alert(e?.message || String(e))
+      avisar.erro(e)
       setJogando(false)
     }
   }
@@ -218,7 +219,7 @@ export default function Trilha() {
                 <span className="font-bold text-ink">
                   {completouDia ? `✅ Jogos do dia completos! +${valorBonus} 🎁` : `🎮 Jogos do dia: ${feitosHoje.length}/${jogosDiarios.length}`}
                 </span>
-                {!completouDia && <span className="text-[11px] text-muted shrink-0">complete todos = +{valorBonus} 🎁</span>}
+                {!completouDia && <span className="text-xs text-muted shrink-0">complete todos = +{valorBonus} 🎁</span>}
               </div>
               <div className="h-2 bg-surface2 rounded-full overflow-hidden mt-2">
                 <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${Math.round((100 * feitosHoje.length) / jogosDiarios.length)}%` }} />
@@ -262,7 +263,7 @@ export default function Trilha() {
                     className={`w-full text-left rounded-2xl p-3.5 mb-3 bg-amber-50 border-2 border-gold flex items-center gap-3 ${semanaTravado ? 'opacity-70' : ''}`}>
                     <span className={`text-3xl shrink-0 ${!semanaAberto ? 'grayscale' : ''}`}>{JOGOS[jogoSemana].emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-extrabold text-gold uppercase tracking-wide">🎲 Jogo da semana</div>
+                      <div className="text-xs font-extrabold text-gold uppercase tracking-wide">🎲 Jogo da semana</div>
                       <div className="font-extrabold text-ink leading-tight">{JOGOS[jogoSemana].nome}</div>
                       <div className="text-xs text-muted">
                         {semanaJogado ? '✓ Jogado hoje — volte amanhã! Quem fizer mais estrelas até domingo leva +20 🏆'
@@ -276,7 +277,7 @@ export default function Trilha() {
 
               {rodizioOn && (rodizio.hoje || []).some((c) => JOGOS[c]) && (
                 <div className="rounded-2xl p-3.5 mb-3 bg-brand/5 border-2 border-brand/30">
-                  <div className="text-[11px] font-extrabold text-brand uppercase tracking-wide">🥇 Jogos do dia</div>
+                  <div className="text-xs font-extrabold text-brand uppercase tracking-wide">🥇 Jogos do dia</div>
                   <p className="text-xs text-muted mt-0.5 mb-2">
                     O melhor de cada um leva <b>+10</b> amanhã cedo (empate: quem jogou primeiro).
                     Jogue os {jogosDiarios.length} e ganhe <b>+{valorBonus}</b> de bônus! 🎁
@@ -318,7 +319,7 @@ export default function Trilha() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-ink leading-tight">{doDia ? '🥇 ' : ''}{j.nome}</div>
-                          <div className="text-[11px] text-faint leading-snug mt-0.5">
+                          <div className="text-xs text-faint leading-snug mt-0.5">
                             {aberto ? j.desc : <>🔒 Abre <b>{fmtAbre(proximaData(chave))}</b> — ou peça pra liderança liberar</>}
                           </div>
                         </div>

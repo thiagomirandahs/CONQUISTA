@@ -5,6 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import { carregarFotos, adicionarFoto, excluirFoto } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 // Categorias (álbuns) do mural. O nome é gravado na coluna "evento" de cada foto.
 const CATEGORIAS = [
@@ -140,7 +141,7 @@ export default function Mural() {
                       <div className="font-bold text-sm drop-shadow flex items-center gap-1">
                         <span>{c.icon}</span><span className="truncate">{c.nome}</span>
                       </div>
-                      <div className="text-[11px] text-white/90 drop-shadow">
+                      <div className="text-xs text-white/90 drop-shadow">
                         {carregando ? '...' : `${lista.length} foto(s)`}
                       </div>
                     </div>
@@ -163,10 +164,10 @@ export default function Mural() {
             {lightbox.legenda && <p className="text-white text-center mt-4 max-w-md px-4">{lightbox.legenda}</p>}
             <div className="flex items-center gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
               {podeExcluir(lightbox) && (
-                <button onClick={() => aoExcluir(lightbox).catch((err) =>
-                  alert(err?.message === 'SEM_PERMISSAO'
-                    ? 'Não foi possível excluir (sem permissão). A liderança precisa aplicar a regra de exclusão no banco.'
-                    : 'Erro ao excluir: ' + (err?.message || err)))}
+                <button onClick={() => aoExcluir(lightbox).catch((err) => avisar.erro(err,
+                  err?.message === 'SEM_PERMISSAO'
+                    ? 'Você não tem permissão para excluir esta foto.'
+                    : 'Não consegui excluir a foto.'))}
                   className="bg-red-500/90 text-white text-sm font-semibold rounded-xl px-4 py-2">🗑️ Excluir</button>
               )}
               <button onClick={() => setLightbox(null)} className="bg-white/20 text-white text-sm font-semibold rounded-xl px-4 py-2">Fechar</button>
@@ -356,7 +357,7 @@ function ModalDesenho({ onFechar, onEnviar }) {
         const file = new File([blob], 'desenho.png', { type: 'image/png' })
         await onEnviar({ file, legenda: legenda.trim() || `🎨 ${tema}` })
       } catch (err) {
-        alert('Não deu pra enviar: ' + (err?.message || err))
+        avisar.erro(err, 'Não consegui enviar o desenho.')
         setEnviando(false)
       }
     }, 'image/png')
@@ -369,7 +370,7 @@ function ModalDesenho({ onFechar, onEnviar }) {
       <div className="flex items-center justify-between gap-2 px-4 py-2 text-white shrink-0">
         <div className="min-w-0">
           <h3 className="text-base font-extrabold leading-tight">🎨 Ateliê</h3>
-          <p className="text-[11px] text-white/70 truncate">Tema: {tema} · 2 dedos p/ mover e dar zoom ✌️</p>
+          <p className="text-xs text-white/70 truncate">Tema: {tema} · 2 dedos p/ mover e dar zoom ✌️</p>
         </div>
         <button onClick={onFechar} disabled={enviando}
           className="text-sm font-bold text-white bg-white/15 rounded-lg px-3 py-2 shrink-0 disabled:opacity-50">Fechar</button>
@@ -408,9 +409,9 @@ function ModalDesenho({ onFechar, onEnviar }) {
           ))}
           <div className="flex-1" />
           <button onClick={desfazer} disabled={!tracos.length}
-            className="text-base font-bold text-muted bg-surface2 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer">↩️</button>
+            className="text-base font-bold text-muted bg-surface2 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Desfazer" aria-label="Desfazer o último traço">↩️</button>
           <button onClick={limpar} disabled={!tracos.length}
-            className="text-base font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Limpar">🗑️</button>
+            className="text-base font-bold text-red-600 bg-red-50 rounded-xl px-3 py-2 disabled:opacity-40 shrink-0" title="Limpar" aria-label="Limpar o desenho">🗑️</button>
         </div>
         <div className="flex items-center gap-2">
           <input value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}

@@ -6,6 +6,7 @@ import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -131,16 +132,16 @@ export default function Atividades() {
     const resp = id
       ? await supabase.from('atividades').update(dados).eq('id', id)
       : await supabase.from('atividades').insert({ ...dados, criado_por: profile?.id })
-    if (resp.error) { alert('Não foi possível salvar: ' + resp.error.message); return }
+    if (resp.error) { avisar.erro(resp.error, 'Não consegui salvar a atividade.'); return }
     setCriando(false)
     setEditando(null)
     carregar()
   }
 
   async function excluirAtividade(a) {
-    if (!window.confirm(`Excluir a atividade "${a.titulo}"?`)) return
+    if (!(await avisar.confirmar({ titulo: `Excluir a atividade "${a.titulo}"?`, descricao: 'As entregas feitas nela também somem. Isso não pode ser desfeito.', rotulo: 'Excluir a atividade' }))) return
     const { error } = await supabase.from('atividades').delete().eq('id', a.id)
-    if (error) { alert('Não foi possível excluir: ' + error.message); return }
+    if (error) { avisar.erro(error, 'Não consegui excluir a atividade.'); return }
     carregar()
   }
 
@@ -169,8 +170,8 @@ export default function Atividades() {
     // 'pendente' — nunca dobra (duplo toque) nem fica "aprovada sem pontos".
     const { data, error } = await supabase.rpc('aprovar_entrega', { p_entrega_id: e.id })
     setAvaliando(null)
-    if (error) { alert('Não consegui aprovar: ' + (error.message || error)); return }
-    if (data && data.ok === false) { alert('Essa entrega já tinha sido avaliada — atualizei a lista.') }
+    if (error) { avisar.erro(error, 'Não consegui aprovar a entrega.'); return }
+    if (data && data.ok === false) { avisar.info('Essa entrega já tinha sido avaliada — atualizei a lista.') }
     carregar()
   }
   async function reprovarEntrega(e, feedback) {
@@ -180,11 +181,11 @@ export default function Atividades() {
       .update({ status: 'reprovada', avaliado_por: profile?.id, feedback: feedback || null })
       .eq('id', e.id).eq('status', 'pendente')
     setAvaliando(null)
-    if (error) { alert('Não consegui reprovar: ' + (error.message || error)); return }
+    if (error) { avisar.erro(error, 'Não consegui reprovar a entrega.'); return }
     carregar()
   }
   async function excluirEntrega(e) {
-    if (!window.confirm(`Apagar a entrega de ${e.autor?.nome || 'desbravador'} em "${e.atividade?.titulo || ''}"?`)) return
+    if (!(await avisar.confirmar({ titulo: `Apagar a entrega de ${e.autor?.nome || 'desbravador'}?`, descricao: `A entrega em "${e.atividade?.titulo || ''}" e os pontos dela são removidos. Isso não pode ser desfeito.`, rotulo: 'Apagar a entrega' }))) return
     // Remove os pontos ANTES da entrega (o vínculo entrega_id vira null ao apagá-la).
     if (e.status === 'aprovada') {
       const { data: del } = await supabase.from('pontos').delete().eq('entrega_id', e.id).select('id')
@@ -196,7 +197,7 @@ export default function Atividades() {
       }
     }
     const { error } = await supabase.from('entregas').delete().eq('id', e.id)
-    if (error) { alert('Não foi possível apagar: ' + error.message); return }
+    if (error) { avisar.erro(error, 'Não consegui apagar a entrega.'); return }
     carregar()
   }
 
@@ -281,24 +282,24 @@ export default function Atividades() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">{iconeCat[a.categoria] || '📋'}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-semibold text-brand">{a.categoria} · {a.alvo}</div>
+                      <div className="text-xs font-semibold text-brand">{a.categoria} · {a.alvo}</div>
                       <div className="font-bold text-ink leading-tight break-words">{a.titulo}</div>
                       <div className="text-xs text-muted mt-0.5 line-clamp-2 break-words">{comLinks(a.descricao)}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-gold font-extrabold leading-none">+{a.pontos}</div>
-                      <div className="text-[10px] text-faint">pontos</div>
+                      <div className="text-xs text-faint">pontos</div>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
                     {badgesCriterio(a.criterios).map((b) => (
-                      <span key={b} className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">{b}</span>
+                      <span key={b} className="text-xs bg-surface2 text-muted rounded-full px-2 py-0.5">{b}</span>
                     ))}
                   </div>
 
                   {ehAdmin && membros.length > 0 && (
-                    <div className="text-[11px]">
+                    <div className="text-xs">
                       <button type="button" onClick={() => setAbertoFaltam(abertoFaltam === a.id ? null : a.id)}
                         className="font-semibold text-muted hover:text-brand">
                         ✅ {entreguesSet.size}/{membros.length} entregaram{faltam.length ? ` · ${faltam.length} faltando ▾` : ' 🎉'}
@@ -312,7 +313,7 @@ export default function Atividades() {
                   )}
 
                   {status === 'reprovada' && minha?.feedback && (
-                    <div className="text-[11px] bg-amber-50 border border-amber-200 text-amber-700 rounded-lg p-2">
+                    <div className="text-xs bg-amber-50 border border-amber-200 text-amber-700 rounded-lg p-2">
                       <span className="font-semibold">Motivo:</span> {minha.feedback}
                     </div>
                   )}
@@ -322,10 +323,10 @@ export default function Atividades() {
                     <div className="flex items-center gap-2">
                       {ehAdmin && (
                         <>
-                          <button onClick={() => setEditando(a)} title="Editar"
-                            className="text-xs text-muted hover:bg-surface2 rounded-lg px-2 py-1.5">✏️</button>
-                          <button onClick={() => excluirAtividade(a)} title="Excluir"
-                            className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1.5">🗑️</button>
+                          <button onClick={() => setEditando(a)} aria-label={`Editar a atividade ${a.titulo}`}
+                            className="text-base text-muted hover:bg-surface2 rounded-lg min-w-[44px] min-h-[44px]">✏️</button>
+                          <button onClick={() => excluirAtividade(a)} aria-label={`Excluir a atividade ${a.titulo}`}
+                            className="text-base text-red-500 hover:bg-red-50 rounded-lg min-w-[44px] min-h-[44px]">🗑️</button>
                         </>
                       )}
                       {status === 'aprovada' ? (
@@ -461,7 +462,7 @@ function EntregasView({ entregas, onExcluir }) {
               <div className="font-bold text-ink">{e.autor?.nome || 'Desbravador'}</div>
               <div className="text-xs text-brand font-semibold">{e.atividade?.titulo}</div>
             </div>
-            <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
+            <span className={`text-xs font-bold rounded-full px-2 py-0.5 shrink-0 ${badge(e.status)}`}>{rotulo(e.status)}</span>
           </div>
           {e.texto && <p className="text-sm text-muted mt-2 bg-surface2 rounded-lg p-2 italic break-words">"{comLinks(e.texto)}"</p>}
           {e.foto_url && (
@@ -613,7 +614,7 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
                 ? <video src={previa} controls playsInline className="mt-2 w-full max-h-56 rounded-lg bg-black" />
                 : <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />)}
               {foto && !previa && <p className="text-xs text-green-600 mt-1">Anexado: {foto.name}</p>}
-              {c.foto && <p className="text-[11px] text-faint mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
+              {c.foto && <p className="text-xs text-faint mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
             </Campo>
           )}
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
@@ -644,7 +645,7 @@ function Painel({ titulo, children, onFechar }) {
       className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
       <div className="bg-gradient-to-r from-brand to-brand2 text-white px-5 py-4 flex items-center justify-between">
         <h3 className="font-extrabold">{titulo}</h3>
-        <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+        <button aria-label="Fechar" onClick={onFechar} className="w-11 h-11 rounded-full bg-white/20 grid place-items-center">✕</button>
       </div>
       {children}
     </motion.div>

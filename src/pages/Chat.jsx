@@ -243,11 +243,11 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
             return (
               <div key={m.id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${minha ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'bg-surface2 text-ink'}`}>
-                  {!minha && (tipo === 'unidade' || tipo === 'geral') && <div className="text-[11px] font-bold opacity-70 mb-0.5">{m.autor?.nome || '...'}</div>}
+                  {!minha && (tipo === 'unidade' || tipo === 'geral') && <div className="text-xs font-bold opacity-70 mb-0.5">{m.autor?.nome || '...'}</div>}
                   <div className={`text-sm ${m.apagada ? 'italic opacity-60' : ''}`}>
                     {m.apagada ? 'Mensagem removida pela liderança' : m.texto}
                   </div>
-                  <div className={`text-[10px] mt-0.5 ${minha ? 'text-blue-100' : 'text-faint'}`}>{tempoRel(m.created_at)}</div>
+                  <div className={`text-xs mt-0.5 ${minha ? 'text-blue-100' : 'text-faint'}`}>{tempoRel(m.created_at)}</div>
                 </div>
               </div>
             )

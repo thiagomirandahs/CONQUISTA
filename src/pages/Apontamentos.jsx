@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import Avatar from '../components/Avatar.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 // Valores dos pontos (fácil de ajustar aqui)
 const PT = { naHora: 10, atrasado: 5, faltou: 0, biblia: 20, uniforme: 10, igreja: 10, atividade: 10 }
@@ -86,10 +87,10 @@ export default function Apontamentos() {
     const { error } = await supabase.rpc('salvar_reuniao', { p_data: data, p_motivo: motivo, p_itens: itens })
     setSalvando(false)
     if (error) {
-      alert('❌ Não consegui salvar os apontamentos.\n' + (error.message || error) + '\n\nNenhum ponto foi alterado — confira a internet e tente de novo.')
+      avisar.erro(error, 'Não consegui salvar os apontamentos. Nenhum ponto foi alterado.')
       return
     }
-    alert('Apontamentos salvos! ✅ Os pontos já entram no ranking.')
+    avisar.sucesso('Apontamentos salvos! Os pontos já entram no ranking.')
   }
 
   if (!podeApontar) {
@@ -125,7 +126,7 @@ export default function Apontamentos() {
         )}
       </div>
 
-      <div className="text-[11px] text-faint mb-3 leading-relaxed">
+      <div className="text-xs text-faint mb-3 leading-relaxed">
         Na hora +{PT.naHora} · Atrasado +{PT.atrasado} · 📖 Bíblia +{PT.biblia} · 👕 Uniforme +{PT.uniforme} · ⛪ Igreja +{PT.igreja} · ⭐ Atividade +{PT.atividade} · Faltou: 0
       </div>
 
@@ -157,7 +158,7 @@ export default function Apontamentos() {
                 <Avatar foto={d.foto} nome={d.nome} size="w-9 h-9" textSize="text-sm" />
                 <span className="flex-1 text-left font-semibold text-ink truncate">
                   {d.nome}
-                  {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
+                  {d.papel !== 'desbravador' && <span className="ml-2 text-xs bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                 </span>
                 <span className={`text-sm font-bold shrink-0 ${presente ? 'text-green-600' : 'text-faint'}`}>{presente ? '✅ Presente' : '❌ Faltou'}</span>
               </button>
@@ -178,7 +179,7 @@ export default function Apontamentos() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-ink">
                     {d.nome}
-                    {d.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
+                    {d.papel !== 'desbravador' && <span className="ml-2 text-xs bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{d.papel}</span>}
                   </span>
                   <span className="text-brand font-extrabold">{calcTotal(m)} pts</span>
                 </div>

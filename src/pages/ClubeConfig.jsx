@@ -42,7 +42,7 @@ function Campo({ rotulo, dica, children }) {
         <span className="block text-sm font-medium text-ink mb-1">{rotulo}</span>
         {children}
       </label>
-      {dica && <span className="block text-[11px] text-faint mt-1">{dica}</span>}
+      {dica && <span className="block text-xs text-faint mt-1">{dica}</span>}
     </div>
   )
 }
@@ -60,7 +60,7 @@ function CampoCor({ rotulo, valor, aoMudar }) {
           <button type="button" onClick={() => aoMudar('')} className="text-xs text-muted font-semibold shrink-0 px-2">Padrão</button>
         )}
       </div>
-      <span className="block text-[11px] text-faint mt-1">Deixe vazio para usar a cor padrão do app.</span>
+      <span className="block text-xs text-faint mt-1">Deixe vazio para usar a cor padrão do app.</span>
     </div>
   )
 }
@@ -140,7 +140,7 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
           </label>
           {form.logoUrl && <button type="button" onClick={() => mudar('logoUrl')('')} className="text-xs text-muted font-semibold px-2">Remover</button>}
         </div>
-        <span className="block text-[11px] text-faint mt-1">JPG, PNG, WebP ou GIF, até 5 MB. Fica pública (aparece na tela de entrada).</span>
+        <span className="block text-xs text-faint mt-1">JPG, PNG, WebP ou GIF, até 5 MB. Fica pública (aparece na tela de entrada).</span>
       </div>
 
       {erros.length > 0 && (

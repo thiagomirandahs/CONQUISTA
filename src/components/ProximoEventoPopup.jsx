@@ -76,7 +76,7 @@ export default function ProximoEventoPopup() {
             className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden text-center">
             <div className="p-5 text-white" style={{ background: 'linear-gradient(135deg,#1e3a8a,#4338ca)' }}>
               <div className="text-4xl mb-1">{iconeTipo[ev.tipo] || '📅'}</div>
-              <div className="text-[11px] font-semibold opacity-90">{ev.tipo || 'Evento'} chegando!</div>
+              <div className="text-xs font-semibold opacity-90">{ev.tipo || 'Evento'} chegando!</div>
               <p className="text-xl font-extrabold leading-tight">{ev.titulo}</p>
             </div>
             <div className="p-5">
@@ -92,7 +92,7 @@ export default function ProximoEventoPopup() {
                   {caixas.map(([lbl, val]) => (
                     <div key={lbl} className="bg-slate-100 rounded-xl px-2.5 py-2 min-w-[56px]">
                       <div className="text-2xl font-extrabold text-brand tabular-nums leading-none">{String(val).padStart(2, '0')}</div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">{lbl}</div>
+                      <div className="text-xs text-slate-500 font-bold uppercase mt-1">{lbl}</div>
                     </div>
                   ))}
                 </div>

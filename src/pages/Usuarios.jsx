@@ -7,6 +7,7 @@ import {
   carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
   lancarPontosIndividual, definirAtivoUsuario, excluirUsuario, definirTesteUsuario,
 } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -41,24 +42,24 @@ export default function Usuarios() {
   // Desativar/reativar: bloqueia (ou libera) o acesso sem apagar o histórico.
   async function alternarAtivo(u) {
     const desativando = u.status === 'ativo'
-    if (desativando && !window.confirm(`Desativar ${u.nome || 'esta pessoa'}?\n\nEla não vai mais conseguir entrar e some do ranking, mas o histórico fica guardado. Dá pra reativar depois.`)) return
+    if (desativando && !(await avisar.confirmar({ titulo: `Desativar ${u.nome || 'esta pessoa'}?`, descricao: 'Ela não vai mais conseguir entrar e some do ranking. O histórico fica guardado e dá pra reativar depois.', rotulo: 'Desativar' }))) return
     try {
       await definirAtivoUsuario(u.id, !desativando)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: desativando ? 'inativo' : 'ativo' } : x)))
     } catch (e) {
-      alert('Não foi possível: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui aplicar a mudança.')
     }
   }
 
   // Conta de teste: usa o app à vontade sem pontuar e sem entrar no ranking.
   async function alternarTeste(u) {
     const ligando = !u.teste
-    if (ligando && !window.confirm(`Marcar ${u.nome || 'esta conta'} como TESTE?\n\nEla para de ganhar pontos, pode repetir jogos/missões sem limite e some do ranking. Dá pra desmarcar depois.`)) return
+    if (ligando && !(await avisar.confirmar({ titulo: `Marcar ${u.nome || 'esta conta'} como teste?`, descricao: 'Ela para de ganhar pontos, pode repetir jogos e missões sem limite e some do ranking. Dá pra desmarcar depois.', rotulo: 'Marcar como teste', perigo: false }))) return
     try {
       await definirTesteUsuario(u.id, ligando)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, teste: ligando } : x)))
     } catch (e) {
-      alert('Não foi possível: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui aplicar a mudança.')
     }
   }
 
@@ -70,7 +71,7 @@ export default function Usuarios() {
         ? { ...x, papel: novoPapel, unidade_id: r?.limpouUnidade ? null : x.unidade_id }
         : x)))
     } catch (e) {
-      alert('Não foi possível trocar o cargo: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui trocar o cargo.')
     }
   }
 
@@ -81,7 +82,7 @@ export default function Usuarios() {
       await mudarUnidade(u.id, alvoId)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, unidade_id: alvoId } : x)))
     } catch (e) {
-      alert('Não foi possível trocar a unidade: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui trocar a unidade.')
     }
   }
 
@@ -139,14 +140,14 @@ export default function Usuarios() {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-ink text-sm truncate">
                     {u.nome || '(sem nome)'}
-                    {u.status === 'pendente' && <span className="ml-2 text-[10px] text-amber-600 font-normal">pendente</span>}
-                    {u.status === 'inativo' && <span className="ml-2 text-[10px] text-muted font-normal bg-surface2 rounded px-1.5 py-0.5">desativado</span>}
-                    {u.teste && <span className="ml-2 text-[10px] text-purple-700 font-normal bg-purple-100 rounded px-1.5 py-0.5">🧪 teste</span>}
+                    {u.status === 'pendente' && <span className="ml-2 text-xs text-amber-600 font-normal">pendente</span>}
+                    {u.status === 'inativo' && <span className="ml-2 text-xs text-muted font-normal bg-surface2 rounded px-1.5 py-0.5">desativado</span>}
+                    {u.teste && <span className="ml-2 text-xs text-purple-700 font-normal bg-purple-100 rounded px-1.5 py-0.5">🧪 teste</span>}
                     {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
-                      <span className="ml-2 text-[10px] text-orange-600 font-normal">sem unidade</span>
+                      <span className="ml-2 text-xs text-orange-600 font-normal">sem unidade</span>
                     )}
                   </div>
-                  {u.email && <div className="text-[11px] text-brand/80 truncate">✉️ {u.email}</div>}
+                  {u.email && <div className="text-xs text-brand/80 truncate">✉️ {u.email}</div>}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -300,7 +301,7 @@ function ModalReset({ usuario, onFechar }) {
         {usuario.email ? (
           <div className="bg-surface2 rounded-xl p-3 mb-4 flex items-center gap-2">
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] text-faint">E-mail do cadastro</div>
+              <div className="text-xs text-faint">E-mail do cadastro</div>
               <div className="font-medium text-ink text-sm truncate select-all">{usuario.email}</div>
             </div>
             <a href={`mailto:${usuario.email}`} className="text-brand text-xs font-semibold bg-brand/10 rounded-lg px-3 py-2 shrink-0">✉️ Enviar</a>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarTodasConversasChat, apagarMensagemChat } from '../lib/dados.js'
 import { supabase } from '../lib/supabase.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -84,8 +85,8 @@ export default function ChatModeracao() {
                 <div className="text-xs text-muted truncate">{c.ultima_mensagem || '(sem mensagens)'}</div>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-[11px] text-faint">{c.total_mensagens} msg</div>
-                {c.ultima_em && <div className="text-[10px] text-faint">{fmtData(c.ultima_em)}</div>}
+                <div className="text-xs text-faint">{c.total_mensagens} msg</div>
+                {c.ultima_em && <div className="text-xs text-faint">{fmtData(c.ultima_em)}</div>}
               </div>
             </button>
           ))}
@@ -116,8 +117,8 @@ function ConversaAberta({ conversaId, titulo, onVoltar }) {
   useEffect(() => { carregar() }, [conversaId]) // eslint-disable-line
 
   async function apagar(id) {
-    if (!window.confirm('Apagar esta mensagem? Ela some da tela dos desbravadores, mas você continua vendo aqui.')) return
-    try { await apagarMensagemChat(id); carregar() } catch (e) { alert(e?.message || e) }
+    if (!(await avisar.confirmar({ titulo: 'Apagar esta mensagem?', descricao: 'Ela some da tela dos desbravadores. Você continua vendo o texto original aqui na moderação.', rotulo: 'Apagar a mensagem' }))) return
+    try { await apagarMensagemChat(id); carregar() } catch (e) { avisar.erro(e, 'Não consegui apagar a mensagem.') }
   }
 
   return (
@@ -136,15 +137,15 @@ function ConversaAberta({ conversaId, titulo, onVoltar }) {
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-ink">{m.autor?.nome || '?'}</span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] text-faint">{fmtData(m.created_at)}</span>
+                    <span className="text-xs text-faint">{fmtData(m.created_at)}</span>
                     {!m.apagada && (
                       <motion.button whileTap={{ scale: 0.95 }} onClick={() => apagar(m.id)}
-                        className="text-[11px] text-red-600 font-bold">Apagar</motion.button>
+                        className="text-xs text-red-600 font-bold">Apagar</motion.button>
                     )}
                   </div>
                 </div>
                 <p className={`text-sm mt-1 ${m.apagada ? 'text-red-700 line-through' : 'text-ink'}`}>{m.texto}</p>
-                {m.apagada && <p className="text-[10px] text-red-500 mt-0.5">Apagada da tela dos desbravadores (texto original preservado aqui)</p>}
+                {m.apagada && <p className="text-xs text-red-500 mt-0.5">Apagada da tela dos desbravadores (texto original preservado aqui)</p>}
               </div>
             ))}
           </div>

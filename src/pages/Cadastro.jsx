@@ -127,7 +127,7 @@ export default function Cadastro() {
           <div>
             <label className="block text-sm font-medium text-ink mb-1">Foto de perfil</label>
             <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files?.[0] || null)} className="text-sm w-full text-muted" />
-            <p className="text-[11px] text-faint mt-1">
+            <p className="text-xs text-faint mt-1">
               {foto ? `Selecionada: ${foto.name}` : 'Ajuda líderes e colegas a te reconhecerem 😊 (opcional)'}
             </p>
           </div>

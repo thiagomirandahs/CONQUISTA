@@ -128,7 +128,7 @@ export default function Chefao() {
 
         {/* Barra de vida */}
         <div className="mt-4">
-          <div className="flex justify-between text-[11px] font-bold text-white/80 mb-1">
+          <div className="flex justify-between text-xs font-bold text-white/80 mb-1">
             <span>❤️ Vida do {est.nome}</span>
             <span>{est.vida_atual.toLocaleString('pt-BR')} / {est.vida_total.toLocaleString('pt-BR')}</span>
           </div>
@@ -137,7 +137,7 @@ export default function Chefao() {
               style={{ background: venceu ? '#22c55e' : vidaPct < 25 ? 'linear-gradient(90deg,#f59e0b,#ef4444)' : 'linear-gradient(90deg,#ef4444,#b91c1c)' }}
               animate={{ width: `${vidaPct}%` }} transition={{ type: 'spring', stiffness: 120, damping: 22 }} />
           </div>
-          <p className="text-[11px] text-white/70 mt-1">💥 {est.dano.toLocaleString('pt-BR')} de dano do clube até agora</p>
+          <p className="text-xs text-white/70 mt-1">💥 {est.dano.toLocaleString('pt-BR')} de dano do clube até agora</p>
         </div>
 
         {est.versiculo && !venceu && (
@@ -158,7 +158,7 @@ export default function Chefao() {
               🗡️ Golpe especial! <span className="opacity-80 font-bold">(-25)</span>
             </motion.button>
           )}
-          <p className="text-[11px] text-faint text-center mt-1">Cada jogo, missão e leitura que você faz no fim de semana já bate no chefão. O golpe especial recarrega 1x por hora. ⏳</p>
+          <p className="text-xs text-faint text-center mt-1">Cada jogo, missão e leitura que você faz no fim de semana já bate no chefão. O golpe especial recarrega 1x por hora. ⏳</p>
         </div>
       )}
 

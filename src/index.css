@@ -117,3 +117,28 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   user-select: none;
   -webkit-touch-callout: none;              /* sem menu de "copiar" no toque longo */
 }
+
+/* ===== Alvo de toque mínimo (fase 7.1) =====
+   A auditoria mediu dezenas de controles abaixo de 44px nas telas legadas — botões de fechar de
+   32px, chips de 28px, toggles de 32px. Em vez de editar ~40 arquivos um a um (e correr o risco de
+   quebrar layout em cada um), a regra vale para QUALQUER controle real dentro do conteúdo, e só em
+   tela de toque: no mouse, um alvo de 32px é perfeitamente clicável e crescer tudo só desperdiça
+   espaço. `min-height` nunca encolhe nada — só impede que fique pequeno demais para um dedo.
+
+   Fora do alvo de propósito: `.alvo-livre` (para o raro controle que é mesmo inline dentro de um
+   parágrafo) e os campos que já têm altura própria. */
+@media (pointer: coarse) {
+  main button:not(.alvo-livre),
+  main a[href]:not(.alvo-livre):not(:where(p, li, span) > a),
+  main select:not(.alvo-livre),
+  main summary:not(.alvo-livre),
+  main [role="button"]:not(.alvo-livre),
+  main label:has(> input[type="file"]) {
+    min-height: 44px;
+  }
+  /* controle que só tem ícone/emoji: também precisa de largura mínima */
+  main button:not(.alvo-livre):empty,
+  main button:not(.alvo-livre) > svg:only-child {
+    min-width: 44px;
+  }
+}

@@ -118,7 +118,7 @@ export default function Missoes() {
               {ehDevocional ? '📖 Devocional do dia' : `🎖️ Desafio${missao.tema ? ' · ' + missao.tema : ''}`}
             </div>
             {missao.texto && <p className="text-[15px] leading-snug mt-1">"{missao.texto}"</p>}
-            {ehDevocional && <p className="text-[11px] opacity-80 mt-1">📖 Leia com atenção e responda de qual livro é 👇</p>}
+            {ehDevocional && <p className="text-xs opacity-80 mt-1">📖 Leia com atenção e responda de qual livro é 👇</p>}
           </div>
 
           <div className="bg-surface p-4 space-y-4">

@@ -122,7 +122,7 @@ export default function Ranking() {
                       initial={{ scaleX: 0 }} animate={{ scaleX: Math.min(1, valor(item) / max) }}
                       transition={{ duration: 0.6, ease: 'easeOut' }} />
                   </div>
-                  {item.unidade && <div className="text-[11px] text-faint mt-0.5">{item.unidade}</div>}
+                  {item.unidade && <div className="text-xs text-faint mt-0.5">{item.unidade}</div>}
                 </div>
                 <span className="font-extrabold text-brand w-10 text-right">{valor(item)}</span>
               </motion.button>
@@ -158,7 +158,7 @@ export default function Ranking() {
                   <div className="mt-4 space-y-3">
                     {/* A conta aberta: dá pra conferir a média membro por membro */}
                     <div className="bg-surface2 rounded-xl p-3">
-                      <p className="text-[11px] font-bold text-faint uppercase tracking-wide mb-2">Como a média é feita</p>
+                      <p className="text-xs font-bold text-faint uppercase tracking-wide mb-2">Como a média é feita</p>
                       {card.item.membros.length === 0 ? (
                         <p className="text-xs text-faint">Nenhum desbravador ou conselheiro nesta unidade ainda — média fica 0.</p>
                       ) : (
@@ -171,7 +171,7 @@ export default function Ranking() {
                                     avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
                                   <span className="text-muted truncate">
                                     {m.nome || 'Desbravador'}
-                                    {m.papel !== 'desbravador' && <span className="text-[10px] text-faint"> · {m.papel}</span>}
+                                    {m.papel !== 'desbravador' && <span className="text-xs text-faint"> · {m.papel}</span>}
                                   </span>
                                 </div>
                                 <span className="font-semibold text-ink shrink-0">{m.pts}</span>
@@ -218,7 +218,7 @@ function Stat({ rotulo, valor, destaque }) {
   return (
     <div className="bg-surface2 rounded-xl py-2">
       <div className={`font-extrabold ${destaque ? 'text-gold text-lg' : 'text-ink text-sm'} truncate px-1`}>{valor}</div>
-      <div className="text-[10px] text-faint">{rotulo}</div>
+      <div className="text-xs text-faint">{rotulo}</div>
     </div>
   )
 }

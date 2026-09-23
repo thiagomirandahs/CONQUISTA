@@ -69,7 +69,7 @@ export default function Planos() {
         ))}
       </ul>
 
-      <p className="text-[11px] text-faint mt-6 leading-snug">
+      <p className="text-xs text-faint mt-6 leading-snug">
         A troca de plano não é feita por aqui: fale com quem responde pela conta do clube. Nenhuma
         mudança de plano apaga dados — o que já existe continua, mesmo em um plano menor.
       </p>
@@ -121,7 +121,7 @@ function SituacaoAtual({ a }) {
             </div>
           ))}
         </dl>
-        <p className="text-[11px] text-faint mt-2 leading-snug">
+        <p className="text-xs text-faint mt-2 leading-snug">
           Sem número à direita = sem limite. “—” = a plataforma ainda não mede este item.
         </p>
       </div>
@@ -136,12 +136,12 @@ function CardPlano({ p, atual }) {
     <li className={`bg-surface rounded-2xl p-4 shadow-soft ${atual ? 'ring-2 ring-brand' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-bold text-ink">{p.nome} {atual && <span className="text-[11px] text-brand font-extrabold">· seu plano</span>}</div>
+          <div className="font-bold text-ink">{p.nome} {atual && <span className="text-xs text-brand font-extrabold">· seu plano</span>}</div>
           <p className="text-xs text-muted leading-snug mt-0.5">{p.descricao}</p>
         </div>
         <div className="text-right shrink-0">
           <div className="font-extrabold text-ink">{mensal ? formatarPreco(mensal.valor_centavos, mensal.moeda) : '—'}</div>
-          <div className="text-[10px] text-faint">por mês</div>
+          <div className="text-xs text-faint">por mês</div>
         </div>
       </div>
       <p className="text-xs text-faint mt-2 leading-snug">
@@ -149,7 +149,7 @@ function CardPlano({ p, atual }) {
           ? 'Inclui todos os recursos do DesbravaClube.'
           : `Inclui: ${recursos.map((r) => RECURSO_NOME[r] || r).join(', ')}.`}
       </p>
-      {p.provisorio && <p className="text-[10px] text-amber-700 mt-1">Preço e composição provisórios.</p>}
+      {p.provisorio && <p className="text-xs text-amber-700 mt-1">Preço e composição provisórios.</p>}
     </li>
   )
 }

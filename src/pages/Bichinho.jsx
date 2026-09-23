@@ -40,8 +40,8 @@ function OpBtn({ bloq, ativo, nivel, nome, onClick, children }) {
     <button disabled={bloq} onClick={onClick}
       className={`rounded-xl p-1 border-2 flex flex-col items-center transition ${ativo ? 'border-brand bg-surface2' : 'border-line'} ${bloq ? 'opacity-50' : ''}`}>
       {children}
-      <span className="text-[10px] font-semibold text-muted leading-none">{nome}</span>
-      {bloq && <span className="text-[9px] text-faint leading-none mt-0.5">nível {nivel}</span>}
+      <span className="text-xs font-semibold text-muted leading-none">{nome}</span>
+      {bloq && <span className="text-xs text-faint leading-none mt-0.5">nível {nivel}</span>}
     </button>
   )
 }
@@ -334,7 +334,7 @@ export default function Bichinho() {
         <div className="grid grid-cols-5 gap-1 bg-surface2 rounded-xl p-1 mb-3">
           {[['enfeite', '🎩', 'Enfeite'], ['cor', '🎨', 'Cor'], ['olhos', '👀', 'Olhos'], ['cenario', '🌄', 'Cenário'], ['movel', '🛋️', 'Móveis']].map(([id, ic, lbl]) => (
             <button key={id} onClick={() => setAba(id)}
-              className={`rounded-lg py-1.5 text-[11px] font-bold flex flex-col items-center gap-0.5 transition ${aba === id ? 'bg-surface shadow-soft text-brand' : 'text-muted'}`}>
+              className={`rounded-lg py-1.5 text-xs font-bold flex flex-col items-center gap-0.5 transition ${aba === id ? 'bg-surface shadow-soft text-brand' : 'text-muted'}`}>
               <span className="text-base leading-none">{ic}</span>{lbl}
             </button>
           ))}
@@ -384,8 +384,8 @@ export default function Bichinho() {
                       <BichinhoImg especie={bicho.especie} humor="feliz" estagio={1} item="nenhum" cor={bicho.cor} olhos={bicho.olhos} size={34} />
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-muted leading-none py-0.5">{c.nome}</span>
-                  {bloq && <span className="text-[9px] text-faint leading-none pb-0.5">nível {c.nivel}</span>}
+                  <span className="text-xs font-semibold text-muted leading-none py-0.5">{c.nome}</span>
+                  {bloq && <span className="text-xs text-faint leading-none pb-0.5">nível {c.nivel}</span>}
                 </button>
               )
             })}
@@ -407,8 +407,8 @@ export default function Bichinho() {
                       <BichinhoImg especie={bicho.especie} humor="feliz" estagio={1} item="nenhum" cor={bicho.cor} olhos={bicho.olhos} size={34} />
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-muted leading-none py-0.5">{m.nome}</span>
-                  {bloq && <span className="text-[9px] text-faint leading-none pb-0.5">nível {m.nivel}</span>}
+                  <span className="text-xs font-semibold text-muted leading-none py-0.5">{m.nome}</span>
+                  {bloq && <span className="text-xs text-faint leading-none pb-0.5">nível {m.nivel}</span>}
                 </button>
               )
             })}
@@ -416,7 +416,7 @@ export default function Bichinho() {
         )}
       </div>
 
-      <p className="text-[11px] text-faint text-center mt-3">
+      <p className="text-xs text-faint text-center mt-3">
         Toque em {bicho.nome} pra fazer carinho 💛. Fazer pelo menos <b>1 cuidado por dia</b> mantém ele vivo e feliz, dá <b>+2 pontos</b> e conta ofensiva 🔥. Se ficar <b>3 dias sem cuidado</b>, ele pode ir embora — <b>vai acampar ou ficar sem celular?</b> Coloque ele pra dormir 💤 que fica tudo pausado e seguro.
       </p>
     </div>

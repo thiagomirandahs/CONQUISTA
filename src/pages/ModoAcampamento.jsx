@@ -186,7 +186,7 @@ export default function ModoAcampamento() {
         <div className="grid grid-cols-4 gap-2">
           {COLOCACOES.map((pos) => (
             <div key={pos}>
-              <label className="text-[11px] text-faint">{pos}º lugar</label>
+              <label className="text-xs text-faint">{pos}º lugar</label>
               <input type="number" min={0} value={pontosPorColocacao[pos]}
                 onChange={(e) => setPontosPorColocacao((m) => ({ ...m, [pos]: Number(e.target.value) || 0 }))}
                 className={inputClass} />
@@ -248,16 +248,16 @@ export default function ModoAcampamento() {
           </button>
         </div>
 
-        <label className="block text-[11px] text-faint mb-1">Unidade</label>
+        <label className="block text-xs text-faint mb-1">Unidade</label>
         <select value={ajusteUni} onChange={(e) => setAjusteUni(e.target.value)} className={`${inputClass} mb-2`}>
           <option value="">Escolha a unidade…</option>
           {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
         </select>
 
-        <label className="block text-[11px] text-faint mb-1">Pontos {ajusteSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
+        <label className="block text-xs text-faint mb-1">Pontos {ajusteSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
         <input type="number" min={1} value={ajusteVal} onChange={(e) => setAjusteVal(e.target.value)} placeholder="ex.: 50" className={`${inputClass} mb-2`} />
 
-        <label className="block text-[11px] text-faint mb-1">Motivo (opcional)</label>
+        <label className="block text-xs text-faint mb-1">Motivo (opcional)</label>
         <input value={ajusteMotivo} onChange={(e) => setAjusteMotivo(e.target.value)}
           placeholder={ajusteSinal === 'tirar' ? 'ex.: bagunça no alojamento' : 'ex.: ajuda extra'} className={inputClass} />
 
@@ -285,7 +285,7 @@ export default function ModoAcampamento() {
           </button>
         </div>
 
-        <label className="block text-[11px] text-faint mb-1">Membro</label>
+        <label className="block text-xs text-faint mb-1">Membro</label>
         <select value={ajusteMbId} onChange={(e) => setAjusteMbId(e.target.value)} className={`${inputClass} mb-2`}>
           <option value="">Escolha o membro…</option>
           {membrosOrd.map((m) => (
@@ -293,10 +293,10 @@ export default function ModoAcampamento() {
           ))}
         </select>
 
-        <label className="block text-[11px] text-faint mb-1">Pontos {ajusteMbSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
+        <label className="block text-xs text-faint mb-1">Pontos {ajusteMbSinal === 'tirar' ? 'a tirar' : 'a dar'}</label>
         <input type="number" min={1} value={ajusteMbVal} onChange={(e) => setAjusteMbVal(e.target.value)} placeholder="ex.: 20" className={`${inputClass} mb-2`} />
 
-        <label className="block text-[11px] text-faint mb-1">Motivo (opcional)</label>
+        <label className="block text-xs text-faint mb-1">Motivo (opcional)</label>
         <input value={ajusteMbMotivo} onChange={(e) => setAjusteMbMotivo(e.target.value)}
           placeholder={ajusteMbSinal === 'tirar' ? 'ex.: saiu da fila' : 'ex.: destaque da prova'} className={inputClass} />
 
@@ -319,7 +319,7 @@ export default function ModoAcampamento() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-ink truncate">{h.motivo}</div>
-                  <div className="text-[11px] text-faint">{fmtData(h.data)}</div>
+                  <div className="text-xs text-faint">{fmtData(h.data)}</div>
                 </div>
                 <span className={`font-extrabold shrink-0 ${h.pontos < 0 ? 'text-red-600' : 'text-brand'}`}>
                   {h.pontos > 0 ? '+' : ''}{h.pontos}

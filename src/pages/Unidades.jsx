@@ -10,6 +10,7 @@ import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -23,6 +24,7 @@ export default function Unidades() {
   const [sel, setSel] = useState(null)
   const [pontosPara, setPontosPara] = useState(null) // unidade que vai receber pontos de time
   const [editando, setEditando] = useState(false) // formulário de identidade da unidade
+  const [erroImagem, setErroImagem] = useState('') // validação do arquivo (tipo/tamanho): mensagem no próprio campo
 
   async function carregar() {
     try {
@@ -38,30 +40,32 @@ export default function Unidades() {
     const nome = window.prompt('Nome da nova unidade:')
     if (!nome?.trim()) return
     const { error } = await supabase.from('unidades').insert({ nome: nome.trim() })
-    if (error) alert('Não foi possível criar: ' + error.message)
+    if (error) avisar.erro(error, 'Não consegui criar a unidade.')
     else carregar()
   }
 
   async function excluirUnidade(u) {
-    if (!window.confirm(`Excluir a unidade "${u.nome}"? Os membros dela ficarão sem unidade.`)) return
+    if (!(await avisar.confirmar({ titulo: `Excluir a unidade "${u.nome}"?`, descricao: 'Os membros dela ficam sem unidade e precisam ser realocados. Isso não pode ser desfeito.', rotulo: 'Excluir a unidade' }))) return
     // solta os membros da unidade e apaga, tudo numa RPC só (unidade_id é do vínculo agora)
     const { error } = await supabase.rpc('unidade_excluir', { p_unidade_id: u.id })
-    if (error) { alert('Não foi possível excluir: ' + error.message); return }
+    if (error) { avisar.erro(error, 'Não consegui excluir a unidade.'); return }
     setSel(null)
     carregar()
   }
 
   // Sobe imagem da unidade: 'emblema' (logo redondo) ou 'bandeira' (banner).
   async function trocarImagem(u, file, campo = 'emblema') {
-    try { await validarImagem(file) } catch (e) { alert(e?.message || e); return } // tipo REAL + tamanho
+    setErroImagem('')
+    // tipo REAL + tamanho, conferidos antes de subir: erro de CAMPO fica inline, não vira toast
+    try { await validarImagem(file) } catch (e) { setErroImagem(e?.message || 'Escolha uma imagem JPG, PNG, WebP ou GIF de até 5 MB.'); return }
     file = await comprimirImagem(file, { maxLado: campo === 'bandeira' ? 1024 : 512 })
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
     const path = `unidades/${u.id}-${campo}-${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
-    if (upErr) { alert('Erro no upload: ' + upErr.message); return }
+    if (upErr) { avisar.erro(upErr, 'Não consegui enviar a imagem.'); return }
     const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
     const { error } = await supabase.from('unidades').update({ [campo]: pub.publicUrl }).eq('id', u.id)
-    if (error) { alert('Erro ao salvar: ' + error.message); return }
+    if (error) { avisar.erro(error, 'Não consegui salvar a imagem.'); return }
     // Emblema/bandeira não mexem em média/membros: atualiza só na tela, sem
     // recarregar o ranking inteiro de todas as unidades.
     setSel((s) => (s ? { ...s, [campo]: pub.publicUrl } : s))
@@ -125,7 +129,7 @@ export default function Unidades() {
                     initial={{ width: 0 }} animate={{ width: `${Math.min(u.pontos, 100)}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} />
                 </div>
-                <div className="text-[10px] text-faint mt-1">time {u.avulsos} + média nivelada {u.media}</div>
+                <div className="text-xs text-faint mt-1">time {u.avulsos} + média nivelada {u.media}</div>
               </div>
             </motion.button>
           ))}
@@ -179,7 +183,7 @@ export default function Unidades() {
                       avatarPersonagem={m.avatarTipo === 'personagem' ? m.avatar : undefined} />
                     <span className="flex-1 min-w-0 font-medium text-ink truncate">
                       {m.nome}
-                      {m.papel !== 'desbravador' && <span className="ml-2 text-[10px] bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
+                      {m.papel !== 'desbravador' && <span className="ml-2 text-xs bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
                     </span>
                     <span className="text-lg">{medalhas[i] || ''}</span>
                     <span className="font-extrabold text-brand">{m.pts}</span>
@@ -202,8 +206,9 @@ export default function Unidades() {
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
                     </label>
                   </div>
+                  {erroImagem && <p role="alert" className="text-xs text-rose-600 mb-2">{erroImagem}</p>}
                   <button onClick={() => excluirUnidade(sel)}
-                    className="w-full text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
+                    className="w-full min-h-[44px] text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
                     🗑️ Excluir unidade
                   </button>
                 </div>
@@ -323,7 +328,7 @@ function FormIdentidade({ unidade, onFechar, onSalvar, onTrocarBandeira }) {
     try {
       await onSalvar(lema, grito)
     } catch (err) {
-      alert('Não deu pra salvar: ' + (err?.message || err))
+      avisar.erro(err, 'Não consegui salvar o lema da unidade.')
       travado.current = false
       setSalvando(false)
     }

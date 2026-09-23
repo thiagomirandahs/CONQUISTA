@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { carregarRadarFaltas, enviarAvisoPessoal } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
@@ -42,7 +43,7 @@ export default function RadarFaltas() {
       })
       setEnviados((e) => ({ ...e, [p.id]: true }))
     } catch (e) {
-      alert('Não foi possível enviar: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui enviar o aviso.')
     }
   }
 
@@ -70,7 +71,7 @@ export default function RadarFaltas() {
                 <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-10 h-10" textSize="text-base" />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-ink text-sm truncate">{p.nome || 'Desbravador'}</div>
-                  <div className="text-[11px] text-red-500 font-semibold">❌ {p.faltas} faltas seguidas · última reunião: {fmtData(p.ultima)}</div>
+                  <div className="text-xs text-red-500 font-semibold">❌ {p.faltas} faltas seguidas · última reunião: {fmtData(p.ultima)}</div>
                 </div>
               </div>
               {enviados[p.id] ? (

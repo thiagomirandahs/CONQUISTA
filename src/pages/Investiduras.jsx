@@ -96,7 +96,7 @@ function Conclusao({ it, onMudou }) {
           <h3 className="font-bold text-ink truncate text-base">{it.usuario_nome}</h3>
           <div className="text-xs text-faint">{it.classe_nome} · {it.percentual}% · iniciada em {fmtData(it.iniciada_em)}{it.concluida_em ? ` · concluída em ${fmtData(it.concluida_em)}` : ''}</div>
         </div>
-        <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-0.5 ${estado.badge}`} data-testid="estado" data-estado={it.status}>
+        <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${estado.badge}`} data-testid="estado" data-estado={it.status}>
           <span aria-hidden="true">{estado.icon}</span> {estado.label}
         </span>
       </div>
@@ -164,7 +164,7 @@ function Conclusao({ it, onMudou }) {
               ✅ Aprovar revisão final
             </button>
           </div>
-          {corrigindo && <p id={`dica-corr-${it.member_class_id}`} className="text-[11px] text-faint">Marque pelo menos um requisito e escreva a observação.</p>}
+          {corrigindo && <p id={`dica-corr-${it.member_class_id}`} className="text-xs text-faint">Marque pelo menos um requisito e escreva a observação.</p>}
         </div>
       )}
 

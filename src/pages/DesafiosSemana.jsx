@@ -5,6 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Duelos from '../components/Duelos.jsx'
 import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -52,7 +53,7 @@ export default function DesafiosSemana() {
       setPremiando(false)
       carregar()
     } catch (e) {
-      alert('Não deu pra premiar: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui premiar a unidade.')
       throw e // deixa o modal liberar o botão pra tentar de novo
     }
   }
@@ -105,7 +106,7 @@ export default function DesafiosSemana() {
             )
           })}
         </motion.div>
-        <p className="text-[11px] text-faint mt-3">Cada missão, jogo, devocional e atividade da semana conta aqui. Na segunda começa de novo!</p>
+        <p className="text-xs text-faint mt-3">Cada missão, jogo, devocional e atividade da semana conta aqui. Na segunda começa de novo!</p>
       </div>
 
       {/* Corrida das unidades */}

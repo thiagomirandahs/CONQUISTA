@@ -6,6 +6,7 @@ import {
   darLance, confirmarLanceConjunto, recusarLanceConjunto, criarLeilao, encerrarLeilao, cancelarLeilao,
 } from '../lib/dados.js'
 import { vitoria as festa, acerto } from '../lib/juice.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 // Só quem de fato compete pela unidade dá lance — diretoria/instrutor/tesoureiro
@@ -136,36 +137,36 @@ export default function Leilao() {
     setProcessando(true)
     try {
       const r = await confirmarLanceConjunto(lance.id)
-      if (r?.ativado) { acerto(3); alert('Confirmado! Seu lance conjunto está ativo agora. 🤝') }
-      else if (r?.motivo) alert(r.motivo)
-      else alert('Confirmado! Falta outra unidade aceitar pra valer.')
+      if (r?.ativado) { acerto(3); avisar.sucesso('Confirmado! Seu lance conjunto está ativo agora. 🤝') }
+      else if (r?.motivo) avisar.info(r.motivo)
+      else avisar.sucesso('Confirmado! Falta outra unidade aceitar pra valer.')
       await carregar()
-    } catch (e) { alert(e?.message || e) }
+    } catch (e) { avisar.erro(e) }
     setProcessando(false)
   }
 
   async function recusar(lance) {
-    if (!window.confirm('Recusar esse convite? O lance conjunto inteiro cai.')) return
+    if (!(await avisar.confirmar({ titulo: 'Recusar esse convite?', descricao: 'O lance conjunto inteiro cai — as outras unidades também perdem o lance.', rotulo: 'Recusar o convite' }))) return
     setProcessando(true)
     try {
       await recusarLanceConjunto(lance.id)
       await carregar()
-    } catch (e) { alert(e?.message || e) }
+    } catch (e) { avisar.erro(e) }
     setProcessando(false)
   }
 
   async function encerrarAgora() {
-    if (!window.confirm('Encerrar o leilão agora? Cada item vai pra quem estiver na frente.')) return
+    if (!(await avisar.confirmar({ titulo: 'Encerrar o leilão agora?', descricao: 'Cada item vai para quem estiver na frente neste momento. O leilão não reabre.', rotulo: 'Encerrar o leilão' }))) return
     setProcessando(true)
     try { await encerrarLeilao(leilao.id); festa(3); await carregar() }
-    catch (e) { alert(e?.message || e) }
+    catch (e) { avisar.erro(e) }
     setProcessando(false)
   }
   async function cancelarAgora() {
-    if (!window.confirm('Cancelar este leilão? Ninguém perde pontos.')) return
+    if (!(await avisar.confirmar({ titulo: 'Cancelar este leilão?', descricao: 'Ninguém perde pontos — os lances simplesmente são descartados.', rotulo: 'Cancelar o leilão' }))) return
     setProcessando(true)
     try { await cancelarLeilao(leilao.id); await carregar() }
-    catch (e) { alert(e?.message || e) }
+    catch (e) { avisar.erro(e) }
     setProcessando(false)
   }
 
@@ -330,7 +331,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
 
           {historico.length > 0 && (
             <button onClick={() => setVerHistorico((v) => !v)}
-              className="mt-2 text-[11px] font-semibold text-brand flex items-center gap-1">
+              className="mt-2 text-xs font-semibold text-brand flex items-center gap-1">
               {verHistorico ? '▲ Esconder' : '▼ Ver'} disputa ({historico.length} lance{historico.length > 1 ? 's' : ''})
             </button>
           )}
@@ -343,7 +344,7 @@ function ItemCard({ item, aberto, podeDarLance, onDarLance }) {
                     <div key={l.id} className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                         {l.unidades.map((u, i) => (
-                          <span key={i} className="font-bold px-1.5 py-0.5 rounded text-white text-[10px]" style={{ background: u.cor || '#1e3a8a' }}>
+                          <span key={i} className="font-bold px-1.5 py-0.5 rounded text-white text-xs" style={{ background: u.cor || '#1e3a8a' }}>
                             {u.nome}
                           </span>
                         ))}
@@ -390,7 +391,7 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
     try {
       const r = await darLance(item.id, v, convidadas)
       acerto(2)
-      if (r?.pendente) alert('Lance registrado! Falta a(s) outra(s) unidade(s) convidada(s) confirmar pra valer.')
+      if (r?.pendente) avisar.info('Lance registrado! Falta a(s) outra(s) unidade(s) convidada(s) confirmar pra valer.')
       onDado()
     } catch (e) { setErro(e?.message || String(e)) }
     setEnviando(false)
@@ -429,7 +430,7 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
                 ))}
               </div>
               {convidadas.length > 0 && (
-                <p className="text-[11px] text-faint mt-2">
+                <p className="text-xs text-faint mt-2">
                   Esse lance só entra na disputa depois que alguém de cada unidade convidada confirmar
                   (ela recebe o convite na tela do leilão). Se vencerem, os pontos são rateados proporcional
                   ao total de cada unidade.
@@ -510,12 +511,12 @@ function ModalCriarLeilao({ onFechar, onCriado }) {
                   className={inputClass + ' mt-2 text-sm'} placeholder="Descrição (opcional)" />
                 <div className="flex gap-2 mt-2">
                   <div className="flex-1">
-                    <label className="text-[11px] text-faint">Preço-base</label>
+                    <label className="text-xs text-faint">Preço-base</label>
                     <input type="number" min={0} value={it.preco_base}
                       onChange={(e) => mudarItem(i, 'preco_base', e.target.value)} className={inputClass} />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[11px] text-faint">Incremento mín.</label>
+                    <label className="text-xs text-faint">Incremento mín.</label>
                     <input type="number" min={1} value={it.incremento_minimo}
                       onChange={(e) => mudarItem(i, 'incremento_minimo', e.target.value)} className={inputClass} />
                   </div>

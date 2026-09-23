@@ -8,7 +8,7 @@ import { vitoria as festa, acerto } from '../lib/juice.js'
 function Swatch({ cor, selecionado, onClick }) {
   return (
     <button type="button" onClick={onClick}
-      className={`w-8 h-8 rounded-full shrink-0 transition ${selecionado ? 'ring-2 ring-offset-2 ring-azul' : ''}`}
+      className={`w-11 h-11 rounded-full shrink-0 transition ${selecionado ? 'ring-2 ring-offset-2 ring-azul' : ''}`}
       style={{ background: cor }} aria-label={cor} />
   )
 }
@@ -22,7 +22,7 @@ function Peca({ item, nivel, selecionado, onClick }) {
         selecionado ? 'bg-azul text-white border-azul' : 'bg-white text-slate-600 border-slate-200'
       }`}>
       {item.nome}
-      {bloqueado && <span className="block text-[9px] font-semibold mt-0.5">🔒 Nível {item.nivel}</span>}
+      {bloqueado && <span className="block text-xs font-semibold mt-0.5">🔒 Nível {item.nivel}</span>}
     </button>
   )
 }

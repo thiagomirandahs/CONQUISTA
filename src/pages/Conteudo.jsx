@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']
@@ -38,12 +39,12 @@ export default function Conteudo() {
 
   async function alternarAtivo(item) {
     try { await salvarConteudo(aba, { ativo: !item.ativo }, item.id); carregar() }
-    catch (e) { alert('Não foi possível: ' + (e?.message || e)) }
+    catch (e) { avisar.erro(e, 'Não consegui aplicar a mudança.') }
   }
   async function excluir(item) {
-    if (!window.confirm('Apagar este item? Ele sai do rodízio das missões.')) return
+    if (!(await avisar.confirmar({ titulo: 'Apagar este item?', descricao: 'Ele sai do rodízio das missões e não volta. Isso não pode ser desfeito.', rotulo: 'Apagar o item' }))) return
     try { await excluirConteudo(aba, item.id); carregar() }
-    catch (e) { alert('Não foi possível: ' + (e?.message || e)) }
+    catch (e) { avisar.erro(e, 'Não consegui aplicar a mudança.') }
   }
 
   const ehVers = aba === 'versiculos'
@@ -88,20 +89,20 @@ export default function Conteudo() {
                   {ehVers ? (item.texto || '(sem texto)') : (item.pergunta || '(sem pergunta)')}
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-1">
-                  {ehVers && item.referencia && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">📗 {item.referencia}</span>}
-                  {!ehVers && <span className="text-[11px] bg-brand/10 text-brand rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
-                  {!ehVers && item.pede_foto && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">📷 Foto</span>}
-                  {!ehVers && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-[11px] bg-surface2 text-muted rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
+                  {ehVers && item.referencia && <span className="text-xs bg-surface2 text-muted rounded-full px-2 py-0.5">📗 {item.referencia}</span>}
+                  {!ehVers && <span className="text-xs bg-brand/10 text-brand rounded-full px-2 py-0.5">{item.classe || 'Geral'}</span>}
+                  {!ehVers && item.pede_foto && <span className="text-xs bg-surface2 text-muted rounded-full px-2 py-0.5">📷 Foto</span>}
+                  {!ehVers && !item.pede_foto && Array.isArray(item.opcoes) && <span className="text-xs bg-surface2 text-muted rounded-full px-2 py-0.5">❓ {item.opcoes.length} opções</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <button onClick={() => alternarAtivo(item)}
-                  className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${item.ativo ? 'bg-green-100 text-green-700' : 'bg-surface2 text-muted'}`}>
+                  className={`text-xs font-bold rounded-full px-2 py-0.5 ${item.ativo ? 'bg-green-100 text-green-700' : 'bg-surface2 text-muted'}`}>
                   {item.ativo ? '✅ Ativo' : '💤 Inativo'}
                 </button>
                 <div className="flex gap-1">
-                  <button onClick={() => setEditando(item)} title="Editar" className="text-xs text-muted hover:bg-surface2 rounded-lg px-2 py-1">✏️</button>
-                  <button onClick={() => excluir(item)} title="Apagar" className="text-xs text-red-500 hover:bg-red-50 rounded-lg px-2 py-1">🗑️</button>
+                  <button onClick={() => setEditando(item)} aria-label="Editar este item" className="text-base text-muted hover:bg-surface2 rounded-lg min-w-[44px] min-h-[44px]">✏️</button>
+                  <button onClick={() => excluir(item)} aria-label="Apagar este item" className="text-base text-red-500 hover:bg-red-50 rounded-lg min-w-[44px] min-h-[44px]">🗑️</button>
                 </div>
               </div>
             </div>
@@ -180,7 +181,7 @@ function FormConteudo({ aba, inicial, onFechar, onSalvo }) {
         className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         <div className="bg-gradient-to-r from-brand to-brand2 text-white px-5 py-4 flex items-center justify-between shrink-0">
           <h3 className="font-extrabold">{inicial ? 'Editar' : 'Novo'} {ehVers ? 'versículo' : 'desafio'}</h3>
-          <button onClick={onFechar} className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+          <button aria-label="Fechar" onClick={onFechar} className="w-11 h-11 rounded-full bg-white/20 grid place-items-center">✕</button>
         </div>
 
         <form onSubmit={salvar} className="p-5 space-y-3 overflow-y-auto">

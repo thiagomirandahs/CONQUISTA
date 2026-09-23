@@ -5,12 +5,15 @@ import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
 import { ClubeProvider } from './context/Clube.jsx'
 import { EscopoProvider } from './context/Escopo.jsx'
+import { AvisosProvider } from './ui/avisos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
+      {/* toast + confirmação: o que substituiu os alert()/confirm() nativos (fase 7.1) */}
+      <AvisosProvider>
       <AuthProvider>
         <ClubeProvider>
           {/* jornada institucional (distrito/região/campo): contexto próprio, ao lado do clube — nunca dentro dele */}
@@ -19,6 +22,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           </EscopoProvider>
         </ClubeProvider>
       </AuthProvider>
+      </AvisosProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

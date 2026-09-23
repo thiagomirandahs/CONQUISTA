@@ -76,7 +76,7 @@ export default function Onboarding() {
               const agora = e.chave === etapaAtual
               return (
                 <li key={e.chave}
-                  className={`text-[11px] px-2 py-1 rounded-full border ${agora ? 'bg-brand text-white border-brand font-bold'
+                  className={`text-xs px-2 py-1 rounded-full border ${agora ? 'bg-brand text-white border-brand font-bold'
                     : feita ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-surface text-faint border-line'}`}>
                   {feita && !agora ? '✓ ' : `${e.icone} `}{e.titulo}
                 </li>
@@ -168,7 +168,7 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
             })}
           </select>
         </label>
-        <p className="text-[11px] text-amber-700 mb-3">Valores provisórios: nada será cobrado nesta fase.</p>
+        <p className="text-xs text-amber-700 mb-3">Valores provisórios: nada será cobrado nesta fase.</p>
         <Botao salvando={salvando}>Criar o clube</Botao>
       </form>
     )

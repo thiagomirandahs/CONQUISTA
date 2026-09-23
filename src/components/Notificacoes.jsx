@@ -89,7 +89,7 @@ export default function Notificacoes() {
       <button onClick={abrir} aria-label="Notificações" className="relative grid place-items-center">
         <span className="text-xl">🔔</span>
         {naoLidas > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center ring-2 ring-azul">
+          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-xs font-bold grid place-items-center ring-2 ring-azul">
             {naoLidas > 9 ? '9+' : naoLidas}
           </span>
         )}
@@ -120,7 +120,7 @@ export default function Notificacoes() {
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-slate-800 text-sm">{n.titulo}</div>
                       {n.corpo && <div className="text-xs text-slate-500 line-clamp-2">{n.corpo}</div>}
-                      <div className="text-[10px] text-slate-400 mt-0.5">{tempoRel(n.created_at)}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{tempoRel(n.created_at)}</div>
                     </div>
                   </button>
                 ))}
@@ -129,7 +129,7 @@ export default function Notificacoes() {
               {/* Ativar push neste aparelho */}
               <div className="p-3 border-t border-slate-100 shrink-0">
                 {!suportaPush ? (
-                  <p className="text-[11px] text-slate-400 text-center">Avisos no celular não disponíveis neste aparelho.</p>
+                  <p className="text-xs text-slate-400 text-center">Avisos no celular não disponíveis neste aparelho.</p>
                 ) : pushOn ? (
                   <p className="text-xs text-green-600 text-center font-semibold">📲 Avisos no celular ativados ✓</p>
                 ) : (
@@ -138,7 +138,7 @@ export default function Notificacoes() {
                     📲 Ativar avisos no celular
                   </button>
                 )}
-                {pushMsg && <p className="text-[11px] text-slate-500 mt-2 text-center">{pushMsg}</p>}
+                {pushMsg && <p className="text-xs text-slate-500 mt-2 text-center">{pushMsg}</p>}
               </div>
             </motion.div>
           </motion.div>

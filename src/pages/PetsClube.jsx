@@ -56,17 +56,17 @@ export default function PetsClube() {
                   <PetImg especie={p.especie} item={p.item} estagio={p.estagio} vivo={p.vivo} cor={p.cor} olhos={p.olhos} dormindo={p.dormindo} />
                 </div>
                 {p.dormindo && p.vivo && (
-                  <span className="absolute top-1 left-1 z-10 text-[10px] font-extrabold bg-surface/85 text-muted rounded-full px-1.5">💤</span>
+                  <span className="absolute top-1 left-1 z-10 text-xs font-extrabold bg-surface/85 text-muted rounded-full px-1.5">💤</span>
                 )}
                 {p.ofensiva > 0 && p.vivo && (
-                  <span className="absolute top-1 right-1 z-10 text-[10px] font-extrabold bg-orange-100 text-orange-600 rounded-full px-1.5">🔥{p.ofensiva}</span>
+                  <span className="absolute top-1 right-1 z-10 text-xs font-extrabold bg-orange-100 text-orange-600 rounded-full px-1.5">🔥{p.ofensiva}</span>
                 )}
               </div>
               <p className="font-bold text-ink text-sm mt-1 truncate">{p.pet_nome}</p>
               <div className="flex items-center justify-center gap-1 mt-0.5">
                 <Avatar foto={p.dono_foto} nome={p.dono_nome} size="w-5 h-5" textSize="text-[9px]"
                   avatarPersonagem={p.dono_avatar_tipo === 'personagem' ? p.dono_avatar : undefined} />
-                <span className="text-[11px] text-muted truncate">{p.dono_nome?.split(' ')[0]}</span>
+                <span className="text-xs text-muted truncate">{p.dono_nome?.split(' ')[0]}</span>
               </div>
             </div>
           ))}

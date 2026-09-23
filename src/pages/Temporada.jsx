@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRanking, carregarTemporadas, iniciarNovaTemporada } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
+import { avisar } from '../ui/avisos.jsx'
 
 const fmtData = (iso) => {
   if (!iso) return ''
@@ -54,10 +55,10 @@ export default function Temporada() {
       const r = await iniciarNovaTemporada({ campeaoIndividual: campInd, campeaoUnidade: campUni })
       festa()
       setConfirmando(false)
-      alert(`🏁 Temporada ${r?.numero || ''} iniciada! O ranking foi zerado e os campeões ficaram salvos.`)
+      avisar.sucesso(`Temporada ${r?.numero || ''} iniciada! O ranking foi zerado e os campeões ficaram salvos.`)
       carregar()
     } catch (e) {
-      alert('Não foi possível: ' + (e?.message || e))
+      avisar.erro(e, 'Não consegui iniciar a temporada.')
     }
     setProcessando(false)
   }
@@ -98,7 +99,7 @@ export default function Temporada() {
                   <div key={t.numero} className="px-4 py-3">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-ink">Temporada {t.numero}</span>
-                      <span className="text-[11px] text-faint">{fmtData(t.inicio)} — {fmtData(t.fim)}</span>
+                      <span className="text-xs text-faint">{fmtData(t.inicio)} — {fmtData(t.fim)}</span>
                     </div>
                     <div className="text-sm text-muted mt-0.5">🧒 {t.campeao_individual || '—'} · 🛡️ {t.campeao_unidade || '—'}</div>
                   </div>

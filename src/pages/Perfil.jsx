@@ -112,7 +112,7 @@ export default function Perfil() {
           <motion.div className="h-full bg-gradient-to-r from-brand to-brand2 rounded-full"
             initial={{ width: 0 }} animate={{ width: `${Math.round(nivel.progresso * 100)}%` }} transition={{ duration: 0.6 }} />
         </div>
-        <p className="text-[11px] text-faint mt-1.5">
+        <p className="text-xs text-faint mt-1.5">
           {nivel.faltam > 0 ? `Faltam ${nivel.faltam} pts pro Nível ${nivel.nivel + 1}` : 'Nível máximo por enquanto — você é demais! 🏆'}
         </p>
       </div>
@@ -180,8 +180,8 @@ export default function Perfil() {
               {b.pronto && <span className="absolute -top-1.5 -right-1.5 text-sm">✨</span>}
               <div className={`text-3xl ${b.pronto ? '' : 'grayscale opacity-40'}`}
                 style={b.pronto ? { filter: 'drop-shadow(0 2px 5px rgba(245,197,24,0.5))' } : undefined}>{b.emoji}</div>
-              <div className={`text-[11px] font-bold mt-1 leading-tight ${b.pronto ? 'text-amber-700' : 'text-muted'}`}>{b.nome}</div>
-              <div className="text-[10px] text-faint mt-0.5">{b.pronto ? '✓ conquistada' : `${Math.min(b.atual, b.meta)}/${b.meta}`}</div>
+              <div className={`text-xs font-bold mt-1 leading-tight ${b.pronto ? 'text-amber-700' : 'text-muted'}`}>{b.nome}</div>
+              <div className="text-xs text-faint mt-0.5">{b.pronto ? '✓ conquistada' : `${Math.min(b.atual, b.meta)}/${b.meta}`}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -209,7 +209,7 @@ export default function Perfil() {
                 <span className="text-lg shrink-0">{iconeOrigem[p.origem] || '⭐'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-ink truncate">{p.motivo || p.origem}</div>
-                  <div className="text-[11px] text-faint">{fmtData(p.data)}</div>
+                  <div className="text-xs text-faint">{fmtData(p.data)}</div>
                 </div>
                 <span className={`font-extrabold shrink-0 ${p.pontos < 0 ? 'text-red-500' : 'text-brand'}`}>{p.pontos > 0 ? '+' : ''}{p.pontos}</span>
               </div>

@@ -58,7 +58,7 @@ export default function DevocionalPopup() {
             <div className="p-5 text-white" style={{ background: 'linear-gradient(135deg,#1e3a8a,#4338ca)' }}>
               <div className="text-xs font-semibold opacity-90 mb-1">📖 Devocional do dia</div>
               <p className="text-[15px] leading-snug">"{versiculo.texto}"</p>
-              <p className="text-[11px] opacity-80 mt-1">Leia com atenção e responda de qual livro é 👇</p>
+              <p className="text-xs opacity-80 mt-1">Leia com atenção e responda de qual livro é 👇</p>
             </div>
             <div className="p-5 space-y-4">
               {feito ? (

@@ -8,6 +8,7 @@ import {
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -72,7 +73,7 @@ export default function MinhaClasse() {
       await iniciarClasse(classId)
       await recarregar()
     } catch (e) {
-      alert(mensagemDeErro(e))
+      avisar.erro(e)
     }
   }
 
@@ -118,7 +119,7 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
               {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
               {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
               {c.curriculum_version?.origem === 'piloto_teste' && (
-                <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                <span className="inline-block mt-1 text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                   Dados de teste
                 </span>
               )}
@@ -152,7 +153,7 @@ function Progresso({ dados, userId, onMudou }) {
         <div className="flex items-center justify-between gap-2 mb-1">
           <h3 className="font-extrabold text-ink text-lg">{classe?.nome}</h3>
           {ehTeste && (
-            <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
+            <span className="text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
               Dados de teste
             </span>
           )}
@@ -257,7 +258,7 @@ function Requisito({ r, userId, onMudou }) {
         <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug">
           <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
         </h5>
-        <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-0.5 ${info.badge}`} data-testid="situacao" data-situacao={situacao}>
+        <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`} data-testid="situacao" data-situacao={situacao}>
           <span aria-hidden="true">{info.icon}</span> {info.label}
         </span>
       </div>
@@ -321,7 +322,7 @@ function Requisito({ r, userId, onMudou }) {
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
         {(r.avaliacoes || []).length > 0 && (
-          <button onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} className="text-[11px] font-semibold text-faint underline">
+          <button onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} className="text-xs font-semibold text-faint underline">
             {mostrarHistorico ? 'Esconder' : 'Ver'} histórico de avaliação ({r.avaliacoes.length})
           </button>
         )}
@@ -468,11 +469,11 @@ function OrigemDoRequisito({ requirementId }) {
   const [abrindo, setAbrindo] = useState(false)
   async function verOrigem() {
     setAbrindo(true)
-    try { setOrigem(await carregarOrigemRequisito(requirementId)) } catch (e) { alert(mensagemDeErro(e)) } finally { setAbrindo(false) }
+    try { setOrigem(await carregarOrigemRequisito(requirementId)) } catch (e) { avisar.erro(e) } finally { setAbrindo(false) }
   }
   return (
     <>
-      <button onClick={verOrigem} disabled={abrindo} className="text-[11px] text-faint underline">
+      <button onClick={verOrigem} disabled={abrindo} className="text-xs text-faint underline">
         {abrindo ? 'Carregando…' : 'Origem do requisito'}
       </button>
       {origem && <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />}
