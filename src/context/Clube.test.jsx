@@ -338,4 +338,21 @@ describe('marca guardada para o login', () => {
     const semSessao = renderHook(() => useClube(), { wrapper })
     expect(semSessao.result.current.marca.nome).toBe('Clube B Oficial')
   })
+
+  // A contrapartida, encontrada na jornada de navegador da 8.4: FECHAR o app e SAIR do app são
+  // gestos diferentes. Quem fecha volta e quer ver o próprio clube (o teste acima). Quem sai está
+  // entregando o aparelho — e a tela de login seguia com sigla, nome, lema, cores e "desde" do
+  // clube anterior para a próxima pessoa que abrisse.
+  it('SAIR limpa a marca: a tela de login não fica com o clube de quem saiu', async () => {
+    responder(servidor([vincB({ selecionavel: true })], 'B'))
+    const r = await montar()
+    expect(r.result.current.marca.nome).toBe('Clube B Oficial')
+
+    logar(null)
+    r.rerender()
+    await waitFor(() => expect(localStorage.getItem('cq.marca.v1')).toBeNull())
+    // e some da TELA na mesma hora, sem depender de recarregar a página
+    expect(r.result.current.marca.nome).not.toBe('Clube B Oficial')
+    expect(document.title).not.toBe('Clube B Oficial')
+  })
 })

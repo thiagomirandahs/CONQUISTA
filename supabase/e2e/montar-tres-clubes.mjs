@@ -223,6 +223,35 @@ console.log('\n-- unidades (pela diretoria, como a tela Unidades faz) --')
     iguais.length === 1 && atores.clubes.B_unidades['Falcão'] !== atores.clubes.C_unidades['Falcão'])
 }
 
+// ---------------------------------------------------------------------------
+// A PESSOA MULTI-CLUBE — e ela precisa nascer pelo produto, como todo o resto.
+//
+// É o ator mais importante da fase: quase tudo que a 8.4 encontrou só aparece para quem tem
+// vínculo em mais de um clube. E, até a migration 61, não havia caminho de produto para criá-la —
+// os 54 arquivos de teste anteriores montavam esses vínculos com INSERT direto, que é justamente
+// o que esta fase proíbe. Aqui ela nasce por onde uma pessoa real nasceria: a diretoria de B
+// convida, ela aceita, e passa a ter dois clubes.
+// ---------------------------------------------------------------------------
+console.log('\n-- a pessoa multi-clube (pelo convite de equipe, não por SQL) --')
+{
+  const sbB = sessao(fundadorB.token, atores.clubes.B)
+  const { error: eConv } = await sbB.rpc('convite_equipe_criar', { p_email: emailC, p_papel: 'instrutor' })
+  ok('a diretoria de B convida o fundador de C', !eConv, eConv?.message)
+
+  // Quem aceita está operando em C — o vínculo tem de nascer no clube DO CONVITE, não no da aba.
+  const sbC = sessao(fundadorC.token, atores.clubes.C)
+  const { data: pend } = await sbC.rpc('convites_da_equipe')
+  ok('o convidado enxerga o convite pendente', (pend?.length || 0) === 1, `n=${pend?.length}`)
+  const { error: eAceite } = await sbC.rpc('convite_equipe_aceitar', { p_id: pend?.[0]?.id })
+  ok('...e aceita, operando na aba de C', !eAceite, eAceite?.message)
+
+  const { data: ctx } = await sessao(fundadorC.token).rpc('meu_contexto')
+  const clubes = (ctx?.vinculos || []).map((v) => v.club_id)
+  ok('agora ele tem vínculo nos DOIS clubes', clubes.length === 2, `n=${clubes.length}`)
+  ok('...e são exatamente B e C', clubes.includes(atores.clubes.B) && clubes.includes(atores.clubes.C))
+  atores.pessoas.multiclube = { ...fundadorC, email: emailC, clubes: { B: atores.clubes.B, C: atores.clubes.C } }
+}
+
 mkdirSync(dirname(join(process.cwd(), 'supabase/e2e/atores.json')), { recursive: true })
 writeFileSync(join(process.cwd(), 'supabase/e2e/atores.json'), JSON.stringify(atores, null, 2))
 

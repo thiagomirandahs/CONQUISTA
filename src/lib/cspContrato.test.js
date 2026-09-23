@@ -52,6 +52,22 @@ describe('CSP: a política', () => {
     expect(p).toContain('https://ex.supabase.co')
     expect(p).toContain('wss://ex.supabase.co')
   })
+
+  // A origem passou a vir do VITE_SUPABASE_URL (8.4), então ela pode ser http — o stack local é.
+  // O conversor antigo fazia um replace global de `https:` por `wss:` e deixava uma origem http
+  // SEM o par de websocket: o realtime ficava bloqueado e nada no build dizia isso.
+  it('uma origem http ganha o par ws, não fica sem websocket nenhum', () => {
+    const local = politicaDe(rodar('<html><head></head></html>', { conectaEm: ['http://127.0.0.1:54321'] }))
+    expect(local).toContain('http://127.0.0.1:54321')
+    expect(local).toContain('ws://127.0.0.1:54321')
+    expect(local).not.toContain('wss://127.0.0.1')
+  })
+
+  it('a política cita a origem que lhe passaram, e não um curinga que autorizaria qualquer projeto', () => {
+    const proprio = politicaDe(rodar('<html><head></head></html>', { conectaEm: ['https://abc123.supabase.co'] }))
+    expect(proprio).toContain('https://abc123.supabase.co')
+    expect(proprio).not.toContain('*.supabase.co')
+  })
 })
 
 describe('CSP: hash de todo script inline', () => {

@@ -6,7 +6,7 @@ import {
   permissoesDoPapel, escolherClubeAtual, podeTrocarPara, temRecursoNoVinculo,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from '../lib/clube.js'
-import { MARCA_LEGADA, aplicarMarca, lerMarcaSalva, salvarMarca } from '../lib/marca.js'
+import { MARCA_LEGADA, aplicarMarca, lerMarcaSalva, salvarMarca, esquecerMarcaSalva } from '../lib/marca.js'
 
 // ClubeContext (o "OrganizationContext" do produto): a SESSÃO resolve, de uma vez, em quais clubes a pessoa está, qual está em uso, o papel dela
 // NESSE clube, a unidade, as permissões, os recursos ligados e a marca. As telas perguntam aqui — nunca mais a `profiles.papel`/`unidade_id`
@@ -33,6 +33,9 @@ export function ClubeProvider({ children }) {
   const [estado, setEstado] = useState({ uid: null, contexto: null, erro: null })
   const [escolha, setEscolha] = useState({ uid: null, clubeId: null })
   const [marcaSalva] = useState(() => lerMarcaSalva())
+  // "a sessão acabou NESTA aba" — ver o efeito de saída mais abaixo. Fica declarado aqui, junto do
+  // resto do estado, porque `marca` o consulta antes daquele ponto do arquivo.
+  const [saiu, setSaiu] = useState(false)
 
   // quem está logado AGORA: uma resposta atrasada de outra pessoa (troca de conta no meio do pedido) é descartada
   const uidAtual = useRef(uid)
@@ -72,10 +75,27 @@ export function ClubeProvider({ children }) {
   )
   const vinculo = useMemo(() => vinculos.find((v) => v.clubeId === clubeId) || null, [vinculos, clubeId])
 
-  const marca = vinculo?.marca || marcaSalva || MARCA_LEGADA
+  // Apagar o localStorage na saída não basta: este componente não é remontado no logout, e
+  // `marcaSalva` foi lida uma única vez no mount — ela continuaria na tela até alguém recarregar.
+  // Por isso o `saiu` também vale aqui.
+  const marca = vinculo?.marca || (saiu ? null : marcaSalva) || MARCA_LEGADA
   useEffect(() => { aplicarMarca(marca) }, [marca])
   useEffect(() => { if (vinculo && contexto && !contexto.legado) salvarMarca(vinculo.clubeId, vinculo.marca) }, [vinculo, contexto])
-  useEffect(() => { if (!uid && estado.uid) esquecerClubePreferido() }, [uid, estado.uid])   // saiu: a escolha não fica no aparelho
+  // SAIR é diferente de FECHAR, e a marca guardada tem de tratar os dois casos de formas opostas.
+  //
+  // Guardar a marca (`cq.marca.v1`) existe por um bom motivo: quem fecha o app e volta vê o nome e
+  // as cores do próprio clube já na tela de entrada, em vez do tema padrão piscando até o servidor
+  // responder. Isso é feature, e continua.
+  //
+  // Sair é outra coisa: é o gesto de entregar o aparelho. Medido no navegador nesta fase — depois
+  // de sair do clube B, a TELA DE LOGIN seguia com a sigla, o nome, o lema, as cores e o "desde"
+  // de B. No tablet do clube ou no celular de casa, a próxima pessoa abre e vê a identidade do
+  // clube de quem usou antes. `esquecerMarcaSalva()` estava escrita em lib/marca.js desde sempre e
+  // nunca era chamada por ninguém.
+  useEffect(() => {
+    if (!uid && estado.uid) { esquecerClubePreferido(); esquecerMarcaSalva(); setSaiu(true) }
+    if (uid) setSaiu(false)
+  }, [uid, estado.uid])
   // toda chamada ao servidor (desta aba) passa a pedir o clube EM USO — cobre a resolução inicial
   // (preferidoId), uma troca de clube e a volta ao padrão quando a preferência deixa de valer
   useEffect(() => { definirClubeAtivoNoTransporte(clubeId) }, [clubeId])

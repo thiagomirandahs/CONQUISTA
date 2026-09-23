@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -10,6 +10,36 @@ import { cspComHashes } from './vite-plugin-csp.js'
 // problema que já tivemos no PWA) e SEM o modo legado (a WebView do Android é
 // moderna — corta ~centenas de KB de polyfill à toa).
 const forCap = process.env.CAP_BUILD === '1'
+
+// A quem a CSP autoriza o app a se conectar.
+//
+// Isto era `['https://*.supabase.co']` cravado aqui, e o AMBIENTE-DE-PRODUCAO.md registrava, como
+// passo manual, "se um dia houver domínio próprio para a API, entra em cspComHashes". Passo manual
+// numa política de segurança é dívida: quem esquecer não vê erro nenhum no build — vê o app
+// quebrando em produção, ou, pior, uma política mais frouxa do que deveria.
+//
+// Agora sai do MESMO `VITE_SUPABASE_URL` que o app usa para falar com o banco. Três efeitos:
+//   · a política passa a citar o host exato do projeto, em vez do curinga que autoriza QUALQUER
+//     projeto Supabase do mundo — inclusive um que um atacante controle;
+//   · um domínio próprio para a API passa a funcionar sem ninguém lembrar de nada;
+//   · o stack local (http://127.0.0.1:54321) passa a ser alcançável em desenvolvimento, que é o
+//     que revelou o problema: com o host cravado, nenhuma jornada de navegador contra o Supabase
+//     local conseguia sequer fazer login.
+// O curinga fica como último recurso, para um build sem env (o aviso do src/lib/supabase.js já cobre).
+const apiDoSupabase = (() => {
+  // `loadEnv` e não `process.env`: o Vite lê os .env para `import.meta.env` do app, mas o arquivo
+  // de configuração roda antes disso e não enxerga nada por `process.env`. Sem esta linha a
+  // política cairia sempre no curinga, em silêncio — que é como este tipo de coisa costuma
+  // "funcionar" por meses.
+  const bruto = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '').VITE_SUPABASE_URL
+  if (!bruto) return ['https://*.supabase.co']
+  try {
+    const { origin } = new URL(bruto)
+    return [origin]
+  } catch {
+    return ['https://*.supabase.co']
+  }
+})()
 
 // Configuração do projeto: React + Tailwind + PWA (instalável no celular)
 export default defineConfig({
@@ -85,7 +115,7 @@ export default defineConfig({
     // CSP por HASH, embutida no próprio HTML (fase 8.1). Precisa ser o ÚLTIMO plugin:
     // ele calcula o hash dos scripts inline que os anteriores injetaram. Vale para os dois
     // builds — o do navegador e o do APK, que não tem servidor na frente para mandar header.
-    cspComHashes({ conectaEm: ['https://*.supabase.co'] }),
+    cspComHashes({ conectaEm: apiDoSupabase }),
   ].filter(Boolean),
   build: {
     // Minifica com terser e tira console/debugger do bundle de produção

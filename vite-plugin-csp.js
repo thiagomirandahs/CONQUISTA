@@ -116,7 +116,13 @@ export function cspComHashes({ conectaEm = [] } = {}) {
           `img-src 'self' data: blob: ${supabase}`.trim(),
           `media-src 'self' blob: ${supabase}`.trim(),
           `font-src 'self' data:`,
-          `connect-src 'self' ${supabase} ${supabase.replace(/https:/g, 'wss:')}`.trim(),
+          // O realtime usa websocket, então cada origem entra duas vezes: o esquema HTTP e o
+          // esquema WS correspondente. `https→wss` e `http→ws`, um por um — o replace global de
+          // antes só sabia converter https, e uma origem http (o stack local) entrava sem o par
+          // de websocket, deixando o realtime bloqueado sem nenhum sinal no build.
+          `connect-src 'self' ${supabase} ${conectaEm
+            .map((o) => o.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:'))
+            .join(' ')}`.trim(),
           `worker-src 'self' blob:`,
           `manifest-src 'self'`,
           `object-src 'none'`,
