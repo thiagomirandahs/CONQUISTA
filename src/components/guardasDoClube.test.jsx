@@ -9,6 +9,9 @@ const sair = vi.fn()
 const recarregar = vi.fn()
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => clube }))
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ sair }) }))
+// fase 5: quando o recurso é barrado, o guarda pergunta ao servidor QUAL camada barrou
+const verificarOperacao = vi.fn()
+vi.mock('../services/comercial.js', () => ({ verificarOperacao: (...a) => verificarOperacao(...a) }))
 
 const { default: RotaRestrita } = await import('./RotaRestrita.jsx')
 const { default: RecursoOpcional } = await import('./RecursoOpcional.jsx')
@@ -24,7 +27,10 @@ function como(papel, recursos = {}, extra = {}) {
 }
 const naRota = (rota, ui) => render(<MemoryRouter initialEntries={[rota]}>{ui}</MemoryRouter>)
 
-beforeEach(() => { sair.mockReset(); recarregar.mockReset() })
+beforeEach(() => {
+  sair.mockReset(); recarregar.mockReset()
+  verificarOperacao.mockReset().mockResolvedValue({ permitido: false, bloqueio: 'clube' })
+})
 
 describe('RotaRestrita: papel do VÍNCULO no clube em uso', () => {
   it('diretoria abre /aprovacoes', () => {
@@ -77,6 +83,14 @@ describe('RotaRestrita: papel do VÍNCULO no clube em uso', () => {
     naRota('/chat-moderacao', <RotaRestrita><p>moderação</p></RotaRestrita>)
     expect(screen.queryByText('moderação')).toBeNull()
     expect(screen.getByText('Recurso não habilitado')).toBeInTheDocument()
+  })
+  it('fase 5 — quando quem barra é o PLANO, o aviso diz isso (e não culpa a diretoria)', async () => {
+    verificarOperacao.mockResolvedValue({ permitido: false, bloqueio: 'plano' })
+    como('diretoria', { leilao: false })
+    naRota('/leilao', <RecursoOpcional recurso="leilao"><p>leilão</p></RecursoOpcional>)
+    expect(await screen.findByText('Fora do plano deste clube')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver o plano' })).toBeInTheDocument()
+    expect(screen.queryByText('leilão')).toBeNull()
   })
   it('...e abre quando o clube usa o chat', () => {
     como('diretoria', { chat: true })

@@ -40,7 +40,23 @@ insert into t.excecoes values
   ('investiture_workflow_stages','etapas declarativas de um workflow do catálogo acima (fase 4.2): escopo/papéis/ordem são dado da PLATAFORMA, não de um clube'),
   ('investiture_workflow_runs',  'execução do workflow para UM snapshot (fase 4.2): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é o clube da conclusão (proveniência), não escopo — hierarquia pode envolver mais de um clube/unidade'),
   ('workflow_stage_decisions',   'decisão IMUTÁVEL de uma etapa (fase 4.2): segue a visibilidade da conquista; escopo_organizational_unit_id é a unidade RESOLVIDA pela hierarquia (clube, distrito, região...) — pode não ser o clube da pessoa. Gatilho recusa UPDATE/DELETE (teste 41)'),
-  ('document_signatures',        'INTERFACE DE DADOS preparada pra futura assinatura eletrônica (fase 4.3): nasce e fica VAZIA — nenhuma RPC escreve nela; hoje só existe aprovacao_sistema (que não é assinatura digital). Segue a visibilidade da conquista (usuario_id + club_id_origem); club_id_origem é proveniência do emissor, não escopo (teste 42)');
+  ('document_signatures',        'INTERFACE DE DADOS preparada pra futura assinatura eletrônica (fase 4.3): nasce e fica VAZIA — nenhuma RPC escreve nela; hoje só existe aprovacao_sistema (que não é assinatura digital). Segue a visibilidade da conquista (usuario_id + club_id_origem); club_id_origem é proveniência do emissor, não escopo (teste 42)'),
+  -- ----- fase 5: camada COMERCIAL. Deliberadamente NÃO é por clube: quem contrata é a conta/cliente,
+  -- que pode cobrir N clubes. O elo com o clube mora em subscription_clubs (que tem club_id). Misturar
+  -- assinatura com clube é justamente o erro que o teste 43 impede (assinatura não é vínculo).
+  ('billing_accounts',           'CONTA/CLIENTE comercial (fase 5): é o contratante, não um clube — uma conta pode cobrir vários clubes (subscription_clubs, que tem club_id). Visível só pro contato da conta e pra operação da plataforma'),
+  ('billing_account_contacts',   'pessoa x conta COMERCIAL (fase 5): papel comercial (titular/financeiro/leitura), nunca papel eclesiástico — não é organization_memberships e não dá acesso a dado de clube'),
+  ('billing_plans',              'CATÁLOGO versionado de planos da PLATAFORMA (fase 5): a mesma definição vale pra qualquer cliente; preço e composição não moram no React'),
+  ('billing_prices',             'preços versionados do catálogo acima (fase 5): da plataforma, não de um clube'),
+  ('billing_policies',           'política comercial (carência/suspensão) da PLATAFORMA, versionada (fase 5); nunca_apagar_dados tem CHECK — não há política que apague dado de clube'),
+  ('subscriptions',              'ASSINATURA da conta comercial (fase 5): pertence à conta, não a um clube; os clubes cobertos ficam em subscription_clubs'),
+  ('subscription_events',        'histórico das transições comerciais de uma assinatura (fase 5): auditoria da conta, não do clube'),
+  ('billing_invoices',           'COBRANÇA de uma assinatura (fase 5): da conta comercial; nenhum dado operacional de clube passa por aqui'),
+  ('billing_providers',          'interface de PROVEDOR de pagamento (fase 5): catálogo da plataforma; hoje só o mock local'),
+  ('billing_events',             'eventos de WEBHOOK recebidos (fase 5): idempotentes por unique (provider, evento_externo_id); operação interna — nem o contato da conta lê'),
+  ('platform_admins',            'ADMINISTRAÇÃO DA PLATAFORMA (fase 5): papel de operação do produto, deliberadamente FORA de organization_memberships — não é autoridade eclesiástica e não ganha policy nenhuma sobre dado de clube (teste 43)'),
+  ('platform_admin_audit',       'auditoria IMUTÁVEL das ações administrativas da plataforma (fase 5): alvo pode ser conta, assinatura ou clube — por isso alvo_tipo/alvo_id genéricos, não club_id'),
+  ('onboarding_sessions',        'estado RETOMÁVEL do cadastro de um clube novo (fase 5): pertence à PESSOA que está cadastrando; o club_id só existe depois da etapa que cria o clube (por isso nullable)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

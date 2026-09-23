@@ -50,6 +50,8 @@ const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
 const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
+const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
+const Planos = lazy(() => import('./pages/Planos.jsx'))
 const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
@@ -149,6 +151,10 @@ export default function App() {
             distrital/regional não tem vínculo de clube nenhum e ficaria trancado do lado de fora. */}
         <Route path="/institucional" element={<SessaoObrigatoria><PortalInstitucional /></SessaoObrigatoria>} />
 
+        {/* Cadastro de um clube NOVO: exige sessão, mas não pode passar pelo ClubeGuard — quem chega
+            pra abrir um clube ainda não tem clube nenhum (é justamente o que o onboarding cria). */}
+        <Route path="/criar-clube" element={<SessaoObrigatoria><Onboarding /></SessaoObrigatoria>} />
+
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />
           <Route path="/ranking" element={<Ranking />} />
@@ -184,6 +190,7 @@ export default function App() {
           <Route path="/chat-moderacao" element={<RotaRestrita><ChatModeracao /></RotaRestrita>} />
           <Route path="/agenda" element={<RecursoOpcional recurso="agenda"><Agenda /></RecursoOpcional>} />
           <Route path="/clube" element={<RotaRestrita><ClubeConfig /></RotaRestrita>} />
+          <Route path="/planos" element={<RotaRestrita><Planos /></RotaRestrita>} />
           <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
           <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />
           <Route path="/investiduras" element={<RotaRestrita><Investiduras /></RotaRestrita>} />
