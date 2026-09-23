@@ -255,21 +255,36 @@ select t.montar_pool('clube_b');
 grant select on t.pool to public;
 
 -- monta "select public.f(args)::text" com o alvo na posição i e neutros nas demais; null se algum tipo não for suportado
+--
+-- ATENÇÃO AO ÍNDICE (corrigido na fase 8.2): `proargtypes::oid[]` vem de um `oidvector`, que é
+-- 0-BASED — `recurso_situacao(uuid, text)` tem bounds [0:1]. Este laço começava em 1, então lia a
+-- posição errada e, para toda função com 2+ argumentos, caía no `v_args[j] is null` e DESISTIA da
+-- função inteira. Medido no banco: a varredura enxergava 19 das 118 posições uuid existentes —
+-- 84% da superfície nunca foi sondada, e foi por essa fresta que os RPCs cross-tenant da fase 8.2
+-- passaram despercebidos por tanto tempo. Agora o laço usa os limites reais do array.
 create function t.chamada(p_nome text, p_tipos oid[], p_pos int, p_alvo uuid, p_outros uuid) returns text language plpgsql as $$
-declare j int; v_args text[] := '{}'; v_tipo text;
+declare j int; v_args text[] := '{}'; v_tipo text; v_arg text;
 begin
-  for j in 1..coalesce(array_length(p_tipos, 1), 0) loop
+  for j in array_lower(p_tipos, 1) .. array_upper(p_tipos, 1) loop
     v_tipo := p_tipos[j]::regtype::text;
-    v_args := v_args || case
+    v_arg := case
       when j = p_pos then format('%L::uuid', p_alvo)
       when v_tipo = 'uuid' then format('%L::uuid', p_outros)
       when v_tipo = 'text' then quote_literal('x')
       when v_tipo = 'integer' then '1'
+      when v_tipo = 'bigint' then '1'
       when v_tipo = 'boolean' then 'true'
-      when v_tipo = 'jsonb' then '''{}''::jsonb'
-      when v_tipo = 'uuid[]' then '''{}''::uuid[]'
+      when v_tipo = 'jsonb' then $x$'{}'::jsonb$x$
+      when v_tipo = 'json' then $x$'{}'::json$x$
+      when v_tipo = 'uuid[]' then $x$'{}'::uuid[]$x$
+      when v_tipo = 'text[]' then $x$'{}'::text[]$x$
+      when v_tipo = 'date' then 'current_date'
+      when v_tipo = 'timestamp with time zone' then 'now()'
       else null end;
-    if v_args[j] is null then return null; end if;
+    -- tipo não suportado: a função inteira fica de fora, e o assert de COBERTURA
+    -- transforma isso num número visível em vez de silêncio.
+    if v_arg is null then return null; end if;
+    v_args := v_args || v_arg;
   end loop;
   return format('select (public.%I(%s))::text', p_nome, array_to_string(v_args, ', '));
 end $$;
@@ -284,10 +299,15 @@ begin
     where pr.pronamespace = 'public'::regnamespace and pr.prokind = 'f' and not pr.proretset and pr.prorettype <> 'trigger'::regtype
       and has_function_privilege(current_user, pr.oid, 'execute')
       and 'uuid'::regtype::oid = any (pr.proargtypes::oid[])
+      -- IMMUTABLE nao pode ler o banco, entao nao pode vazar estado dele: o que ela devolve sai
+      -- do que o proprio chamador passou. Hoje isso e exatamente 1 funcao (dono_do_objeto, um
+      -- coalesce entre as duas formas de guardar o dono de um objeto do Storage), e ela aparecia
+      -- como "oraculo" so porque f(x) = x — devolver o proprio argumento nao informa nada.
+      and pr.provolatile <> 'i'
     order by 1
   loop
-    for i in 1..f.pronargs loop
-      continue when f.tipos[i] <> 'uuid'::regtype::oid;
+    for i in array_lower(f.tipos, 1) .. array_upper(f.tipos, 1) loop
+      continue when f.tipos[i] is distinct from 'uuid'::regtype::oid;
       for p in select distinct on (id) id, rotulo from t.pool where clube = p_pool_clube loop
         v_sql_a := t.chamada(f.proname, f.tipos, i, p.id, v_rnd);
         v_sql_b := t.chamada(f.proname, f.tipos, i, v_rnd, v_rnd);
@@ -302,6 +322,30 @@ begin
   insert into t.contagem values (p_pool_clube, v_n);
   return v_dif;
 end $$;
+
+-- =============================================================================
+--  COBERTURA DA VARREDURA — o assert que faltava, e que custou caro.
+--
+--  `proargtypes::oid[]` vem de um `oidvector`, que e 0-BASED. Ate a fase 8.2 esta varredura
+--  percorria de 1 ate pronargs, o que lia a posicao errada e fazia TODA funcao com 2+ argumentos
+--  ser descartada em silencio. Medido no banco antes da correcao: 19 das 118 posicoes uuid
+--  existentes eram sondadas — 16%. Uma guarda que cobre 16% da superficie nao e uma guarda, e
+--  uma sensacao de guarda, e foi por essa fresta que os RPCs cross-tenant da fase 8.2 passaram.
+--
+--  Este assert nao deixa isso voltar: ele compara o que a varredura ALCANCA com o que EXISTE.
+--  Se alguem mexer no indice, no filtro ou nos tipos suportados e a cobertura cair, quebra aqui —
+--  e nao dali a tres fases, num red-team.
+-- =============================================================================
+select t.como('membro_a');
+select t.eq('a varredura alcanca TODAS as posicoes uuid das funcoes que ela deve cobrir',
+  (select count(*) from pg_proc pr, generate_series(0, greatest(pr.pronargs - 1, 0)) g
+    where pr.pronamespace = 'public'::regnamespace and pr.prokind = 'f' and not pr.proretset
+      and pr.prorettype <> 'trigger'::regtype and pr.provolatile <> 'i'
+      and has_function_privilege('authenticated', pr.oid, 'execute')
+      and (pr.proargtypes::oid[])[g] = 'uuid'::regtype::oid
+      and t.chamada(pr.proname, pr.proargtypes::oid[], g, gen_random_uuid(), gen_random_uuid()) is null),
+  0);
+reset role;
 
 select t.como('membro_a');
 select t.eq('Tenant001->002 (membro A): nenhuma função pública distingue uuid do clube B de uuid aleatório', t.varrer('clube_b'), '');

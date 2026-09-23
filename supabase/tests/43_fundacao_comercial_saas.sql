@@ -14,6 +14,17 @@
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
+
+-- Fase 8.2: `recurso_disponivel_no_plano` deixou de ser chamavel por `authenticated` — era por
+-- ela que o vetor comercial de QUALQUER clube vazava (o red-team leu plano, overrides e
+-- suspensao de um clube pagante com uma conta sem vinculo nenhum).
+--
+-- As sondas abaixo perguntam o que o PLANO contem, nao quem pode perguntar — logo rodam como
+-- postgres. `t.pg()` faz isso sem mexer no papel da sessao: quem estava logado continua logado
+-- no proximo assert.
+create function t.pg(p_sql text) returns text language plpgsql security definer set search_path = '' as $$
+declare v text;
+begin execute p_sql into v; return v; exception when others then return 'ERRO: ' || sqlerrm; end $$;
 \set ON_ERROR_STOP on
 \o /dev/null
 
@@ -168,16 +179,16 @@ insert into public.subscription_clubs (subscription_id, club_id) values (t.id('a
 select t.eq('uma assinatura pode cobrir VÁRIOS clubes',
   t.n(format($q$select public.limite_uso(%L, 'clubes')$q$, t.id('clube1'))), 2);
 select t.eq('...e o plano vale igual no clube irmão',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1b'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1b'))), 'true');
 
 -- =============================================================================
 -- 4) AS TRÊS CAMADAS: plano → clube → usuário
 -- =============================================================================
 -- o plano "essencial" NÃO inclui leilão nem classes
 select t.eq('camada 1 (plano): "leilao" não está no plano essencial',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube1'))), 'false');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube1'))), 'false');
 select t.eq('camada 1 (plano): "jogos" está no plano essencial',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1'))), 'true');
 
 -- a diretoria LIGA o leilão no clube: a camada do clube aceita, mas a do plano continua barrando
 select t.como('fundador_x');
@@ -224,7 +235,7 @@ select t.eq('...e que o status é trial', t.txt($q$select public.assinatura_do_c
 select t.como('admin_saas');
 select t.permitido('a plataforma faz UPGRADE', format($q$select public.plano_mudar(%L, 'completo')$q$, t.id('assin1')));
 select t.eq('upgrade liberou o leilão no plano',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube1'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube1'))), 'true');
 reset role;
 select t.eq('...e agora o efetivo segue a escolha do clube (que já tinha ligado)',
   t.txt(format($q$select public.recurso_habilitado_no_clube(%L, 'leilao')::text$q$, t.id('clube1'))), 'true');
@@ -262,7 +273,7 @@ select t.eq('havia 1 mensalidade no clube antes do downgrade',
   t.n(format($q$select count(*) from public.mensalidades where club_id = %L$q$, t.id('clube1'))), 1);
 select t.como('admin_saas');
 select t.eq('gratuito não inclui mensalidades',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'mensalidades')::text$q$, t.id('clube1'))), 'false');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'mensalidades')::text$q$, t.id('clube1'))), 'false');
 \o /dev/null
 reset role;
 \o
@@ -291,7 +302,7 @@ update public.billing_invoices set vence_em = current_date - 20 where provider_r
 \o
 select t.eq('passada a carência: inadimplente', t.txt(format($q$select public.assinatura_avaliar(%L)$q$, t.id('assin2'))), 'inadimplente');
 select t.eq('inadimplente NÃO desliga o clube: os recursos seguem disponíveis',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'true');
 
 \o /dev/null
 reset role;
@@ -299,7 +310,7 @@ update public.billing_invoices set vence_em = current_date - 200 where provider_
 \o
 select t.eq('atraso longo: suspensa', t.txt(format($q$select public.assinatura_avaliar(%L)$q$, t.id('assin2'))), 'suspensa');
 select t.eq('suspensa PARA a escrita nova de recurso opcional',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'false');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'false');
 select t.eq('...mas o VÍNCULO das pessoas continua exatamente como estava',
   t.n(format($q$select count(*) from public.organization_memberships where organizational_unit_id = %L and status = 'ativo'$q$, t.id('clube2'))), 1);
 select t.como('fundador_y');
@@ -315,7 +326,7 @@ select t.eq('webhook "pagamento_aprovado" REATIVA a assinatura',
         json_build_object('cobranca_ref', 'cob-2')::text)), 'ativa');
 select t.eq('...a cobrança ficou paga', t.txt($q$select status from public.billing_invoices where provider_ref = 'cob-2'$q$), 'paga');
 select t.eq('...e os recursos voltaram',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube2'))), 'true');
 
 -- =============================================================================
 -- 7) WEBHOOK DUPLICADO (reentrega do MESMO evento)
@@ -479,7 +490,7 @@ select t.throws('...e não pode ser apagada',
 select t.eq('o Tenant 001 não tem assinatura nenhuma',
   t.n(format($q$select count(*) from public.subscription_clubs where club_id = %L$q$, t.id('clube_a'))), 0);
 select t.eq('...então a camada do plano devolve "disponível" (comportamento de hoje, bit a bit)',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube_a'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube_a'))), 'true');
 select t.eq('...o leilão do Tenant 001 continua ligado', t.txt(format($q$select public.recurso_habilitado_no_clube(%L, 'leilao')::text$q$, t.id('clube_a'))), 'true');
 select t.eq('...e sem teto nenhum', t.txt(format($q$select coalesce(public.plano_limite(%L, 'membros')::text, 'sem-teto')$q$, t.id('clube_a'))), 'sem-teto');
 

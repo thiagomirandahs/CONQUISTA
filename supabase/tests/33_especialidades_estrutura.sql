@@ -63,8 +63,25 @@ select t.throws('uma dependência circular (depende de si mesma) é recusada',
   format($q$insert into public.curriculum_dependencies (alvo_tipo, alvo_id, depende_de_tipo, depende_de_id) values ('specialty', %L, 'specialty', %L)$q$,
     '00000000-0000-4000-a000-000000000102'::uuid, '00000000-0000-4000-a000-000000000102'::uuid),
   'não pode depender de si mesma');
-select t.eq('dependencias_pendentes() é executável por authenticated (o servidor decide, não o frontend)',
-  has_function_privilege('authenticated', 'public.dependencias_pendentes(text,uuid,uuid,uuid)', 'execute'), true);
+-- A intenção original deste assert continua valendo e está preservada: a regra de dependência é
+-- decidida pelo SERVIDOR, não pelo frontend. O que mudou na fase 8.2 é ONDE o servidor a expõe.
+--
+-- `dependencias_pendentes` aceita p_usuario_id arbitrário e, sendo SECURITY DEFINER, lê
+-- `classes`/`specialties` por fora da RLS delas. O red-team provou, com dado oficial, que ela
+-- nomeia itens de currículo que a RLS esconde (6 classes de uma versão arquivada estão hoje
+-- invisíveis, e a função nomeou três) e que, por contraste entre duas chamadas, revela se uma
+-- pessoa de OUTRO clube concluiu uma especialidade.
+--
+-- Ela saiu da API e continua servindo às 8 funções-fachada que o app realmente chama
+-- (classe_iniciar, especialidades_disponiveis, explicar_requisito_classe...), que são elas
+-- próprias SECURITY DEFINER e aplicam a autorização certa. Nenhuma tela perdeu nada: a única
+-- menção a "dependencias_pendentes" em src/ é um CAMPO da resposta de outra RPC.
+select t.eq('dependencias_pendentes() NÃO é chamável direto pelo frontend (é interna do servidor)',
+  has_function_privilege('authenticated', 'public.dependencias_pendentes(text,uuid,uuid,uuid)', 'execute'), false);
+select t.ok('...e a regra continua no servidor: as fachadas que o app usa seguem existindo',
+  t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.proname <> 'dependencias_pendentes'
+         and p.prosrc like '%dependencias_pendentes%'$q$) >= 5);
 
 -- ---------- 6) as RPCs de especialidade existem, com EXECUTE só para authenticated ----------
 select t.eq('as 9 RPCs de especialidade existem', (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace

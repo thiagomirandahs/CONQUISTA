@@ -13,6 +13,17 @@
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
+
+-- Fase 8.2: `recurso_disponivel_no_plano` deixou de ser chamavel por `authenticated` — era por
+-- ela que o vetor comercial de QUALQUER clube vazava (o red-team leu plano, overrides e
+-- suspensao de um clube pagante com uma conta sem vinculo nenhum).
+--
+-- As sondas abaixo perguntam o que o PLANO contem, nao quem pode perguntar — logo rodam como
+-- postgres. `t.pg()` faz isso sem mexer no papel da sessao: quem estava logado continua logado
+-- no proximo assert.
+create function t.pg(p_sql text) returns text language plpgsql security definer set search_path = '' as $$
+declare v text;
+begin execute p_sql into v; return v; exception when others then return 'ERRO: ' || sqlerrm; end $$;
 \set ON_ERROR_STOP on
 \o /dev/null
 
@@ -363,7 +374,7 @@ select '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-00000000
 insert into public.subscription_clubs (subscription_id, club_id) values ('00000000-0000-4000-9000-000000000002', t.id('clube_b'));
 \o
 select t.eq('o plano essencial v1 NÃO inclui o módulo novo (quem assinou a v1 segue na v1)',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_b'))), 'false');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_b'))), 'false');
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.throws('fora do plano, o motor não abre — mesmo com o clube tendo ligado',
   $q$select public.experiencias_do_clube()$q$, 'desabilitado neste clube');
@@ -373,13 +384,13 @@ update public.subscriptions set plan_id = (select id from public.billing_plans w
  where id = '00000000-0000-4000-9000-000000000002';
 \o
 select t.eq('a versão NOVA do plano inclui o módulo',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_b'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_b'))), 'true');
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.permitido('...e o motor abre', $q$select public.experiencias_do_clube()$q$, 0);
 
 -- Tenant 001 sem assinatura segue funcionando
 select t.eq('o Tenant 001 não tem assinatura e o plano não atrapalha',
-  t.txt(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_a'))), 'true');
+  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'experiencias')::text$q$, t.id('clube_a'))), 'true');
 
 -- =============================================================================
 -- 12) REMOÇÃO DO VÍNCULO DURANTE A EXPERIÊNCIA — barra o futuro, não apaga o passado

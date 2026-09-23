@@ -228,8 +228,13 @@ select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
 select t.permitido('aba A: multi inicia a MESMA classe sintética também no A', format($q$select public.classe_iniciar(%L)$q$, t.id('classe_regras')));
 select t.eq('aba A: minha_classe() mostra o req 3 NÃO iniciado no A (o progresso operacional é da aba/clube)',
   t.txt($q$select r->>'status' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'codigo' = '3'$q$), 'nao_iniciado');
+-- A sonda direta roda como postgres desde a fase 8.2: `dependencias_pendentes` deixou de ser
+-- chamável por `authenticated` (ela nomeava itens de currículo que a RLS esconde — ver teste 33).
+-- O que o teste mede aqui é a REGRA, não a superfície; a superfície é medida no 51.
+reset role;
 select t.eq('aba A: a dependência do req 3 está satisfeita (a conquista é uma só, a aba não importa)',
   array_length(public.dependencias_pendentes('class_requirement', t.id('req_dependente'), t.id('multi_dois_papeis'), t.id('clube_a')), 1), null);
+select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
 select t.pedir_clube('clube_b');
 select t.eq('aba B: minha_classe() mostra o req 3 APROVADO no B', t.txt($q$select r->>'status' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'codigo' = '3'$q$), 'aprovado');
 select t.eq('aba B: a mesma conquista', t.nv(format($q$select count(*) from public.curriculum_achievements where id = %L$q$, t.id('ach_portatil'))), 1);
