@@ -35,7 +35,11 @@ insert into t.excecoes values
   ('class_completion_events',    'trilha de auditoria IMUTÁVEL das transições de conclusão (fase 4); operacional do clube (club_id), leitura por dono/liderança'),
   ('class_investitures',         'evento de investidura (fase 4): pertence à pessoa, segue a visibilidade da conquista; club_id é o clube que registrou (proveniência), não escopo'),
   ('document_templates',         'catálogo de templates de documento da PLATAFORMA (fase 4.1): versionado; o documento emitido fixa o template. Sem club_id'),
-  ('class_documents',            'DOCUMENTO emitido (Caderno DesbravaClube, fase 4.1): aponta pro snapshot selado; token público aleatório; segue a visibilidade da conquista (usuario_id + club_id_origem). A verificação pública é por RPC (resumo mínimo), nunca leitura da tabela (teste 40)');
+  ('class_documents',            'DOCUMENTO emitido (Caderno DesbravaClube, fase 4.1): aponta pro snapshot selado; token público aleatório; segue a visibilidade da conquista (usuario_id + club_id_origem). A verificação pública é por RPC (resumo mínimo), nunca leitura da tabela (teste 40)'),
+  ('investiture_workflows',      'catálogo de WORKFLOWS de investidura da PLATAFORMA (fase 4.2): versionado (chave+versão), declarativo. Sem club_id — a mesma definição vale pra qualquer clube'),
+  ('investiture_workflow_stages','etapas declarativas de um workflow do catálogo acima (fase 4.2): escopo/papéis/ordem são dado da PLATAFORMA, não de um clube'),
+  ('investiture_workflow_runs',  'execução do workflow para UM snapshot (fase 4.2): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é o clube da conclusão (proveniência), não escopo — hierarquia pode envolver mais de um clube/unidade'),
+  ('workflow_stage_decisions',   'decisão IMUTÁVEL de uma etapa (fase 4.2): segue a visibilidade da conquista; escopo_organizational_unit_id é a unidade RESOLVIDA pela hierarquia (clube, distrito, região...) — pode não ser o clube da pessoa. Gatilho recusa UPDATE/DELETE (teste 41)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
