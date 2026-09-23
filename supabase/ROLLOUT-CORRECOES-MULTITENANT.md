@@ -15,17 +15,17 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`49`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`50`.
    (A `40` e a `43` são GERADAS do manifesto curricular — `npm run curriculo:importacao:check` tem que passar antes; a `40` publica
    o catálogo 2026.1 e a `43` publica a revisão 2026.2 arquivando a 2026.1 (quem começou na 2026.1 continua nela); nenhuma
    matricula ninguém, e reaplicá-las é no-op. A `45` publica o Caderno Digital DesbravaClube — sem assinatura digital; documentos
    emitidos ficam idempotentes e nenhum é apagado ao reaplicar. A `46` adiciona a hierarquia institucional e o motor de
    workflow declarativo de investidura — não muda o comportamento hoje (o workflow ativo continua com 2 etapas, ambas no
-   clube, idêntico ao já testado na `44`); só dá base pra revisão distrital/regional quando isso vier a ser exigido. A `47` acrescenta o escopo institucional e o portal — sem NENHUMA policy de RLS nova: hierarquia não passa a ver dado de clube. A `48` traz a camada COMERCIAL (contas, planos versionados, assinaturas, cobranças, webhooks idempotentes, onboarding e administração da plataforma) — nenhum gateway é integrado e clube SEM assinatura, como o Tenant 001, se comporta exatamente como hoje; ela também corrige, de forma aditiva, o cadastro de "fundador", que passa a nascer sem clube em vez de virar membro pendente do Tenant 001. A `49` traz o MOTOR DE EXPERIÊNCIAS: o recurso `experiencias` nasce DESLIGADO (nenhum clube vê nada até a diretoria ligar) e ela semeia 4 experiências de exemplo marcadas `[TESTE]` no clube legado, que podem ser apagadas à vontade; o módulo só entra num plano pela versão nova (`essencial v2`), então nenhum cliente muda de escopo sozinho.)
+   clube, idêntico ao já testado na `44`); só dá base pra revisão distrital/regional quando isso vier a ser exigido. A `47` acrescenta o escopo institucional e o portal — sem NENHUMA policy de RLS nova: hierarquia não passa a ver dado de clube. A `48` traz a camada COMERCIAL (contas, planos versionados, assinaturas, cobranças, webhooks idempotentes, onboarding e administração da plataforma) — nenhum gateway é integrado e clube SEM assinatura, como o Tenant 001, se comporta exatamente como hoje; ela também corrige, de forma aditiva, o cadastro de "fundador", que passa a nascer sem clube em vez de virar membro pendente do Tenant 001. A `49` traz o MOTOR DE EXPERIÊNCIAS: o recurso `experiencias` nasce DESLIGADO (nenhum clube vê nada até a diretoria ligar) e ela semeia 4 experiências de exemplo marcadas `[TESTE]` no clube legado, que podem ser apagadas à vontade; o módulo só entra num plano pela versão nova (`essencial v2`), então nenhum cliente muda de escopo sozinho. A `50` é SOMENTE LEITURA: duas funções que alimentam o Início contextual e a fila de avaliação — nenhuma tabela, nenhuma policy, nenhuma RPC de escrita.)
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
    **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
-   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`49` são idempotentes. (A `02` também: aplique uma vez.)
+   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`50` são idempotentes. (A `02` também: aplique uma vez.)
 
 ## Ordem
 | # | O quê | Onde |

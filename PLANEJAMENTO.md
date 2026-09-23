@@ -560,6 +560,28 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   4 recompensas, nenhuma duplicada. **Parado antes de migrar os jogos atuais para o motor**.
   **Pendências declaradas**: editor de etapa existente (hoje só adiciona), upload de imagem de capa,
   check-in recorrente sem UI dedicada, e a migração dos jogos/missões atuais.
+- ✅ **Fase 7 — Arquitetura de experiência mobile (migration 50, somente leitura)**: reorganização de
+  navegação, não reimplementação. Começou pela auditoria (`AUDITORIA-UX.md`): 48 rotas catalogadas,
+  16–17 itens de menu, 21 cards em Gestão, e o achado mais duro — a 360×800, **8 dos 17 itens do menu
+  ficavam abaixo da dobra**, incluindo Minha Classe, Especialidades, Experiências e a própria Gestão;
+  Gestão media 4,6 telas de rolagem; e DUAS jornadas que existem e funcionam eram **inalcançáveis pela
+  UI** (o coordenador sem clube e o fundador caíam numa tela com um único botão "Sair" — o onboarding
+  da fase 5 não tinha um link sequer no app). Depois: **5 destinos por papel** (membro: Início ·
+  Jornada · Clube · Jogos · Eu; liderança troca Jogos por Gestão; responsável, coordenador e fundador
+  ganham 2 cada), **Início contextual** com motor de prioridades DECLARATIVO no servidor
+  (`meu_inicio()`, 10 regras com peso e texto humano — no máximo 3 ações à vista, resto em "ver mais",
+  zero dashboard), Gestão em 4 grupos com **fila ÚNICA de avaliação** (`avaliacoes_pendentes()`), e a
+  gaveta ☰ do celular removida por ser a "segunda porta" que a própria auditoria criticou. Design
+  system em `src/ui` (Card, Botão, Campo, Vazio, Carregando com skeleton, Folha, Aviso, Selo,
+  Progresso, Abas, Cabeçalho) + **contraste protegido**: a cor escolhida pelo clube passa por cálculo
+  WCAG e o app decide o texto em cima dela. Erros deixam de mostrar o texto cru do servidor
+  (`mensagemDeErro`). PWA passa a se chamar **DesbravaClube** (era o nome de um cliente) com ícone
+  `maskable`. Medido a 360/390/430: 5 destinos de 52px, 0 itens fora da tela, sem scroll horizontal;
+  Gestão de 4,6 → 1,6 telas; instrutor chega à fila de avaliação em **1 toque** (era 3 + varrer 21
+  cards); coordenador e fundador em **1 toque** (era impossível). Testes: Vitest 373 (+22), nada de
+  RLS/RPC de escrita/contrato tocado. **11 das 19 métricas bateram, 5 avançaram parcialmente, 2 não se
+  moveram** — consequência do alcance aprovado (núcleo + telas de jornada): ~35 telas antigas seguem
+  com `alert()`, texto ≤11px e a tabela de 12 colunas, todas listadas com caminho:linha na auditoria.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
