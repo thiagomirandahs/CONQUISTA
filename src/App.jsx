@@ -52,6 +52,8 @@ const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
+const Experiencias = lazy(() => import('./pages/Experiencias.jsx'))
+const ExperienciaEditor = lazy(() => import('./pages/ExperienciaEditor.jsx'))
 const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
@@ -191,6 +193,8 @@ export default function App() {
           <Route path="/agenda" element={<RecursoOpcional recurso="agenda"><Agenda /></RecursoOpcional>} />
           <Route path="/clube" element={<RotaRestrita><ClubeConfig /></RotaRestrita>} />
           <Route path="/planos" element={<RotaRestrita><Planos /></RotaRestrita>} />
+          <Route path="/experiencias" element={<RecursoOpcional recurso="experiencias"><Experiencias /></RecursoOpcional>} />
+          <Route path="/experiencias/novo" element={<RotaRestrita><ExperienciaEditor /></RotaRestrita>} />
           <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
           <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />
           <Route path="/investiduras" element={<RotaRestrita><Investiduras /></RotaRestrita>} />

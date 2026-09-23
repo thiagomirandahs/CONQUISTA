@@ -16,6 +16,7 @@ export const ABAS_BASE = [
   { to: '/atividades', label: 'Atividades', icon: '📋' },
   { to: '/unidades', label: 'Unidades', icon: '🏠' },
   { to: '/mural', label: 'Mural', icon: '📸' },
+  { to: '/experiencias', label: 'Experiências', icon: '✨' },
   { to: '/minha-classe', label: 'Minha Classe', icon: '🎖️' },
   { to: '/minhas-especialidades', label: 'Especialidades', icon: '🏅' },
 ]

@@ -357,8 +357,10 @@ select t.eq('...nem os eventos de webhook (operação interna)', t.nv($q$select 
 select t.como('lider_a');
 select t.eq('ser diretor de clube NÃO dá acesso a nenhuma conta comercial', t.nv($q$select count(*) from public.billing_accounts$q$), 0);
 select t.eq('...nem a nenhuma assinatura', t.nv($q$select count(*) from public.subscriptions$q$), 0);
+-- 3 planos públicos (o legado-fundador não é público); contam-se as CHAVES, não as versões — a fase 6
+-- publicou a v2 do essencial, e é assim mesmo que módulo novo entra: por versão nova de plano.
 select t.eq('o catálogo de planos, esse sim, é público pra quem está logado (o preço vem do banco)',
-  t.n($q$select count(*) from public.billing_plans where publico$q$), 3);
+  t.n($q$select count(distinct chave) from public.billing_plans where publico$q$), 3);
 
 -- =============================================================================
 -- 10) ADMIN DA PLATAFORMA: opera o SaaS, não enxerga o clube

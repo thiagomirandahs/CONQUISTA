@@ -56,7 +56,11 @@ insert into t.excecoes values
   ('billing_events',             'eventos de WEBHOOK recebidos (fase 5): idempotentes por unique (provider, evento_externo_id); operação interna — nem o contato da conta lê'),
   ('platform_admins',            'ADMINISTRAÇÃO DA PLATAFORMA (fase 5): papel de operação do produto, deliberadamente FORA de organization_memberships — não é autoridade eclesiástica e não ganha policy nenhuma sobre dado de clube (teste 43)'),
   ('platform_admin_audit',       'auditoria IMUTÁVEL das ações administrativas da plataforma (fase 5): alvo pode ser conta, assinatura ou clube — por isso alvo_tipo/alvo_id genéricos, não club_id'),
-  ('onboarding_sessions',        'estado RETOMÁVEL do cadastro de um clube novo (fase 5): pertence à PESSOA que está cadastrando; o club_id só existe depois da etapa que cria o clube (por isso nullable)');
+  ('onboarding_sessions',        'estado RETOMÁVEL do cadastro de um clube novo (fase 5): pertence à PESSOA que está cadastrando; o club_id só existe depois da etapa que cria o clube (por isso nullable)'),
+  -- ----- fase 6: motor de experiências. TUDO que é do clube tem club_id (experiences, stages,
+  -- audiences, participations, submissions, rewards, seasons, events, reports, badges). Só o CATÁLOGO
+  -- de modelos da plataforma fica de fora, pela mesma razão do currículo oficial.
+  ('experience_templates',       'catálogo de MODELOS de experiência da PLATAFORMA (fase 6): versionado (chave+versão) e igual pra todo clube. O clube COPIA pra uma instância dele (experiences.club_id) — mudar o modelo depois não altera a cópia publicada (teste 44)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
