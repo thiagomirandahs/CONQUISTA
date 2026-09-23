@@ -90,9 +90,16 @@ select t.ok('suspenso só no B: o vínculo ativo (A) é selecionável e o suspen
    from jsonb_array_elements(public.meu_contexto()->'vinculos') v));
 select t.eq('suspenso só no B: sem pedir nada, o servidor age no A (o único ativo)', t.txt('select public.clube_atual_id()::text'), t.id('clube_a')::text);
 select t.pedir_clube('clube_b');
-select t.eq('suspenso só no B: PEDIR o B não muda nada — vínculo suspenso nunca é honrado, cai no A de novo',
+-- MUDOU NA 8.4 (migration 63), e a mudança é o ponto: antes, pedir um clube suspenso caía no A
+-- caladamente. Enquanto as leituras não seguiam o clube em uso, isso era inofensivo. Depois da
+-- migration 62 elas seguem — e cair no A significaria devolver dados de A para uma aba rotulada
+-- como B. Um pedido que não vale agora não vale para nada: a requisição fica SEM clube.
+select t.eq('suspenso só no B: PEDIR o B não é honrado — e não cai em outro clube: fica sem clube',
+  coalesce(t.txt('select public.clube_atual_id()::text'), 'sem-clube'), 'sem-clube');
+select t.eq('suspenso só no B: ainda sem acesso a dados do B', t.nv($q$select count(*) from public.fotos where legenda = 'Foto B'$q$), 0);
+select t.esquecer_clube_pedido();
+select t.eq('suspenso só no B: sem pedir nada, segue operando no A normalmente (o fallback do padrão continua)',
   t.txt('select public.clube_atual_id()::text'), t.id('clube_a')::text);
-select t.eq('suspenso só no B: ainda sem acesso a dados do B (segue operando no A)', t.nv($q$select count(*) from public.fotos where legenda = 'Foto B'$q$), 0);
 reset role;
 
 -- ==================== 7) TROCA de clube durante a "sessão" ====================
@@ -127,15 +134,22 @@ reset role;
 -- ==================== 9) tentativa de FORJAR club_id ====================
 select t.como('membro_a');
 select t.pedir_clube('clube_b');
-select t.eq('membro só do A pede o clube B (sem vínculo lá): NUNCA é honrado, cai no A', t.txt('select public.clube_atual_id()::text'), t.id('clube_a')::text);
+select t.eq('membro só do A pede o clube B (sem vínculo lá): não é honrado, e a requisição fica sem clube',
+  coalesce(t.txt('select public.clube_atual_id()::text'), 'sem-clube'), 'sem-clube');
 select t.eq('...e continua sem ver nada do clube B', t.nv($q$select count(*) from public.fotos where legenda = 'Foto B'$q$), 0);
 select t.pedir_clube(gen_random_uuid());
-select t.eq('pedindo um clube ALEATÓRIO (nem existe): mesma coisa, cai no A', t.txt('select public.clube_atual_id()::text'), t.id('clube_a')::text);
+select t.eq('pedindo um clube ALEATÓRIO (nem existe): mesma coisa',
+  coalesce(t.txt('select public.clube_atual_id()::text'), 'sem-clube'), 'sem-clube');
+-- A regra de oráculo continua valendo, e é a razão de as duas respostas acima serem idênticas:
+-- "clube que existe mas não é meu" e "clube que não existe" não podem ser distinguíveis.
 reset role;
 -- e o inverso: um clube de VERDADE, mas de outra pessoa sem vínculo lá
 select t.como('membro_b');
 select t.pedir_clube('clube_a');
-select t.eq('membro só do B pede o clube A (existe, mas sem vínculo lá): cai no B, nunca no A', t.txt('select public.clube_atual_id()::text'), t.id('clube_b')::text);
+select t.eq('membro só do B pede o clube A (existe, mas sem vínculo lá): sem clube — nunca "então fica no B"',
+  coalesce(t.txt('select public.clube_atual_id()::text'), 'sem-clube'), 'sem-clube');
+select t.esquecer_clube_pedido();
+select t.eq('...e sem pedido nenhum, segue no B normalmente', t.txt('select public.clube_atual_id()::text'), t.id('clube_b')::text);
 reset role;
 
 -- ==================== 10) remoção de vínculo com a "sessão" aberta ====================
@@ -151,8 +165,18 @@ select t.permitido('liderança do B encerra o vínculo de multi_dois_papeis', fo
 reset role;
 select t.como('multi_dois_papeis');
 select t.pedir_clube('clube_b');
-select t.eq('depois de remover: pedir o B de novo NÃO é mais honrado (vínculo não é mais ativo)', t.txt('select public.clube_atual_id()::text'), t.id('clube_a')::text);
+-- Este é o cenário com a SESSÃO JÁ ABERTA, e é o que mais importa da migration 63: a aba de B
+-- continua na tela, com a marca de B, mandando `x-clube-atual: B` a cada clique. Ela tem de parar
+-- de funcionar — não virar uma aba do clube A disfarçada de B.
+select t.eq('depois de remover: pedir o B de novo não é honrado, e a requisição fica sem clube',
+  coalesce(t.txt('select public.clube_atual_id()::text'), 'sem-clube'), 'sem-clube');
 select t.eq('depois de remover: perdeu o acesso a dados do B imediatamente (sem cache)', t.nv($q$select count(*) from public.fotos where legenda = 'Foto B'$q$), 0);
+select t.eq('depois de remover: e NÃO passou a ver os dados do A pela aba de B',
+  t.nv($q$select count(*) from public.fotos where legenda = 'Foto A'$q$), 0);
+-- O conserto vem do contexto, que lista os vínculos independentemente do clube em uso: o cliente
+-- reescolhe a partir daí. É o que o ClubeProvider faz num round-trip.
+select t.ok('depois de remover: o contexto ainda lista o vínculo do A, que é por onde a aba se conserta',
+  t.txt($q$select (public.meu_contexto()->'vinculos')::text$q$) like '%' || t.id('clube_a')::text || '%');
 reset role;
 select t.eq('depois de remover: o vínculo do clube A (nunca mexido) continua intacto',
   (select role from public.organization_memberships where user_id = t.id('multi_dois_papeis') and organizational_unit_id = t.id('clube_a')), 'desbravador');

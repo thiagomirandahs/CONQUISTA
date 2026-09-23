@@ -93,15 +93,19 @@ $$;
 -- Um cruzamento = uma pessoa. Confere as três superfícies de uma vez e registra os três asserts.
 -- `p_participantes` é passado à parte porque só as DIRETAS têm linha em chat_participantes: quem
 -- enxerga a geral do A não enxerga participante nenhum ali (não existe nenhum).
-create function t.matriz(p_pessoa text, p_conversas text, p_participantes text) returns void
+-- p_clube é a ABA. Para quem só tem um clube ele é dispensável (não há outra aba possível); para
+-- quem tem dois ele é obrigatório, e desde a 8.4 é ele que decide o que a pessoa lê.
+create function t.matriz(p_pessoa text, p_conversas text, p_participantes text, p_clube text default null) returns void
 language plpgsql as $$
+declare v_rot text := p_pessoa || coalesce(' @' || p_clube, '');
 begin
   perform t.como(p_pessoa);
-  perform t.eq(format('[%s] conversas visíveis', p_pessoa), t.txt('select t.m_conversas()'), p_conversas);
+  if p_clube is not null then perform t.pedir_clube(p_clube); end if;
+  perform t.eq(format('[%s] conversas visíveis', v_rot), t.txt('select t.m_conversas()'), p_conversas);
   -- a matriz de MENSAGENS tem de ser idêntica à de conversas: toda conversa deste cenário tem
   -- exatamente uma mensagem visível, então qualquer divergência é vazamento ou perda de acesso.
-  perform t.eq(format('[%s] mensagens visíveis batem com as conversas', p_pessoa), t.txt('select t.m_mensagens()'), p_conversas);
-  perform t.eq(format('[%s] participantes visíveis', p_pessoa), t.txt('select t.m_participantes()'), p_participantes);
+  perform t.eq(format('[%s] mensagens visíveis batem com as conversas', v_rot), t.txt('select t.m_mensagens()'), p_conversas);
+  perform t.eq(format('[%s] participantes visíveis', v_rot), t.txt('select t.m_participantes()'), p_participantes);
   reset role;
 end $$;
 \o
@@ -140,17 +144,33 @@ select t.matriz('lider_b',       'conv_5_geral_b conv_6_unid_b1 conv_7_direta_b'
 select t.matriz('membro_b',      'conv_5_geral_b conv_6_unid_b1 conv_7_direta_b', 'conv_7_direta_b');
 select t.matriz('pais_b',        '-', '-');
 
--- ---------- pessoas com vínculo em DOIS clubes: a soma dos dois pontos de vista ----------
+-- ---------- pessoas com vínculo em DOIS clubes: UMA ABA DE CADA VEZ ----------
+--
+-- REESCRITO NA 8.4, e o motivo merece ficar registrado porque é o erro mais instrutivo do projeto.
+--
+-- Estas linhas nasceram na 8.1 somando os dois clubes: `multi_dois_papeis` aparecia com as
+-- conversas de A E de B na mesma lista, sem aba nenhuma pedida. Aquilo foi conferido contra a
+-- implementação antiga e estava fiel a ela — a 8.1 pedia justamente que a matriz antes/depois
+-- fosse idêntica, e foi. O que ninguém perguntou é se a matriz de origem estava CERTA.
+--
+-- Não estava. Ler a soma dos clubes é contaminação de contexto: a aba diz B e o chat traz A junto.
+-- A 8.4 corrigiu (migration 62) e agora cada pessoa de dois clubes tem DUAS linhas, uma por aba —
+-- que é como ela realmente usa o produto. A soma das duas linhas é exatamente a linha antiga: nada
+-- de acesso foi perdido, só deixou de vir tudo ao mesmo tempo.
+--
 -- desbravador na A1 + conselheiro na B1: membro comum nos dois, cada um com a sua unidade.
--- Uma conta só, dois clubes, sem vazamento cruzado e sem precisar escolher um deles.
-select t.matriz('multi_dois_papeis', 'conv_1_geral_a conv_2_unid_a1 conv_5_geral_b conv_6_unid_b1', '-');
+select t.matriz('multi_dois_papeis', 'conv_1_geral_a conv_2_unid_a1', '-', 'clube_a');
+select t.matriz('multi_dois_papeis', 'conv_5_geral_b conv_6_unid_b1', '-', 'clube_b');
 -- diretoria no A + desbravador comum na B1: gestão de um lado, membro do outro.
--- A prova de que o papel é POR CLUBE: ela vê a direta do A (gestão) e não vê a do B (não participa).
-select t.matriz('dir_a_membro_b', 'conv_1_geral_a conv_2_unid_a1 conv_3_unid_a2 conv_4_direta_a conv_5_geral_b conv_6_unid_b1', 'conv_4_direta_a');
--- instrutor nos dois clubes: gestão dos dois lados.
-select t.matriz('instrutor_2clubes', 'conv_1_geral_a conv_2_unid_a1 conv_3_unid_a2 conv_4_direta_a conv_5_geral_b conv_6_unid_b1 conv_7_direta_b', 'conv_4_direta_a conv_7_direta_b');
--- responsável nos dois clubes: nada, nos dois. Ser responsável em dois lugares não soma acesso.
-select t.matriz('pais_2clubes', '-', '-');
+-- A prova de que o papel é POR CLUBE: na aba de A ela vê a direta (gestão); na de B, não (não participa).
+select t.matriz('dir_a_membro_b', 'conv_1_geral_a conv_2_unid_a1 conv_3_unid_a2 conv_4_direta_a', 'conv_4_direta_a', 'clube_a');
+select t.matriz('dir_a_membro_b', 'conv_5_geral_b conv_6_unid_b1', '-', 'clube_b');
+-- instrutor nos dois clubes: gestão dos dois lados — mas de um lado por vez.
+select t.matriz('instrutor_2clubes', 'conv_1_geral_a conv_2_unid_a1 conv_3_unid_a2 conv_4_direta_a', 'conv_4_direta_a', 'clube_a');
+select t.matriz('instrutor_2clubes', 'conv_5_geral_b conv_6_unid_b1 conv_7_direta_b', 'conv_7_direta_b', 'clube_b');
+-- responsável nos dois clubes: nada, em nenhuma das abas. Ser responsável em dois lugares não soma acesso.
+select t.matriz('pais_2clubes', '-', '-', 'clube_a');
+select t.matriz('pais_2clubes', '-', '-', 'clube_b');
 -- ATIVO no A, SUSPENSO no B: o vínculo suspenso não abre NADA do B, e não contamina o do A.
 select t.matriz('suspenso_so_b', 'conv_1_geral_a conv_2_unid_a1', '-');
 
@@ -181,16 +201,27 @@ select t.eq('membro do clube B não enxerga nem a linha da mensagem moderada do 
   t.nv(format('select count(*) from public.chat_mensagens where id = %L', t.id('msg_moderada'))), 0);
 reset role;
 
--- 2) Pedir um clube pelo header NÃO amplia nem reduz o que a pessoa lê no chat: a leitura é por
---    VÍNCULO, não pela aba escolhida. (Se a otimização passasse a depender de clube_atual_id(),
---    a pessoa de dois clubes perderia metade das conversas — este assert pega isso.)
+-- 2) INVERTIDO NA 8.4. Aqui havia um assert que dizia, com todas as letras: "Se a otimização
+--    passasse a depender de clube_atual_id(), a pessoa de dois clubes perderia metade das
+--    conversas — este assert pega isso." Ele foi escrito na 8.1 como rede de segurança, e a rede
+--    funcionou: pegou exatamente a mudança que ele existia para pegar. Só que a mudança era a
+--    correção, e o que ele protegia era o defeito.
+--
+--    Fica como lembrete de método: um teste de regressão prova que o comportamento não mudou. Ele
+--    não prova, e nunca provou, que o comportamento estava certo. Só uma pessoa com vínculo em
+--    mais de um clube usando o produto de ponta a ponta revelou a diferença.
+--
+--    A troca de aba é uma TROCA, não um acúmulo:
 select t.como('multi_dois_papeis');
 select t.pedir_clube('clube_a');
-select t.eq('com o clube A pedido, continua enxergando as conversas dos DOIS clubes',
-  t.txt('select t.m_conversas()'), 'conv_1_geral_a conv_2_unid_a1 conv_5_geral_b conv_6_unid_b1');
+select t.eq('na aba de A, só o chat de A',
+  t.txt('select t.m_conversas()'), 'conv_1_geral_a conv_2_unid_a1');
 select t.pedir_clube('clube_b');
-select t.eq('com o clube B pedido, idem — a leitura do chat não depende da aba',
-  t.txt('select t.m_conversas()'), 'conv_1_geral_a conv_2_unid_a1 conv_5_geral_b conv_6_unid_b1');
+select t.eq('trocando para B, o chat de A sai de vista e entra o de B',
+  t.txt('select t.m_conversas()'), 'conv_5_geral_b conv_6_unid_b1');
+select t.pedir_clube('clube_a');
+select t.eq('e voltando para A, o de A volta inteiro — a troca não é destrutiva',
+  t.txt('select t.m_conversas()'), 'conv_1_geral_a conv_2_unid_a1');
 reset role;
 
 -- 3) Uma conversa de unidade de OUTRO clube nunca é alcançada por id direto (não existe caminho

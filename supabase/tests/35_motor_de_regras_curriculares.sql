@@ -405,11 +405,23 @@ select t.eq('club_id_origem de TODA conquista bate com o club_id do registro ope
     left join public.member_classes mc on mc.id = a.member_class_id
     where a.club_id_origem is distinct from coalesce(ms.club_id, mc.club_id)), 0);
 
--- header pedindo um clube SEM vínculo: membro_b (só no B) "pede" o A ao iniciar Z — o servidor grava B
+-- header pedindo um clube SEM vínculo: membro_b (só no B) "pede" o A ao iniciar Z.
+-- MUDOU NA 8.4 (migration 63), e para MELHOR: antes, o header forjado era ignorado e o servidor
+-- gravava em B caladamente. O dado nascia certo, mas nascia — e a pessoa nunca ficava sabendo que
+-- o pedido dela não tinha sido honrado. Agora um pedido que não vale não vira outro clube: vira
+-- NENHUM clube, e a operação é recusada. É a garantia mais forte das duas, porque nada é escrito.
 select t.como('membro_b'); select t.pedir_clube('clube_a');
-select t.permitido('membro_b inicia Z pedindo o clube A no header', format($q$select public.especialidade_iniciar(%L)$q$, t.id('esp_z')));
+select t.throws('forjando o clube A no header, membro_b não inicia Z — e nada é gravado em lugar nenhum',
+  format($q$select public.especialidade_iniciar(%L)$q$, t.id('esp_z')), 'Sem clube em uso');
 reset role;
-select t.eq('o registro operacional nasceu no clube B (único vínculo real) — o header forjado não foi honrado',
+select t.eq('...nenhum registro operacional de Z nasceu, nem em A nem em B',
+  (select count(*) from public.member_specialties where usuario_id = t.id('membro_b') and specialty_id = t.id('esp_z')), 0);
+
+-- E agora pelo caminho legítimo: o mesmo início, com o clube que é de verdade dela.
+select t.como('membro_b'); select t.pedir_clube('clube_b');
+select t.permitido('membro_b inicia Z no clube dela', format($q$select public.especialidade_iniciar(%L)$q$, t.id('esp_z')));
+reset role;
+select t.eq('o registro operacional nasceu no clube B',
   (select club_id from public.member_specialties where usuario_id = t.id('membro_b') and specialty_id = t.id('esp_z')), t.id('clube_b'));
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.permitido('lider_b aprova', format($q$select public.especialidade_requisito_avaliar((select id from public.member_specialty_requirements where usuario_id = %L and club_id = %L), 'aprovado', null)$q$, t.id('membro_b'), t.id('clube_b')));

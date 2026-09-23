@@ -15,3 +15,6 @@ vapid-keys.txt
 # Teste de carga: JWTs gerados para os usuários sintéticos (só valem no Supabase local,
 # mas são credenciais — não entram no repositório). Recriar com supabase/carga/gerar-tokens.mjs
 supabase/carga/usuarios.json
+
+# ids gerados por supabase/e2e/montar-tres-clubes.mjs — valem so para UM banco local
+supabase/e2e/atores.json
