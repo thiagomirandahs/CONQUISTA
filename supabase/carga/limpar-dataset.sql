@@ -30,10 +30,15 @@ begin
   delete from auth.users where email like '%@carga.local';
   delete from public.organizational_units where id = any(v_clubes);
 
-  -- Objetos sintéticos do Storage (PoC de armazenamento por clube). Dois marcadores, porque a PoC
-  -- criou dois formatos: `mural/carga-*.jpg` (sem dono) e `perfis/<uuid>.jpg` (dono sintético, que
-  -- acabou de ser apagado acima — por isso o critério aqui é "órfão"). O `session_replication_role`
-  -- é o que desarma o gatilho storage.protect_delete(), que só existe para evitar apagão acidental.
+  -- Objetos sintéticos do Storage. Dois marcadores, porque foram criados em dois formatos:
+  -- `mural/carga-*.jpg` (sem dono) e `perfis/<uuid>.jpg` (dono sintético, apagado acima — por isso
+  -- o critério aqui é "órfão").
+  --
+  -- `storage.allow_delete_query` (e não session_replication_role) é o que desarma o
+  -- storage.protect_delete(). A diferença importa desde a fase 8.1: o replica desligaria TAMBÉM o
+  -- gatilho de contabilidade de armazenamento, e o livro-razão ficaria com linhas de objetos que
+  -- não existem mais.
+  set local storage.allow_delete_query = 'true';
   delete from storage.objects where name like '%carga-%';
   delete from storage.objects o
    where o.owner_id is not null
