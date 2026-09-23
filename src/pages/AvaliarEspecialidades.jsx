@@ -5,6 +5,7 @@ import {
   carregarEspecialidadesDisponiveis, criarOfertaEspecialidade, carregarOfertasDoClube,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -143,7 +144,7 @@ function Item({ it, onFeito }) {
       await avaliarRequisitoEspecialidade(it.member_specialty_requirement_id, decisao, comentario.trim() || null)
       onFeito(it.member_specialty_requirement_id)
     } catch (e) {
-      alert('Erro: ' + (e?.message || e))
+      alert(mensagemDeErro(e))
       setOcupado(false)
     }
   }

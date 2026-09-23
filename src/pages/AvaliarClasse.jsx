@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -65,7 +66,7 @@ function Item({ it, onFeito }) {
       await avaliarRequisito(it.member_requirement_id, decisao, comentario.trim() || null)
       onFeito(it.member_requirement_id)
     } catch (e) {
-      alert('Erro: ' + (e?.message || e))
+      alert(mensagemDeErro(e))
       setOcupado(false)
     }
   }

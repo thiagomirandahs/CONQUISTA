@@ -9,6 +9,9 @@ const sair = vi.fn()
 const recarregar = vi.fn()
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => clube }))
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ sair }) }))
+// fase 7: o guarda passou a oferecer as jornadas de quem NÃO tem clube (portal e criar clube)
+let escopo = { temEscopo: false, escopos: [], carregando: false }
+vi.mock('../context/Escopo.jsx', () => ({ useEscopo: () => escopo }))
 // fase 5: quando o recurso é barrado, o guarda pergunta ao servidor QUAL camada barrou
 const verificarOperacao = vi.fn()
 vi.mock('../services/comercial.js', () => ({ verificarOperacao: (...a) => verificarOperacao(...a) }))
@@ -30,6 +33,7 @@ const naRota = (rota, ui) => render(<MemoryRouter initialEntries={[rota]}>{ui}</
 beforeEach(() => {
   sair.mockReset(); recarregar.mockReset()
   verificarOperacao.mockReset().mockResolvedValue({ permitido: false, bloqueio: 'clube' })
+  escopo = { temEscopo: false, escopos: [], carregando: false }
 })
 
 describe('RotaRestrita: papel do VÍNCULO no clube em uso', () => {
@@ -133,15 +137,25 @@ describe('ClubeGuard: só entra quem tem vínculo ATIVO com um clube em uso', ()
     como('desbravador', {}, { carregando: true })
     render(<ClubeGuard><p>o app</p></ClubeGuard>)
     expect(screen.queryByText('o app')).toBeNull()
-    expect(screen.getByText('Carregando...')).toBeInTheDocument()
+    expect(screen.getByText('Carregando…')).toBeInTheDocument()
   })
-  it('conta sem vínculo com clube nenhum: tela de sem acesso, com saída — e NADA do app', () => {
+  it('conta sem clube: NADA do app, e a saída é criar o próprio clube (fase 7)', () => {
     como(null, {}, { semVinculo: true, vinculos: [] })
-    render(<ClubeGuard><p>o app</p></ClubeGuard>)
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
     expect(screen.queryByText('o app')).toBeNull()
-    expect(screen.getByText('Sem acesso a nenhum clube')).toBeInTheDocument()
+    expect(screen.getByText('Você ainda não está em um clube')).toBeInTheDocument()
+    // antes desta fase o onboarding não tinha NENHUM link no app inteiro
+    expect(screen.getByTestId('ir-criar-clube')).toHaveAttribute('href', '/criar-clube')
     screen.getByRole('button', { name: 'Sair' }).click()
     expect(sair).toHaveBeenCalledTimes(1)
+  })
+  it('coordenador institucional sem clube é mandado para o PORTAL, não para a porta de saída', () => {
+    escopo = { temEscopo: true, escopos: [{ nome: 'Distrito Central' }], carregando: false }
+    como(null, {}, { semVinculo: true, vinculos: [] })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.queryByText('o app')).toBeNull()
+    expect(screen.getByText('Sua jornada é institucional')).toBeInTheDocument()
+    expect(screen.getByTestId('ir-portal')).toHaveAttribute('href', '/institucional')
   })
   it('cadastro pendente: diz que aguarda aprovação do clube (pelo nome do clube dele)', () => {
     como(null, {}, { semVinculo: true, vinculos: [{ status: 'pendente', marca: { nome: 'Clube Pendente' } }] })

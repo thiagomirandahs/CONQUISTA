@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   salvarExperiencia, salvarEtapa, definirPublico, mudarEstado, carregarExperiencia,
   carregarModelos, copiarModelo, carregarPendentes, avaliarEnvio,
-  TIPO_ROTULO, EVIDENCIA_ROTULO,
+  TIPO_ROTULO, EVIDENCIA_ROTULO, STATUS_ROTULO,
 } from '../services/experiencias.js'
 import { supabase } from '../lib/supabase.js'
 
@@ -182,7 +182,7 @@ export default function ExperienciaEditor() {
         <div className="space-y-4" data-testid="editor-aberto">
           <div className="bg-surface rounded-2xl p-4 shadow-soft">
             <div className="font-bold text-ink">{exp.titulo}</div>
-            <div className="text-xs text-muted">{TIPO_ROTULO[exp.tipo] || exp.tipo} · {exp.status}</div>
+            <div className="text-xs text-muted">{TIPO_ROTULO[exp.tipo] || exp.tipo} · {STATUS_ROTULO[exp.status] || exp.status}</div>
           </div>
 
           {exp.status === 'rascunho' && (

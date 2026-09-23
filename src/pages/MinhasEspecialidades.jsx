@@ -7,6 +7,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 const STATUS_INFO = {
   nao_iniciado: { label: 'Não iniciado', badge: 'bg-surface2 text-muted border border-line', icon: '⚪' },
@@ -46,7 +47,7 @@ export default function MinhasEspecialidades() {
       await iniciarEspecialidade(specialtyId)
       await recarregar()
     } catch (e) {
-      alert('Erro: ' + (e?.message || e))
+      alert(mensagemDeErro(e))
     }
   }
 

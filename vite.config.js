@@ -53,17 +53,26 @@ export default defineConfig({
           },
         ],
       },
+      // O app instalado é o DesbravaClube (o produto), não o nome de um cliente: desde a fase 5 a
+      // plataforma é multi-clube, e o manifest ainda dizia "Filhos da Conquista". A marca do CLUBE
+      // continua aparecendo dentro do app (nome, cores e logo vêm do servidor, por clube) — o que
+      // não pode é o ícone da tela inicial de todo mundo levar o nome de um clube só.
       manifest: {
-        name: 'Filhos da Conquista',
-        short_name: 'Conquista',
-        description: 'Clube de Desbravadores Filhos da Conquista — atividades, ranking e mural.',
+        name: 'DesbravaClube',
+        short_name: 'DesbravaClube',
+        description: 'O clube de Desbravadores na palma da mão: classes, especialidades, experiências e o dia a dia da unidade.',
+        lang: 'pt-BR',
         theme_color: '#1e3a8a',
         background_color: '#1e3a8a',
         display: 'standalone',
+        orientation: 'portrait',
         start_url: '/',
+        scope: '/',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // `maskable` faz o Android recortar o ícone no formato do sistema sem cortar o desenho
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       }
     }),

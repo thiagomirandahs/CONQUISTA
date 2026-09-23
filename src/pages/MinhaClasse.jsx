@@ -7,6 +7,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -32,6 +33,10 @@ export function situacaoDoRequisito(r) {
 
 // Datas SEM hora (vigente_desde, publicado_em: "2018-01-01") são calendário, não instante — parsear como
 // UTC e formatar no fuso local mostrava "31/12/2017". Datas com hora (timestamps) seguem o caminho normal.
+// os enums da versão curricular em português (a auditoria de UX achou os dois crus na tela)
+const ORIGEM_ROTULO = { oficial: 'oficial', adaptado: 'adaptado pelo clube', rascunho: 'rascunho' }
+const VERSAO_ROTULO = { publicado: 'em vigor', arquivado: 'arquivada', rascunho: 'rascunho' }
+
 export const fmtData = (iso) => {
   if (!iso) return ''
   const so = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
@@ -67,7 +72,7 @@ export default function MinhaClasse() {
       await iniciarClasse(classId)
       await recarregar()
     } catch (e) {
-      alert('Erro: ' + (e?.message || e))
+      alert(mensagemDeErro(e))
     }
   }
 
@@ -463,7 +468,7 @@ function OrigemDoRequisito({ requirementId }) {
   const [abrindo, setAbrindo] = useState(false)
   async function verOrigem() {
     setAbrindo(true)
-    try { setOrigem(await carregarOrigemRequisito(requirementId)) } catch (e) { alert('Erro: ' + (e?.message || e)) } finally { setAbrindo(false) }
+    try { setOrigem(await carregarOrigemRequisito(requirementId)) } catch (e) { alert(mensagemDeErro(e)) } finally { setAbrindo(false) }
   }
   return (
     <>
@@ -491,7 +496,7 @@ function OrigemRequisito({ origem, onFechar }) {
         </div>
         <p className="text-ink">{req.codigo}. {req.descricao}</p>
         <ul className="space-y-1">
-          {req.manifesto_id && <li><span className="font-semibold">Item no manifesto:</span> {req.manifesto_id}</li>}
+          {req.manifesto_id && <li><span className="font-semibold">Item no manifesto:</span> <code>{req.manifesto_id}</code></li>}
           {req.status_fonte && <li><span className="font-semibold">Situação na fonte:</span> {req.status_fonte === 'ALTERADO_POR_OMD' ? 'alterado por OMD' : 'confirmado'}</li>}
           {omd(req.alterado_por_omd, 'Alterado por')}
           {omd(req.confirmado_por_omd, 'Confirmado por')}
@@ -506,7 +511,7 @@ function OrigemRequisito({ origem, onFechar }) {
           {classe.vigente_desde && <div><span className="font-semibold">Vigente desde:</span> {fmtData(classe.vigente_desde)}</div>}
         </div>
         <div className="border-t border-line pt-2 space-y-1">
-          <div><span className="font-semibold">Versão:</span> {versao.identificador} {versao.versao} ({versao.origem}) · {versao.status}</div>
+          <div><span className="font-semibold">Versão:</span> {versao.identificador} {versao.versao} ({ORIGEM_ROTULO[versao.origem] || versao.origem}) · {VERSAO_ROTULO[versao.status] || versao.status}</div>
           {versao.manifesto_versao && <div><span className="font-semibold">Manifesto:</span> {versao.manifesto_versao}, gerado em {fmtData(versao.gerado_em)}</div>}
           {versao.importado_em && <div><span className="font-semibold">Importado em:</span> {fmtData(versao.importado_em)}</div>}
           {versao.fonte_hash && <div className="break-all"><span className="font-semibold">Hash:</span> <code>{versao.fonte_hash}</code></div>}

@@ -1,3 +1,5 @@
+import { variaveisDeContraste } from '../ui/contraste.js'
+
 // Marca (branding) do clube: nome, sigla, lema, cores e logo. Lógica pura + aplicação no documento.
 // A marca vem do SERVIDOR, por clube (`meu_contexto()`); nada de "Filhos da Conquista" fixo nas telas.
 //
@@ -81,6 +83,14 @@ export function aplicarMarca(marca, doc = typeof document !== 'undefined' ? docu
   escolher('--marca-1-dark', p1 ? `color-mix(in srgb, ${p1} 72%, white)` : null)   // no tema escuro a cor precisa de mais luz
   escolher('--marca-2', p2)
   escolher('--marca-2-dark', m.corSecundaria ? `color-mix(in srgb, ${m.corSecundaria} 72%, white)` : (p1 ? `color-mix(in srgb, ${p1} 50%, white)` : null))
+
+  // Fase 7 — contraste protegido: a cor que o clube escolheu não pode deixar nada ilegível.
+  // `--marca-1-texto`  = o que escrever EM CIMA da cor (branco ou tinta escura, pelo contraste real);
+  // `--marca-1-legivel`= a cor usada COMO texto, escurecida até alcançar 4.5:1 se precisar.
+  // Sem cor definida, as duas somem e o tema padrão volta idêntico ao de sempre.
+  const contraste = variaveisDeContraste(p1)
+  escolher('--marca-1-texto', contraste['--marca-1-texto'] || null)
+  escolher('--marca-1-legivel', contraste['--marca-1-legivel'] || null)
 }
 
 // A última marca vista fica guardada: a tela de login (antes de entrar) e o 1º quadro do app mostram a do SEU clube, sem "piscar".

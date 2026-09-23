@@ -47,10 +47,11 @@ describe('permissoesDoPapel: a fonte única dos grupos que as telas repetiam', (
       expect(ligados.sort(), papel).toEqual([...esperado[papel]].sort())
     }
   })
-  it('rota inicial: responsável no portal do filho; os demais no ranking', () => {
+  it('rota inicial: responsável no portal do filho; os demais no Início contextual (fase 7)', () => {
     expect(rotaInicial('pais')).toBe('/meu-filho')
-    for (const papel of PAPEIS.filter((p) => p !== 'pais')) expect(rotaInicial(papel)).toBe('/ranking')
-    expect(CAMINHOS_DO_RESPONSAVEL).toEqual(['/meu-filho', '/perfil'])
+    for (const papel of PAPEIS.filter((p) => p !== 'pais')) expect(rotaInicial(papel)).toBe('/inicio')
+    // fase 7: o responsável ganhou o destino "Eu" (perfil, tema, sair) — e continua fora da administração
+    expect(CAMINHOS_DO_RESPONSAVEL).toEqual(['/meu-filho', '/perfil', '/eu'])
   })
 })
 

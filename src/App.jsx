@@ -52,6 +52,12 @@ const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
+const Inicio = lazy(() => import('./pages/Inicio.jsx'))
+const Eu = lazy(() => import('./pages/Eu.jsx'))
+const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
+const Jornada = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jornada })))
+const MeuClubeHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.MeuClube })))
+const JogosHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jogos })))
 const Experiencias = lazy(() => import('./pages/Experiencias.jsx'))
 const ExperienciaEditor = lazy(() => import('./pages/ExperienciaEditor.jsx'))
 const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
@@ -159,6 +165,13 @@ export default function App() {
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />
+          {/* Destinos da fase 7 (hubs de jornada) */}
+          <Route path="/inicio" element={<Inicio />} />
+          <Route path="/jornada" element={<Jornada />} />
+          <Route path="/meu-clube" element={<MeuClubeHub />} />
+          <Route path="/jogos" element={<JogosHub />} />
+          <Route path="/eu" element={<Eu />} />
+          <Route path="/gestao/avaliar" element={<RotaRestrita><GestaoAvaliar /></RotaRestrita>} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/meu-filho" element={<MeuFilho />} />
           <Route path="/vinculos-pais" element={<RotaRestrita><VinculosPais /></RotaRestrita>} />
