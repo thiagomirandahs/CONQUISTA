@@ -11,3 +11,7 @@ vapid-keys.txt
 # Chave de assinatura Android — NUNCA versionar
 *.keystore
 *.jks
+
+# Teste de carga: JWTs gerados para os usuários sintéticos (só valem no Supabase local,
+# mas são credenciais — não entram no repositório). Recriar com supabase/carga/gerar-tokens.mjs
+supabase/carga/usuarios.json
