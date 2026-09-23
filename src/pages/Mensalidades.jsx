@@ -53,10 +53,14 @@ export default function Mensalidades() {
     let vivo = true
     setCarregandoAnual(true)
     ;(async () => {
-      const { data } = await supabase.from('mensalidades').select('desbravador_id,mes,status').eq('ano', ano)
+      // Uma linha por PESSOA com os doze meses dentro, em vez de N x 12 linhas soltas.
+      // Medido na fase 8.2: com 110 membros a consulta antiga pedia 1.320 linhas e o PostgREST
+      // devolvia 1.000 com HTTP 200 — sem erro, sem aviso. A tela mostrava 320 pagamentos como
+      // NAO PAGOS. Erro de dinheiro, silencioso, na tela que justifica a mensalidade do produto.
+      const { data } = await supabase.rpc('mensalidades_ano', { p_ano: ano })
       if (!vivo) return
       const map = {}
-      ;(data || []).forEach((m) => { (map[m.desbravador_id] ||= {})[m.mes] = m.status })
+      ;(data || []).forEach((r) => { map[r.desbravador_id] = r.meses || {} })
       setAnual(map)
       setCarregandoAnual(false)
     })()

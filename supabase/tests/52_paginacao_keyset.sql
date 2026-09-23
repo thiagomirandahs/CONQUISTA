@@ -214,5 +214,43 @@ select t.eq('...e um membro comum não lê (o texto vem nulo, não o original)',
       where m ->> 'texto' = 'palavra ruim para moderar'$q$), 0);
 reset role;
 
+-- =============================================================================
+--  9. A aba "Ano" de Mensalidades — o truncamento silencioso que era erro de DINHEIRO
+-- =============================================================================
+-- Medido na fase 8.2: 1.320 mensalidades de um ano devolviam 1.000 linhas com HTTP 200. A tela
+-- mostrava 320 pagamentos como NAO PAGOS, sem nenhum aviso. A correcao nao foi paginar: foi
+-- devolver uma linha por PESSOA com os doze meses dentro, que e a forma que a tela ja montava.
+\o /dev/null
+reset role;
+insert into public.mensalidades (desbravador_id, mes, ano, valor, status, club_id, registrado_por)
+select t.id('membro_a'), m, 2031, 50, 'pago', t.id('clube_a'), t.id('lider_a')
+  from generate_series(1, 12) m on conflict do nothing;
+\o
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+-- Uma linha por pessoa: o numero de linhas e igual ao numero de pessoas DISTINTAS. Era isto que
+-- multiplicava por 12 e estourava o teto do PostgREST.
+select t.eq('a aba Ano devolve UMA linha por pessoa, nao uma por mes',
+  t.n($q$select count(*) from public.mensalidades_ano(2031)$q$),
+  t.n($q$select count(distinct desbravador_id) from public.mensalidades_ano(2031)$q$));
+select t.ok('...e a lista nao esta vazia (senao o assert acima passaria no vazio)',
+  t.n($q$select count(*) from public.mensalidades_ano(2031)$q$) > 0);
+select t.eq('nenhuma linha carrega mais de 12 meses',
+  t.n($q$select count(*) from public.mensalidades_ano(2031)
+       where (select count(*) from jsonb_object_keys(meses)) > 12$q$), 0);
+select t.eq('...e os doze meses vem dentro da linha',
+  t.n($q$select count(*) from jsonb_object_keys(
+        (select meses from public.mensalidades_ano(2031) where desbravador_id = t.id('membro_a')))$q$), 12);
+select t.eq('quem nao pagou aparece com o objeto vazio, nao sumindo da lista',
+  t.txt($q$select meses::text from public.mensalidades_ano(2031) where desbravador_id = t.id('membro_a2')$q$), '{}');
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.eq('membro comum nao le mensalidade de ninguem (dinheiro e da gestao)',
+  t.n($q$select count(*) from public.mensalidades_ano(2031)$q$), 0);
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.eq('a lideranca do outro clube nao ve as mensalidades do clube A',
+  t.n($q$select count(*) from public.mensalidades_ano(2031) x
+      join public.organization_memberships v on v.user_id = x.desbravador_id
+     where v.organizational_unit_id = t.id('clube_a')$q$), 0);
+reset role;
+
 select t.fim();
 rollback;
