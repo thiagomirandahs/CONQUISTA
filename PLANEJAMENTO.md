@@ -511,6 +511,29 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   Testes: 42 (54 asserts), Vitest 317 (+8). Inspeção visual: público válido/acompanhamento/não encontrado/revogado,
   portal, documento final com QR e faixa de revogado, acompanhamento sem QR. Portal é só leitura (a tela pra a
   autoridade DECIDIR fica pra quando houver processo real que exija); sem assinatura eletrônica/ICP-Brasil.
+- ✅ **Fase 5 — Fundação comercial SaaS (migration 48)**: o motor comercial ANTES de qualquer gateway.
+  Cadeia modelada: conta/cliente (`billing_accounts` + contatos) → assinatura (`subscriptions`) → plano versionado
+  (`billing_plans`/`billing_prices`, chave+versão) → recursos/limites → clubes cobertos (`subscription_clubs`) →
+  cobrança (`billing_invoices`) → status comercial. **Assinatura não é vínculo**: inadimplência/cancelamento não
+  apagam nem desligam ninguém (`billing_policies.nunca_apagar_dados` tem CHECK — não existe política que apague).
+  **Três camadas distintas** (plano → clube → usuário) integradas POR DENTRO do entitlement que já existia:
+  `recurso_habilitado_no_clube()` virou "plano E clube", então os 17 gatilhos `trg_exigir_recurso` da 34 passaram a
+  respeitar o plano sem nenhum gate novo; `operacao_permitida()` diz QUAL camada barrou e a tela usa isso (achado:
+  antes o app dizia "o clube não usa" quando quem barrava era o plano). Downgrade abaixo do uso é permitido com
+  confirmação explícita e **não apaga nada** — o que para é o crescimento. Preço NUNCA no React: catálogo lido do
+  banco, tudo marcado como `provisorio` (nada decidido comercialmente). **Admin da plataforma fora de
+  `organization_memberships`**, sem nenhuma policy sobre dado de clube (lê 0 linhas de profiles/fotos/chat/
+  mensalidades/responsáveis/entregas/eventos), sem auto-promoção, com auditoria imutável. **Suporte assistido**
+  modelado (motivo + prazo + autorização do CLUBE + auditoria) mas **sem acesso**: assert estrutural de que nenhuma
+  policy consulta `suporte_acesso_vigente`. **Nenhum gateway**: interface de provedor + `mock` local; webhook
+  idempotente por `unique (provider, evento_externo_id)`. **Onboarding retomável e idempotente** (9 etapas, estado no
+  servidor, ordem imposta, repetir etapa não cria 2º clube/assinatura) reaproveitando `provisionar_clube` e
+  conferindo o resultado em `club_provisioning_status`. Achado corrigido de forma aditiva: cadastro público sem
+  unidade caía no Tenant 001 — criado o tipo `fundador`, que nasce sem clube (membro/responsável byte a byte iguais).
+  Testes: 43 (150 asserts), Vitest 332 (+15). Inspeção visual: onboarding completo no navegador com reload no meio
+  (retomou na etapa certa; 1 clube, 1 conta, 1 assinatura no fim), página de planos com uso do plano, e o bloqueio
+  por plano explicando a camada certa. **Pendências declaradas**: medição de `armazenamento_mb` por clube (exige o
+  clube no caminho do Storage); valores comerciais definitivos; nenhum gateway real integrado.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

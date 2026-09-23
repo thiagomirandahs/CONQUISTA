@@ -58,6 +58,83 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Fundação comercial SaaS — fase 5 (migration 48)
+
+### Princípio: assinatura NÃO é vínculo
+`organization_memberships` continua sendo a única fonte de autorização de PESSOA. Nenhum status comercial
+desliga, apaga ou esconde alguém: inadimplência e cancelamento no máximo param a **escrita nova** de recurso
+opcional. O teste 43 prova pelo estado — clube suspenso e depois cancelado mantém membros, vínculos, config e
+conteúdo provisionado, e a pessoa segue `membro_ativo_no_clube` com `clube_atual_id()` normal.
+
+Garantia estrutural: `billing_policies.nunca_apagar_dados` tem `CHECK` de valor verdadeiro. **Não existe
+política configurável que apague dado de clube.**
+
+### As três camadas (e a integração com o entitlement que já existia)
+| Camada | Onde vive | Quem decide |
+|---|---|---|
+| 1. recurso **disponível no plano** | `recurso_disponivel_no_plano(clube, recurso)` → `subscription_clubs` → `subscriptions` → `billing_plans.recursos` | comercial (conta/plataforma) |
+| 2. recurso **habilitado pelo clube** | `club_features`, senão `recursos_catalogo.padrao` | diretoria do clube |
+| 3. **permissão do usuário** | `pode_gerir_no_clube` / `membro_ativo_no_clube` | papel no vínculo |
+
+A integração é **por dentro**: `recurso_habilitado_no_clube()` passou a ser "plano E clube". Com isso os 17
+gatilhos `trg_exigir_recurso` da migration 34 respeitam o plano sem uma linha nova de gate — **não nasceu um
+segundo sistema de feature flags**. `operacao_permitida(recurso, acao)` devolve qual camada barrou, e a tela
+usa isso pra não culpar a diretoria por um limite comercial.
+
+Clube **sem assinatura devolve "disponível"**: o Tenant 001 e qualquer clube não cobrado seguem bit a bit como
+antes. O plano `legado-fundador` (não público, todos os recursos, sem tetos) está no catálogo pronto pra ser
+atribuído a ele — testado que atribuí-lo não muda nada.
+
+### Limites
+`membros`, `administradores`, `clubes` e `fotos` são medidos de verdade (`limite_uso`). `armazenamento_mb`
+está **declarado no plano e pendente de medição**, e a plataforma diz isso (`medicao: 'pendente'`) em vez de
+inventar número: os objetos do Storage não carregam o clube no caminho (`perfis/`, `mural/`, `unidades/`), então
+medir por clube exige mudar a convenção de caminho. Fica registrado como pendência.
+
+Downgrade abaixo do uso é **permitido e nunca apaga nada**: `plano_mudar` sem `p_confirmar_excedente` devolve a
+lista do que ficaria excedido; com confirmação, aplica — e o que para é o **crescimento** (o gatilho
+`trg_exigir_limite_de_vinculo` barra vínculo novo), não as pessoas que já estão lá.
+
+### Administrador da plataforma ≠ autoridade eclesiástica
+Mora em `platform_admins`, **nunca** em `organization_memberships`. Não ganhou nenhuma policy sobre dado de
+clube: sem vínculo ele não tem `clube_atual_id()` e lê 0 linhas de `profiles`, `fotos`, `chat_mensagens`,
+`mensalidades`, `responsaveis`, `entregas` e `eventos` (teste 43, com assert estrutural de que nenhuma policy
+fora das tabelas comerciais cita `eh_admin_plataforma`). Ninguém se auto-promove: não há RPC de promoção e
+`platform_admins` não aceita escrita de `authenticated` — só o `service_role` faz o bootstrap.
+Toda ação administrativa vai pra `platform_admin_audit`, **imutável** (nem o dono do banco reescreve).
+
+### Suporte assistido: pedido, não poder
+`support_grants` exige motivo (≥10 caracteres), prazo (1–168 h, com `CHECK` que proíbe "autorizado sem prazo") e
+**autorização explícita da liderança do clube** — o próprio admin não autoriza o acesso dele. Nesta fase o acesso
+**não é implementado**: `suporte_acesso_vigente()` existe e é fechada, e o teste 43 verifica por estrutura que
+**nenhuma policy do banco a consulta**. O clube vê quem pediu acesso a ele e revoga a qualquer momento.
+
+### Provedor de pagamento: interface + mock, nenhum gateway
+`billing_providers` descreve o vocabulário do motor (`pagamento_aprovado`, `pagamento_recusado`,
+`pagamento_atrasado`, `renovacao`, `cancelamento`); um gateway futuro traduz o dele pra cá. O único provedor
+cadastrado é o `mock` local. **Webhook idempotente desde o primeiro dia**: `unique (provider, evento_externo_id)`
+no banco, e o receptor devolve `duplicado: true` sem reprocessar (testado: reentrega não cria segundo evento nem
+segunda transição comercial).
+
+### Cadastro de fundador (achado da fase)
+Ao construir o onboarding descobriu-se que **todo** cadastro público sem unidade cai no clube legado
+(`handle_new_user`) e, mesmo sem vínculo, `sincronizar_vinculo_perfil` criava um lá. Num SaaS isso faria cada
+cliente novo virar membro pendente do Tenant 001. Correção **aditiva e mínima**: o tipo `fundador` nasce com
+identidade e **sem clube** (o dele é criado no onboarding). Membro e responsável seguem byte a byte iguais —
+há assert de controle disso no teste 43.
+
+### Onboarding retomável e idempotente
+Estado no servidor (`onboarding_sessions`, um vivo por pessoa por índice único parcial). Ordem imposta pelo
+servidor (não dá pra pular etapa), cada etapa idempotente pelos ids guardados na sessão: repetir "clube" não cria
+um segundo clube nem uma segunda assinatura. O provisionamento **reaproveita o mecanismo existente**
+(gatilho `trg_provisionar_clube` → `_prov_*`) e o resultado é **conferido** e registrado em
+`club_provisioning_status`, que alimenta o painel de falhas da operação.
+
+### Matriz — tabelas novas sem `club_id` (e por quê)
+13 exceções declaradas no teste 20: a camada comercial é da **conta/cliente**, que pode cobrir N clubes. O elo
+com o clube mora em `subscription_clubs` (que tem `club_id`, FK e RLS), junto com `support_grants`,
+`club_provisioning_status` e `club_team_invites`.
+
 ## Motor curricular — fase 4.3 (migration 47): escopo institucional, portal enxuto e verificação pública
 
 ### Princípio: hierarquia NÃO é acesso
