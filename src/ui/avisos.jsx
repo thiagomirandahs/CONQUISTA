@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { reportarErro } from '../lib/observabilidade.js'
 import { Botao, Folha, mensagemDeErro } from './index.jsx'
 
 // =============================================================================
@@ -145,7 +146,13 @@ const ponte = { mostrar: null, confirmar: null }
 export const avisar = {
   sucesso: (texto) => ponte.mostrar?.(texto, 'sucesso'),
   info: (texto) => ponte.mostrar?.(texto, 'info'),
-  erro: (erro, contexto) => ponte.mostrar?.(mensagemDeErro(erro, contexto), 'erro'),
+  // Ponto unico de instrumentacao (fase 8.1): todo erro que chega a uma pessoa passa por aqui,
+  // entao e daqui que sai o registro. `reportarErro` nunca lanca nem espera — telemetria nao
+  // pode atrasar nem quebrar a mensagem que a pessoa precisa ler.
+  erro: (erro, contexto) => {
+    reportarErro(erro, { origem: 'ui', contexto })
+    return ponte.mostrar?.(mensagemDeErro(erro, contexto), 'erro')
+  },
   // devolve Promise<boolean>; sem provider (teste) responde `false` — falha fechada numa decisão
   // destrutiva é o comportamento certo.
   confirmar: (opcoes) => (ponte.confirmar ? ponte.confirmar(opcoes) : Promise.resolve(false)),

@@ -1,5 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+// Handlers globais de erro (fase 8.1): precisam estar de pe ANTES de qualquer render, senao um
+// erro no primeiro paint — justamente o pior — passa sem registro.
+import { ligarObservabilidade } from './lib/observabilidade.js'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
@@ -8,6 +11,8 @@ import { EscopoProvider } from './context/Escopo.jsx'
 import { AvisosProvider } from './ui/avisos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
+
+ligarObservabilidade()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

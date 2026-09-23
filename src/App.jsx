@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
+import { reportarErro } from './lib/observabilidade.js'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
@@ -118,6 +119,9 @@ class ErroApp extends Component {
   constructor(props) { super(props); this.state = { erro: false } }
   static getDerivedStateFromError() { return { erro: true } }
   componentDidCatch(erro) {
+    // Tela quebrada e o pior caso para a pessoa e o mais dificil de reproduzir depois:
+    // e o unico lugar onde o relato costuma ser so "deu erro e sumiu tudo".
+    reportarErro(erro, { origem: 'boundary', contexto: 'A tela quebrou e o app precisou se recuperar.' })
     const msg = String(erro?.message || erro || '')
     const ehChunk = /dynamically imported module|module script failed|ChunkLoadError|Failed to fetch|Loading chunk|CSS chunk/i.test(msg)
     let jaTentou = false
