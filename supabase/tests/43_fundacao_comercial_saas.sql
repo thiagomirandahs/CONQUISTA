@@ -408,7 +408,11 @@ select t.eq('a migration 48 NÃO criou policy nenhuma que cite eh_admin_platafor
                                 -- fase 8.2: telemetria de ENTREGA de push. Mesmo desenho das duas
                                 -- acima — sem coluna de conteudo, so metadado de falha. O admin
                                 -- ve "quantas entregas falharam, em que clube", nunca o que dizia.
-                                'push_eventos','push_evento_destinatarios','push_tentativas')$q$), 0);
+                                'push_eventos','push_evento_destinatarios','push_tentativas',
+                                -- fase 8.2: canal de alerta. Mesmo desenho — o CHECK
+                                -- `alerta_sem_conteudo` proibe titulo/corpo/texto/token/email em
+                                -- `dados`, porque o alerta SAI do sistema (vai para um Slack).
+                                'alertas','alerta_destinos','alerta_entregas','infra_heartbeat')$q$), 0);
 
 -- E a prova de que a exceção não abriu porta: a telemetria que o admin lê não tem como carregar
 -- conteúdo de clube nenhum, porque as colunas para isso não existem.
@@ -418,6 +422,21 @@ select t.eq('as duas tabelas de operação novas não têm coluna capaz de guard
           and column_name in ('mensagem','texto','payload','corpo','conteudo','url','foto','nome','email')$q$), 0);
 -- As tabelas de push seguem a mesma regra, e uma a mais: nem a CREDENCIAL de entrega entra.
 -- `push_tentativas` aponta para o aparelho por um uuid derivado, nunca pelo token/endpoint.
+-- E o alerta, que e o que mais sai do sistema, tem a trava como CONSTRAINT e nao como convencao.
+select t.eq('a tabela de alertas proibe conteudo por CHECK, nao por disciplina',
+  t.n($q$select count(*) from pg_constraint
+        where conrelid = 'public.alertas'::regclass and conname = 'alerta_sem_conteudo'$q$), 1);
+-- Duas camadas, e a ordem importa: quem esta logado esbarra no GRANT antes de chegar ao CHECK.
+-- Por isso a prova do CHECK roda como postgres — senao o teste passaria pelo motivo errado.
+select t.throws('ninguem logado escreve alerta (a primeira camada e o GRANT)',
+  $q$insert into public.alertas (categoria, chave_dedupe, severidade, resumo)
+     values ('push_degradado', 'x', 'alto', 'r')$q$, 'permission denied');
+reset role;
+select t.throws('...e o CHECK recusa um alerta que carregue texto, mesmo vindo do servidor',
+  $q$insert into public.alertas (categoria, chave_dedupe, severidade, resumo, dados)
+     values ('push_degradado', 'x', 'alto', 'r', '{"corpo":"o aviso do Joao"}'::jsonb)$q$,
+  'alerta_sem_conteudo');
+
 select t.eq('as tabelas de push não guardam conteúdo nem credencial de entrega',
   t.n($q$select count(*) from information_schema.columns
         where table_schema='public' and table_name in ('push_eventos','push_evento_destinatarios','push_tentativas')
