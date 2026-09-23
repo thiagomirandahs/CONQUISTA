@@ -58,6 +58,104 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 4.2 (migration 46): hierarquia institucional + workflow declarativo de investidura
+
+### Pesquisa institucional (antes de fixar qualquer regra)
+Estrutura oficial (institucional.adventistas.org/quem-somos/estrutura-organizacional): Igreja Local → Distrito
+Pastoral → Associação/Missão → União → Divisão. Coordenação de Desbravadores (página oficial de fundação de
+clube): "coordenador geral, coordenadores regionais e distritais" são papéis REAIS, de autoridade territorial
+(distrito/região), diferente do clube. QUEM aprova investidura
+(adventistas.org/desbravadores/orientacoes-cartao-classes-de-lideranca, item 9): "LÍDER: MDA da Associação/Missão
+ou Pastor Distrital/Regional... MÁSTER: MDA da União ou Associação... MÁSTER AVANÇADO: MDA da Divisão ou União" —
+mas o texto deixa claro que é **só para Classes de Liderança**, ainda não importadas. Nenhuma fonte exige revisão
+distrital/regional pra investidura das Classes Regulares (Amigo–Guia): a nomeação de diretor é aprovada pela
+comissão da igreja local, e a investidura dessas classes é ato do clube. **Decisão**: o workflow ATIVO continua
+com só 2 etapas, ambas no clube — nada muda na prática. A exigência distrital/regional fica PENDENTE (não fixada),
+com o motor pronto pra quando as Classes de Liderança forem importadas.
+
+### Hierarquia: já existia, só faltava o papel fora do clube
+`organizational_units` já suporta a árvore inteira desde a fundação (migration 01): `type` em
+divisao/uniao/campo/regiao/distrito/igreja/clube, `parent_id` auto-referente e OPCIONAL — um clube pode ligar
+direto num campo, sem duplicar identidade nem forçar todos os níveis. O que faltava: `organization_memberships.role`
+só tinha vocabulário de clube. Estendido (grounded acima): `coordenador_distrital` (só em `distrito`),
+`coordenador_regional` (só em `regiao`), `coordenador_geral`/`diretor_mda` (só em `campo`) — e um GATILHO
+(`_validar_role_por_tipo_unidade`) recusa qualquer combinação papel×tipo que não bata (papel de clube num distrito,
+ou vice-versa; tipos ainda sem papel modelado — igreja/uniao/divisao — recusam vínculo, em vez de aceitar dado sem
+sentido). `unidade_ancestral(unidade, tipo)` sobe `parent_id` até achar o tipo pedido (ou ela mesma, se já for
+desse tipo) — retorna NULL quando o nível não existe na árvore, e é assim que um nível intermediário fica
+realmente opcional. `organization_memberships` já suportava — desde sempre — a MESMA pessoa ter papéis diferentes
+em escopos diferentes (índice único é por `user_id+unidade+role`); nada mudou aí.
+
+### Workflow declarativo e versionado (não colunas `assinatura_diretor`/`assinatura_distrital`)
+`investiture_workflows`(chave+versão, único, `ativo`) + `investiture_workflow_stages` (ordem, `chave` em
+`revisao_clube`|`aprovacao_intermediaria`|`investidura`, `escopo_tipo`, `papeis_permitidos[]`, `obrigatoria`,
+`pular_se_nivel_ausente`, `permite_mesmo_decisor`). Seed real: **`classes-regulares` v1**, 2 etapas
+(`revisao_clube`+`investidura`, ambas `escopo_tipo='clube'`) — é exatamente o fluxo já testado na fase 4, sem
+mudança de comportamento pra quem usa hoje.
+
+### Execução: quem decide é resolvido pelo SERVIDOR, nunca declarado pelo cliente
+`investiture_workflow_runs` (1:1 com `class_completion_snapshots`, preserva a granularidade de versão da fase 4) +
+`workflow_stage_decisions` (**imutável**, mesmo gatilho `_proteger_registro_imutavel` da fase 4). Núcleo
+(`_workflow_registrar_decisao`): trava a corrida (`for update`), confere que a etapa decidida é a etapa ATUAL
+("tentativa de pular etapa" recusada aqui), resolve a unidade CONCRETA via `unidade_ancestral(clube, escopo_tipo)`,
+confere se quem chamou (`auth.uid()`) tem vínculo ATIVO com um dos papéis da etapa NAQUELA unidade
+(`_workflow_papel_autorizado` — o cliente só manda decisão+observação, nunca "sou distrital"), grava a decisão
+IMUTÁVEL (escopo resolvido, papel efetivamente usado, decisor, decisão, data, observação, **versão do workflow
+utilizado**) e avança — pulando automaticamente etapas cujo nível não existe na árvore deste clube (registrado como
+`decisao='pulada_nivel_ausente'`, também imutável, pra auditoria honesta do pulo).
+
+### Segregação de funções
+Por padrão, quem já decidiu (aprovado/reprovado) uma etapa de `escopo_tipo` DIFERENTE nesta MESMA investidura não
+decide outra — autoridades que deveriam ser distintas (clube ≠ distrito ≠ região) exigem pessoas distintas, salvo a
+etapa marcar `permite_mesmo_decisor` explicitamente (nenhuma etapa real marca isso hoje). Etapas do MESMO
+`escopo_tipo` nunca são bloqueadas entre si (é a mesma autoridade — por isso o workflow padrão, com as 2 etapas
+`escopo_tipo='clube'`, continua permitindo o mesmo diretor revisar E investir, como sempre foi). Acúmulo de cargo
+(a mesma pessoa com vínculo de clube E vínculo distrital) não basta pra burlar a regra: ela só pode usar UM dos
+dois "chapéus" por investidura.
+
+### Aprovação ≠ assinatura
+`workflow_stage_decisions.metodo` tem 3 valores possíveis (`aprovacao_sistema`, `assinatura_eletronica`,
+`certificado_digital`), mas **nenhuma RPC desta fase aceita outro valor além de `aprovacao_sistema`** — os outros
+dois são placeholders de schema pra métodos futuros. `aprovacao_sistema` = decisão autenticada dentro do sistema
+(autoria/auditoria); em NENHUM lugar do produto isso é chamado de "assinatura digital" ou "ICP-Brasil".
+
+### Compatibilidade — fase 4 preservada byte a byte
+`revisao_final_decidir`/`investidura_registrar` mantêm assinatura, textos de erro e efeitos colaterais EXATOS
+(`investiture_reviews`/`class_investitures`/`curriculum_achievements`) — agora autorizados e auditados pelo motor
+por baixo. `_classe_selar_conclusao` só trocou o `insert` direto em `investiture_reviews` por
+`_workflow_iniciar_run` (que ainda insere essa linha legada, pra `minha_classe()`/`documento_conteudo()`/
+`Investiduras.jsx` continuarem funcionando sem tocar em uma linha de front). Nova RPC
+`workflow_etapa_intermediaria_decidir` pra etapas que não são nem a primeira nem a última (ex.: revisão distrital,
+quando um workflow futuro exigir). Nova RPC de leitura `workflow_historico(member_class_id)` (mesma visibilidade da
+conquista portátil) expõe etapas+decisões completas — satisfaz "cada etapa registra escopo/papel/decisor/decisão/
+data/observação/versão" sem precisar de tela nova nesta fase.
+
+### Testado
+`41_hierarquia_e_workflow_investidura.sql` (62 asserts): papel×tipo de unidade validado por gatilho;
+`unidade_ancestral` sobe a árvore e retorna NULL pro nível ausente (Clube B tem distrito, não tem região); workflow
+de TESTE com 4 etapas (clube→distrito→região→investidura, **nunca ativado de verdade** — só nesta transação, com a
+v1 real desativada e restaurada no rollback); tentativa de pular etapa (investidura direta, etapa distrital antes
+da etapa 1) recusada; autoridade CORRETA decide cada etapa; autoridade de OUTRO distrito/clube e membro comum são
+recusados; nível PRESENTE (região de A) é decidido de verdade; nível AUSENTE (região de B) é pulado automaticamente
+e registrado; documento de acompanhamento disponível a qualquer momento, documento FINAL recusado antes da última
+aprovação mesmo com as 3 etapas anteriores ok; pessoa com múltiplos vínculos tentando usar o cargo acumulado na
+MESMA investidura é bloqueada por segregação, pessoa distinta com a mesma autoridade formal decide normalmente;
+reprovação intermediária cancela a corrida sem apagar as decisões já tomadas; histórico IMUTÁVEL (liderança, dono do
+banco, UPDATE e DELETE todos recusados); remoção posterior do cargo preserva a decisão histórica (nome/papel/escopo
+intactos) mas impede decisões FUTURAS; concorrência (reenvio da mesma etapa já decidida recusado; unicidade física
+`(run_id,stage_id)` impede duplicata); Tenant 001×002 isolados também no workflow (`terceiro`, pessoa só do clube A,
+testado por ser genuinamente isolado — diferente de `multi_dois_papeis`, que tem vínculo dual A+B de propósito).
+Inspeção visual: fluxo real completo (não fixture isolada) através do motor novo, com `workflow_historico` e
+`documento_verificar` conferidos, e o documento final renderizado mostrando investidura/revisão com data, quem
+decidiu e o papel — idêntico ao que a fase 4.1 já mostrava, agora alimentado pelo motor declarativo.
+
+### Limites honestos desta fase
+Sem tela nova pra atores fora do clube (não existe hoje, em lugar nenhum do front, o conceito de "unidade em uso"
+não-clube — um coordenador distrital decide por RPC, testado em SQL, mas não há portal distrital). Sem exigência
+real de revisão distrital/regional pra Classes Regulares (fica pendente, grounded acima). `obrigatoria=false` numa
+etapa (pulo manual e explícito, não por nível ausente) tem coluna no schema mas nenhuma RPC usa essa via ainda. Sem
+assinatura digital/ICP-Brasil/desenhada.
+
 ## Motor curricular — fase 4.1 (migration 45): Caderno Digital DesbravaClube + verificação pública
 
 ### Separação conceitual

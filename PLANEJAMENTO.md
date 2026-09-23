@@ -477,6 +477,23 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   só expõem a chave no tipo `final`), com teste cobrindo o cenário exato. Testes: 40 (41), Vitest 11 (qr +
   VerificarDocumento + DocumentoClasse); dois documentos reais gerados do banco pra inspeção visual. Sem assinatura
   digital/ICP-Brasil.
+- ✅ **Fase 4.2 — Hierarquia institucional + workflow declarativo de investidura (migration 46)**: pesquisa
+  confirmou que a exigência de revisão distrital/regional/MDA (institucional.adventistas.org +
+  orientacoes-cartao-classes-de-lideranca) é **só de Classes de Liderança**, ainda não importadas — o workflow ativo
+  pra Classes Regulares continua com 2 etapas, ambas no clube, nada muda na prática. Hierarquia (`organizational_units`
+  Clube→Distrito→Região→Campo, níveis opcionais) já existia desde a fundação; adicionado o vocabulário de papel fora
+  do clube (`coordenador_distrital`/`coordenador_regional`/`coordenador_geral`/`diretor_mda`), validado por gatilho
+  contra o tipo da unidade, e `unidade_ancestral()` pra subir a árvore. Workflow **declarativo e versionado**
+  (`investiture_workflows`/`investiture_workflow_stages`: chave/ordem/escopo/papéis/obrigatória/pula-se-ausente) —
+  nada de colunas `assinatura_diretor`/`assinatura_distrital`. Execução (`investiture_workflow_runs`+
+  `workflow_stage_decisions`, IMUTÁVEL): o SERVIDOR resolve quem pode decidir (nunca o cliente declarando "sou
+  distrital"), segrega funções (mesma pessoa não decide 2 etapas de escopo distinto na mesma investidura, salvo
+  permissão explícita), pula etapas de nível ausente com registro auditável. Aprovação (`aprovacao_sistema`) ≠
+  assinatura (schema pronto pra `assinatura_eletronica`/`certificado_digital`, nenhuma RPC aceita ainda).
+  `revisao_final_decidir`/`investidura_registrar` da fase 4 preservados byte a byte (mesma assinatura, mesmos erros,
+  mesmos efeitos) — agora autorizados pelo motor por baixo. Testes: 41 (62 asserts, workflow de teste de 4 etapas
+  criado só na transação, nunca ativado de verdade) + inspeção visual do fluxo real completo. Sem tela pra atores
+  fora do clube (não existe "unidade em uso" não-clube no front ainda); sem assinatura digital/ICP-Brasil.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
