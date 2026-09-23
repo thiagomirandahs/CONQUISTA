@@ -41,7 +41,18 @@ select t.eq('membro A: nada do clube B vaza pelo contexto (id nem nome)', t.n(fo
 select t.eq('Tenant 001: nome', t.ctx('->''vinculos''->0->''marca''->>''nome'''), 'Filhos da Conquista');
 select t.eq('Tenant 001: sigla "FC" (a que o app sempre mostrou)', t.ctx('->''vinculos''->0->''marca''->>''sigla'''), 'FC');
 select t.eq('Tenant 001: lema, descrição e ano', t.ctx('->''vinculos''->0->''marca''->>''lema''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''descricao''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''desde'''), 'Desbravadores · 1994|Clube de Desbravadores · 1994|1994');
-select t.eq('Tenant 001: logo é a de sempre (icon-192) e as cores seguem as do tema (sem sobrescrita)', t.ctx('->''vinculos''->0->''marca''->>''logo_url''') || '|' || coalesce(t.ctx('->''vinculos''->0->''marca''->>''cor_primaria'''), 'padrao'), '/icon-192.png|padrao');
+-- MUDOU NA 8.5 (migration 65). O logo do Tenant 001 apontava para `/icon-192.png`, que é o ÍCONE
+-- DO PRODUTO — o favicon, o ícone do PWA, o ícone do app Android e o `icon`/`badge` de toda
+-- notificação push de todo clube. E aquele arquivo era, de fato, o brasão do clube A. A identidade
+-- do produto e a de um cliente eram literalmente o mesmo arquivo: nem o clube A podia trocar o
+-- logo dele sem trocar o do produto, nem um clube novo escapava de instalar um app com o brasão
+-- do clube A na tela inicial. Agora o brasão mora num arquivo dele, e a marca aponta para lá.
+select t.eq('Tenant 001: o logo é o BRASÃO DELE, num arquivo dele — não o ícone do produto',
+  t.ctx('->''vinculos''->0->''marca''->>''logo_url''') || '|' || coalesce(t.ctx('->''vinculos''->0->''marca''->>''cor_primaria'''), 'padrao'),
+  '/clubes/tenant-001.png|padrao');
+select t.eq('...e nenhum clube aponta o logo para o ícone do produto',
+  (select count(*) from public.organizational_units
+    where type = 'clube' and metadata->'marca'->>'logo_url' in ('/icon-192.png', '/icon-512.png', '/logo.png')), 0);
 select t.eq('Tenant 001: leilão segue ligado (era o único recurso opcional) e o resto do catálogo vem ligado', t.ctx('->''vinculos''->0->''recursos''->>''leilao''') || '|' || t.ctx('->''vinculos''->0->''recursos''->>''chat''') || '|' || t.ctx('->''vinculos''->0->''recursos''->>''mural'''), 'true|true|true');
 
 -- ---------- Tenant 002: marca padrão derivada do NOME do clube (nunca "Filhos da Conquista") ----------
