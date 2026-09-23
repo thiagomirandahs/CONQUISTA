@@ -20,10 +20,19 @@ const VALOR_PADRAO = Object.freeze({
 const EscopoContext = createContext(VALOR_PADRAO)
 export const useEscopo = () => useContext(EscopoContext)
 
-// guarda a escolha POR ABA (sessionStorage), como o clube: duas abas podem estar em escopos diferentes
+// Guarda a escolha POR ABA (sessionStorage): duas abas podem estar em escopos diferentes.
+//
+// Nota histórica que vale registrar: este comentário dizia "como o clube", e não era verdade — o
+// clube usava localStorage, compartilhado entre abas. A assimetria passou despercebida por fases
+// porque só aparece com a mesma conta em duas abas. Desde a fase 8.5 os dois usam o mesmo padrão,
+// e agora o "como o clube" descreve o que o código faz.
 const chaveAba = (uid) => `escopo_atual:${uid}`
 const lerEscopoPreferido = (uid) => { try { return sessionStorage.getItem(chaveAba(uid)) || null } catch { return null } }
 const guardarEscopoPreferido = (uid, id) => { try { id ? sessionStorage.setItem(chaveAba(uid), id) : sessionStorage.removeItem(chaveAba(uid)) } catch { /* sem storage */ } }
+// Exportado para o ClubeProvider limpar na SAÍDA. A chave é por uid, então não vazaria para outra
+// pessoa de qualquer forma — mas "não vaza" e "não sobrevive" são coisas diferentes, e o item 4 da
+// fase 8.5 pede a segunda.
+export const esquecerEscopoDaAba = (uid) => guardarEscopoPreferido(uid, null)
 
 export function EscopoProvider({ children }) {
   const { session } = useAuth()

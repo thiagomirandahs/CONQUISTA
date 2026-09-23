@@ -93,15 +93,47 @@ export function contextoLegado({ perfil, recursos }) {
 }
 
 // ---- qual clube está em uso ----
-// Ordem: a escolha guardada da pessoa (se ainda vale) > o clube em que o SERVIDOR age > o 1º vínculo ativo selecionável.
-// Só entra quem tem vínculo ATIVO e SELECIONÁVEL (o servidor só sabe agir em um clube por vez). Nada disso é "clube por padrão":
-// sem vínculo utilizável => null.
-export function escolherClubeAtual({ vinculos, servidorClubeId, preferidoId }) {
+//
+// Devolve { clubeId, situacao }, e a `situacao` é a parte que importa:
+//
+//   'resolvido'       — há um clube em uso. `clubeId` preenchido.
+//   'precisa_escolher' — a pessoa TINHA um clube escolhido, ele deixou de valer (foi suspensa,
+//                        removida, o clube saiu do ar) e existe outro vínculo utilizável.
+//                        `clubeId` é null: a escolha é dela, não nossa.
+//   'sem_vinculo'     — nenhum vínculo utilizável. `clubeId` é null.
+//
+// POR QUE ESTA FUNÇÃO DEIXOU DE DEVOLVER SÓ UM ID (fase 8.5, item 3):
+//
+// A versão anterior terminava em `return usaveis[0].clubeId` — se o clube guardado não estivesse
+// mais na lista, ela pegava OUTRO e não contava a ninguém. Para quem tem um clube só isso nunca
+// acontecia. Para quem tem dois, o dia em que a diretoria de um deles encerrasse o vínculo, a
+// pessoa recarregava e simplesmente aparecia dentro do outro clube — mesma sessão, mesma tela,
+// outro clube, sem um aviso.
+//
+// Isso é fallback silencioso de segurança: o app decide sozinho, em nome de quem perdeu acesso,
+// em qual outro lugar colocá-la. A decisão é dela, e ela precisa saber que algo mudou.
+//
+// Escolher o primeiro continua certo em DOIS casos, e só neles: quando não havia escolha guardada
+// (primeiro acesso — não há nada a perder nem a avisar) e quando o clube guardado continua valendo.
+export function resolverClubeDaAba({ vinculos, servidorClubeId, preferidoId }) {
   const usaveis = (vinculos || []).filter((v) => v.status === 'ativo' && v.selecionavel)
-  if (usaveis.length === 0) return null
-  if (preferidoId && usaveis.some((v) => v.clubeId === preferidoId)) return preferidoId
-  if (servidorClubeId && usaveis.some((v) => v.clubeId === servidorClubeId)) return servidorClubeId
-  return usaveis[0].clubeId
+  if (usaveis.length === 0) return { clubeId: null, situacao: 'sem_vinculo' }
+  if (preferidoId && usaveis.some((v) => v.clubeId === preferidoId)) {
+    return { clubeId: preferidoId, situacao: 'resolvido' }
+  }
+  // Havia uma escolha e ela não vale mais: pára aqui. Não importa que exista um "próximo".
+  if (preferidoId) return { clubeId: null, situacao: 'precisa_escolher' }
+  if (servidorClubeId && usaveis.some((v) => v.clubeId === servidorClubeId)) {
+    return { clubeId: servidorClubeId, situacao: 'resolvido' }
+  }
+  return { clubeId: usaveis[0].clubeId, situacao: 'resolvido' }
+}
+
+// Forma antiga, só o id. Mantida porque several telas/testes só querem saber "qual clube".
+// Repare que ela devolve null tanto para 'sem_vinculo' quanto para 'precisa_escolher' — quem
+// precisa distinguir os dois usa `resolverClubeDaAba`.
+export function escolherClubeAtual(args) {
+  return resolverClubeDaAba(args).clubeId
 }
 
 // Pode trocar para este clube? Devolve { ok } ou { ok:false, motivo }:
@@ -122,17 +154,60 @@ export function temRecursoNoVinculo(vinculo, chave) {
   return !!vinculo && vinculo.status === 'ativo' && vinculo.recursos?.[chave] === true
 }
 
-// ---- escolha guardada (por usuário) ----
-const CHAVE_PREFERIDO = 'cq.clube.v1'
+// ---- o clube DESTA ABA, e a semente para uma aba nova ----
+//
+// Dois storages, com papéis diferentes, e a distinção é o item 2 da fase 8.5:
+//
+//   sessionStorage (`cq.clube.aba.v1`)  — o clube DESTA ABA. sessionStorage é, por definição do
+//     navegador, por aba: duas abas da mesma conta têm cópias independentes. Recarregar lê daqui,
+//     então a aba volta no SEU clube, não no da aba vizinha.
+//
+//   localStorage (`cq.clube.v1`)        — a SEMENTE, e só isso: de onde uma aba RECÉM-ABERTA (que
+//     ainda não tem nada em sessionStorage) começa. É o "meu clube de costume".
+//
+// Antes da 8.5 só existia o localStorage, e ele era lido a cada resolução. Consequência medida na
+// fase 8.4, com duas abas abertas: trocar o clube na aba 2 reescrevia a preferência compartilhada,
+// e um F5 na aba 1 a levava junto — apesar de a própria tela "Eu" prometer, por escrito, que "cada
+// aba pode estar em um clube diferente".
+//
+// NADA DISTO É AUTORIZAÇÃO. É um pedido: vai no header `x-clube-atual`, e o servidor só honra
+// depois de conferir o vínculo ativo (`clube_atual_id()`); um valor forjado aqui não abre nada,
+// e desde a migration 63 um pedido que não vale deixa a requisição SEM clube, nunca em outro.
+const CHAVE_SEMENTE = 'cq.clube.v1'
+const CHAVE_ABA = 'cq.clube.aba.v1'
+
+const leJson = (armazem, chave) => {
+  try { return JSON.parse(armazem.getItem(chave) || 'null') } catch { return null }
+}
+const gravaJson = (armazem, chave, valor) => {
+  try { armazem.setItem(chave, JSON.stringify(valor)) } catch { /* sem storage */ }
+}
+const apaga = (armazem, chave) => {
+  try { armazem.removeItem(chave) } catch { /* sem storage */ }
+}
+
+// O clube desta aba; se a aba ainda não tem um, cai na semente. O `uid` casado em ambos impede que
+// a escolha de uma pessoa vire a escolha da próxima que entrar no mesmo aparelho.
 export function lerClubePreferido(uid) {
-  try {
-    const o = JSON.parse(localStorage.getItem(CHAVE_PREFERIDO) || 'null')
-    return o && o.uid === uid ? o.clubeId || null : null
-  } catch { return null }
+  if (!uid) return null
+  const daAba = leJson(sessionStorage, CHAVE_ABA)
+  if (daAba && daAba.uid === uid && daAba.clubeId) return daAba.clubeId
+  const semente = leJson(localStorage, CHAVE_SEMENTE)
+  return semente && semente.uid === uid ? semente.clubeId || null : null
 }
+
+// Grava nos dois: a aba passa a ter o seu, e a semente passa a ser este para a PRÓXIMA aba.
+// Chamado tanto na troca explícita quanto quando a aba resolve seu clube na primeira carga — sem
+// o segundo caso, uma aba que nunca trocou de clube continuaria sem registro próprio e seguiria a
+// semente que outra aba reescreveu.
 export function guardarClubePreferido(uid, clubeId) {
-  try { localStorage.setItem(CHAVE_PREFERIDO, JSON.stringify({ uid, clubeId })) } catch { /* sem storage */ }
+  if (!uid || !clubeId) return
+  gravaJson(sessionStorage, CHAVE_ABA, { uid, clubeId })
+  gravaJson(localStorage, CHAVE_SEMENTE, { uid, clubeId })
 }
+
+// Sair zera os dois. A aba não guarda mais clube nenhum, e o aparelho não guarda de quem saiu.
 export function esquecerClubePreferido() {
-  try { localStorage.removeItem(CHAVE_PREFERIDO) } catch { /* sem storage */ }
+  apaga(sessionStorage, CHAVE_ABA)
+  apaga(localStorage, CHAVE_SEMENTE)
 }

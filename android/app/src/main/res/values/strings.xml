@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Filhos da Conquista</string>
-    <string name="title_activity_main">Filhos da Conquista</string>
+    <string name="app_name">DesbravaClube</string>
+    <string name="title_activity_main">DesbravaClube</string>
     <string name="package_name">app.filhosdaconquista</string>
     <string name="custom_url_scheme">app.filhosdaconquista</string>
 </resources>

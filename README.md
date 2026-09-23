@@ -1,7 +1,14 @@
-# 🏕️ Filhos da Conquista
+# 🧭 DesbravaClube
 
-Aplicativo (PWA) do clube de desbravadores **Filhos da Conquista** (fundado em 1994) para
-acompanhamento de atividades, pontuação, ranking e gestão das unidades.
+Plataforma (PWA + app Android) para clubes de desbravadores: classes, especialidades, atividades,
+pontuação, ranking, mensalidades e o dia a dia das unidades.
+
+É **multi-clube**: cada clube tem a própria identidade (nome, sigla, cores, logo), o próprio plano
+e os próprios dados. Uma pessoa pode ter vínculo em mais de um clube, e o clube em uso é escolhido
+por aba — nada de um clube enxergar o outro.
+
+O clube **Filhos da Conquista** (fundado em 1994) é o primeiro cliente da plataforma, preservado
+como Tenant 001 — a marca dele vive no banco, como a de qualquer outro clube, e não no código.
 
 🔗 **No ar:** https://conquista-ashy.vercel.app
 
@@ -61,4 +68,4 @@ public/         logo e ícones do PWA
 
 ---
 
-Feito com 💙💛 para o clube **Filhos da Conquista**.
+Nasceu para o clube **Filhos da Conquista** e virou produto para todos os clubes. 💙💛

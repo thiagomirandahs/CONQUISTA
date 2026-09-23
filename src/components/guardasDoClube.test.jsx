@@ -164,6 +164,29 @@ describe('ClubeGuard: só entra quem tem vínculo ATIVO com um clube em uso', ()
     expect(screen.getByText('Seu cadastro aguarda aprovação')).toBeInTheDocument()
     expect(screen.getByText(/Clube Pendente/)).toBeInTheDocument()
   })
+  // FASE 8.5, item 3: nada de fallback silencioso de seguranca. Quando o clube que a aba usava
+  // deixa de valer e a pessoa tem outros, o app NAO escolhe um sozinho — ele para e devolve a
+  // escolha a ela. Antes, o vinculo encerrado num clube fazia a pessoa reaparecer dentro de outro,
+  // mesma sessao, sem aviso nenhum.
+  it('clube perdido com outros disponiveis: pede nova escolha em vez de entrar em outro sozinho', () => {
+    const trocarClube = vi.fn()
+    como(null, {}, {
+      semVinculo: false, precisaEscolher: true, trocarClube,
+      vinculos: [
+        { clubeId: 'A', status: 'ativo', selecionavel: true, nome: 'Clube A', marca: { nome: 'Clube A' } },
+        { clubeId: 'B', status: 'suspenso', selecionavel: false, nome: 'Clube B', marca: { nome: 'Clube B' } },
+      ],
+    })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.queryByText('o app')).toBeNull()
+    expect(screen.getByText('Escolha em qual clube continuar')).toBeInTheDocument()
+    // so os utilizaveis viram botao — o suspenso nao e oferecido
+    expect(screen.getByTestId('escolher-A')).toBeInTheDocument()
+    expect(screen.queryByTestId('escolher-B')).toBeNull()
+    screen.getByTestId('escolher-A').click()
+    expect(trocarClube).toHaveBeenCalledWith('A')
+  })
+
   it('erro de rede/servidor: "tentar de novo", app bloqueado (não assume papel nem clube)', () => {
     como(null, {}, { erro: new Error('caiu') })
     render(<ClubeGuard><p>o app</p></ClubeGuard>)

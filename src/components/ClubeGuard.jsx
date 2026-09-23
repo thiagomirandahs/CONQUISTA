@@ -18,7 +18,7 @@ import Logo from './Logo.jsx'
 // O que mudou é que agora a porta certa aparece.
 export default function ClubeGuard({ children }) {
   const { sair } = useAuth()
-  const { carregando, erro, semVinculo, vinculos, recarregar, marca } = useClube()
+  const { carregando, erro, semVinculo, precisaEscolher, vinculos, recarregar, marca, trocarClube } = useClube()
   const { temEscopo, escopos, carregando: carregandoEscopo } = useEscopo()
 
   if (carregando) {
@@ -39,6 +39,34 @@ export default function ClubeGuard({ children }) {
         <button onClick={recarregar} className="w-full min-h-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow"
           style={{ color: 'var(--marca-1-texto, #fff)' }}>Tentar de novo</button>
         <button onClick={sair} className="mt-2 w-full min-h-[44px] text-sm text-muted font-semibold">Sair</button>
+      </Aviso>
+    )
+  }
+
+  // O clube que esta aba usava deixou de valer — e a pessoa tem outros. Antes da fase 8.5 o app
+  // escolhia um sozinho e seguia como se nada tivesse acontecido: a pessoa aparecia DENTRO de
+  // outro clube, mesma sessão, sem um aviso. Aqui ela fica sabendo, e a escolha volta a ser dela.
+  //
+  // Não é um erro e não é "sem vínculo": é uma escolha pendente. A tela já está com a marca do
+  // produto, não com a do clube perdido — o contexto zera essa marca no mesmo quadro.
+  if (precisaEscolher) {
+    const disponiveis = vinculos.filter((v) => v.status === 'ativo' && v.selecionavel)
+    return (
+      <Aviso icone="🔀" titulo="Escolha em qual clube continuar">
+        <p className="text-sm text-muted mt-1 mb-5">
+          O clube que você estava usando nesta aba não está mais disponível para você. Isso acontece
+          quando a liderança encerra ou suspende um vínculo. Os seus outros clubes continuam abertos.
+        </p>
+        <div className="space-y-2">
+          {disponiveis.map((v) => (
+            <button key={v.clubeId} onClick={() => trocarClube(v.clubeId)} data-testid={`escolher-${v.clubeId}`}
+              className="block w-full min-h-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow"
+              style={{ color: 'var(--marca-1-texto, #fff)' }}>
+              {v.marca?.nome || v.nome}
+            </button>
+          ))}
+          <button onClick={sair} className="w-full min-h-[44px] text-sm text-muted font-semibold">Sair</button>
+        </div>
       </Aviso>
     )
   }

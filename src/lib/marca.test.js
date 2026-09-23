@@ -101,27 +101,42 @@ describe('aplicarMarca: escreve a marca na página', () => {
     expect(document.documentElement.style.getPropertyValue('--marca-2')).not.toContain('aabbcc')
   })
 
-  it('sem marca usa a legada (compat com o Tenant 001 antes do SQL)', () => {
+  // MUDOU NA 8.5 (item 1): sem marca, a identidade e a do PRODUTO. Este fallback era a marca do
+  // Tenant 001, entao toda tela sem contexto de clube — a entrada, o primeiro quadro, o estado
+  // "escolha um clube" — levava o nome de um cliente especifico.
+  it('sem marca usa a do produto (sem contexto de clube, a identidade e DesbravaClube)', () => {
     aplicarMarca(null)
-    expect(document.title).toBe('Filhos da Conquista')
+    expect(document.title).toBe('DesbravaClube')
   })
 })
 
 describe('última marca vista (login sem "piscar")', () => {
   beforeEach(() => { localStorage.clear() })
-  it('salva e lê a marca do clube', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B', sigla: 'CB', cor_primaria: '#112233' }))
-    expect(lerMarcaSalva()).toMatchObject({ nome: 'Clube B', corPrimaria: '#112233' })
+  it('salva e le a marca do clube, para a MESMA identidade', () => {
+    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B', sigla: 'CB', cor_primaria: '#112233' }), 'u1')
+    expect(lerMarcaSalva('u1')).toMatchObject({ nome: 'Clube B', corPrimaria: '#112233' })
   })
-  it('sem nada salvo ou com lixo: null (a tela usa a legada)', () => {
-    expect(lerMarcaSalva()).toBeNull()
+  // O CERNE DO ITEM 4 DA FASE 8.5: a marca guardada e DE UMA PESSOA. Sem esta regra, quem entrasse
+  // depois no mesmo aparelho via a identidade do clube de quem usou antes durante o round-trip
+  // inteiro do contexto — nome, sigla, lema, cores e logo.
+  it('outra identidade no mesmo aparelho NAO herda a marca', () => {
+    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B' }), 'u1')
+    expect(lerMarcaSalva('u2')).toBeNull()
+  })
+  it('sem identidade (tela de entrada) tambem nao: la nao ha contexto de clube nenhum', () => {
+    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B' }), 'u1')
+    expect(lerMarcaSalva(null)).toBeNull()
+    expect(lerMarcaSalva(undefined)).toBeNull()
+  })
+  it('sem nada salvo ou com lixo: null (a tela usa a do produto)', () => {
+    expect(lerMarcaSalva('u1')).toBeNull()
     localStorage.setItem('cq.marca.v1', '{lixo')
-    expect(lerMarcaSalva()).toBeNull()
+    expect(lerMarcaSalva('u1')).toBeNull()
   })
   it('esquecer apaga', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'x' }))
+    salvarMarca('c1', marcaDaResposta({ nome: 'x' }), 'u1')
     esquecerMarcaSalva()
-    expect(lerMarcaSalva()).toBeNull()
+    expect(lerMarcaSalva('u1')).toBeNull()
   })
 })
 

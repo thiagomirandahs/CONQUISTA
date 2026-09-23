@@ -1,21 +1,36 @@
 import { variaveisDeContraste } from '../ui/contraste.js'
 
 // Marca (branding) do clube: nome, sigla, lema, cores e logo. Lógica pura + aplicação no documento.
-// A marca vem do SERVIDOR, por clube (`meu_contexto()`); nada de "Filhos da Conquista" fixo nas telas.
+// A marca vem do SERVIDOR, por clube (`meu_contexto()`); nenhum clube é conhecido pelo nome aqui.
 //
-// MARCA_LEGADA é o ÚNICO lugar do front que ainda conhece o Tenant 001: é o que se mostra quando o banco ainda não tem o SQL do
-// multi-clube (front publicado antes do SQL — regra do rollout) e antes de a primeira resposta chegar. Depois do SQL, o Tenant 001
-// recebe essa mesma marca do banco (migration 33) e este objeto deixa de ser usado. Pode sair quando o rollout terminar.
-export const MARCA_LEGADA = Object.freeze({
-  nome: 'Filhos da Conquista',
-  sigla: 'FC',
-  lema: 'Desbravadores · 1994',
-  descricao: 'Clube de Desbravadores · 1994',
-  desde: 1994,
+// MARCA_PRODUTO é o que se mostra quando NÃO HÁ CLUBE: tela de entrada antes de alguém se
+// identificar, o instante entre abrir o app e a primeira resposta chegar, e o estado "sem clube
+// em uso". Sem contexto de clube, a identidade é a do produto.
+//
+// ISTO MUDOU NA FASE 8.5, e o motivo é a razão de ser da fase. Este objeto era a marca do
+// TENANT 001 — o nome dele, o lema dele com o ano de fundação, e o brasão dele como logo. O
+// comentário original explicava por quê (compatibilidade de rollout: o front subia antes do SQL
+// multi-clube) e terminava com "pode sair quando o rollout terminar". O rollout terminou há muitas
+// fases; o que ficou foi todo cliente novo abrindo o app e lendo o nome de OUTRO clube.
+//
+// (O nome do Tenant 001 não aparece escrito aqui, nem em comentário, de propósito: quem investiga
+//  "de onde vem esse nome no meu app?" faz isso com grep, e um comentário dizendo que ele saiu é
+//  indistinguível do nome continuar ali. O contrato em identidadeDoProduto.contract.test.js trava.)
+export const MARCA_PRODUTO = Object.freeze({
+  nome: 'DesbravaClube',
+  sigla: 'DC',
+  lema: 'O clube na palma da mão',
+  descricao: 'Classes, especialidades e o dia a dia do clube.',
+  desde: null,
   corPrimaria: null,
   corSecundaria: null,
-  logoUrl: '/icon-192.png',
+  logoUrl: '/icon-192.png',   // a bússola do produto (public/marca-produto.svg), não o brasão de um clube
 })
+
+// Nome antigo mantido como apelido para não quebrar import de quem ainda não foi atualizado.
+// O contrato de identidade (produtoMulticlube.contract.test.js) impede que ele volte a carregar
+// nome de tenant: o que ele aponta agora é o produto.
+export const MARCA_LEGADA = MARCA_PRODUTO
 
 // cor da barra do navegador quando o clube não escolheu cor (a mesma do index.html)
 export const COR_TEMA_PADRAO = '#1e3a8a'
@@ -93,16 +108,27 @@ export function aplicarMarca(marca, doc = typeof document !== 'undefined' ? docu
   escolher('--marca-1-legivel', contraste['--marca-1-legivel'] || null)
 }
 
-// A última marca vista fica guardada: a tela de login (antes de entrar) e o 1º quadro do app mostram a do SEU clube, sem "piscar".
-// (Não é dado sensível: é a identidade pública do clube. Trocou de conta => a próxima resposta do servidor sobrescreve.)
-export function lerMarcaSalva() {
+// A última marca vista fica guardada para o 1º quadro não "piscar" o tema do produto antes de a
+// resposta do servidor chegar. Não é dado sensível — é a identidade pública do clube.
+//
+// MAS ELA É DE UMA PESSOA (fase 8.5, item 4). Antes, o registro guardava só `{clubeId, marca}`, e
+// `lerMarcaSalva()` devolvia isso para QUEM QUER QUE FOSSE. O comentário antigo dizia "trocou de
+// conta => a próxima resposta do servidor sobrescreve", e é verdade — só que "a próxima resposta"
+// leva um round-trip inteiro. Nesse intervalo, quem acabou de entrar via a marca do clube da
+// pessoa ANTERIOR: nome, sigla, lema, cores e logo. É a janela de frames que o item 4 proíbe.
+//
+// Agora o registro carrega o `uid` e a leitura exige que ele bata. Sem uid (tela de login, antes de
+// alguém se identificar), não há a quem devolver: o produto aparece com a marca do produto.
+export function lerMarcaSalva(uid) {
   try {
     const o = JSON.parse(localStorage.getItem(CHAVE_SALVA) || 'null')
-    return o && o.marca ? marcaDaResposta(o.marca) : null      // marcaDaResposta aceita camelCase e snake_case
+    if (!o || !o.marca) return null
+    if (!uid || o.uid !== uid) return null
+    return marcaDaResposta(o.marca)      // marcaDaResposta aceita camelCase e snake_case
   } catch { return null }
 }
-export function salvarMarca(clubeId, marca) {
-  try { localStorage.setItem(CHAVE_SALVA, JSON.stringify({ clubeId, marca })) } catch { /* sem storage */ }
+export function salvarMarca(clubeId, marca, uid) {
+  try { localStorage.setItem(CHAVE_SALVA, JSON.stringify({ uid: uid || null, clubeId, marca })) } catch { /* sem storage */ }
 }
 export function esquecerMarcaSalva() {
   try { localStorage.removeItem(CHAVE_SALVA) } catch { /* sem storage */ }

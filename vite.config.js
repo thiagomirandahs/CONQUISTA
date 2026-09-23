@@ -85,7 +85,7 @@ export default defineConfig({
         ],
       },
       // O app instalado é o DesbravaClube (o produto), não o nome de um cliente: desde a fase 5 a
-      // plataforma é multi-clube, e o manifest ainda dizia "Filhos da Conquista". A marca do CLUBE
+      // plataforma é multi-clube, e o manifest ainda levava o nome do Tenant 001. A marca do CLUBE
       // continua aparecendo dentro do app (nome, cores e logo vêm do servidor, por clube) — o que
       // não pode é o ícone da tela inicial de todo mundo levar o nome de um clube só.
       manifest: {

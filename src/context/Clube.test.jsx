@@ -7,9 +7,15 @@ import { normalizarContexto, contextoLegado } from '../lib/clube.js'
 let sessao
 const carregarContexto = vi.fn()
 const definirClubeAtivoNoTransporte = vi.fn()
+const definirEscopoAtivoNoTransporte = vi.fn()
 vi.mock('./Auth.jsx', () => ({ useAuth: () => ({ session: sessao }) }))
 vi.mock('../services/clubes.js', () => ({ carregarContexto: (...a) => carregarContexto(...a) }))
-vi.mock('../lib/supabase.js', () => ({ definirClubeAtivoNoTransporte: (...a) => definirClubeAtivoNoTransporte(...a) }))
+vi.mock('../lib/supabase.js', () => ({
+  definirClubeAtivoNoTransporte: (...a) => definirClubeAtivoNoTransporte(...a),
+  // Desde a fase 8.5 a SAIDA tambem zera o escopo institucional: sair tem de limpar todo o
+  // contexto, nao so o do clube.
+  definirEscopoAtivoNoTransporte: (...a) => definirEscopoAtivoNoTransporte(...a),
+}))
 
 const { ClubeProvider, useClube } = await import('./Clube.jsx')
 const wrapper = ({ children }) => <ClubeProvider>{children}</ClubeProvider>
@@ -38,7 +44,12 @@ async function montar() {
 beforeEach(() => {
   carregarContexto.mockReset()
   definirClubeAtivoNoTransporte.mockClear()
+  definirEscopoAtivoNoTransporte.mockClear()
   localStorage.clear()
+  // sessionStorage tambem: desde a fase 8.5 o clube DA ABA mora ali, e a aba registra o clube que
+  // resolveu mesmo sem ninguem trocar de clube. Sem limpar, a escolha de um teste vira a
+  // "preferencia guardada" do seguinte e os dois passam a medir outra coisa.
+  sessionStorage.clear()
   document.head.innerHTML = '<meta name="theme-color" content="#1e3a8a"><link rel="icon" href="/logo.png"><title>x</title>'
   document.documentElement.removeAttribute('style')
   logar('u1')
@@ -182,14 +193,35 @@ describe('troca de clube', () => {
     expect(r).toEqual({ ok: false, motivo: 'indisponivel' })
     expect(result.current.clubeId).toBe('A')
     expect(result.current.papel).toBe('desbravador')
-    expect(localStorage.getItem('cq.clube.v1')).toBeNull()
+    // A recusa nao guardou o B. Guardou o A, que e o clube em uso — desde a fase 8.5 a aba
+    // registra o clube que resolveu, para sobreviver a um recarregamento sem seguir outra aba.
+    expect(JSON.parse(localStorage.getItem('cq.clube.v1'))).toEqual({ uid: 'u1', clubeId: 'A' })
   })
 
-  it('a escolha guardada de um clube que deixou de ser utilizável é ignorada', async () => {
+  // MUDOU NA 8.5 (item 3). Antes, um clube guardado que deixasse de valer era "ignorado" e o app
+  // escolhia OUTRO sozinho — sem avisar. Para quem tem um clube isso nunca acontecia; para quem
+  // tem dois, o dia em que a diretoria de um encerrasse o vinculo, a pessoa recarregava e
+  // simplesmente aparecia dentro do outro clube. Agora o app para e devolve a escolha a ela.
+  it('a escolha guardada de um clube que deixou de ser utilizavel NAO vira outro clube calado', async () => {
     localStorage.setItem('cq.clube.v1', JSON.stringify({ uid: 'u1', clubeId: 'B' }))
     responder(servidor([vinc(), vincB({ selecionavel: false })], 'A'))
     const { result } = await montar()
-    expect(result.current.clubeId).toBe('A')
+    expect(result.current.clubeId).toBeNull()
+    expect(result.current.precisaEscolher).toBe(true)
+    // ...e nao e "voce nao tem clube nenhum": ela tem o A, e e isso que a tela vai oferecer.
+    expect(result.current.semVinculo).toBe(false)
+    expect(result.current.vinculos.map((v) => v.clubeId)).toEqual(['A', 'B'])
+    // A marca do clube perdido sai da tela no MESMO quadro, sem esperar resposta do servidor.
+    expect(result.current.marca.nome).toBe('DesbravaClube')
+  })
+
+  it('e escolher de novo resolve: a aba volta a ter clube, sem recarregar', async () => {
+    localStorage.setItem('cq.clube.v1', JSON.stringify({ uid: 'u1', clubeId: 'B' }))
+    responder(servidor([vinc(), vincB({ selecionavel: false })], 'A'))
+    const { result } = await montar()
+    expect(result.current.precisaEscolher).toBe(true)
+    await act(async () => { await result.current.trocarClube('A') })
+    expect(result.current).toMatchObject({ clubeId: 'A', papel: 'desbravador', precisaEscolher: false })
   })
 })
 
@@ -201,15 +233,21 @@ describe('tentativa de acessar clube SEM vínculo', () => {
     await act(async () => { r = await result.current.trocarClube('clube-alheio') })
     expect(r).toEqual({ ok: false, motivo: 'sem_vinculo' })
     expect(result.current).toMatchObject({ clubeId: 'A', papel: 'desbravador' })
-    expect(localStorage.getItem('cq.clube.v1')).toBeNull()
+    // O clube alheio nao foi guardado; o que ficou guardado e o clube em uso.
+    expect(JSON.parse(localStorage.getItem('cq.clube.v1'))).toEqual({ uid: 'u1', clubeId: 'A' })
   })
 
-  it('escolha guardada (adulterada) de um clube SEM vínculo nunca vira acesso', async () => {
+  it('escolha guardada (adulterada) de um clube SEM vinculo nunca vira acesso', async () => {
     localStorage.setItem('cq.clube.v1', JSON.stringify({ uid: 'u1', clubeId: 'clube-alheio' }))
     responder(servidor([vinc()], 'A'))
     const { result } = await montar()
-    expect(result.current.clubeId).toBe('A')
+    // A propriedade de SEGURANCA e esta, e ela nao mudou: o clube forjado nunca entra em uso.
+    expect(result.current.clubeId).not.toBe('clube-alheio')
     expect(result.current.vinculos.map((v) => v.clubeId)).toEqual(['A'])
+    // O que mudou (8.5) e o que acontece DEPOIS de recusar: em vez de escolher o A sozinho, o app
+    // diz que precisa de uma escolha. Adulterar o storage nao decide nada em nome da pessoa.
+    expect(result.current.clubeId).toBeNull()
+    expect(result.current.precisaEscolher).toBe(true)
   })
 
   it('conta SEM nenhum vínculo: semVinculo, papel nulo, nenhuma permissão nem recurso', async () => {
@@ -317,7 +355,12 @@ describe('front publicado ANTES do SQL (modo legado)', () => {
     carregarContexto.mockResolvedValue(contextoLegado({ perfil: { id: 'u1', papel: 'instrutor', unidade_id: 'u9', status: 'ativo' }, recursos: { leilao: true } }))
     const { result } = await montar()
     expect(result.current).toMatchObject({ legado: true, papel: 'instrutor', podeGerir: true, unidadeId: 'u9' })
-    expect(result.current.marca.nome).toBe('Filhos da Conquista')
+    // MUDOU NA 8.5: o modo legado e o caminho de quando o BANCO ainda nao tem o SQL multi-clube,
+    // entao nao ha marca de clube nenhuma para mostrar. Antes ele mostrava "Filhos da Conquista",
+    // porque a marca de fallback do front ERA a do Tenant 001. Sem contexto de clube a identidade
+    // e a do produto — e o papel, a unidade e os recursos continuam funcionando igual, que e o
+    // que este teste existe para provar.
+    expect(result.current.marca.nome).toBe('DesbravaClube')
     expect(result.current.temRecurso('leilao')).toBe(true)
     expect(result.current.temRecurso('chat')).toBe(true)
   })
@@ -328,15 +371,52 @@ describe('front publicado ANTES do SQL (modo legado)', () => {
   })
 })
 
-describe('marca guardada para o login', () => {
-  it('a marca do clube fica guardada e a próxima abertura (antes de entrar) já mostra a dele', async () => {
+describe('marca guardada: de quem ela e, e onde ela vale', () => {
+  // REESCRITO NA 8.5 (itens 1 e 4), e os dois puxam para o mesmo lado.
+  //
+  // Este teste dizia: "a marca do clube fica guardada e a proxima abertura (ANTES DE ENTRAR) ja
+  // mostra a dele" — ou seja, congelava a marca do ultimo clube aparecendo na TELA DE LOGIN. Na
+  // jornada da 8.4 isso apareceu como defeito: no aparelho compartilhado, a proxima pessoa lia a
+  // identidade do clube de quem usou antes. E o item 1 desta fase diz a mesma coisa por outro
+  // caminho: sem contexto de clube — e a tela de login nao tem nenhum — a identidade e a do
+  // produto.
+  //
+  // O beneficio original (nao piscar o tema padrao) continua existindo, so que no lugar certo: o
+  // primeiro quadro DEPOIS de a sessao ser reconhecida.
+  it('sem sessao, a tela de entrada e do PRODUTO — nunca do ultimo clube visto', async () => {
     responder(servidor([vincB({ selecionavel: true })], 'B'))
     const primeira = await montar()
     primeira.unmount()
     expect(JSON.parse(localStorage.getItem('cq.marca.v1')).marca.nome).toBe('Clube B Oficial')
     logar(null)
     const semSessao = renderHook(() => useClube(), { wrapper })
-    expect(semSessao.result.current.marca.nome).toBe('Clube B Oficial')
+    expect(semSessao.result.current.marca.nome).toBe('DesbravaClube')
+  })
+
+  it('com a sessao ja reconhecida, o primeiro quadro ja e do clube dela (sem piscar)', async () => {
+    responder(servidor([vincB({ selecionavel: true })], 'B'))
+    const primeira = await montar()
+    primeira.unmount()
+    // reabrindo com a MESMA identidade: a marca guardada serve antes de o servidor responder
+    carregarContexto.mockReturnValue(new Promise(() => {}))   // resposta que nunca chega
+    const reabrindo = renderHook(() => useClube(), { wrapper })
+    expect(reabrindo.result.current.carregando).toBe(true)
+    expect(reabrindo.result.current.marca.nome).toBe('Clube B Oficial')
+  })
+
+  // A JANELA DE FRAMES do item 4: trocar de conta sem passar por logout (o servidor devolve outra
+  // sessao). Enquanto o contexto da pessoa nova nao chega, a marca guardada e da ANTERIOR.
+  it('troca de conta: nenhum quadro mostra a marca do clube da pessoa anterior', async () => {
+    responder(servidor([vincB({ selecionavel: true })], 'B'))
+    const r = await montar()
+    expect(r.result.current.marca.nome).toBe('Clube B Oficial')
+
+    carregarContexto.mockReturnValue(new Promise(() => {}))   // a resposta da pessoa nova demora
+    logar('u2')
+    r.rerender()
+    expect(r.result.current.carregando).toBe(true)
+    expect(r.result.current.marca.nome).toBe('DesbravaClube')
+    expect(document.title).not.toBe('Clube B Oficial')
   })
 
   // A contrapartida, encontrada na jornada de navegador da 8.4: FECHAR o app e SAIR do app são

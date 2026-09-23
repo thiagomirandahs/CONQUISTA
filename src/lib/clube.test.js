@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   PAPEIS, RECURSOS_PADRAO, permissoesDoPapel, rotaInicial, CAMINHOS_DO_RESPONSAVEL,
-  normalizarContexto, normalizarVinculo, contextoLegado, escolherClubeAtual, podeTrocarPara, temRecursoNoVinculo,
+  normalizarContexto, normalizarVinculo, contextoLegado, escolherClubeAtual, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from './clube.js'
 import { MARCA_LEGADA } from './marca.js'
@@ -98,11 +98,29 @@ describe('escolherClubeAtual', () => {
   it('vários clubes sem escolha: o clube em que o SERVIDOR age', () => {
     expect(escolherClubeAtual({ vinculos: [A, B], servidorClubeId: 'B', preferidoId: null })).toBe('B')
   })
-  it('a escolha guardada de um clube que NÃO é mais utilizável é ignorada (cai no do servidor)', () => {
-    expect(escolherClubeAtual({ vinculos: [A, Bnao], servidorClubeId: 'A', preferidoId: 'B' })).toBe('A')
+  // MUDOU NA 8.5 (item 3): "ignorada" virava "escolho outro por voce, calado". Agora a funcao
+  // devolve a situacao, e quem chama decide o que mostrar. O id continua null nos dois casos — a
+  // diferenca e que agora da para saber POR QUE, e a tela pede uma nova escolha em vez de inventar.
+  it('a escolha guardada de um clube que NAO e mais utilizavel: pede nova escolha, nao cai em outro', () => {
+    expect(resolverClubeDaAba({ vinculos: [A, Bnao], servidorClubeId: 'A', preferidoId: 'B' }))
+      .toEqual({ clubeId: null, situacao: 'precisa_escolher' })
+    expect(escolherClubeAtual({ vinculos: [A, Bnao], servidorClubeId: 'A', preferidoId: 'B' })).toBeNull()
   })
-  it('a escolha guardada de um clube SEM vínculo é ignorada', () => {
-    expect(escolherClubeAtual({ vinculos: [A], servidorClubeId: 'A', preferidoId: 'clube-alheio' })).toBe('A')
+  it('a escolha guardada de um clube SEM vinculo: idem — adulterar o storage nao decide nada', () => {
+    expect(resolverClubeDaAba({ vinculos: [A], servidorClubeId: 'A', preferidoId: 'clube-alheio' }))
+      .toEqual({ clubeId: null, situacao: 'precisa_escolher' })
+  })
+  it('"precisa escolher" e "sem vinculo" sao estados DIFERENTES', () => {
+    // tem outro clube para escolher
+    expect(resolverClubeDaAba({ vinculos: [A, Bnao], servidorClubeId: null, preferidoId: 'B' }).situacao)
+      .toBe('precisa_escolher')
+    // nao tem nenhum: nao ha o que escolher
+    expect(resolverClubeDaAba({ vinculos: [Bnao], servidorClubeId: null, preferidoId: 'B' }).situacao)
+      .toBe('sem_vinculo')
+  })
+  it('sem escolha guardada, resolver o primeiro continua certo (nao ha nada a perder nem a avisar)', () => {
+    expect(resolverClubeDaAba({ vinculos: [A, B], servidorClubeId: null, preferidoId: null }))
+      .toEqual({ clubeId: 'A', situacao: 'resolvido' })
   })
   it('só vínculo pendente/suspenso: nenhum clube em uso (sem acesso "por padrão")', () => {
     expect(escolherClubeAtual({ vinculos: [pendente], servidorClubeId: null, preferidoId: 'P' })).toBeNull()
@@ -165,7 +183,7 @@ describe('contextoLegado (front publicado ANTES do SQL)', () => {
 })
 
 describe('escolha guardada por usuário', () => {
-  beforeEach(() => { localStorage.clear() })
+  beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
   it('guarda e lê para o MESMO usuário', () => {
     guardarClubePreferido('u1', 'B')
     expect(lerClubePreferido('u1')).toBe('B')
