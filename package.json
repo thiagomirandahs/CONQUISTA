@@ -24,7 +24,8 @@
     "curriculo:autoteste": "node supabase/curriculo-manifesto/validar.autoteste.mjs",
     "curriculo:importacao:gerar": "node supabase/curriculo-manifesto/gerar-importacao.mjs",
     "curriculo:importacao:check": "node supabase/curriculo-manifesto/gerar-importacao.mjs --check",
-    "test:auth:e2e": "node supabase/tests/e2e/auth-confirmacao.mjs"
+    "test:auth:e2e": "node supabase/tests/e2e/auth-confirmacao.mjs",
+    "test:smoke": "node supabase/tests/smoke/smoke.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
