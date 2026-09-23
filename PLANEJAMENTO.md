@@ -534,6 +534,32 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   (retomou na etapa certa; 1 clube, 1 conta, 1 assinatura no fim), página de planos com uso do plano, e o bloqueio
   por plano explicando a camada certa. **Pendências declaradas**: medição de `armazenamento_mb` por clube (exige o
   clube no caminho do Storage); valores comerciais definitivos; nenhum gateway real integrado.
+- ✅ **Fase 6 — Motor de experiências no-code (migration 49)**: o clube monta
+  `experiência → etapas → regras → participantes → evidências → validação → recompensa → período` sem
+  tocar em código. UM modelo representa os 10 tipos iniciais (desafio individual, por unidade, campanha,
+  sequência de missões, evento especial, quiz, tarefa com evidência, meta quantitativa, check-in) — sem
+  tabela por modalidade; **temporada** é AGRUPADOR (`experience_seasons`, com início/fim), não mais um tipo.
+  **Vocabulário FECHADO validado no servidor**: tipo desconhecido, chave a mais, valor fora de faixa e
+  texto com HTML/`javascript:`/evento são recusados na escrita, e **nenhuma função do motor tem `execute`**
+  (assert estrutural) — o que o clube configura é lido como dado, jamais executado. **Não é o motor
+  curricular**: assert estrutural de que nenhuma função toca em member_requirements/requirement_approvals/
+  member_classes/member_specialties/curriculum_achievements — experiência do clube não marca requisito
+  oficial. **Publicado não se reescreve** (gatilhos em experiences e experience_stages); mudança
+  incompatível vira versão nova, sem tocar no histórico. **Recompensa idempotente pelo BANCO**
+  (`chave_idempotencia` UNIQUE) integrada ao ledger `pontos` que já existia; badge/item preparados, sem
+  loja nova. **Evidência privada** no bucket `comprovacoes` que já existe (pasta do próprio usuário),
+  sem atravessar clube nem unidade e sem reaproveitar `curriculum_achievements`. **Público declarativo**
+  (todos/unidade/papel/membro) com `criterio` reservado e vazio por CHECK. **Três camadas da fase 5**:
+  recurso `experiencias` nasce desligado e entra por versão NOVA de plano (`essencial v2`) — Tenant 001,
+  sem assinatura, segue funcionando. Quiz não entrega a resposta certa a quem responde. Auditoria imutável
+  + capacidade de denúncia. **Templates da plataforma são COPIADOS**: publicar a v2 do modelo não muda a
+  instância já publicada pelo clube. Testes: 44 (114 asserts, com red-team do no-code), Vitest 351 (+19).
+  Inspeção visual: 3 pilotos [TESTE] ponta a ponta no navegador (individual com regra de texto recusando
+  resposta curta; unidade com foto no bucket privado, validação da liderança e 50 pontos pra unidade;
+  temporada com quiz→conquista e meta quantitativa recusando 3 e concluindo com 12) — 4 conclusões,
+  4 recompensas, nenhuma duplicada. **Parado antes de migrar os jogos atuais para o motor**.
+  **Pendências declaradas**: editor de etapa existente (hoje só adiciona), upload de imagem de capa,
+  check-in recorrente sem UI dedicada, e a migração dos jogos/missões atuais.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.

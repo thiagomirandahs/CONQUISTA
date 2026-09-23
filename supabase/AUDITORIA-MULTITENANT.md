@@ -58,6 +58,81 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor de experiências no-code — fase 6 (migration 49)
+
+### Princípio: o clube configura, o servidor decide — e nada do clube é executável
+As regras são DADO DECLARATIVO validado contra um **vocabulário fechado** (`_validar_regra_etapa`,
+`_validar_regra_conclusao`, `_validar_recompensa`, `_so_estas_chaves`, `_texto_seguro`). Tipo
+desconhecido, chave a mais, valor fora de faixa e texto com HTML são recusados **na escrita**.
+Nenhuma função do motor tem um `execute` — o teste 44 confere isso lendo o `prosrc`. Ou seja: o que o
+clube configura é LIDO como dado, nunca executado; não há como guardar SQL, JS ou expressão.
+
+Texto da liderança é tratado como **conteúdo gerado por usuário**: sem `<`/`>`, sem `javascript:`,
+sem atributo de evento, sem caracteres de controle, com tamanho máximo por campo.
+
+### Não é o motor curricular, e não pode virar
+Currículo oficial (catálogo da PLATAFORMA, versionado) e experiências do clube (conteúdo DO CLUBE)
+são separados de propósito. Nenhuma função do motor cita `member_requirements`,
+`requirement_approvals`, `member_classes`, `member_specialties`, `curriculum_achievements`,
+`class_completion_snapshots` ou `class_investitures` — assert estrutural no teste 44. Uma experiência
+do clube **não marca requisito oficial como aprovado**. Se um dia houver integração, ela será
+explícita e auditável, não efeito colateral.
+
+### Os 10 tipos, sem tabela por modalidade
+Um único modelo (`experiences` + `experience_stages` + `experience_audiences`) representa desafio
+individual, desafio por unidade, campanha, sequência de missões, evento especial, quiz, tarefa com
+evidência, meta quantitativa e check-in. **Temporada** é modelada como AGRUPADOR
+(`experience_seasons`, com início/fim), não como mais um tipo: ela não tem etapa nem participante —
+ela reúne. O `alvo` (individual/unidade) define quem conclui; a `evidencia` da etapa define o que a
+pessoa entrega; `exige_aprovacao` é a "validação da liderança".
+
+### Publicado não se reescreve
+`_proteger_experiencia_publicada` recusa mudança de tipo, alvo, sequencial, regra de conclusão,
+recompensa, período, versão e clube depois da publicação; `_proteger_etapa_publicada` recusa criar,
+mudar ou apagar etapa. Correção cosmética de título/descrição/imagem continua permitida (erro de
+digitação não exige versão). Mudança incompatível vira `experiencia_nova_versao`: versão nova em
+rascunho, com etapas e público copiados, **sem tocar no histórico** de quem já participou.
+
+### Recompensa idempotente pelo banco
+`experience_rewards.chave_idempotencia` (`exp:<id>:part:<id>:final`) é UNIQUE. Clique duplo, retry,
+reprocessamento e concorrência batem nessa unicidade — testado chamando a concessão várias vezes e
+conferindo que continua **uma** recompensa e **um** lançamento em `pontos` (o ledger que já existia).
+Tipos: `pontos` (vai pro ledger), `badge` (`club_badges`/`member_badges`), `item` (registrado, sem
+loja nova) e `nenhuma`.
+
+### Evidência privada, do clube
+Arquivos vão pro bucket **`comprovacoes`** que já existe (privado, caminho `<user_id>/…`, policies de
+dono/liderança). O servidor recusa caminho na pasta de outra pessoa. A RLS de
+`experience_submissions` libera só autor, a unidade da participação e a liderança **daquele** clube —
+testado que liderança de outro clube e membro de outra unidade leem zero. `curriculum_achievements`
+**não** é reaproveitado para isto.
+
+### Público declarativo
+`experience_audiences` com `todos | unidade | papel | membro` (várias linhas = união). Unidade e
+pessoa precisam ser do próprio clube — segmentar não pode virar porta para outro clube. A coluna
+`criterio` está reservada para critérios futuros (idade etc.) e tem `CHECK` de objeto vazio: o modelo
+está preparado sem inventar segmentação, e nada aqui expõe data de nascimento.
+
+### Três camadas da fase 5
+Recurso comercial `experiencias`, que nasce **desligado** no catálogo. `_exigir_experiencias()` passa
+por `recurso_habilitado_no_clube()` (que já é "plano E clube") mais o vínculo ativo, e os gatilhos
+genéricos `trg_exigir_recurso` cobrem as tabelas novas. O módulo entra por **versão nova de plano**
+(`essencial v2`): quem assinou a v1 continua na v1. Tenant 001, sem assinatura, segue funcionando.
+
+### Quiz não entrega a resposta
+`experiencia_detalhe` remove a chave `correta` das perguntas para quem não é liderança — testado nos
+dois papéis.
+
+### Moderação e auditoria
+`experience_events` registra criação, edição, público, estados, avaliação e recompensa com autor e
+data, e é **imutável**. `experience_reports` existe como capacidade de denúncia (conteúdo é gerado
+por usuário) sem construir um sistema de moderação agora.
+
+### Templates da plataforma
+`experience_templates` (chave+versão) é catálogo da PLATAFORMA; `experiencia_do_template` **copia**
+para o clube, guardando a proveniência. Publicar uma versão nova do modelo **não altera** a instância
+que o clube já publicou — testado.
+
 ## Fundação comercial SaaS — fase 5 (migration 48)
 
 ### Princípio: assinatura NÃO é vínculo
