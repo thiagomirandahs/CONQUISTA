@@ -48,6 +48,8 @@ const ClubeConfig = lazy(() => import('./pages/ClubeConfig.jsx'))
 const MinhaClasse = lazy(() => import('./pages/MinhaClasse.jsx'))
 const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
+const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
+const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
 
@@ -130,6 +132,8 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        {/* Verificação PÚBLICA de documento (sem login): só o resumo mínimo, via RPC anônima */}
+        <Route path="/verificar/:token" element={<VerificarDocumento />} />
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />
@@ -169,6 +173,8 @@ export default function App() {
           <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
           <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />
           <Route path="/investiduras" element={<RotaRestrita><Investiduras /></RotaRestrita>} />
+          {/* Documento imprimível (dono/liderança); a autorização real é da RPC documento_conteudo */}
+          <Route path="/documento/:token" element={<DocumentoClasse />} />
           <Route path="/minhas-especialidades" element={<RecursoOpcional recurso="classes"><MinhasEspecialidades /></RecursoOpcional>} />
           <Route path="/avaliar-especialidades" element={<RotaRestrita><AvaliarEspecialidades /></RotaRestrita>} />
         </Route>

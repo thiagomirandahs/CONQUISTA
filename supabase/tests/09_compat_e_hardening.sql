@@ -38,10 +38,11 @@ select t.ok('criar_convite_responsavel devolve {token, expires_at}', t.txt('sele
 reset role;
 
 -- ---------- hardening: ACL de funções ----------
-select t.eq('nenhuma função do public é chamável por anon (exceto a do cadastro público)',
+select t.eq('nenhuma função do public é chamável por anon (exceto o cadastro público e a verificação pública de documento)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') and p.proname not in ('clube_legado_id')), 0);
+    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') and p.proname not in ('clube_legado_id', 'documento_verificar')), 0);
 select t.ok('clube_legado_id continua chamável por anon (a policy do cadastro precisa)', has_function_privilege('anon', 'public.clube_legado_id()', 'execute'));
+select t.ok('documento_verificar é chamável por anon (verificação pública por token; só o resumo mínimo)', has_function_privilege('anon', 'public.documento_verificar(text)', 'execute'));
 select t.eq('nenhuma função do public é PUBLIC-executável (herança do default do Postgres)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proacl is null), 0);

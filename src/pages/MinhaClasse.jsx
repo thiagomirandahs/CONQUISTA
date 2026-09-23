@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaClasse, carregarClassesDisponiveis, iniciarClasse,
-  salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito,
+  salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
@@ -182,6 +182,7 @@ function Progresso({ dados, userId, onMudou }) {
             🏅 Investido(a) nesta classe{conclusao?.investidura?.data ? ` em ${fmtData(conclusao.investidura.data)}` : ''}!
           </div>
         )}
+        {conclusao?.snapshot && <BotaoDocumento memberClassId={mc.id} ehFinal={mc.status === 'investida'} />}
       </div>
 
       {(secoes || []).map((s) => (
@@ -333,6 +334,28 @@ function Requisito({ r, userId, onMudou }) {
         </ul>
       )}
     </article>
+  )
+}
+
+// Gera (ou reobtém, idempotente) o Caderno da própria pessoa e abre a versão imprimível numa aba nova.
+// Antes da investidura sai como acompanhamento; depois, como documento final.
+function BotaoDocumento({ memberClassId, ehFinal }) {
+  const [ocupado, setOcupado] = useState(false)
+  const [erro, setErro] = useState('')
+  async function gerar() {
+    setOcupado(true); setErro('')
+    try {
+      const r = await emitirDocumento(memberClassId)
+      window.open(`/documento/${r.token}`, '_blank', 'noopener')
+    } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+  }
+  return (
+    <div className="mt-3">
+      <button onClick={gerar} disabled={ocupado} className="w-full min-h-[44px] rounded-xl border border-line bg-surface2 text-ink font-semibold text-sm py-2 disabled:opacity-60">
+        {ocupado ? 'Gerando…' : ehFinal ? '📘 Ver / imprimir meu documento de conclusão' : '📘 Ver / imprimir meu caderno de acompanhamento'}
+      </button>
+      {erro && <p role="alert" className="text-xs text-red-700 mt-1">{erro}</p>}
+    </div>
   )
 }
 

@@ -16,6 +16,7 @@ vi.mock('../lib/dados.js', () => ({
   solicitarRevisaoFinal: (...a) => solicitarRevisaoFinal(...a),
   decidirRevisaoFinal: (...a) => decidirRevisaoFinal(...a),
   registrarInvestidura: (...a) => registrarInvestidura(...a),
+  emitirDocumento: vi.fn().mockResolvedValue({ token: 'TESTTOKEN' }),
 }))
 const { default: Investiduras } = await import('./Investiduras.jsx')
 

@@ -31,7 +31,11 @@ insert into t.excecoes values
   ('requirement_option_groups', 'regra "N de M" declarada sobre um requisito do CATÁLOGO curricular (plataforma) — a mesma regra vale em qualquer clube; a satisfação é calculada por pessoa'),
   ('requirement_options',       'opções de um grupo N-de-M do catálogo (plataforma)'),
   ('curriculum_achievements',   'HISTÓRICO CURRICULAR PORTÁTIL da PESSOA (fase 2.6): pertence à identidade global (usuario_id), não a um clube. club_id_origem é PROVENIÊNCIA imutável de quem emitiu (só ele revoga), não escopo de acesso. Só o fato curricular — nunca pontos/presença/mensalidade/mensagem/arquivo (teste 35)'),
-  ('class_completion_snapshots', 'SNAPSHOT IMUTÁVEL da conclusão de classe (fase 4): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é proveniência de quem selou (só ele revoga). Gatilho recusa UPDATE de conteúdo e DELETE (teste 39)');
+  ('class_completion_snapshots', 'SNAPSHOT IMUTÁVEL da conclusão de classe (fase 4): pertence à pessoa (usuario_id) e segue a visibilidade da conquista portátil; club_id_origem é proveniência de quem selou (só ele revoga). Gatilho recusa UPDATE de conteúdo e DELETE (teste 39)'),
+  ('class_completion_events',    'trilha de auditoria IMUTÁVEL das transições de conclusão (fase 4); operacional do clube (club_id), leitura por dono/liderança'),
+  ('class_investitures',         'evento de investidura (fase 4): pertence à pessoa, segue a visibilidade da conquista; club_id é o clube que registrou (proveniência), não escopo'),
+  ('document_templates',         'catálogo de templates de documento da PLATAFORMA (fase 4.1): versionado; o documento emitido fixa o template. Sem club_id'),
+  ('class_documents',            'DOCUMENTO emitido (Caderno DesbravaClube, fase 4.1): aponta pro snapshot selado; token público aleatório; segue a visibilidade da conquista (usuario_id + club_id_origem). A verificação pública é por RPC (resumo mínimo), nunca leitura da tabela (teste 40)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
-import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura } from '../lib/dados.js'
+import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura, emitirDocumento } from '../lib/dados.js'
 
 // Revisão final e investidura (fase 4) — só a liderança do clube em uso. Tudo vem do servidor:
 // estados, snapshot (hash), bloqueios atuais e a lista de requisitos. A tela não decide regra: o
@@ -166,6 +166,13 @@ function Conclusao({ it, onMudou }) {
           </div>
           {corrigindo && <p id={`dica-corr-${it.member_class_id}`} className="text-[11px] text-faint">Marque pelo menos um requisito e escreva a observação.</p>}
         </div>
+      )}
+
+      {it.snapshot && (it.status === 'aguardando_revisao' || it.status === 'apto_investidura') && (
+        <button onClick={async () => { try { const r = await emitirDocumento(it.member_class_id); window.open(`/documento/${r.token}`, '_blank', 'noopener') } catch (e) { setErro(e?.message || String(e)) } }}
+          className="w-full min-h-[40px] rounded-lg border border-line text-xs font-semibold text-muted mt-2">
+          📘 Ver caderno de acompanhamento
+        </button>
       )}
 
       {it.status === 'apto_investidura' && (
