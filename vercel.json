@@ -1,4 +1,18 @@
 {
+  "$comentario": [
+    "CSP: a politica de conteudo vive no HTML, gerada no build por vite-plugin-csp.js a partir do",
+    "VITE_SUPABASE_URL do ambiente. Aqui fica SO o que uma tag <meta> nao consegue expressar.",
+    "",
+    "Por que isto encolheu na fase 8.5: este header trazia a politica INTEIRA, com",
+    "'connect-src https://*.supabase.co' escrito a mao. E quando duas CSPs valem para a mesma",
+    "pagina — uma por header e outra por meta — o navegador aplica a INTERSECAO das duas, nao a",
+    "uniao. Enquanto o host estava cravado nos dois lugares, davam no mesmo. Desde que a meta passou",
+    "a sair do ambiente, um dia em que a API tivesse dominio proprio a meta permitiria e este header",
+    "negaria: o app quebraria so em producao, sem nenhum sinal local, e o motivo estaria escrito num",
+    "arquivo que ninguem lembra de olhar quando o console acusa CSP.",
+    "",
+    "A regra ficou: quem sabe o ambiente e o build. O header cuida do que so ele pode."
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
@@ -6,7 +20,7 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; font-src 'self' data:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },

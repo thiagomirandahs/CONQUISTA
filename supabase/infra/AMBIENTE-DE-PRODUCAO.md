@@ -68,11 +68,23 @@ Conferir com `npm run test:auth:e2e` apontado para o ambiente (20 asserts: cadas
 
 - A CSP viaja **no próprio HTML**, como `<meta>`, gerada no build por `vite-plugin-csp.js`. Vale
   para o navegador **e** para a WebView do APK, que não tem servidor na frente para mandar header.
-- O `vercel.json` continua responsável pelo que só funciona em header: `frame-ancestors`, HSTS,
-  `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`. As duas políticas se somam.
-- `connect-src` precisa citar o domínio do projeto Supabase de produção. Hoje é
-  `https://*.supabase.co` + `wss://*.supabase.co` — se um dia houver domínio próprio para a API,
-  entra em `cspComHashes({ conectaEm: [...] })` no `vite.config.js`.
+- **`connect-src` não é mais um passo manual.** Ele sai de `VITE_SUPABASE_URL` — a mesma variável
+  que diz ao app com quem falar. Um domínio próprio para a API passa a funcionar sozinho, e a
+  política cita o host exato do projeto em vez de um curinga que autorizaria qualquer projeto
+  Supabase do mundo.
+- **Fail-closed:** `vite build --mode production` **falha** se `VITE_SUPABASE_URL` estiver ausente
+  ou inválida. Um bundle de produção sem endpoint ou não funciona, ou subiria com uma política
+  frouxa — as duas saídas são piores do que um build que para no CI dizendo o que falta.
+- O `vercel.json` ficou **só** com `frame-ancestors` (que o navegador ignora em `<meta>`) e os
+  headers que não são CSP: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
+  Ele **não repete mais** `connect-src`/`img-src`/etc. O motivo é um detalhe do navegador que custa
+  caro descobrir em produção: duas CSPs válidas para a mesma página são aplicadas em **interseção**,
+  não em união. Com o header cravando `https://*.supabase.co` e a meta citando o host real, um
+  domínio próprio de API seria permitido pela meta e negado pelo header.
+
+**Conferência antes do deploy:** `npm run test:ambiente` (está dentro de `npm run check`). Ele
+constrói três vezes — local/teste, produção e produção sem env — e prova que cada bundle carrega o
+endpoint do próprio ambiente, que nenhum carrega o do outro, e que o terceiro **falha**.
 
 **Conferência após deploy:** abrir o app e olhar o console. **Zero erro de CSP.** Um script
 bloqueado não derruba a página — degrada em silêncio, que é pior.

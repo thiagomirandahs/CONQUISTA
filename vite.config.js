@@ -11,38 +11,61 @@ import { cspComHashes } from './vite-plugin-csp.js'
 // moderna — corta ~centenas de KB de polyfill à toa).
 const forCap = process.env.CAP_BUILD === '1'
 
-// A quem a CSP autoriza o app a se conectar.
+// ============================================================================
+//  A QUEM A CSP AUTORIZA O APP A SE CONECTAR — e por que isso é FAIL-CLOSED.
 //
-// Isto era `['https://*.supabase.co']` cravado aqui, e o AMBIENTE-DE-PRODUCAO.md registrava, como
-// passo manual, "se um dia houver domínio próprio para a API, entra em cspComHashes". Passo manual
-// numa política de segurança é dívida: quem esquecer não vê erro nenhum no build — vê o app
-// quebrando em produção, ou, pior, uma política mais frouxa do que deveria.
+//  Isto era `['https://*.supabase.co']` cravado no arquivo, e o AMBIENTE-DE-PRODUCAO.md registrava
+//  trocá-lo como PASSO MANUAL. Passo manual em política de segurança é dívida: quem esquecer não vê
+//  erro nenhum no build — vê o app quebrando em produção, ou, pior, uma política mais frouxa do que
+//  deveria. E o curinga autoriza QUALQUER projeto Supabase do mundo, inclusive um que um atacante
+//  controle.
 //
-// Agora sai do MESMO `VITE_SUPABASE_URL` que o app usa para falar com o banco. Três efeitos:
-//   · a política passa a citar o host exato do projeto, em vez do curinga que autoriza QUALQUER
-//     projeto Supabase do mundo — inclusive um que um atacante controle;
-//   · um domínio próprio para a API passa a funcionar sem ninguém lembrar de nada;
-//   · o stack local (http://127.0.0.1:54321) passa a ser alcançável em desenvolvimento, que é o
-//     que revelou o problema: com o host cravado, nenhuma jornada de navegador contra o Supabase
-//     local conseguia sequer fazer login.
-// O curinga fica como último recurso, para um build sem env (o aviso do src/lib/supabase.js já cobre).
-const apiDoSupabase = (() => {
+//  Agora a origem sai do MESMO `VITE_SUPABASE_URL` que o app usa para falar com o banco, e o
+//  comportamento quando ela falta depende de para onde o build vai:
+//
+//    · DESENVOLVIMENTO / TESTE  → sem env, o app não conecta em lugar nenhum. Já existe o aviso em
+//      src/lib/supabase.js, e um dev sem `.env` percebe na primeira tela. Não vale parar o processo.
+//    · PRODUÇÃO (`vite build`) → PARA. Um bundle de produção sem endpoint é um bundle que ou não
+//      funciona, ou — se houvesse curinga — sobe com uma política frouxa que ninguém pediu. As duas
+//      saídas são piores do que um build que falha na hora, com a mensagem dizendo o que falta.
+//
+//  É a diferença entre fail-closed e fail-open: o erro acontece nos dois casos; o que muda é se ele
+//  aparece no CI de quem publicou ou no celular de quem usa.
+// ============================================================================
+function origensDaApi(command, mode) {
   // `loadEnv` e não `process.env`: o Vite lê os .env para `import.meta.env` do app, mas o arquivo
   // de configuração roda antes disso e não enxerga nada por `process.env`. Sem esta linha a
-  // política cairia sempre no curinga, em silêncio — que é como este tipo de coisa costuma
+  // política cairia sempre no fallback, em silêncio — que é como este tipo de coisa costuma
   // "funcionar" por meses.
-  const bruto = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '').VITE_SUPABASE_URL
-  if (!bruto) return ['https://*.supabase.co']
-  try {
-    const { origin } = new URL(bruto)
-    return [origin]
-  } catch {
-    return ['https://*.supabase.co']
+  const bruto = loadEnv(mode, process.cwd(), '').VITE_SUPABASE_URL
+  const ehBuildDeProducao = command === 'build' && mode === 'production'
+
+  const parar = (porque) => {
+    throw new Error(
+      `[CSP] build de produção sem endpoint utilizável: ${porque}.\n` +
+      '      VITE_SUPABASE_URL define ao mesmo tempo com quem o app fala e o que a CSP autoriza.\n' +
+      '      Sem ela o bundle sobe sem saber com quem falar — e sem política que o proteja.\n' +
+      '      Defina VITE_SUPABASE_URL (ex.: https://<projeto>.supabase.co) e publique de novo.',
+    )
   }
-})()
+
+  if (!bruto) {
+    if (ehBuildDeProducao) parar('VITE_SUPABASE_URL está vazia ou ausente')
+    return []
+  }
+  try {
+    return [new URL(bruto).origin]
+  } catch {
+    if (ehBuildDeProducao) parar(`VITE_SUPABASE_URL não é uma URL válida ("${bruto}")`)
+    return []
+  }
+}
 
 // Configuração do projeto: React + Tailwind + PWA (instalável no celular)
-export default defineConfig({
+// `defineConfig` com FUNÇÃO, não objeto: só assim o Vite entrega `command` ('serve' | 'build') e
+// `mode` — e é exatamente essa distinção que decide se a falta do endpoint para o build ou apenas
+// deixa o app sem conexão. Com o objeto estático não havia como saber para onde o build ia.
+export default defineConfig(({ command, mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
@@ -115,7 +138,7 @@ export default defineConfig({
     // CSP por HASH, embutida no próprio HTML (fase 8.1). Precisa ser o ÚLTIMO plugin:
     // ele calcula o hash dos scripts inline que os anteriores injetaram. Vale para os dois
     // builds — o do navegador e o do APK, que não tem servidor na frente para mandar header.
-    cspComHashes({ conectaEm: apiDoSupabase }),
+    cspComHashes({ conectaEm: origensDaApi(command, mode) }),
   ].filter(Boolean),
   build: {
     // Minifica com terser e tira console/debugger do bundle de produção
@@ -125,4 +148,4 @@ export default defineConfig({
   server: {
     open: true, // abre o navegador automaticamente ao rodar "npm run dev"
   },
-})
+}))

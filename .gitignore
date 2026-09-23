@@ -18,3 +18,6 @@ supabase/carga/usuarios.json
 
 # ids gerados por supabase/e2e/montar-tres-clubes.mjs — valem so para UM banco local
 supabase/e2e/atores.json
+
+# builds temporarios do gate de ambiente (supabase/tests/e2e/build-por-ambiente.mjs)
+.tmp-build-ambiente/
