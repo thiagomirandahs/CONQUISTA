@@ -15,14 +15,15 @@ A matriz de cada módulo está em `supabase/AUDITORIA-MULTITENANT.md`.
 3. **Publique o front ANTES do SQL** (merge → Vercel). O front novo grava PIX/popup/rodízio pela RPC `config_gravar` e, se ela ainda
    não existe, cai no upsert antigo — então funciona antes e depois do SQL. (Front/APK antigo em cache **não** sabe gravar essas
    configs depois do SQL: leitura e o resto seguem; atualize o app.)
-4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`44`.
+4. Aplique **tudo na mesma janela**: as migrations `20260921000001`–`12` (SaaS) **e** `13`–`31` **e** `33`–`45`.
    (A `40` e a `43` são GERADAS do manifesto curricular — `npm run curriculo:importacao:check` tem que passar antes; a `40` publica
    o catálogo 2026.1 e a `43` publica a revisão 2026.2 arquivando a 2026.1 (quem começou na 2026.1 continua nela); nenhuma
-   matricula ninguém, e reaplicá-las é no-op.)
+   matricula ninguém, e reaplicá-las é no-op. A `45` publica o Caderno Digital DesbravaClube — sem assinatura digital; documentos
+   emitidos ficam idempotentes e nenhum é apagado ao reaplicar.)
    Não pare no meio: a `11` remove o alvo de conflito antigo de mensalidades e a `14` o devolve; a `24` troca a chave do catálogo de jogos.
    **A `32` NÃO entra nessa janela** (é a virada do bucket `imagens` para privado): só depois do front novo publicado **e** do APK novo distribuído — veja "Passo 6".
 5. O SQL Editor é atômico por execução: se uma migration falhar, ela **não** aplica nada — corrija a causa e rode de novo.
-   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`44` são idempotentes. (A `02` também: aplique uma vez.)
+   Cada uma das `03`–`06` e `08`–`12` deve ser aplicada **uma vez** (não são reaplicáveis); as `13`–`45` são idempotentes. (A `02` também: aplique uma vez.)
 
 ## Ordem
 | # | O quê | Onde |

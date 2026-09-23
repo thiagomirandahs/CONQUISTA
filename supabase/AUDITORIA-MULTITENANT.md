@@ -58,6 +58,79 @@ Cadastro público (o app de cadastro ainda entra pelo Tenant 001) e sincronizaç
 copia (jogos e conteúdo); `INSERT` manual no SQL Editor sem `club_id` em fotos/avisos/pontos (cai no Tenant 001, como sempre foi);
 a policy que mostra as unidades ao cadastro anônimo.
 
+## Motor curricular — fase 4.1 (migration 45): Caderno Digital DesbravaClube + verificação pública
+
+### Separação conceitual
+`snapshot selado (44)` → **documento emitido** (`class_documents`: aponta pro snapshot + template versionado +
+token público) → **representação PDF** (front: `DocumentoClasse.jsx`, HTML imprimível A4/mobile, função pura do
+`documento_conteudo` — regenerável, nunca consulta o currículo corrente) → **verificação pública**
+(`documento_verificar(token)`, anon: só o resumo mínimo). O PDF não é a fonte da verdade — perdido, é regenerado
+determinístico a partir da mesma emissão (mesmo token ⇒ mesma `conferencia`, sha256 do `hash` do snapshot + token +
+versão do template).
+
+### `document_templates` — versionado
+Melhoria visual futura = **versão nova** do template (`chave`, `versao`, único); o documento emitido fixa
+`template_id` no momento da emissão e nunca muda — não altera silenciosamente a identificação de um documento já
+emitido. Hoje só `caderno-desbravaclube/1` (identidade visual própria — a página oficial da DSA é só a lista de
+requisitos, sem cartão/layout preenchível pra copiar; sem autorização pra reproduzir arte/logotipo oficial).
+
+### `class_documents` — emissão idempotente, token público não enumerável
+`documento_emitir(member_class_id, tipo?)`: exige snapshot selado; `tipo='final'` só com investidura **registrada**
+apontando pro mesmo snapshot (senão erro "só após a investidura"); sem `tipo`, o servidor escolhe (investida → final,
+senão acompanhamento). Único `(snapshot_id, tipo, template_id)`: reemitir devolve o MESMO `token_publico`/`conferencia`
+— determinístico, sem duplicar linha. `token_publico`: 20 bytes de `gen_random_bytes` em base32 Crockford (sem
+I/L/O/U, ~100 bits) — não é UUID, não é sequencial, não expõe `snapshot_id`/`usuario_id`/`club_id`. RLS de leitura =
+a da conquista portátil (dono, liderança do emissor, liderança de clube com vínculo ativo); **sem policy pra anon**
+— a tabela nunca é lida diretamente, só pela RPC pública.
+
+### `documento_conteudo(token)` (autenticado) — sanitizado, nunca some com a investidura
+Pra quem tem acesso: nome, clube emissor, classe, versão curricular, seções/requisitos com situação/escolha/conteúdo
+dinâmico/aprovador (nome+papel+data — nunca comentário interno), revisão final, investidura. **Evidência nunca é
+copiada** — nem texto nem foto (achado do teste: comentário interno de aprovação e resposta privada do requisito
+não vazam). **Achado da inspeção visual desta fase**: a chave `periodo.investidura` só existe quando
+`tipo='final'` — antes disso, `documento_emitir` gera o Caderno de acompanhamento apontando pro MESMO snapshot que,
+depois, é usado pra investir; sem essa checagem por tipo, o acompanhamento (que declara "não é comprovante de
+investidura") acabava exibindo a data de investidura de qualquer forma. Corrigido com `||` condicional por
+`v_d.tipo` (chave ausente, não `null`, pra não confundir "sem valor" com "não se aplica"); mesma correção em
+`documento_verificar`.
+
+### `documento_verificar(token)` (anon) — o mínimo público
+Nome, classe, clube emissor, versão curricular, tipo, data de conclusão, data de investidura (só no `final`),
+**estado** (`valido`/`acompanhamento`/`substituido`/`revogado`, derivado AO VIVO do status do snapshot — nunca
+gravado, reflete revogação/substituição na hora), `integro` (hash recalculado), `conferencia`, `emitido_em`. Nunca
+requisitos, avaliadores, comentários, ids internos. Token inexistente ou malformado devolve a MESMA forma
+(`{encontrado:false}`) — sem sinal de enumeração; a tabela não tem policy de leitura pra anon (só a RPC).
+
+### Front
+`VerificarDocumento.jsx` (rota pública `/verificar/:token`, sem login): o resumo mínimo + aviso de integridade +
+disclaimer fixo ("não substitui o cartão ou registro oficial da Igreja Adventista / do Ministério de
+Desbravadores"). `DocumentoClasse.jsx` (`/documento/:token`, autenticado): identificação, seções/requisitos (com
+`break-inside: avoid` — requisito e situação nunca se separam entre páginas), QR (SVG inline via `qr.js`,
+`qrcode-generator` MIT/zero-dep) apontando SÓ pra URL de verificação — nunca carrega dado curricular no QR —,
+espaço de assinaturas reservado (Conselheiro/Diretoria/Distrital-Regional) com nota explícita "este documento ainda
+não possui assinatura digital" (sem fingir validade jurídica que não existe), rodapé com conferência curta,
+data de emissão e o mesmo disclaimer. `@media print { @page { size: A4; margin: 14mm } }`; mobile-first na tela.
+Botões de emissão em `MinhaClasse` (a própria pessoa) e `Investiduras` (liderança).
+
+### Testado
+`40_documento_e_verificacao.sql` (41 asserts): documento de acompanhamento antes da investidura + final depois
+(recusa emitir final antes); regeneração idempotente (mesmo token/conferência, sem duplicar linha); conteúdo
+sanitizado (nome/clube/classe/versão/período/25 requisitos com aprovador, escolha e dinâmico CONGELADOS do
+snapshot) sem evidência/comentário/id interno; **acompanhamento não expõe investidura mesmo com o mesmo snapshot
+já investido** (o achado corrigido, em `documento_conteudo` e em `documento_verificar`); catálogo oficial
+arquivado → verificação e conteúdo continuam (self-contained); QR/token válido (anon); token inexistente e
+malformado (mesma forma); anon não lê a tabela nem chama `documento_conteudo`; snapshot revogado (cascata da
+migration 44) → estado vira `revogado` nos dois documentos (acompanhamento e final), token continua resolvendo,
+hash continua íntegro; Tenant B (liderança com vínculo ativo) vê e verifica mas não altera; membro comum do B só
+tem o resumo público. Vitest: `qr.test.js` (2), `VerificarDocumento.test.jsx` (5), `DocumentoClasse.test.jsx` (4,
+inclusive acentuação e texto longo de requisito). Inspeção visual: dois documentos reais gerados a partir do banco
+(não mock) — Caderno de acompanhamento e Documento final da mesma conclusão de teste.
+
+### Limites honestos desta fase
+Sem assinatura digital/ICP-Brasil/desenhada — só o espaço reservado, com aviso explícito. Sem cartão/PDF com
+identidade visual oficial da DSA (não há layout oficial pra copiar, nem autorização — ver acima). Documento não
+afirma substituir registro eclesiástico/SGC em nenhum lugar do texto.
+
 ## Motor curricular — fase 4 (migration 44): snapshot curricular imutável + conclusão / revisão final / investidura
 
 ### Estados formais (100% aprovado ≠ investido)

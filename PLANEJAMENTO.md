@@ -464,6 +464,19 @@ O sistema atual **Filhos da Conquista** será preservado como o primeiro clube (
   posterior só por `snapshot_revogar` auditado em cascata (nada apagado). Tela `/investiduras` pra liderança; Minha Classe
   mostra a etapa. Achado corrigido: `requisito_avaliar` gravava a aprovação depois do status (última aprovação ficava fora
   do snapshot). Testes: 39 (62), 32/35/37 migrados, Vitest 297. Sem PDF/cartão ainda.
+- ✅ **Fase 4.1 — Caderno Digital DesbravaClube + verificação pública (migration 45)**: snapshot selado → documento
+  emitido (`class_documents`, idempotente — mesmo snapshot+tipo+template devolve o mesmo token/conferência) → PDF
+  (HTML imprimível A4/mobile, `DocumentoClasse.jsx`, regenerável a partir da mesma emissão) → verificação pública
+  (`documento_verificar`, anon, token de 100 bits não enumerável, só resumo mínimo + integridade + estado ao vivo).
+  `document_templates` versionado (identidade própria — a página da DSA é só lista de requisitos, sem cartão/arte
+  oficial pra copiar). Caderno de acompanhamento antes da investidura (nunca comprovante); documento final só após
+  `investidura_registrar`. QR aponta só pra `/verificar/<token>`, nunca carrega dado curricular. Assinaturas
+  reservadas, sem fingir validade (aviso explícito: "ainda não possui assinatura digital"); disclaimer fixo que
+  não substitui registro oficial da Igreja/SGC. Achado da inspeção visual: o acompanhamento vazava a data de
+  investidura quando o mesmo snapshot já tinha sido investido — corrigido (`documento_conteudo`/`documento_verificar`
+  só expõem a chave no tipo `final`), com teste cobrindo o cenário exato. Testes: 40 (41), Vitest 11 (qr +
+  VerificarDocumento + DocumentoClasse); dois documentos reais gerados do banco pra inspeção visual. Sem assinatura
+  digital/ICP-Brasil.
 
 ### Ordem de execução recomendada após a auditoria
 1. Criar branch `saas-refactor`, staging e baseline/testes.
