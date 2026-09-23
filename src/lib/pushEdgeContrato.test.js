@@ -74,3 +74,61 @@ describe('Edge Function enviar-push: dependências fixadas', () => {
     expect(externos).toContain(`npm:@supabase/supabase-js@${doLock}`)
   })
 })
+
+// Fase 8.1 — o APK gravava o token do FCM em push_tokens e ninguém lia essa tabela: o push
+// nativo no Android não funcionava. Estes testes travam a rota nova para ela não se perder de
+// novo numa refatoração, e travam o teto de concorrência que a acompanha.
+describe('Edge Function enviar-push: rota nativa (APK/FCM)', () => {
+  it('busca os tokens do APK pela função SQL do clube — o mesmo público da rota web', () => {
+    expect(fonte).toMatch(/\.rpc\('push_destinatarios_nativos'/)
+    // as duas rotas recebem EXATAMENTE os mesmos argumentos; se divergirem, web e Android
+    // passam a ter públicos diferentes e ninguém percebe
+    expect(fonte).toMatch(/const argumentos = \{ p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario \}/)
+    expect(fonte).toMatch(/rpc\('push_destinatarios', argumentos\)/)
+    expect(fonte).toMatch(/rpc\('push_destinatarios_nativos', argumentos\)/)
+  })
+
+  it('nunca lê push_tokens sem filtro (o mesmo erro que o broadcast global foi)', () => {
+    expect(fonte).not.toMatch(/from\('push_tokens'\)\s*\.select\(/)
+  })
+
+  it('usa FCM HTTP v1 com conta de serviço (não a API legada por server key)', () => {
+    expect(fonte).toMatch(/fcm\.googleapis\.com\/v1\/projects\//)
+    expect(fonte).not.toMatch(/fcm\.googleapis\.com\/fcm\/send/)
+    expect(fonte).toMatch(/FCM_SERVICE_ACCOUNT/)
+  })
+
+  it('só apaga o token quando o FCM diz que ele não existe mais (404)', () => {
+    expect(fonte).toMatch(/resp\.status === 404.*push_tokens.*delete/s)
+  })
+
+  it('falta de configuração do FCM é REGISTRADA, não engolida — e não cala a rota web', () => {
+    expect(fonte).toMatch(/registrarFalha\(`FCM_SERVICE_ACCOUNT ausente/)
+    expect(fonte).toMatch(/from\('infra_falhas'\)\.insert/)
+  })
+
+  it('o registro de falha não guarda token, texto da notificação nem destinatário', () => {
+    const corpoRegistrar = fonte.slice(fonte.indexOf('async function registrarFalha'), fonte.indexOf('async function emLotes'))
+    expect(corpoRegistrar).not.toMatch(/token|titulo|corpo|payload|user_id|endpoint/)
+  })
+})
+
+describe('Edge Function enviar-push: concorrência e prazo', () => {
+  it('envia em lotes com teto — nunca um Promise.all sobre a lista inteira', () => {
+    expect(fonte).toMatch(/const LOTE = \d+/)
+    expect(fonte).toMatch(/async function emLotes/)
+    // as duas rotas passam pelo limitador
+    expect(fonte).toMatch(/emLotes\(subs, LOTE/)
+    expect(fonte).toMatch(/emLotes\(tokens, LOTE/)
+    // o Promise.all que sobra é o de DENTRO do lote (tamanho limitado) e o do digest do segredo
+    expect(fonte).not.toMatch(/Promise\.all\(\s*subs\./)
+    expect(fonte).not.toMatch(/Promise\.all\(\s*tokens\./)
+  })
+
+  it('toda chamada de saída tem prazo (sem isso um provedor lento segura o invoke inteiro)', () => {
+    expect(fonte).toMatch(/const TIMEOUT_MS = /)
+    expect(fonte).toMatch(/function comPrazo/)
+    expect(fonte).toMatch(/comPrazo\(webpush\.sendNotification/)
+    expect(fonte).toMatch(/comPrazo\(fetch\(urlFcm/)
+  })
+})

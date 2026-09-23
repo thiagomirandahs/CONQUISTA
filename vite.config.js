@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import legacy from '@vitejs/plugin-legacy'
+import { cspComHashes } from './vite-plugin-csp.js'
 
 // CAP_BUILD=1 → build pro app nativo (Capacitor/Android): SEM service worker
 // (dentro da WebView o SW guardaria versão velha e daria tela em branco, o mesmo
@@ -81,6 +82,10 @@ export default defineConfig({
     !forCap && legacy({
       targets: ['defaults', 'Android >= 6', 'Chrome >= 61', 'not dead'],
     }),
+    // CSP por HASH, embutida no próprio HTML (fase 8.1). Precisa ser o ÚLTIMO plugin:
+    // ele calcula o hash dos scripts inline que os anteriores injetaram. Vale para os dois
+    // builds — o do navegador e o do APK, que não tem servidor na frente para mandar header.
+    cspComHashes({ conectaEm: ['https://*.supabase.co'] }),
   ].filter(Boolean),
   build: {
     // Minifica com terser e tira console/debugger do bundle de produção

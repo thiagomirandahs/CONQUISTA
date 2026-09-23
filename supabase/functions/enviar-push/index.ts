@@ -1,19 +1,32 @@
 // Edge Function: enviar-push
-// Acionada por um Database Webhook quando entra uma linha em "notificacoes".
-// Envia a notificação como PUSH para os aparelhos inscritos em push_subscriptions.
+// Acionada pelo gatilho `trg_notificacao_push` (migration 52) quando entra uma linha em
+// "notificacoes". Entrega o aviso por DUAS rotas, para o mesmo público:
+//   - Web Push  (navegador / PWA)  -> public.push_subscriptions, via VAPID
+//   - FCM       (APK Android)      -> public.push_tokens,        via FCM HTTP v1
 //
-// SEGURANÇA: como o "Verify JWT" fica desligado (quem chama é o webhook do
-// banco, não um usuário), a função tem a PRÓPRIA fechadura: o webhook precisa
-// mandar o header `x-push-webhook-secret` com o valor do secret
-// PUSH_WEBHOOK_SECRET. Sem ele (ou errado), respondemos 401 e NÃO tocamos no
-// banco. O payload também é validado e o `link` só pode ser caminho interno.
+// Fase 8.1 — o que mudou e por quê:
+//   * O APK gravava o token do FCM em push_tokens desde sempre e NINGUÉM lia essa tabela.
+//     O push nativo no Android simplesmente não funcionava. Agora funciona.
+//   * O envio era um `Promise.all` sobre TODOS os destinatários, sem teto: um clube de 500
+//     membros abria 500 conexões HTTP de saída ao mesmo tempo, e agora seriam 1.000 com as duas
+//     rotas. Passou a ser em lotes com concorrência limitada.
+//   * O público das duas rotas vem da MESMA regra no banco (_push_publico), então não há como
+//     Web e Android divergirem sobre quem pode receber o quê.
 //
-// MULTI-TENANT: os destinatários vêm de public.push_destinatarios(club_id, para, para_usuario),
-// criada pela migration 20260921000017 — APLIQUE ESSE SQL ANTES de publicar esta versão da
-// função (sem ele a função responde 500 e não envia nada, de propósito: falha fechada).
+// SEGURANÇA: como o "Verify JWT" fica desligado (quem chama é o gatilho do banco, não um
+// usuário), a função tem a PRÓPRIA fechadura: o chamador precisa mandar o header
+// `x-push-webhook-secret` com o valor do secret PUSH_WEBHOOK_SECRET. Sem ele (ou errado),
+// respondemos 401 e NÃO tocamos no banco. O payload também é validado e o `link` só pode ser
+// caminho interno.
+//
+// MULTI-TENANT: os destinatários vêm de public.push_destinatarios(...) e
+// public.push_destinatarios_nativos(...), ambas restritas ao service_role e testadas no banco
+// (supabase/tests/07_push_por_clube.sql e 47_push_nativo_e_infra.sql).
 //
 // Secrets necessários (painel Supabase → Edge Functions → Secrets):
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PUSH_WEBHOOK_SECRET
+//   FCM_SERVICE_ACCOUNT  (JSON da conta de serviço do Firebase; SEM ele o envio nativo é
+//                         simplesmente pulado, e isso é registrado — a rota web continua)
 // (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já são injetados automaticamente.)
 
 // Versões EXATAS de propósito (a função é colada no painel, não há lockfile): o supabase-js é o mesmo
@@ -26,6 +39,15 @@ const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const WEBHOOK_SECRET = Deno.env.get('PUSH_WEBHOOK_SECRET') ?? ''
+const FCM_SERVICE_ACCOUNT = Deno.env.get('FCM_SERVICE_ACCOUNT') ?? ''
+
+// Teto de envios simultâneos. Um clube grande tem centenas de aparelhos; sem teto, um único
+// invoke abria uma conexão de saída por aparelho. 25 mantém o paralelismo útil sem transformar
+// um aviso do clube numa rajada.
+const LOTE = 25
+// Toda chamada de saída tem prazo. Sem isto, um provedor lento segurava o invoke até o timeout
+// da plataforma e nenhum aviso saía.
+const TIMEOUT_MS = 10_000
 
 webpush.setVapidDetails('mailto:contato@filhosdaconquista.app', VAPID_PUBLIC, VAPID_PRIVATE)
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE)
@@ -63,6 +85,80 @@ function linkSeguro(l: unknown): string {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Registra uma falha de infraestrutura sem derrubar o envio. Nunca grava token, texto da
+// notificação nem nada de quem recebe — só o que serve para investigar depois.
+async function registrarFalha(detalhe: string, clubId: string | null) {
+  try {
+    await sb.from('infra_falhas').insert({ origem: 'push/edge', detalhe: detalhe.slice(0, 500), club_id: clubId })
+  } catch { /* se nem isso der, não há o que fazer aqui */ }
+}
+
+// Executa `tarefa` sobre `itens` em lotes de `tamanho`, esperando cada lote terminar.
+// É o teto de concorrência: o número de chamadas de saída simultâneas nunca passa de `tamanho`.
+async function emLotes<T>(itens: T[], tamanho: number, tarefa: (item: T) => Promise<boolean>): Promise<number> {
+  let ok = 0
+  for (let i = 0; i < itens.length; i += tamanho) {
+    const resultados = await Promise.all(itens.slice(i, i + tamanho).map(tarefa))
+    ok += resultados.filter(Boolean).length
+  }
+  return ok
+}
+
+function comPrazo<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+}
+
+// ---------------------------------------------------------------------------
+// FCM HTTP v1: a rota do APK.
+//
+// A API v1 exige um access token OAuth2 obtido assinando um JWT com a chave privada da conta de
+// serviço. O token vale 1 hora; guardamos em memória para não refazer a troca a cada invoke —
+// numa instância quente isso economiza uma ida ao Google por notificação.
+// ---------------------------------------------------------------------------
+let tokenFcm: { valor: string; expira: number } | null = null
+
+function base64url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function pemParaDer(pem: string): Uint8Array {
+  const corpo = pem.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, '').replace(/\s+/g, '')
+  const bin = atob(corpo)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+async function acessoFcm(conta: { client_email: string; private_key: string }): Promise<string> {
+  const agora = Math.floor(Date.now() / 1000)
+  if (tokenFcm && tokenFcm.expira > agora + 60) return tokenFcm.valor
+
+  const cabecalho = base64url(new TextEncoder().encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })))
+  const corpo = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: conta.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: agora,
+    exp: agora + 3600,
+  })))
+  const chave = await crypto.subtle.importKey(
+    'pkcs8', pemParaDer(conta.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
+  const assinatura = new Uint8Array(await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5', chave, new TextEncoder().encode(`${cabecalho}.${corpo}`)))
+  const jwt = `${cabecalho}.${corpo}.${base64url(assinatura)}`
+
+  const resp = await comPrazo(fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt }),
+  }), TIMEOUT_MS)
+  if (!resp.ok) throw new Error('oauth ' + resp.status)
+  const dados = await resp.json()
+  tokenFcm = { valor: dados.access_token, expira: agora + 3500 }
+  return tokenFcm.valor
+}
+
 Deno.serve(async (req) => {
   // 1) FECHADURA: sem o segredo do webhook, nada acontece (falha fechada:
   //    se o secret nem foi cadastrado, também recusa tudo).
@@ -73,10 +169,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const notif = body.record ?? body // o webhook envia { type, table, record, ... }
+    const notif = body.record ?? body // o gatilho envia { type, table, record, ... }
 
     // 2) VALIDAÇÃO do payload (aceita só notificação com cara de notificação).
-    //    Respondemos 200 nos inválidos pra o webhook não ficar re-tentando.
+    //    Respondemos 200 nos inválidos pra o chamador não ficar re-tentando.
     const titulo = typeof notif?.titulo === 'string' ? notif.titulo.trim().slice(0, 120) : ''
     if (!titulo) return new Response('ok (sem notificacao valida)', { status: 200 })
     const corpo = typeof notif?.corpo === 'string' ? notif.corpo.slice(0, 500) : ''
@@ -89,49 +185,86 @@ Deno.serve(async (req) => {
     }
 
     // 3) Define quem recebe — SEMPRE dentro do CLUBE da notificação (multi-tenant).
-    //    A escolha é uma função SQL (push_destinatarios: só o service_role executa), testada no
-    //    banco (supabase/tests/07_push_por_clube.sql). Notificação sem clube válido, ou com
-    //    destino desconhecido, NUNCA vira broadcast (falha fechada). Antes: "todos" lia TODAS as
-    //    inscrições e "lideranca" pegava a liderança de todos os clubes.
+    //    A escolha é uma função SQL (só o service_role executa), testada no banco. Notificação
+    //    sem clube válido, ou com destino desconhecido, NUNCA vira broadcast (falha fechada).
     const clubeId = typeof notif?.club_id === 'string' && UUID_RE.test(notif.club_id) ? notif.club_id : null
     if (!clubeId) return new Response('ok (notificacao sem clube)', { status: 200 })
     const para = typeof notif?.para === 'string' ? notif.para : ''
     if (!paraUsuario && para !== 'todos' && para !== 'lideranca') {
       return new Response('ok (destino desconhecido)', { status: 200 })
     }
-    const { data: destinatarios, error: erroDestinatarios } = await sb.rpc('push_destinatarios', {
-      p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario,
-    })
-    // Sem a função (SQL ainda não aplicado) ou erro de banco: não envia nada e devolve 500 (o webhook
-    // tenta de novo) — melhor atrasar o aviso do que mandar pro clube errado.
+    const argumentos = { p_club_id: clubeId, p_para: para, p_para_usuario: paraUsuario }
+
+    const { data: destinatarios, error: erroDestinatarios } = await sb.rpc('push_destinatarios', argumentos)
+    // Sem a função (SQL ainda não aplicado) ou erro de banco: não envia nada e devolve 500 (para
+    // o chamador tentar de novo) — melhor atrasar o aviso do que mandar pro clube errado.
     if (erroDestinatarios) return new Response('erro: ' + erroDestinatarios.message, { status: 500 })
     const subs: any[] = destinatarios ?? []
 
-    const payload = JSON.stringify({
-      titulo,
-      corpo,
-      link: linkSeguro(notif.link),
+    // A rota nativa segue a MESMA regra de público, na mesma transação lógica. Se esta falhar,
+    // o web ainda sai: um canal quebrado não pode calar o outro.
+    const { data: nativos, error: erroNativos } = await sb.rpc('push_destinatarios_nativos', argumentos)
+    if (erroNativos) await registrarFalha('push_destinatarios_nativos: ' + erroNativos.message, clubeId)
+    const tokens: any[] = nativos ?? []
+
+    const link = linkSeguro(notif.link)
+    const payload = JSON.stringify({ titulo, corpo, link })
+
+    // ---- rota 1: Web Push ----
+    const enviadosWeb = await emLotes(subs, LOTE, async (s) => {
+      try {
+        await comPrazo(webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload), TIMEOUT_MS)
+        return true
+      } catch (e: any) {
+        // Inscrição expirada/cancelada -> remove do banco
+        if (e?.statusCode === 404 || e?.statusCode === 410) {
+          await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
+        }
+        return false
+      }
     })
 
-    let enviados = 0
-    await Promise.all(
-      subs.map(async (s) => {
+    // ---- rota 2: FCM (APK) ----
+    let enviadosApp = 0
+    if (tokens.length > 0) {
+      if (!FCM_SERVICE_ACCOUNT) {
+        // Falha declarada, não silenciosa: há aparelho Android esperando e falta configuração.
+        await registrarFalha(`FCM_SERVICE_ACCOUNT ausente; ${tokens.length} aparelho(s) sem aviso`, clubeId)
+      } else {
         try {
-          await webpush.sendNotification(
-            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-            payload,
-          )
-          enviados++
+          const conta = JSON.parse(FCM_SERVICE_ACCOUNT)
+          const acesso = await acessoFcm(conta)
+          const urlFcm = `https://fcm.googleapis.com/v1/projects/${conta.project_id}/messages:send`
+          enviadosApp = await emLotes(tokens, LOTE, async (k) => {
+            try {
+              const resp = await comPrazo(fetch(urlFcm, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${acesso}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  message: {
+                    token: k.token,
+                    notification: { title: titulo, body: corpo },
+                    // o app usa isto para abrir na tela certa ao tocar no aviso
+                    data: { link },
+                    android: { priority: 'high', notification: { click_action: 'FLUTTER_NOTIFICATION_CLICK' } },
+                  },
+                }),
+              }), TIMEOUT_MS)
+              if (resp.ok) return true
+              // 404 = token não existe mais (app desinstalado); 403 = projeto errado.
+              // Só o 404 significa "limpe este aparelho".
+              if (resp.status === 404) await sb.from('push_tokens').delete().eq('token', k.token)
+              return false
+            } catch { return false }
+          })
         } catch (e: any) {
-          // Inscrição expirada/cancelada -> remove do banco
-          if (e?.statusCode === 404 || e?.statusCode === 410) {
-            await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
-          }
+          await registrarFalha('FCM: ' + (e?.message ?? e), clubeId)
         }
-      }),
-    )
+      }
+    }
 
-    return new Response(JSON.stringify({ enviados }), {
+    return new Response(JSON.stringify({ enviados: enviadosWeb, enviadosApp, aparelhosWeb: subs.length, aparelhosApp: tokens.length }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (e: any) {
