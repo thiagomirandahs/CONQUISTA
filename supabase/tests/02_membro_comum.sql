@@ -5,12 +5,19 @@ begin;
 \ir _fixtures.sql
 
 
--- ---------- cadastro público: o formulário precisa listar as unidades (anon) ----------
+-- ---------- o cadastro público NÃO enxerga unidade de clube nenhum (fase 8.6) ----------
+--
+-- Este bloco dizia "o formulário precisa listar as unidades (anon)", e era verdade: a tela de
+-- cadastro montava o seletor de unidade com uma consulta anônima, que uma policy recortava para o
+-- Tenant 001. Era a metade visível do fallback — a policy dizia QUAIS unidades um desconhecido via,
+-- e o cadastro transformava aquela escolha em vínculo naquele clube.
+--
+-- A unidade saiu do cadastro, então a janela não serve mais para nada — e uma janela que não serve
+-- para nada continua sendo uma janela: qualquer visitante listava os nomes das unidades de um clube
+-- específico, sem conta e sem limite.
 select t.como_anon();
-select t.eq('anon lista as unidades do clube legado no cadastro',
-            t.n($q$select count(*) from public.unidades where nome in ('Teste A1','Teste A2')$q$), 2);
-select t.eq('anon NÃO enxerga unidade de outro clube',
-            t.nv($q$select count(*) from public.unidades where nome = 'Teste B1'$q$), 0);
+select t.eq('anon não lista unidade de clube nenhum — nem as do legado',
+            t.nv($q$select count(*) from public.unidades$q$), 0);
 reset role;
 
 -- ---------- cadastro: IDENTIDADE, e nada além dela (fase 8.6) ----------

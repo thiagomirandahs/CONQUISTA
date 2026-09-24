@@ -95,7 +95,11 @@ export default function Cadastro() {
             {ehPai ? (
               <>Pronto! Agora é só <strong>entrar</strong> e <strong>pedir o vínculo com seu filho(a)</strong>. A diretoria confirma e você já acompanha tudo. 🎉</>
             ) : (
-              <>Seu cadastro foi recebido e está <strong>aguardando a aprovação da diretoria</strong>. Assim que aprovado, você já poderá entrar. 🎉</>
+              /* MUDOU NA 8.6: esta frase dizia "aguardando a aprovação da diretoria" — e agora não
+                 há diretoria nenhuma esperando, porque o cadastro não coloca mais ninguém em clube
+                 algum. Prometer uma aprovação que nunca vem é pior do que não dizer nada: a pessoa
+                 fica esperando em vez de dar o próximo passo, que é entrar num clube. */
+              <>Sua conta está pronta! Agora é só <strong>entrar</strong> e usar o <strong>código do seu clube</strong> para pedir a sua vaga. 🎉</>
             )}
           </p>
           <Link to="/login" className="block w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5">

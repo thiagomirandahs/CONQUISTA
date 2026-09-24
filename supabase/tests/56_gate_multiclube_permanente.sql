@@ -48,6 +48,9 @@ insert into public.unidades (nome, cor, club_id) values ('Unidade C', '#0ea5e9',
 insert into t.ids (chave, id) select 'C1', id from public.unidades where nome = 'Unidade C';
 select t.mk('lider_c', 'Lider C', 'diretoria', 'ativo', 'clube_c', 'C1');
 select t.mk('membro_c', 'Membro C', 'desbravador', 'ativo', 'clube_c', 'C1');
+-- A pessoa dos TRÊS clubes (fase 8.6, item 11). Ela é o pior caso da matriz: cada função lhe deve
+-- uma resposta verdadeira sobre três clubes, e a ÚNICA coisa que decide qual é a aba.
+select t.mk2('instrutor_2clubes', 'conselheiro', 'ativo', 'clube_c', 'C1');
 -- O leilao precisa estar LIGADO nos tres para que a varredura tenha o que medir. E ele e a
 -- superficie que a fase 8.4 declarou fechada sem estar: se ficasse desligado aqui, o gate
 -- repetiria o erro que veio corrigir — medir uma tabela vazia e chamar isso de isolamento.
@@ -179,31 +182,27 @@ select t.eq('toda policy de LEITURA de superfície operacional chega ao clube da
                       and not t.alcanca_a_aba(p.qual)) x$q$), '');
 
 -- ---------------------------------------------------------------------------
---  A SUPERFÍCIE ANÔNIMA — pequena, listada, e nenhuma entra sem decisão.
+--  A SUPERFÍCIE ANÔNIMA — hoje é VAZIA, e o assert existe para que continue sendo.
 --
---  Hoje ela tem um item só, e ele é um achado que fica registrado aqui em vez de ser corrigido às
---  escondidas: `unidades` é legível por `anon` quando `club_id = clube_legado_id()`, para a tela de
---  cadastro montar o seletor de unidade (src/pages/Cadastro.jsx:32). Consequências, medidas:
+--  Na fase 8.5 este assert listava um item: `unidades` era legível por `anon` quando o clube era o
+--  Tenant 001, para a tela de cadastro montar o seletor de unidade. O comentário de então dizia que
+--  aquilo não era falha de isolamento e sim "a última peça do produto que ainda supõe clube único",
+--  e que consertá-la era decidir como o cadastro descobre o clube.
 --
---    · quem abre o cadastro de QUALQUER clube recebe a lista de unidades do Tenant 001;
---    · e, como o cadastro manda essa `unidade_id` para `handle_new_user`, o autocadastro só
---      consegue criar vínculo NAQUELE clube. Um clube novo não tem caminho de autocadastro — a
---      entrada dele é por convite.
+--  A fase 8.6 decidiu: ele não descobre. Quem descobre é o código de entrada, depois do login — e a
+--  unidade deixou de ser escolhida no cadastro. A policy virou peso morto e foi removida.
 --
---  Isso não é falha de isolamento (nome de unidade não é segredo, e a policy é de um clube só): é
---  a última peça do produto que ainda supõe um clube único, e consertá-la é decidir como o
---  cadastro descobre para qual clube a pessoa está entrando — decisão de produto, não de segurança.
---  O assert existe para que ela não seja esquecida nem acompanhada.
+--  O assert continua, agora exigindo VAZIO. Uma policy nova para `anon` sobre tabela com clube
+--  passa a ser uma decisão visível num diff, e não algo que aparece porque deu jeito.
 -- ---------------------------------------------------------------------------
-select t.eq('a superfície legível por ANÔNIMO é exatamente a declarada',
+select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
   t.txt($q$select coalesce(string_agg(p.tablename || '.' || p.policyname, ' ' order by p.tablename), '')
              from pg_policies p
             where p.schemaname = 'public' and 'anon' = any (p.roles)
               and exists (select 1 from pg_attribute a join pg_class c on c.oid = a.attrelid
                             join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
                            where c.relname = p.tablename and a.attname = 'club_id'
-                             and not a.attisdropped)$q$),
-  'unidades.anon le unidades tenant legado');
+                             and not a.attisdropped)$q$), '');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'
@@ -231,6 +230,10 @@ insert into t.identidade values
   ('dir_a_membro_b',    'liderança no A, membro no B', 4),
   ('instrutor_2clubes', 'instrutor em A+B',          5),
   ('suspenso_so_b',     'ativo no A, suspenso no B', 6);
+-- `instrutor_2clubes` já está na lista acima (ordem 5) — e desde a fase 8.6 ela pertence aos TRÊS
+-- clubes, não a dois. O nome ficou, a descrição diz a verdade. É ela o pior caso da matriz: cada
+-- função lhe deve resposta verdadeira sobre três clubes, e a única coisa que decide qual é a aba.
+update t.identidade set descricao = 'pertence aos TRÊS clubes' where chave = 'instrutor_2clubes';
 grant select on t.identidade to public;
 
 -- Os quatro contextos. 'invalido' é um uuid que não é clube de ninguém; 'nenhum' é a requisição
@@ -336,7 +339,20 @@ insert into t.mutacao values
   ('evento_direto', format($m$insert into public.eventos (titulo, tipo, data, criado_por, club_id)
        values ('gate-8.5', 'Reunião', current_date, %L, %L)$m$, t.id('lider_a'), t.id('clube_a')), 4),
   ('config_gravar', $m$select public.config_gravar('pix', 'gate-8.5')$m$, 5),
-  ('vinculo_gerir', format($m$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$m$, t.id('membro_a')), 6);
+  ('vinculo_gerir', format($m$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$m$, t.id('membro_a')), 6),
+  -- ---- as portas de ENTRADA (fase 8.6, item 11) ----
+  -- Cada uma é uma escrita que decide de que clube alguém passa a ser, e por isso tinha de entrar
+  -- na mesma invariante: nenhuma delas pode mexer em clube que não seja o da requisição.
+  ('codigo_gerar',   $m$select public.clube_codigo_gerar()$m$, 7),
+  ('codigo_revogar', $m$select public.clube_codigo_revogar()$m$, 8),
+  -- solicitar com um código inválido: não pode criar vínculo em lugar nenhum, nem no "clube padrão"
+  ('entrada_codigo_invalido', $m$select public.entrada_solicitar('ZZZZZZZZZZZZZZZZ')$m$, 9),
+  ('convite_token_invalido',  $m$select public.convite_aceitar('token-que-nao-existe')$m$, 10),
+  ('convite_equipe', format($m$select public.convite_equipe_criar(%L, 'instrutor')$m$, 'sonda-8-6@teste.local'), 11),
+  -- aprovar e atribuir unidade: os dois atos da liderança depois que alguém pede entrada
+  ('aprovar_entrada', format($m$select public.vinculo_gerir(%L, p_status := 'ativo')$m$, t.id('membro_a')), 12),
+  ('atribuir_unidade', format($m$select public.vinculo_gerir(%L, p_unidade_id := %L)$m$, t.id('membro_a'), t.id('A1')), 13),
+  ('remover_vinculo', format($m$select public.vinculo_gerir(%L, p_status := 'encerrado')$m$, t.id('membro_a')), 14);
 grant select on t.mutacao to public;
 
 -- O laço: identidade × contexto × mutação. Devolve as violações da invariante.
@@ -374,8 +390,11 @@ create table t.prova_mutacao as
 select (select count(*) from t.identidade) * (select count(*) from t.contexto) * (select count(*) from t.mutacao) as n;
 grant select on t.prova_mutacao to public;
 \o
-select t.eq('...e foram 144 combinações sondadas (6 identidades × 4 contextos × 6 mutações)',
-  t.n($q$select n from t.prova_mutacao$q$), 144);
+-- 6 identidades × 4 contextos × 14 mutações. O número cresce quando a matriz cresce, e ele é um
+-- assert de propósito: se alguém apagar uma identidade ou uma mutação para "fazer passar", o
+-- conserto aparece aqui em vez de virar uma cobertura menor sem ninguém notar.
+select t.eq('...e foram 336 combinações sondadas (6 identidades × 4 contextos × 14 mutações)',
+  t.n($q$select n from t.prova_mutacao$q$), 336);
 
 -- A contraprova da sonda: uma escrita LEGÍTIMA no clube da aba TEM de ser detectada. Sem ela, uma
 -- sonda quebrada (que nunca visse efeito nenhum) faria a invariante passar sempre.
