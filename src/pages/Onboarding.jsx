@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useClube } from '../context/Clube.jsx'
 import {
   carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco,
 } from '../services/comercial.js'
@@ -29,6 +30,18 @@ export default function Onboarding() {
     try { setEstado(await carregarOnboarding()) } catch (e) { setErro(e?.message || String(e)) }
   }, [])
   useEffect(() => { buscar() }, [buscar])
+
+  // "Entrar no clube" RECARREGA o contexto antes de ir. Era um link para "/": o contexto do clube
+  // continuava o de antes do onboarding (sem vínculo), e a primeira tela de quem acabou de criar o
+  // clube dizia "Você ainda não está em um clube" — com "Criar um clube" logo abaixo. Achado na UAT
+  // da fase 9; o vínculo existia no banco, só a tela estava velha.
+  const { recarregar } = useClube()
+  const navigate = useNavigate()
+  const entrarNoClube = async () => {
+    setSalvando(true)
+    try { await recarregar() } finally { setSalvando(false) }
+    navigate('/')
+  }
 
   const comecar = async () => {
     setErro(''); setSalvando(true)
@@ -97,9 +110,10 @@ export default function Onboarding() {
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center" data-testid="concluido">
           <p className="font-bold text-emerald-900">🎉 Seu clube está pronto!</p>
           <p className="text-xs text-emerald-800 mt-1">Cadastro concluído — é só entrar.</p>
-          <Link to="/" className="block mt-4 min-h-[48px] leading-[48px] rounded-xl bg-brand text-white font-bold">
+          <button type="button" onClick={entrarNoClube} disabled={salvando}
+            className="block w-full mt-4 min-h-[48px] leading-[48px] rounded-xl bg-brand text-white font-bold">
             Entrar no clube
-          </Link>
+          </button>
           <button type="button" onClick={comecar} disabled={salvando}
             className="mt-3 text-xs font-semibold text-emerald-900 underline">
             Preciso criar outro clube

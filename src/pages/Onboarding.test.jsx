@@ -4,8 +4,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
+const recarregar = vi.fn()
+vi.mock('../context/Clube.jsx', () => ({ useClube: () => ({ recarregar }) }))
 const carregarOnboarding = vi.fn()
 const iniciarOnboarding = vi.fn()
 const salvarEtapaOnboarding = vi.fn()
@@ -29,7 +31,7 @@ const sessao = (etapa, concluidas = []) => ({
 const renderT = () => render(<MemoryRouter><Onboarding /></MemoryRouter>)
 
 beforeEach(() => {
-  carregarOnboarding.mockReset()
+  carregarOnboarding.mockReset(); recarregar.mockReset().mockResolvedValue()
   iniciarOnboarding.mockReset().mockResolvedValue({})
   salvarEtapaOnboarding.mockReset().mockResolvedValue({})
 })
@@ -47,10 +49,25 @@ describe('Onboarding', () => {
     carregarOnboarding.mockResolvedValue({ tem_sessao: false, concluido: true, club_id: 'c1', planos: PLANOS })
     renderT()
     expect(await screen.findByTestId('concluido')).toHaveTextContent(/Seu clube está pronto/)
-    expect(screen.getByRole('link', { name: 'Entrar no clube' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar no clube' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Começar' })).not.toBeInTheDocument()
     // abrir outro clube continua possível, mas como ato explícito
     expect(screen.getByRole('button', { name: /Preciso criar outro clube/ })).toBeInTheDocument()
+  })
+
+  it('"Entrar no clube" RECARREGA o contexto antes de navegar (fase 9: sem isso, a 1ª tela dizia "sem clube")', async () => {
+    carregarOnboarding.mockResolvedValue({ tem_sessao: false, concluido: true, club_id: 'c1', planos: PLANOS })
+    const ordem = []
+    recarregar.mockImplementation(async () => { ordem.push('recarregou') })
+    // um COMPONENTE (e não uma expressão no JSX da rota): só roda quando a rota é de fato desenhada
+    function Inicio() { if (!ordem.includes('chegou em /')) ordem.push('chegou em /'); return <p>inicio</p> }
+    render(<MemoryRouter initialEntries={['/criar-clube']}><Routes>
+      <Route path="/criar-clube" element={<Onboarding />} />
+      <Route path="/" element={<Inicio />} />
+    </Routes></MemoryRouter>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Entrar no clube' }))
+    expect(await screen.findByText('inicio')).toBeInTheDocument()
+    expect(ordem).toEqual(['recarregou', 'chegou em /'])
   })
 
   it('RETOMA exatamente na etapa que o servidor diz (fechou na 4, volta na 4)', async () => {
