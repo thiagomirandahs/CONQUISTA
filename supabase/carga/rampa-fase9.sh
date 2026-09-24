@@ -55,11 +55,24 @@ for F in "${FAMILIAS[@]}"; do
     echo "   limpeza da escrita: $N"
   fi
   if [ "$F" = upload ]; then
-    N=$(psql_ -c "with d as (delete from storage.objects where bucket_id = 'imagens' and name like 'mural/%-carga-%' returning 1) select count(*) from d;")
+    # O Storage proíbe DELETE direto nas tabelas dele (storage.protect_delete) — um freio contra
+    # objeto órfão. A 1ª rodada apagou os arquivos do disco e FALHOU no metadado, deixando 18.966
+    # linhas órfãs. A flag abaixo é o caminho que o próprio gatilho oferece para limpeza deliberada.
+    N=$(psql_ <<'SQL' | tail -1
+begin;
+set local storage.allow_delete_query = 'true';
+with d as (delete from storage.objects where bucket_id = 'imagens' and name like 'mural/%-carga-%' returning 1) select count(*) from d;
+commit;
+SQL
+)
     docker exec "$STORAGE" sh -c "find /mnt -path '*mural*-carga-*' -exec rm -rf {} + 2>/dev/null; true"
     echo "   limpeza do upload: $N objeto(s) do Storage apagados (metadado e disco)"
   fi
   sed -n '/^família:/,$p' "$SAIDA/$F-k6.txt"
   tail -3 "$SAIDA/$F-servidor.txt"
   echo ""
+  # Resfriamento entre famílias. Medido na 1ª rodada: a família que aborta com milhares de conexões
+  # deixa a rede do Docker (host.docker.internal, no Windows) entupida por ~1 min, e a família
+  # seguinte registrou 3,6% de falha no degrau de 50 usuários — falha da ANTERIOR, não dela.
+  sleep 90
 done

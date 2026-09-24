@@ -1,0 +1,9 @@
+--- as 8 consultas que mais custaram durante a família rajada (pg_stat_statements) ---
+28751 | 94126 | 3.27 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT "public"."meu_inicio"() pgrst_scalar) pgrst_
+28756 | 21098 | 0.73 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT "public"."meu_contexto"() pgrst_scalar) pgrs
+57507 | 952 | 0.02 | select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config
+41 | 6 | 0.14 | select count(*), count(*) filter (where state = $1), count(*) filter (where state = $2), count(*) filter (wher
+1 | 3 | 2.95 | select public.alertas_avaliar()
+1 | 1 | 0.72 | select public.fechar_leiloes_vencidos()
+1 | 0 | 0.37 | select public.alertas_despachar()
+11 | 0 | 0.03 | SELECT t0."id", t0."name", t0."external_id", t0."jwt_secret", t0."jwt_jwks", t0."postgres_cdc_default", t0."ma

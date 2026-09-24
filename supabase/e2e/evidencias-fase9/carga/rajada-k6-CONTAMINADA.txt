@@ -1,0 +1,30 @@
+time="2026-09-24T13:27:51Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:51Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:51Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:52Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:53Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:54Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:55Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:56Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:57Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:57Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:57Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:58Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": dial: i/o timeout"
+time="2026-09-24T13:27:58Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:59Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:27:59Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:28:00Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:28:00Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+time="2026-09-24T13:28:01Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": dial: i/o timeout"
+time="2026-09-24T13:28:01Z" level=warning msg="Request Failed" error="Post \"http://host.docker.internal:55321/rest/v1/rpc/meu_contexto\": request timeout"
+família: rajada   (NÃO-VALIDANTE: mede esta máquina)
+degrau |  reqs | req/s |  p50 ms |  p95 ms |  p99 ms | falha % | aguenta?
+    50 |   295 |    10 |       8 |      13 |      15 |    6.44 | NÃO
+   100 |  (não chegou a este degrau)
+   250 |  (não chegou a este degrau)
+   500 |  (não chegou a este degrau)
+  1000 |  (não chegou a este degrau)
+  2000 |  (não chegou a este degrau)
+  3000 |  (não chegou a este degrau)
+CRITÉRIO DE PARADA ATINGIDO (C1/C2/C3) — o teste abortou antes do fim
+time="2026-09-24T13:28:03Z" level=error msg="thresholds on metrics 'falha' were crossed; at least one has abortOnFail enabled, stopping test prematurely"

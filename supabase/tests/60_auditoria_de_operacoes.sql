@@ -107,10 +107,15 @@ select public.registrar_erro('ui', 'correlacao-t60-b', '/verificar/TOKENDODOCUME
 select public.registrar_erro('ui', 'correlacao-t60-c', '/entrar', 'O código A1B2C3D4E5F60718 não existe', 'X', 'ua');
 select public.registrar_erro('ui', 'correlacao-t60-d', '/eu', 'Falhou para crianca@exemplo.com', 'X', 'ua');
 select public.registrar_erro('ui', 'correlacao-t60-e', '/avaliar/' || t.id('membro_b')::text, 'x', 'X', 'ua');
+-- migration 79: a SEGUNDA rota com token de documento, e o token no formato real (20 maiúsculas/dígitos)
+select public.registrar_erro('ui', 'correlacao-t60-f', '/documento/7V8XC44WJ1NTYHMEK0ER', 'Documento 7V8XC44WJ1NTYHMEK0ER não abriu', 'X', 'ua');
 \o
 reset role;
 select t.eq('[telemetria] o FRAGMENTO some (é onde anda #convite=<token>)',
   t.txt($q$select rota from public.app_erros where correlacao = 'correlacao-t60-a'$q$), '/cadastro');
+select t.eq('[telemetria] /documento/:token também (a 77 só conhecia /verificar) — e o mesmo token no texto',
+  t.txt($q$select rota || ' | ' || contexto from public.app_erros where correlacao = 'correlacao-t60-f'$q$),
+  '/documento/:token | Documento [segredo] não abriu');
 select t.eq('[telemetria] o token do DOCUMENTO no caminho vira marcador',
   t.txt($q$select rota from public.app_erros where correlacao = 'correlacao-t60-b'$q$), '/verificar/:token');
 select t.eq('[telemetria] um código de entrada completo no texto vira marcador',
@@ -120,7 +125,7 @@ select t.eq('[telemetria] e-mail no texto vira marcador',
 select t.eq('[telemetria] ...mas o UUID de um registro continua (é o que permite reproduzir o erro)',
   t.txt($q$select rota from public.app_erros where correlacao = 'correlacao-t60-e'$q$), '/avaliar/' || t.id('membro_b')::text);
 select t.eq('[telemetria] nenhum dos segredos está em coluna nenhuma',
-  t.n($q$select count(*) from public.app_erros e where e::text ~ '(0123456789abcdef0123456789abcdef|TOKENDODOCUMENTO42|A1B2C3D4E5F60718|crianca@exemplo)'$q$), 0);
+  t.n($q$select count(*) from public.app_erros e where e::text ~ '(0123456789abcdef0123456789abcdef|TOKENDODOCUMENTO42|A1B2C3D4E5F60718|crianca@exemplo|7V8XC44WJ1NTYHMEK0ER)'$q$), 0);
 
 select t.fim();
 rollback;

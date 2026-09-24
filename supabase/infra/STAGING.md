@@ -54,6 +54,11 @@ staging  kid 5c01ebdd-…      dev  kid b81269f1-…
 OK   um token do DESENVOLVIMENTO é recusado pelo staging
 ```
 
+E um efeito medido depois, no teste de carga: com a chave própria, o JWKS do PostgREST do staging
+tem **só a chave EC** — a simétrica some. Um token HS256 assinado com o segredo do staging dá
+**401**. Quem precisar de tokens sintéticos (carga) assina ES256 com a chave do staging:
+`CHAVE_JWK=staging/supabase/signing_keys.json node supabase/carga/gerar-tokens.mjs …`.
+
 **Isto vale para produção.** Se um dia houver um projeto Supabase de staging na nuvem ao lado do de
 produção, as chaves são geradas por projeto e o problema não existe. Mas qualquer ambiente local que
 alguém chame de "staging" e suba com o CLI padrão **compartilha domínio de confiança com todos os
@@ -74,6 +79,28 @@ o erro não falaria em segredo nenhum.
 
 Por isso a fonte de verdade é **`.env.staging`**, escrito por `scripts/staging.mjs` no momento em que
 o stack sobe — por quem sabe o segredo. Não copie chave de `status`.
+
+---
+
+## Povoar, conferir, recuperar — os comandos da fase 9
+
+```bash
+node supabase/e2e/montar-tres-clubes.mjs            # ALVO=staging: B e C pelo onboarding
+ALVO=staging node supabase/e2e/popular-staging.mjs  # dez identidades e os dados, pelo produto
+ALVO=staging node supabase/e2e/gates-api-staging.mjs  # os cinco gates pela API real
+ALVO=staging node supabase/e2e/redteam-staging.mjs    # o red-team
+node scripts/restaurar-staging.mjs completo         # backup + restore num terceiro stack descartável
+node scripts/restaurar-staging.mjs in-place <dir>   # restore do PRÓPRIO staging (recuperação)
+node scripts/aplicar-migration.mjs                  # migrations pendentes, como o SQL Editor aplica
+node scripts/drill-migration.mjs                    # o drill (só a partir da versão 72)
+```
+
+Os scripts que usam o serviço pedem `SERVICE_ROLE_KEY` (saída de `node scripts/staging.mjs chaves`).
+
+**Um restore que recria o banco precisa criá-lo com `owner postgres`.** Sem isso tudo volta — dados,
+policies, GRANTs, a suíte passa — e a próxima migration falha com "permission denied for schema
+public". Os dois restores do `restaurar-staging.mjs` criam com o dono certo e provam que uma migration
+ainda passa. Detalhes em `DEPLOY-E-RECUPERACAO.md`.
 
 ---
 

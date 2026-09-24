@@ -1,0 +1,9 @@
+--- as 8 consultas que mais custaram durante a família upload (pg_stat_statements) ---
+16570 | 8328 | 0.50 | INSERT INTO storage.objects ("name", "owner_id", "bucket_id", "metadata", "version") VALUES ($1, $2, $3, $4, $
+16570 | 5135 | 0.31 | INSERT INTO storage.objects ("name", "owner_id", "bucket_id", "metadata", "user_metadata", "version") VALUES (
+600 | 2792 | 4.65 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SEL
+2388 | 1256 | 0.53 | INSERT INTO storage.objects ("name", "owner", "owner_id", "bucket_id", "metadata", "version") VALUES ($1, $2, 
+2388 | 730 | 0.31 | INSERT INTO storage.objects ("name", "owner", "owner_id", "bucket_id", "metadata", "user_metadata", "version")
+37916 | 616 | 0.02 | SELECT set_config('role', $1, true), set_config('request.jwt.claim.role', $2, true), set_config('request.jwt',
+56874 | 534 | 0.01 | SELECT set_config('role', $1, true), set_config('request.jwt.claim.role', $2, true), set_config('request.jwt',
+56874 | 506 | 0.01 | SELECT set_config($10, $1, $11), set_config($12, $2, $13), set_config($14, $3, $15), set_config($16, $4, $17),

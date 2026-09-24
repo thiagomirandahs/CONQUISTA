@@ -1,0 +1,9 @@
+--- as 8 consultas que mais custaram durante a família leitura (pg_stat_statements) ---
+20149 | 64282 | 3.19 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT "public"."meu_inicio"() pgrst_scalar) pgrst_
+7565 | 39782 | 5.26 | WITH pgrst_source AS ( SELECT "public"."pontos"."usuario_id", "public"."pontos"."pontos" FROM "public"."pontos
+5622 | 33494 | 5.96 | WITH pgrst_source AS ( SELECT "public"."chat_mensagens"."id", "public"."chat_mensagens"."texto", "public"."cha
+5732 | 33427 | 5.83 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT $1 AS json_data) pgrst_payload, LATERAL (SEL
+18680 | 13435 | 0.72 | WITH pgrst_source AS (SELECT pgrst_call.pgrst_scalar FROM (SELECT "public"."meu_contexto"() pgrst_scalar) pgrs
+57748 | 915 | 0.02 | select set_config('search_path', $1, true), set_config($2, $3, true), set_config('role', $4, true), set_config
+40 | 6 | 0.15 | select count(*), count(*) filter (where state = $1), count(*) filter (where state = $2), count(*) filter (wher
+1 | 4 | 4.15 | select public.alertas_avaliar()

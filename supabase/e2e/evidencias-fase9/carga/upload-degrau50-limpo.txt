@@ -1,0 +1,5 @@
+família: upload   (NÃO-VALIDANTE: mede esta máquina)
+degrau |  reqs | req/s |  p50 ms |  p95 ms |  p99 ms | falha % | aguenta?
+    50 |   297 |    10 |      10 |      13 |      18 |    0.00 | sim
+   100 |   593 |    20 |      10 |      13 |      19 |    0.00 | sim
+terminou a rampa sem atingir o critério de parada
