@@ -134,7 +134,24 @@ insert into t.sonda values
    $s$select public.chefao_golpe()$s$, 10),
   ('apontamento (conselheiro)', 'lider', 'pontos', 'usuario_id', 'membro_a',
    $s$select public.salvar_reuniao(current_date, 'sonda-9', jsonb_build_array(
-        jsonb_build_object('usuario_id', t.id('membro_a'), 'pontos', 5)))$s$, 11);
+        jsonb_build_object('usuario_id', t.id('membro_a'), 'pontos', 5)))$s$, 11),
+  -- As quatro de baixo entraram depois do TESTE DE CARGA da fase 9: o dataset sintético tinha gente
+  -- em dois clubes, e o chat recusou uma delas na aba do clube mais antigo ("Autor de outro
+  -- clube."). A varredura que se seguiu achou o chat e a bíblia decidindo pelo espelho do perfil
+  -- (migration 78). Elas estão aqui para a sonda nunca mais deixar essa família de fora.
+  ('chat do clube', 'membro_a', 'chat_mensagens', 'autor_id', 'membro_a',
+   $s$select public.chat_enviar_geral('sonda do chat')$s$, 12),
+  ('chat da unidade', 'membro_a', 'chat_mensagens', 'autor_id', 'membro_a',
+   $s$select public.chat_enviar_unidade('sonda da unidade')$s$, 13),
+  ('chat direto (com amigo dos dois clubes)', 'membro_a', 'chat_mensagens', 'autor_id', 'membro_a',
+   $s$select public.chat_enviar_direta(t.id('membro_b'), 'sonda direta')$s$, 14),
+  ('leitura da bíblia concluída', 'membro_a', 'biblia_leituras', 'usuario_id', 'membro_a',
+   $s$select public.biblia_iniciar_leitura('gn', 2); select t.envelhecer_leitura(t.id('membro_a')); select public.biblia_confirmar_leitura('gn', 2)$s$, 15);
+
+-- a leitura só conta depois do tempo mínimo do capítulo: o teste "envelhece" a leitura aberta
+create function t.envelhecer_leitura(p_user uuid) returns void language sql security definer set search_path = '' as $$
+  update public.biblia_leitura_atual set aberto_em = now() - interval '2 hours' where usuario_id = p_user;
+$$;
 
 -- chefão ligado nos dois, e com a data do fuso certo (ver teste 30: o banco é UTC)
 insert into public.config_clube (club_id, chave, valor)
@@ -194,7 +211,7 @@ select t.eq('[funcional] toda escrita que funciona num dos clubes funciona tamb�
 
 -- 3. HONESTIDADE DA SONDA: quantas superfícies foram de fato medidas. Uma que recusa nas duas abas
 --    não provou nada — e não pode entrar na conta como se tivesse passado.
-select t.eq('[sonda] as 11 superfícies foram realmente exercitadas (nenhuma recusou nas duas abas, nenhuma deu "nada")',
+select t.eq('[sonda] TODAS as superfícies da sonda foram realmente exercitadas (nenhuma recusou nas duas abas, nenhuma deu "nada")',
   t.txt($q$select coalesce(string_agg(superficie, ', ' order by superficie), '')
              from (select superficie from t.resultado group by superficie
                     having bool_and(obtido like 'recusado%' or obtido = 'nada')) x$q$), '');
