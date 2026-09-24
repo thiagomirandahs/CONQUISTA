@@ -192,6 +192,10 @@ for (const [k, q] of Object.entries(quem)) {
 const membroSoDe = { A: P.so_a.id, B: P.so_b.id, C: P.so_c.id }
 for (const [lk, meu] of [['lider_a', 'A'], ['lider_b', 'B'], ['lider_c', 'C']]) {
   for (const outro of ['A', 'B', 'C'].filter((x) => x !== meu)) {
+    // Quem é liderança do OUTRO clube também (pelo banco, não pelo nome) pode escrever lá — é
+    // legítimo. A UAT da fase 9 fez o fundador de C aceitar um convite de instrutor em B, e a 2ª
+    // rodada deste gate acusou "furo" onde havia só o dado novo: a regra agora é o papel real.
+    if (modera(quem[lk].id, C[outro])) { nota(`${lk} é liderança de ${outro} também — escrever lá é legítimo, pulado`); continue }
     const r0 = retrato()
     for (const aba of [C[meu], C[outro]]) {
       await cliente(quem[lk].token, aba).from('mensalidades').upsert({ desbravador_id: membroSoDe[outro], mes: 11, ano: 2026, valor: 1, status: 'pago' }, { onConflict: 'club_id,desbravador_id,mes,ano' })

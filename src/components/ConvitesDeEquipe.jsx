@@ -68,7 +68,10 @@ export function ConvidarEquipe() {
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           data-testid="convite-email" placeholder="email@da.pessoa"
           className="w-full min-h-[44px] text-sm rounded-xl border border-line px-3" />
-        <Selecao id="convite-papel" rotulo="Papel no clube" opcoes={PAPEIS}
+        {/* `Selecao` recebe PARES [valor, rótulo]. Passar os objetos direto derrubava o componente
+            ("object is not iterable") — e, com ele, a tela de Usuários inteira, onde este formulário
+            vive. Achado na UAT da fase 9; nenhum teste renderizava o formulário. */}
+        <Selecao id="convite-papel" rotulo="Papel no clube" opcoes={PAPEIS.map((p) => [p.valor, p.texto])}
           value={papel} onChange={(e) => setPapel(e.target.value)} data-testid="convite-papel" />
         <Botao tipo="submit" carregando={ocupado} data-testid="convite-enviar">Convidar</Botao>
       </form>
