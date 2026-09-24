@@ -92,6 +92,11 @@ select t.ok('as fachadas que o app chama continuam existindo e usando a regra',
   t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public' and p.proname <> 'dependencias_pendentes'
          and p.prosrc like '%dependencias_pendentes%'$q$) >= 5);
+-- (especialidades são recurso que SÓ a plataforma liga desde a migration 83: liga aqui como o SQL
+-- Editor faria, numa sessão sem usuário, para provar que a fachada continua servindo)
+select t.como_cron();
+insert into public.club_features (club_id, feature, enabled) values ((select id from t.ids where chave = 'clube_a'), 'especialidades', true)
+on conflict (club_id, feature) do update set enabled = true;
 select t.como('membro_a');
 select t.pedir_clube('clube_a');
 select t.permitido('e a tela de especialidades continua funcionando pela fachada',

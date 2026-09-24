@@ -7,7 +7,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { nome: 'Ana Clara Souza' } }) }))
-vi.mock('../context/Clube.jsx', () => ({ useClube: () => ({ marca: { nome: 'Clube Teste' } }) }))
+// os recursos ligados NESTE clube (cada teste pode trocar): um card que leva a tela de recurso desligado não aparece
+let recursos
+vi.mock('../context/Clube.jsx', () => ({ useClube: () => ({ marca: { nome: 'Clube Teste' }, temRecurso: (c) => recursos[c] === true }) }))
 const carregarInicio = vi.fn()
 vi.mock('../services/inicio.js', () => ({ carregarInicio: (...a) => carregarInicio(...a) }))
 const { default: Inicio } = await import('./Inicio.jsx')
@@ -16,7 +18,10 @@ const item = (chave, peso, titulo, rota = '/x') =>
   ({ chave, peso, icone: '✏️', titulo, descricao: `descrição de ${titulo}`, rota, contador: 1 })
 
 const renderT = () => render(<MemoryRouter><Inicio /></MemoryRouter>)
-beforeEach(() => { carregarInicio.mockReset().mockResolvedValue([]) })
+beforeEach(() => {
+  carregarInicio.mockReset().mockResolvedValue([])
+  recursos = { classes: true }
+})
 
 describe('Inicio', () => {
   it('cumprimenta pelo primeiro nome e mostra o clube em uso', async () => {
@@ -75,5 +80,39 @@ describe('Inicio', () => {
     const alerta = await screen.findByRole('alert')
     expect(alerta).toHaveTextContent(/Não deu certo agora|Tente de novo/)
     expect(alerta).not.toHaveTextContent(/PGRST/)
+  })
+})
+
+// Fase 9, item 9: especialidades fora do piloto. O servidor montava os cards de especialidade sob o recurso 'classes'; o
+// convidado via "Você está fazendo a especialidade [PILOTO/TESTE] ..." no primeiro card. A tela filtra pela rota de destino.
+describe('Inicio — especialidades desligadas neste clube', () => {
+  const especialidade = { ...item('especialidade', 40, 'Continue de onde parou', '/minhas-especialidades'), descricao: 'Você está fazendo a especialidade [PILOTO/TESTE] Primeiros Socorros.' }
+  const correcao = item('especialidade_correcao', 96, 'Correção em uma especialidade', '/minhas-especialidades')
+  const classe = item('classe', 60, 'Falta pouco na sua classe', '/minha-classe')
+
+  it('com "classes" ligado e "especialidades" desligado: o card da classe aparece e os de especialidade NÃO', async () => {
+    recursos = { classes: true, especialidades: false }
+    carregarInicio.mockResolvedValue([correcao, classe, especialidade])
+    renderT()
+    const lista = await screen.findByTestId('prioridades')
+    expect(lista.querySelectorAll('li')).toHaveLength(1)
+    expect(screen.getByRole('link', { name: /Falta pouco na sua classe/ })).toHaveAttribute('href', '/minha-classe')
+    expect(document.body.textContent).not.toMatch(/especialidade|PILOTO/i)   // ('Clube Teste' é o nome do clube no dublê)
+    expect(document.querySelector('a[href="/minhas-especialidades"]')).toBeNull()
+  })
+
+  it('se só sobrou especialidade, a pessoa vê "em dia" — e o "ver mais" não conta o que foi escondido', async () => {
+    recursos = { classes: true }
+    carregarInicio.mockResolvedValue([correcao, especialidade])
+    renderT()
+    expect(await screen.findByText('Você está em dia!')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ver mais/ })).toBeNull()
+  })
+
+  it('com o recurso "especialidades" ligado, o card volta', async () => {
+    recursos = { classes: true, especialidades: true }
+    carregarInicio.mockResolvedValue([correcao])
+    renderT()
+    expect(await screen.findByRole('link', { name: /Correção em uma especialidade/ })).toHaveAttribute('href', '/minhas-especialidades')
   })
 })

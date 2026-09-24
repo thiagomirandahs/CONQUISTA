@@ -47,9 +47,12 @@ export async function definirRecurso(feature, enabled) {
   return data
 }
 
-// Catálogo da plataforma (rótulo, ícone, padrão) — a tela de recursos lista a partir dele.
+// Catálogo da plataforma (rótulo, ícone, padrão, se só a plataforma liga) — a tela de recursos lista a partir dele.
+// select('*') e não a lista de colunas: a coluna `somente_plataforma` chega numa migration da fase 9, e o front pode ser
+// publicado ANTES dela. Pedir pelo nome uma coluna que ainda não existe faz o PostgREST recusar a consulta inteira (42703),
+// e a liderança ficaria sem a lista de recursos. Com '*', sem a coluna o campo só não vem, e a tela o trata como false.
 export async function carregarCatalogoRecursos() {
-  const { data, error } = await supabase.from('recursos_catalogo').select('chave,nome,descricao,icone,padrao,ordem').order('ordem')
+  const { data, error } = await supabase.from('recursos_catalogo').select('*').order('ordem')
   if (error) throw new Error(error.message)
   return data || []
 }

@@ -202,5 +202,16 @@ select t.eq('classes regulares 2026: a importação não criou progresso/conquis
   (select count(*) from public.member_classes mc join public.classes c on c.id = mc.class_id join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial')
   + (select count(*) from public.curriculum_achievements), 0);
 
+-- fase 9.1 (migrations 83/84): o upgrade não deixa conteúdo de TESTE no cliente real, e especialidades
+-- ficam desligadas (recurso que só a plataforma liga) mesmo com o plano "legado" liberando tudo
+select t.eq('nenhuma experiência/temporada [TESTE] da migration 49 ficou no Tenant 001 (a 83 apaga as sem uso)',
+  (select count(*) from public.experiences where club_id = public.clube_legado_id() and teste)
+  + (select count(*) from public.experience_seasons where club_id = public.clube_legado_id() and teste), 0);
+select t.eq('especialidades DESLIGADAS no Tenant 001 depois do upgrade (e é recurso somente da plataforma)',
+  public.recurso_habilitado_no_clube(public.clube_legado_id(), 'especialidades')::text || '|'
+  || (select somente_plataforma::text from public.recursos_catalogo where chave = 'especialidades'), 'false|true');
+select t.eq('conteúdo anual: nenhum período aberto e nenhum valor sem ano (a tabela nasce vazia em produção)',
+  (select count(*) from public.dynamic_content_values where vigente_ate is null or ano is null), 0);
+
 select t.fim();
 rollback;

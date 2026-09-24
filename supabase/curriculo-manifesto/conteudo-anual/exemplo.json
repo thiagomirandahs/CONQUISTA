@@ -1,0 +1,16 @@
+{
+  "formato": "conquista.conteudo_anual/1",
+  "ano": 2099,
+  "exemplo": true,
+  "preparado_em": "2026-09-24",
+  "observacao": "EXEMPLO do formato. NÃO é conteúdo oficial e nunca é publicado: o gerador só o mostra (--exemplo), embrulhado em begin/rollback. O manifesto real de um ano é <ano>.json, com o conteúdo e a fonte OFICIAIS.",
+  "itens": [
+    { "chave": "curso_leitura_amigo", "valor": "[EXEMPLO] Livro fictício — Amigo", "vigente_desde": "2099-01-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — não é fonte oficial; só mostra o formato." },
+    { "chave": "curso_leitura_companheiro", "valor": "[EXEMPLO] Livro fictício — Companheiro", "vigente_desde": "2099-01-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — não é fonte oficial; só mostra o formato." },
+    { "chave": "curso_leitura_pesquisador", "valor": "[EXEMPLO] Livro fictício — Pesquisador", "vigente_desde": "2099-01-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — não é fonte oficial; só mostra o formato." },
+    { "chave": "curso_leitura_pioneiro", "valor": "[EXEMPLO] Livro fictício — Pioneiro", "vigente_desde": "2099-01-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — não é fonte oficial; só mostra o formato." },
+    { "chave": "curso_leitura_excursionista", "valor": "[EXEMPLO] Livro fictício — Excursionista (1º semestre)", "vigente_desde": "2099-01-01", "vigente_ate": "2099-06-30", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — um slot pode ter mais de um período no ano, desde que eles cubram o ano inteiro sem se sobrepor." },
+    { "chave": "curso_leitura_excursionista", "valor": "[EXEMPLO] Livro fictício — Excursionista (2º semestre)", "vigente_desde": "2099-07-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — um slot pode ter mais de um período no ano, desde que eles cubram o ano inteiro sem se sobrepor." },
+    { "chave": "curso_leitura_guia", "valor": "[EXEMPLO] Livro fictício — Guia", "vigente_desde": "2099-01-01", "vigente_ate": "2099-12-31", "fonte_url": "https://exemplo.invalid/curso-de-leitura/2099", "fonte_descricao": "EXEMPLO — não é fonte oficial; só mostra o formato." }
+  ]
+}

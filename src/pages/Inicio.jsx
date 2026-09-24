@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarInicio } from '../services/inicio.js'
+import { rotaLiberada } from '../lib/navegacao.js'
 import { Card, CardAcao, Carregando, Vazio, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 // Início contextual (fase 7). Responde UMA pergunta: "o que é mais importante para mim agora?".
@@ -21,7 +22,7 @@ function saudacao() {
 
 export default function Inicio() {
   const { profile } = useAuth()
-  const { marca } = useClube()
+  const { marca, temRecurso } = useClube()
   const [itens, setItens] = useState(null)
   const [erro, setErro] = useState('')
   const [tudo, setTudo] = useState(false)
@@ -35,7 +36,11 @@ export default function Inicio() {
   }, [])
 
   const primeiroNome = (profile?.nome || '').split(' ')[0]
-  const visiveis = tudo ? itens : (itens || []).slice(0, MOSTRAR)
+  // Card que leva a uma tela cujo recurso está desligado neste clube não aparece (ex.: especialidade com o recurso
+  // 'especialidades' desligado — fora do piloto). O servidor já deveria não mandar; isto é a 2ª trava, a de navegação,
+  // e evita o nome de um item de teste escrito no primeiro card que a pessoa vê.
+  const liberados = itens === null ? null : itens.filter((i) => rotaLiberada(i.rota, temRecurso))
+  const visiveis = tudo ? liberados : (liberados || []).slice(0, MOSTRAR)
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -46,7 +51,7 @@ export default function Inicio() {
 
       {erro && <Aviso tom="erro" titulo="Não deu pra ver as suas pendências">{erro}</Aviso>}
 
-      {itens === null ? <Carregando linhas={2} texto="Vendo o que precisa de você" /> : itens.length === 0 ? (
+      {liberados === null ? <Carregando linhas={2} texto="Vendo o que precisa de você" /> : liberados.length === 0 ? (
         <Vazio icone="✅" titulo="Você está em dia!">
           Nada esperando por você agora. Aproveite para explorar a sua jornada ou jogar um pouco.
         </Vazio>
@@ -68,10 +73,10 @@ export default function Inicio() {
               </li>
             ))}
           </ul>
-          {!tudo && itens.length > MOSTRAR && (
+          {!tudo && liberados.length > MOSTRAR && (
             <button type="button" onClick={() => setTudo(true)}
               className="mt-3 w-full min-h-[44px] text-sm font-bold text-brand underline">
-              Ver mais {itens.length - MOSTRAR}
+              Ver mais {liberados.length - MOSTRAR}
             </button>
           )}
         </>

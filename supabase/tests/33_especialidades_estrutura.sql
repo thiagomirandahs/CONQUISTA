@@ -96,13 +96,22 @@ select t.eq('nenhuma RPC de especialidade é executável por anon', (select coun
       'especialidade_requisito_enviar', 'especialidade_avaliacoes_pendentes', 'especialidade_requisito_avaliar')
       and has_function_privilege('anon', p.oid, 'execute')), 0);
 
--- ---------- 7) o recurso "classes" agora bloqueia ESCRITA de verdade (achado da auditoria: só escondia a rota) ----------
-select t.eq('classe_iniciar/requisito_avaliar/especialidade_iniciar citam o gate de recurso habilitado',
+-- ---------- 7) o recurso bloqueia no SERVIDOR (achado da auditoria: só escondia a rota) ----------
+-- Classes pelo recurso "classes". Especialidades, desde a migration 83, pelo recurso PRÓPRIO
+-- "especialidades" (que só a plataforma liga) — em TODAS as RPCs, de escrita e de leitura. Antes
+-- elas passavam com "classes" ligado e levavam o catálogo de TESTE junto com as Classes oficiais.
+select t.eq('as 6 RPCs de escrita de classe citam o gate de "classes"',
   (select count(*) from pg_proc p where p.pronamespace = 'public'::regnamespace
-    and p.proname in ('classe_iniciar', 'classe_atribuir', 'requisito_salvar', 'requisito_enviar', 'requisito_avaliar', 'investidura_registrar',
-                       'especialidade_iniciar', 'especialidade_atribuir', 'oferta_especialidade_criar',
-                       'especialidade_requisito_salvar', 'especialidade_requisito_enviar', 'especialidade_requisito_avaliar')
-    and pg_get_functiondef(p.oid) ~ '_exigir_classes_habilitado'), 12);
+    and p.proname in ('classe_iniciar', 'classe_atribuir', 'requisito_salvar', 'requisito_enviar', 'requisito_avaliar', 'investidura_registrar')
+    and pg_get_functiondef(p.oid) ~ '_exigir_classes_habilitado'), 6);
+select t.eq('as 11 RPCs de especialidade (escrita E leitura) citam o gate PRÓPRIO — e nenhuma mais o de "classes"',
+  (select count(*) from pg_proc p where p.pronamespace = 'public'::regnamespace
+    and p.proname in ('especialidade_iniciar', 'especialidade_atribuir', 'oferta_especialidade_criar',
+                       'especialidade_requisito_salvar', 'especialidade_requisito_enviar', 'especialidade_requisito_avaliar',
+                       'especialidades_disponiveis', 'minha_especialidade', 'ofertas_especialidade_do_clube',
+                       'especialidade_avaliacoes_pendentes', 'explicar_requisito_especialidade')
+    and pg_get_functiondef(p.oid) ~ '_exigir_especialidades_habilitado'
+    and pg_get_functiondef(p.oid) !~ '_exigir_classes_habilitado'), 11);
 
 -- ---------- 8) ferramenta de diff entre versões existe e é executável ----------
 select t.eq('comparar_versoes_curriculares existe e é executável por authenticated',

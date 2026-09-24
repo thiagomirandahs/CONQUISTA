@@ -233,7 +233,9 @@ export default function App() {
           <Route path="/investiduras" element={<RotaRestrita><Investiduras /></RotaRestrita>} />
           {/* Documento imprimível (dono/liderança); a autorização real é da RPC documento_conteudo */}
           <Route path="/documento/:token" element={<DocumentoClasse />} />
-          <Route path="/minhas-especialidades" element={<RecursoOpcional recurso="classes"><MinhasEspecialidades /></RecursoOpcional>} />
+          {/* Especialidades: recurso PRÓPRIO, não `classes` (fase 9, item 9) — o catálogo ainda é de teste e fica fora do piloto.
+              /avaliar-especialidades pega o mesmo recurso pela matriz (RECURSO_POR_ROTA). A trava de verdade são as RPCs. */}
+          <Route path="/minhas-especialidades" element={<RecursoOpcional recurso="especialidades"><MinhasEspecialidades /></RecursoOpcional>} />
           <Route path="/avaliar-especialidades" element={<RotaRestrita><AvaliarEspecialidades /></RotaRestrita>} />
         </Route>
       </Routes>

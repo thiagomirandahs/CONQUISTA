@@ -10,10 +10,13 @@ begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
--- Este teste exercita o MOTOR com a classe PILOTO. Desde a fase 3 (migration 40) existe catálogo
--- oficial publicado, e o piloto some do fluxo normal quando isso acontece (teste 37 prova) — aqui
--- arquivamos o oficial (só nesta transação) pra continuar testando o motor com o dado pequeno.
+-- Este teste exercita o MOTOR com a classe PILOTO (o dado pequeno). Desde a migration 83 o fluxo
+-- normal só aceita catálogo OFICIAL, sem exceção nenhuma: dado de teste nunca aparece para ninguém,
+-- nem quando falta o oficial (teste 37 prova). Então, SÓ nesta transação, o teste faz o papel da
+-- plataforma: arquiva o oficial real e publica a versão piloto como oficial. Em produção, só o
+-- importador do manifesto cria versão oficial — a regra não abre.
 update public.curriculum_versions set status = 'arquivado' where origem = 'oficial';
+update public.curriculum_versions set origem = 'oficial' where id = '00000000-0000-4000-a000-000000000001'::uuid;
 insert into t.ids (chave, id) values ('classe_piloto', '00000000-0000-4000-a000-000000000002'::uuid);
 insert into t.ids (chave, id)
   select 'req_' || s.codigo || '_' || r.codigo, r.id

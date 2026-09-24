@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { gravarMarca, definirRecurso, carregarCatalogoRecursos, subirLogoDoClube } from '../services/clubes.js'
 import { formularioDaMarca, diferencasDaMarca, errosDaMarca, COR_TEMA_PADRAO } from '../lib/marca.js'
+import { somenteDaPlataforma } from '../lib/recursos.js'
 
 const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
@@ -187,6 +188,9 @@ function ListaRecursos({ recursos, aoMudar }) {
         <ul className="divide-y divide-line">
           {catalogo.map((r) => {
             const ligado = recursos[r.chave] === true
+            // Recurso que só a plataforma liga (ex.: especialidades, fora do piloto enquanto o catálogo é de teste): sem switch.
+            // Oferecer o botão aqui era o caminho pelo qual a liderança ligava sozinha e expunha o teste às crianças do clube.
+            const daPlataforma = somenteDaPlataforma(r)
             return (
               <li key={r.chave} className="py-3 flex items-center gap-3">
                 <span className="text-2xl shrink-0" aria-hidden="true">{r.icone}</span>
@@ -194,11 +198,18 @@ function ListaRecursos({ recursos, aoMudar }) {
                   <div className="font-semibold text-ink text-sm">{r.nome}</div>
                   <div className="text-xs text-faint">{r.descricao}</div>
                 </div>
-                <button type="button" role="switch" aria-checked={ligado} aria-label={`${r.nome}: ${ligado ? 'ligado' : 'desligado'}`}
-                  disabled={salvando === r.chave} onClick={() => alternar(r.chave, !ligado)}
-                  className={`relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-60 ${ligado ? 'bg-brand' : 'bg-line'}`}>
-                  <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${ligado ? 'translate-x-5' : ''}`} />
-                </button>
+                {daPlataforma ? (
+                  <span data-testid={`recurso-plataforma-${r.chave}`}
+                    className={`text-xs font-semibold text-right shrink-0 max-w-[8.5rem] leading-snug ${ligado ? 'text-ink' : 'text-faint'}`}>
+                    {ligado ? 'Liberado pela plataforma' : 'Ainda não liberado pela plataforma'}
+                  </span>
+                ) : (
+                  <button type="button" role="switch" aria-checked={ligado} aria-label={`${r.nome}: ${ligado ? 'ligado' : 'desligado'}`}
+                    disabled={salvando === r.chave} onClick={() => alternar(r.chave, !ligado)}
+                    className={`relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-60 ${ligado ? 'bg-brand' : 'bg-line'}`}>
+                    <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${ligado ? 'translate-x-5' : ''}`} />
+                  </button>
+                )}
               </li>
             )
           })}

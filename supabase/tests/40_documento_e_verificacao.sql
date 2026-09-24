@@ -22,9 +22,11 @@ create function t.snap(p_versao int) returns uuid language sql stable security d
 create table t.ids_txt (chave text primary key, id text not null); grant all on t.ids_txt to public;
 create function t.tok() returns text language sql stable as $$ select id from t.ids_txt where chave = 'token_final' $$;
 
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
-select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
-from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
+-- (migration 84: ANO explícito e vigência fechada. O valor é o do ANO CORRENTE no Brasil — assim o
+-- teste não vence na virada do ano, que era o que acontecia com as datas fixas de 2026.)
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
+select d.id, a.y, 'Livro do Curso de Leitura do ano [DADO DE TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
+from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a where d.chave = 'curso_leitura_amigo';
 
 -- conclui Amigo por multi_dois_papeis (desbravador no A, conselheiro no B) e investe
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
@@ -95,7 +97,7 @@ select t.eq('conteúdo: 9 seções, 25 requisitos, cada um com situação e resp
 select t.eq('conteúdo: escolha (V.1 = Natação principiante I) e conteúdo dinâmico (livro do ano) CONGELADOS do snapshot',
   (select (select r->'escolha'->'escolhidas'->>0 from jsonb_array_elements(d->'secoes') s, jsonb_array_elements(s->'requisitos') r where r->>'codigo' = '1' and s->>'codigo' = 'V')
        || '|' || (select r->'conteudo_dinamico'->>'valor' from jsonb_array_elements(d->'secoes') s, jsonb_array_elements(s->'requisitos') r where r->>'codigo' = '4' and s->>'codigo' = 'I')
-     from (select public.documento_conteudo(t.tok()) d) x), 'Natação principiante I|Livro do Curso de Leitura 2026 [DADO DE TESTE]');
+     from (select public.documento_conteudo(t.tok()) d) x), 'Natação principiante I|Livro do Curso de Leitura do ano [DADO DE TESTE]');
 -- privacidade: nada de evidência, comentário interno, id interno
 select t.eq('conteúdo NÃO contém a evidência privada, o comentário interno de aprovação, nem ids internos (snapshot_id/member_class_id/club_id/user_id)',
   ((public.documento_conteudo(t.tok())::text like '%Resposta privada%')

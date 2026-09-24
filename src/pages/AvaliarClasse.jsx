@@ -85,7 +85,7 @@ function Item({ it, onFeito }) {
       </div>
       <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
       {it.conteudo_dinamico && (
-        <p className="text-xs text-muted mb-2">📖 Conteúdo do período: {it.conteudo_dinamico.valor || <span className="text-amber-800">ainda não cadastrado</span>}</p>
+        <p className="text-xs text-muted mb-2">📖 {it.conteudo_dinamico.ano ? `Conteúdo de ${it.conteudo_dinamico.ano}` : 'Conteúdo do período'}: {it.conteudo_dinamico.valor || <span className="text-amber-800">ainda não cadastrado</span>}</p>
       )}
       {escolha && (
         <div className="text-xs text-muted bg-surface2 rounded-lg px-3 py-1.5 mb-2">

@@ -367,11 +367,15 @@ function BotaoDocumento({ memberClassId, ehFinal }) {
 
 // Conteúdo anual/dinâmico: o servidor resolveu o valor pra hoje (ou não há valor cadastrado — e a
 // tela diz isso claramente; o requisito fica bloqueado, nunca "cumprido" por conta própria).
+// Desde a migration 84 o servidor manda o ANO do conteúdo (`ano`; `ano_referencia` = o ano procurado
+// quando falta) e, depois do envio/aprovação, o valor FIXADO no requisito — a tela diz de que ano é.
+// Sem o campo (servidor antigo), cai no texto de antes.
 // (sem valor + lista de bloqueios visível, o aviso não repete: a lista já diz o motivo)
 function ConteudoDoPeriodo({ dinamico, mostrarAviso }) {
-  if (dinamico.valor) return <p className="text-xs text-ink bg-surface2 rounded-lg px-3 py-1.5 mb-1.5">📖 Conteúdo deste período: <span className="font-semibold">{dinamico.valor}</span></p>
+  if (dinamico.valor) return <p className="text-xs text-ink bg-surface2 rounded-lg px-3 py-1.5 mb-1.5">📖 {dinamico.ano ? `Conteúdo de ${dinamico.ano}` : 'Conteúdo deste período'}: <span className="font-semibold">{dinamico.valor}</span></p>
   if (!mostrarAviso) return null
-  return <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-1.5">📖 O conteúdo oficial deste período ainda não está disponível. Assim que for cadastrado, este requisito é liberado.</p>
+  const ano = dinamico.ano_referencia
+  return <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-1.5">📖 O conteúdo oficial {ano ? `de ${ano}` : 'deste período'} ainda não está disponível. Assim que for cadastrado, este requisito é liberado.</p>
 }
 
 // Escolha N-de-M: opções na ordem do cartão (checkbox), texto livre só quando o cartão não lista opções.

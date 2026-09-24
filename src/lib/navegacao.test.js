@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   destinosDoPapel, destinosSemClube, gruposDoMenuLateral, itensDoHub,
-  HUB_JORNADA, HUB_CLUBE, HUB_JOGOS, rotaInicial, RECURSO_POR_ROTA,
+  HUB_JORNADA, HUB_CLUBE, HUB_JOGOS, rotaInicial, RECURSO_POR_ROTA, rotaLiberada, descricaoDaJornada,
 } from './navegacao.js'
 import { permissoesDoPapel, RECURSOS_PADRAO, PAPEIS } from './clube.js'
 
@@ -95,5 +95,52 @@ describe('menu lateral (PC) e rota inicial', () => {
   it('quem entra vai para o Início contextual; o responsável, para os filhos', () => {
     expect(rotaInicial('pais')).toBe('/meu-filho')
     for (const papel of PAPEIS.filter((p) => p !== 'pais')) expect(rotaInicial(papel)).toBe('/inicio')
+  })
+})
+
+// Fase 9, item 9: especialidades fora do piloto. O cenário que importa é o do clube que LIGOU as Classes oficiais:
+// ele não pode levar junto as especialidades (catálogo de teste) — nem no hub, nem na gaveta, nem em card vindo do servidor.
+describe('especialidades: com "classes" ligado e "especialidades" desligado, nada de especialidade aparece', () => {
+  const soClasses = ligados({ ...RECURSOS_PADRAO, classes: true, especialidades: false })
+
+  it('o hub Jornada mostra Minha Classe e NÃO mostra Especialidades', () => {
+    const jornada = rotas(itensDoHub(HUB_JORNADA, soClasses))
+    expect(jornada).toContain('/minha-classe')
+    expect(jornada).not.toContain('/minhas-especialidades')
+  })
+
+  it('a gaveta lateral (PC) também não mostra, em nenhum papel', () => {
+    for (const papel of PAPEIS) {
+      const todas = gruposDoMenuLateral(permissoesDoPapel(papel), soClasses).flatMap((g) => rotas(g.itens))
+      expect(todas, papel).not.toContain('/minhas-especialidades')
+      expect(todas, papel).not.toContain('/avaliar-especialidades')
+    }
+  })
+
+  it('o item de especialidades volta só quando o PRÓPRIO recurso liga', () => {
+    const com = ligados({ ...RECURSOS_PADRAO, classes: true, especialidades: true })
+    expect(rotas(itensDoHub(HUB_JORNADA, com))).toContain('/minhas-especialidades')
+  })
+
+  it('o padrão do modo legado já nasce com especialidades desligado', () => {
+    expect(RECURSOS_PADRAO.especialidades).toBe(false)
+    expect(rotas(itensDoHub(HUB_JORNADA, ligados(RECURSOS_PADRAO)))).not.toContain('/minhas-especialidades')
+  })
+
+  it('rotaLiberada: card do servidor que leva a especialidades não passa; o de classe passa', () => {
+    expect(rotaLiberada('/minhas-especialidades', soClasses)).toBe(false)
+    expect(rotaLiberada('/avaliar-especialidades', soClasses)).toBe(false)
+    expect(rotaLiberada('/minhas-especialidades/', soClasses)).toBe(false)            // barra final não fura
+    expect(rotaLiberada('/Minhas-Especialidades?aba=1', soClasses)).toBe(false)      // nem maiúscula ou query
+    expect(rotaLiberada('/minha-classe', soClasses)).toBe(true)
+    expect(rotaLiberada('/gestao/avaliar', soClasses)).toBe(true)                    // núcleo (sem recurso) sempre passa
+    expect(rotaLiberada('/ranking', () => false)).toBe(true)
+  })
+
+  it('o subtítulo da Jornada não promete especialidades desligadas', () => {
+    expect(descricaoDaJornada(soClasses)).not.toMatch(/especialidade/i)
+    expect(descricaoDaJornada(soClasses)).toMatch(/classe/i)
+    expect(descricaoDaJornada(() => false)).not.toMatch(/especialidade|classe/i)
+    expect(descricaoDaJornada(ligados({ classes: true, especialidades: true }))).toMatch(/especialidades/)
   })
 })

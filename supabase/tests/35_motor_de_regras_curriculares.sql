@@ -1,6 +1,8 @@
 -- Fase 2.6 — Motor de Regras Curriculares (migration 38). Fixtures SINTÉTICAS ("[PILOTO/TESTE]"),
 -- nunca conteúdo oficial: as 6 Classes Regulares continuam NÃO importadas. Cenários pedidos:
---   1) conteúdo anual 2026 vs 2027 sem duplicar a Classe;
+--   1) conteúdo anual por ANO, com vigência fechada, sem fallback de outro ano e no fuso do Brasil,
+--      sem duplicar a Classe; o valor fica FIXADO no requisito enviado/aprovado; publicação só pelo
+--      manifesto validado (migration 84);
 --   2) escolha 2-de-3 (e 1-de-N, polimórfico em requisito de especialidade);
 --   3) Especialidade concluída no Clube A satisfazendo regra curricular no Clube B;
 --   4) Clube B incapaz de alterar/revogar a conclusão emitida pelo A (e revogação = soft, com autoria);
@@ -15,15 +17,21 @@ begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
-insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'classes', true), (t.id('clube_b'), 'classes', true)
+-- 'classes' a liderança liga; 'especialidades' (migration 83) é recurso que SÓ a plataforma liga —
+-- aqui como o SQL Editor faria (sessão sem usuário: é o estado do começo do teste).
+insert into public.club_features (club_id, feature, enabled) values
+  (t.id('clube_a'), 'classes', true), (t.id('clube_b'), 'classes', true),
+  (t.id('clube_a'), 'especialidades', true), (t.id('clube_b'), 'especialidades', true)
 on conflict (club_id, feature) do update set enabled = true;
--- fixtures sintéticas são origem='piloto_teste' — somem do fluxo normal quando há catálogo oficial
--- publicado (fase 3, teste 37). Arquiva o oficial só nesta transação pra testar o motor com elas.
+-- As fixtures sintéticas abaixo exercitam o motor. Desde a migration 83 o fluxo normal só aceita
+-- catálogo OFICIAL, sem exceção — então, SÓ nesta transação, o teste faz o papel da plataforma:
+-- arquiva o oficial real e publica a versão sintética como oficial. Em produção, só o importador do
+-- manifesto cria versão oficial; a regra não abre.
 update public.curriculum_versions set status = 'arquivado' where origem = 'oficial';
 
 -- ==================== fixtures curriculares SINTÉTICAS desta fase ====================
 insert into public.curriculum_versions (id, origem, identificador, versao, vigente_desde, status, fonte_descricao)
-values ('00000000-0000-4000-a000-000000000201'::uuid, 'piloto_teste', 'piloto-motor-regras-curriculares', 'rascunho-1', current_date, 'publicado',
+values ('00000000-0000-4000-a000-000000000201'::uuid, 'oficial', 'piloto-motor-regras-curriculares', 'rascunho-1', current_date, 'publicado',
         'Dados de TESTE da fase 2.6 (conteúdo dinâmico, N-de-M, histórico portátil, prazo). Não é currículo oficial.');
 insert into public.classes (id, curriculum_version_id, codigo, nome, ordem)
 values ('00000000-0000-4000-a000-000000000202'::uuid, '00000000-0000-4000-a000-000000000201'::uuid, 'piloto_regras', '[PILOTO/TESTE] Regras Curriculares', 10);
@@ -99,31 +107,147 @@ select t.eq('...e a regra que bloqueou está nomeada, com a origem (tabela) que 
   'dynamic_content_definitions + dynamic_content_values');
 reset role;
 
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_descricao) values
-  (t.id('def_leitura'), 'Livro 2026 [TESTE]', '2026-01-01', '2026-12-31', 'fixture'),
-  (t.id('def_leitura'), 'Livro 2027 [TESTE]', '2027-01-01', null, 'fixture (aberto)');
-select t.throws('período que SOBREPÕE outro da mesma definição é rejeitado (resolução sempre determinística: 1 valor por data)',
-  format($q$insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate) values (%L, 'Duplicado', '2026-06-01', '2026-08-01')$q$, t.id('def_leitura')), 'sobrepõe');
-select t.throws('vigente_ate antes de vigente_desde é rejeitado', format($q$insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate) values (%L, 'Invertido', '2030-05-01', '2030-01-01')$q$, t.id('def_leitura')), 'check');
-select t.permitido('um período que NÃO sobrepõe (antes de 2026) entra normalmente',
-  format($q$insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate) values (%L, 'Livro 2025 [TESTE]', '2025-01-01', '2025-12-31')$q$, t.id('def_leitura')));
+-- MIGRATION 84: o conteúdo tem ANO explícito e vigência FECHADA dentro do ano — nenhum valor vale em
+-- outro ano. (Até ela, este bloco consagrava o contrário: "período aberto vale até ser fechado", e o
+-- livro de 2027 ainda valia em 2031.) As regras de vigência são provadas num SEGUNDO slot, com datas
+-- fixas; o slot do requisito recebe o valor do ANO CORRENTE (no Brasil), que é o que o fluxo de hoje usa.
+insert into public.dynamic_content_definitions (id, chave, nome, descricao)
+values ('00000000-0000-4000-a000-000000000222'::uuid, 'piloto_leitura_por_ano', '[PILOTO/TESTE] Leitura por ano', 'slot de teste só das regras de vigência');
+insert into t.ids (chave, id) values ('def_anos', '00000000-0000-4000-a000-000000000222'::uuid);
 
-select t.eq('resolver(2026-06-15) = livro de 2026', public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2026-06-15') ->> 'valor', 'Livro 2026 [TESTE]');
-select t.eq('resolver(2027-06-15) = livro de 2027', public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2027-06-15') ->> 'valor', 'Livro 2027 [TESTE]');
-select t.eq('resolver(2031-01-01) = ainda o de 2027 (período aberto vale até ser fechado)', public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2031-01-01') ->> 'valor', 'Livro 2027 [TESTE]');
-select t.eq('resolver(2020-01-01) = NULL (nenhum período cobre; nunca adivinha)', public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2020-01-01') ->> 'valor', null);
+select t.throws('período ABERTO (sem vigente_ate) é RECUSADO — o livro de um ano nunca vale nos seguintes',
+  format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2026, 'Aberto', '2026-01-01', null)$q$, t.id('def_anos')), 'vigente_ate');
+select t.throws('valor SEM ano é recusado (o ano é explícito, nunca deduzido)',
+  format($q$insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate) values (%L, 'Sem ano', '2026-01-01', '2026-12-31')$q$, t.id('def_anos')), '"ano"');
+select t.throws('vigência que ATRAVESSA o ano é recusada',
+  format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2026, 'Atravessa', '2026-07-01', '2027-06-30')$q$, t.id('def_anos')), 'vigencia_no_ano');
+select t.throws('ano que não bate com a vigência é recusado',
+  format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2026, 'Ano errado', '2027-01-01', '2027-12-31')$q$, t.id('def_anos')), 'vigencia_no_ano');
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_descricao) values
+  (t.id('def_anos'), 2026, 'Livro 2026 [TESTE]', '2026-01-01', '2026-12-31', 'fixture');
+select t.throws('período que SOBREPÕE outro da mesma definição é rejeitado (resolução sempre determinística: 1 valor por data)',
+  format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2026, 'Duplicado', '2026-06-01', '2026-08-01')$q$, t.id('def_anos')), 'sobrepõe');
+select t.throws('vigente_ate antes de vigente_desde é rejeitado', format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2030, 'Invertido', '2030-05-01', '2030-01-01')$q$, t.id('def_anos')), 'check');
+select t.permitido('um ano que NÃO sobrepõe (2025) entra normalmente',
+  format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2025, 'Livro 2025 [TESTE]', '2025-01-01', '2025-12-31')$q$, t.id('def_anos')));
+
+select t.eq('resolver(2026-06-15) = livro de 2026, com o ANO explícito na resposta',
+  (public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2026-06-15') ->> 'valor') || '|' || (public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2026-06-15') ->> 'ano'), 'Livro 2026 [TESTE]|2026');
+select t.eq('resolver(2027-06-15) = NULL: o valor de 2026 NÃO vale em 2027 (sem fallback de outro ano)', public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2027-06-15') ->> 'valor', null);
+select t.eq('...e a resposta diz QUAL ano faltou (a tela mostra "o conteúdo de 2027 ainda não está disponível")', public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2027-06-15') ->> 'ano_referencia', '2027');
+select t.eq('resolver(2031-01-01) = NULL (antes da 84: "ainda o de 2027", porque o período aberto valia para sempre)', public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2031-01-01') ->> 'valor', null);
+select t.eq('resolver(2020-01-01) = NULL (nenhum período cobre; nunca adivinha)', public.conteudo_dinamico_resolver('piloto_leitura_por_ano', '2020-01-01') ->> 'valor', null);
 select t.ok('resolver de chave inexistente = NULL (não inventa)', public.conteudo_dinamico_resolver('nao_existe', current_date) is null);
+-- o dia de referência é o do BRASIL, não o do servidor (UTC)
+select t.eq('31/12/2026 às 21h no Brasil (já 01/01/2027 00h em UTC) ainda é 31/12/2026', public._data_no_brasil('2027-01-01 00:00:00+00'::timestamptz)::text, '2026-12-31');
+select t.eq('...e nesse instante o conteúdo é o de 2026 (com current_date em UTC já seria "2027, sem conteúdo")',
+  public.conteudo_dinamico_resolver('piloto_leitura_por_ano', public._data_no_brasil('2027-01-01 00:00:00+00'::timestamptz)) ->> 'valor', 'Livro 2026 [TESTE]');
+select t.eq('...e à 0h de 01/01/2027 no Brasil já é 2027', public._data_no_brasil('2027-01-01 00:00:00-03'::timestamptz)::text, '2027-01-01');
+select t.eq('sem data, o resolvedor usa o dia no Brasil (padrão do parâmetro)',
+  public.conteudo_dinamico_resolver('piloto_leitura_por_ano') ->> 'ano_referencia', extract(year from public._data_no_brasil())::int::text);
+
+-- o slot do requisito ganha o valor do ANO CORRENTE (no Brasil) — é o que o fluxo de hoje usa
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_descricao)
+select t.id('def_leitura'), a.y, 'Livro do ano corrente [TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'fixture'
+  from (select extract(year from public._data_no_brasil())::int as y) a;
 select t.eq('a Classe continua sendo UMA só (nenhuma versão nova por causa do ano)', (select count(*) from public.classes where codigo = 'piloto_regras'), 1);
 select t.eq('...e UMA curriculum_version só', (select count(*) from public.curriculum_versions where identificador = 'piloto-motor-regras-curriculares'), 1);
-select t.eq('...e o requisito da classe é UM só (o mesmo id serve 2025, 2026 e 2027)', (select count(*) from public.class_requirements where conteudo_dinamico_definicao_id = t.id('def_leitura')), 1);
+select t.eq('...e o requisito da classe é UM só (o mesmo id serve para todos os anos)', (select count(*) from public.class_requirements where conteudo_dinamico_definicao_id = t.id('def_leitura')), 1);
 
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('EXPLICAÇÃO: com o valor de hoje cadastrado, o mesmo requisito passa de BLOQUEADO pra PENDENTE (ainda não aprovado)',
   t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_anual_a'))), 'pendente');
-select t.ok('...a regra conteudo_dinamico agora está satisfeita e carrega o valor resolvido pro dia de hoje',
-  t.txt(format($q$select r->'detalhe'->>'valor' from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'conteudo_dinamico' and (r->>'satisfeito')::boolean$q$, t.id('mr_anual_a'))) like 'Livro 20%');
+select t.eq('...a regra conteudo_dinamico agora está satisfeita e carrega o valor resolvido pro dia de hoje',
+  t.txt(format($q$select r->'detalhe'->>'valor' from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'conteudo_dinamico' and (r->>'satisfeito')::boolean$q$, t.id('mr_anual_a'))), 'Livro do ano corrente [TESTE]');
 select t.ok('membro comum LÊ o catálogo dinâmico (leitura pública)...', t.nv($q$select count(*) from public.dynamic_content_values$q$) >= 3);
-select t.bloqueado('...mas NÃO escreve nele (catálogo da plataforma, só migration/SQL)', format($q$insert into public.dynamic_content_values (definicao_id, valor, vigente_desde) values (%L, 'hack', '2040-01-01')$q$, t.id('def_leitura')));
+select t.bloqueado('...mas NÃO escreve nele (catálogo da plataforma, só migration/SQL)', format($q$insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate) values (%L, 2040, 'hack', '2040-01-01', '2040-12-31')$q$, t.id('def_leitura')));
+reset role;
+
+-- ==================== 1b) o valor usado fica FIXADO no requisito: a virada do ano não reabre nada ====================
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.permitido('lider_a aprova o requisito anual de membro_a (observado em reunião, sem envio)', format($q$select public.requisito_avaliar(%L, 'aprovado', 'leu o livro')$q$, t.id('mr_anual_a')));
+reset role;
+select t.eq('a aprovação FIXOU no requisito o conteúdo do ano corrente (valor, ano, momento) e a avaliação guardou o que avaliou',
+  (select (mr.conteudo_fixado ->> 'valor') || '|' || (mr.conteudo_fixado ->> 'ano') || '|' || (mr.conteudo_fixado ->> 'fixado_no') from public.member_requirements mr where mr.id = t.id('mr_anual_a'))
+  || '|' || (select a.conteudo_avaliado ->> 'valor' from public.requirement_approvals a where a.member_requirement_id = t.id('mr_anual_a') order by a.created_at desc limit 1),
+  'Livro do ano corrente [TESTE]|' || extract(year from public._data_no_brasil())::int || '|aprovacao|Livro do ano corrente [TESTE]');
+-- "vira o ano": o valor publicado deixa de cobrir o dia de hoje (a plataforma o desloca para outro ano)
+update public.dynamic_content_values set ano = ano - 10, vigente_desde = make_date(ano - 10, 1, 1), vigente_ate = make_date(ano - 10, 12, 31)
+ where definicao_id = t.id('def_leitura');
+select t.eq('sem valor para hoje, o requisito JÁ APROVADO não vira bloqueado (nenhum bloqueio: vale o valor fixado)',
+  coalesce(array_length(public._requisito_bloqueios(t.id('mr_anual_a')), 1), 0), 0);
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.eq('...a explicação segue SATISFEITO, com o valor fixado (o que a criança leu), não o de hoje',
+  t.txt(format($q$select (e->>'resultado') || '|' || (select r->'detalhe'->>'valor' from jsonb_array_elements(e->'regras_aplicadas') r where r->>'regra' = 'conteudo_dinamico') from (select public.explicar_requisito_classe(%L) e) q$q$, t.id('mr_anual_a'))),
+  'satisfeito|Livro do ano corrente [TESTE]');
+select t.eq('...e Minha Classe mostra o valor fixado, com o ano dele',
+  t.txt($q$select (r->'conteudo_dinamico'->>'valor') || '|' || (r->'conteudo_dinamico'->>'ano') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'codigo' = '1'$q$),
+  'Livro do ano corrente [TESTE]|' || extract(year from public._data_no_brasil())::int);
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.permitido('membro_a2 inicia a mesma classe (requisito anual ainda NÃO enviado)', format($q$select public.classe_iniciar(%L)$q$, t.id('classe_regras')));
+reset role;
+insert into t.ids (chave, id) select 'mr_anual_a2', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a2') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.id('req_anual');
+select t.eq('...já quem ainda NÃO enviou fica BLOQUEADO, com o ANO que falta no motivo',
+  array_to_string(public._requisito_bloqueios(t.id('mr_anual_a2')), ' '),
+  'O conteúdo oficial de ' || extract(year from public._data_no_brasil())::int || ' ([PILOTO/TESTE] Curso de Leitura do Ano) ainda não está disponível.');
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.throws('...e não envia', format($q$select public.requisito_enviar(%L)$q$, t.id('req_anual')), 'ainda não está disponível');
+reset role;
+-- a plataforma publica o ano: quem ainda não enviou volta a andar
+update public.dynamic_content_values set ano = ano + 10, vigente_desde = make_date(ano + 10, 1, 1), vigente_ate = make_date(ano + 10, 12, 31)
+ where definicao_id = t.id('def_leitura');
+select t.eq('com o valor do ano publicado, o bloqueio de quem não enviou some', coalesce(array_length(public._requisito_bloqueios(t.id('mr_anual_a2')), 1), 0), 0);
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.permitido('...e o ENVIO fixa o conteúdo daquele ano no requisito', format($q$select public.requisito_enviar(%L)$q$, t.id('req_anual')));
+reset role;
+select t.eq('...fixado no envio', (select (conteudo_fixado ->> 'fixado_no') || '|' || (conteudo_fixado ->> 'valor') from public.member_requirements where id = t.id('mr_anual_a2')), 'envio|Livro do ano corrente [TESTE]');
+
+-- ==================== 1c) publicação: só pelo manifesto validado, só pela plataforma ====================
+-- (o slot "em uso" pelo catálogo oficial publicado, nesta transação, é o da classe sintética: a versão
+-- oficial real está arquivada acima. Os pacotes aqui imitam o que gerar-conteudo-anual.mjs produz.)
+create function t.pacote(p_ano int, p_itens jsonb) returns jsonb language sql as $$
+  select jsonb_build_object('formato', 'conquista.conteudo_anual/1', 'ano', p_ano,
+                            'arquivo', 'supabase/curriculo-manifesto/conteudo-anual/' || p_ano || '.json', 'itens', p_itens) $$;
+create function t.item(p_chave text, p_desde text, p_ate text, p_valor text default 'Livro de teste [TESTE]', p_url text default 'https://exemplo.invalid/fonte')
+returns jsonb language sql as $$
+  select jsonb_build_object('chave', p_chave, 'valor', p_valor, 'vigente_desde', p_desde, 'vigente_ate', p_ate, 'fonte_url', p_url, 'fonte_descricao', 'fixture do teste 35') $$;
+select t.eq('a publicação NÃO é executável por authenticated nem anon (só a plataforma: SQL Editor/service_role)',
+  has_function_privilege('authenticated', 'public.conteudo_anual_publicar(jsonb,text)', 'execute')::text || '|' || has_function_privilege('anon', 'public.conteudo_anual_publicar(jsonb,text)', 'execute')::text, 'false|false');
+select t.throws('pacote com vigência ABERTA é recusado',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', null))), repeat('a', 64)), 'vigência FECHADA');
+select t.throws('pacote com LACUNA (só o 1º semestre) é recusado — e nada é publicado',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30'))), repeat('a', 64)), 'não fica coberto');
+select t.eq('...(nenhuma linha de 2098 ficou)', (select count(*) from public.dynamic_content_values where ano = 2098), 0);
+select t.throws('item sem fonte https é recusado',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Livro', 'http://sem-tls.invalid'))), repeat('a', 64)), 'fonte_url https');
+select t.throws('item com vigência fora do ano do pacote é recusado',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2099-01-01', '2099-12-31'))), repeat('a', 64)), 'dentro de 2098');
+select t.throws('chave que não é conteúdo dinâmico do catálogo é recusada',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('slot_inventado', '2098-01-01', '2098-12-31'))), repeat('a', 64)), 'não é um conteúdo dinâmico');
+select t.throws('campo fora do formato é recusado (não aproximado)',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31') || '{"extra":1}')), repeat('a', 64)), 'não representa');
+select t.throws('hash que não é sha256 é recusado',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31'))), 'abc'), 'hash');
+select t.eq('pacote válido (o ano coberto por dois períodos que se completam) publica 2 linhas',
+  public.conteudo_anual_publicar(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30', 'Livro 2098/1 [TESTE]'),
+                                                                  t.item('piloto_curso_leitura_do_ano', '2098-07-01', '2098-12-31', 'Livro 2098/2 [TESTE]'))), repeat('b', 64)) ->> 'publicados',
+  '2');
+select t.eq('...com ano, hash do manifesto, arquivo de origem e data de publicação',
+  (select count(*) from public.dynamic_content_values where ano = 2098 and fonte_hash = repeat('b', 64) and manifesto_arquivo = 'supabase/curriculo-manifesto/conteudo-anual/2098.json' and publicado_em is not null), 2);
+select t.eq('...e o resolvedor já serve cada metade no seu período',
+  (public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2098-03-01') ->> 'valor') || '|' || (public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2098-09-01') ->> 'valor'),
+  'Livro 2098/1 [TESTE]|Livro 2098/2 [TESTE]');
+select t.eq('rodar o MESMO manifesto de novo é no-op (0 novas, 2 já estavam)',
+  (select (r ->> 'publicados') || '|' || (r ->> 'ja_estavam') from (select public.conteudo_anual_publicar(t.pacote(2098, jsonb_build_array(
+     t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30', 'Livro 2098/1 [TESTE]'),
+     t.item('piloto_curso_leitura_do_ano', '2098-07-01', '2098-12-31', 'Livro 2098/2 [TESTE]'))), repeat('b', 64)) r) q), '0|2');
+select t.throws('OUTRO manifesto para um ano já publicado é recusado (publicado não se edita por aqui)',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Outro livro'))), repeat('c', 64)), 'já tem conteúdo de 2098');
+select t.throws('...nem um ano que entrou por SQL direto (fora do manifesto)',
+  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(extract(year from public._data_no_brasil())::int,
+    jsonb_build_array(t.item('piloto_curso_leitura_do_ano', extract(year from public._data_no_brasil())::int || '-01-01', extract(year from public._data_no_brasil())::int || '-12-31'))), repeat('d', 64)), 'publicado por outro manifesto');
+select t.como('lider_a');
+select t.throws('a liderança não publica (permissão negada)', format('select public.conteudo_anual_publicar(%L::jsonb, %L)', '{}', repeat('e', 64)), 'permission denied');
 reset role;
 
 -- ==================== 2) escolha 2-de-3 — o servidor conta, o front só apresenta ====================
@@ -287,7 +411,7 @@ reset role;
 
 -- ==================== 8) troca de versão curricular preserva o histórico portátil ====================
 insert into public.curriculum_versions (id, origem, identificador, versao, status, fonte_descricao)
-values ('00000000-0000-4000-a000-000000000299'::uuid, 'piloto_teste', 'piloto-motor-regras-curriculares', 'rascunho-2', 'publicado', 'v2 de teste');
+values ('00000000-0000-4000-a000-000000000299'::uuid, 'oficial', 'piloto-motor-regras-curriculares', 'rascunho-2', 'publicado', 'v2 de teste');
 insert into public.specialties (id, curriculum_version_id, codigo, nome, ordem)
 values ('00000000-0000-4000-a000-000000000298'::uuid, '00000000-0000-4000-a000-000000000299'::uuid, 'piloto_portatil', '[PILOTO/TESTE] Portátil (v2)', 40);
 insert into public.specialty_requirements (specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem) values

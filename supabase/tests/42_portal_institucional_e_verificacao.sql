@@ -17,9 +17,11 @@ create function t.req(p text) returns uuid language sql stable security definer 
   select r.id from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
   join public.curriculum_versions v on v.id = c.curriculum_version_id where r.manifesto_id = p and v.origem = 'oficial' and v.status = 'publicado' $$;
 create table t.ids_txt (chave text primary key, id text not null); grant all on t.ids_txt to public;
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
-select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
-from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
+-- (migration 84: ANO explícito e vigência fechada. O valor é o do ANO CORRENTE no Brasil — assim o
+-- teste não vence na virada do ano, que era o que acontecia com as datas fixas de 2026.)
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
+select d.id, a.y, 'Livro do Curso de Leitura do ano [DADO DE TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
+from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a where d.chave = 'curso_leitura_amigo';
 
 -- pedir um ESCOPO institucional nesta requisição (equivalente ao t.pedir_clube, header próprio)
 create function t.pedir_escopo(p_escopo_id uuid) returns void language plpgsql as $$

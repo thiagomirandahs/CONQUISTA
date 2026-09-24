@@ -285,16 +285,18 @@ for (const c of ['A', 'B', 'C']) {
 
 console.log('\n-- progresso curricular (classe) com evidência de criança --')
 // OPERAÇÃO DE PLATAFORMA (SQL) nº 2: o "Curso de Leitura do ano" de cada classe é conteúdo
-// dinâmico por período, e SEM um valor vigente o requisito fica bloqueado — nenhuma classe pode ser
-// concluída. Não há RPC nem tela para a plataforma publicar esse valor (medido na fase 9): os
-// testes inserem direto na tabela, e aqui também. É um achado, não um detalhe de setup.
+// dinâmico por ANO, e SEM o valor do ano o requisito fica bloqueado — nenhuma classe pode ser
+// concluída. Em produção o único caminho é o manifesto validado (supabase/curriculo-manifesto/
+// PUBLICACAO-CONTEUDO-ANUAL.md → conteudo_anual_publicar). Aqui é dado de STAGING, por SQL direto,
+// mas já na regra da migration 84: ano explícito e vigência FECHADA no ano corrente do Brasil (um
+// período aberto valeria nos anos seguintes — é exatamente o que a 84 proíbe).
 {
   const n = psql(`
     with novos as (
-      insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_descricao)
-      select d.id, 'Livro do ano [STAGING]', date_trunc('year', current_date)::date, null, 'staging: operação de plataforma (SQL)'
-        from public.dynamic_content_definitions d
-       where public.conteudo_dinamico_resolver(d.chave, current_date) ->> 'valor' is null
+      insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_descricao)
+      select d.id, a.y, 'Livro do ano [STAGING]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'staging: operação de plataforma (SQL)'
+        from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a
+       where public.conteudo_dinamico_resolver(d.chave, public._data_no_brasil()) ->> 'valor' is null
       returning 1)
     select count(*) from novos;`)
   nota(`conteúdo do período publicado por SQL de plataforma para ${n} definição(ões) (0 = já estava)`)

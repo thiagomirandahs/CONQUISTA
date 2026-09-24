@@ -59,7 +59,7 @@ const MINHA = {
     requisitos: [
       base({ id: 'r1', codigo: '1', descricao: 'Requisito simples de teste.' }),
       base({ id: 'r2', codigo: '2', descricao: 'Requisito com evidência de texto.', tipo_evidencia: 'texto', status: 'em_andamento', evidencia_texto: 'rascunho' }),
-      base({ id: 'r3', codigo: '3', descricao: 'Requisito anual com conteúdo.', conteudo_dinamico: { chave: 'slot', valor: 'Conteúdo do ano [TESTE]' } }),
+      base({ id: 'r3', codigo: '3', descricao: 'Requisito anual com conteúdo.', conteudo_dinamico: { chave: 'slot', valor: 'Conteúdo do ano [TESTE]', ano: 2026 } }),
       base({ id: 'r4', codigo: '4', descricao: 'Requisito anual sem conteúdo.', conteudo_dinamico: { chave: 'slot2', valor: null },
         bloqueios: ['O conteúdo oficial deste período (Slot 2) ainda não está disponível.'] }),
       base({ id: 'r5', codigo: '5', descricao: 'Requisito de escolha.', escolha: escolhaBase({ sem_repeticao: true }), bloqueios: ['Escolha pelo menos 1 das 3 opções (0 de 1 até agora).'] }),
@@ -156,6 +156,7 @@ describe('MinhaClasse — os estados de requisito', () => {
     render(<MinhaClasse />)
     await screen.findByRole('heading', { level: 4 })
     expect(within(card('3')).getByText('Conteúdo do ano [TESTE]')).toBeInTheDocument()
+    expect(within(card('3')).getByText(/Conteúdo de 2026/)).toBeInTheDocument() // o ano do conteúdo vem do servidor (migration 84)
     expect(within(card('3')).getByRole('button', { name: 'Enviar para avaliação' })).toBeEnabled()
     const c4 = card('4')
     expect(within(c4).getAllByText(/ainda não está disponível/)).toHaveLength(1) // o motivo aparece UMA vez (na lista de bloqueios), não duplicado

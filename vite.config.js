@@ -114,7 +114,8 @@ export default defineConfig(({ command, mode }) => ({
       manifest: {
         name: 'DesbravaClube',
         short_name: 'DesbravaClube',
-        description: 'O clube de Desbravadores na palma da mão: classes, especialidades, experiências e o dia a dia da unidade.',
+        // sem "especialidades": fora do piloto até existir catálogo oficial (fase 9, item 9) — o manifest não promete o que está desligado
+        description: 'O clube de Desbravadores na palma da mão: classes, experiências e o dia a dia da unidade.',
         lang: 'pt-BR',
         theme_color: '#1e3a8a',
         background_color: '#1e3a8a',

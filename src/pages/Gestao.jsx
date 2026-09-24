@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentes } from '../services/inicio.js'
 import { FERRAMENTAS, GRUPOS_GESTAO } from '../lib/permissoes.js'
+import { rotaLiberada } from '../lib/navegacao.js'
 import { Card, CardAcao, Cabecalho, Vazio, Selo, Carregando, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 // Gestão (fase 7): 4 grupos em vez de uma parede de 21 cards.
@@ -87,6 +88,7 @@ const FILAS = [
 ]
 
 export function FilaDeAvaliacao() {
+  const { temRecurso } = useClube()
   const [dados, setDados] = useState(null)
   const [erro, setErro] = useState('')
   useEffect(() => {
@@ -100,7 +102,9 @@ export function FilaDeAvaliacao() {
   if (erro) return <Aviso tom="erro" titulo="Não deu pra ver a fila">{erro}</Aviso>
   if (dados === null) return <div className="mb-5"><Carregando linhas={1} texto="Vendo o que espera avaliação" /></div>
 
-  const comPendencia = FILAS.filter((f) => (dados[f.chave] || 0) > 0)
+  // Só as filas cuja tela abre neste clube: o número vem do servidor, e uma fila de recurso desligado (ex.: especialidades,
+  // que o servidor contava sob 'classes') levaria a liderança a uma tela bloqueada. Mesma regra do menu e da rota.
+  const comPendencia = FILAS.filter((f) => (dados[f.chave] || 0) > 0 && rotaLiberada(f.to, temRecurso))
   const total = comPendencia.reduce((s, f) => s + dados[f.chave], 0)
 
   return (

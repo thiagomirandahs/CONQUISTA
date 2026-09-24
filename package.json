@@ -24,6 +24,10 @@
     "curriculo:autoteste": "node supabase/curriculo-manifesto/validar.autoteste.mjs",
     "curriculo:importacao:gerar": "node supabase/curriculo-manifesto/gerar-importacao.mjs",
     "curriculo:importacao:check": "node supabase/curriculo-manifesto/gerar-importacao.mjs --check",
+    "curriculo:conteudo-anual:validar": "node supabase/curriculo-manifesto/validar-conteudo-anual.mjs",
+    "curriculo:conteudo-anual:gerar": "node supabase/curriculo-manifesto/gerar-conteudo-anual.mjs",
+    "curriculo:conteudo-anual:check": "node supabase/curriculo-manifesto/gerar-conteudo-anual.mjs --check",
+    "curriculo:conteudo-anual:autoteste": "node supabase/curriculo-manifesto/conteudo-anual.autoteste.mjs",
     "test:auth:e2e": "node supabase/tests/e2e/auth-confirmacao.mjs",
     "test:smoke": "node supabase/tests/smoke/smoke.mjs",
     "test:ambiente": "node supabase/tests/e2e/build-por-ambiente.mjs"

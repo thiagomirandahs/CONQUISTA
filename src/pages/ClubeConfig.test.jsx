@@ -168,3 +168,44 @@ describe('recursos (feature flags) do clube', () => {
     expect(await screen.findByText('negado')).toBeInTheDocument()
   })
 })
+
+// Fase 9, item 9: especialidades fora do piloto. O servidor marca no catálogo o recurso que só a PLATAFORMA liga
+// (`somente_plataforma`); a liderança não ganha switch para ele — era por este switch que ela ligava sozinha.
+describe('recurso que só a plataforma liga', () => {
+  const ESPECIALIDADES = { chave: 'especialidades', nome: 'Especialidades', descricao: 'Especialidades do catálogo oficial.', icone: '🏅', padrao: false, ordem: 135, somente_plataforma: true }
+
+  it('desligado: aparece sem switch, como "ainda não liberado pela plataforma", e os outros seguem com switch', async () => {
+    carregarCatalogoRecursos.mockResolvedValue([...CATALOGO, ESPECIALIDADES])
+    comoLideranca({ recursos: { chat: true, leilao: false, classes: true, especialidades: false } })
+    render(<ClubeConfig />)
+    expect(await screen.findByText('Especialidades')).toBeInTheDocument()
+    expect(screen.queryByRole('switch', { name: /Especialidades/ })).toBeNull()
+    expect(screen.getByTestId('recurso-plataforma-especialidades')).toHaveTextContent('Ainda não liberado pela plataforma')
+    expect(screen.getByRole('switch', { name: 'Chat: ligado' })).toBeInTheDocument()
+    expect(screen.getAllByRole('switch')).toHaveLength(2)
+  })
+
+  it('ligado pela plataforma: mostra "liberado pela plataforma", ainda sem switch', async () => {
+    carregarCatalogoRecursos.mockResolvedValue([...CATALOGO, ESPECIALIDADES])
+    comoLideranca({ recursos: { chat: true, especialidades: true } })
+    render(<ClubeConfig />)
+    expect(await screen.findByTestId('recurso-plataforma-especialidades')).toHaveTextContent(/^Liberado pela plataforma$/)
+    expect(screen.queryByRole('switch', { name: /Especialidades/ })).toBeNull()
+  })
+
+  it('nenhum clique na linha do recurso da plataforma chama o servidor', async () => {
+    carregarCatalogoRecursos.mockResolvedValue([ESPECIALIDADES])
+    render(<ClubeConfig />)
+    await userEvent.click(await screen.findByTestId('recurso-plataforma-especialidades'))
+    await userEvent.click(screen.getByText('Especialidades'))
+    expect(definirRecurso).not.toHaveBeenCalled()
+  })
+
+  it('catálogo sem o campo (banco antes da migration): recurso comum, com switch, como sempre', async () => {
+    const semCampo = { ...ESPECIALIDADES }
+    delete semCampo.somente_plataforma
+    carregarCatalogoRecursos.mockResolvedValue([semCampo])
+    render(<ClubeConfig />)
+    expect(await screen.findByRole('switch', { name: 'Especialidades: desligado' })).toBeInTheDocument()
+  })
+})

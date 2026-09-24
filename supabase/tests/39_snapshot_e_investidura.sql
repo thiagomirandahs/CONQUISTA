@@ -3,7 +3,7 @@
 -- conteúdo dinâmico congelado; aprovação/revisor preservados; tentativa de editar snapshot; investidura antes da
 -- revisão; investidura válida; tentativa duplicada; Clube B reconhecendo a conquista emitida no A sem poder
 -- alterá-la; remoção do vínculo do avaliador sem destruir a autoria; revogação/correção auditável sem apagar.
--- Curso de Leitura 2026 real segue sem fonte DSA: o valor aqui é FIXTURE SINTÉTICA marcada como teste.
+-- Curso de Leitura real segue sem fonte DSA: o valor aqui é FIXTURE SINTÉTICA marcada como teste.
 begin;
 \ir _lib.sql
 \ir _curriculo_regular_2026.sql
@@ -24,9 +24,11 @@ create function t.eventos(p_tipo text) returns bigint language sql stable as $$
   select count(*) from public.class_completion_events where member_class_id = t.id('mc') and tipo = p_tipo $$;
 
 -- fixture SINTÉTICA do conteúdo anual (o livro real de 2026 não tem fonte DSA — ver AUDITORIA)
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
-select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
-from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
+-- (migration 84: ANO explícito e vigência fechada. O valor é o do ANO CORRENTE no Brasil — assim o
+-- teste não vence na virada do ano, que era o que acontecia com as datas fixas de 2026.)
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
+select d.id, a.y, 'Livro do Curso de Leitura do ano [DADO DE TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
+from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a where d.chave = 'curso_leitura_amigo';
 
 -- ==================== conclusão válida de Amigo por multi_dois_papeis (13 anos; desbravador no A, conselheiro no B) ====================
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
@@ -65,10 +67,10 @@ select t.eq('conteúdo: escolhas registradas (V.1 = Natação principiante I; IX
   (select string_agg((r->>'manifesto_id') || '=' || (r->'escolha'->'escolhidas'->>0) || '/' || jsonb_array_length(r->'escolha'->'opcoes'), ',' order by r->>'manifesto_id')
      from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' in ('amigo.V.1', 'amigo.IX.1')),
   'amigo.IX.1=Cestaria [DADO DE TESTE]/0,amigo.V.1=Natação principiante I/4');
-select t.eq('conteúdo: conteúdo dinâmico CONGELADO em I.4 — valor, período e fonte',
-  (select (r->'conteudo_dinamico'->>'valor') || '|' || (r->'conteudo_dinamico'->>'vigente_desde') || '|' || (r->'conteudo_dinamico'->>'vigente_ate') || '|' || (r->'conteudo_dinamico'->>'fonte_descricao')
+select t.eq('conteúdo: conteúdo dinâmico CONGELADO em I.4 — valor, ANO, período e fonte (o fixado na aprovação)',
+  (select (r->'conteudo_dinamico'->>'valor') || '|' || (r->'conteudo_dinamico'->>'ano') || '|' || (r->'conteudo_dinamico'->>'vigente_desde') || '|' || (r->'conteudo_dinamico'->>'vigente_ate') || '|' || (r->'conteudo_dinamico'->>'fonte_descricao')
      from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.4'),
-  'Livro do Curso de Leitura 2026 [DADO DE TESTE]|2026-01-01|2026-12-31|FIXTURE DE TESTE — não é o livro oficial');
+  'Livro do Curso de Leitura do ano [DADO DE TESTE]|' || extract(year from public._data_no_brasil())::int || '|' || make_date(extract(year from public._data_no_brasil())::int, 1, 1) || '|' || make_date(extract(year from public._data_no_brasil())::int, 12, 31) || '|FIXTURE DE TESTE — não é o livro oficial');
 -- MUDOU NA 8.5 (item 6). Este assert exigia o `comentario` do avaliador DENTRO do snapshot — ou
 -- seja, congelava um vazamento. O snapshot é portátil: ele atravessa clube por desenho, e é lido
 -- pela liderança de qualquer clube em que a pessoa entre depois. O comentário que o avaliador
@@ -105,11 +107,11 @@ select t.eq('catálogo arquivado + texto de requisito editado + valor do ano tro
   (select ((select r->>'descricao' from jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where r->>'manifesto_id' = 'amigo.I.1') like '%EDITADO%')::text || '|'
        || (select r->'conteudo_dinamico'->>'valor' from jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4') || '|'
        || (s.conteudo->'curriculum_version'->>'status') || '|' || (public.snapshot_verificar(s.id)->>'integro')
-     from public.class_completion_snapshots s where s.id = t.snap(1)), 'false|Livro do Curso de Leitura 2026 [DADO DE TESTE]|publicado|true');
+     from public.class_completion_snapshots s where s.id = t.snap(1)), 'false|Livro do Curso de Leitura do ano [DADO DE TESTE]|publicado|true');
 -- devolve o catálogo (o resto do fluxo continua nele)
 update public.curriculum_versions set status = 'publicado' where id = (select curriculum_version_id from public.class_completion_snapshots where id = t.snap(1));
 update public.class_requirements set descricao = replace(descricao, ' [EDITADO DEPOIS]', '') where descricao like '% [EDITADO DEPOIS]';
-update public.dynamic_content_values set valor = 'Livro do Curso de Leitura 2026 [DADO DE TESTE]' where fonte_descricao = 'FIXTURE DE TESTE — não é o livro oficial';
+update public.dynamic_content_values set valor = 'Livro do Curso de Leitura do ano [DADO DE TESTE]' where fonte_descricao = 'FIXTURE DE TESTE — não é o livro oficial';
 
 -- ==================== 3) tentativa de editar o snapshot: ninguém ====================
 select t.como('lider_a'); select t.pedir_clube('clube_a');
@@ -157,12 +159,20 @@ reset role;
 select t.eq('apto para investidura ≠ investido: status apto_investidura, revisão aprovada por lider_a (diretoria), sem investidura, sem conquista',
   (select status from public.member_classes where id = t.id('mc')) || '|' || (select status || '/' || revisado_papel from public.investiture_reviews where snapshot_id = t.snap(2)) || '|' || (select count(*) from public.class_investitures where member_class_id = t.id('mc')) || '|' || (select count(*) from public.curriculum_achievements where usuario_id = t.id('multi_dois_papeis') and tipo = 'classe'),
   'apto_investidura|aprovado/diretoria|0|0');
+-- MUDOU NA 84. Este bloco provava que, sem o conteúdo do ano, a investidura era recusada — ou seja,
+-- que a virada do ano (ou um valor apagado) REABRIA um requisito já aprovado e travava a classe na
+-- porta da investidura. Agora o conteúdo que a criança fez fica FIXADO no requisito na aprovação, e
+-- é ele que vale na reconferência: a investidura continua reconferindo tudo AGORA (pendências,
+-- escolhas, dependências), só não troca o livro que foi lido.
 delete from public.dynamic_content_values where fonte_descricao = 'FIXTURE DE TESTE — não é o livro oficial';
-select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.throws('com o conteúdo do ano removido, a investidura é recusada (reconfere as regras AGORA, não só o snapshot)', format($q$select public.investidura_registrar(%L)$q$, t.id('mc')), 'bloqueado');
-reset role;
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
-select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial' from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
+select t.eq('sem o conteúdo do ano publicado, o I.4 JÁ APROVADO não vira bloqueado: vale o valor fixado na aprovação',
+  coalesce(array_length(public._requisito_bloqueios(t.mr('amigo.I.4')), 1), 0)::text || '|' || (select (conteudo_fixado ->> 'valor') || '/' || (conteudo_fixado ->> 'fixado_no') from public.member_requirements where id = t.mr('amigo.I.4')),
+  '0|Livro do Curso de Leitura do ano [DADO DE TESTE]/aprovacao');
+-- (migration 84: ANO explícito e vigência fechada. O valor é o do ANO CORRENTE no Brasil — assim o
+-- teste não vence na virada do ano, que era o que acontecia com as datas fixas de 2026.)
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
+select d.id, a.y, 'Livro do Curso de Leitura do ano [DADO DE TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'https://exemplo.test/fixture', 'FIXTURE DE TESTE — não é o livro oficial'
+from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a where d.chave = 'curso_leitura_amigo';
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.throws('data futura é recusada', format($q$select public.investidura_registrar(%L, current_date + 1)$q$, t.id('mc')), 'inválida');
 select t.permitido('investidura registrada (data, clube, quem registrou, snapshot v2)', format($q$select public.investidura_registrar(%L, current_date, 'Cerimônia [TESTE]')$q$, t.id('mc')));

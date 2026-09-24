@@ -30,7 +30,9 @@ export const FERRAMENTAS = [
   { to: '/experiencias/novo', icon: '🛠️', titulo: 'Montar experiências', desc: 'Desafios, campanhas e temporadas, sem programar', papeis: ['diretoria', 'instrutor'], recurso: 'experiencias' , grupo: 'conteudo', contextual: true },
   { to: '/avaliar-classe', icon: '🎖️', titulo: 'Avaliar classes', desc: 'Aprovar ou pedir correção dos requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
   { to: '/investiduras', icon: '🏅', titulo: 'Revisão final e investidura', desc: 'Revisar conclusões de classe e registrar investiduras', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
-  { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
+  // Especialidades têm recurso PRÓPRIO, separado de `classes` (fase 9, item 9): o catálogo de especialidades ainda é de teste
+  // e fica fora do piloto. Com `classes` ligado e `especialidades` desligado, este card some e a rota não abre.
+  { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'especialidades' , grupo: 'avaliar', contextual: true },
 ]
 
 // ---- fase 7: agrupamento e progressive disclosure ----
@@ -69,6 +71,6 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/mural': 'mural',
   '/experiencias': 'experiencias',
   '/minha-classe': 'classes',
-  '/minhas-especialidades': 'classes',
+  '/minhas-especialidades': 'especialidades',   // não 'classes': ligar as Classes oficiais não pode abrir as especialidades de teste
   ...Object.fromEntries(FERRAMENTAS.filter((f) => f.recurso).map((f) => [f.to, f.recurso])),
 })

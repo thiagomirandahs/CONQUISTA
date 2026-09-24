@@ -25,6 +25,11 @@ supabase/curriculo-manifesto/
   validar.mjs                validador + relatório de cobertura (CLI)
   validar.autoteste.mjs      autoteste do validador, com fixtures SINTÉTICAS
   gerar-importacao.mjs       (fase 3) gera a migration 40 + a fixture de teste A PARTIR deste manifesto
+  conteudo-anual/            (fase 9.1) o conteúdo que muda todo ano (Curso de Leitura), um manifesto por ano
+  validar-conteudo-anual.mjs (fase 9.1) validador do conteúdo anual (vigência fechada, sem lacuna, com fonte)
+  gerar-conteudo-anual.mjs   (fase 9.1) gera o SQL de plataforma que publica um ano A PARTIR do manifesto validado
+  conteudo-anual.autoteste.mjs  autoteste do validador/gerador do conteúdo anual (fixtures sintéticas)
+  PUBLICACAO-CONTEUDO-ANUAL.md  procedimento operacional: quem publica, quando, como conferir, o que acontece se faltar
   README.md                  este arquivo
 ```
 
@@ -34,6 +39,10 @@ npm run curriculo:validar           # valida o manifesto real + imprime o relat�
 npm run curriculo:autoteste         # prova que o validador rejeita cada violação pedida (fixtures fake)
 npm run curriculo:importacao:check  # a migration 40 e tests/_curriculo_regular_2026.sql batem com o manifesto? (gate)
 npm run curriculo:importacao:gerar  # regera os dois (só depois de mudar o manifesto — e aí é VERSÃO NOVA, ver abaixo)
+npm run curriculo:conteudo-anual:validar     # valida conteudo-anual/*.json (o Curso de Leitura de cada ano)
+npm run curriculo:conteudo-anual:autoteste   # prova que o validador/gerador do conteúdo anual recusa o que deve
+npm run curriculo:conteudo-anual:gerar -- 2027   # gera conteudo-anual/publicar-2027.sql a partir de conteudo-anual/2027.json
+npm run curriculo:conteudo-anual:check       # o SQL gerado de cada ano ainda bate com o manifesto? (gate)
 ```
 
 ## Por que `publicado_em` ≠ `vigente_desde` (a regra mais importante daqui)
@@ -108,7 +117,7 @@ o schema ainda achataria. O relatório de cobertura imprime esse mapa no fim.
 
 | tag | representação no banco |
 |---|---|
-| `requisito_anual_dinamico` | `dynamic_content_definitions` + `dynamic_content_values` (vigência sem sobreposição) + `conteudo_dinamico_resolver(chave, data)`; `class_requirements.conteudo_dinamico_definicao_id` |
+| `requisito_anual_dinamico` | `dynamic_content_definitions` + `dynamic_content_values` (ano explícito, vigência FECHADA dentro do ano, sem sobreposição — migration 84) + `conteudo_dinamico_resolver(chave, data)` (dia no Brasil, nunca outro ano); `class_requirements.conteudo_dinamico_definicao_id`; o valor usado fica em `member_requirements.conteudo_fixado` |
 | `escolha_n_de_m` | `requirement_option_groups(n_minimo)` + `requirement_options`; `opcoes_satisfeitas_automaticamente()` |
 | `escolha_sem_repeticao` | `requirement_option_groups.sem_repeticao` + `especialidade_ja_concluida_pela_pessoa()` sobre `curriculum_achievements` (histórico curricular **portátil**, com proveniência) |
 | `prazo_conclusao` | `classes/specialties.prazo_minimo_dias/prazo_maximo_dias` + `prazo_situacao()`; o gatilho de conclusão respeita o mínimo |
@@ -162,8 +171,11 @@ manifesto → banco). Ninguém copia requisito pra SQL à mão. Regras que valem
   a anterior fica, com o histórico de quem andou nela.
 - **`curriculo:importacao:check` é gate**: manifesto editado sem regerar = falha.
 - **`36_curriculo_oficial_integridade.sql` é gate permanente**: requisito editado à mão no SQL = falha.
-- O valor anual do Curso de Leitura NÃO está aqui nem na migration — entra como `dynamic_content_values`
-  com fonte, por ano, por classe (`curso_leitura_<classe>`).
+- O valor anual do Curso de Leitura NÃO está no manifesto das classes nem na migration de importação — tem
+  manifesto PRÓPRIO, um por ano, em `conteudo-anual/<ano>.json` (fase 9.1, migration 84). O validador exige
+  ano explícito, vigência fechada dentro do ano, fonte e o ano inteiro coberto para as seis classes; o
+  gerador produz o SQL de plataforma (`conteudo_anual_publicar(pacote, hash)`), a única porta de publicação.
+  Quem publica, quando (antes de 1º de janeiro) e como conferir: [`PUBLICACAO-CONTEUDO-ANUAL.md`](PUBLICACAO-CONTEUDO-ANUAL.md).
 
 O que ainda NÃO é importado: Classes Avançadas (a pendência de Pesquisador de Campo e Bosque bloqueia),
 Liderança, catálogo de Especialidades.

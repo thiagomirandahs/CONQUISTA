@@ -4,8 +4,14 @@
 -- especialidade libera quando a especialidade está concluída pela PESSOA (desde a fase 2.6,
 -- via o histórico curricular portátil — ver seção 7); turma/oferta com instrutor responsável que
 -- não é liderança; conclusão automática; histórico de avaliação; mudança de versão sem
--- alterar o histórico + a ferramenta de diff; feature flag "classes" desligada bloqueia
--- escrita (não só a rota).
+-- alterar o histórico + a ferramenta de diff; o recurso "especialidades" desligado bloqueia
+-- no SERVIDOR (não só a rota).
+--
+-- Migration 83: especialidades têm recurso PRÓPRIO, que só a plataforma liga, e o fluxo normal só
+-- aceita catálogo OFICIAL. Este teste exercita o motor com a especialidade PILOTO (o dado pequeno):
+-- SÓ nesta transação, o teste faz o papel da plataforma — publica a versão piloto como oficial e
+-- liga o recurso nos dois clubes (sessão sem usuário, como o SQL Editor). A regra de produção não
+-- abre: o teste 62 prova que o piloto nunca aparece para ninguém.
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -18,13 +24,18 @@ insert into t.ids (chave, id) select 'req_pri_' || codigo, id from public.specia
 insert into t.ids (chave, id) select 'req_conhecimentos_3', r.id from public.class_requirements r
   join public.class_sections s on s.id = r.section_id where s.class_id = t.id('classe_piloto') and s.codigo = 'conhecimentos' and r.codigo = '3';
 
--- ==================== 1) recurso "classes" desligado por padrão: escrita bloqueada (não só a rota) ====================
-select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
-select t.throws('com o recurso "classes" desligado, especialidade_iniciar é recusado pelo SERVIDOR (não só escondido no menu)',
-  format($q$select public.especialidade_iniciar(%L)$q$, t.id('especialidade_piloto')), 'desabilitado');
-reset role;
+update public.curriculum_versions set origem = 'oficial' where id = t.id('versao_especialidade_piloto');
 
+-- ==================== 1) recurso "especialidades" desligado por padrão: bloqueado no servidor (não só a rota) ====================
 insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'classes', true), (t.id('clube_b'), 'classes', true)
+on conflict (club_id, feature) do update set enabled = true;
+select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
+select t.throws('com "especialidades" desligado (padrão) — mesmo com "classes" ligado —, especialidade_iniciar é recusado pelo SERVIDOR',
+  format($q$select public.especialidade_iniciar(%L)$q$, t.id('especialidade_piloto')), 'não estão liberadas');
+
+-- a PLATAFORMA liga (sessão sem usuário, como o SQL Editor/service_role)
+select t.como_cron();
+insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'especialidades', true), (t.id('clube_b'), 'especialidades', true)
 on conflict (club_id, feature) do update set enabled = true;
 
 -- ==================== 2) a MESMA pessoa faz a MESMA especialidade em clubes diferentes ====================
@@ -84,15 +95,17 @@ select t.ok('minha_especialidade() de A mostra o histórico de avaliação do pr
   and t.txt($q$select (public.minha_especialidade()->'requisitos'->0->'avaliacoes')::text$q$) like '%aprovado%');
 reset role;
 
--- ==================== 5) recurso "classes" desligado NUM clube só: bloqueia lá, não no outro ====================
+-- ==================== 5) recurso "especialidades" desligado NUM clube só: bloqueia lá, não no outro ====================
 -- (feito aqui, enquanto req 2 de ms_a/ms_b ainda está intocado nos dois clubes — não interfere no resto do cenário)
-update public.club_features set enabled = false where club_id = t.id('clube_b') and feature = 'classes';
+select t.como_cron();  -- quem desliga é a plataforma: a liderança não mexe em recurso da plataforma
+update public.club_features set enabled = false where club_id = t.id('clube_b') and feature = 'especialidades';
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_b');
-select t.throws('com "classes" desligado só no clube B, escrever lá é recusado pelo SERVIDOR', format($q$select public.especialidade_requisito_salvar(%L, %L, null)$q$, t.id('req_pri_2'), 'tentativa'), 'desabilitado');
+select t.throws('com "especialidades" desligado só no clube B, escrever lá é recusado pelo SERVIDOR', format($q$select public.especialidade_requisito_salvar(%L, %L, null)$q$, t.id('req_pri_2'), 'tentativa'), 'não estão liberadas');
+select t.throws('...e LER também (a RPC de leitura exige o recurso, com erro claro)', $q$select public.minha_especialidade()$q$, 'não estão liberadas');
 select t.pedir_clube('clube_a');
 select t.permitido('...mas no clube A (onde continua ligado) a escrita segue funcionando', format($q$select public.especialidade_requisito_salvar(%L, null, null)$q$, t.id('req_pri_2')));
-reset role;
-update public.club_features set enabled = true where club_id = t.id('clube_b') and feature = 'classes';
+select t.como_cron();
+update public.club_features set enabled = true where club_id = t.id('clube_b') and feature = 'especialidades';
 
 -- ==================== 6) turma/oferta: instrutor responsável NÃO-liderança avalia SÓ a própria turma ====================
 select t.como('lider_a'); select t.pedir_clube('clube_a');
@@ -152,8 +165,10 @@ select t.eq('...e TAMBÉM NO CLUBE B (fase 2.6: dependência é PORTÁTIL via cu
   array_length(public.dependencias_pendentes('class_requirement', t.id('req_conhecimentos_3'), t.id('multi_dois_papeis'), t.id('clube_b')), 1), null);
 
 -- ==================== 8) mudança de versão: v2 não mexe no histórico de quem já andou na v1 + ferramenta de diff ====================
+-- (a v2 também é "publicada como oficial" pela plataforma só nesta transação: o diff, para quem é do
+-- app, só compara versões oficiais — migration 83)
 insert into public.curriculum_versions (id, origem, identificador, versao, status, fonte_descricao)
-values ('00000000-0000-4000-a000-000000000199'::uuid, 'piloto_teste', 'piloto-motor-curricular-especialidade', 'rascunho-2', 'publicado', 'v2 de teste, só pra provar o diff e a preservação do histórico.');
+values ('00000000-0000-4000-a000-000000000199'::uuid, 'oficial', 'piloto-motor-curricular-especialidade', 'rascunho-2', 'publicado', 'v2 de teste, só pra provar o diff e a preservação do histórico.');
 insert into public.specialties (id, curriculum_version_id, codigo, nome, categoria, nivel, ordem)
 values ('00000000-0000-4000-a000-000000000198'::uuid, '00000000-0000-4000-a000-000000000199'::uuid, 'piloto_primeiros_socorros', '[PILOTO/TESTE] Primeiros Socorros', 'Dado de teste', 'regular', 10);
 insert into public.specialty_requirements (specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem) values

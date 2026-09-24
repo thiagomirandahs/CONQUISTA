@@ -9,10 +9,13 @@ export const PAPEIS = ['desbravador', 'conselheiro', 'instrutor', 'diretoria', '
 
 // Recursos do catálogo da plataforma (espelho de public.recursos_catalogo — um teste confere que os dois não se afastam).
 // Só serve ao modo LEGADO (front publicado antes do SQL): com o SQL, o servidor manda o mapa efetivo de cada clube.
+// `especialidades` é chave PRÓPRIA (fase 9, item 9) e nasce desligada: antes, as especialidades viviam atrás de `classes`, e um
+// clube que ligava as Classes oficiais levava junto o catálogo de especialidades de TESTE para todas as crianças. Quem liga é
+// só a plataforma, quando existir catálogo oficial; o padrão aqui fica `false` para o modo legado também não mostrar nada.
 export const RECURSOS_PADRAO = Object.freeze({
   desafios: true, chefao: true, missoes: true, jogos: true, leilao: false, chat: true,
   biblia: true, bichinho: true, agenda: true, atividades: true, mural: true, mensalidades: true,
-  classes: false, experiencias: false,
+  classes: false, experiencias: false, especialidades: false,
 })
 
 const inclui = (lista, papel) => !!papel && lista.includes(papel)

@@ -51,19 +51,18 @@ select t.eq('as experiências NÃO reaproveitam curriculum_achievements (nenhuma
           and k.confrelid in ('public.curriculum_achievements'::regclass, 'public.member_classes'::regclass)$q$), 0);
 
 -- =============================================================================
--- 2) OS PILOTOS [TESTE] NASCERAM NO CLUBE LEGADO
+-- 2) OS PILOTOS [TESTE] DO CLUBE LEGADO SAÍRAM (migration 83)
 -- =============================================================================
-select t.eq('4 experiências piloto marcadas como TESTE no clube legado',
-  t.n(format($q$select count(*) from public.experiences where club_id = %L and teste$q$, t.id('clube_a'))), 4);
-select t.eq('...e uma temporada piloto agrupando parte delas',
-  t.n(format($q$select count(*) from public.experience_seasons where club_id = %L and teste$q$, t.id('clube_a'))), 1);
-select t.eq('...todas com "[TESTE]" no título (ninguém confunde com conteúdo real)',
-  t.n(format($q$select count(*) from public.experiences where club_id = %L and teste and titulo not like '[TESTE]%%'$q$, t.id('clube_a'))), 0);
+-- A migration 49 semeava 4 experiências e 1 temporada [TESTE] no clube legado (Tenant 001), e o ensaio
+-- de produção mostrou que o upgrade as criava no cliente real. A 83 apaga as que não tiveram uso (no
+-- upgrade, todas: o recurso nasce desligado) e arquiva as que tiveram. Exemplo não mora em clube de
+-- cliente: os modelos da plataforma (seção F da 49) continuam servindo de ponto de partida.
+select t.eq('nenhuma experiência [TESTE] ficou no clube legado',
+  t.n(format($q$select count(*) from public.experiences where club_id = %L and teste$q$, t.id('clube_a'))), 0);
+select t.eq('...nem a temporada piloto',
+  t.n(format($q$select count(*) from public.experience_seasons where club_id = %L and teste$q$, t.id('clube_a'))), 0);
 select t.eq('o recurso nasce DESLIGADO no catálogo (nenhum clube vê nada sem a liderança ligar)',
   t.txt($q$select padrao::text from public.recursos_catalogo where chave = 'experiencias'$q$), 'false');
-select t.eq('o piloto cobre desafio individual, tarefa com evidência, quiz e meta quantitativa',
-  t.txt(format($q$select string_agg(distinct tipo, ',' order by tipo) from public.experiences where club_id = %L and teste$q$, t.id('clube_a'))),
-  'desafio_individual,meta_quantitativa,quiz,tarefa_evidencia');
 
 -- =============================================================================
 -- 3) RED-TEAM DO NO-CODE: o clube não escapa do vocabulário

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "conquista.conteudo_anual/1",
+  "title": "Manifesto do conteúdo anual das Classes (Curso de Leitura do ano)",
+  "description": "Um arquivo por ano civil (<ano>.json). É a fonte única do que a plataforma publica em dynamic_content_values: validado por validar-conteudo-anual.mjs e transformado em SQL por gerar-conteudo-anual.mjs. Regras que o esquema sozinho não expressa (e o validador cobra): o nome do arquivo bate com o ano; toda vigência fica dentro do ano; cada slot cobre o ano inteiro, de 01/01 a 31/12, sem lacuna nem sobreposição; todos os slots das Classes Regulares com requisito anual estão presentes; exemplo só em exemplo.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formato", "ano", "itens"],
+  "properties": {
+    "formato": { "const": "conquista.conteudo_anual/1" },
+    "ano": { "type": "integer", "minimum": 2000, "maximum": 2999, "description": "Ano civil do conteúdo. Nenhum valor vale fora dele." },
+    "exemplo": { "type": "boolean", "description": "true SÓ em exemplo.json. Arquivo de ano real não declara (ou declara false)." },
+    "preparado_em": { "type": "string", "format": "date", "description": "Quando o manifesto foi preparado (AAAA-MM-DD). Proveniência; não entra no banco." },
+    "observacao": { "type": "string", "description": "Nota livre para quem revisa. Não entra no banco." },
+    "itens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["chave", "valor", "vigente_desde", "vigente_ate", "fonte_url", "fonte_descricao"],
+        "properties": {
+          "chave": { "type": "string", "pattern": "^curso_leitura_[a-z]+$", "description": "Slot do catálogo: curso_leitura_<id da classe regular>." },
+          "valor": { "type": "string", "minLength": 1, "maxLength": 300, "description": "O conteúdo do ano (ex.: o título do livro). Nunca o texto integral de obra protegida." },
+          "vigente_desde": { "type": "string", "format": "date", "description": "Início da vigência, dentro do ano." },
+          "vigente_ate": { "type": "string", "format": "date", "description": "Fim da vigência, dentro do ano. OBRIGATÓRIO: vigência aberta é recusada." },
+          "fonte_url": { "type": "string", "pattern": "^https://\\S+$", "description": "De onde veio o conteúdo (página oficial). https obrigatório." },
+          "fonte_descricao": { "type": "string", "minLength": 1, "description": "Qual documento/página, publicado por quem, conferido quando." }
+        }
+      }
+    }
+  }
+}

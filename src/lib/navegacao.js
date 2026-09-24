@@ -28,7 +28,8 @@ export const DESTINO = {
 // `recurso` = feature flag do clube (mesma fonte de sempre). Sem recurso = tela do núcleo.
 export const HUB_JORNADA = [
   { to: '/minha-classe', label: 'Minha Classe', icon: '🎖️', desc: 'Os requisitos da sua classe', recurso: 'classes' },
-  { to: '/minhas-especialidades', label: 'Especialidades', icon: '🏅', desc: 'As suas especialidades', recurso: 'classes' },
+  // recurso PRÓPRIO (fase 9, item 9): com as Classes oficiais ligadas, as especialidades de teste continuam de fora
+  { to: '/minhas-especialidades', label: 'Especialidades', icon: '🏅', desc: 'As suas especialidades', recurso: 'especialidades' },
   { to: '/experiencias', label: 'Experiências', icon: '✨', desc: 'Desafios e campanhas do clube', recurso: 'experiencias' },
   { to: '/atividades', label: 'Atividades', icon: '📋', desc: 'Tarefas com entrega', recurso: 'atividades' },
   { to: '/missoes', label: 'Missões', icon: '🎯', desc: 'A missão de hoje', recurso: 'missoes' },
@@ -54,6 +55,29 @@ export const HUB_JOGOS = [
 
 const liberado = (item, temRecurso) => !item.recurso || temRecurso(item.recurso)
 export const itensDoHub = (hub, temRecurso) => hub.filter((i) => liberado(i, temRecurso))
+
+// Um link que o SERVIDOR mandou (card do Início, fila de avaliação da Gestão) só aparece se a rota de destino abre neste
+// clube. Por quê: esses cards vêm prontos do banco, e se o banco ainda contar algo de um recurso desligado (foi o caso das
+// especialidades, que o `meu_inicio` contava sob `classes`), o card levaria a pessoa para uma tela bloqueada, com o nome do
+// item de teste escrito no próprio card. A regra é a mesma do menu e da rota (RECURSO_POR_ROTA). Rota sem recurso = núcleo.
+// A query string e a barra final não mudam o destino ("/minhas-especialidades?x=1" é a mesma tela).
+export function rotaLiberada(rota, temRecurso) {
+  if (typeof rota !== 'string') return true
+  const caminho = rota.split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase() || '/'
+  const recurso = RECURSO_POR_ROTA[caminho]
+  return !recurso || temRecurso(recurso) === true
+}
+
+// Subtítulo do hub Jornada: só promete o que está ligado NESTE clube. O texto fixo antigo ("Classe, especialidades e...")
+// anunciava especialidades para todo mundo, mesmo com o recurso desligado (fora do piloto enquanto não há catálogo oficial).
+export function descricaoDaJornada(temRecurso) {
+  const classes = temRecurso('classes') === true
+  const especialidades = temRecurso('especialidades') === true
+  if (classes && especialidades) return 'Classe, especialidades e tudo o que você está conquistando'
+  if (classes) return 'Sua classe e tudo o que você está conquistando'
+  if (especialidades) return 'Especialidades e tudo o que você está conquistando'
+  return 'Tudo o que você está conquistando'
+}
 
 // ---------------------------------------------------------------- destinos por papel
 // `extras`: { temEscopo } — quem também tem vínculo institucional.

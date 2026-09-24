@@ -1,6 +1,6 @@
 import { useClube } from '../context/Clube.jsx'
 import { CardAcao, Cabecalho, Vazio } from '../ui/index.jsx'
-import { HUB_JORNADA, HUB_CLUBE, HUB_JOGOS, itensDoHub } from '../lib/navegacao.js'
+import { HUB_JORNADA, HUB_CLUBE, HUB_JOGOS, itensDoHub, descricaoDaJornada } from '../lib/navegacao.js'
 
 // Hubs de destino (fase 7): Jornada, Clube e Jogos.
 // Cada um reúne as telas de um assunto. Antes, cada uma dessas telas era uma linha solta no menu —
@@ -39,8 +39,10 @@ function Hub({ icone, titulo, descricao, itens, vazio }) {
 }
 
 export function Jornada() {
+  const { temRecurso } = useClube()
+  // o subtítulo acompanha o que está ligado NESTE clube: não promete especialidades com o recurso desligado
   return <Hub icone="🎖️" titulo="Minha jornada" itens={HUB_JORNADA}
-    descricao="Classe, especialidades e tudo o que você está conquistando"
+    descricao={descricaoDaJornada(temRecurso)}
     vazio="Sua jornada ainda não começou" />
 }
 

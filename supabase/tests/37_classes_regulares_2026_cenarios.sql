@@ -61,12 +61,15 @@ reset role;
 select t.eq('(12) o piloto continua EXISTINDO (preservado, separado: origem piloto_teste, versão própria)',
   (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where c.id = t.id('classe_piloto') and v.origem = 'piloto_teste' and v.status = 'publicado'), 1);
 select t.eq('nenhuma sequência/pré-requisito entre classes foi inventada (0 dependências class→class)', (select count(*) from public.curriculum_dependencies where alvo_tipo = 'class' and depende_de_tipo = 'class'), 0);
--- a regra é condicional: sem catálogo oficial, o piloto volta a aparecer (arquiva SÓ a publicada e devolve SÓ ela —
--- a 2026.1 já está arquivada de verdade e tem que continuar assim)
+-- MUDOU NA 83: a regra DEIXOU de ser condicional. Antes, sem catálogo oficial publicado, o piloto
+-- voltava ao fluxo normal — era o "fallback" que expunha dado de TESTE a convidado justamente quando
+-- faltava o oficial (o caso das especialidades). Agora, nem assim: o fluxo normal é só o oficial.
+-- (arquiva SÓ a publicada e devolve SÓ ela — a 2026.1 já está arquivada de verdade e tem que continuar assim)
 insert into t.ids (chave, id) select 'versao_publicada', id from public.curriculum_versions where origem = 'oficial' and status = 'publicado';
 update public.curriculum_versions set status = 'arquivado' where id = t.id('versao_publicada');
 select t.como('membro_a2'); select t.pedir_clube('clube_a');
-select t.eq('(12) sem catálogo oficial publicado, o piloto volta ao fluxo normal (a regra é condicional, não um apagamento)', t.txt($q$select public.classes_disponiveis()::text$q$) like '%PILOTO%', true);
+select t.eq('(12) sem catálogo oficial publicado, o piloto NÃO volta ao fluxo normal (sem fallback para dado de teste)', t.txt($q$select public.classes_disponiveis()::text$q$) like '%PILOTO%', false);
+select t.throws('(12) ...nem pela RPC direta', format($q$select public.classe_iniciar(%L)$q$, t.id('classe_piloto')), 'não encontrada');
 reset role;
 update public.curriculum_versions set status = 'publicado' where id = t.id('versao_publicada');
 select t.eq('(1) continua UMA versão oficial publicada (a 2026.1 segue arquivada)', (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'publicado'), 1);
@@ -101,15 +104,19 @@ select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.throws('(4) ...e APROVAR também é recusado — aprovação manual não contorna a regra', format($q$select public.requisito_avaliar(%L, 'aprovado', null)$q$, t.id('mr_amigo_I4')), 'ainda não está disponível');
 reset role;
 select t.eq('(4) o requisito continua nao_iniciado, sem avaliação registrada', (select status from public.member_requirements where id = t.id('mr_amigo_I4')) || '|' || (select count(*) from public.requirement_approvals where member_requirement_id = t.id('mr_amigo_I4')), 'nao_iniciado|0');
--- o valor do ano entra DEPOIS, como dado com fonte (aqui, sintético de teste) — nunca dentro do requisito
-insert into public.dynamic_content_values (definicao_id, valor, vigente_desde, vigente_ate, fonte_descricao)
-select id, 'Livro do Curso de Leitura 2026 [DADO DE TESTE]', '2026-01-01', '2026-12-31', 'fixture do teste 37' from public.dynamic_content_definitions where chave = 'curso_leitura_amigo';
-select t.eq('(4) resolver(curso_leitura_amigo, 2026-06-01) = o valor de 2026', public.conteudo_dinamico_resolver('curso_leitura_amigo', '2026-06-01') ->> 'valor', 'Livro do Curso de Leitura 2026 [DADO DE TESTE]');
-select t.eq('(4) resolver(…, 2027-06-01) = NULL (2027 ainda sem cadastro; não reaproveita 2026)', public.conteudo_dinamico_resolver('curso_leitura_amigo', '2027-06-01') ->> 'valor', null);
+-- o valor do ano entra DEPOIS, como dado com fonte e ANO explícito (aqui, sintético de teste) — nunca
+-- dentro do requisito. É o do ano CORRENTE no Brasil, para o teste não vencer na virada do ano.
+insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_descricao)
+select d.id, a.y, 'Livro do Curso de Leitura do ano [DADO DE TESTE]', make_date(a.y, 1, 1), make_date(a.y, 12, 31), 'fixture do teste 37'
+  from public.dynamic_content_definitions d, (select extract(year from public._data_no_brasil())::int as y) a where d.chave = 'curso_leitura_amigo';
+select t.eq('(4) resolver(curso_leitura_amigo, 01/06 do ano corrente) = o valor do ano',
+  public.conteudo_dinamico_resolver('curso_leitura_amigo', make_date(extract(year from public._data_no_brasil())::int, 6, 1)) ->> 'valor', 'Livro do Curso de Leitura do ano [DADO DE TESTE]');
+select t.eq('(4) resolver(…, 01/06 do ano seguinte) = NULL (o ano seguinte ainda sem cadastro; não reaproveita este)',
+  public.conteudo_dinamico_resolver('curso_leitura_amigo', make_date(extract(year from public._data_no_brasil())::int + 1, 6, 1)) ->> 'valor', null);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('(4) minha_classe() agora entrega o valor de 2026 no requisito, e a explicação passa a PENDENTE',
-  t.txt($q$select r->'conteudo_dinamico'->>'valor' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
-  'Livro do Curso de Leitura 2026 [DADO DE TESTE]|pendente');
+select t.eq('(4) minha_classe() agora entrega o valor do ano no requisito (com o ANO), e a explicação passa a PENDENTE',
+  t.txt($q$select (r->'conteudo_dinamico'->>'valor') || '/' || (r->'conteudo_dinamico'->>'ano') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
+  'Livro do Curso de Leitura do ano [DADO DE TESTE]/' || extract(year from public._data_no_brasil())::int || '|pendente');
 select t.eq('(4) o texto do requisito NÃO mudou (o ano vive no catálogo dinâmico)', t.txt($q$select r->>'descricao' from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$), (select descricao from public.class_requirements where id = t.req('amigo.I.4')));
 reset role;
 
@@ -215,8 +222,16 @@ select t.eq('(8) membro comum do B não vê a conquista', t.nv(format($q$select 
 reset role;
 
 -- ==================== 6) sem_repeticao consulta o histórico portátil, de verdade ====================
+-- MUDOU NA 83: a especialidade piloto NÃO está mais no fluxo normal (nem com o catálogo oficial de
+-- especialidades vazio), e especialidade é recurso PRÓPRIO que só a plataforma liga. Para exercitar o
+-- sem_repeticao com uma especialidade de verdade, o teste faz o papel da plataforma SÓ nesta
+-- transação: publica a versão piloto como oficial e liga o recurso no clube A (sessão sem usuário).
+select t.como_cron();
+update public.curriculum_versions set origem = 'oficial' where id = (select curriculum_version_id from public.specialties where id = t.id('especialidade_piloto'));
+insert into public.club_features (club_id, feature, enabled) values (t.id('clube_a'), 'especialidades', true)
+on conflict (club_id, feature) do update set enabled = true;
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
-select t.permitido('multi inicia a especialidade piloto no A (não há especialidade oficial: o piloto segue no fluxo)', format($q$select public.especialidade_iniciar(%L)$q$, t.id('especialidade_piloto')));
+select t.permitido('multi inicia a especialidade (publicada como oficial pela plataforma) no A', format($q$select public.especialidade_iniciar(%L)$q$, t.id('especialidade_piloto')));
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('lider_a aprova os 3 requisitos', format($q$select public.especialidade_requisito_avaliar(mr.id, 'aprovado', null) from public.member_specialty_requirements mr where mr.usuario_id = %L and mr.club_id = %L$q$, t.id('multi_dois_papeis'), t.id('clube_a')), 3);
 reset role;
