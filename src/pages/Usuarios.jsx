@@ -17,12 +17,20 @@ const rotuloPapel = {
 }
 
 // Gera uma senha temporária fácil de passar (sem caracteres ambíguos).
-function gerarSenha() {
-  const chars = 'abcdefghijkmnpqrstuvwxyz23456789'
-  let s = ''
-  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)]
-  return s
+// A política de senha é a do Auth (fase 8.1): 8 caracteres, com letras E números — e desde a
+// migration 77 o servidor a aplica também aqui. Sortear 8 de um alfabeto misto dava "só letras" em
+// ~1 de cada 10 senhas sugeridas, que o servidor recusaria; por isso uma letra e um dígito são
+// garantidos, e a posição deles é embaralhada.
+const LETRAS = 'abcdefghijkmnpqrstuvwxyz'
+const DIGITOS = '23456789'
+const sorteia = (s) => s[Math.floor(Math.random() * s.length)]
+export function gerarSenha() {
+  const cs = [sorteia(LETRAS), sorteia(DIGITOS)]
+  while (cs.length < 8) cs.push(sorteia(LETRAS + DIGITOS))
+  for (let i = cs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cs[i], cs[j]] = [cs[j], cs[i]] }
+  return cs.join('')
 }
+export const senhaValida = (s) => s.length >= 8 && /[A-Za-z]/.test(s) && /[0-9]/.test(s)
 
 export default function Usuarios() {
   const { profile } = useAuth()
@@ -274,7 +282,7 @@ function ModalReset({ usuario, onFechar }) {
   const [copiado, setCopiado] = useState(false)
 
   async function confirmar() {
-    if (senha.length < 6) { setErro('A senha precisa ter pelo menos 6 caracteres.'); return }
+    if (!senhaValida(senha)) { setErro('A senha precisa ter pelo menos 8 caracteres, com letras e números.'); return }
     setSalvando(true)
     setErro('')
     try {

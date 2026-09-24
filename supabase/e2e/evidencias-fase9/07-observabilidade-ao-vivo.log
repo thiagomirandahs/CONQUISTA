@@ -1,0 +1,5 @@
+trilha, as duas operações feitas pela API agora:
+12:55:46 | vinculo_alterado | ator=fundador.b@multiclube.local | clube=Águias do Vale | alvo=so.b2@staging.local | {"status": ["ativo", "suspenso"]}
+12:55:46 | vinculo_alterado | ator=fundador.b@multiclube.local | clube=Águias do Vale | alvo=so.b2@staging.local | {"status": ["suspenso", "ativo"]}
+telemetria gravada pela API: /cadastro | código [segredo] inválido | clube=Filhos da Conquista
+linhas novas na trilha: 2

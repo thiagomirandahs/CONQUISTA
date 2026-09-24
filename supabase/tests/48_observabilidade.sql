@@ -79,7 +79,9 @@ select t.eq('nenhuma das duas entrou',
 -- Textos longos são truncados, não recusados: perder o registro seria pior que cortá-lo.
 select t.como('membro_a');
 select t.permitido('texto gigante é aceito',
-  $q$select public.registrar_erro('ui', 'correlacao-teste-04', repeat('a', 500), repeat('b', 500), repeat('c', 500), repeat('d', 500))$q$, 0);
+  -- texto longo COMUM (com espaços e barras). Até a fase 9 a carga era repeat('a', 500): desde a
+  -- migration 77 uma sequência dessas tem cara de token e é mascarada — o que tem teste próprio (60).
+  $q$select public.registrar_erro('ui', 'correlacao-teste-04', '/' || repeat('ab/', 170), repeat('b ', 250), repeat('c ', 250), repeat('d', 500))$q$, 0);
 reset role;
 select t.eq('...e truncado nos limites declarados (rota 120, contexto 200, código 80, agente 120)',
   t.txt($q$select length(rota)||'/'||length(contexto)||'/'||length(codigo)||'/'||length(agente)
