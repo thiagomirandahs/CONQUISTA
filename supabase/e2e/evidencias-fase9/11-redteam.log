@@ -1,0 +1,90 @@
+
+== 1. código de entrada ==
+   SEGUROU  o código só revela a identidade PÚBLICA do clube (sem id, sem membros, sem e-mail)  [chaves: clube,encontrado,lema,logo_url,papel,sigla]
+   SEGUROU  pedir entrada não abre o clube: o pendente não lê nada de C
+   SEGUROU  ...e o vínculo nasce PENDENTE no banco
+   SEGUROU  código revogado não abre mais  [{"encontrado":false}]
+   SEGUROU  revogado e inexistente respondem com a MESMA forma (sem oráculo)  [{"encontrado":false} vs {"encontrado":false}]
+   SEGUROU  força bruta: depois de 10 erros, nem o código certo abre (limite por pessoa)  [Muitas tentativas. Espere alguns minutos e tente de novo.]
+   SEGUROU  ...e o limite é contado no banco (tentativas registradas)
+   ACHADO   o limite de entrada é POR CONTA: um atacante com N contas tem N×10 tentativas a cada 10 min. O código tem espaço grande e expira, mas o limite não é por IP.
+   SEGUROU  quem não abusou continua entrando com o código certo
+
+== 2. convites ==
+   SEGUROU  o convite de equipe de OUTRA pessoa não é aceito pelo atacante (mesmo com o id)  [Convite não encontrado, vencido ou já usado.]
+   SEGUROU  ...e nem aparece na lista dele
+   SEGUROU  convite revogado não é aceito nem pela pessoa certa  [Convite não encontrado, vencido ou já usado.]
+   SEGUROU  token de responsável já usado não serve para uma segunda conta (replay)  [{"encontrado":false}]
+   SEGUROU  entrar como responsável por convite não entrega filho nenhum sem aprovação da liderança
+
+== 3. pessoa em vários clubes: poder de um clube usado em outro ==
+   SEGUROU  Vera (diretoria de A) na aba B não gere membro de B  [Sem permissão (apenas diretoria/instrutor deste clube).]
+   SEGUROU  ...nem na aba A, apontando para alguém que só é de B  [Esta pessoa não tem vínculo com o clube em uso.]
+   SEGUROU  Vera na aba B não vê a fila de aprovação de B
+   SEGUROU  Ivo (instrutor de A e B), na aba A, não mexe em requisito de B
+
+== 4. vínculo suspenso / removido ==
+   SEGUROU  suspenso: com o MESMO token de antes, perde a leitura de B na hora  [34 → 0]
+   SEGUROU  ...e a escrita
+   SEGUROU  ...e o contexto não oferece mais B como ativo
+   SEGUROU  reativado, volta (o controle é o vínculo, não o token)
+
+== 5. Storage ==
+   SEGUROU  subir na pasta de comprovação de OUTRA criança  [new row violates row-level security policy]
+   SEGUROU  subir no mural com o id de OUTRA pessoa no nome  [new row violates row-level security policy]
+   SEGUROU  path traversal para a pasta de outra criança  [new row violates row-level security policy]
+   SEGUROU  subir no bucket público sem ser liderança  [new row violates row-level security policy]
+   SEGUROU  subir num prefixo de pasta inventado  [new row violates row-level security policy]
+   SEGUROU  sobrescrever (upsert) a foto de outra pessoa do MESMO clube  [new row violates row-level security policy]
+   SEGUROU  listar o mural (Storage) em C só traz arquivos de gente de C  [44 arquivos, 0 autor(es) de fora]
+   SEGUROU  baixar a foto do mural de A sendo só de C
+   SEGUROU  URL pública de um arquivo do bucket PRIVADO não abre  [HTTP 400]
+
+== 6. evidência de criança ==
+   SEGUROU  outra criança do MESMO clube (Davi, só A): nem URL assinada, nem download da evidência de Ana
+   SEGUROU  membro de outro clube (Bia): nem URL assinada, nem download da evidência de Ana
+   SEGUROU  liderança de outro clube (B): nem URL assinada, nem download da evidência de Ana
+   SEGUROU  coordenador distrital (A está no distrito): nem URL assinada, nem download da evidência de Ana
+   SEGUROU  atacante sem clube: nem URL assinada, nem download da evidência de Ana
+   SEGUROU  a liderança do clube DELA vê (para avaliar) — o acesso certo continua funcionando
+   ACHADO   a responsável aprovada de Ana NÃO consegue abrir a evidência de classe da filha (decisão de produto a registrar)
+
+== 7. APIs / RPC ==
+   ·        funções executáveis por ANON: documento_verificar
+   SEGUROU  nenhuma RPC devolve dado a quem não entrou  [1 testadas]
+   SEGUROU  nenhuma tabela responde linha para anônimo
+   SEGUROU  a liderança de B não troca a senha de uma criança de A  [Sem permissão (apenas diretoria/instrutor do clube desta pessoa).]
+
+== 8. manipulação de headers ==
+   SEGUROU  Bia (só B) com x-clube-atual lista "A,B": nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual lista "B, A": nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual JSON: nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual maiúsculas (A): nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual espaços: nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual injeção SQL: nunca vê A
+   SEGUROU  Bia (só B) com x-clube-atual uuid nulo: nunca vê A
+   ·        Ana com A em maiúsculas → clube em uso A (mesmo uuid)
+   SEGUROU  um membro com x-escopo-atual = distrito não abre o painel institucional  [[]]
+
+== 9. rate limit ==
+   SEGUROU  pedir ajuda: o 6º pedido em 5 minutos é barrado  [barrados=2]
+   SEGUROU  chat geral: há limite de envio  [30 passaram antes de barrar]
+
+== 10. logout / troca de identidade ==
+   SEGUROU  depois do logout, o refresh token não gera sessão nova
+   ACHADO   depois do logout, o access token antigo ainda responde HTTP 200 até expirar (jwt_expiry = 3600 s). Mitigação: expiração menor; o vínculo continua sendo checado a cada requisição.
+
+   ·        limpeza feita: mensagens, ajudas, tentativas, convites e a conta do atacante
+
+==============================================================
+ 50 ataques SEGURADOS · 0 FURO(S) · 3 achado(s) para o relatório
+   ACHADO [1. código de entrada] o limite de entrada é POR CONTA: um atacante com N contas tem N×10 tentativas a cada 10 min. O código tem espaço grande e expira, mas o limite não é por IP.
+   ACHADO [6. evidência de criança] a responsável aprovada de Ana NÃO consegue abrir a evidência de classe da filha (decisão de produto a registrar)
+   ACHADO [10. logout / troca de identidade] depois do logout, o access token antigo ainda responde HTTP 200 até expirar (jwt_expiry = 3600 s). Mitigação: expiração menor; o vínculo continua sendo checado a cada requisição.
+==============================================================
+
+== 9b. limite de login (medido separado, por último) ==
+   40 senhas erradas em 2.4s: {"400":40}; nenhum 429.
+   em seguida, outra pessoa com a senha CERTA, do mesmo IP: HTTP 200.
+   causa: o CLI local não repassa [auth.rate_limit].sign_in_sign_ups ao GoTrue (a variável não existe no container).
+   => a proteção contra força bruta de senha NÃO é demonstrável no staging local; conferir no projeto de nuvem do piloto.

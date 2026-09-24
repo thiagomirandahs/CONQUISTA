@@ -40,10 +40,16 @@ select t.ok('criar_convite_responsavel devolve {token, expires_at}', t.txt('sele
 reset role;
 
 -- ---------- hardening: ACL de funções ----------
-select t.eq('nenhuma função do public é chamável por anon (exceto o cadastro público e a verificação pública de documento)',
+select t.eq('nenhuma função do public é chamável por anon (exceto a verificação pública de documento)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') and p.proname not in ('clube_legado_id', 'documento_verificar')), 0);
-select t.ok('clube_legado_id continua chamável por anon (a policy do cadastro precisa)', has_function_privilege('anon', 'public.clube_legado_id()', 'execute'));
+    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') and p.proname not in ('documento_verificar')), 0);
+-- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
+-- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
+-- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções
+-- `security definer` — rodam como dono, não como anon — e nenhuma policy.
+select t.ok('clube_legado_id NÃO é chamável por anon (migration 76)', not has_function_privilege('anon', 'public.clube_legado_id()', 'execute'));
+select t.eq('...e nenhuma policy depende dela (que é o que a revogação poderia quebrar)',
+  (select count(*) from pg_policies where coalesce(qual, '') ilike '%clube_legado_id%' or coalesce(with_check, '') ilike '%clube_legado_id%'), 0);
 select t.ok('documento_verificar é chamável por anon (verificação pública por token; só o resumo mínimo)', has_function_privilege('anon', 'public.documento_verificar(text)', 'execute'));
 select t.eq('nenhuma função do public é PUBLIC-executável (herança do default do Postgres)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace

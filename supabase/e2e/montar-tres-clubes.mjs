@@ -108,7 +108,8 @@ const atores = { clubes: {}, pessoas: {} }
 // ---------------------------------------------------------------------------
 console.log('-- A: Tenant 001 (legado) --')
 {
-  const sb = anon()
+  // pela service_role: desde a migration 76 esta função não é mais executável por anônimo
+  const sb = createClient(API, AMBIENTE.service, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data } = await sb.rpc('clube_legado_id')
   atores.clubes.A = data
   ok('o clube legado existe e é alcançável', !!data)

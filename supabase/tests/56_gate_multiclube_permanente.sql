@@ -204,6 +204,16 @@ select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
                            where c.relname = p.tablename and a.attname = 'club_id'
                              and not a.attisdropped)$q$), '');
 
+-- ...e o mesmo para FUNÇÕES. O red-team da fase 9 achou `clube_legado_id()` executável por anônimo
+-- — resto do tempo em que o cadastro punha todo mundo no Tenant 001 — devolvendo o uuid do clube A
+-- a quem nunca entrou. Nenhum front a chamava mais. A lista permitida é escrita aqui, uma por uma:
+-- `documento_verificar` é pública DE PROPÓSITO (conferir um documento emitido, por token).
+select t.eq('as únicas funções que ANÔNIMO executa são as públicas por desenho',
+  t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
+             from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+            where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
+  'documento_verificar');
+
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'
        where p.schemaname='public' and p.cmd in ('SELECT','ALL')$q$) > 40);

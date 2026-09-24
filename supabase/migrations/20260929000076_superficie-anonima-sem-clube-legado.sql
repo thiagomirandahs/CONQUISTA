@@ -1,0 +1,15 @@
+-- =============================================================================
+--  Fase 9 (SEGURANÇA) — `clube_legado_id()` deixa de ser executável por anônimo.
+--
+--  Achado pelo red-team da fase 9: uma chamada sem login a `/rest/v1/rpc/clube_legado_id` devolvia
+--  o uuid do clube legado. O grant veio da migration 17 ("só a do cadastro público"), do tempo em
+--  que o cadastro colocava todo mundo no Tenant 001. Desde a 8.6 o cadastro cria só a conta, e
+--  nenhum front — nem o publicado (`main`) nem o desta branch — chama esta função.
+--
+--  O uuid sozinho não abre nada (o header de clube exige vínculo ativo), mas é uma porta anônima sem
+--  uso, e a fase 8.5 tratou oráculo de uuid como defeito (teste 24). Fica a regra do gate 56: o que
+--  anônimo executa é uma lista escrita, hoje só `documento_verificar`.
+--
+--  Ordem de deploy: nenhuma. Nenhum front chama a função.
+-- =============================================================================
+revoke execute on function public.clube_legado_id() from anon, public;
