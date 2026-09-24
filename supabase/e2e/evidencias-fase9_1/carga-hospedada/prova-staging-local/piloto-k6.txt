@@ -1,0 +1,5 @@
+família: piloto   (HOSPEDADO: host.docker.internal — um gerador de carga, um IP; SLO: falha ≤ 1%, p95 ≤ 1000 ms, p99 ≤ 3000 ms)
+degrau |  reqs | req/s |  p50 ms |  p95 ms |  p99 ms | falha % | aguenta?
+     2 |    13 |     1 |       7 |      28 |      32 |    0.00 | sim
+     4 |    28 |     3 |       5 |      23 |      27 |    0.00 | sim
+terminou a rampa sem atingir o critério de parada

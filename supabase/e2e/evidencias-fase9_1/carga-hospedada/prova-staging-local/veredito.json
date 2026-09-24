@@ -1,0 +1,64 @@
+{
+  "quando": "2026-09-24T15:49:04.359Z",
+  "alvo": "127.0.0.1",
+  "local": true,
+  "pico_esperado": 1,
+  "margem": 3,
+  "degrau_de_margem": 4,
+  "slo": {
+    "falha": 1,
+    "p95": 1000,
+    "p99": 3000
+  },
+  "familias": [
+    "piloto",
+    "rajada"
+  ],
+  "aguenta_no_degrau_de_margem": {
+    "piloto": true,
+    "rajada": true
+  },
+  "margem_confortavel": "NAO-SE-APLICA (alvo local: prova da ferramenta, não do projeto)",
+  "resultados": {
+    "piloto": {
+      "2": {
+        "reqs": 13,
+        "rps": 1,
+        "p50": 7,
+        "p95": 28,
+        "p99": 32,
+        "falha_pct": 0,
+        "aguenta": true
+      },
+      "4": {
+        "reqs": 28,
+        "rps": 3,
+        "p50": 5,
+        "p95": 23,
+        "p99": 27,
+        "falha_pct": 0,
+        "aguenta": true
+      }
+    },
+    "rajada": {
+      "2": {
+        "reqs": 20,
+        "rps": 2,
+        "p50": 5,
+        "p95": 8,
+        "p99": 11,
+        "falha_pct": 0,
+        "aguenta": true
+      },
+      "4": {
+        "reqs": 20,
+        "rps": 2,
+        "p50": 4,
+        "p95": 6,
+        "p99": 9,
+        "falha_pct": 0,
+        "aguenta": true
+      }
+    }
+  }
+}

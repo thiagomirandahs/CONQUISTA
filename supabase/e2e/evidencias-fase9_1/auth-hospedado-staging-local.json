@@ -1,0 +1,294 @@
+{
+  "ferramenta": "scripts/verificar-auth-hospedado.mjs",
+  "formato": 1,
+  "quando": "2026-09-24T15:49:56.258Z",
+  "alvo": {
+    "origem": "http://127.0.0.1:55321",
+    "ref": null,
+    "local": true,
+    "piloto_dominio": null
+  },
+  "guarda": {
+    "producao_conhecida": 1,
+    "recusou": false
+  },
+  "gotrue": "v2.196.0",
+  "publico": {
+    "external": {
+      "anonymous_users": false,
+      "apple": false,
+      "azure": false,
+      "bitbucket": false,
+      "discord": false,
+      "facebook": false,
+      "snapchat": false,
+      "figma": false,
+      "fly": false,
+      "github": false,
+      "gitlab": false,
+      "google": false,
+      "keycloak": false,
+      "kakao": false,
+      "linkedin": false,
+      "linkedin_oidc": false,
+      "notion": false,
+      "spotify": false,
+      "slack": false,
+      "slack_oidc": false,
+      "workos": false,
+      "twitch": false,
+      "twitter": false,
+      "email": true,
+      "phone": false,
+      "zoom": false
+    },
+    "disable_signup": false,
+    "mailer_autoconfirm": false,
+    "phone_autoconfirm": true,
+    "sms_provider": "",
+    "saml_enabled": false,
+    "passkeys_enabled": false
+  },
+  "gestao": {
+    "status": "nao-se-aplica",
+    "motivo": "alvo local: não existe Management API para o Supabase do Docker",
+    "registro": null
+  },
+  "parametros": {
+    "AUTH_LOGINS_POR_IP": 60,
+    "AUTH_EMAILS_POR_HORA": 60,
+    "AUTH_REDIRECT_EXTRA": [],
+    "app_envia_captchaToken": false
+  },
+  "criterios": [
+    {
+      "id": "auth-responde",
+      "titulo": "Auth do projeto responde (/auth/v1/health e /settings)",
+      "obrigatorio": true,
+      "resultado": "PASS",
+      "valor": "GoTrue v2.196.0",
+      "esperado": "",
+      "nota": ""
+    },
+    {
+      "id": "confirmacao-email",
+      "titulo": "confirmação de e-mail obrigatória",
+      "obrigatorio": true,
+      "resultado": "PASS",
+      "valor": {
+        "mailer_autoconfirm_publico": false,
+        "mailer_autoconfirm_gestao": null
+      },
+      "esperado": "mailer_autoconfirm = false",
+      "nota": "ligada: sem ela o e-mail de qualquer terceiro vira conta ativa (B5). Efeito sobre crianças sem e-mail: MENORES-E-EMAIL.md"
+    },
+    {
+      "id": "metodos-de-entrada",
+      "titulo": "só e-mail + senha (o único método que o app usa)",
+      "obrigatorio": true,
+      "resultado": "PASS",
+      "valor": {
+        "email": true,
+        "outros_ligados": []
+      },
+      "esperado": "email ligado; anônimo, telefone, OAuth e SAML desligados",
+      "nota": ""
+    },
+    {
+      "id": "cadastro-aberto",
+      "titulo": "cadastro público aberto (a criança cria a própria conta)",
+      "obrigatorio": true,
+      "resultado": "PASS",
+      "valor": {
+        "disable_signup": false
+      },
+      "esperado": "disable_signup = false",
+      "nota": ""
+    },
+    {
+      "id": "senha-politica",
+      "titulo": "política de senha = a do app (8+, letras e números)",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "troca-de-senha-segura",
+      "titulo": "troca de senha exige sessão recente",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "limite-login-ativo",
+      "titulo": "limite de cadastro+login por IP ativo (força bruta)",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "limite-comporta-reuniao",
+      "titulo": "limite comporta uma reunião no mesmo Wi-Fi em 5 min",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "smtp-proprio",
+      "titulo": "SMTP próprio configurado",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "limite-emails",
+      "titulo": "cota de e-mail comporta o dia do cadastro",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "captcha-coerente",
+      "titulo": "captcha coerente com o app",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "jwt-expiracao",
+      "titulo": "access token expira em até 1 h",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "refresh-rotacao",
+      "titulo": "refresh token com rotação (reuso ≤ 10 s)",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "site-url",
+      "titulo": "site_url = domínio do piloto",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "redirects-so-piloto",
+      "titulo": "redirects só para o domínio do piloto",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "template-confirmacao-pt",
+      "titulo": "e-mail de confirmação de cadastro em pt-BR",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "template-recuperacao-pt",
+      "titulo": "e-mail de recuperação de senha em pt-BR",
+      "obrigatorio": true,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "troca-de-email-dupla",
+      "titulo": "troca de e-mail confirmada nos dois endereços",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "limite-verificacao",
+      "titulo": "limite de verificação (clique no link) por IP",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "senha-vazada",
+      "titulo": "recusa senha que já vazou (HaveIBeenPwned)",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "template-convite-pt",
+      "titulo": "e-mail de convite (Auth) em pt-BR",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "template-magic-link-pt",
+      "titulo": "e-mail de link mágico em pt-BR",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    },
+    {
+      "id": "template-troca-email-pt",
+      "titulo": "e-mail de troca de endereço em pt-BR",
+      "obrigatorio": false,
+      "resultado": "NAO-VERIFICAVEL",
+      "valor": null,
+      "esperado": "",
+      "nota": "alvo local: não existe Management API para o Supabase do Docker"
+    }
+  ],
+  "resumo": {
+    "obrigatorios": {
+      "PASS": 4,
+      "FAIL": 0,
+      "NAO-VERIFICAVEL": 13
+    },
+    "complementares": {
+      "PASS": 0,
+      "FAIL": 0,
+      "NAO-VERIFICAVEL": 6
+    },
+    "veredito": "INCOMPLETO",
+    "codigo_saida": 2
+  }
+}

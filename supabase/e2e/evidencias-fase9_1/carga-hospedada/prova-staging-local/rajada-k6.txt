@@ -1,0 +1,5 @@
+família: rajada   (HOSPEDADO: host.docker.internal — um gerador de carga, um IP; SLO: falha ≤ 1%, p95 ≤ 1000 ms, p99 ≤ 3000 ms)
+degrau |  reqs | req/s |  p50 ms |  p95 ms |  p99 ms | falha % | aguenta?
+     2 |    20 |     2 |       5 |       8 |      11 |    0.00 | sim
+     4 |    20 |     2 |       4 |       6 |       9 |    0.00 | sim
+terminou a rampa sem atingir o critério de parada
