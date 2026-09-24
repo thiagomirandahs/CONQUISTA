@@ -44,3 +44,9 @@ staging/supabase/migrations/
 staging/supabase/functions/
 staging/supabase/seed.sql
 .env.staging
+
+# Fase 9, item 8: o BACKUP do staging (dump do banco com auth.users e os arquivos do Storage) e o
+# ambiente DESCARTÁVEL onde ele é restaurado. O dump tem hash de senha e evidência de criança
+# (sintéticas, mas é o formato real): nunca versionar.
+staging/backups/
+restore/

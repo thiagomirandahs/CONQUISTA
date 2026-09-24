@@ -1,0 +1,82 @@
+
+-- BACKUP do staging → staging\backups\2026-09-24T11-57-38-370Z --
+   ·       banco.dump  2.2 MB  sha256 bb4018371ab460ca…
+   ·       storage.tgz 9 KB  sha256 aa97b167f5cdf5be…
+   ·       ponto de recuperação 2026-09-24T11:57:38.981Z  (backup em 1.5s)
+   ·       migração 20260928000072, 16 contas, 4 pessoas multi-clube
+
+-- RESTORE de staging\backups\2026-09-24T11-57-38-370Z num ambiente DESCARTÁVEL (CONQUISTA-RESTORE, porta 56321) --
+   OK      o arquivo banco.dump do backup está íntegro (sha256 confere)
+   OK      o arquivo storage.tgz do backup está íntegro (sha256 confere)
+   ·       stack descartável no ar em 39.2s
+   OK      pg_restore terminou sem erro (5.7s)
+   OK      auth, API e storage do descartável respondem (4.8s)
+
+-- 1. o que voltou (manifesto, fora da RLS) --
+   OK      migracao               "20260928000072"
+   OK      contas                 16
+   OK      identidades_auth       14
+   OK      vinculos_ativos        {"Águias do Vale":7,"Clube Teste Tenant 002":1,"Distrito Staging do Agreste":1,"Filhos da Conquista":8,"Sentinelas do Agreste":3}
+   OK      pessoas_multiclube     4
+   OK      pontos                 {"Águias do Vale":100,"Clube Teste Tenant 002":20,"Filhos da Conquista":80,"Sentinelas do Agreste":25}
+   OK      mensalidades           {"Águias do Vale":6,"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
+   OK      fotos                  {"Águias do Vale":30,"Clube Teste Tenant 002":1,"Filhos da Conquista":44,"Sentinelas do Agreste":10}
+   OK      matriculas             {"em_andamento":2,"investida":1}
+   OK      requisitos_aprovados   37
+   OK      documentos             1
+   OK      objetos_storage        {"comprovacoes":17,"imagens":110}
+   OK      cron_jobs              13
+   OK      policies               139
+   OK      funcoes                400
+   OK      gatilhos               85
+   OK      tabelas_com_rls        119
+   OK      os 127 objetos do Storage têm arquivo no disco do descartável
+
+-- 2. a suíte reduzida, pela API do descartável --
+   OK      identidade so_a entra com a senha de antes (hash restaurado)
+   OK      identidade so_b entra com a senha de antes (hash restaurado)
+   OK      identidade so_c entra com a senha de antes (hash restaurado)
+   OK      identidade ab entra com a senha de antes (hash restaurado)
+   OK      identidade abc entra com a senha de antes (hash restaurado)
+   OK      identidade dir_a_membro_b entra com a senha de antes (hash restaurado)
+   OK      identidade instrutor_ab entra com a senha de antes (hash restaurado)
+   OK      identidade responsavel entra com a senha de antes (hash restaurado)
+   OK      identidade coordenador entra com a senha de antes (hash restaurado)
+   OK      identidade fundador_sem_clube entra com a senha de antes (hash restaurado)
+   OK      so_a: vínculos ativos voltaram exatamente (1)
+   OK      so_b: vínculos ativos voltaram exatamente (1)
+   OK      so_c: vínculos ativos voltaram exatamente (1)
+   OK      ab: vínculos ativos voltaram exatamente (2)
+   OK      abc: vínculos ativos voltaram exatamente (3)
+   OK      dir_a_membro_b: vínculos ativos voltaram exatamente (2)
+   OK      instrutor_ab: vínculos ativos voltaram exatamente (2)
+   OK      fundador_sem_clube: vínculos ativos voltaram exatamente (0)
+   OK      o responsável volta vendo exatamente a filha certa
+   OK      a classe de Ana volta INVESTIDA
+   OK      o documento emitido voltou
+   OK      ...e a verificação pública do documento ainda confere
+   OK      a liderança de A vê os mesmos 80 pontos de antes
+   OK      Ana lista as próprias evidências no bucket privado
+   OK      ...baixa a evidência, e o arquivo é o mesmo de antes (bytes)
+   OK      ...e Bia (só B) continua SEM acesso à evidência de Ana depois do restore
+   OK      o mural de B, visto por Bia, não traz foto de A
+   OK      há foto do povoamento no mural de A
+   OK      uma foto do mural de A abre (arquivo e metadado voltaram juntos)
+   OK      um token emitido pelo STAGING é recusado pelo descartável
+
+-- 3. RPO — o ponto de recuperação é o instante do dump --
+   OK      a escrita de ANTES do backup voltou (rpo-antes-mufh99aj)
+   OK      a escrita de DEPOIS do backup não voltou (rpo-depois-mufh99aj) — é a perda que o RPO mede
+
+==============================================================
+ RTO OBSERVADO (backup de 2.2 MB + 9 KB de arquivos)
+   provisionar o ambiente ... 39.2s
+   restaurar o banco ........ 5.7s
+   storage + serviços ....... 4.8s
+   conferência .............. 1.9s
+   TOTAL (até a suíte verde)  51.6s
+ RPO: o instante do dump (2026-09-24T11:57:38.981Z). Numa rotina real, RPO = intervalo entre backups.
+
+ RESULTADO: RESTORE COMPROVADO
+==============================================================
+   ·       ambiente descartável derrubado e apagado (containers, volumes e diretório)
