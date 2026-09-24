@@ -4,6 +4,7 @@ import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
+import Entrar from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
@@ -173,6 +174,14 @@ export default function App() {
         {/* Cadastro de um clube NOVO: exige sessão, mas não pode passar pelo ClubeGuard — quem chega
             pra abrir um clube ainda não tem clube nenhum (é justamente o que o onboarding cria). */}
         <Route path="/criar-clube" element={<SessaoObrigatoria><Onboarding /></SessaoObrigatoria>} />
+
+        {/* Entrar num clube por código/QR ou por link de convite (fase 8.6). Exige SESSÃO e não
+            passa pelo ClubeGuard, pela mesma razão do onboarding: quem chega aqui ainda não tem
+            clube — é exatamente isso que esta tela resolve.
+            A sessão é exigida de propósito, e é uma decisão de privacidade: sem ela, tentar códigos
+            ao acaso seria uma sonda anônima e ilimitada contra a existência de clubes. Com ela,
+            cada tentativa tem dono e entra no limite de abuso do servidor. */}
+        <Route path="/entrar" element={<SessaoObrigatoria><Entrar /></SessaoObrigatoria>} />
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />

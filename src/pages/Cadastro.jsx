@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
-import { CARGOS, precisaUnidade } from '../lib/cargos.js'
+import { CARGOS } from '../lib/cargos.js'
 
 const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
@@ -17,8 +17,7 @@ export default function Cadastro() {
   // tiramos da barra de endereço.
   const [convite] = useState(() => lerTokenConvite(window.location))
   useEffect(() => { if (convite) limparConviteDaUrl(window.location, window.history) }, [convite])
-  const [unidades, setUnidades] = useState([])
-  const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', unidade_id: '', cargo: 'Desbravador' })
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', cargo: 'Desbravador' })
   const [ehPai, setEhPai] = useState(Boolean(convite)) // cadastro de responsável (pai/mãe)
   const [foto, setFoto] = useState(null)
   const [erro, setErro] = useState('')
@@ -27,10 +26,15 @@ export default function Cadastro() {
 
   const set = (campo, v) => setForm((f) => ({ ...f, [campo]: v }))
 
-  // Carrega as unidades do banco para o desbravador escolher
-  useEffect(() => {
-    supabase.from('unidades').select('id,nome').order('nome').then(({ data }) => setUnidades(data || []))
-  }, [])
+  // A LISTA DE UNIDADES SAIU DAQUI (fase 8.6), e ela era o coração da última suposição de clube
+  // único do produto: esta tela lia `unidades` sem sessão, o que só devolvia as do Tenant 001 —
+  // então quem se cadastrasse para entrar no clube B escolhia uma unidade do clube A, e o servidor
+  // o colocava no clube A.
+  //
+  // Cadastrar-se agora cria só a conta. A unidade vem depois de a pessoa entrar num clube, e quem
+  // a atribui é a liderança, que sabe quem ela é e como as unidades estão organizadas. Pedir isso
+  // a um desconhecido num formulário público nunca foi uma escolha informada — era uma lista de
+  // nomes para adivinhar.
 
   async function cadastrar(e) {
     e.preventDefault()
@@ -46,7 +50,6 @@ export default function Cadastro() {
         convite_responsavel: ehPai ? convite : '',
         nascimento: ehPai ? '' : form.nascimento,
         cargo: ehPai ? '' : form.cargo,
-        unidade_id: (!ehPai && precisaUnidade(form.cargo)) ? form.unidade_id : '',
       } },
     })
 
@@ -142,15 +145,8 @@ export default function Cadastro() {
                   {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              {precisaUnidade(form.cargo) && (
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1">Unidade</label>
-                  <select required className={inputClass} value={form.unidade_id} onChange={(e) => set('unidade_id', e.target.value)}>
-                    <option value="" disabled>{unidades.length ? 'Escolha sua unidade' : 'Carregando unidades...'}</option>
-                    {unidades.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-                  </select>
-                </div>
-              )}
+              {/* A unidade saiu do cadastro (fase 8.6): ela só existe DENTRO de um clube, e aqui
+                  ainda não há clube nenhum. Quem atribui é a liderança, depois que a pessoa entra. */}
             </>
           )}
 

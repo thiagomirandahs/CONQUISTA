@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
+import { entradasPendentes } from '../services/entrada.js'
+import CodigoDeEntrada from '../components/CodigoDeEntrada.jsx'
 import { CARGOS_LIDERANCA } from '../lib/cargos.js'
 import { avisar } from '../ui/avisos.jsx'
 
@@ -10,26 +12,28 @@ const fmtData = (iso) => (iso ? iso.split('-').reverse().join('/') : '—')
 const ehLideranca = (cargo) => CARGOS_LIDERANCA.includes(cargo)
 
 export default function Aprovacoes() {
-  const { papel: meuPapel } = useClube()
+  const { papel: meuPapel, clubeId } = useClube()
   const ehAdmin = ADMIN.includes(meuPapel)
   const [pendentes, setPendentes] = useState([])
   const [carregando, setCarregando] = useState(true)
 
+  // A fila é de VÍNCULOS do clube em uso, não de `profiles.status` (fase 8.6).
+  //
+  // Antes, esta tela perguntava "quem tem a CONTA pendente?" — o status global da pessoa. Era
+  // herança de quando havia um clube só: com N clubes, "esta pessoa está pendente" não quer dizer
+  // nada sem dizer pendente ONDE. E desde que o cadastro deixou de criar vínculo, a conta nasce
+  // ativa: a lista ficaria permanentemente vazia, e ninguém seria aprovado em lugar nenhum.
   async function carregar() {
     setCarregando(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('id,nome,nascimento,unidade_id,cargo,unidades(nome)')
-      .eq('status', 'pendente')
-      .order('created_at', { ascending: true })
-    setPendentes(data || [])
+    try { setPendentes(await entradasPendentes()) } catch { setPendentes([]) }
     setCarregando(false)
   }
 
+  // `clubeId` na dependência: a fila é do clube EM USO, então trocar de aba tem de recarregar.
   useEffect(() => {
     if (ehAdmin) carregar()
     else setCarregando(false)
-  }, [ehAdmin])
+  }, [ehAdmin, clubeId])
 
   async function decidir(id, novoStatus) {
     const alvo = pendentes.find((x) => x.id === id)
@@ -59,8 +63,12 @@ export default function Aprovacoes() {
     <div>
       <div className="mb-5">
         <h2 className="text-2xl font-extrabold text-ink">✅ Aprovações</h2>
-        <p className="text-sm text-muted">Novos cadastros aguardando liberação</p>
+        <p className="text-sm text-muted">Quem pediu para entrar neste clube</p>
       </div>
+
+      {/* O código fica AQUI, junto da fila que ele alimenta: é a mesma conversa — como as pessoas
+          chegam, e quem deixa entrar. */}
+      <div className="mb-5"><CodigoDeEntrada /></div>
 
       {carregando ? (
         <p className="text-faint text-sm">Carregando...</p>
@@ -85,16 +93,14 @@ export default function Aprovacoes() {
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-ink truncate">{p.nome || 'Sem nome'}</div>
                     <div className="text-xs text-faint">
-                      {p.unidades?.nome ? `🏠 ${p.unidades.nome}` : 'Sem unidade'} · 🎂 {fmtData(p.nascimento)}
+                      🎂 {fmtData(p.nascimento)}
+                      {p.origem === 'codigo_de_entrada' ? ' · 🎟️ pelo código do clube' : ''}
                     </div>
-                    {p.cargo && (
-                      <span className={`inline-block mt-1 text-xs font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.cargo) ? 'bg-amber-100 text-amber-700' : 'bg-surface2 text-muted'}`}>
-                        {ehLideranca(p.cargo) ? '⭐ ' : ''}{p.cargo}
-                      </span>
-                    )}
-                    {ehLideranca(p.cargo) && (
-                      <div className="text-xs text-amber-600 mt-1">Entra como desbravador — se for líder mesmo, promova em Usuários.</div>
-                    )}
+                    {/* A unidade não aparece porque não existe ainda: quem entra pelo código entra
+                        SEM unidade, e atribuí-la é ato da liderança, em Usuários, depois de aprovar. */}
+                    <span className={`inline-block mt-1 text-xs font-semibold rounded-full px-2 py-0.5 ${ehLideranca(p.papel_pedido) ? 'bg-amber-100 text-amber-700' : 'bg-surface2 text-muted'}`}>
+                      {ehLideranca(p.papel_pedido) ? '⭐ ' : ''}{p.papel_pedido}
+                    </span>
                   </div>
                 </div>
                 {/* Linha 2: botões largos, fáceis de acertar no celular */}

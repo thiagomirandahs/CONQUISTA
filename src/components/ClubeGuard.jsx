@@ -98,7 +98,7 @@ export default function ClubeGuard({ children }) {
         <p className="text-sm text-muted mt-1 mb-5">
           {temEscopo
             ? `Esta conta não participa de nenhum clube, e não precisa: o seu lugar é o portal ${escopos[0]?.nome ? `de ${escopos[0].nome}` : 'institucional'}.`
-            : 'Esta conta ainda não faz parte de nenhum clube. Você pode abrir o seu próprio clube agora, ou pedir à liderança do seu clube para liberar o seu acesso.'}
+            : 'Você ainda não participa de nenhum clube. Peça o código de entrada à liderança do seu clube — ou abra o seu próprio.'}
         </p>
         <div className="space-y-2">
           {temEscopo && (
@@ -108,11 +108,19 @@ export default function ClubeGuard({ children }) {
               Abrir o portal institucional
             </Link>
           )}
-          <Link to="/criar-clube" data-testid="ir-criar-clube"
+          {/* A porta PRINCIPAL desde a fase 8.6. Antes, cadastrar-se já colocava a pessoa dentro do
+              Tenant 001 e esta tela quase nunca aparecia; quando aparecia, a única saída oferecida
+              era abrir um clube — o que não serve para a maioria, que só quer entrar no clube que
+              já existe. Agora entrar é o caminho normal, e abrir um clube é a exceção. */}
+          <Link to="/entrar" data-testid="ir-entrar"
             className={`block w-full min-h-[48px] leading-[48px] font-extrabold rounded-2xl ${
               temEscopo ? 'bg-surface2 text-ink' : 'bg-gradient-to-r from-brand to-brand2 shadow-glow'}`}
             style={temEscopo ? undefined : { color: 'var(--marca-1-texto, #fff)' }}>
-            Criar o meu clube
+            Entrar com código
+          </Link>
+          <Link to="/criar-clube" data-testid="ir-criar-clube"
+            className="block w-full min-h-[48px] leading-[48px] font-extrabold rounded-2xl bg-surface2 text-ink">
+            Criar um clube
           </Link>
           <button onClick={sair} className="w-full min-h-[44px] text-sm text-muted font-semibold">Sair</button>
         </div>
