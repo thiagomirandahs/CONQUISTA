@@ -1,0 +1,101 @@
+# Suíte SQL inteira contra o banco VIVO do staging (versão 74, povoado), antes da 75.
+# 43 OK; as 16 falhas são ambientais — classificação no relatório de Go/No-Go.
+
+==> [4/4] Rodando testes no banco 'postgres'
+   OK     01_leilao_cron_vs_manual.sql  (19 asserts)
+   OK     02_membro_comum.sql  (68 asserts)
+   OK     03_responsavel.sql  (48 asserts)
+   OK     04_lider_tenant001.sql  (65 asserts)
+   OK     05_lider_tenant002.sql  (54 asserts)
+   OK     06_leitura_escrita_cruzada.sql  (191 asserts)
+   OK     07_push_por_clube.sql  (28 asserts)
+   FALHOU 08_convites_responsavel.sql
+          psql:/tmp/cq_tests/08_convites_responsavel.sql:95: ERROR:  FALHOU: 1 de 43 asserts:
+            - líder A lista os 3 convites do clube A  [obtido=14 esperado=3]
+   FALHOU 09_compat_e_hardening.sql
+          psql:/tmp/cq_migrations/20260921000013_papeis-vinculos-e-escopo-legado.sql:35: ERROR:  check constraint "organization_memberships_role_valido" of relation "organization_memberships" is violated by some row
+   OK     10_reino_legado_fechado.sql  (57 asserts)
+   FALHOU 11_revisao_independente.sql
+          psql:/tmp/cq_tests/11_revisao_independente.sql:133: ERROR:  FALHOU: 2 de 50 asserts:
+            - membro A lista só os próprios arquivos  [obtido=89 esperado=1]
+            - líder A vê os arquivos do próprio clube (não os do B)  [obtido=89 esperado=1]
+   OK     12_regressoes_tenant001.sql  (18 asserts)
+   OK     13_config_por_clube.sql  (54 asserts)
+   OK     14_duelos_por_clube.sql  (59 asserts)
+   OK     15_missoes_e_devocional_por_clube.sql  (76 asserts)
+   OK     16_leilao_por_clube.sql  (46 asserts)
+   OK     17_jogos_por_clube.sql  (96 asserts)
+   FALHOU 18_jogos_cron_por_clube.sql
+          psql:/tmp/cq_tests/18_jogos_cron_por_clube.sql:103: WARNING:  chefao_premiar: o clube abdc84e0-abb0-4fa8-b50b-edcd22020a4f falhou e foi pulado: invalid input syntax for type integer: "abc"
+          psql:/tmp/cq_tests/18_jogos_cron_por_clube.sql:107: ERROR:  FALHOU: 2 de 32 asserts:
+            - ...e ninguém mais foi lembrado  [obtido=10 esperado=2]
+            - lembrete de ausência não repete no mesmo dia  [obtido=10 esperado=2]
+   OK     19_chat_bichinho_biblia_por_clube.sql  (73 asserts)
+   OK     20_matriz_de_auditoria.sql  (27 asserts)
+   OK     21_revisao_de_seguranca_rodada2.sql  (33 asserts)
+   OK     22_revisao_de_regressao_rodada2.sql  (22 asserts)
+   OK     23_chat_mensagem_moderada.sql  (43 asserts)
+   OK     24_oraculos_de_uuid.sql  (45 asserts)
+   FALHOU 25_imagens_privadas.sql
+          psql:/tmp/cq_tests/25_imagens_privadas.sql:162: ERROR:  FALHOU: 3 de 62 asserts:
+            - membro A: a listagem inteira tem exatamente 8 arquivos (sem erro de policy)  [obtido=96 esperado=8]
+            - membro A2: a listagem inteira tem exatamente 6 arquivos  [obtido=94 esperado=6]
+            - líder A vê TUDO do clube A (11), inclusive avatar de pendente/responsável e o comprovante antigo  [obtido=99 esperado=11]
+   OK     26_contexto_do_clube.sql  (94 asserts)
+   OK     27_multiclube_real.sql  (52 asserts)
+   OK     28_entitlements_recursos.sql  (23 asserts)
+   OK     29_sem_profiles_papel_operacional.sql  (12 asserts)
+   OK     30_jogos_premios_multiclube_isolados.sql  (29 asserts)
+   OK     31_motor_curricular_estrutura.sql  (14 asserts)
+   OK     32_classes_multiclube_isolado.sql  (61 asserts)
+   OK     33_especialidades_estrutura.sql  (26 asserts)
+   FALHOU 34_especialidades_multiclube_isolado.sql
+          psql:/tmp/cq_tests/34_especialidades_multiclube_isolado.sql:183: ERROR:  FALHOU: 1 de 46 asserts:
+            - com o recurso "classes" desligado, especialidade_iniciar é recusado pelo SERVIDOR (não só escondido no menu)  [não lançou erro]
+   OK     35_motor_de_regras_curriculares.sql  (138 asserts)
+   FALHOU 36_curriculo_oficial_integridade.sql
+          psql:/tmp/cq_tests/36_curriculo_oficial_integridade.sql:175: ERROR:  FALHOU: 1 de 43 asserts:
+            - dinâmico: nenhum "2026" materializado no texto de requisito anual, e nenhum valor anual cadastrado pela importação (o ano entra depois, com fonte)  [obtido=6 esperado=0]
+   FALHOU 37_classes_regulares_2026_cenarios.sql
+          psql:/tmp/cq_tests/37_classes_regulares_2026_cenarios.sql:106: ERROR:  Período de vigência (2026-01-01 a 2026-12-31) sobrepõe outro valor já cadastrado para esta definição.
+   FALHOU 38_matriz_manifesto_api.sql
+          psql:/tmp/cq_tests/38_matriz_manifesto_api.sql:109: ERROR:  FALHOU: 2 de 18 asserts:
+            - API: bloqueios iniciais — SÓ os 6 dinâmicos (sem conteúdo do ano) e os 25 de escolha (sem escolha registrada) vêm bloqueados; os outros 118 livres  [obtido=25124 esperado=31118]
+            - API: o texto do bloqueio dinâmico nomeia o conteúdo do período; o de escolha diz quantas faltam  [obtido=6 esperado=0]
+   FALHOU 39_snapshot_e_investidura.sql
+          psql:/tmp/cq_tests/39_snapshot_e_investidura.sql:29: ERROR:  Período de vigência (2026-01-01 a 2026-12-31) sobrepõe outro valor já cadastrado para esta definição.
+   FALHOU 40_documento_e_verificacao.sql
+          psql:/tmp/cq_tests/40_documento_e_verificacao.sql:27: ERROR:  Período de vigência (2026-01-01 a 2026-12-31) sobrepõe outro valor já cadastrado para esta definição.
+   FALHOU 41_hierarquia_e_workflow_investidura.sql
+          psql:/tmp/cq_tests/41_hierarquia_e_workflow_investidura.sql:26: ERROR:  Período de vigência (2026-01-01 a 2026-12-31) sobrepõe outro valor já cadastrado para esta definição.
+   FALHOU 42_portal_institucional_e_verificacao.sql
+          psql:/tmp/cq_tests/42_portal_institucional_e_verificacao.sql:22: ERROR:  Período de vigência (2026-01-01 a 2026-12-31) sobrepõe outro valor já cadastrado para esta definição.
+   FALHOU 43_fundacao_comercial_saas.sql
+          psql:/tmp/cq_tests/43_fundacao_comercial_saas.sql:560: ERROR:  FALHOU: 5 de 157 asserts:
+            - IDEMPOTENTE: continua existindo UMA assinatura  [obtido=3 esperado=1]
+            - IDEMPOTENTE: continua existindo UM clube coberto  [obtido=3 esperado=1]
+            - dois clientes comerciais independentes  [obtido=4 esperado=2]
+            - duas assinaturas independentes  [obtido=4 esperado=2]
+            - admin enxerga as contas/planos/assinaturas/uso  [condição = false]
+   OK     44_motor_de_experiencias.sql  (114 asserts)
+   OK     45_chat_matriz_de_acesso.sql  (75 asserts)
+   OK     46_desempenho_estrutural.sql  (17 asserts)
+   OK     47_push_nativo_e_infra.sql  (24 asserts)
+   OK     48_observabilidade.sql  (27 asserts)
+   FALHOU 49_armazenamento_por_clube.sql
+          psql:/tmp/cq_tests/49_armazenamento_por_clube.sql:201: ERROR:  FALHOU: 2 de 26 asserts:
+            - a contagem de objetos acompanha  [obtido=91 esperado=2]
+            - ...e a contagem de objetos bate  [obtido=140 esperado=51]
+   OK     50_push_idempotente.sql  (47 asserts)
+   OK     51_rpcs_cross_tenant.sql  (26 asserts)
+   OK     52_paginacao_keyset.sql  (33 asserts)
+   OK     53_leilao_rateio_conjunto.sql  (65 asserts)
+   OK     54_vinculo_multiclube_pelo_produto.sql  (42 asserts)
+   OK     55_matriz_multiclube.sql  (84 asserts)
+   OK     56_gate_multiclube_permanente.sql  (27 asserts)
+   OK     57_entrada_em_clube.sql  (56 asserts)
+   OK     58_multiclube_opera_nos_dois_clubes.sql  (14 asserts)
+   FALHOU multi_tenant_isolation.sql
+          psql:/tmp/cq_tests/multi_tenant_isolation.sql:208: ERROR:  Esperadas exatamente duas unidades organizacionais no seed local
+----------------------------------------------------------------
+Testes: 43 ok, 16 com falha  -> 08_convites_responsavel.sql 09_compat_e_hardening.sql 11_revisao_independente.sql 18_jogos_cron_por_clube.sql 25_imagens_privadas.sql 34_especialidades_multiclube_isolado.sql 36_curriculo_oficial_integridade.sql 37_classes_regulares_2026_cenarios.sql 38_matriz_manifesto_api.sql 39_snapshot_e_investidura.sql 40_documento_e_verificacao.sql 41_hierarquia_e_workflow_investidura.sql 42_portal_institucional_e_verificacao.sql 43_fundacao_comercial_saas.sql 49_armazenamento_por_clube.sql multi_tenant_isolation.sql

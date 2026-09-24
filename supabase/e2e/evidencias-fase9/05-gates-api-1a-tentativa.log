@@ -1,0 +1,163 @@
+# Primeiro ensaio do gate de API: 91 leituras diretas de experiences dão erro (falha fechada),
+# e 4 falhas eram do TESTE (escolheu foto do próprio ator). Mantido como registro.
+
+
+== 1. ISOLAMENTO DE LEITURA ==
+   ·       piso (linhas por clube, fora da RLS): fotos 51/36/12 · mensalidades 9/10/0 · pontos 5/5/2 · member_classes 1/2/0 · notificacoes 10/8/3 · unidades 1/8/2 · experiences 4/11/0 · chat_mensagens 0/0/0
+   FALHOU  so_a · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_a · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_b · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  so_c · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  ab · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  abc · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  dir_a_membro_b · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  instrutor_ab · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  responsavel · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  coordenador · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  fundador_sem_clube · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_a · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_b · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · A · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · B · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · C · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · sem header · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · lixo · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · clube inexistente · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   FALHOU  lider_c · distrito · experiences: só vê o clube da aba (e só se for dela)  [permission denied for function _experiencia_no_publico]
+   ·       728 leituras de tabela, cada uma conferida contra o clube da aba
+
+== 2. ISOLAMENTO DE ESCRITA ==
+   FALHOU  so_b: PATCH/DELETE na foto de B não mudou o banco  [agora=(APAGADA)]
+   FALHOU  so_c: PATCH/DELETE na foto de C não mudou o banco  [agora=(APAGADA)]
+   FALHOU  instrutor_ab: PATCH/DELETE na foto de A não mudou o banco  [agora=(APAGADA)]
+   FALHOU  instrutor_ab: PATCH/DELETE na foto de B não mudou o banco  [agora=(APAGADA)]
+
+== 3. INTEGRIDADE DE CONTEXTO ==
+
+== 4. FRONTEIRA DO PORTÁTIL ==
+
+== 5. ISOLAMENTO DE IDENTIDADE ==
+   ·       depois do logout, o ACCESS token antigo responde HTTP 200 — vale até expirar (60 min). Propriedade do JWT sem estado: registrado como risco residual.
+
+   ·       limpeza: 26 foto(s) de gate apagadas; o staging sai como entrou
+
+==============================================================
+ 1. ISOLAMENTO DE LEITURA         640 OK   91 falha(s)
+ 2. ISOLAMENTO DE ESCRITA         350 OK   4 falha(s)
+ 3. INTEGRIDADE DE CONTEXTO        12 OK   0 falha(s)
+ 4. FRONTEIRA DO PORTÁTIL          13 OK   0 falha(s)
+ 5. ISOLAMENTO DE IDENTIDADE        5 OK   0 falha(s)
+
+ RESULTADO: 95 FALHA(S)
+==============================================================
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · clube inexistente · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_a · distrito · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · clube inexistente · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_b · distrito · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · clube inexistente · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] so_c · distrito · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · clube inexistente · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] ab · distrito · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · clube inexistente · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] abc · distrito · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] dir_a_membro_b · A · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] dir_a_membro_b · B · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] dir_a_membro_b · C · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] dir_a_membro_b · sem header · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico
+   ·  [1. ISOLAMENTO DE LEITURA] dir_a_membro_b · lixo · experiences: só vê o clube da aba (e só se for dela) — permission denied for function _experiencia_no_publico

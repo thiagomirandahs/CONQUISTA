@@ -27,9 +27,10 @@
 // =============================================================================
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { join, basename } from 'node:path'
+import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { MANIFESTO_SQL } from './lib/manifesto.mjs'
+import { aplicarComoSqlEditor } from './lib/aplicar.mjs'
 
 const DB = 'supabase_db_CONQUISTA-STAGING'
 const RELEASE = ['20260929000073_o-clube-do-ato-e-a-aba.sql', '20260929000074_mensalidade-unica-por-clube.sql']
@@ -52,18 +53,8 @@ const ok = (n, c, d = '') => { console.log(c ? `   OK      ${n}` : `   FALHOU  $
 const nota = (n) => console.log(`   ·       ${n}`)
 const etapa = (n) => console.log(`\n-- ${n} --`)
 
-// Aplica UM arquivo como o SQL Editor: tudo ou nada, como `postgres`, com o ledger na mesma transação.
-function aplicar(nomeArquivo, corpo) {
-  const [version, ...resto] = basename(nomeArquivo, '.sql').split('_')
-  const sql = `${corpo}\n;insert into supabase_migrations.schema_migrations (version, name, statements) values ('${version}', '${resto.join('_')}', array[]::text[]);\n`
-  const t0 = Date.now()
-  try {
-    docker(['exec', '-i', DB, 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '--single-transaction'], { input: sql })
-    return { ok: true, ms: Date.now() - t0 }
-  } catch (e) {
-    return { ok: false, ms: Date.now() - t0, erro: (e.stderr || e.message).split('\n').find((l) => /ERROR/.test(l)) || e.message }
-  }
-}
+// Aplica UM arquivo como o SQL Editor (scripts/lib/aplicar.mjs — o mesmo do aplicar-migration).
+const aplicar = (nomeArquivo, corpo) => aplicarComoSqlEditor(DB, nomeArquivo, corpo)
 
 // ---------------------------------------------------------------------------
 //  A sonda funcional: o que a release muda, visto pela API, como as pessoas usam.
