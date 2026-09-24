@@ -214,7 +214,7 @@ create or replace function public.entrada_abrir(p_codigo text)
 returns json
 language plpgsql security definer set search_path = ''
 as $$
-declare v_row public.club_entry_codes; v_marca jsonb; v_nome text;
+declare v_row public.club_entry_codes; v_marca jsonb; v_nome text; v_achou boolean;
 begin
   if auth.uid() is null then raise exception 'Entre na sua conta para continuar.'; end if;
   if public._entrada_excedeu_limite() then
@@ -226,13 +226,24 @@ begin
      and revoked_at is null
      and (expires_at is null or expires_at > now());
 
-  perform public._entrada_registrar_tentativa(found);
-  if not found then raise exception 'Código não encontrado.'; end if;
+  -- `v_achou` em vez de usar `found` direto, e isto é uma armadilha do plpgsql que custou caro:
+  -- DUAS ARMADILHAS MORAM NESTAS TRÊS LINHAS, e as duas só apareceram no teste.
+  --
+  -- 1. `v_achou` em vez de `found` direto: `perform` TAMBÉM redefine `found` no plpgsql. Registrar
+  --    a tentativa (que é um insert) apagava o resultado do `select` acima, o teste nunca
+  --    disparava, e um código inválido seguia adiante com a linha vazia.
+  -- 2. a recusa é VALOR, não exceção. Com `raise`, a transação inteira volta atrás — e leva junto
+  --    o registro da tentativa que acabou de ser feito. O limite de abuso nunca acumulava nada:
+  --    cada tentativa errada apagava a própria prova de ter existido.
+  v_achou := found;
+  perform public._entrada_registrar_tentativa(v_achou);
+  if not v_achou then return json_build_object('encontrado', false); end if;
 
   select o.nome, o.metadata -> 'marca' into v_nome, v_marca
     from public.organizational_units o where o.id = v_row.club_id;
 
   return json_build_object(
+    'encontrado', true,
     'clube', v_nome,
     'sigla', v_marca ->> 'sigla',
     'lema', v_marca ->> 'lema',
@@ -255,7 +266,7 @@ create or replace function public.entrada_solicitar(p_codigo text)
 returns json
 language plpgsql security definer set search_path = ''
 as $$
-declare v_uid uuid := auth.uid(); v_row public.club_entry_codes; v_ja public.organization_memberships;
+declare v_uid uuid := auth.uid(); v_row public.club_entry_codes; v_ja public.organization_memberships; v_achou boolean;
 begin
   if v_uid is null then raise exception 'Entre na sua conta para continuar.'; end if;
   if public._entrada_excedeu_limite() then
@@ -270,8 +281,18 @@ begin
      and (expires_at is null or expires_at > now())
    for update;
 
-  perform public._entrada_registrar_tentativa(found);
-  if not found then raise exception 'Código não encontrado.'; end if;
+  -- `v_achou` em vez de usar `found` direto, e isto é uma armadilha do plpgsql que custou caro:
+  -- DUAS ARMADILHAS MORAM NESTAS TRÊS LINHAS, e as duas só apareceram no teste.
+  --
+  -- 1. `v_achou` em vez de `found` direto: `perform` TAMBÉM redefine `found` no plpgsql. Registrar
+  --    a tentativa (que é um insert) apagava o resultado do `select` acima, o teste nunca
+  --    disparava, e um código inválido seguia adiante com a linha vazia.
+  -- 2. a recusa é VALOR, não exceção. Com `raise`, a transação inteira volta atrás — e leva junto
+  --    o registro da tentativa que acabou de ser feito. O limite de abuso nunca acumulava nada:
+  --    cada tentativa errada apagava a própria prova de ter existido.
+  v_achou := found;
+  perform public._entrada_registrar_tentativa(v_achou);
+  if not v_achou then return json_build_object('encontrado', false); end if;
 
   select * into v_ja from public.organization_memberships
    where user_id = v_uid and organizational_unit_id = v_row.club_id
@@ -281,14 +302,14 @@ begin
     -- Já tem vínculo aqui. O código não promove, não reativa e não muda papel: quem já está
     -- encerrado ou suspenso volta pela liderança, que foi quem o tirou. Repetir a solicitação é
     -- inofensivo e idempotente.
-    return json_build_object('ok', true, 'ja_era', true, 'situacao', v_ja.status);
+    return json_build_object('encontrado', true, 'ok', true, 'ja_era', true, 'situacao', v_ja.status);
   end if;
 
   insert into public.organization_memberships (user_id, organizational_unit_id, role, status, metadata)
   values (v_uid, v_row.club_id, v_row.papel, 'pendente',
           jsonb_build_object('source', 'codigo_de_entrada', 'codigo_id', v_row.id));
 
-  return json_build_object('ok', true, 'ja_era', false, 'situacao', 'pendente');
+  return json_build_object('encontrado', true, 'ok', true, 'ja_era', false, 'situacao', 'pendente');
 end $$;
 revoke all on function public.entrada_solicitar(text) from public, anon;
 grant execute on function public.entrada_solicitar(text) to authenticated;
@@ -335,7 +356,7 @@ create or replace function public.convite_abrir(p_token text)
 returns json
 language plpgsql security definer set search_path = ''
 as $$
-declare v_inv public.club_invites; v_marca jsonb; v_nome text;
+declare v_inv public.club_invites; v_marca jsonb; v_nome text; v_achou boolean;
 begin
   if auth.uid() is null then raise exception 'Entre na sua conta para continuar.'; end if;
   if public._entrada_excedeu_limite() then
@@ -346,12 +367,18 @@ begin
    where token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
      and used_at is null and revoked_at is null and expires_at > now();
 
-  perform public._entrada_registrar_tentativa(found);
-  if not found then raise exception 'Convite não encontrado.'; end if;
+  -- `v_achou` em vez de usar `found` direto, e isto é uma armadilha do plpgsql que custou caro:
+  -- `perform` TAMBÉM redefine `found` no plpgsql. Registrar a tentativa (que é um insert) apagava
+  -- o resultado do `select` acima, o teste nunca disparava, e um convite inválido seguia adiante
+  -- com a linha vazia. E a recusa é VALOR, não exceção: com `raise`, a transação volta atrás e
+  -- leva junto o registro da tentativa — o limite de abuso nunca acumularia nada.
+  v_achou := found;
+  perform public._entrada_registrar_tentativa(v_achou);
+  if not v_achou then return json_build_object('encontrado', false); end if;
 
   select o.nome, o.metadata -> 'marca' into v_nome, v_marca
     from public.organizational_units o where o.id = v_inv.club_id;
-  return json_build_object('clube', v_nome, 'sigla', v_marca ->> 'sigla',
+  return json_build_object('encontrado', true, 'clube', v_nome, 'sigla', v_marca ->> 'sigla',
                            'lema', v_marca ->> 'lema', 'logo_url', v_marca ->> 'logo_url',
                            'papel', 'pais');
 end $$;
@@ -362,7 +389,7 @@ create or replace function public.convite_aceitar(p_token text)
 returns json
 language plpgsql security definer set search_path = ''
 as $$
-declare v_uid uuid := auth.uid(); v_inv public.club_invites; v_ja boolean;
+declare v_uid uuid := auth.uid(); v_inv public.club_invites; v_ja boolean; v_achou boolean;
 begin
   if v_uid is null then raise exception 'Entre na sua conta para continuar.'; end if;
   if public._entrada_excedeu_limite() then
@@ -374,8 +401,14 @@ begin
      and used_at is null and revoked_at is null and expires_at > now()
    for update;
 
-  perform public._entrada_registrar_tentativa(found);
-  if not found then raise exception 'Convite não encontrado.'; end if;
+  -- `v_achou` em vez de usar `found` direto, e isto é uma armadilha do plpgsql que custou caro:
+  -- `perform` TAMBÉM redefine `found` no plpgsql. Registrar a tentativa (que é um insert) apagava
+  -- o resultado do `select` acima, o teste nunca disparava, e um convite inválido seguia adiante
+  -- com a linha vazia. E a recusa é VALOR, não exceção: com `raise`, a transação volta atrás e
+  -- leva junto o registro da tentativa — o limite de abuso nunca acumularia nada.
+  v_achou := found;
+  perform public._entrada_registrar_tentativa(v_achou);
+  if not v_achou then return json_build_object('encontrado', false); end if;
 
   select exists (select 1 from public.organization_memberships
                   where user_id = v_uid and organizational_unit_id = v_inv.club_id) into v_ja;
@@ -390,7 +423,7 @@ begin
   end if;
 
   update public.club_invites set used_at = now(), used_by = v_uid where id = v_inv.id;
-  return json_build_object('ok', true, 'ja_era_membro', v_ja);
+  return json_build_object('encontrado', true, 'ok', true, 'ja_era_membro', v_ja);
 end $$;
 revoke all on function public.convite_aceitar(text) from public, anon;
 grant execute on function public.convite_aceitar(text) to authenticated;
