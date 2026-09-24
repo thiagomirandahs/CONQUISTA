@@ -21,3 +21,18 @@ supabase/e2e/atores.json
 
 # builds temporarios do gate de ambiente (supabase/tests/e2e/build-por-ambiente.mjs)
 .tmp-build-ambiente/
+
+# STAGING (fase 9): tudo que e CREDENCIAL do ambiente fica fora do git.
+#
+# `signing_keys.json` e uma CHAVE PRIVADA — quem a tiver assina token valido para o staging. Ela
+# entrou num commit por descuido e foi removida no mesmo minuto; a linha abaixo existe para isso
+# nao se repetir. O `.temp/start-secrets` do CLI guarda as variaveis dos containers, incluindo
+# chaves de servico.
+staging/.jwt-secret
+staging/supabase/signing_keys.json
+staging/supabase/.temp/
+staging/supabase/.branches/
+staging/supabase/migrations/
+staging/supabase/functions/
+staging/supabase/seed.sql
+.env.staging

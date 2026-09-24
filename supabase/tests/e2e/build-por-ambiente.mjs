@@ -38,6 +38,7 @@ const SAIDA_REL = '.tmp-build-ambiente'
 const SAIDA = join(RAIZ, SAIDA_REL)
 
 const LOCAL = 'http://127.0.0.1:54321'
+const STAGING = 'http://127.0.0.1:55321'
 const PRODUCAO = 'https://projeto-de-producao.supabase.co'
 
 let falhas = 0
@@ -134,7 +135,26 @@ console.log('\n-- 2. build de PRODUÇÃO --')
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n-- 3. FAIL-CLOSED: produção sem endpoint --')
+//  O STAGING entrou aqui na fase 9. Ele é um TERCEIRO ambiente, e a pergunta que importa não é
+//  "ele funciona?" — é se o bundle de staging carrega, por descuido, o endpoint de desenvolvimento
+//  (que é o vizinho de porta, 54321 x 55321) ou o de produção. Os três builds saem da mesma árvore,
+//  e a única coisa que os distingue é uma variável.
+console.log('\n-- 3. build de STAGING --')
+{
+  const { destino, erro } = construir('staging', { VITE_SUPABASE_URL: STAGING, VITE_SUPABASE_ANON_KEY: 'chave-de-staging' })
+  if (!ok('o build de staging termina', !erro, erro?.slice(-500))) process.exit(1)
+  const { tudo, html } = conteudoServido(destino)
+  const csp = politicaDe(html)
+
+  ok('a CSP autoriza o endpoint de staging', csp.includes(STAGING), csp)
+  ok('o bundle aponta para staging', tudo.includes(STAGING))
+  ok('e NADA do endpoint de desenvolvimento entrou', !tudo.includes(LOCAL), `achou "${LOCAL}"`)
+  ok('...nem do de produção', !tudo.includes(PRODUCAO), `achou "${PRODUCAO}"`)
+  ok('...nem o curinga', !csp.includes('*.supabase.co'), csp)
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n-- 4. FAIL-CLOSED: produção sem endpoint --')
 {
   const { erro } = construir('sem-env', { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' })
   ok('o build de produção SEM VITE_SUPABASE_URL falha', !!erro)
