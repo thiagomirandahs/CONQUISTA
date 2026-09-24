@@ -1,0 +1,149 @@
+
+=== FASE 9 — povoando o staging ===
+
+   ·       A=c9ff1811-062f-4935-851a-b91fa6ee52d3  B=59a20f52-89c1-4fe9-9728-9e4afda3c48b  C=70952caf-9e07-42c3-a7c0-600f3cb4ef82
+   OK      A tem unidades para distribuir as pessoas
+   OK      B tem unidades para distribuir as pessoas
+   OK      C tem unidades para distribuir as pessoas
+   OK      a liderança de A gera o código de entrada
+   OK      a liderança de B gera o código de entrada
+   OK      a liderança de C gera o código de entrada
+   OK      A liga o motor curricular pela tela de recursos
+   OK      B liga o motor curricular pela tela de recursos
+
+-- cadastro e entrada pelo código (a liderança aprova) --
+   ·       so_a já é de A
+   OK      so_a: vínculos ativos exatamente em A
+   ·       so_a2 já é de A
+   OK      so_a2: vínculos ativos exatamente em A
+   ·       so_b já é de B
+   OK      so_b: vínculos ativos exatamente em B
+   ·       so_b2 já é de B
+   OK      so_b2: vínculos ativos exatamente em B
+   ·       so_c já é de C
+   OK      so_c: vínculos ativos exatamente em C
+   ·       ab já é de A
+   ·       ab já é de B
+   OK      ab: vínculos ativos exatamente em A+B
+   ·       abc já é de A
+   ·       abc já é de B
+   ·       abc já é de C
+   OK      abc: vínculos ativos exatamente em A+B+C
+   ·       dir_a_membro_b já é de B
+   ·       dir_a_membro_b já é da equipe de A
+   OK      dir_a_membro_b: vínculos ativos exatamente em B+A
+   ·       instrutor_ab já é da equipe de A
+   ·       instrutor_ab já é da equipe de B
+   OK      instrutor_ab: vínculos ativos exatamente em A+B
+
+-- responsável: convite da liderança de A, e o vínculo com o filho aprovado --
+   OK      o responsável enxerga exatamente UMA filha, a certa
+
+-- fundador sem clube (conta criada, onboarding nunca iniciado) --
+   OK      ...e ele não tem vínculo nenhum (estado válido desde a 8.6)
+
+-- coordenador institucional: OPERAÇÃO DE PLATAFORMA (SQL) — não há caminho de produto --
+   ·       distrito 8016025b-c10b-47ff-bb1b-755774c0d5df (A e B embaixo; C fora) — criado por SQL de plataforma
+
+-- pontos (apontamento da reunião, pela liderança) --
+   OK      reunião de A registrada com 4 apontamentos
+   OK      reunião de B registrada com 5 apontamentos
+   OK      reunião de C registrada com 2 apontamentos
+
+-- mensalidades (o upsert que a tela faz, na aba do clube) --
+   OK      mensalidade 7/2026 de Ana Somente-A em A
+   OK      mensalidade 8/2026 de Ana Somente-A em A
+   OK      mensalidade 7/2026 de Davi Somente-A em A
+   OK      mensalidade 8/2026 de Davi Somente-A em A
+   OK      mensalidade 7/2026 de Lia A-e-B em A
+   OK      mensalidade 8/2026 de Lia A-e-B em A
+   OK      mensalidade 7/2026 de Rui A-B-C em A
+   OK      mensalidade 8/2026 de Rui A-B-C em A
+   OK      mensalidade 7/2026 de Bia Somente-B em B
+   OK      mensalidade 8/2026 de Bia Somente-B em B
+   OK      mensalidade 7/2026 de Enzo Somente-B em B
+   OK      mensalidade 8/2026 de Enzo Somente-B em B
+   CONHEC. mensalidade 7/2026 de Lia A-e-B em B  [defeito da versão 72, corrigido pela 73]
+   CONHEC. mensalidade 8/2026 de Lia A-e-B em B  [defeito da versão 72, corrigido pela 73]
+   CONHEC. mensalidade 7/2026 de Rui A-B-C em B  [defeito da versão 72, corrigido pela 73]
+   CONHEC. mensalidade 8/2026 de Rui A-B-C em B  [defeito da versão 72, corrigido pela 73]
+   OK      mensalidade 7/2026 de Vera Diretora-A Membro-B em B
+   OK      mensalidade 8/2026 de Vera Diretora-A Membro-B em B
+   OK      C (gratuito) recusa a mensalidade de Caio Somente-C: o recurso é desligado lá
+   OK      C (gratuito) recusa a mensalidade de Caio Somente-C: o recurso é desligado lá
+   CONHEC. C (gratuito) recusa a mensalidade de Rui A-B-C: o recurso é desligado lá  [defeito da versão 72, corrigido pela 73]
+   CONHEC. C (gratuito) recusa a mensalidade de Rui A-B-C: o recurso é desligado lá  [defeito da versão 72, corrigido pela 73]
+
+-- fotos no mural e partidas de jogo (cada pessoa, em cada clube dela) --
+   OK      Ana Somente-A sobe a foto no Storage (aba A)
+   OK      Ana Somente-A publica a foto no mural de A
+   OK      Ana Somente-A joga uma partida em A
+   OK      Davi Somente-A sobe a foto no Storage (aba A)
+   OK      Davi Somente-A publica a foto no mural de A
+   OK      Davi Somente-A joga uma partida em A
+   OK      Lia A-e-B sobe a foto no Storage (aba A)
+   OK      Lia A-e-B publica a foto no mural de A
+   OK      Lia A-e-B joga uma partida em A
+   OK      Rui A-B-C sobe a foto no Storage (aba A)
+   OK      Rui A-B-C publica a foto no mural de A
+   OK      Rui A-B-C joga uma partida em A
+   OK      Bia Somente-B sobe a foto no Storage (aba B)
+   OK      Bia Somente-B publica a foto no mural de B
+   OK      Bia Somente-B joga uma partida em B
+   OK      Enzo Somente-B sobe a foto no Storage (aba B)
+   OK      Enzo Somente-B publica a foto no mural de B
+   OK      Enzo Somente-B joga uma partida em B
+   OK      Lia A-e-B sobe a foto no Storage (aba B)
+   CONHEC. Lia A-e-B publica a foto no mural de B  [defeito da versão 72, corrigido pela 73]
+   OK      Lia A-e-B joga uma partida em B
+   OK      Rui A-B-C sobe a foto no Storage (aba B)
+   CONHEC. Rui A-B-C publica a foto no mural de B  [defeito da versão 72, corrigido pela 73]
+   OK      Rui A-B-C joga uma partida em B
+   OK      Vera Diretora-A Membro-B sobe a foto no Storage (aba B)
+   OK      Vera Diretora-A Membro-B publica a foto no mural de B
+   OK      Vera Diretora-A Membro-B joga uma partida em B
+   OK      Caio Somente-C sobe a foto no Storage (aba C)
+   OK      Caio Somente-C publica a foto no mural de C
+   OK      C (gratuito) não tem jogos: a partida de Caio Somente-C é recusada
+   OK      Rui A-B-C sobe a foto no Storage (aba C)
+   CONHEC. Rui A-B-C publica a foto no mural de C  [defeito da versão 72, corrigido pela 73]
+   OK      C (gratuito) não tem jogos: a partida de Rui A-B-C é recusada
+
+-- progresso curricular (classe) com evidência de criança --
+   ·       conteúdo do período publicado por SQL de plataforma para 0 definição(ões) (0 = já estava)
+   OK      Ana Somente-A tem matrícula na classe em A
+   OK      Ana Somente-A: 0 requisito(s) enviado(s) e 0 avaliado(s) em A
+   ·       matrícula de Ana Somente-A em A: investida
+   OK      Lia A-e-B tem matrícula na classe em B
+   OK      Lia A-e-B sobe a evidência no bucket privado (B)
+   OK      Lia A-e-B: 1 requisito(s) enviado(s) e 1 avaliado(s) em B
+   OK      Bia Somente-B tem matrícula na classe em B
+   OK      Bia Somente-B sobe a evidência no bucket privado (B)
+   OK      Bia Somente-B: 1 requisito(s) enviado(s) e 1 avaliado(s) em B
+
+-- especialidade --
+   OK      B tem especialidade disponível
+   OK      A tem especialidade disponível
+
+-- experiência (B tem o recurso; C não tem) --
+   OK      C (plano gratuito, sem o recurso) NÃO cria experiência
+
+-- documento da matrícula --
+   OK      o documento da classe concluída de so_a é emitido em A
+   OK      ...e o de ab (classe incompleta) é RECUSADO em B
+   OK      ...e o de so_b (classe incompleta) é RECUSADO em B
+
+-- o retrato do staging (contado no banco, fora da RLS) --
+   ·       clubes: 4
+   ·       contas (auth.users): 16
+   ·       fotos por clube: Clube Teste Tenant 002=1, Sentinelas do Agreste=10, Filhos da Conquista=41, Águias do Vale=30
+   ·       mensalidades por clube: Clube Teste Tenant 002=1, Filhos da Conquista=9, Águias do Vale=6
+   ·       objetos no Storage: comprovacoes=17, imagens=110
+   ·       pessoas em 2+ clubes: 4
+   ·       vínculos ativos por clube: Distrito Staging do Agreste=1, Águias do Vale=7, Filhos da Conquista=8, Sentinelas do Agreste=3, Clube Teste Tenant 002=1
+   ·       ids em supabase/e2e/populacao.staging.json (sem tokens)
+
+   9 recusa(s) CONHECIDA(S) da versão 72 (ESPERA_DEFEITO_73=1) — rode de novo depois da migration
+
+POVOAMENTO OK
+

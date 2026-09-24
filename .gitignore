@@ -25,6 +25,7 @@ supabase/carga/usuarios.json
 # seeder entra no .gitignore ANTES de o seeder rodar pela primeira vez.
 supabase/e2e/atores.json
 supabase/e2e/atores.staging.json
+supabase/e2e/populacao.staging.json
 
 # builds temporarios do gate de ambiente (supabase/tests/e2e/build-por-ambiente.mjs)
 .tmp-build-ambiente/
