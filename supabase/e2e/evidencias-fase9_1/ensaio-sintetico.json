@@ -1,0 +1,409 @@
+{
+  "rotulo": "sintetico",
+  "veredito": "ENSAIO OK",
+  "falhas": 0,
+  "checks": [
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "restore sem erro (4.2s)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "o banco restaurado tem o dono original (postgres)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "auth, API e storage sobem sobre o banco restaurado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "2. Em que estado a cópia está",
+      "nome": "o estado é coerente: sem ledger, também sem nenhuma tabela do SaaS (nada aplicado à mão fora do ledger)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "3. Pré-voo de produção (supabase/PREFLIGHT-PRODUCAO.sql)",
+      "nome": "o pré-voo roda numa transação SOMENTE LEITURA (não escreve nada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "3. Pré-voo de produção (supabase/PREFLIGHT-PRODUCAO.sql)",
+      "nome": "pré-voo sem PROBLEMA fora a criação do ledger (correção documentada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "4. Migrations do SaaS (86), uma execução por arquivo, com o ledger na mesma transação",
+      "nome": "todas as 86 migrations aplicaram (19.0s)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "4. Migrations do SaaS (86), uma execução por arquivo, com o ledger na mesma transação",
+      "nome": "ledger conferido pelo CONJUNTO (não pelo max): nenhuma versão faltando",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "4. Migrations do SaaS (86), uma execução por arquivo, com o ledger na mesma transação",
+      "nome": "o banco restaurado tem o dono original (postgres)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "4. Migrations do SaaS (86), uma execução por arquivo, com o ledger na mesma transação",
+      "nome": "...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "contas (auth.users): antes 10, depois 10",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "perfis: antes 10, depois 10",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "vínculos (antes: 1 perfil = 1 membro do clube único): antes 10, depois 10",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "unidades: antes 2, depois 2",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "lançamentos de pontos: antes 5, depois 5",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "soma dos pontos: antes 105, depois 105",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "mensalidades: antes 4, depois 4",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "caixa (soma das mensalidades pagas): antes 150, depois 150",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "catálogo de jogos: antes 28, depois 28",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "jogadas + recordes + partidas: antes 4, depois 4",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "mensagens do chat: antes 2, depois 2",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "avisos (notificações): antes 23, depois 23",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "fotos do mural: antes 2, depois 2",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "objetos do Storage (metadados): antes 4, depois 4",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "configurações do clube: antes 6, depois 6",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "responsáveis aprovados: antes 1, depois 1",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "eventos da agenda: antes 2, depois 2",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "atividades + entregas: antes 3, depois 3",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "leilões + lances: antes 2, depois 2",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "documentos de classe: antes 0, depois 0",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "5. Antes × depois — entidades críticas",
+      "nome": "matrículas em classe: antes 0, depois 0",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "6. Antes × depois — linha a linha, coluna a coluna",
+      "nome": "toda diferença em dado que já existia tem explicação (8 grupo(s), 0 sem explicação)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "o Tenant 001 existe (clube legado) e é um clube ativo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "cada perfil de antes tem exatamente 1 vínculo de clube, e é no Tenant 001",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "papel e situação de cada vínculo = os do perfil de antes (mapa das migrations 2 e 13)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "a unidade de cada vínculo = a unidade do perfil de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "as 34 tabelas antigas que ganharam club_id: toda linha é do Tenant 001",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "todo objeto do Storage está no controle de uso do Tenant 001",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "7. Invariantes do upgrade (fora da RLS)",
+      "nome": "a reconciliação perfil × vínculo não tem nada a ajustar",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "8. Suíte de banco sobre a cópia atualizada (cada teste em transação com ROLLBACK)",
+      "nome": "suíte de banco na cópia: 49 arquivos verdes, 16 só colidem com contagem exata no Tenant 001, 0 falha(s) de verdade",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "diretoria entra com a senha de ANTES do upgrade (hash restaurado, Auth aceita)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Login — diretoria entra pelo Auth do descartável",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Login — membro entra pelo Auth do descartável",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Login — responsavel entra pelo Auth do descartável",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Login — tesouraria entra pelo Auth do descartável",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Home — diretoria: contexto com 1 vínculo, no Tenant 001, e o servidor usa o Tenant 001 sem cabeçalho",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Home — membro: contexto com 1 vínculo, no Tenant 001, e o servidor usa o Tenant 001 sem cabeçalho",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Home — responsavel: contexto com 1 vínculo, no Tenant 001, e o servidor usa o Tenant 001 sem cabeçalho",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Home — tesouraria: contexto com 1 vínculo, no Tenant 001, e o servidor usa o Tenant 001 sem cabeçalho",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Home — os módulos que o clube usava seguem ligados (chat, jogos, mensalidades)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Membros — a diretoria lista todas as pessoas de antes (tela Usuários)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Unidades — a diretoria vê as unidades de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Pontos — a diretoria vê a mesma soma de pontos de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Pontos — o ranking abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Mensalidades — a diretoria vê todas as mensalidades de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Gestão — o painel de pendências abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Gestão — os cadastros pendentes de antes seguem pendentes para a diretoria",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Mensalidades — a tesouraria vê o mesmo caixa de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Pontos — o membro vê os pontos do clube, como antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Jogos — o catálogo de jogos do clube está lá",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Jogos — o progresso da trilha abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Jogos — o ranking dos jogos abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Chat — o membro lê o histórico do chat geral",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Classes — com o recurso desligado, o servidor RECUSA iniciar uma classe (não é só o menu que some)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Responsável — \"Meu filho\" traz os filhos aprovados de antes",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "9. Tenant 001 depois do upgrade — as jornadas do clube, pela API do descartável",
+      "nome": "Responsável — continua sem ver os pontos do clube",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}

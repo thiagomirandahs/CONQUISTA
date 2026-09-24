@@ -369,13 +369,16 @@ for (const [c, quem, completa] of [['A', 'so_a', true], ['B', 'ab', false], ['B'
   nota(`matrícula de ${m.nome} em ${c}: ${await status()}`)
 }
 
-console.log('\n-- especialidade --')
-for (const [c, quem] of [['B', 'abc'], ['A', 'abc']]) {
-  const esp = await tenta(`${c} lista as especialidades`, () => rpc(naAba(lider[c], c), 'especialidades_disponiveis'))
-  const e = (esp || [])[0]
-  if (!ok(`${c} tem especialidade disponível`, !!e, JSON.stringify(esp)?.slice(0, 120))) continue
-  await tenta(`${c} atribui ${e.nome} a ${gente[quem]?.nome}`, () => rpc(naAba(lider[c], c), 'especialidade_atribuir', { p_usuario_id: gente[quem].id, p_specialty_id: e.specialty_id || e.id }))
+console.log('\n-- especialidade (fase 9.1, item 9: fora do piloto — só a PLATAFORMA liga, e só com catálogo oficial) --')
+for (const c of ['B', 'A']) {
+  // a lideranca do clube NÃO consegue ligar (nem pela RPC nem pelo onboarding): é a prova de que o
+  // recurso ficou mesmo fora do alcance dela, não um passo que o povoamento pulou.
+  const { error } = await naAba(lider[c], c).rpc('recurso_definir', { p_feature: 'especialidades', p_enabled: true })
+  ok(`${c}: a liderança NÃO consegue ligar especialidades (só a plataforma)`, !!error, error ? '' : 'ligou — deveria ter sido recusado')
+  const { error: eLer } = await naAba(lider[c], c).rpc('especialidades_disponiveis')
+  ok(`${c}: com o recurso desligado, a RPC recusa (não devolve lista vazia)`, /não estão liberadas|desabilitado/i.test(eLer?.message || ''), eLer?.message)
 }
+nota('nenhuma especialidade fica visível a convidado neste povoamento — não há catálogo oficial ainda (ver supabase/curriculo-manifesto/)')
 
 console.log('\n-- experiência (B tem o recurso; C não tem) --')
 for (const c of ['B', 'C']) {
