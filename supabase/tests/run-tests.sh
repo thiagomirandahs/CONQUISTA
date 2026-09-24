@@ -172,4 +172,14 @@ if [ "$REPLAY" = 1 ] && [ "$KEEP" = 0 ]; then
 fi
 echo "----------------------------------------------------------------"
 echo "Testes: $PASS ok, $FAIL com falha${FALHAS:+  -> ${FALHAS[*]}}"
+
+# O UPGRADE de produção entra em TODA rodada completa (fase 9). Ele existia desde a 8.x como opção
+# (--upgrade), e ninguém o rodava: ficou vermelho na 8.5 (migration 65) e ninguém viu até o drill de
+# migration da fase 9. Um gate opcional é um gate que apodrece. ~7 s a mais.
+if [ ${#ONLY[@]} -eq 0 ] && [ "$REPLAY" = 1 ] && [ "$UPGRADE" = 0 ]; then
+  echo ""
+  echo "==> e o UPGRADE de produção simulado (legado + dados -> todas as migrations)"
+  bash "$0" --upgrade | grep -E "OK|FALHOU|^ +- " ; UPG=${PIPESTATUS[0]}
+  [ "$UPG" = 0 ] || FAIL=$((FAIL+1))
+fi
 [ "$FAIL" = 0 ]

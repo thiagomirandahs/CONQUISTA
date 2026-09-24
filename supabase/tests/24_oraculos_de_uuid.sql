@@ -73,8 +73,13 @@ select public.criar_leilao('Leilão B', now() + interval '1 day', '[{"nome":"Ite
 select public.criar_convite_responsavel();
 select public.chat_enviar_geral('msg do lider B');
 reset role;
-select id as item_a from public.leilao_itens where club_id = t.id('clube_a') limit 1 \gset
-select id as item_b from public.leilao_itens where club_id = t.id('clube_b') limit 1 \gset
+-- o item do leilão ABERTO — o que acabou de ser criado. Num banco com histórico (o staging, ou o
+-- upgrade com dados de produção) o clube já tem itens de leilões encerrados, e "o primeiro item do
+-- clube" era um deles: o lance caía num leilão encerrado e o teste abortava antes de medir nada.
+select i.id as item_a from public.leilao_itens i join public.leiloes l on l.id = i.leilao_id
+ where i.club_id = t.id('clube_a') and l.status = 'aberto' limit 1 \gset
+select i.id as item_b from public.leilao_itens i join public.leiloes l on l.id = i.leilao_id
+ where i.club_id = t.id('clube_b') and l.status = 'aberto' limit 1 \gset
 insert into t.ids values ('item_a', :'item_a'), ('item_b', :'item_b');
 select t.como('membro_a');
 select public.dar_lance(t.id('item_a'), 20, '{}');

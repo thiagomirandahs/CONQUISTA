@@ -128,7 +128,10 @@ reset role;
 select t.como('d1');
 select t.eq('contexto (Tenant 001 de produção): 1 vínculo ativo, papel DO VÍNCULO, e o clube atual do servidor é o legado', (public.meu_contexto()->'vinculos'->0->>'club_id') || '|' || (public.meu_contexto()->'vinculos'->0->>'papel') || '|' || (public.meu_contexto()->>'clube_atual_id' = public.meu_contexto()->'vinculos'->0->>'club_id')::text || '|' || jsonb_array_length(public.meu_contexto()->'vinculos')::text, public.clube_legado_id()::text || '|desbravador|true|1');
 select t.eq('contexto: a unidade do vínculo é a do perfil de produção (Águias)', t.txt('select public.meu_contexto()->''vinculos''->0->>''unidade_nome'''), 'Águias');
-select t.eq('contexto: a marca de sempre vem do BANCO (nome, sigla FC, lema, ano e a logo do app), sem cor própria', t.txt('select concat_ws(''|'', public.meu_contexto()->''vinculos''->0->''marca''->>''nome'', public.meu_contexto()->''vinculos''->0->''marca''->>''sigla'', public.meu_contexto()->''vinculos''->0->''marca''->>''lema'', public.meu_contexto()->''vinculos''->0->''marca''->>''desde'', public.meu_contexto()->''vinculos''->0->''marca''->>''logo_url'', coalesce(public.meu_contexto()->''vinculos''->0->''marca''->>''cor_primaria'', ''padrao''))'), 'Filhos da Conquista|FC|Desbravadores · 1994|1994|/icon-192.png|padrao');
+-- a logo: desde a migration 65 o brasão do clube A é um arquivo DELE (/clubes/tenant-001.png), e o
+-- /icon-192.png virou o ícone neutro do produto. Esta asserção esperava o ícone antigo e ficou
+-- vermelha desde a 8.5 sem ninguém ver — o modo --upgrade não rodava no gate padrão.
+select t.eq('contexto: a marca de sempre vem do BANCO (nome, sigla FC, lema, ano e o brasão próprio), sem cor própria', t.txt('select concat_ws(''|'', public.meu_contexto()->''vinculos''->0->''marca''->>''nome'', public.meu_contexto()->''vinculos''->0->''marca''->>''sigla'', public.meu_contexto()->''vinculos''->0->''marca''->>''lema'', public.meu_contexto()->''vinculos''->0->''marca''->>''desde'', public.meu_contexto()->''vinculos''->0->''marca''->>''logo_url'', coalesce(public.meu_contexto()->''vinculos''->0->''marca''->>''cor_primaria'', ''padrao''))'), 'Filhos da Conquista|FC|Desbravadores · 1994|1994|/clubes/tenant-001.png|padrao');
 select t.eq('contexto: o leilão que já usavam segue ligado e os módulos de sempre também (nada some para o Tenant 001)', t.txt('select concat_ws(''|'', public.meu_contexto()->''vinculos''->0->''recursos''->>''leilao'', public.meu_contexto()->''vinculos''->0->''recursos''->>''chat'', public.meu_contexto()->''vinculos''->0->''recursos''->>''jogos'', public.meu_contexto()->''vinculos''->0->''recursos''->>''mensalidades'')'), 'true|true|true|true');
 select t.como('dir');
 select t.eq('contexto da diretoria de produção: papel diretoria', t.txt('select public.meu_contexto()->''vinculos''->0->>''papel'''), 'diretoria');
@@ -152,8 +155,14 @@ select t.eq('aprovado: passa a ver os pontos do clube', t.n('select count(*) fro
 select t.como('d3');
 select t.eq('reativado: volta a ver as fotos', t.n('select count(*) from public.fotos'), :pre_fotos::bigint);
 select t.como('tes');
-select t.permitido('tesoureiro grava mensalidade com o onConflict do front PUBLICADO', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
-   values (%L, 1, 2026, 55, 'pago', %L) on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor, status = excluded.status$q$, t.id('d2'), t.id('tes')));
+-- Desde a migration 74 o alvo é (club_id, desbravador_id, mes, ano). O alvo legado deixa de
+-- existir, e é por isso que a 74 só pode ser aplicada DEPOIS do front novo publicado (ordem de
+-- deploy escrita nela). As duas asserções juntas são a prova de que a ordem importa.
+select t.permitido('tesoureiro grava mensalidade com o alvo do front NOVO (club_id, desbravador_id, mes, ano)', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+   values (%L, 1, 2026, 55, 'pago', %L) on conflict (club_id, desbravador_id, mes, ano) do update set valor = excluded.valor, status = excluded.status$q$, t.id('d2'), t.id('tes')));
+select t.throws('...e o alvo do front ANTERIOR é recusado (por isso a 74 vem depois do front)', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+   values (%L, 1, 2026, 55, 'pago', %L) on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('d2'), t.id('tes')),
+  'no unique or exclusion constraint');
 select t.como('con');
 select t.permitido('conselheiro aponta membro da própria unidade', format($q$select public.salvar_reuniao(current_date, 'Reunião prod', %L::jsonb)$q$, jsonb_build_array(jsonb_build_object('usuario_id', t.id('d1'), 'pontos', 3))::text));
 select t.como('d2');

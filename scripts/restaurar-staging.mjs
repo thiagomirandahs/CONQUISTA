@@ -26,6 +26,7 @@ import { createHash, randomBytes, randomUUID, generateKeyPairSync } from 'node:c
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
+import { MANIFESTO_SQL } from './lib/manifesto.mjs'
 
 const RAIZ = process.cwd()
 const CLI = ['--yes', 'supabase@2.117.0']
@@ -53,39 +54,8 @@ const ok = (n, c, d = '') => {
   return c
 }
 
-// ---------------------------------------------------------------------------
-//  O MANIFESTO: o que PRECISA voltar, contado fora da RLS. É calculado igual na origem e no
-//  destino, e as duas saídas são comparadas campo a campo.
-// ---------------------------------------------------------------------------
-const MANIFESTO_SQL = `
-select json_build_object(
-  'migracao',        (select max(version) from supabase_migrations.schema_migrations),
-  'contas',          (select count(*) from auth.users),
-  'identidades_auth',(select count(*) from auth.identities),
-  'vinculos_ativos', (select coalesce(json_object_agg(u.nome, x.n order by u.nome), '{}') from
-                       (select organizational_unit_id, count(*) n from public.organization_memberships where status = 'ativo' group by 1) x
-                       join public.organizational_units u on u.id = x.organizational_unit_id),
-  'pessoas_multiclube', (select count(*) from (select m.user_id from public.organization_memberships m
-                       join public.organizational_units u on u.id = m.organizational_unit_id and u.type = 'clube'
-                       where m.status = 'ativo' group by 1 having count(*) > 1) y),
-  'pontos',          (select coalesce(json_object_agg(u.nome, x.n order by u.nome), '{}') from
-                       (select club_id, sum(pontos) n from public.pontos group by 1) x join public.organizational_units u on u.id = x.club_id),
-  'mensalidades',    (select coalesce(json_object_agg(u.nome, x.n order by u.nome), '{}') from
-                       (select club_id, count(*) n from public.mensalidades group by 1) x join public.organizational_units u on u.id = x.club_id),
-  'fotos',           (select coalesce(json_object_agg(u.nome, x.n order by u.nome), '{}') from
-                       (select club_id, count(*) n from public.fotos group by 1) x join public.organizational_units u on u.id = x.club_id),
-  'matriculas',      (select coalesce(json_object_agg(status, n order by status), '{}') from (select status, count(*) n from public.member_classes group by 1) x),
-  'requisitos_aprovados', (select count(*) from public.member_requirements where status = 'aprovado'),
-  'documentos',      (select count(*) from public.class_documents),
-  'objetos_storage', (select coalesce(json_object_agg(bucket_id, n order by bucket_id), '{}') from (select bucket_id, count(*) n from storage.objects group by 1) x),
-  'cron_jobs',       (select count(*) from cron.job),
-  'policies',        (select count(*) from pg_policies where schemaname = 'public'),
-  'funcoes',         (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'),
-  'gatilhos',        (select count(*) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace
-                       where n.nspname = 'public' and not t.tgisinternal),
-  'tabelas_com_rls', (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
-                       where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity)
-);`
+// O MANIFESTO (o que PRECISA voltar, contado fora da RLS) mora em scripts/lib/manifesto.mjs:
+// o drill de migration (item 9) usa o mesmo, para as duas conferências falarem a mesma língua.
 
 // ---------------------------------------------------------------------------
 //  BACKUP
@@ -155,17 +125,82 @@ function descartar() {
   console.log('   ·       ambiente descartável derrubado e apagado (containers, volumes e diretório)')
 }
 
-async function esperarApi(anon) {
+async function esperarApi(anon, api = R_API) {
   for (let i = 0; i < 60; i++) {
     try {
-      const a = await fetch(`${R_API}/auth/v1/health`, { headers: { apikey: anon } })
-      const b = await fetch(`${R_API}/rest/v1/`, { headers: { apikey: anon } })
-      const c = await fetch(`${R_API}/storage/v1/bucket`, { headers: { apikey: anon, Authorization: `Bearer ${anon}` } })
+      const a = await fetch(`${api}/auth/v1/health`, { headers: { apikey: anon } })
+      const b = await fetch(`${api}/rest/v1/`, { headers: { apikey: anon } })
+      const c = await fetch(`${api}/storage/v1/bucket`, { headers: { apikey: anon, Authorization: `Bearer ${anon}` } })
       if (a.ok && b.ok && c.status < 500) return true
     } catch { /* subindo */ }
     await espera(1000)
   }
   return false
+}
+
+// ---------------------------------------------------------------------------
+//  A TROCA DO BANCO — o coração dos dois restores (o descartável e o in-place).
+//
+//  O banco novo nasce com o MESMO DONO do original: `postgres`. Sem isso o restore "funciona" —
+//  dados, policies e GRANTs voltam, a suíte passa —, mas o schema `public` pertence a
+//  `pg_database_owner`, que passaria a ser o `supabase_admin`. O papel `postgres` (o do SQL Editor)
+//  perde o direito de CRIAR no `public`, e a PRÓXIMA migration falha com "permission denied for
+//  schema public". Achado pelo drill de migration (item 9) — depois de o restore do item 8 ter
+//  passado sem ver, porque ele não aplicava migration nenhuma depois de restaurar.
+// ---------------------------------------------------------------------------
+function trocarBanco(container, dir) {
+  psql(container, 'drop database if exists postgres with (force);', 'template1')
+  psql(container, 'create database postgres owner postgres;', 'template1')
+  docker(['cp', join(dir, 'banco.dump'), `${container}:/tmp/banco.dump`])
+  let saida = ''
+  try { saida = docker(['exec', container, 'pg_restore', '-U', 'supabase_admin', '-d', 'postgres', '/tmp/banco.dump']) } catch (e) { saida = `${e.stdout || ''}${e.stderr || ''}` }
+  docker(['exec', container, 'rm', '-f', '/tmp/banco.dump'])
+  return saida.split('\n').filter((l) => /^pg_restore: error/.test(l))
+}
+function restaurarArquivos(container, dir) {
+  docker(['cp', join(dir, 'storage.tgz'), `${container}:/tmp/storage.tgz`])
+  docker(['exec', container, 'sh', '-c', 'rm -rf /mnt/* && tar xzf /tmp/storage.tgz -C /mnt && rm -f /tmp/storage.tgz'])
+}
+// Não basta o banco voltar: o PRÓXIMO deploy tem de continuar possível. A prova é fazer o que uma
+// migration faz — criar uma função no `public` como `postgres` — e desfazer.
+function conferirQueODeployContinua(container) {
+  const dono = psql(container, `select pg_get_userbyid(datdba) from pg_database where datname = 'postgres';`)
+  ok('o banco restaurado tem o dono original (postgres)', dono === 'postgres', `dono=${dono}`)
+  let criou = true
+  try {
+    docker(['exec', '-i', container, 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-v', 'ON_ERROR_STOP=1'],
+      { input: `begin; create function public.zz_sonda_do_restore() returns int language sql as 'select 1'; rollback;` })
+  } catch { criou = false }
+  ok('...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa', criou)
+}
+
+// ---------------------------------------------------------------------------
+//  RESTORE IN-PLACE do próprio staging — o caminho de recuperação de uma migration que commitou
+//  dano (item 9). Em produção, o equivalente é o PITR do plano, que restaura no mesmo projeto.
+// ---------------------------------------------------------------------------
+async function inPlace(dir) {
+  const info = JSON.parse(readFileSync(join(dir, 'manifesto.json'), 'utf8'))
+  console.log(`\n-- RESTORE IN-PLACE do STAGING a partir de ${dir} --`)
+  for (const [f, meta] of Object.entries(info.arquivos)) ok(`${f} íntegro (sha256)`, sha(join(dir, f)) === meta.sha256)
+  const env = Object.fromEntries(readFileSync('.env.staging', 'utf8').split(/\r?\n/)
+    .filter((l) => l.includes('=') && !l.startsWith('#')).map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]))
+  const T0 = Date.now()
+  const servicos = docker(['ps', '--format', '{{.Names}}']).split('\n').filter((n) => n.endsWith('_CONQUISTA-STAGING') && n !== STG.db)
+  for (const s of servicos) docker(['stop', s])
+  const erros = trocarBanco(STG.db, dir)
+  const T1 = Date.now()
+  ok(`banco restaurado sem erro (${seg(T1 - T0)}, com os serviços parados)`, erros.length === 0, erros.slice(0, 3).join(' | '))
+  conferirQueODeployContinua(STG.db)
+  docker(['start', STG.storage])
+  restaurarArquivos(STG.storage, dir)
+  for (const s of servicos) if (s !== STG.storage) docker(['start', s])
+  const noAr = await esperarApi(env.VITE_SUPABASE_ANON_KEY, env.VITE_SUPABASE_URL)
+  const T2 = Date.now()
+  ok(`serviços do staging de volta (${seg(T2 - T1)})`, noAr)
+  const depois = JSON.parse(psql(STG.db, MANIFESTO_SQL))
+  const diverge = Object.keys(info.manifesto).filter((k) => JSON.stringify(info.manifesto[k]) !== JSON.stringify(depois[k]))
+  ok('o manifesto voltou IDÊNTICO ao do backup', diverge.length === 0, diverge.join(','))
+  console.log(`   ·       restore in-place: ${seg(T2 - T0)} (banco ${seg(T1 - T0)} + serviços ${seg(T2 - T1)})`)
 }
 
 // ---------------------------------------------------------------------------
@@ -186,20 +221,13 @@ async function restaurar(dir, marcadores = null) {
   // O banco do descartável é trocado INTEIRO pelo do backup. Os serviços param antes, para nenhum
   // deles segurar conexão nem escrever num banco pela metade.
   for (const s of ['auth', 'rest', 'storage']) docker(['stop', r(s)])
-  psql(r('db'), 'drop database if exists postgres with (force);', 'template1')
-  psql(r('db'), 'create database postgres;', 'template1')
-  docker(['cp', join(dir, 'banco.dump'), `${r('db')}:/tmp/banco.dump`])
-  let saida = ''
-  try {
-    saida = docker(['exec', r('db'), 'pg_restore', '-U', 'supabase_admin', '-d', 'postgres', '/tmp/banco.dump'])
-  } catch (e) { saida = `${e.stdout || ''}${e.stderr || ''}` }
-  const erros = (saida.match(/^pg_restore: error/gm) || []).length
+  const erros = trocarBanco(r('db'), dir)
   T.banco = Date.now()
-  ok(`pg_restore terminou sem erro (${seg(T.banco - T.provisionado)})`, erros === 0, saida.split('\n').filter((l) => /error/.test(l)).slice(0, 3).join(' | '))
+  ok(`pg_restore terminou sem erro (${seg(T.banco - T.provisionado)})`, erros.length === 0, erros.slice(0, 3).join(' | '))
+  conferirQueODeployContinua(r('db'))
 
   docker(['start', r('storage')])
-  docker(['cp', join(dir, 'storage.tgz'), `${r('storage')}:/tmp/storage.tgz`])
-  docker(['exec', r('storage'), 'sh', '-c', 'rm -rf /mnt/* && tar xzf /tmp/storage.tgz -C /mnt && rm -f /tmp/storage.tgz'])
+  restaurarArquivos(r('storage'), dir)
   for (const s of ['auth', 'rest', 'storage']) docker(['restart', r(s)])
   const noAr = await esperarApi(chaves.anon)
   T.servicos = Date.now()
@@ -323,6 +351,10 @@ async function marcar(legenda) {
 const cmd = process.argv[2]
 if (cmd === 'backup') backup()
 else if (cmd === 'descartar') descartar()
+else if (cmd === 'in-place') {
+  if (!process.argv[3]) { console.log('uso: node scripts/restaurar-staging.mjs in-place staging/backups/<instante>'); process.exit(2) }
+  await inPlace(process.argv[3])
+}
 else if (cmd === 'restaurar') {
   const base = join('staging', 'backups')
   const dir = process.argv[3] || join(base, readdirSync(base).sort().pop())

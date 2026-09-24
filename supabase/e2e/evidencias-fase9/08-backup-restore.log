@@ -1,36 +1,38 @@
 
--- BACKUP do staging → staging\backups\2026-09-24T11-57-38-370Z --
-   ·       banco.dump  2.2 MB  sha256 bb4018371ab460ca…
-   ·       storage.tgz 9 KB  sha256 aa97b167f5cdf5be…
-   ·       ponto de recuperação 2026-09-24T11:57:38.981Z  (backup em 1.5s)
-   ·       migração 20260928000072, 16 contas, 4 pessoas multi-clube
+-- BACKUP do staging → staging\backups\2026-09-24T12-08-41-425Z --
+   ·       banco.dump  2.2 MB  sha256 2f5acc74554a9648…
+   ·       storage.tgz 10 KB  sha256 149bdcb84d7a51d5…
+   ·       ponto de recuperação 2026-09-24T12:08:42.146Z  (backup em 1.7s)
+   ·       migração 20260929000074, 16 contas, 4 pessoas multi-clube
 
--- RESTORE de staging\backups\2026-09-24T11-57-38-370Z num ambiente DESCARTÁVEL (CONQUISTA-RESTORE, porta 56321) --
+-- RESTORE de staging\backups\2026-09-24T12-08-41-425Z num ambiente DESCARTÁVEL (CONQUISTA-RESTORE, porta 56321) --
    OK      o arquivo banco.dump do backup está íntegro (sha256 confere)
    OK      o arquivo storage.tgz do backup está íntegro (sha256 confere)
-   ·       stack descartável no ar em 39.2s
-   OK      pg_restore terminou sem erro (5.7s)
-   OK      auth, API e storage do descartável respondem (4.8s)
+   ·       stack descartável no ar em 40.7s
+   OK      pg_restore terminou sem erro (5.5s)
+   OK      o banco restaurado tem o dono original (postgres)
+   OK      ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+   OK      auth, API e storage do descartável respondem (5.3s)
 
 -- 1. o que voltou (manifesto, fora da RLS) --
-   OK      migracao               "20260928000072"
+   OK      migracao               "20260929000074"
    OK      contas                 16
    OK      identidades_auth       14
    OK      vinculos_ativos        {"Águias do Vale":7,"Clube Teste Tenant 002":1,"Distrito Staging do Agreste":1,"Filhos da Conquista":8,"Sentinelas do Agreste":3}
    OK      pessoas_multiclube     4
    OK      pontos                 {"Águias do Vale":100,"Clube Teste Tenant 002":20,"Filhos da Conquista":80,"Sentinelas do Agreste":25}
-   OK      mensalidades           {"Águias do Vale":6,"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
-   OK      fotos                  {"Águias do Vale":30,"Clube Teste Tenant 002":1,"Filhos da Conquista":44,"Sentinelas do Agreste":10}
+   OK      mensalidades           {"Águias do Vale":10,"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
+   OK      fotos                  {"Águias do Vale":36,"Clube Teste Tenant 002":1,"Filhos da Conquista":50,"Sentinelas do Agreste":12}
    OK      matriculas             {"em_andamento":2,"investida":1}
-   OK      requisitos_aprovados   37
+   OK      requisitos_aprovados   39
    OK      documentos             1
-   OK      objetos_storage        {"comprovacoes":17,"imagens":110}
+   OK      objetos_storage        {"comprovacoes":19,"imagens":121}
    OK      cron_jobs              13
    OK      policies               139
-   OK      funcoes                400
+   OK      funcoes                403
    OK      gatilhos               85
    OK      tabelas_com_rls        119
-   OK      os 127 objetos do Storage têm arquivo no disco do descartável
+   OK      os 140 objetos do Storage têm arquivo no disco do descartável
 
 -- 2. a suíte reduzida, pela API do descartável --
    OK      identidade so_a entra com a senha de antes (hash restaurado)
@@ -65,17 +67,17 @@
    OK      um token emitido pelo STAGING é recusado pelo descartável
 
 -- 3. RPO — o ponto de recuperação é o instante do dump --
-   OK      a escrita de ANTES do backup voltou (rpo-antes-mufh99aj)
-   OK      a escrita de DEPOIS do backup não voltou (rpo-depois-mufh99aj) — é a perda que o RPO mede
+   OK      a escrita de ANTES do backup voltou (rpo-antes-mufhngwd)
+   OK      a escrita de DEPOIS do backup não voltou (rpo-depois-mufhngwd) — é a perda que o RPO mede
 
 ==============================================================
- RTO OBSERVADO (backup de 2.2 MB + 9 KB de arquivos)
-   provisionar o ambiente ... 39.2s
-   restaurar o banco ........ 5.7s
-   storage + serviços ....... 4.8s
-   conferência .............. 1.9s
-   TOTAL (até a suíte verde)  51.6s
- RPO: o instante do dump (2026-09-24T11:57:38.981Z). Numa rotina real, RPO = intervalo entre backups.
+ RTO OBSERVADO (backup de 2.2 MB + 10 KB de arquivos)
+   provisionar o ambiente ... 40.7s
+   restaurar o banco ........ 5.5s
+   storage + serviços ....... 5.3s
+   conferência .............. 2.0s
+   TOTAL (até a suíte verde)  53.4s
+ RPO: o instante do dump (2026-09-24T12:08:42.146Z). Numa rotina real, RPO = intervalo entre backups.
 
  RESULTADO: RESTORE COMPROVADO
 ==============================================================

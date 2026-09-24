@@ -1,0 +1,64 @@
+# drill 1 (antes da correção do dono do banco) — a falha que o drill achou
+
+=== DRILL DE MIGRATION — staging vivo ===
+
+-- 0. versão N --
+   OK      o staging está na versão N = 20260928000072 (a de antes da release)
+   ·       16 contas, 4 pessoas multi-clube, mensalidades {"Águias do Vale":6,"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
+   OK      na versão N, Lia (A+B) NÃO publica no mural de B — o defeito que a release corrige
+
+-- 1. backup antes da release --
+   OK      backup feito (banco + arquivos do Storage + manifesto)
+   ·       staging\backups\2026-09-24T12-05-12-384Z
+
+-- 2. a release: 73 e 74, uma por vez, como o SQL Editor --
+   OK      20260929000073_o-clube-do-ato-e-a-aba.sql aplicada (0.2s)
+   OK      20260929000074_mensalidade-unica-por-clube.sql aplicada (0.2s)
+   OK      o ledger andou para 74
+
+-- 3. F1 — uma migration que ABORTA no meio --
+   OK      o SQL Editor recusa a F1
+   ·       erro: ERROR:  column "nome_que_nao_existe" of relation "unidades" does not exist
+   OK      ...e NADA dela ficou: nem a coluna, nem o índice (atomicidade provada pelo estado)
+   OK      ...o ledger não andou (continua 74)
+   OK      ...e o app segue funcionando na versão de antes: Lia publica em B
+   ·       recuperação da F1: nenhuma no banco. Corrige-se o arquivo e aplica-se de novo numa próxima janela.
+
+-- 4. F2 — uma migration que COMMITA e ESTRAGA dado --
+   OK      o SQL Editor ACEITA a F2 (nada aborta — é isso que a torna perigosa)
+
+-- 5. detecção — a conferência pega o que o SQL Editor não pegou --
+   OK      o manifesto acusa a diferença (vínculos e caixa de B)
+   ·       antes: vínculos {"Águias do Vale":7,"Clube Teste Tenant 002":1,"Distrito Staging do Agreste":1,"Filhos da Conquista":8,"Sentinelas do Agreste":3}  mensalidades {"Águias do Vale":6,"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
+   ·       agora: vínculos {"Águias do Vale":2,"Clube Teste Tenant 002":1,"Distrito Staging do Agreste":1,"Filhos da Conquista":8,"Sentinelas do Agreste":3}  mensalidades {"Clube Teste Tenant 002":1,"Filhos da Conquista":9}
+   OK      a sonda de uso acusa: Bia (só B) perdeu o acesso ao próprio clube
+   ·       decisão: o caixa de B foi APAGADO — nenhuma migration corretiva traz de volta. Restore do backup de antes da release.
+
+-- 6. recuperação — restore IN-PLACE do backup de antes da release --
+   OK      banco restaurado sem erro (9.8s, com os serviços parados)
+   OK      serviços de volta (4.2s)
+   OK      o staging voltou à versão N
+   OK      o manifesto voltou IDÊNTICO ao de antes da release (vínculos, caixa, fotos, classes, documentos, Storage, policies…)
+   OK      Bia voltou a entrar em B
+
+-- 7. RPO — o que o restore custou --
+   OK      a escrita ENTRE o backup e o incidente foi perdida
+   OK      a escrita DEPOIS do incidente foi perdida
+   ·       as duas eram legítimas. É o custo do restore in-place: TUDO depois do backup. O runbook exige
+   ·       backup IMEDIATAMENTE antes da release e janela sem uso — o produto não tem modo manutenção.
+
+-- 8. a release de novo, a certa — e o efeito dela --
+   FALHOU  20260929000073_o-clube-do-ato-e-a-aba.sql reaplicada (0.2s)  [ERROR:  permission denied for schema public]
+   OK      20260929000074_mensalidade-unica-por-clube.sql reaplicada (0.2s)
+   OK      o ledger está em 74
+   FALHOU  e agora Lia (A+B) publica no mural de B — a correção chegou aos dados reais
+
+==============================================================
+ TEMPOS OBSERVADOS (staging, banco de ~2 MB)
+   restore do banco (serviços parados) ... 9.8s
+   storage + serviços de volta ........... 4.2s
+   release reaplicada + sonda ............ 0.8s
+   TOTAL da recuperação da F2 ............ 15.8s  (de "decidi restaurar" a "release certa no ar")
+
+ RESULTADO: 2 FALHA(S)
+==============================================================
