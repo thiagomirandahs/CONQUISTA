@@ -211,41 +211,54 @@ create function t.pacote(p_ano int, p_itens jsonb) returns jsonb language sql as
 create function t.item(p_chave text, p_desde text, p_ate text, p_valor text default 'Livro de teste [TESTE]', p_url text default 'https://exemplo.invalid/fonte')
 returns jsonb language sql as $$
   select jsonb_build_object('chave', p_chave, 'valor', p_valor, 'vigente_desde', p_desde, 'vigente_ate', p_ate, 'fonte_url', p_url, 'fonte_descricao', 'fixture do teste 35') $$;
+-- (migration 86) o banco confere o sha256 do pacote canônico: os pacotes aqui levam o hash VERDADEIRO,
+-- o mesmo que o gerador calcularia — assim cada recusa abaixo é a da regra que ela testa, não a do hash.
+-- (Sem a 86 não há _json_canonico: devolve o sha256 do texto do jsonb — um hash por conteúdo, que a 84 aceitava.)
+create function t.hash(p jsonb) returns text language plpgsql as $$
+declare v text;
+begin
+  execute 'select encode(extensions.digest(public._json_canonico($1), ''sha256''), ''hex'')' into v using p;
+  return v;
+exception when undefined_function then return encode(extensions.digest(p::text, 'sha256'), 'hex');
+end $$;
+create function t.publicar_sql(p jsonb) returns text language sql as $$
+  select format('select public.conteudo_anual_publicar(%L::jsonb, %L)', p, t.hash(p)) $$;
+-- o pacote válido de 2098: o ano coberto por dois períodos que se completam
+create function t.p2098() returns jsonb language sql as $$
+  select t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30', 'Livro 2098/1 [TESTE]'),
+                                          t.item('piloto_curso_leitura_do_ano', '2098-07-01', '2098-12-31', 'Livro 2098/2 [TESTE]'))) $$;
 select t.eq('a publicação NÃO é executável por authenticated nem anon (só a plataforma: SQL Editor/service_role)',
   has_function_privilege('authenticated', 'public.conteudo_anual_publicar(jsonb,text)', 'execute')::text || '|' || has_function_privilege('anon', 'public.conteudo_anual_publicar(jsonb,text)', 'execute')::text, 'false|false');
 select t.throws('pacote com vigência ABERTA é recusado',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', null))), repeat('a', 64)), 'vigência FECHADA');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', null)))), 'vigência FECHADA');
 select t.throws('pacote com LACUNA (só o 1º semestre) é recusado — e nada é publicado',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30'))), repeat('a', 64)), 'não fica coberto');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30')))), 'não fica coberto');
 select t.eq('...(nenhuma linha de 2098 ficou)', (select count(*) from public.dynamic_content_values where ano = 2098), 0);
 select t.throws('item sem fonte https é recusado',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Livro', 'http://sem-tls.invalid'))), repeat('a', 64)), 'fonte_url https');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Livro', 'http://sem-tls.invalid')))), 'fonte_url https');
 select t.throws('item com vigência fora do ano do pacote é recusado',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2099-01-01', '2099-12-31'))), repeat('a', 64)), 'dentro de 2098');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2099-01-01', '2099-12-31')))), 'dentro de 2098');
 select t.throws('chave que não é conteúdo dinâmico do catálogo é recusada',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('slot_inventado', '2098-01-01', '2098-12-31'))), repeat('a', 64)), 'não é um conteúdo dinâmico');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('slot_inventado', '2098-01-01', '2098-12-31')))), 'não é um conteúdo dinâmico');
 select t.throws('campo fora do formato é recusado (não aproximado)',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31') || '{"extra":1}')), repeat('a', 64)), 'não representa');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31') || '{"extra":1}'))), 'não representa');
 select t.throws('hash que não é sha256 é recusado',
   format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31'))), 'abc'), 'hash');
 select t.eq('pacote válido (o ano coberto por dois períodos que se completam) publica 2 linhas',
-  public.conteudo_anual_publicar(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30', 'Livro 2098/1 [TESTE]'),
-                                                                  t.item('piloto_curso_leitura_do_ano', '2098-07-01', '2098-12-31', 'Livro 2098/2 [TESTE]'))), repeat('b', 64)) ->> 'publicados',
+  public.conteudo_anual_publicar(t.p2098(), t.hash(t.p2098())) ->> 'publicados',
   '2');
 select t.eq('...com ano, hash do manifesto, arquivo de origem e data de publicação',
-  (select count(*) from public.dynamic_content_values where ano = 2098 and fonte_hash = repeat('b', 64) and manifesto_arquivo = 'supabase/curriculo-manifesto/conteudo-anual/2098.json' and publicado_em is not null), 2);
+  (select count(*) from public.dynamic_content_values where ano = 2098 and fonte_hash = t.hash(t.p2098()) and manifesto_arquivo = 'supabase/curriculo-manifesto/conteudo-anual/2098.json' and publicado_em is not null), 2);
 select t.eq('...e o resolvedor já serve cada metade no seu período',
   (public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2098-03-01') ->> 'valor') || '|' || (public.conteudo_dinamico_resolver('piloto_curso_leitura_do_ano', '2098-09-01') ->> 'valor'),
   'Livro 2098/1 [TESTE]|Livro 2098/2 [TESTE]');
 select t.eq('rodar o MESMO manifesto de novo é no-op (0 novas, 2 já estavam)',
-  (select (r ->> 'publicados') || '|' || (r ->> 'ja_estavam') from (select public.conteudo_anual_publicar(t.pacote(2098, jsonb_build_array(
-     t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-06-30', 'Livro 2098/1 [TESTE]'),
-     t.item('piloto_curso_leitura_do_ano', '2098-07-01', '2098-12-31', 'Livro 2098/2 [TESTE]'))), repeat('b', 64)) r) q), '0|2');
+  (select (r ->> 'publicados') || '|' || (r ->> 'ja_estavam') from (select public.conteudo_anual_publicar(t.p2098(), t.hash(t.p2098())) r) q), '0|2');
 select t.throws('OUTRO manifesto para um ano já publicado é recusado (publicado não se edita por aqui)',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Outro livro'))), repeat('c', 64)), 'já tem conteúdo de 2098');
+  t.publicar_sql(t.pacote(2098, jsonb_build_array(t.item('piloto_curso_leitura_do_ano', '2098-01-01', '2098-12-31', 'Outro livro')))), 'já tem conteúdo de 2098');
 select t.throws('...nem um ano que entrou por SQL direto (fora do manifesto)',
-  format('select public.conteudo_anual_publicar(%L::jsonb, %L)', t.pacote(extract(year from public._data_no_brasil())::int,
-    jsonb_build_array(t.item('piloto_curso_leitura_do_ano', extract(year from public._data_no_brasil())::int || '-01-01', extract(year from public._data_no_brasil())::int || '-12-31'))), repeat('d', 64)), 'publicado por outro manifesto');
+  t.publicar_sql(t.pacote(extract(year from public._data_no_brasil())::int,
+    jsonb_build_array(t.item('piloto_curso_leitura_do_ano', extract(year from public._data_no_brasil())::int || '-01-01', extract(year from public._data_no_brasil())::int || '-12-31')))), 'publicado por outro manifesto');
 select t.como('lider_a');
 select t.throws('a liderança não publica (permissão negada)', format('select public.conteudo_anual_publicar(%L::jsonb, %L)', '{}', repeat('e', 64)), 'permission denied');
 reset role;

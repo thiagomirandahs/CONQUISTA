@@ -4,7 +4,7 @@ import { carregarContexto } from '../services/clubes.js'
 import { definirClubeAtivoNoTransporte, definirEscopoAtivoNoTransporte } from '../lib/supabase.js'
 import { esquecerEscopoDaAba } from './Escopo.jsx'
 import {
-  permissoesDoPapel, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo,
+  permissoesDoPapel, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo, clubePadraoSemCabecalho,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from '../lib/clube.js'
 import { MARCA_PRODUTO, aplicarMarca, lerMarcaSalva, salvarMarca, esquecerMarcaSalva } from '../lib/marca.js'
@@ -20,6 +20,7 @@ const PERMISSOES_NENHUMA = permissoesDoPapel(null)
 const VALOR_PADRAO = Object.freeze({
   carregando: true, erro: null, semVinculo: false, precisaEscolher: false, legado: false,
   vinculos: [], vinculo: null, clubeId: null, papel: null, status: null, unidadeId: null, unidadeNome: null,
+  clubeDaAbaEhOPadrao: false,
   marca: MARCA_PRODUTO, recursos: {}, ...PERMISSOES_NENHUMA,
   temRecurso: () => false, trocarClube: async () => ({ ok: false, motivo: 'sem_vinculo' }), recarregar: async () => {},
 })
@@ -153,6 +154,10 @@ export function ClubeProvider({ children }) {
     legado: !!contexto?.legado,
     vinculos, vinculo, clubeId, status: vinculo?.status || null,
     unidadeId: vinculo?.unidadeId ?? null, unidadeNome: vinculo?.unidadeNome ?? null,
+    // true só quando é CERTO que o clube desta aba é o que o servidor usa sem header — o do tempo
+    // real. Na dúvida é false (ver clubePadraoSemCabecalho): o chat usa isto para decidir se precisa
+    // do reforço periódico, e errar para "não precisa" deixaria a aba do clube secundário surda.
+    clubeDaAbaEhOPadrao: !!clubeId && clubePadraoSemCabecalho(vinculos) === clubeId,
     marca, recursos: vinculo?.status === 'ativo' ? vinculo.recursos : {},
     ...(vinculo && vinculo.status === 'ativo' ? permissoesDoPapel(papel) : PERMISSOES_NENHUMA),
     temRecurso: (chave) => temRecursoNoVinculo(vinculo, chave),

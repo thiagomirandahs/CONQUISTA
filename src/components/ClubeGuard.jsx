@@ -7,7 +7,8 @@ import Logo from './Logo.jsx'
 // Porteiro do app: só deixa passar quem tem VÍNCULO ATIVO com um clube em uso.
 //  * carregando            -> espera o contexto do clube;
 //  * erro de rede/servidor -> "tentar de novo" (NUNCA cai num papel/clube "por padrão" — falha fechada);
-//  * sem vínculo ativo     -> tela clara, COM AS SAÍDAS que a pessoa tem.
+//  * sem vínculo ativo     -> tela clara, COM AS SAÍDAS que a pessoa tem (pendente, suspenso e
+//                             "nunca entrou" são telas diferentes: cada uma diz o que é verdade).
 //
 // Fase 7 — o achado mais duro da auditoria de UX: quem não tem clube caía aqui com UM ÚNICO botão,
 // "Sair". Isso trancava do lado de fora duas jornadas que existem e funcionam:
@@ -98,6 +99,41 @@ export default function ClubeGuard({ children }) {
         <div className="min-h-full grid place-items-center p-6">
           <p className="text-faint text-sm" role="status">Carregando…</p>
         </div>
+      )
+    }
+    // Desativada pela liderança: o vínculo continua existindo, SUSPENSO (meu_contexto o devolve com
+    // status 'suspenso'). Antes esta pessoa caía na tela de quem nunca entrou em clube nenhum —
+    // "Você ainda não está em um clube", com "Entrar com código" e "Criar um clube". Digitar o código
+    // do próprio clube mostrava um "Pedido enviado" falso (o servidor não cria pedido para quem já tem
+    // vínculo, e a liderança não via nada), e uma criança desativada era convidada a abrir um clube
+    // e virar diretoria dele. Aqui ela fica sabendo a verdade e com quem falar. "Criar um clube"
+    // some de propósito; o código de OUTRO clube continua valendo, como no ramo do pendente.
+    const suspensos = vinculos.filter((v) => v.status === 'suspenso')
+    if (suspensos.length) {
+      return (
+        <Aviso icone="⏸️" titulo="Seu acesso está suspenso">
+          <p className="text-sm text-muted mt-1 mb-5" data-testid="aviso-suspenso">
+            Você faz parte de {suspensos.map((v) => v.marca?.nome || v.nome).join(', ')}, mas a liderança
+            suspendeu o seu acesso. Para voltar, fale com a liderança do clube.
+          </p>
+          <div className="space-y-2">
+            {temEscopo && (
+              <Link to="/institucional" data-testid="ir-portal"
+                className="block w-full min-h-[48px] leading-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow"
+                style={{ color: 'var(--marca-1-texto, #fff)' }}>
+                Abrir o portal institucional
+              </Link>
+            )}
+            <button onClick={sair}
+              className={`w-full min-h-[48px] font-extrabold rounded-2xl ${
+                temEscopo ? 'bg-surface2 text-ink' : 'bg-gradient-to-r from-brand to-brand2 shadow-glow'}`}
+              style={temEscopo ? undefined : { color: 'var(--marca-1-texto, #fff)' }}>Sair</button>
+            <Link to="/entrar" data-testid="ir-entrar-suspenso"
+              className="block w-full min-h-[44px] leading-[44px] text-sm text-muted font-semibold">
+              Tenho o código de outro clube
+            </Link>
+          </div>
+        </Aviso>
       )
     }
     return (

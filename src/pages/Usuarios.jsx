@@ -48,10 +48,14 @@ export default function Usuarios() {
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
   const CARGOS_DA_DIRETORIA = ['diretoria', 'instrutor', 'tesoureiro']
 
-  // Desativar/reativar: bloqueia (ou libera) o acesso sem apagar o histórico.
+  // Desativar/reativar: bloqueia (ou libera) o acesso A ESTE CLUBE sem apagar o histórico.
+  // O texto do diálogo diz o que de fato acontece. Ele prometia "não vai mais conseguir entrar", e
+  // isso deixou de ser verdade quando o login parou de barrar pelo espelho profiles.status: a conta
+  // continua entrando (e segue normal em outro clube, se estiver em outro); o que ela perde é ESTE
+  // clube — ao entrar, vê "Seu acesso está suspenso" e o recado para falar com a liderança.
   async function alternarAtivo(u) {
     const desativando = u.status === 'ativo'
-    if (desativando && !(await avisar.confirmar({ titulo: `Desativar ${u.nome || 'esta pessoa'}?`, descricao: 'Ela não vai mais conseguir entrar e some do ranking. O histórico fica guardado e dá pra reativar depois.', rotulo: 'Desativar' }))) return
+    if (desativando && !(await avisar.confirmar({ titulo: `Desativar ${u.nome || 'esta pessoa'}?`, descricao: 'Ela perde o acesso a este clube e some do ranking. Ao entrar, verá que o acesso está suspenso. O histórico fica guardado e dá pra reativar depois.', rotulo: 'Desativar' }))) return
     try {
       await definirAtivoUsuario(u.id, !desativando)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: desativando ? 'inativo' : 'ativo' } : x)))
@@ -156,6 +160,9 @@ export default function Usuarios() {
                     {u.nome || '(sem nome)'}
                     {u.status === 'pendente' && <span className="ml-2 text-xs text-amber-600 font-normal">pendente</span>}
                     {u.status === 'inativo' && <span className="ml-2 text-xs text-muted font-normal bg-surface2 rounded px-1.5 py-0.5">desativado</span>}
+                    {/* listar_usuarios devolve o vínculo ENCERRADO como 'rejeitado'; sem esta marca ele
+                        aparecia igual a um membro ativo, só que sem os botões de senha e teste */}
+                    {u.status === 'rejeitado' && <span className="ml-2 text-xs text-muted font-normal bg-surface2 rounded px-1.5 py-0.5">recusado</span>}
                     {u.teste && <span className="ml-2 text-xs text-purple-700 font-normal bg-purple-100 rounded px-1.5 py-0.5">🧪 teste</span>}
                     {!u.unidade_id && (u.papel === 'desbravador' || u.papel === 'conselheiro') && (
                       <span className="ml-2 text-xs text-orange-600 font-normal">sem unidade</span>
@@ -179,15 +186,23 @@ export default function Usuarios() {
                 </select>
                 <button onClick={() => setPontosPara(u)}
                   className="text-xs bg-gold/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
-                <button onClick={() => setAlvo(u)}
-                  className="text-xs bg-brand/10 text-brand rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
+                {/* Senha e modo teste só para quem está ATIVO neste clube: o servidor recusa os
+                    outros (resetar_senha_membro e membro_definir_teste, migration 80). Recusar
+                    'pendente' é de propósito — um vínculo pendente nasce de QUALQUER conta que digita
+                    o código, e trocar a senha dela seria tomar uma conta que o clube nem aprovou. O
+                    caminho é aprovar (ou reativar) primeiro. Antes os botões apareciam para todos e
+                    a liderança só descobria a recusa depois de tocar. */}
+                {u.status === 'ativo' && (
+                  <button onClick={() => setAlvo(u)} data-testid={`senha-${u.id}`}
+                    className="text-xs bg-brand/10 text-brand rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
+                )}
                 {(ehDiretoria || !CARGOS_DA_DIRETORIA.includes(u.papel)) && (
                   <button onClick={() => alternarAtivo(u)}
                     className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
                     {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
                   </button>
                 )}
-                {ehDiretoria && (
+                {ehDiretoria && u.status === 'ativo' && (
                   <button onClick={() => alternarTeste(u)}
                     className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.teste ? 'bg-purple-100 text-purple-700' : 'bg-surface2 text-muted'}`}>
                     {u.teste ? '🧪 Sair do teste' : '🧪 Teste'}
@@ -198,6 +213,11 @@ export default function Usuarios() {
                     className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-2 font-semibold">🗑️ Excluir</button>
                 )}
               </div>
+              {u.status !== 'ativo' && (
+                <p className="text-xs text-faint mt-1.5" data-testid={`so-ativo-${u.id}`}>
+                  Senha{ehDiretoria ? ' e modo teste' : ''} só para quem está ativo: {u.status === 'pendente' ? 'aprove' : 'reative'} primeiro.
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -336,7 +356,7 @@ function ModalReset({ usuario, onFechar }) {
           </>
         ) : (
           <>
-            <label className="block text-xs font-semibold text-muted mb-1">Nova senha (mín. 6)</label>
+            <label className="block text-xs font-semibold text-muted mb-1">Nova senha (mín. 8, com letras e números)</label>
             <div className="flex gap-2 mb-3">
               <input value={senha} onChange={(e) => setSenha(e.target.value)}
                 className="flex-1 rounded-lg border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm font-mono outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />

@@ -13,6 +13,8 @@ const corClasse = {
 
 export default function Missoes() {
   const { profile } = useAuth()
+  // O nascimento é da PRÓPRIA pessoa e chega pelo perfil do Auth (RPC meu_perfil). Não dá mais para
+  // lê-lo com um select em profiles: desde a migration 86 essa coluna não é legível pela tabela.
   const classe = classeDoUsuario(profile?.nascimento)
   const [carregando, setCarregando] = useState(true)
   const [missao, setMissao] = useState(null)

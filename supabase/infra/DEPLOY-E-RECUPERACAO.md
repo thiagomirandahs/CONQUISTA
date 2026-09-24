@@ -22,14 +22,24 @@ A F2 é a razão de este documento existir. Nenhuma migration corretiva traz de 
 ## Antes da janela
 
 1. **Replay e upgrade verdes** na máquina de quem vai aplicar:
-   `bash supabase/tests/run-tests.sh` — roda as 154 migrations do zero, a suíte inteira e, desde
+   `bash supabase/tests/run-tests.sh` — roda todas as migrations do zero, a suíte inteira e, desde
    a fase 9, o **upgrade de produção simulado** (schema legado + dados → todas as migrations).
 2. **Pré-voo** em produção (somente leitura): `supabase/PREFLIGHT-PRODUCAO.sql`.
-   ⚠️ Ele cobre as dependências das migrations **1 a 28**. As de 29 em diante não têm pré-voo
-   próprio; o que as protege é o upgrade simulado do passo 1.
-3. **Ordem de deploy** de cada release, lida no cabeçalho das migrations. Hoje há UMA com ordem
-   obrigatória: a **74** só depois do **front novo publicado** (ela remove o alvo de upsert que o
-   front anterior usa em Mensalidades).
+   Desde a fase 9.1 ele cobre as migrations **1 a 80** (41 verificações, cada uma provada com caso
+   negativo — `scripts/testar-preflight.mjs`). Ao acrescentar uma migration que crie pré-condição
+   nova (tabela/coluna/dado que a próxima etapa exige), estenda o pré-voo e um caso negativo; migration
+   puramente aditiva (create table/function if not exists sem tocar dado legado) não precisa.
+3. **Ensaio de produção** sobre uma cópia real, quando houver backup: `node scripts/ensaio-producao.mjs
+   ensaiar <backup>` — ver `supabase/infra/ENSAIO-DE-PRODUCAO.md`. Prova o upgrade inteiro (restore →
+   pré-voo → migrations → antes×depois linha a linha → suíte → Tenant 001) sem tocar produção.
+4. **Ordem de deploy** de cada release, lida no cabeçalho das migrations. Hoje há duas com ordem
+   obrigatória:
+   - a **74**, só depois do **front novo publicado** (remove o alvo de upsert que o front anterior
+     usa em Mensalidades);
+   - a **86**, só depois do **front novo e do APK novo publicados** (revoga o SELECT de
+     `profiles.nascimento` da tabela inteira; qualquer cliente que ainda faça `select('*')` em
+     profiles — APK já instalado, PWA em cache, `main` antes deste branch — recebe "permission
+     denied" ao carregar o perfil assim que ela entra, mesmo sem nenhuma mudança nesse cliente).
 4. **Janela sem uso.** O produto **não tem modo manutenção**. Tudo o que for escrito entre o backup
    (passo 5) e um eventual restore (passo 8) **se perde** — o drill mediu: a escrita feita entre o
    backup e o incidente não voltou, e a feita depois do incidente também não. Combine o horário com

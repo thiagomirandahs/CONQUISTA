@@ -517,5 +517,189 @@ select t.ok('[catálogo] membros_do_clube: authenticated executa, anon não',
 select t.ok('[catálogo] membros_do_clube não devolve data de nascimento (só "aniversario" como texto MM-DD)',
   pg_get_function_result('public.membros_do_clube(text[], uuid, text[], text)'::regprocedure) !~* '\mdate\M|nascimento');
 
+-- =============================================================================
+--  15. (86, S1) A conta de quem ADMINISTRA A PLATAFORMA não é mexida por um clube
+-- =============================================================================
+-- O dono da plataforma também é diretoria de A — e só de A. A trava da 80 olhava só os vínculos:
+-- para ela, ele era "só deste clube", e a liderança de A redefinia a senha GLOBAL dele (e, com ela,
+-- entrava nas RPCs de plataforma de TODOS os clubes). O de suporte é conselheiro em A e está
+-- DESATIVADO em platform_admins: a conta é a mesma, e ele pode ser reativado.
+\o /dev/null
+select t.mk('adm_plat', 'Admin Plataforma 61', 'diretoria',   'ativo', 'clube_a');
+select t.mk('sup_plat', 'Suporte Plataforma 61', 'conselheiro', 'ativo', 'clube_a', 'A1');
+insert into public.platform_admins (user_id, papel, ativo, motivo) values
+  (t.id('adm_plat'), 'owner', true, 'teste 61'), (t.id('sup_plat'), 'suporte', false, 'teste 61 (desativado)');
+\o
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('[admin] a diretoria de A NÃO redefine a senha do dono da plataforma (que é diretoria só de A)',
+  format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('adm_plat')), 'outro clube');
+select t.throws('[admin] ...nem liga o modo teste dele', format($q$select public.membro_definir_teste(%L, true)$q$, t.id('adm_plat')), 'outro clube');
+select t.throws('[admin] ...nem troca a foto dele', format($q$select public.membro_definir_foto(%L, 'https://atacante.example/x.png')$q$, t.id('adm_plat')), 'outro clube');
+select t.throws('[admin] ...nem mexe no admin DESATIVADO (a conta é a mesma)', format($q$select public.membro_definir_teste(%L, true)$q$, t.id('sup_plat')), 'outro clube');
+select t.eq('[admin] a recusa é a MESMA de "participa de outro clube" (ninguém descobre por aqui quem é admin)',
+  t.erro(format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('adm_plat'))),
+  t.erro(format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('crianca'))));
+select t.como('instrutor_a'); select t.pedir_clube('clube_a');
+select t.throws('[admin] o INSTRUTOR de A não redefine a senha do admin que é conselheiro em A (o passo da diretoria não o protegia)',
+  format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('sup_plat')), 'outro clube');
+select t.throws('[admin] ...nem troca a foto dele', format($q$select public.membro_definir_foto(%L, 'https://atacante.example/x.png')$q$, t.id('sup_plat')), 'outro clube');
+reset role;
+select t.ok('[admin] as senhas dos dois admins continuam as originais', t.senha_intacta('adm_plat') and t.senha_intacta('sup_plat'));
+select t.eq('[admin] ...e foto e modo teste também', t.perfil('adm_plat') || ' / ' || t.perfil('sup_plat'),
+  'Admin Plataforma 61|sem-foto|sem-nascimento|f / Suporte Plataforma 61|sem-foto|sem-nascimento|f');
+
+-- =============================================================================
+--  16. (86, S2) A data de nascimento completa não sai pela API; a própria pessoa lê a dela por RPC
+-- =============================================================================
+select t.como('so_a'); select t.pedir_clube('clube_a');
+select t.throws('[nascimento] um colega de A NÃO lê a data de nascimento de outra criança pela API',
+  format($q$select nascimento from public.profiles where id = %L$q$, t.id('amigo_ab')), 'permission denied');
+select t.throws('[nascimento] ...nem com select * (o Auth do front passa a usar a RPC meu_perfil)', $q$select * from public.profiles limit 1$q$, 'permission denied');
+select t.eq('[nascimento] ...as outras colunas continuam legíveis (ranking, chat, chamada)',
+  t.txt(format($q$select nome || '|' || coalesce(foto, 'sem-foto') from public.profiles where id = %L$q$, t.id('amigo_ab'))), 'Amigo Dois Clubes|sem-foto');
+select t.eq('[nascimento] ...e o card de aniversariantes segue com o dia e o mês', t.txt(format($q$select aniversario from public.membros_do_clube() where id = %L$q$, t.id('amigo_ab'))), '04-04');
+select t.como('membro_b'); select t.pedir_clube('clube_b');
+select t.throws('[nascimento] quem é de B também não lê o nascimento da criança de A+B',
+  format($q$select nascimento from public.profiles where id = %L$q$, t.id('crianca')), 'permission denied');
+select t.como('crianca'); select t.pedir_clube('clube_b');
+select t.eq('[nascimento] a própria criança lê o SEU nascimento pela RPC meu_perfil()', t.txt($q$select nascimento::text from public.meu_perfil()$q$), '2014-03-15');
+select t.eq('[nascimento] ...que devolve só a linha dela, com as colunas de profiles',
+  t.txt($q$select count(*) || '|' || bool_and(id = auth.uid()) || '|' || bool_and(nome is not null) from public.meu_perfil()$q$), '1|true|true');
+select t.ok('[nascimento] a missão do dia (que usa o nascimento para a classe, como definer) continua respondendo', t.n($q$select count(*) from public.missao_do_dia()$q$) >= 0);
+select t.como_anon();
+select t.throws('[nascimento] anon não chama meu_perfil', $q$select count(*) from public.meu_perfil()$q$, 'permission denied');
+reset role;
+select t.ok('[catálogo] authenticated não tem SELECT em profiles.nascimento, nem o SELECT da tabela inteira',
+  not has_column_privilege('authenticated', 'public.profiles', 'nascimento', 'select')
+  and not has_table_privilege('authenticated', 'public.profiles', 'select')
+  and has_column_privilege('authenticated', 'public.profiles', 'nome', 'select'));
+
+-- =============================================================================
+--  17. (86, M1) Missão e devocional: uma por pessoa, por CLUBE, por dia
+-- =============================================================================
+-- Antes: "já fez hoje" somava os clubes, mas o duelo de B (81) só conta o que foi feito em B — a
+-- criança que fazia primeiro em A ficava com "já fez" em B e ZERO no duelo de B para sempre.
+\o /dev/null
+update public.desafios set ativo = false where club_id in (t.id('clube_a'), t.id('clube_b'));
+insert into public.desafios (club_id, tema, texto, pergunta, opcoes, correta, classe, pede_foto, ativo) values
+  (t.id('clube_a'), 'T61', 'missão de A (61)', 'P?', '["a","b"]'::jsonb, 0, null, false, true),
+  (t.id('clube_b'), 'T61', 'missão de B (61)', 'P?', '["a","b"]'::jsonb, 0, null, false, true);
+update public.versiculos set ativo = false where club_id in (t.id('clube_a'), t.id('clube_b'));
+insert into public.versiculos (club_id, texto, referencia, pergunta, opcoes, correta, ativo, livro_abrev, capitulo, versiculo_num) values
+  (t.id('clube_a'), 'versículo de A (61)', 'Gn 1:1', 'Q?', '["x","y"]'::jsonb, 0, true, 'gn', 1, 1),
+  (t.id('clube_b'), 'versículo de B (61)', 'Gn 1:2', 'Q?', '["x","y"]'::jsonb, 0, true, 'gn', 1, 2);
+-- um duelo de DEVOCIONAL em B, B2 x B1 (a criança fica no lado b; o lado a de B1 já tem 2 duelos da seção 6)
+insert into public.desafios_unidade (club_id, titulo, tipo, meta, pontos, dias) values (t.id('clube_b'), 'Devocional 61', 'devocional', 1, 10, 7);
+insert into public.duelos (club_id, desafio_id, unidade_a, unidade_b, prazo, criado_por)
+select t.id('clube_b'), d.id, t.id('B2'), t.id('B1'), current_date + 7, t.id('lider_b') from public.desafios_unidade d where d.titulo = 'Devocional 61';
+insert into t.ids (chave, id) select 'duelo_devocional', du.id from public.duelos du join public.desafios_unidade d on d.id = du.desafio_id where d.titulo = 'Devocional 61';
+-- o "feito" de alguém num lado do duelo, pelo nome (a criança foi renomeada na seção 13)
+create function t.feito_lado(p_duelo text, p_lado text, p_nome text) returns text language sql as $$
+  select coalesce((select x->>'feito' from json_array_elements(public.progresso_duelo(t.id(p_duelo))->p_lado->'membros') x
+                    where x->>'nome' = p_nome), 'ausente');
+$$;
+\o
+select t.como('so_b'); select t.pedir_clube('clube_b');
+select t.feito_lado('duelo_missoes', 'a', 'Criança Renomeada') as missoes_b_antes \gset
+select t.como('crianca'); select t.pedir_clube('clube_a');
+select t.permitido('[missão] a criança faz a missão na aba A', $q$select public.registrar_missao(null, 0)$q$);
+select t.permitido('[devocional] ...e o devocional na aba A', $q$select public.registrar_devocional(0)$q$);
+select t.pedir_clube('clube_b');
+select t.eq('[missão] na aba B a missão de hoje NÃO aparece como feita (antes: "feito", era a de A)',
+  t.txt($q$select (public.meu_resumo_missoes()->>'feito') || '|' || (public.meu_resumo_devocional()->>'feito') || '|' || public.devocional_feito_hoje()::text$q$), 'false|false|false');
+select t.como('so_b'); select t.pedir_clube('clube_b');
+select t.eq('[duelo] a missão feita em A não conta no duelo de B', t.feito_lado('duelo_missoes', 'a', 'Criança Renomeada'), :'missoes_b_antes');
+select t.eq('[duelo] ...nem o devocional feito em A', t.feito_lado('duelo_devocional', 'b', 'Criança Renomeada'), '0');
+select t.como('crianca'); select t.pedir_clube('clube_b');
+select t.permitido('[missão] em B ela faz a missão de B (antes: "Você já fez a missão de hoje!")', $q$select public.registrar_missao(null, 0)$q$);
+select t.permitido('[devocional] ...e o devocional de B (antes: "Você já fez o devocional de hoje!")', $q$select public.registrar_devocional(0)$q$);
+select t.throws('[missão] ...uma vez por clube: de novo em B é recusado', $q$select public.registrar_missao(null, 0)$q$, 'já fez a missão');
+select t.throws('[devocional] ...idem o devocional', $q$select public.registrar_devocional(0)$q$, 'já fez o devocional');
+select t.eq('[missão] agora a aba B mostra feito',
+  t.txt($q$select (public.meu_resumo_missoes()->>'feito') || '|' || (public.meu_resumo_devocional()->>'feito') || '|' || public.devocional_feito_hoje()::text$q$), 'true|true|true');
+select t.como('so_b'); select t.pedir_clube('clube_b');
+select t.eq('[duelo] a missão feita em B conta no duelo de B (+1)', t.feito_lado('duelo_missoes', 'a', 'Criança Renomeada'), ((:'missoes_b_antes')::int + 1)::text);
+select t.eq('[duelo] ...e o devocional feito em B também', t.feito_lado('duelo_devocional', 'b', 'Criança Renomeada'), '1');
+reset role;
+select t.eq('[missão] uma missão e um devocional em CADA clube, cada um no seu',
+  (select string_agg(t.uni_clube(club_id), ',' order by t.uni_clube(club_id)) from public.missoes_feitas where usuario_id = t.id('crianca'))
+  || '|' || (select string_agg(t.uni_clube(club_id), ',' order by t.uni_clube(club_id)) from public.devocional where usuario_id = t.id('crianca')), 'A,B|A,B');
+select t.eq('[catálogo] o "já fez hoje" de missão e devocional é único por pessoa E clube',
+  (select count(*) from pg_indexes where schemaname = 'public' and tablename in ('missoes_feitas', 'devocional')
+      and indexdef ilike 'create unique index%' and indexdef not like '%(id)%' and indexdef not like '%club_id%'), 0);
+
+-- =============================================================================
+--  18. (86, M2) Conselheira que também é responsável no mesmo clube vale como conselheira
+-- =============================================================================
+\o /dev/null
+select t.mk('mae_b', 'Mae Conselheira 61', 'conselheiro', 'ativo', 'clube_b', 'B2');
+-- o vínculo de responsável é o MAIS NOVO (inserido direto: nenhum fluxo do app cria isso, mas dado legado sim)
+insert into public.organization_memberships (user_id, organizational_unit_id, role, status) values (t.id('mae_b'), t.id('clube_b'), 'pais', 'ativo');
+insert into public.desafios_unidade (club_id, titulo, tipo, meta, pontos, dias) values
+  (t.id('clube_a'), 'Duelo A1 61', 'manual', 1, 10, 7), (t.id('clube_a'), 'Duelo A2 61', 'manual', 1, 10, 7), (t.id('clube_a'), 'Duelo A3 61', 'manual', 1, 10, 7),
+  (t.id('clube_b'), 'Duelo B 61', 'manual', 1, 10, 7), (t.id('clube_b'), 'Duelo M2 61', 'manual', 1, 10, 7);
+\o
+select t.eq('[vínculo] _vinculo_ativo escolhe a conselheira (não o "pais" mais novo) — o mesmo critério da lista',
+  (select papel || '/' || t.uni(unidade_id) from public._vinculo_ativo(t.id('mae_b'), t.id('clube_b'))), 'conselheiro/B2');
+select t.como('mae_b'); select t.pedir_clube('clube_b');
+select t.eq('[vínculo] ...e ela lança duelo pela unidade dela (antes: "precisa estar numa unidade")',
+  t.erro(format($q$select public.criar_duelo((select id from public.desafios_unidade where titulo = 'Duelo M2 61'), %L)$q$, t.id('B1'))), 'ok');
+reset role;
+
+-- =============================================================================
+--  19. (86, M4) O teto de 3 duelos em 24h é por clube
+-- =============================================================================
+select t.como('crianca'); select t.pedir_clube('clube_a');
+select t.permitido('[duelo] a criança lança 3 duelos em A',
+  format($q$select public.criar_duelo(d.id, %L) from public.desafios_unidade d where d.titulo in ('Duelo A1 61', 'Duelo A2 61', 'Duelo A3 61')$q$, t.id('A2')), 3);
+select t.pedir_clube('clube_b');
+select t.eq('[duelo] ...e ainda lança um em B (antes: "Você já lançou 3 duelos nas últimas 24h")',
+  t.erro(format($q$select public.criar_duelo((select id from public.desafios_unidade where titulo = 'Duelo B 61'), %L)$q$, t.id('B2'))), 'ok');
+reset role;
+
+-- =============================================================================
+--  20. (86, M5) O aviso de aniversário segue a regra do card
+-- =============================================================================
+\o /dev/null
+-- aniversário HOJE (ano bissexto: 29/02 também existe)
+create function t.aniv_hoje() returns date language sql stable as $$
+  select make_date(2012, extract(month from (now() at time zone 'America/Sao_Paulo'))::int, extract(day from (now() at time zone 'America/Sao_Paulo'))::int);
+$$;
+select t.mk('aniv_mae', 'Aniv61 Mae', 'conselheiro', 'ativo', 'clube_a', 'A1', t.aniv_hoje());
+select t.mk2('aniv_mae', 'pais', 'ativo', 'clube_b');                 -- em B ela é só responsável
+select t.mk('aniv_crianca', 'Aniv61 Crianca', 'desbravador', 'ativo', 'clube_a', 'A1', t.aniv_hoje());
+select t.mk2('aniv_crianca', 'desbravador', 'ativo', 'clube_b', 'B1');
+select t.mk('aniv_dois', 'Aniv61 Dois Papeis', 'conselheiro', 'ativo', 'clube_b', 'B1', t.aniv_hoje());
+select t.mk2('aniv_dois', 'instrutor', 'ativo', 'clube_b');           -- dois papéis no MESMO clube
+select t.mk('aniv_teste', 'Aniv61 Teste', 'desbravador', 'ativo', 'clube_a', 'A2', t.aniv_hoje());
+update public.profiles set teste = true where id = t.id('aniv_teste');
+select t.mk('aniv_vencido', 'Aniv61 Vencido', 'desbravador', 'ativo', 'clube_a', 'A2', t.aniv_hoje());
+update public.organization_memberships set starts_at = now() - interval '60 days', ends_at = now() - interval '1 day' where user_id = t.id('aniv_vencido');
+\o
+select t.como_cron();
+select public.notif_aniversariantes_hoje();
+reset role;
+select t.eq('[aniversário] um aviso por pessoa por clube, e só de quem está no card (sem responsável, conta de teste nem vínculo vencido)',
+  (select string_agg(x, ',' order by x) from (
+     select substring(corpo from 'Aniv61 [A-Za-z ]+') || '@' || t.uni_clube(club_id) as x
+       from public.notificacoes where corpo like '%Aniv61%') q),
+  'Aniv61 Crianca@A,Aniv61 Crianca@B,Aniv61 Dois Papeis@B,Aniv61 Mae@A');
+
+-- =============================================================================
+--  21. (86, R3) "Reativar" avisa a pessoa (com texto de reativação, não "cadastro aprovado")
+-- =============================================================================
+\o /dev/null
+select t.mk('rejeitada_b', 'Rejeitada em B 61', 'desbravador', 'pendente', 'clube_b', 'B1');
+\o
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select public.vinculo_gerir(t.id('rejeitada_b'), p_status => 'rejeitado');
+select public.vinculo_gerir(t.id('rejeitada_b'), p_status => 'ativo');
+reset role;
+select t.eq('[reativar] quem foi REJEITADO e depois reativado recebe o aviso de reativação, no clube B',
+  (select string_agg(titulo || '@' || t.uni_clube(club_id), ',') from public.notificacoes where para_usuario = t.id('rejeitada_b') and tipo = 'cadastro'),
+  '🔓 Acesso reativado!@B');
+select t.eq('[reativar] ...e a criança desativada e reativada em B (seção 1) também — uma vez, em B',
+  (select string_agg(t.uni_clube(club_id), ',') from public.notificacoes where para_usuario = t.id('crianca') and titulo like '%reativado%'), 'B');
+
 select t.fim();
 rollback;

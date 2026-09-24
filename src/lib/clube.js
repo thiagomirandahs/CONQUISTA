@@ -139,6 +139,24 @@ export function escolherClubeAtual(args) {
   return resolverClubeDaAba(args).clubeId
 }
 
+// O clube que o SERVIDOR usa quando a requisição chega sem o header x-clube-atual — que é sempre o
+// caso do websocket do Realtime (o header só vai no fetch; ver lib/supabase.js). Sem header,
+// clube_atual_id() cai no vínculo ATIVO mais antigo da pessoa (starts_at, created_at, id), e a RLS
+// do tempo real filtra por esse clube. Quem pergunta isto quer saber: "o tempo real vai chegar na
+// aba deste clube?".
+//
+// O front só consegue AFIRMAR a resposta quando a pessoa tem UM clube utilizável — aí não existe
+// outro para o servidor escolher. Com dois ou mais, devolve null ("não sei"), por dois motivos:
+//   * o `clube_atual_id` que vem em meu_contexto NÃO é esse padrão: a própria chamada de
+//     meu_contexto leva o header da aba (desde a primeira carga, pela semente do aparelho), então
+//     ele volta com o clube PEDIDO, não com o que valeria sem header;
+//   * a lista de vínculos não traz as datas que decidem o desempate.
+// "Não sei" deve ser tratado como "o tempo real pode não chegar" — errar para o lado seguro.
+export function clubePadraoSemCabecalho(vinculos) {
+  const usaveis = (vinculos || []).filter((v) => v.status === 'ativo' && v.selecionavel)
+  return usaveis.length === 1 ? usaveis[0].clubeId : null
+}
+
 // Pode trocar para este clube? Devolve { ok } ou { ok:false, motivo }:
 //   sem_vinculo   — a pessoa NÃO tem vínculo com esse clube (nunca vira acesso);
 //   vinculo_inativo — o vínculo existe mas está pendente/suspenso;

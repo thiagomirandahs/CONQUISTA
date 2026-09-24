@@ -167,6 +167,47 @@ describe('ClubeGuard: só entra quem tem vínculo ATIVO com um clube em uso', ()
     // pedido pendente num clube não pode trancá-la para fora do código de outro
     expect(screen.getByTestId('ir-entrar-pendente')).toHaveAttribute('href', '/entrar')
   })
+  // Achado F-R1 da revisão da fase 9.1: a pessoa DESATIVADA (vínculo suspenso) caía em "Você ainda
+  // não está em um clube", com "Entrar com código" (que dava um "Pedido enviado" falso) e "Criar um
+  // clube" (uma criança desativada convidada a abrir um clube e virar diretoria). O contexto abaixo
+  // é o que meu_contexto devolveu de verdade para o membro desativado no replay_rev.
+  const SUSPENSO = { clubeId: 'A', status: 'suspenso', selecionavel: false, nome: 'Clube A', marca: { nome: 'Clube A' } }
+  it('desativado (vínculo suspenso): diz que o acesso está suspenso, pelo nome do clube, sem "Criar um clube"', () => {
+    como(null, {}, { semVinculo: true, vinculos: [SUSPENSO] })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.queryByText('o app')).toBeNull()
+    expect(screen.getByText('Seu acesso está suspenso')).toBeInTheDocument()
+    expect(screen.getByTestId('aviso-suspenso')).toHaveTextContent('Você faz parte de Clube A')
+    expect(screen.getByTestId('aviso-suspenso')).toHaveTextContent('fale com a liderança')
+    expect(screen.queryByText('Você ainda não está em um clube')).toBeNull()
+    expect(screen.queryByTestId('ir-criar-clube')).toBeNull()
+    expect(screen.queryByTestId('ir-entrar')).toBeNull()
+    // o código de OUTRO clube continua valendo, como para quem está pendente
+    expect(screen.getByTestId('ir-entrar-suspenso')).toHaveAttribute('href', '/entrar')
+    screen.getByRole('button', { name: 'Sair' }).click()
+    expect(sair).toHaveBeenCalledTimes(1)
+  })
+  it('suspenso num clube e pendente em outro: vale a mensagem do pendente (é o que ainda pode andar)', () => {
+    como(null, {}, { semVinculo: true, vinculos: [SUSPENSO, { clubeId: 'B', status: 'pendente', marca: { nome: 'Clube B' } }] })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.getByText('Seu cadastro aguarda aprovação')).toBeInTheDocument()
+    expect(screen.queryByText('Seu acesso está suspenso')).toBeNull()
+  })
+  it('suspenso no clube mas coordenador institucional: o portal continua na tela', () => {
+    escopo = { temEscopo: true, escopos: [{ nome: 'Distrito Central' }], carregando: false }
+    como(null, {}, { semVinculo: true, vinculos: [SUSPENSO] })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.getByText('Seu acesso está suspenso')).toBeInTheDocument()
+    expect(screen.getByTestId('ir-portal')).toHaveAttribute('href', '/institucional')
+  })
+  it('suspenso: enquanto o escopo institucional carrega, não decide nada', () => {
+    escopo = { temEscopo: false, escopos: [], carregando: true }
+    como(null, {}, { semVinculo: true, vinculos: [SUSPENSO] })
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
+    expect(screen.queryByText('Seu acesso está suspenso')).toBeNull()
+    expect(screen.getByText('Carregando…')).toBeInTheDocument()
+  })
+
   // FASE 8.5, item 3: nada de fallback silencioso de seguranca. Quando o clube que a aba usava
   // deixa de valer e a pessoa tem outros, o app NAO escolhe um sozinho — ele para e devolve a
   // escolha a ela. Antes, o vinculo encerrado num clube fazia a pessoa reaparecer dentro de outro,

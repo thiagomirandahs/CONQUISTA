@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { abrirCodigo, solicitarEntrada, abrirConvite, aceitarConvite } from '../services/entrada.js'
 import { Card, Botao } from '../ui/index.jsx'
@@ -61,25 +61,23 @@ export default function Entrar() {
     try {
       const r = ehConvite ? await aceitarConvite(tokenDaUrl) : await solicitarEntrada(codigo.trim())
       if (!r) { setErro('Não vale mais. Peça outro à liderança do clube.'); setOcupado(false); return }
-      setPronto({ clube: destino.clube, jaEra: r.ja_era || r.ja_era_membro, convite: ehConvite })
+      setPronto({ clube: destino.clube, jaEra: !!(r.ja_era || r.ja_era_membro), situacao: r.situacao || null, convite: ehConvite })
       await recarregar()
     } catch (e) { setErro(e.message) }
     setOcupado(false)
   }
 
   if (pronto) {
+    const { titulo, texto } = resultadoDaEntrada(pronto)
     return (
-      <Tela titulo={pronto.convite ? '🎉 Pronto!' : '✅ Pedido enviado'}>
-        {pronto.convite ? (
-          <p className="text-sm text-muted">
-            Você agora faz parte de <strong className="text-ink">{pronto.clube}</strong>.
-          </p>
-        ) : (
-          <p className="text-sm text-muted">
-            A liderança de <strong className="text-ink">{pronto.clube}</strong> recebeu seu pedido.
-            Assim que aprovarem, o clube aparece aqui para você.
-          </p>
-        )}
+      <Tela titulo={titulo}>
+        <p className="text-sm text-muted" data-testid="resultado-entrada">{texto}</p>
+        {/* Sem esta saída a tela era um beco: no app instalado (PWA/iPhone) não há botão de voltar.
+            O início passa pelo porteiro do clube, que mostra a situação real da pessoa. */}
+        <Link to="/" data-testid="voltar-inicio"
+          className="mt-4 block w-full min-h-[44px] leading-[44px] text-sm text-muted font-semibold">
+          Voltar ao início
+        </Link>
       </Tela>
     )
   }
@@ -130,6 +128,36 @@ export default function Entrar() {
       {erro && <p className="text-xs text-red-600 mt-3" data-testid="erro-codigo">{erro}</p>}
     </Tela>
   )
+}
+
+// O que dizer depois de confirmar. O servidor não cria um segundo vínculo para quem JÁ tem um neste
+// clube (entrada_solicitar devolve `ja_era: true` e a `situacao` do vínculo que já existe;
+// convite_aceitar devolve `ja_era_membro`). Antes esta tela ignorava isso e dizia "✅ Pedido
+// enviado" para todo mundo — inclusive para quem foi desativado ou recusado, que ficava esperando
+// uma aprovação que nunca viria, porque nenhum pedido tinha sido criado e a liderança não via nada.
+// Cada mensagem aqui diz o que de fato aconteceu e, quando a pessoa não tem o que fazer no app,
+// manda falar com a liderança (é ela quem reativa: o código não promove nem reativa ninguém).
+function resultadoDaEntrada({ clube, jaEra, situacao, convite }) {
+  const nome = <strong className="text-ink">{clube}</strong>
+  if (!jaEra) {
+    return convite
+      ? { titulo: '🎉 Pronto!', texto: <>Você agora faz parte de {nome}.</> }
+      : { titulo: '✅ Pedido enviado', texto: <>A liderança de {nome} recebeu seu pedido. Assim que aprovarem, o clube aparece aqui para você.</> }
+  }
+  // convite_aceitar só diz "já era membro", sem a situação: a mensagem não pode prometer acesso
+  if (!convite && situacao === 'pendente') {
+    return { titulo: '⏳ Pedido já enviado', texto: <>Você já tinha pedido para entrar em {nome}, e o pedido continua aguardando a liderança. Não precisa pedir de novo.</> }
+  }
+  if (!convite && situacao === 'ativo') {
+    return { titulo: '✅ Você já faz parte deste clube', texto: <>Você já faz parte de {nome}. Nenhum pedido novo foi preciso.</> }
+  }
+  if (!convite && situacao === 'suspenso') {
+    return { titulo: '⏸️ Acesso suspenso', texto: <>Você já faz parte de {nome}, mas seu acesso está suspenso. Um código novo não muda isso: fale com a liderança do clube.</> }
+  }
+  if (!convite && situacao === 'encerrado') {
+    return { titulo: '🚫 Pedido recusado', texto: <>Seu pedido anterior para entrar em {nome} foi recusado (ou o seu vínculo foi encerrado). Um código novo não reabre o pedido: fale com a liderança do clube.</> }
+  }
+  return { titulo: 'ℹ️ Você já tinha cadastro aqui', texto: <>Você já tinha um cadastro em {nome}, então nada novo foi criado. Se o clube não abrir para você, fale com a liderança.</> }
 }
 
 function Tela({ titulo, children }) {

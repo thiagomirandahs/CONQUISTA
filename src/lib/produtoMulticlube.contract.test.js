@@ -85,12 +85,13 @@ export function leituraDoEspelho(texto) {
   return motivos
 }
 
-// Exceções EXPLÍCITAS (e só estas duas):
-//  * context/Auth.jsx — carrega o perfil da PRÓPRIA pessoa (select('*') por id). Ninguém ali lê
-//    papel/unidade para decidir nada: isso é do ClubeContext (o teste do topo trava profile.papel).
+// Exceção EXPLÍCITA (e só esta):
 //  * services/clubes.js — fallback legado de carregarContexto para quando a RPC meu_contexto não
 //    existe (banco anterior à migration 33). Lê a própria pessoa; sai quando todo ambiente tiver a 33+.
-const EXCECOES_DO_ESPELHO = ['context/Auth.jsx', 'services/clubes.js']
+// context/Auth.jsx era a outra (select('*') do próprio perfil). Desde a migration 86 ele lê pela RPC
+// meu_perfil, e o fallback dele pede colunas explícitas sem papel/status/unidade_id — deixou de
+// precisar de exceção e passa pela regra como todo mundo.
+const EXCECOES_DO_ESPELHO = ['services/clubes.js']
 
 describe('listas de pessoas vêm do VÍNCULO no clube da aba, nunca do espelho profiles', () => {
   it('nenhum arquivo (fora das exceções) filtra ou seleciona profiles por papel/status/unidade_id', () => {
@@ -139,6 +140,83 @@ describe('listas de pessoas vêm do VÍNCULO no clube da aba, nunca do espelho p
     ['a RPC nova', "supabase.rpc('membros_do_clube', { p_papeis: ['desbravador'] })"],
   ])('não acusa o que é permitido: %s', (_, trecho) => {
     expect(leituraDoEspelho(trecho)).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------------------------
+// A data de nascimento só pela RPC meu_perfil (migration 86).
+//
+// A policy de profiles deixa ler a linha de quem divide QUALQUER clube com você, e o grant de
+// SELECT era da tabela inteira: qualquer desbravador lia pela API a data de nascimento completa
+// das outras crianças. A 86 tira `nascimento` do SELECT direto (revoke da tabela + grant por
+// coluna) e entrega a própria linha, com o nascimento, pela RPC meu_perfil().
+//
+// Consequência para o front, e é o que esta trava protege: um select('*') ou select() em profiles
+// — ou um embutido profiles!fk(*) — passa a dar "permission denied" e quebra a tela inteira (no
+// Auth, quebraria o login de todo mundo). Pedir `nascimento` pela tabela também.
+// ---------------------------------------------------------------------------------------------
+const COLUNAS_FORA_DA_TABELA = /^(\*|nascimento)$/
+const SELECT_ABRE = /\.\s*select\s*\(/g
+// coluna que o contrato não consegue ler (vem de variável/template): pode ser qualquer coisa
+const colunaOpaca = (c) => c.includes('${')
+
+export function leituraDoNascimento(texto) {
+  const motivos = []
+  for (const [, , cadeia] of texto.matchAll(CADEIA)) {
+    const literais = [...cadeia.matchAll(SELECT)]
+    // .select(COLUNAS) com constante: o SELECT acima só casa string literal — sem esta conta, uma
+    // constante com '*' passaria calada
+    if ((cadeia.match(SELECT_ABRE) || []).length > literais.length) {
+      motivos.push(`select em profiles com colunas fora de uma string literal: from('profiles')${cadeia.slice(0, 120)}`)
+    }
+    for (const [, , colunas] of literais) {
+      const cols = colunas === undefined ? ['*'] : colunasDe(colunas)   // .select() sem argumento é '*'
+      if (cols.some((c) => COLUNAS_FORA_DA_TABELA.test(c) || colunaOpaca(c))) {
+        motivos.push(`select em profiles com '*' ou nascimento: from('profiles')${cadeia.slice(0, 120)}`)
+      }
+    }
+  }
+  for (const [trecho, colunas] of texto.matchAll(EMBED)) {
+    if (colunasDe(colunas).some((c) => COLUNAS_FORA_DA_TABELA.test(c) || colunaOpaca(c))) {
+      motivos.push(`profiles embutido com '*' ou nascimento: ${trecho.trim()}`)
+    }
+  }
+  return motivos
+}
+
+describe('a data de nascimento sai só pela RPC meu_perfil, nunca por select em profiles', () => {
+  it('nenhum arquivo (SEM exceções) lê profiles com * ou nascimento', () => {
+    const achados = codigo.flatMap((c) => leituraDoNascimento(c.texto).map((m) => `${c.arquivo}: ${m}`))
+    expect(achados).toEqual([])
+  })
+
+  it('o Auth carrega o perfil da própria pessoa pela RPC meu_perfil', () => {
+    const auth = ler('context/Auth.jsx')
+    expect(auth).toMatch(/\.rpc\(\s*'meu_perfil'\s*\)/)
+    expect(leituraDoNascimento(auth)).toEqual([])
+  })
+
+  it.each([
+    ['o Auth antigo', "await supabase.from('profiles').select('*').eq('id', id).single()"],
+    ['select() sem argumento', "supabase.from('profiles').select().eq('id', x)"],
+    ['nascimento pedido pelo nome', "supabase.from('profiles').select('id,nome,nascimento').in('id', ids)"],
+    ['nascimento com alias e cast', "supabase.from('profiles').select('id, n:nascimento::text')"],
+    ['colunas numa constante', "supabase.from('profiles').select(COLUNAS).eq('id', id)"],
+    ['colunas num template', 'supabase.from(\'profiles\').select(`id,${extra}`)'],
+    ['embutido com *', ".select('id, autor:profiles!usuario_id(*)')"],
+    ['embutido com nascimento', ".select('id, pessoa:profiles!usuario_id(nome, nascimento)')"],
+  ])('pega: %s', (_, trecho) => {
+    expect(leituraDoNascimento(trecho)).not.toEqual([])
+  })
+
+  it.each([
+    ['a RPC nova', "await supabase.rpc('meu_perfil')"],
+    ['colunas explícitas por id', "await supabase.from('profiles').select('id,nome,foto').in('id', autorIds)"],
+    ['embutido só com nome', ".select('id, texto, autor:profiles!usuario_id(nome)')"],
+    ['update da própria foto', "await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', userId)"],
+    ['* de OUTRA tabela', "supabase.from('recursos_catalogo').select('*').order('ordem')"],
+  ])('não acusa: %s', (_, trecho) => {
+    expect(leituraDoNascimento(trecho)).toEqual([])
   })
 })
 

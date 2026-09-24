@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarDevocionalPopup, fazerDevocional } from '../lib/dados.js'
 
 export default function DevocionalPopup() {

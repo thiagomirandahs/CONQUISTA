@@ -78,6 +78,53 @@ export async function carregarMensagensDireta(conversaId) {
 }
 
 
+// Folga da releitura incremental. `created_at` é carimbado no INÍCIO da transação de quem envia, e
+// duas mensagens quase simultâneas podem ficar visíveis fora da ordem dos carimbos: a de carimbo
+// menor aparece DEPOIS de a tela já ter lido a de carimbo maior. Ler só "depois da última" a
+// perderia para sempre. Com a folga, cada releitura repassa os últimos segundos — poucas linhas, e
+// a mescla por id na tela descarta as repetidas.
+const FOLGA_RELEITURA_MS = 30000
+
+// Releitura INCREMENTAL da conversa aberta: só o que chegou a partir da última mensagem que a tela
+// já tem (menos a folga acima), em vez das 300 mais recentes a cada vez. Era isso que o reforço do
+// tempo real fazia a cada 15 s: ~68 KB por releitura numa conversa cheia, em dados móveis. O índice
+// idx_chat_msg_keyset (conversa_id, created_at desc, id desc) atende a consulta.
+//
+// `desde` vazio (a tela ainda não tem nada) = leitura completa. `autoresConhecidos` evita reler o
+// perfil de quem a tela já conhece; só se busca nome/foto de autor novo.
+export async function carregarMensagensDesde(conversaId, desde, autoresConhecidos = {}) {
+  const t = desde ? new Date(desde).getTime() : NaN
+  if (!Number.isFinite(t)) return carregarMensagensDaConversa(conversaId)
+  const aPartirDe = new Date(t - FOLGA_RELEITURA_MS).toISOString()
+  const { data, error } = await supabase
+    .from('chat_mensagens_visiveis').select('id,autor_id,texto,created_at,apagada')
+    .eq('conversa_id', conversaId).gte('created_at', aPartirDe)
+    .order('created_at', { ascending: true }).limit(LIMITE_MENSAGENS)
+  if (error) throw new Error(error.message)
+  const lista = data || []
+  // '?' é o marcador de "autor que eu não enxergava": vale tentar de novo quando ele escreve
+  const conhecido = (id) => autoresConhecidos[id] && autoresConhecidos[id].nome !== '?'
+  const faltam = [...new Set(lista.map((m) => m.autor_id))].filter((id) => !conhecido(id))
+  const { data: perfis } = faltam.length
+    ? await supabase.from('profiles').select('id,nome,foto').in('id', faltam)
+    : { data: [] }
+  const novos = Object.fromEntries((perfis || []).map((p) => [p.id, p]))
+  return lista.map((m) => ({ ...m, autor: novos[m.autor_id] || (conhecido(m.autor_id) ? autoresConhecidos[m.autor_id] : { nome: '?' }) }))
+}
+
+// O `created_at` mais recente de uma lista de mensagens, pelo valor e não pela posição: a mensagem
+// que chega pelo tempo real entra no fim da lista sem reordenar. Lista vazia = null.
+export function ultimoCarimbo(mensagens) {
+  let melhor = null
+  let melhorT = -Infinity
+  for (const m of mensagens || []) {
+    const t = new Date(m?.created_at).getTime()
+    if (Number.isFinite(t) && t > melhorT) { melhorT = t; melhor = m.created_at }
+  }
+  return melhor
+}
+
+
 // Junta a conversa que está na tela com a que acabou de vir do servidor, SEM duplicar: a chave é o
 // id da mensagem, e a versão do servidor vence (ela traz o 'apagada' e o texto já filtrado pela
 // view). O que só existe na tela (chegou pelo tempo real depois da leitura) fica. Se nada mudou,

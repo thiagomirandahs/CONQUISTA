@@ -109,8 +109,9 @@ export async function mudarCargo(userId, papel) {
 }
 
 
-// Desativa/reativa uma pessoa NO CLUBE EM USO. Desativada não entra no app e some do ranking
-// e das listas, mas o histórico dela (pontos, fotos) fica preservado.
+// Desativa/reativa uma pessoa NO CLUBE EM USO. Desativada (vínculo suspenso) perde o acesso a ESTE
+// clube — a conta continua entrando e vê "Seu acesso está suspenso" (ClubeGuard); em outro clube
+// dela nada muda — e some do ranking e das listas, mas o histórico (pontos, fotos) fica preservado.
 export async function definirAtivoUsuario(userId, ativo) {
   const { error } = await supabase.rpc('vinculo_gerir', { p_user_id: userId, p_status: ativo ? 'ativo' : 'inativo' })
   if (error) throw new Error(error.message)

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import {
   PAPEIS, RECURSOS_PADRAO, permissoesDoPapel, rotaInicial, CAMINHOS_DO_RESPONSAVEL,
   normalizarContexto, normalizarVinculo, contextoLegado, escolherClubeAtual, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo,
+  clubePadraoSemCabecalho,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from './clube.js'
 import { MARCA_LEGADA } from './marca.js'
@@ -142,6 +143,31 @@ describe('podeTrocarPara: trocar de clube nunca vira acesso a clube sem vínculo
   it('lista vazia/indefinida: recusado', () => {
     expect(podeTrocarPara([], 'A').ok).toBe(false)
     expect(podeTrocarPara(undefined, 'A').ok).toBe(false)
+  })
+})
+
+describe('clubePadraoSemCabecalho: o clube do tempo real (o websocket não leva o header da aba)', () => {
+  const A = normalizarVinculo(vinc({ club_id: 'A' }))
+  const B = normalizarVinculo(vinc({ club_id: 'B' }))
+  const susp = normalizarVinculo(vinc({ club_id: 'S', status: 'suspenso', selecionavel: false }))
+  const pend = normalizarVinculo(vinc({ club_id: 'P', status: 'pendente', selecionavel: false }))
+  it('um clube utilizável só: é ele (o servidor não tem outro para escolher)', () => {
+    expect(clubePadraoSemCabecalho([A])).toBe('A')
+    // pendente e suspenso não contam: clube_atual_id() sem header só olha vínculo ATIVO
+    expect(clubePadraoSemCabecalho([A, susp, pend])).toBe('A')
+  })
+  it('dois clubes utilizáveis: "não sei" (null) — nunca chuta, porque errar deixaria a aba surda', () => {
+    expect(clubePadraoSemCabecalho([A, B])).toBeNull()
+    expect(clubePadraoSemCabecalho([B, A])).toBeNull()
+  })
+  it('sem clube utilizável ou sem lista: null', () => {
+    expect(clubePadraoSemCabecalho([susp, pend])).toBeNull()
+    expect(clubePadraoSemCabecalho([])).toBeNull()
+    expect(clubePadraoSemCabecalho(undefined)).toBeNull()
+  })
+  it('modo legado (banco sem meu_contexto): o clube único da pessoa', () => {
+    const ctx = contextoLegado({ perfil: { id: 'u', papel: 'desbravador', status: 'ativo' }, recursos: {} })
+    expect(clubePadraoSemCabecalho(ctx.vinculos)).toBe('legado')
   })
 })
 

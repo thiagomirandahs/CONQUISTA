@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar.jsx'
 import {
   carregarChatUnidade, carregarChatGeral, carregarMinhasConversasDiretas, carregarMensagensDireta,
   listarColegasChat, enviarMensagemUnidade, enviarMensagemGeral, enviarMensagemDireta, mesclarMensagens,
+  carregarMensagensDesde, ultimoCarimbo,
 } from '../lib/dados.js'
 import { acerto } from '../lib/juice.js'
 
@@ -162,6 +163,7 @@ function EscolherColega({ meuId, onFechar, onEscolher }) {
 
 // Thread reutilizável: chat da unidade OU conversa direta.
 function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
+  const { clubeDaAbaEhOPadrao } = useClube()
   const [conversaId, setConversaId] = useState(conversaIdInicial || null)
   const [mensagens, setMensagens] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -170,6 +172,12 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
   const [erro, setErro] = useState('')
   const autoresRef = useRef({})
   const fimRef = useRef(null)
+  // a releitura incremental precisa da última mensagem que a tela tem, sem recriar o `reler`
+  // (e o relógio) a cada mensagem nova
+  const mensagensRef = useRef(mensagens)
+  useEffect(() => { mensagensRef.current = mensagens }, [mensagens])
+  // "o tempo real JÁ entregou algo nesta conversa": prova de que ele chega nesta aba
+  const tempoRealVivoRef = useRef(false)
 
   async function carregarInicial() {
     setCarregando(true); setErro('')
@@ -191,10 +199,12 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
 
   // Tempo real: assim que souber o conversaId, escuta mensagens novas.
   useEffect(() => {
+    tempoRealVivoRef.current = false // conversa nova: a prova vale por conversa
     if (!conversaId) return
     const canal = supabase.channel(`chat-${conversaId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_mensagens', filter: `conversa_id=eq.${conversaId}` },
         async (payload) => {
+          tempoRealVivoRef.current = true
           const nova = payload.new
           setMensagens((atual) => (atual.some((m) => m.id === nova.id) ? atual : [...atual, { ...nova, autor: autoresRef.current[nova.autor_id] }]))
           if (!autoresRef.current[nova.autor_id]) {
@@ -215,40 +225,57 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
   // clube, então a criança que está na aba do clube SECUNDÁRIO não recebia nada ao vivo — nem a
   // própria mensagem depois de enviar; só via ao reabrir a conversa. Até o tempo real conferir o
   // vínculo pelo clube DA CONVERSA (mudança de servidor), a tela relê a conversa aberta:
-  //   * ao voltar o foco / a aba ficar visível;
-  //   * a cada 15 s enquanto a tela está visível (com a tela escondida não gasta bateria nem dados);
-  //   * logo depois de enviar.
+  //   * ao voltar o foco / a aba ficar visível — leitura COMPLETA: no celular o websocket dorme com
+  //     o app em segundo plano, e é também aqui que aparece uma mensagem apagada pela moderação;
+  //   * logo depois de enviar — só o que é novo;
+  //   * a cada 15 s enquanto a tela está visível — só o que é novo, e SÓ quando o tempo real pode
+  //     não chegar nesta aba.
   // A leitura usa o fetch (com o header certo) e a mescla é por id, então nada duplica quando o
-  // tempo real também entrega. No clube mais antigo, onde o tempo real funciona, é só redundância.
+  // tempo real também entrega.
+  //
+  // Por que o relógio ficou condicional e incremental (achado da revisão da fase 9.1): ele relia as
+  // 300 mensagens mais recentes a cada 15 s para TODO mundo, inclusive a criança de um clube só —
+  // cujo tempo real funciona e para quem a releitura era pura redundância (~68 KB por vez em dados
+  // móveis). Agora o relógio não roda quando:
+  //   * é CERTO que o clube desta aba é o que o servidor usa sem header (clubeDaAbaEhOPadrao — na
+  //     prática, quem tem um clube só); ou
+  //   * o tempo real já entregou alguma mensagem desta conversa (prova de que ele chega aqui).
+  // E quando roda, pede só o que chegou depois da última mensagem da tela.
   const relendoRef = useRef(false)
-  const reler = useCallback(async () => {
+  const reler = useCallback(async ({ completa = false } = {}) => {
     if (relendoRef.current) return
     if (tipo === 'direta' && !conversaId) return // conversa ainda não existe: nasce no 1º envio
     relendoRef.current = true
     try {
-      const r = tipo === 'geral' ? await carregarChatGeral()
-        : tipo === 'unidade' ? await carregarChatUnidade(unidadeId)
-        : { conversaId, mensagens: await carregarMensagensDireta(conversaId) }
-      r.mensagens.forEach((m) => { if (m.autor?.nome !== '?') autoresRef.current[m.autor_id] = m.autor })
-      // alguém abriu a conversa (1ª mensagem do grupo) enquanto a tela estava vazia: o efeito de
-      // carregamento assume a partir do id novo
-      if (r.conversaId && r.conversaId !== conversaId) { setConversaId(r.conversaId); return }
-      setMensagens((atual) => mesclarMensagens(atual, r.mensagens))
+      if (!conversaId) {
+        // grupo ainda sem conversa: alguém pode tê-la aberto (1ª mensagem) enquanto a tela estava
+        // vazia — o efeito de carregamento assume a partir do id novo
+        const r = tipo === 'geral' ? await carregarChatGeral() : await carregarChatUnidade(unidadeId)
+        if (r.conversaId) setConversaId(r.conversaId)
+        return
+      }
+      const desde = completa ? null : ultimoCarimbo(mensagensRef.current)
+      const lidas = await carregarMensagensDesde(conversaId, desde, autoresRef.current)
+      lidas.forEach((m) => { if (m.autor?.nome !== '?') autoresRef.current[m.autor_id] = m.autor })
+      setMensagens((atual) => mesclarMensagens(atual, lidas))
     } catch { /* é só o reforço do tempo real: o erro de verdade aparece ao carregar ou enviar */ }
     finally { relendoRef.current = false }
   }, [tipo, unidadeId, conversaId])
 
   useEffect(() => {
-    const seVisivel = () => { if (document.visibilityState === 'visible') reler() }
-    const relogio = setInterval(seVisivel, INTERVALO_RELEITURA_MS)
-    document.addEventListener('visibilitychange', seVisivel)
-    window.addEventListener('focus', seVisivel)
+    const aoVoltar = () => { if (document.visibilityState === 'visible') reler({ completa: true }) }
+    document.addEventListener('visibilitychange', aoVoltar)
+    window.addEventListener('focus', aoVoltar)
+    // com a tela escondida não gasta bateria nem dados
+    const relogio = clubeDaAbaEhOPadrao ? null : setInterval(() => {
+      if (document.visibilityState === 'visible' && !tempoRealVivoRef.current) reler()
+    }, INTERVALO_RELEITURA_MS)
     return () => {
-      clearInterval(relogio)
-      document.removeEventListener('visibilitychange', seVisivel)
-      window.removeEventListener('focus', seVisivel)
+      if (relogio) clearInterval(relogio)
+      document.removeEventListener('visibilitychange', aoVoltar)
+      window.removeEventListener('focus', aoVoltar)
     }
-  }, [reler])
+  }, [reler, clubeDaAbaEhOPadrao])
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
 

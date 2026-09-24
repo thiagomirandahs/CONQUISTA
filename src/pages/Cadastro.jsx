@@ -139,7 +139,7 @@ export default function Cadastro() {
             </p>
           </div>
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
-          <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
+          <Campo label="Senha (mín. 8, com letras e números)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
           {!ehPai && (
             <>
               <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
