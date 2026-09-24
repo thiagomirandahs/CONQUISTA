@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase.js'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarChatUnidade, carregarChatGeral, carregarMinhasConversasDiretas, carregarMensagensDireta,
-  listarColegasChat, enviarMensagemUnidade, enviarMensagemGeral, enviarMensagemDireta,
+  listarColegasChat, enviarMensagemUnidade, enviarMensagemGeral, enviarMensagemDireta, mesclarMensagens,
 } from '../lib/dados.js'
 import { acerto } from '../lib/juice.js'
 
@@ -14,6 +14,8 @@ import { acerto } from '../lib/juice.js'
 const MEMBRO = ['desbravador', 'conselheiro']
 // Liderança: além de auditar tudo, também conversa no chat Geral.
 const LIDERANCA = ['instrutor', 'diretoria', 'tesoureiro']
+// De quanto em quanto tempo a conversa aberta é relida (ver o FALLBACK do tempo real, no Thread).
+const INTERVALO_RELEITURA_MS = 15000
 
 function tempoRel(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
@@ -207,6 +209,47 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
     return () => { supabase.removeChannel(canal) }
   }, [conversaId])
 
+  // FALLBACK do tempo real. O websocket do Realtime NÃO leva o header x-clube-atual (ele só vai
+  // nas requisições fetch — ver lib/supabase.js), e sem ele clube_atual_id() cai no clube ativo
+  // mais antigo da pessoa. A RLS de chat_mensagens (chat_conversas_visiveis) filtra por esse
+  // clube, então a criança que está na aba do clube SECUNDÁRIO não recebia nada ao vivo — nem a
+  // própria mensagem depois de enviar; só via ao reabrir a conversa. Até o tempo real conferir o
+  // vínculo pelo clube DA CONVERSA (mudança de servidor), a tela relê a conversa aberta:
+  //   * ao voltar o foco / a aba ficar visível;
+  //   * a cada 15 s enquanto a tela está visível (com a tela escondida não gasta bateria nem dados);
+  //   * logo depois de enviar.
+  // A leitura usa o fetch (com o header certo) e a mescla é por id, então nada duplica quando o
+  // tempo real também entrega. No clube mais antigo, onde o tempo real funciona, é só redundância.
+  const relendoRef = useRef(false)
+  const reler = useCallback(async () => {
+    if (relendoRef.current) return
+    if (tipo === 'direta' && !conversaId) return // conversa ainda não existe: nasce no 1º envio
+    relendoRef.current = true
+    try {
+      const r = tipo === 'geral' ? await carregarChatGeral()
+        : tipo === 'unidade' ? await carregarChatUnidade(unidadeId)
+        : { conversaId, mensagens: await carregarMensagensDireta(conversaId) }
+      r.mensagens.forEach((m) => { if (m.autor?.nome !== '?') autoresRef.current[m.autor_id] = m.autor })
+      // alguém abriu a conversa (1ª mensagem do grupo) enquanto a tela estava vazia: o efeito de
+      // carregamento assume a partir do id novo
+      if (r.conversaId && r.conversaId !== conversaId) { setConversaId(r.conversaId); return }
+      setMensagens((atual) => mesclarMensagens(atual, r.mensagens))
+    } catch { /* é só o reforço do tempo real: o erro de verdade aparece ao carregar ou enviar */ }
+    finally { relendoRef.current = false }
+  }, [tipo, unidadeId, conversaId])
+
+  useEffect(() => {
+    const seVisivel = () => { if (document.visibilityState === 'visible') reler() }
+    const relogio = setInterval(seVisivel, INTERVALO_RELEITURA_MS)
+    document.addEventListener('visibilitychange', seVisivel)
+    window.addEventListener('focus', seVisivel)
+    return () => {
+      clearInterval(relogio)
+      document.removeEventListener('visibilitychange', seVisivel)
+      window.removeEventListener('focus', seVisivel)
+    }
+  }, [reler])
+
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
 
   async function enviar() {
@@ -219,7 +262,10 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
         : await enviarMensagemDireta(destinatario.id, v)
       acerto(1)
       setTexto('')
+      // conversa nova: o efeito de carregamento lê tudo pelo id novo. Conversa que já existia:
+      // relê já, sem esperar o tempo real (que não chega na aba do clube secundário).
       if (!conversaId && r?.conversa_id) setConversaId(r.conversa_id)
+      else reler()
     } catch (e) { setErro(e?.message || String(e)) }
     setEnviando(false)
   }

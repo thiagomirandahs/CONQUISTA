@@ -46,7 +46,9 @@ select t.como('membro_e_instrutor');
 select t.pedir_clube('clube_a');
 select t.permitido('joga "memoria" operando no clube A', $q$select public.registrar_jogo('memoria', 3)$q$);
 select t.pedir_clube('clube_b');
-select t.permitido('joga "minado" operando no clube B (tipo diferente: "já jogou hoje" não é por clube)', $q$select public.registrar_jogo('minado', 3)$q$);
+-- (desde a migration 81 o "já jogou hoje" é POR CLUBE — o mesmo tipo pode ser jogado nos dois; o
+-- teste 61 prova isso. Aqui os tipos são diferentes só para cada linha ser identificável pelo tipo.)
+select t.permitido('joga "minado" operando no clube B', $q$select public.registrar_jogo('minado', 3)$q$);
 reset role;
 select t.eq('o jogo de A caiu em trilha_jogos do clube A', (select club_id from public.trilha_jogos where usuario_id = t.id('membro_e_instrutor') and tipo = 'memoria'), t.id('clube_a'));
 select t.eq('o jogo de B caiu em trilha_jogos do clube B (não no A)', (select club_id from public.trilha_jogos where usuario_id = t.id('membro_e_instrutor') and tipo = 'minado'), t.id('clube_b'));

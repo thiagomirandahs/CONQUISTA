@@ -1,6 +1,7 @@
 // Serviço: unidades — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
 import { gravarConfig } from './config.js'
+import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
 
 // PIX do clube (config_clube, POR CLUBE). Todos do clube leem; liderança salva.
 export async function lerPix() {
@@ -185,14 +186,15 @@ export async function listarUnidades() {
 
 // ------- Modo Acampamento (colocação 1º/2º/3º/4º das unidades numa prova) -------
 // Só entram as unidades que TÊM desbravador/conselheiro (a "Liderança" fica de fora).
+// "Ter competidor" é pelo VÍNCULO no clube da aba (membros_do_clube): com o espelho profiles, a
+// unidade de B cujas crianças têm A como clube primário sumia do acampamento de B.
 export async function carregarUnidadesCompetidoras() {
-  const [{ data: us, error: erroU }, { data: ps, error: erroP }] = await Promise.all([
+  const [{ data: us, error: erroU }, ps] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    supabase.from('profiles').select('unidade_id').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).not('unidade_id', 'is', null),
+    membrosDoClube({ papeis: PAPEIS_DE_UNIDADE }),
   ])
   if (erroU) throw new Error(erroU.message)
-  if (erroP) throw new Error(erroP.message)
-  const comCompetidor = new Set((ps || []).map((p) => p.unidade_id))
+  const comCompetidor = new Set(ps.map((p) => p.unidade_id).filter(Boolean))
   return (us || []).filter((u) => comCompetidor.has(u.id))
 }
 

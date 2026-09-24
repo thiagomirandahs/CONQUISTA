@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'
 import { pushSuportado, pushAtivo, ativarPush } from '../lib/push.js'
 
@@ -17,6 +18,9 @@ function tempoRel(iso) {
 
 export default function Notificacoes() {
   const { profile } = useAuth()
+  // O sino fica FORA da área que remonta ao trocar de clube (key={clubeId} no AppLayout): sem o
+  // clube nas dependências, depois de trocar de A para B ele seguia mostrando os avisos de A.
+  const { clubeId } = useClube()
   const navigate = useNavigate()
   const [aberto, setAberto] = useState(false)
   const [lista, setLista] = useState([])
@@ -26,11 +30,13 @@ export default function Notificacoes() {
   const [pushMsg, setPushMsg] = useState('')
   const suportaPush = pushSuportado()
 
+  // notif_visto_em ainda é UM só por pessoa (profiles): ler o sino num clube zera as não-lidas do
+  // outro. Guardar "visto em" por clube é mudança de banco; aqui só se garante a lista certa.
   useEffect(() => {
     if (!profile?.id) return
     setVistoEm(profile.notif_visto_em || null)
     carregarNotificacoes().then(setLista)
-  }, [profile?.id, profile?.notif_visto_em])
+  }, [profile?.id, profile?.notif_visto_em, clubeId])
 
   useEffect(() => { pushAtivo().then(setPushOn) }, [])
 

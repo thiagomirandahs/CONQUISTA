@@ -1,6 +1,7 @@
 // Serviço: jogos — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
 import { gravarConfig } from './config.js'
+import { membrosDoClube } from './membros.js'
 
 // Jogo da semana: a chave do jogo sorteado que vale +20 pro melhor no domingo.
 // É o agendador (SQL 2026-07-30-rodada-semana) que sorteia e grava. Aqui só lê.
@@ -166,12 +167,13 @@ export async function carregarRecordesSemana(jogo) {
 
 
 // ---------- 🆘 Pedir ajuda a um amigo (jogos de palavra) ----------
-// Lista de amigos ativos (não pais) pro seletor — a RLS de profiles já libera
-// pra membro ativo. Tira o próprio id da lista.
+// Lista de amigos ativos (não pais) pro seletor. Tira o próprio id da lista.
+// Pelo VÍNCULO ativo no clube da aba (membros_do_clube), o mesmo critério do pedir_ajuda: com o
+// espelho profiles a criança via amigos SÓ do outro clube e o pedido voltava "Amigo inválido.",
+// e ficava de fora quem é 'pais' no clube primário mas membro aqui.
 export async function listarColegas(meuId) {
-  const { data } = await supabase.from('profiles').select('id,nome,foto,unidade_id')
-    .eq('status', 'ativo').neq('papel', 'pais').order('nome')
-  return (data || []).filter((p) => p.id !== meuId)
+  const lista = await membrosDoClube()
+  return lista.filter((p) => p.id !== meuId)
 }
 
 export async function pedirAjuda({ para, jogo, enunciado, resposta }) {

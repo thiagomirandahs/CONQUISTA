@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { lerConfigPopup, minhaMensalidadePendente } from '../lib/dados.js'
 
 // Hoje no fuso de Brasília (yyyy-mm-dd) — pra "não repetir hoje" bater com o dia certo
@@ -18,6 +19,10 @@ const assinatura = (s) => {
 // mensalidade pendente. Aparece 1x por dia (e de novo se o texto mudar).
 export default function AvisosPopup() {
   const { profile } = useAuth()
+  // O aviso e a cobrança são do CLUBE DA ABA (config_clube e mensalidades são por clube). O popup
+  // fica fora da área que remonta ao trocar de clube, então o clube entra nas dependências: sem
+  // isso, depois de trocar de A para B, o aviso de B só aparecia ao recarregar o app.
+  const { clubeId } = useClube()
   const [aviso, setAviso] = useState(null)
   const [aberto, setAberto] = useState(false)
 
@@ -42,7 +47,7 @@ export default function AvisosPopup() {
       } catch { /* sem config = sem popup */ }
     })()
     return () => { vivo = false }
-  }, [profile?.id])
+  }, [profile?.id, clubeId])
 
   function fechar() {
     try { if (aviso?.chave) localStorage.setItem(aviso.chave, hojeISO()) } catch { /* ignora */ }

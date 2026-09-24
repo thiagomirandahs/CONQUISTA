@@ -231,6 +231,12 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
 // Traduz a falha para o que a pessoa precisa saber: o que houve e o que dá pra fazer.
 // O texto cru do servidor NUNCA vai para a tela (eram ~24 telas mostrando `e.message`).
 const TRADUCOES = [
+  // Recusa ESPERADA de membro_definir_teste / membro_definir_foto: a flag de teste e a foto são da
+  // PESSOA e valem em todos os clubes dela, então o servidor não deixa um clube mudá-las quando ela
+  // também está em outro. Vem antes de "sem permissão" porque a pessoa precisa saber o PORQUÊ.
+  // Estreita de propósito: "pertence a outro clube" (unidade, autor, participante) é OUTRO erro.
+  [/também (participa|está|faz parte)[^.]*outros? clubes?|vínculos?[^.]*em outros? clubes?|mais de um clube/i,
+    'Essa pessoa também participa de outro clube, e isso vale para todos os clubes dela — por isso não dá para mudar por aqui.'],
   [/sem permiss|apenas a liderança|Sem vínculo|não tem permissão/i,
     'Isso é coisa da liderança do clube. Se você acha que deveria poder, fale com a diretoria.'],
   [/desabilitado neste clube/i, 'Este recurso está desligado no seu clube. A diretoria pode ligar em Configurações.'],

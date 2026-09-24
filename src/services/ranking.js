@@ -1,20 +1,22 @@
-// Serviço: ranking — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
+// Serviço: ranking — extraído de lib/dados.js.
 import { supabase } from '../lib/supabase.js'
 import { carregarTrilha } from './jogos.js'
+import { membrosDoClube } from './membros.js'
 
 
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
 export async function carregarRanking() {
   // Busca tudo em paralelo (inclusive o placar): o ranking_totais não depende de
   // us/ps, então deixá-lo no mesmo Promise.all corta 1 ida ao servidor na 1ª tela.
-  const [{ data: us }, { data: ps }, { data: tot, error: totErr }] = await Promise.all([
+  const [{ data: us }, ps, { data: tot, error: totErr }] = await Promise.all([
     // '*' (não lista colunas) pra não quebrar se lema/grito/bandeira ainda não
     // existirem no banco (janela entre o deploy e rodar o SQL da identidade).
     supabase.from('unidades').select('*').order('nome'),
-    // Ranking individual mostra todos os cargos ativos (menos "pais"); só desbravador/conselheiro
-    // têm unidade_id, então os demais aparecem só no individual, sem afetar a média das unidades.
-    // '*' (não lista colunas) pra não quebrar antes de rodar o SQL do modo teste.
-    supabase.from('profiles').select('*').eq('status', 'ativo').neq('papel', 'pais'),
+    // Ranking individual mostra todos os cargos ativos (menos "pais"). As pessoas, o papel e a
+    // unidade vêm do VÍNCULO no clube da aba (membros_do_clube), NUNCA do espelho profiles: quem
+    // está em dois clubes conta na unidade que tem AQUI, e gente só do outro clube não aparece.
+    // Se a RPC falhar, a tela falha junto — um ranking vazio de membros seria pior que o erro.
+    membrosDoClube(),
     // Soma no BANCO (RPC) pra não esbarrar no limite silencioso de 1000 linhas do Supabase.
     supabase.rpc('ranking_totais'),
   ])
@@ -99,10 +101,12 @@ export const METAS_SEMANA = [
 // Corrida das unidades NA SEMANA: mesma média do ranking geral, mas só dos
 // pontos desde a segunda (ranking_semana() faz a janela no banco).
 export async function carregarDesafiosSemana() {
-  const [{ data: us }, { data: ps }, { data: sem }] = await Promise.all([
+  const [{ data: us }, ps, { data: sem }] = await Promise.all([
     supabase.from('unidades').select('id,nome,cor,emblema').order('nome'),
-    // '*' pra trazer também a coluna 'teste' (conta de teste fica fora da corrida)
-    supabase.from('profiles').select('*').eq('status', 'ativo').neq('papel', 'pais'),
+    // Membros pelo VÍNCULO no clube da aba (unidade e papel DAQUI; 'teste' vem junto). A corrida
+    // decide qual unidade a liderança premia — com o espelho, a criança de dois clubes puxava os
+    // pontos para a unidade do clube primário e a unidade dela aqui ficava para trás.
+    membrosDoClube(),
     supabase.rpc('ranking_semana'),
   ])
   const inicio = sem?.inicio || null
@@ -139,45 +143,29 @@ export async function carregarMinhaCartela(inicio, meuId) {
 }
 
 
-// Resumo pro Painel da Diretoria: números do clube numa olhada, com atalhos.
-export async function carregarPainelDiretoria() {
-  const agora = new Date()
-  const mes = agora.getMonth() + 1
-  const ano = agora.getFullYear()
-  const head = { count: 'exact', head: true }
-  const [cad, ent, ativos, mens, miss] = await Promise.all([
-    supabase.from('profiles').select('id', head).eq('status', 'pendente'),
-    supabase.from('entregas').select('id', head).eq('status', 'pendente'),
-    supabase.from('profiles').select('id', head).eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']),
-    supabase.from('mensalidades').select('id', head).eq('mes', mes).eq('ano', ano).eq('status', 'pago'),
-    supabase.rpc('missoes_pendentes').then((r) => (r.data || []).length).catch(() => 0),
-  ])
-  return {
-    cadastros: cad.count || 0,
-    entregas: ent.count || 0,
-    membros: ativos.count || 0,
-    mensPagas: mens.count || 0,
-    missoes: miss || 0,
-  }
-}
-
-
 // Radar de faltas: quem faltou nas últimas reuniões seguidas (2+). Lê os
 // apontamentos recentes e conta as faltas mais recentes de cada pessoa.
+// Só entra quem tem vínculo ATIVO no clube da aba (membros_do_clube). Antes o filtro era o status
+// do espelho profiles: quem foi desativado AQUI mas segue ativo em outro clube continuava no radar,
+// e a liderança mandava "sentimos sua falta" chamando para as reuniões de um clube que a pessoa deixou.
 export async function carregarRadarFaltas() {
-  const { data } = await supabase.from('pontos')
-    .select('usuario_id, data, marca, pessoa:profiles!usuario_id(nome, foto, status)')
-    .eq('origem', 'apontamento')
-    .order('data', { ascending: false })
-    .limit(500)
+  const [{ data }, membros] = await Promise.all([
+    supabase.from('pontos')
+      .select('usuario_id, data, marca')
+      .eq('origem', 'apontamento')
+      .order('data', { ascending: false })
+      .limit(500),
+    membrosDoClube(),
+  ])
+  const pessoaPorId = Object.fromEntries(membros.map((m) => [m.id, m]))
   const porPessoa = {}
   ;(data || []).forEach((p) => {
     if (!p.usuario_id) return
-    ;(porPessoa[p.usuario_id] ||= { pessoa: p.pessoa, linhas: [] }).linhas.push(p)
+    ;(porPessoa[p.usuario_id] ||= { pessoa: pessoaPorId[p.usuario_id], linhas: [] }).linhas.push(p)
   })
   const radar = []
   Object.entries(porPessoa).forEach(([id, info]) => {
-    if (!info.pessoa || info.pessoa.status !== 'ativo') return
+    if (!info.pessoa) return // sem vínculo ativo neste clube
     let faltas = 0
     for (const l of info.linhas) { // linhas em ordem decrescente de data
       if (l.marca && l.marca.presenca === 'faltou') faltas++

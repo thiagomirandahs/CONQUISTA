@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { baixarCSV } from '../lib/csv.js'
+import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
 import Avatar from '../components/Avatar.jsx'
 import { Cabecalho, Card, Carregando, Vazio, Selo, Botao, Selecao, Campo, Folha, Abas } from '../ui/index.jsx'
 import { useAvisos } from '../ui/avisos.jsx'
@@ -34,11 +35,20 @@ export default function Mensalidades() {
     let vivo = true
     setCarregando(true)
     ;(async () => {
-      const { data: ds } = await supabase.from('profiles').select('id,nome,foto,papel')
-        .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
+      // Quem paga = desbravador/conselheiro com vínculo ATIVO neste clube, com o papel DAQUI.
+      // Com o espelho profiles, a diretoria de dois clubes via como devedoras crianças só do
+      // outro clube (e a si mesma, se o espelho dela dizia desbravadora), e quem é líder no
+      // clube primário ficava de fora da cobrança do clube onde é desbravador. Totais e CSV
+      // saíam errados nos dois sentidos. Se a lista falhar, a tela diz — não mostra "ninguém".
+      let ds = []
+      try {
+        ds = await membrosDoClube({ papeis: PAPEIS_DE_UNIDADE })
+      } catch (e) {
+        if (vivo) avisarErro(e, 'Não consegui carregar quem paga mensalidade.')
+      }
       const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
       if (!vivo) return
-      setDesbravadores(ds || [])
+      setDesbravadores(ds)
       const map = {}
       ;(ms || []).forEach((m) => { map[m.desbravador_id] = m })
       setPagamentos(map)

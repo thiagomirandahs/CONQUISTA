@@ -43,7 +43,12 @@ select t.permitido('líder A abre nova temporada do clube', $q$select public.nov
 select t.permitido('líder A cria convite de responsável', $q$select public.criar_convite_responsavel()$q$);
 select t.permitido('líder A edita a config do clube (PIX)', $q$update public.config_clube set valor = 'PIX-NOVO-A' where chave = 'pix'$q$);
 select t.permitido('líder A redefine a senha de membro do clube', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('membro_a')));
-select t.permitido('líder A redefine a senha de usuário DESATIVADO do clube', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('temp_a2')));
+-- Até a fase 9 esta linha dizia o CONTRÁRIO ("redefine a senha de usuário DESATIVADO"). Era o
+-- defeito: a senha é da PESSOA (auth.users é global), e aceitar qualquer vínculo no clube — suspenso,
+-- encerrado, pendente — deixava a liderança trocar a senha de ex-membro e de quem só digitou o código
+-- do clube. Desde a migration 80 só quem está ATIVO aqui (e só aqui) tem a senha redefinida pela
+-- liderança; o afastado usa "Esqueci a senha". Excluir o desativado (linha de baixo) continua valendo.
+select t.throws('líder A NÃO redefine a senha de usuário DESATIVADO do clube (só de quem está ativo)', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('temp_a2')), 'ativo neste clube');
 select t.permitido('líder A exclui usuário DESATIVADO do clube', format('select public.excluir_usuario(%L)', t.id('temp_a2')));
 select t.permitido('líder A (diretoria) exclui usuário do clube', format('select public.excluir_usuario(%L)', t.id('temp_a')));
 reset role;

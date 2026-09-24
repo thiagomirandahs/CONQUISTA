@@ -7,6 +7,7 @@ import { hojeLocalISO } from '../lib/data.js'
 import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -84,9 +85,11 @@ export default function Atividades() {
             .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
             .order('created_at', { ascending: false }).limit(200)
         : vazio,
+      // Quem PODE entregar: desbravador/conselheiro com vínculo ativo NESTE clube (não o espelho
+      // profiles, que trazia crianças só do outro clube como "faltando entregar" uma atividade
+      // daqui). Se a lista falhar, o "x/y entregaram" some em vez de mostrar um número errado.
       ehAdmin
-        ? supabase.from('profiles').select('id,nome')
-            .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
+        ? membrosDoClube({ papeis: PAPEIS_DE_UNIDADE }).then((data) => ({ data }), () => ({ data: [] }))
         : vazio,
     ])
     if (ats.error) setErroBanco(ats.error.message)

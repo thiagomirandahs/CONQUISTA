@@ -5,10 +5,11 @@ import { carregarAniversariantes } from '../lib/dados.js'
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
-// nascimento vem como 'YYYY-MM-DD'
-function parseNasc(iso) {
-  const [ano, mes, dia] = String(iso).split('-').map(Number)
-  return { ano, mes, dia }
+// aniversario vem do servidor como 'MM-DD' (membros_do_clube): só dia e mês, nunca o ano — o card
+// não mostra mais a idade ("faz N anos"), porque a data completa da criança não é do clube inteiro.
+function parseAniversario(mmdd) {
+  const [mes, dia] = String(mmdd).split('-').map(Number)
+  return { mes, dia }
 }
 
 export default function CardAniversariantes() {
@@ -16,17 +17,19 @@ export default function CardAniversariantes() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    carregarAniversariantes().then((d) => { setLista(d); setCarregando(false) })
+    // o card é enfeite: se a busca falhar, ele só não aparece (sem erro solto no console)
+    carregarAniversariantes()
+      .then((d) => { setLista(d); setCarregando(false) })
+      .catch(() => setCarregando(false))
   }, [])
 
   const hoje = new Date()
   const mesAtual = hoje.getMonth() + 1
   const diaHoje = hoje.getDate()
-  const anoAtual = hoje.getFullYear()
 
   const doMes = lista
-    .filter((p) => p.nascimento)
-    .map((p) => ({ ...p, ...parseNasc(p.nascimento) }))
+    .filter((p) => p.aniversario)
+    .map((p) => ({ ...p, ...parseAniversario(p.aniversario) }))
     .filter((p) => p.mes === mesAtual && p.dia)
     .sort((a, b) => a.dia - b.dia)
 
@@ -54,14 +57,13 @@ export default function CardAniversariantes() {
       <div className="space-y-1">
         {doMes.map((p) => {
           const ehHoje = p.dia === diaHoje
-          const faz = anoAtual - p.ano
           return (
             <div key={p.id} className={`flex items-center gap-3 px-2 py-1.5 rounded-xl ${ehHoje ? 'bg-dourado/10' : ''}`}>
               <Avatar foto={p.foto} nome={p.nome} cor="#1e3a8a" size="w-9 h-9" textSize="text-sm" />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-slate-800 text-sm truncate">{p.nome}{ehHoje && ' 🎉'}</div>
                 <div className="text-xs text-slate-400">
-                  dia {p.dia}{faz > 0 && faz < 120 ? ` · faz ${faz} anos` : ''}
+                  dia {p.dia}
                 </div>
               </div>
               {ehHoje && <span className="text-lg">🎂</span>}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
+import { useClube } from '../context/Clube.jsx'
 import { carregarEventos } from '../lib/dados.js'
 import { detalhe, curto } from '../lib/eventos.js'
 
@@ -21,6 +22,9 @@ const JANELA_DIAS = 15
 // acampamento). Aparece 1x por dia por evento (dá pra dispensar) e conta ao vivo.
 export default function ProximoEventoPopup() {
   const { profile } = useAuth()
+  // Os eventos são do CLUBE DA ABA. O popup fica fora da área que remonta ao trocar de clube,
+  // então o clube entra nas dependências: sem isso, em B continuava a contagem do evento de A.
+  const { clubeId } = useClube()
   const [ev, setEv] = useState(null)
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(Date.now())
@@ -47,7 +51,7 @@ export default function ProximoEventoPopup() {
       } catch { /* sem eventos = sem popup */ }
     })()
     return () => { vivo = false }
-  }, [profile?.id])
+  }, [profile?.id, clubeId])
 
   // relógio ao vivo só enquanto o popup está aberto
   useEffect(() => {

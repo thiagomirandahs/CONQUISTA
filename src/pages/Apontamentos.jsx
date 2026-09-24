@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
+import { chamadaDaUnidade } from '../services/membros.js'
 import Avatar from '../components/Avatar.jsx'
 import { avisar } from '../ui/avisos.jsx'
 
@@ -50,28 +51,31 @@ export default function Apontamentos() {
     // (decisão do dono, 24/07: a liderança também pontua nos apontamentos; o
     // banco já permite via pode_apontar). Conselheiro comum segue só com
     // desbravadores (o banco não o deixaria pontuar conselheiros/líderes).
-    const qPessoas = supabase.from('profiles').select('*')
-      .eq('unidade_id', unidadeId).eq('status', 'ativo')
-    if (ehAdmin) qPessoas.neq('papel', 'pais')
-    else qPessoas.eq('papel', 'desbravador')
-    qPessoas.order('papel', { ascending: false }).order('nome')
+    // Quem está na unidade (e o selo de papel) é pelo VÍNCULO no clube da aba: com o espelho
+    // profiles, a criança de dois clubes nunca aparecia na chamada da unidade dela no clube
+    // secundário — e só quem está na lista vai para o salvar_reuniao. Conta de teste fica fora.
     Promise.all([
-      qPessoas,
+      chamadaDaUnidade(unidadeId, { soDesbravadores: !ehAdmin }),
       // já lançado nesta data? traz o que foi marcado de cada um pra pré-preencher
       supabase.from('pontos').select('usuario_id,marca').eq('origem', 'apontamento').eq('motivo', motivo),
-    ]).then(([{ data: desb }, { data: existentes }]) => {
+    ]).then(([desb, { data: existentes }]) => {
       if (!vivo) return
-      // Conta de teste não entra na chamada (não pontua nem aparece no ranking)
-      setDesbravadores((desb || []).filter((d) => !d.teste))
+      setDesbravadores(desb)
       const salvos = {}
       ;(existentes || []).forEach((p) => { if (p.marca) salvos[p.usuario_id] = p.marca })
       const m = {}
       ;(desb || []).forEach((d) => { m[d.id] = salvos[d.id] || marcaInicial() })
       setMarcas(m)
       setCarregando(false)
+    }).catch((e) => {
+      // sem a lista não há chamada: avisa em vez de mostrar "nenhum desbravador" como se fosse verdade
+      if (!vivo) return
+      setDesbravadores([])
+      setCarregando(false)
+      avisar.erro(e, 'Não consegui carregar a chamada desta unidade.')
     })
     return () => { vivo = false }
-  }, [unidadeId, data])
+  }, [unidadeId, data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const setMarca = (id, campo, v) => setMarcas((prev) => ({ ...prev, [id]: { ...prev[id], [campo]: v } }))
 

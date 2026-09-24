@@ -1,5 +1,6 @@
-// Serviço: chat — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
+// Serviço: chat — extraído de lib/dados.js.
 import { supabase } from '../lib/supabase.js'
+import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
 
 
 // ------- Chat (grupo da unidade + conversas diretas; tudo auditável pela liderança) -------
@@ -61,8 +62,9 @@ export async function carregarMinhasConversasDiretas(meuId) {
   const outroPorConversa = {}
   ;(todos || []).forEach((p) => { if (p.usuario_id !== meuId) outroPorConversa[p.conversa_id] = p.usuario_id })
   const outroIds = [...new Set(Object.values(outroPorConversa))]
+  // só nome e foto: a unidade do espelho profiles é a do clube primário da pessoa, não a daqui
   const { data: perfis } = outroIds.length
-    ? await supabase.from('profiles').select('id,nome,foto,unidade_id').in('id', outroIds)
+    ? await supabase.from('profiles').select('id,nome,foto').in('id', outroIds)
     : { data: [] }
   const perfilPorId = Object.fromEntries((perfis || []).map((p) => [p.id, p]))
   return conversaIds
@@ -76,12 +78,32 @@ export async function carregarMensagensDireta(conversaId) {
 }
 
 
+// Junta a conversa que está na tela com a que acabou de vir do servidor, SEM duplicar: a chave é o
+// id da mensagem, e a versão do servidor vence (ela traz o 'apagada' e o texto já filtrado pela
+// view). O que só existe na tela (chegou pelo tempo real depois da leitura) fica. Se nada mudou,
+// devolve a MESMA lista — assim a releitura periódica do chat não redesenha a conversa à toa.
+export function mesclarMensagens(atuais, doServidor) {
+  const antes = atuais || []
+  const porId = new Map(antes.map((m) => [m.id, m]))
+  let mudou = false
+  for (const m of doServidor || []) {
+    const velha = porId.get(m.id)
+    if (!velha || velha.texto !== m.texto || velha.apagada !== m.apagada || (!velha.autor && m.autor)) mudou = true
+    porId.set(m.id, velha ? { ...velha, ...m, autor: m.autor || velha.autor } : m)
+  }
+  if (!mudou) return antes
+  const quando = (m) => new Date(m.created_at).getTime() || 0
+  return [...porId.values()].sort((a, b) => quando(a) - quando(b))
+}
+
+
 // Colegas com quem dá pra conversar (só quem também usa o chat: desbravador/conselheiro).
+// Pelo VÍNCULO ativo no clube da aba — o mesmo critério do chat_enviar_direta. Com o espelho
+// profiles, a criança de dois clubes via na aba B colegas SÓ de A (nome e foto de outro clube) e,
+// ao escolher um deles, o servidor respondia "Essa pessoa não está disponível pro chat."
 export async function listarColegasChat(meuId) {
-  const { data, error } = await supabase.from('profiles').select('id,nome,foto,unidade_id')
-    .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')
-  if (error) throw new Error(error.message)
-  return (data || []).filter((p) => p.id !== meuId)
+  const lista = await membrosDoClube({ papeis: PAPEIS_DE_UNIDADE })
+  return lista.filter((p) => p.id !== meuId)
 }
 
 

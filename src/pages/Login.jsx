@@ -22,24 +22,19 @@ export default function Login() {
     setErro('')
     setCarregando(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
     if (error) {
       setErro(traduzErro(error.message))
       setCarregando(false)
       return
     }
 
-    // Verifica se o cadastro já foi aprovado pela diretoria
-    const { data: perfil } = await supabase.from('profiles').select('status').eq('id', data.user.id).single()
-    if (!perfil || perfil.status !== 'ativo') {
-      await supabase.auth.signOut()
-      setErro(perfil?.status === 'rejeitado'
-        ? 'Seu cadastro não foi aprovado. Fale com um líder do clube. 🙏'
-        : 'Seu cadastro ainda está aguardando aprovação da diretoria. ⏳')
-      setCarregando(false)
-      return
-    }
-
+    // Não há mais portão aqui. Ele olhava o profiles.status da pessoa — um ESPELHO do clube
+    // primário — e decidia por TODOS os clubes: quem estava suspensa num clube e pendente em
+    // outro levava signOut com "aguardando aprovação" e não conseguia nem entrar para digitar o
+    // código de outro clube (e a mensagem de "rejeitado" nunca casava). Quem decide agora é a
+    // ClubeGuard, pelos VÍNCULOS (meu_contexto): cadastro pendente vê "Seu cadastro aguarda
+    // aprovação"; sem clube vê "Entrar com código" / "Criar um clube"; clube perdido pede escolha.
     navigate('/ranking')
   }
 

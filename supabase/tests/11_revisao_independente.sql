@@ -104,8 +104,13 @@ select t.eq('instrutor não desativou a diretoria', (select status from public.p
 select t.eq('instrutor conseguiu o que é permitido (conselheiro)', (select papel from public.profiles where id = t.id('membro_a2')), 'conselheiro');
 select t.como('lider_a');
 select t.permitido('diretoria promove a instrutor', format($q$select public.vinculo_gerir(%L, p_papel := 'instrutor')$q$, t.id('membro_a')));
-select t.permitido('diretoria desativa o tesoureiro', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')));
+-- A senha vem ANTES da desativação. Até a fase 9 a ordem era a inversa, e o teste aprovava a
+-- redefinição da senha de um tesoureiro JÁ DESATIVADO — o defeito que a migration 80 fecha (a
+-- senha é da pessoa; só quem está ativo no clube a tem redefinida pela liderança). O que esta linha
+-- prova continua o mesmo: a DIRETORIA pode o que o instrutor (acima) não pode.
 select t.permitido('diretoria redefine a senha do tesoureiro', format($q$select public.resetar_senha_membro(%L, 'senha-ok-123')$q$, t.id('tesoureiro_a')));
+select t.permitido('diretoria desativa o tesoureiro', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')));
+select t.throws('...e, desativado, a senha dele não é mais redefinida por aqui', format($q$select public.resetar_senha_membro(%L, 'senha-ok-456')$q$, t.id('tesoureiro_a')), 'ativo neste clube');
 reset role;
 select t.eq('a diretoria promoveu de verdade (perfil e vínculo)', (select p.papel || '/' || m.role from public.profiles p join public.organization_memberships m on m.user_id = p.id where p.id = t.id('membro_a')), 'instrutor/instrutor');
 

@@ -1,7 +1,8 @@
-// Serviço: usuarios — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
+// Serviço: usuarios — extraído de lib/dados.js.
 import { supabase } from '../lib/supabase.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
+import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
 
 
 // Mensalidade pendente do PRÓPRIO usuário (pro popup de cobrança). O RLS já
@@ -53,13 +54,13 @@ export async function carregarVinculosPendentes() {
 }
 
 // Diretoria: buscar desbravadores por nome (pra escolher o filho certo ao aprovar).
+// Pelo VÍNCULO no clube da aba, com status ativo OU pendente — a mesma regra do aprovar_vinculo.
+// Antes vinha do espelho profiles: o diretor de dois clubes recebia crianças só do outro clube
+// (e o "limite 20" podia empurrar a certa para fora), e a criança ainda pendente AQUI não aparecia.
+const LIMITE_BUSCA = 20
 export async function buscarDesbravadores(termo) {
-  let q = supabase.from('profiles')
-    .select('id,nome,foto,unidade_id').eq('status', 'ativo')
-    .in('papel', ['desbravador', 'conselheiro']).order('nome').limit(20)
-  if (termo && termo.trim()) q = q.ilike('nome', `%${termo.trim()}%`)
-  const { data } = await q
-  return data || []
+  const lista = await membrosDoClube({ papeis: PAPEIS_DE_UNIDADE, status: ['ativo', 'pendente'], busca: termo })
+  return lista.slice(0, LIMITE_BUSCA)
 }
 
 export async function aprovarVinculo(id, desbravadorId) {
@@ -119,16 +120,15 @@ export async function definirAtivoUsuario(userId, ativo) {
 
 // Liga/desliga o MODO TESTE de uma conta: não pontua, não trava no 1x/dia e
 // não aparece no ranking. Serve pra testar o app sem sujar nada.
+// Pela RPC membro_definir_teste (diretoria do clube da aba), não mais por UPDATE direto em
+// profiles: a flag é da PESSOA e vale em todos os clubes dela, então o servidor RECUSA quando o
+// alvo também está em outro clube (senão a diretoria de A tirava a criança do ranking de B sem
+// ninguém de B saber). O erro do servidor sobe como está e a tela o traduz com o porquê
+// (ui/index.jsx, TRADUCOES) — essa recusa é esperada, não é falha.
 export async function definirTesteUsuario(userId, teste) {
-  const { data, error } = await supabase.from('profiles')
-    .update({ teste: !!teste }).eq('id', userId).select('id,teste')
-  if (error) {
-    throw new Error(/teste|column|schema cache/i.test(error.message)
-      ? 'Rode o SQL supabase/2026-07-15-modo-teste.sql primeiro.'
-      : error.message)
-  }
-  if (!data || data.length === 0) throw new Error('Sem permissão (só liderança).')
-  return data[0]
+  const { error } = await supabase.rpc('membro_definir_teste', { p_usuario_id: userId, p_teste: !!teste })
+  if (error) throw new Error(error.message)
+  return { id: userId, teste: !!teste }
 }
 
 
@@ -151,7 +151,11 @@ export async function mudarUnidade(userId, unidadeId) {
 }
 
 
-// Envia/troca a foto de perfil do próprio usuário — o RLS deixa cada um editar seu perfil.
+// Envia/troca a foto de perfil. Da PRÓPRIA pessoa: UPDATE direto (o RLS deixa cada um editar o
+// seu perfil). De OUTRO membro: pela RPC membro_definir_foto (liderança do clube da aba) — o UPDATE
+// direto da liderança em profiles deixou de existir, porque a foto é global da pessoa e a liderança
+// de B trocava a foto que as crianças de A viam. O servidor recusa alvo que também está em outro
+// clube; o erro dele sobe como está.
 export async function atualizarFotoPerfil({ userId, file }) {
   await validarImagem(file) // tipo REAL + tamanho (hardening etapa 2)
   file = await comprimirImagem(file, { maxLado: 640 })
@@ -160,7 +164,10 @@ export async function atualizarFotoPerfil({ userId, file }) {
   const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
   if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
   const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
-  const { error } = await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', userId)
+  const { data: sessao } = await supabase.auth.getSession()
+  const { error } = sessao?.session?.user?.id === userId
+    ? await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', userId)
+    : await supabase.rpc('membro_definir_foto', { p_usuario_id: userId, p_foto: pub.publicUrl })
   if (error) throw new Error(error.message)
   return pub.publicUrl
 }
@@ -185,13 +192,14 @@ export async function salvarAvatar(avatar, tipo = 'personagem') {
 }
 
 
-// Membros ativos que têm data de nascimento (pro card de aniversariantes).
+// Aniversariantes: membros do clube da aba (vínculo ativo, menos 'pais') que têm aniversário.
+// O servidor devolve só dia e mês ('MM-DD'), nunca a data de nascimento completa — o card não
+// precisa do ano, e a idade da criança não é assunto do clube inteiro. Antes vinha do espelho
+// profiles: na aba B apareciam os aniversariantes SÓ de A, com a data completa.
 export async function carregarAniversariantes() {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id,nome,foto,nascimento')
-    .eq('status', 'ativo')
-    .not('nascimento', 'is', null)
-  return data || []
+  const lista = await membrosDoClube()
+  return lista
+    .filter((p) => /^\d{2}-\d{2}$/.test(p.aniversario || ''))
+    .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, aniversario: p.aniversario }))
 }
 

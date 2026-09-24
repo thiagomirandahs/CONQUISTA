@@ -58,15 +58,20 @@ select t.ok('[vínculo] o que nasce sem sessão fica marcado como ROTINA (ator n
 -- =============================================================================
 --  2. SENHA redefinida pela liderança: na política do Auth, e registrada — sem a senha
 -- =============================================================================
+-- O alvo é membro_a2 (só do clube A). membro_a ganhou um vínculo em B na seção 1, e desde a
+-- migration 80 a liderança de um clube não troca a senha de quem participa de outro (a senha é uma
+-- só para todos os clubes da pessoa) — a recusa é provada logo abaixo, e no teste 61.
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.throws('[senha] "123456" é recusada (antes: aceita — 6 sem exigência contornava a política da 8.1)',
-  $q$select public.resetar_senha_membro(t.id('membro_a'), '123456')$q$, '8 caracteres');
-select t.throws('[senha] 8 letras sem número também', $q$select public.resetar_senha_membro(t.id('membro_a'), 'abcdefgh')$q$, 'letras e números');
-select t.permitido('[senha] 8 com letras e números passa', $q$select public.resetar_senha_membro(t.id('membro_a'), 'NovaSenha2026')$q$);
+  $q$select public.resetar_senha_membro(t.id('membro_a2'), '123456')$q$, '8 caracteres');
+select t.throws('[senha] 8 letras sem número também', $q$select public.resetar_senha_membro(t.id('membro_a2'), 'abcdefgh')$q$, 'letras e números');
+select t.permitido('[senha] 8 com letras e números passa', $q$select public.resetar_senha_membro(t.id('membro_a2'), 'NovaSenha2026')$q$);
+select t.throws('[senha] ...mas não para quem também participa de outro clube (membro_a, agora em A e B)',
+  $q$select public.resetar_senha_membro(t.id('membro_a'), 'NovaSenha2026')$q$, 'outro clube');
 reset role;
 select t.eq('[senha] a redefinição ficou registrada: quem, em que clube, sobre quem',
-  (select concat_ws('|', ator = t.id('lider_a'), club_id = t.id('clube_a'), alvo = t.id('membro_a'))
-     from t.linha('senha_redefinida', t.id('membro_a'))), 't|t|t');
+  (select concat_ws('|', ator = t.id('lider_a'), club_id = t.id('clube_a'), alvo = t.id('membro_a2'))
+     from t.linha('senha_redefinida', t.id('membro_a2'))), 't|t|t');
 select t.eq('[senha] ...e a senha NÃO está em lugar nenhum da trilha',
   (select count(*) from public.auditoria_operacoes a where a::text like '%NovaSenha2026%'), 0);
 

@@ -159,10 +159,13 @@ describe('ClubeGuard: só entra quem tem vínculo ATIVO com um clube em uso', ()
   })
   it('cadastro pendente: diz que aguarda aprovação do clube (pelo nome do clube dele)', () => {
     como(null, {}, { semVinculo: true, vinculos: [{ status: 'pendente', marca: { nome: 'Clube Pendente' } }] })
-    render(<ClubeGuard><p>o app</p></ClubeGuard>)
+    naRota('/x', <ClubeGuard><p>o app</p></ClubeGuard>)
     expect(screen.queryByText('o app')).toBeNull()
     expect(screen.getByText('Seu cadastro aguarda aprovação')).toBeInTheDocument()
     expect(screen.getByText(/Clube Pendente/)).toBeInTheDocument()
+    // o Login não barra mais pelo espelho profiles.status: é aqui que a pessoa pendente chega, e o
+    // pedido pendente num clube não pode trancá-la para fora do código de outro
+    expect(screen.getByTestId('ir-entrar-pendente')).toHaveAttribute('href', '/entrar')
   })
   // FASE 8.5, item 3: nada de fallback silencioso de seguranca. Quando o clube que a aba usava
   // deixa de valer e a pessoa tem outros, o app NAO escolhe um sozinho — ele para e devolve a

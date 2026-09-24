@@ -39,6 +39,109 @@ describe('o app não assume papel nem unidade GLOBAIS do perfil', () => {
   })
 })
 
+// ---------------------------------------------------------------------------------------------
+// Listas de pessoas nunca pelo ESPELHO profiles.
+//
+// profiles é a única tabela de pessoas cuja RLS é por PESSOA (enxerga quem divide QUALQUER clube
+// com você), e profiles.papel/status/unidade_id são um espelho do clube PRIMÁRIO da pessoa. Toda
+// tela que filtrava ou agrupava por essas colunas errava duas vezes para quem está em dois clubes:
+// trazia gente do outro clube e punha a criança na unidade do clube primário (ela sumia da chamada,
+// do ranking e das unidades competidoras do clube secundário). A fonte certa é a RPC
+// membros_do_clube (services/membros.js), com papel/unidade/status do VÍNCULO no clube da aba.
+//
+// Continua permitido ler profiles por id para nome, foto e avatar (autor de mensagem, etc.).
+// ---------------------------------------------------------------------------------------------
+const COLUNAS_DO_ESPELHO = /^(\*|status|papel|unidade_id)$/
+const ARG = String.raw`(?:[^()]|\((?:[^()]|\([^()]*\))*\))*` // argumentos com até 2 níveis de parênteses
+const CADEIA = new RegExp(String.raw`\.from\(\s*(['"\`])profiles\1\s*\)((?:\s*\.\s*\w+\s*\(${ARG}\))*)`, 'g')
+const VARIAVEL = /(?:const|let|var)\s+(\w+)\s*=\s*(?:await\s+)?supabase\s*\.from\(\s*(['"`])profiles\2\s*\)/g
+const FILTRO = /\.\s*(?:eq|neq|in|not|is|filter|gt|gte|lt|lte|like|ilike)\s*\(\s*(['"`])(status|papel|unidade_id)\1/
+const FILTRO_MATCH = /\.\s*match\s*\(\s*\{[^}]*\b(status|papel|unidade_id)\s*:/
+const SELECT = /\.\s*select\s*\(\s*(?:(['"`])([^'"`]*)\1)?\s*[,)]/g
+const EMBED = /[\s,'"`:(]profiles(?:!\w+){0,2}\s*\(([^()]*)\)/g
+// colunas de um select do PostgREST: "a, b:c, d::text" -> ['a', 'c', 'd']
+const colunasDe = (lista) => lista.split(',').map((c) => c.trim().split('::')[0].split(':').pop().trim()).filter(Boolean)
+const trazEspelho = (lista) => colunasDe(lista).some((c) => COLUNAS_DO_ESPELHO.test(c))
+
+// Devolve os motivos pelos quais o texto lê o espelho. Vazio = limpo.
+export function leituraDoEspelho(texto) {
+  const motivos = []
+  for (const [, , cadeia] of texto.matchAll(CADEIA)) {
+    if (FILTRO.test(cadeia) || FILTRO_MATCH.test(cadeia)) motivos.push(`filtro por papel/status/unidade_id: from('profiles')${cadeia.slice(0, 120)}`)
+    for (const [, , colunas] of cadeia.matchAll(SELECT)) {
+      // .select() sem argumento é '*' no supabase-js
+      if (colunas === undefined || trazEspelho(colunas)) motivos.push(`select traz papel/status/unidade_id: from('profiles')${cadeia.slice(0, 120)}`)
+    }
+  }
+  // consulta montada em partes: const q = supabase.from('profiles')...; q.eq('status', ...)
+  for (const [, nome] of texto.matchAll(VARIAVEL)) {
+    const uso = new RegExp(String.raw`\b${nome}\s*${FILTRO.source.slice(0)}`)
+    if (uso.test(texto)) motivos.push(`filtro por papel/status/unidade_id na consulta montada em '${nome}'`)
+  }
+  // embutido em outra consulta: pessoa:profiles!usuario_id(nome, status)
+  for (const [trecho, colunas] of texto.matchAll(EMBED)) {
+    if (trazEspelho(colunas)) motivos.push(`profiles embutido com papel/status/unidade_id: ${trecho.trim()}`)
+  }
+  return motivos
+}
+
+// Exceções EXPLÍCITAS (e só estas duas):
+//  * context/Auth.jsx — carrega o perfil da PRÓPRIA pessoa (select('*') por id). Ninguém ali lê
+//    papel/unidade para decidir nada: isso é do ClubeContext (o teste do topo trava profile.papel).
+//  * services/clubes.js — fallback legado de carregarContexto para quando a RPC meu_contexto não
+//    existe (banco anterior à migration 33). Lê a própria pessoa; sai quando todo ambiente tiver a 33+.
+const EXCECOES_DO_ESPELHO = ['context/Auth.jsx', 'services/clubes.js']
+
+describe('listas de pessoas vêm do VÍNCULO no clube da aba, nunca do espelho profiles', () => {
+  it('nenhum arquivo (fora das exceções) filtra ou seleciona profiles por papel/status/unidade_id', () => {
+    const achados = codigo
+      .filter((c) => !EXCECOES_DO_ESPELHO.includes(c.arquivo))
+      .flatMap((c) => leituraDoEspelho(c.texto).map((m) => `${c.arquivo}: ${m}`))
+    expect(achados).toEqual([])
+  })
+
+  it('as exceções existem e continuam sendo só leitura da PRÓPRIA pessoa (por id)', () => {
+    for (const arq of EXCECOES_DO_ESPELHO) {
+      const texto = ler(arq)
+      expect(texto, arq).toMatch(/from\(\s*'profiles'\s*\)/)
+      const cadeias = [...texto.matchAll(CADEIA)].map((m) => m[2])
+      for (const cadeia of cadeias) expect(cadeia, arq).toMatch(/\.eq\(\s*'id'\s*,/)
+    }
+  })
+
+  // O detector precisa pegar o código que CAUSOU os achados da auditoria multi-clube — se um
+  // destes deixar de ser pego, a trava acima passa a ser decorativa.
+  it.each([
+    ['ranking (select * + filtro)', "supabase.from('profiles').select('*').eq('status', 'ativo').neq('papel', 'pais'),"],
+    ['mensalidades', "await supabase.from('profiles').select('id,nome,foto,papel')\n        .eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).order('nome')"],
+    ['unidades competidoras (.not em unidade_id)', "supabase.from('profiles').select('unidade_id').eq('status', 'ativo').in('papel', ['desbravador', 'conselheiro']).not('unidade_id', 'is', null),"],
+    ['chamada montada em partes (Apontamentos)', "const qPessoas = supabase.from('profiles').select('*')\n      .eq('unidade_id', unidadeId).eq('status', 'ativo')\n    if (ehAdmin) qPessoas.neq('papel', 'pais')\n    else qPessoas.eq('papel', 'desbravador')"],
+    ['busca com let q = ... (VinculosPais)', "let q = supabase.from('profiles')\n    .select('id,nome,foto').order('nome').limit(20)\n  if (termo) q = q.in('papel', ['desbravador'])"],
+    ['radar de faltas (embutido)', ".select('usuario_id, data, marca, pessoa:profiles!usuario_id(nome, foto, status)')"],
+    ['embutido com alias e cast', ".select('id, autor:profiles!usuario_id(nome, u:unidade_id::text)')"],
+    ['portão do login (select status por id)', "await supabase.from('profiles').select('status').eq('id', data.user.id).single()"],
+    ['lookup por id que traz a unidade do espelho', "await supabase.from('profiles').select('id,nome,foto,unidade_id').in('id', outroIds)"],
+    ['select() sem argumento', "supabase.from('profiles').select().eq('id', x)"],
+    ['contagem por status', "supabase.from('profiles').select('id', head).eq('status', 'pendente'),"],
+    ['aspas duplas e match', 'supabase.from("profiles").select("id").match({ status: "ativo" })'],
+  ])('pega o código antigo: %s', (_, trecho) => {
+    expect(leituraDoEspelho(trecho)).not.toEqual([])
+  })
+
+  it.each([
+    ['autores do chat por id', "await supabase.from('profiles').select('id,nome,foto').in('id', autorIds)"],
+    ['autor único por id', "await supabase.from('profiles').select('id,nome,foto').eq('id', nova.autor_id).single()"],
+    ['foto da própria pessoa', "await supabase.from('profiles').update({ foto: pub.publicUrl }).eq('id', userId)"],
+    ['notificações vistas', "await supabase.from('profiles').update({ notif_visto_em: agora }).eq('id', userId)"],
+    ['nome embutido', ".select('id, texto, autor:profiles!usuario_id(nome)')"],
+    ['unidade embutida de OUTRA tabela', ".select('id,pessoa:profiles!usuario_id(nome),unidade:unidades!unidade_id(nome)')"],
+    ['status de outra tabela', "supabase.from('entregas').select('id', head).eq('status', 'pendente')"],
+    ['a RPC nova', "supabase.rpc('membros_do_clube', { p_papeis: ['desbravador'] })"],
+  ])('não acusa o que é permitido: %s', (_, trecho) => {
+    expect(leituraDoEspelho(trecho)).toEqual([])
+  })
+})
+
 describe('o app não conhece nenhum clube pelo nome', () => {
   it('"Filhos da Conquista", o lema e o ano do Tenant 001 só existem em lib/marca.js (a MARCA_LEGADA de compatibilidade)', () => {
     const achados = codigo

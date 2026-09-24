@@ -82,6 +82,13 @@ export default function ClubeGuard({ children }) {
           </p>
           <button onClick={sair} className="w-full min-h-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow"
             style={{ color: 'var(--marca-1-texto, #fff)' }}>Sair</button>
+          {/* Desde que o Login deixou de barrar pelo espelho profiles.status, é aqui que a pessoa
+              pendente chega — e um pedido pendente num clube não pode trancá-la para fora de
+              outro: quem tem o código de outro clube continua podendo usá-lo. */}
+          <Link to="/entrar" data-testid="ir-entrar-pendente"
+            className="mt-2 block w-full min-h-[44px] leading-[44px] text-sm text-muted font-semibold">
+            Tenho o código de outro clube
+          </Link>
         </Aviso>
       )
     }
