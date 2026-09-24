@@ -39,6 +39,21 @@
         "5173"
       ],
       "port": 5173
+    },
+    {
+      "name": "ensaio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4373",
+        "--strictPort",
+        "--mode",
+        "ensaio"
+      ],
+      "port": 4373
     }
   ]
 }

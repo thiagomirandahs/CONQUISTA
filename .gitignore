@@ -52,3 +52,11 @@ staging/supabase/seed.sql
 # (sintéticas, mas é o formato real): nunca versionar.
 staging/backups/
 restore/
+
+# Fase 9.1, item 3: o ENSAIO DE PRODUÇÃO. O backup real da produção (dado de criança de verdade)
+# nunca entra no repositório — guarde-o fora dele ou em staging/backups/ — e o .env.ensaio aponta o
+# front para o ambiente descartável onde a cópia foi restaurada.
+.env.ensaio
+*.backup
+*.backup.gz
+db_cluster-*

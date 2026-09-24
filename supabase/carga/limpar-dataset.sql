@@ -28,6 +28,19 @@ begin
   -- as pessoas sintéticas: e-mail @carga.local é o marcador
   delete from public.profiles where id in (select id from auth.users where email like '%@carga.local');
   delete from auth.users where email like '%@carga.local';
+  -- Com o replica ligado o ON DELETE CASCADE das FKs NÃO dispara: tudo o que aponta para o clube
+  -- sintético tem de sair antes, senão fica linha órfã (o restore da fase 9.1 achou 100 em
+  -- club_storage_uso — e o pg_restore recusa a FK). Varre TODA FK que aponta para
+  -- organizational_units, em vez de uma lista que envelhece a cada migration.
+  declare r record;
+  begin
+    for r in select c.conrelid::regclass as tab, a.attname as col
+               from pg_constraint c join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
+              where c.contype = 'f' and c.confrelid = 'public.organizational_units'::regclass
+                and array_length(c.conkey, 1) = 1 and c.conrelid <> 'public.organizational_units'::regclass loop
+      execute format('delete from %s where %I = any($1)', r.tab, r.col) using v_clubes;
+    end loop;
+  end;
   delete from public.organizational_units where id = any(v_clubes);
 
   -- Objetos sintéticos do Storage. Dois marcadores, porque foram criados em dois formatos:

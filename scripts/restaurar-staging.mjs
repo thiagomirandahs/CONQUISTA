@@ -21,31 +21,19 @@
 //
 //  NUNCA toca em produção nem no ambiente de desenvolvimento: lê do staging, escreve no descartável.
 // =============================================================================
-import { execFileSync } from 'node:child_process'
-import { createHash, randomBytes, randomUUID, generateKeyPairSync } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { MANIFESTO_SQL } from './lib/manifesto.mjs'
+import {
+  R_NOME, R_API, r, docker, psql, seg, provisionar, descartar as descartarStack, esperarApi,
+  trocarBanco as trocar, restaurarArquivos as restaurarTgz, conferirQueODeployContinua as conferirDeploy,
+} from './lib/descartavel.mjs'
 
-const RAIZ = process.cwd()
-const CLI = ['--yes', 'supabase@2.117.0']
 const STG = { db: 'supabase_db_CONQUISTA-STAGING', storage: 'supabase_storage_CONQUISTA-STAGING' }
-const R_DIR = 'restore'
-const R_NOME = 'CONQUISTA-RESTORE'
-const r = (servico) => `supabase_${servico}_${R_NOME}`
-const R_API = 'http://127.0.0.1:56321'
 const SENHA = 'Multiclube2026'
-
-const docker = (args, opts = {}) => execFileSync('docker', args, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024, ...opts })
-const psql = (container, sql, db = 'postgres') =>
-  docker(['exec', '-i', container, 'psql', '-U', 'supabase_admin', '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-d', db], { input: sql }).trim()
-const supabase = (args, env = {}) => execFileSync('npx', [...CLI, ...args], {
-  cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32', env: { ...process.env, ...env },
-})
 const sha = (arquivo) => createHash('sha256').update(readFileSync(arquivo)).digest('hex')
-const seg = (ms) => `${(ms / 1000).toFixed(1)}s`
-const espera = (ms) => new Promise((res) => setTimeout(res, ms))
 
 let falhas = 0
 const ok = (n, c, d = '') => {
@@ -67,6 +55,12 @@ function backup() {
   console.log(`\n-- BACKUP do staging → ${dir} --`)
   const t0 = Date.now()
   const manifesto = JSON.parse(psql(STG.db, MANIFESTO_SQL))
+  // Os vínculos ativos de cada identidade sintética, lidos NA ORIGEM no instante do backup: a UAT
+  // e os ensaios mudam o staging (o fundador sem clube da população já fundou um), e uma lista fixa
+  // no script acusaria "restore errado" onde o restore está certo.
+  const pop = JSON.parse(readFileSync('supabase/e2e/populacao.staging.json', 'utf8'))
+  const identidades = Object.fromEntries(Object.entries(pop.pessoas).map(([k, p]) => [k,
+    psql(STG.db, `select coalesce(string_agg(organizational_unit_id::text, ',' order by organizational_unit_id::text), '') from public.organization_memberships where user_id = '${p.id}' and status = 'ativo';`).split(',').filter(Boolean)]))
   // `supabase_admin` (superusuário do stack) e formato custom: leva donos, GRANTs e os schemas da
   // plataforma (auth, storage, cron). O `postgres` do stack local NÃO é superusuário.
   docker(['exec', STG.db, 'pg_dump', '-U', 'supabase_admin', '-Fc', '-f', '/tmp/banco.dump', 'postgres'])
@@ -78,7 +72,7 @@ function backup() {
   docker(['cp', `${STG.storage}:/tmp/storage.tgz`, join(dir, 'storage.tgz')])
   docker(['exec', STG.storage, 'rm', '-f', '/tmp/storage.tgz'])
   const arquivos = Object.fromEntries(['banco.dump', 'storage.tgz'].map((f) => [f, { bytes: statSync(join(dir, f)).size, sha256: sha(join(dir, f)) }]))
-  const info = { origem: 'staging', ponto_de_recuperacao: pontoDeRecuperacao, duracao_ms: Date.now() - t0, arquivos, manifesto }
+  const info = { origem: 'staging', ponto_de_recuperacao: pontoDeRecuperacao, duracao_ms: Date.now() - t0, arquivos, manifesto, identidades }
   writeFileSync(join(dir, 'manifesto.json'), JSON.stringify(info, null, 2))
   console.log(`   ·       banco.dump  ${(arquivos['banco.dump'].bytes / 1024 / 1024).toFixed(1)} MB  sha256 ${arquivos['banco.dump'].sha256.slice(0, 16)}…`)
   console.log(`   ·       storage.tgz ${(arquivos['storage.tgz'].bytes / 1024).toFixed(0)} KB  sha256 ${arquivos['storage.tgz'].sha256.slice(0, 16)}…`)
@@ -88,54 +82,11 @@ function backup() {
 }
 
 // ---------------------------------------------------------------------------
-//  O AMBIENTE DESCARTÁVEL: terceiro stack, derivado da config do staging.
+//  O AMBIENTE DESCARTÁVEL (provisionar/descartar/esperar) mora em scripts/lib/descartavel.mjs:
+//  o ensaio de produção (fase 9.1) usa o mesmo stack.
 // ---------------------------------------------------------------------------
-function provisionar() {
-  const base = readFileSync(join('staging', 'supabase', 'config.toml'), 'utf8')
-  let cfg = base
-    .replace('project_id = "CONQUISTA-STAGING"', `project_id = "${R_NOME}"`)
-    .replace(/\b553(\d\d)\b/g, '563$1')                 // 55321 → 56321 etc.
-    .replace(/:4273\b/g, ':4373')
-    .replace(/port = 8183\b/, 'port = 8283')
-  // sem seed: o banco do descartável é SUBSTITUÍDO pelo backup; nada de dado próprio
-  cfg = cfg.replace(/(\[db\.seed\][^[]*?enabled = )true/, '$1false')
-  if (cfg.includes('55321') || !cfg.includes('56321')) throw new Error('a config do descartável ainda aponta para o staging')
-  mkdirSync(join(R_DIR, 'supabase', 'migrations'), { recursive: true })
-  writeFileSync(join(R_DIR, 'supabase', 'config.toml'),
-    `# GERADO por scripts/restaurar-staging.mjs — ambiente DESCARTÁVEL de restore. Não versionar.\n${cfg}`)
-  // Chave de assinatura e segredo PRÓPRIOS: o descartável não pode aceitar token do staging.
-  const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' })
-  writeFileSync(join(R_DIR, 'supabase', 'signing_keys.json'), JSON.stringify([{
-    ...privateKey.export({ format: 'jwk' }), alg: 'ES256', kid: randomUUID(), use: 'sig', key_ops: ['sign', 'verify'], ext: true,
-  }]))
-  const segredo = randomBytes(30).toString('base64url')
-  writeFileSync(join(R_DIR, '.jwt-secret'), segredo)
-  // Só o que a conferência usa: banco, auth, API e storage.
-  supabase(['start', '--workdir', R_DIR, '-x', 'studio,mailpit,edge-runtime,imgproxy,vector,logflare,supavisor,postgres-meta,realtime'],
-    { SUPABASE_AUTH_JWT_SECRET: segredo })
-  const env = supabase(['status', '--workdir', R_DIR, '-o', 'env'], { SUPABASE_AUTH_JWT_SECRET: segredo })
-  const pega = (k) => (env.match(new RegExp(`^${k}="?([^"\n]+)"?`, 'm')) || [])[1] || ''
-  return { anon: pega('ANON_KEY'), service: pega('SERVICE_ROLE_KEY') }
-}
-
 function descartar() {
-  if (!existsSync(join(R_DIR, 'supabase', 'config.toml'))) return
-  try { supabase(['stop', '--workdir', R_DIR, '--no-backup']) } catch { /* já parado */ }
-  rmSync(R_DIR, { recursive: true, force: true })
-  console.log('   ·       ambiente descartável derrubado e apagado (containers, volumes e diretório)')
-}
-
-async function esperarApi(anon, api = R_API) {
-  for (let i = 0; i < 60; i++) {
-    try {
-      const a = await fetch(`${api}/auth/v1/health`, { headers: { apikey: anon } })
-      const b = await fetch(`${api}/rest/v1/`, { headers: { apikey: anon } })
-      const c = await fetch(`${api}/storage/v1/bucket`, { headers: { apikey: anon, Authorization: `Bearer ${anon}` } })
-      if (a.ok && b.ok && c.status < 500) return true
-    } catch { /* subindo */ }
-    await espera(1000)
-  }
-  return false
+  if (descartarStack()) console.log('   ·       ambiente descartável derrubado e apagado (containers, volumes e diretório)')
 }
 
 // ---------------------------------------------------------------------------
@@ -149,30 +100,13 @@ async function esperarApi(anon, api = R_API) {
 //  passado sem ver, porque ele não aplicava migration nenhuma depois de restaurar.
 // ---------------------------------------------------------------------------
 function trocarBanco(container, dir) {
-  psql(container, 'drop database if exists postgres with (force);', 'template1')
-  psql(container, 'create database postgres owner postgres;', 'template1')
-  docker(['cp', join(dir, 'banco.dump'), `${container}:/tmp/banco.dump`])
-  let saida = ''
-  try { saida = docker(['exec', container, 'pg_restore', '-U', 'supabase_admin', '-d', 'postgres', '/tmp/banco.dump']) } catch (e) { saida = `${e.stdout || ''}${e.stderr || ''}` }
-  docker(['exec', container, 'rm', '-f', '/tmp/banco.dump'])
-  return saida.split('\n').filter((l) => /^pg_restore: error/.test(l))
+  const { erros } = trocar(container, join(dir, 'banco.dump'))
+  return erros
 }
-function restaurarArquivos(container, dir) {
-  docker(['cp', join(dir, 'storage.tgz'), `${container}:/tmp/storage.tgz`])
-  docker(['exec', container, 'sh', '-c', 'rm -rf /mnt/* && tar xzf /tmp/storage.tgz -C /mnt && rm -f /tmp/storage.tgz'])
-}
+const restaurarArquivos = (container, dir) => restaurarTgz(container, join(dir, 'storage.tgz'))
 // Não basta o banco voltar: o PRÓXIMO deploy tem de continuar possível. A prova é fazer o que uma
 // migration faz — criar uma função no `public` como `postgres` — e desfazer.
-function conferirQueODeployContinua(container) {
-  const dono = psql(container, `select pg_get_userbyid(datdba) from pg_database where datname = 'postgres';`)
-  ok('o banco restaurado tem o dono original (postgres)', dono === 'postgres', `dono=${dono}`)
-  let criou = true
-  try {
-    docker(['exec', '-i', container, 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-v', 'ON_ERROR_STOP=1'],
-      { input: `begin; create function public.zz_sonda_do_restore() returns int language sql as 'select 1'; rollback;` })
-  } catch { criou = false }
-  ok('...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa', criou)
-}
+const conferirQueODeployContinua = (container) => conferirDeploy(container, ok)
 
 // ---------------------------------------------------------------------------
 //  RESTORE IN-PLACE do próprio staging — o caminho de recuperação de uma migration que commitou
@@ -262,7 +196,9 @@ async function restaurar(dir, marcadores = null) {
     try { quem[k] = await entrar(P[k].email); ok(`identidade ${k} entra com a senha de antes (hash restaurado)`, quem[k].id === P[k].id) } catch (e) { ok(`identidade ${k} entra`, false, e.message) }
   }
   quem.lider_a = await entrar('tenant001@local.test', 'local-test-only')
-  const esperado = { so_a: [C.A], so_b: [C.B], so_c: [C.C], ab: [C.A, C.B], abc: [C.A, C.B, C.C], dir_a_membro_b: [C.A, C.B], instrutor_ab: [C.A, C.B], fundador_sem_clube: [] }
+  const esperado = info.identidades
+    ? Object.fromEntries(Object.entries(info.identidades).filter(([k]) => k in quem && k !== 'responsavel' && k !== 'coordenador'))
+    : { so_a: [C.A], so_b: [C.B], so_c: [C.C], ab: [C.A, C.B], abc: [C.A, C.B, C.C], dir_a_membro_b: [C.A, C.B], instrutor_ab: [C.A, C.B], fundador_sem_clube: [] }
   for (const [k, clubes] of Object.entries(esperado)) {
     if (quem[k]) ok(`${k}: vínculos ativos voltaram exatamente (${clubes.length})`, JSON.stringify(await vinculos(quem[k])) === JSON.stringify([...clubes].sort()))
   }
