@@ -25,10 +25,20 @@ select t.mk2('membro_e_instrutor', 'instrutor', 'ativo', 'clube_b', 'B1');
 insert into public.config_clube (club_id, chave, valor) values
   (t.id('clube_a'), 'reflexo_so_desbravador', 'sim'), (t.id('clube_b'), 'reflexo_so_desbravador', 'sim')
 on conflict (club_id, chave) do update set valor = excluded.valor;
--- chefão ligado nos dois clubes, começando hoje (sábado ou não — só o cron/estado que olha, não valida dia da semana aqui)
+-- Chefão ligado nos dois clubes, começando hoje.
+--
+-- A data sai do fuso de SÃO PAULO, não do `current_date` do banco — e isso não é preciosismo.
+-- `chefao_golpe` calcula o início da batalha como "aquela data 00:00 em America/Sao_Paulo"; o
+-- banco roda em UTC. Entre 21h e meia-noite no Brasil, `current_date` já virou para o dia
+-- seguinte em UTC, então o início da batalha caía TRÊS HORAS NO FUTURO e a função recusava o
+-- golpe com "A batalha não está rolando agora".
+--
+-- Ou seja: este teste falhava todas as noites, das 21h à meia-noite, por um motivo que não tem
+-- nada a ver com o que ele testa. Descoberto na fase 8.5 exatamente assim — rodando a suíte às
+-- 21h06. Um teste que só passa em parte do dia não é um teste; é uma moeda.
 insert into public.config_clube (club_id, chave, valor) values
-  (t.id('clube_a'), 'chefao_ativo', 'sim'), (t.id('clube_a'), 'chefao_inicio', to_char(current_date, 'YYYY-MM-DD')), (t.id('clube_a'), 'chefao_vida', '999999'),
-  (t.id('clube_b'), 'chefao_ativo', 'sim'), (t.id('clube_b'), 'chefao_inicio', to_char(current_date, 'YYYY-MM-DD')), (t.id('clube_b'), 'chefao_vida', '999999')
+  (t.id('clube_a'), 'chefao_ativo', 'sim'), (t.id('clube_a'), 'chefao_inicio', to_char((now() at time zone 'America/Sao_Paulo')::date, 'YYYY-MM-DD')), (t.id('clube_a'), 'chefao_vida', '999999'),
+  (t.id('clube_b'), 'chefao_ativo', 'sim'), (t.id('clube_b'), 'chefao_inicio', to_char((now() at time zone 'America/Sao_Paulo')::date, 'YYYY-MM-DD')), (t.id('clube_b'), 'chefao_vida', '999999')
 on conflict (club_id, chave) do update set valor = excluded.valor;
 
 -- ==================== 1) jogar: cada jogo cai no clube CERTO, nunca no outro ====================

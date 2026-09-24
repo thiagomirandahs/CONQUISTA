@@ -187,9 +187,17 @@ from unnest(array['lider_a','instrutor_a','membro_a','pais_a','lider_b','membro_
 insert into public.config_clube (club_id, chave, valor) values (t.id('clube_a'), 'pix', 'PIX-DO-CLUBE-A')
 on conflict (club_id, chave) do update set valor = excluded.valor;
 
+-- Comprovantes no bucket privado. Eles são LIGADOS à entrega que os originou (`entregas.foto_url`)
+-- em vez de ficarem soltos, e isso passou a importar na fase 8.5: o caminho do objeto é
+-- `<usuario_id>/...` e não diz de que CLUBE a evidência é. Enquanto a policy perguntava "esta
+-- pessoa é do meu clube?", um objeto órfão bastava para o teste. Agora ela pergunta "esta evidência
+-- é do meu clube?", e a resposta vem da linha que guarda o caminho — como no produto de verdade,
+-- onde nenhuma comprovação existe sem o registro que a explica.
 insert into storage.objects (bucket_id, name, owner)
 values ('comprovacoes', t.id('membro_a') || '/foto-a.jpg', t.id('membro_a')),
        ('comprovacoes', t.id('membro_b') || '/foto-b.jpg', t.id('membro_b'));
+update public.entregas set foto_url = t.id('membro_a') || '/foto-a.jpg' where id = t.id('ent_a');
+update public.entregas set foto_url = t.id('membro_b') || '/foto-b.jpg' where id = t.id('ent_b');
 
 reset role;
 \o

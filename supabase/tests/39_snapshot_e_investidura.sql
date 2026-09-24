@@ -69,10 +69,27 @@ select t.eq('conteúdo: conteúdo dinâmico CONGELADO em I.4 — valor, período
   (select (r->'conteudo_dinamico'->>'valor') || '|' || (r->'conteudo_dinamico'->>'vigente_desde') || '|' || (r->'conteudo_dinamico'->>'vigente_ate') || '|' || (r->'conteudo_dinamico'->>'fonte_descricao')
      from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.4'),
   'Livro do Curso de Leitura 2026 [DADO DE TESTE]|2026-01-01|2026-12-31|FIXTURE DE TESTE — não é o livro oficial');
-select t.eq('conteúdo: aprovações com avaliador (nome), papel, clube, data e comentário',
-  (select (r->'aprovacoes'->0->'avaliado_por'->>'nome') || '|' || (r->'aprovacoes'->0->>'papel') || '|' || ((r->'aprovacoes'->0->>'club_id')::uuid = t.id('clube_a'))::text || '|' || (r->'aprovacoes'->0->>'comentario') || '|' || ((r->'aprovacoes'->0->>'em') is not null)::text
+-- MUDOU NA 8.5 (item 6). Este assert exigia o `comentario` do avaliador DENTRO do snapshot — ou
+-- seja, congelava um vazamento. O snapshot é portátil: ele atravessa clube por desenho, e é lido
+-- pela liderança de qualquer clube em que a pessoa entre depois. O comentário que o avaliador
+-- escreveu é julgamento interno do clube emissor sobre uma criança, e viajava junto.
+--
+-- O mais revelador é que o assert vizinho (logo abaixo) já era o mecanismo certo — ele varre o
+-- snapshot INTEIRO procurando o texto privado do desbravador. Ele não pegava o comentário do
+-- avaliador só porque a fixture grava 'ok' nesse campo, um valor curto demais para ser procurado.
+-- Agora a fixture grava um marcador, e a varredura cobre os dois lados.
+select t.eq('conteúdo: aprovações com avaliador (nome), papel, clube e data — e NADA além disso',
+  (select (r->'aprovacoes'->0->'avaliado_por'->>'nome') || '|' || (r->'aprovacoes'->0->>'papel') || '|' || ((r->'aprovacoes'->0->>'club_id')::uuid = t.id('clube_a'))::text || '|' || ((r->'aprovacoes'->0->>'em') is not null)::text
      from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.1'),
-  'Lider A|diretoria|true|ok|true');
+  'Lider A|diretoria|true|true');
+select t.eq('conteúdo: o comentário do avaliador NÃO entra no snapshot portátil',
+  (select ((r->'aprovacoes'->0) ? 'comentario')::text
+     from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.1'),
+  'false');
+select t.eq('conteúdo: nem o uuid de quem avaliou (identificador interno não atravessa clube)',
+  (select ((r->'aprovacoes'->0->'avaliado_por') ? 'id')::text
+     from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.1'),
+  'false');
 select t.eq('conteúdo: NÃO copia a evidência privada — só a referência (tem_texto=true) e nunca o texto',
   (select ((r->'evidencia'->>'tem_texto')::boolean)::text || '|' || (s.conteudo::text like '%Minha resposta privada%')::text
      from public.class_completion_snapshots s, jsonb_array_elements(s.conteudo->'secoes') sec, jsonb_array_elements(sec->'requisitos') r where s.id = t.snap(1) and r->>'manifesto_id' = 'amigo.I.1'), 'true|false');

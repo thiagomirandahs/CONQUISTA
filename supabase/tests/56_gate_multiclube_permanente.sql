@@ -538,5 +538,49 @@ select t.eq('[evidência] ...nem o comentário do avaliador de A',
   t.nv($q$select count(*) from public.requirement_approvals where club_id = t.id('clube_a')$q$), 0);
 reset role;
 
+-- ---------------------------------------------------------------------------
+--  A FOTO. O caminho do objeto é `<usuario_id>/...` e não diz clube nenhum — então a única coisa
+--  que sabe de quem é aquela evidência é a LINHA que guarda o caminho. Este bloco prova os dois
+--  lados: quem tem direito continua vendo, e quem não tem parou de ver.
+--
+--  `membro_a` ganha um segundo vínculo em B só para este teste: é a situação exata em que o
+--  vazamento existia — a criança está nos dois clubes, e o caminho do arquivo não distingue a
+--  evidência que ela mandou para um da que mandou para o outro.
+-- ---------------------------------------------------------------------------
+\o /dev/null
+select t.mk2('membro_a', 'desbravador', 'ativo', 'clube_b');
+\o
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.eq('[foto] a liderança do clube EMISSOR lê a comprovação dele',
+  t.nv(format($q$select count(*) from storage.objects where bucket_id='comprovacoes' and name = %L$q$,
+       (select foto_url from public.entregas where id = t.id('ent_a')))), 1);
+reset role;
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.eq('[foto] ...e a liderança do OUTRO clube não lê, mesmo a criança sendo membro dos dois',
+  t.nv(format($q$select count(*) from storage.objects where bucket_id='comprovacoes' and name = %L$q$,
+       (select foto_url from public.entregas where id = t.id('ent_a')))), 0);
+reset role;
+select t.como('membro_a');
+select t.eq('[foto] e a própria criança lê a evidência dela, em qualquer aba',
+  t.nv(format($q$select count(*) from storage.objects where bucket_id='comprovacoes' and name = %L$q$,
+       (select foto_url from public.entregas where id = t.id('ent_a')))), 1);
+reset role;
+
+-- ---------------------------------------------------------------------------
+--  As colunas de texto livre das tabelas portáteis. A linha atravessa; o julgamento escrito, não.
+-- ---------------------------------------------------------------------------
+select t.eq('[portátil] o motivo da revogação não é legível por quem só alcança a conquista',
+  t.n($q$select count(*) from information_schema.column_privileges
+       where grantee = 'authenticated' and table_schema = 'public'
+         and (table_name, column_name) in
+             (('curriculum_achievements','revogada_motivo'), ('class_completion_snapshots','revogado_motivo'),
+              ('class_investitures','observacao'), ('workflow_stage_decisions','observacao'))$q$), 0);
+select t.ok('...e o resto das colunas dessas tabelas continua legível (a conquista não sumiu junto)',
+  t.n($q$select count(*) from information_schema.column_privileges
+       where grantee = 'authenticated' and table_schema = 'public'
+         and table_name in ('curriculum_achievements','class_completion_snapshots',
+                            'class_investitures','workflow_stage_decisions')
+         and privilege_type = 'SELECT'$q$) > 25);
+
 select t.fim();
 rollback;
