@@ -1,0 +1,25 @@
+-- =============================================================================
+--  Fase 9 (ISOLAMENTO) — a mensalidade é única POR CLUBE, não por pessoa.
+--
+--  A migration 14 devolveu `unique (desbravador_id, mes, ano)` para o front publicado na época, que
+--  fazia upsert com esse alvo. O argumento estava escrito: "como cada pessoa pertence a UM clube,
+--  (desbravador,mes,ano) continua único". Deixou de ser verdade no produto multi-clube, e o custo é
+--  duplo, medido no teste 58:
+--
+--    · FUNCIONAL: quem é de A e de B só pode ter UMA mensalidade de julho no mundo. O tesoureiro do
+--      segundo clube não consegue registrar;
+--    · ISOLAMENTO: a recusa é um ORÁCULO. O tesoureiro de B tenta registrar julho, recebe "duplicate
+--      key" (ou a recusa da RLS no DO UPDATE) — e aprende que essa pessoa tem um registro financeiro
+--      de julho em OUTRO clube, que ele não enxerga.
+--
+--  Fica só `uq_mensalidade_clube_mes (club_id, desbravador_id, mes, ano)`, da migration 11.
+--
+--  ORDEM DE DEPLOY — esta é a única migration da fase que depende dela:
+--    o front anterior a este commit faz upsert com `onConflict: 'desbravador_id,mes,ano'`. Sem esta
+--    constraint o Postgres recusa esse upsert ("there is no unique or exclusion constraint matching
+--    the ON CONFLICT specification"): a tela de Mensalidades do front ANTIGO para de gravar.
+--    Então: publicar o front novo (alvo `club_id,desbravador_id,mes,ano`, que funciona com e sem esta
+--    migration) e SÓ DEPOIS aplicar esta. Aplicada fora de ordem, o sintoma é a tela de Mensalidades
+--    do front antigo recusar o pagamento; nenhum dado se perde, e reaplicar a migration 14 desfaz.
+-- =============================================================================
+alter table public.mensalidades drop constraint if exists mensalidades_desbravador_id_mes_ano_key;

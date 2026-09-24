@@ -88,8 +88,10 @@ select t.bloqueado('membro B não cria convite de responsável', $q$insert into 
 select t.bloqueado('membro B não grava inscrição de push de outra pessoa', format($q$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (%L, 'https://push.teste/invasao', 'k', 'a')$q$, t.id('membro_a')));
 select t.bloqueado('membro B não sobe comprovante na pasta de outra pessoa', format($q$insert into storage.objects (bucket_id, name, owner) values ('comprovacoes', %L, %L)$q$, t.id('membro_a') || '/invasao.jpg', t.id('membro_b')));
 select t.bloqueado('membro B não cria mensalidade', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status) values (%L, 5, 2026, 1, 'pago')$q$, t.id('membro_b')));
--- forjar club_id: o dado NÃO pode ir parar no clube A
-select t.permitido('membro B posta foto forjando club_id do clube A (o gatilho corrige)', format($q$insert into public.fotos (url, legenda, autor_id, club_id) values ('https://x.test/f.jpg', 'foto forjada', %L, %L)$q$, t.id('membro_b'), t.id('clube_a')), 0);
+-- forjar club_id: o dado NÃO pode ir parar no clube A. Até a migration 73 o gatilho "corrigia" em
+-- silêncio (trocava o clube forjado pelo da pessoa e gravava); desde ela, um club_id explícito em que
+-- a pessoa não tem vínculo é RECUSADO — o front não manda club_id, então só quem forja vê o erro.
+select t.bloqueado('membro B posta foto forjando club_id do clube A: recusado', format($q$insert into public.fotos (url, legenda, autor_id, club_id) values ('https://x.test/f.jpg', 'foto forjada', %L, %L)$q$, t.id('membro_b'), t.id('clube_a')));
 reset role;
 select t.eq('foto forjada NÃO foi parar no clube A', (select count(*) from public.fotos where legenda = 'foto forjada' and club_id = t.id('clube_a')), 0);
 select t.eq('o vínculo do membro_b segue só no clube B', (select count(*) from public.organization_memberships where user_id = t.id('membro_b') and organizational_unit_id = t.id('clube_b')), 1);

@@ -92,7 +92,9 @@ export default function Mensalidades() {
       desbravador_id: d.id, mes, ano, valor: Number(valor) || 0, status: novo,
       data_pagamento: novo === 'pago' ? hojeLocalISO() : null,
       registrado_por: profile?.id,
-    }, { onConflict: 'desbravador_id,mes,ano' }) // alvo LEGADO: funciona antes e depois da migration (cada pessoa é de 1 clube só)
+    // o `club_id` não vai no corpo: o gatilho carimba o clube da aba ANTES da checagem de conflito,
+    // então o alvo casa com a linha deste clube — e nunca com a do outro clube da mesma pessoa
+    }, { onConflict: 'club_id,desbravador_id,mes,ano' })
     if (error) { avisarErro(error); recarregarMes(); return }
     sucesso(novo === 'pago' ? `${primeiroNome} pagou ${meses[mes - 1]}.` : `${primeiroNome} voltou para pendente.`)
   }

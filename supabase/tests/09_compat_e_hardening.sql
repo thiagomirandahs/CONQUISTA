@@ -1,7 +1,8 @@
 -- Prioridade 6 (compatibilidade front x migrations) + hardening estrutural:
---   * o front PUBLICADO usa onConflict(desbravador_id,mes,ano) em mensalidades; o
---     front novo pode usar o alvo com club_id — as DUAS formas têm que funcionar
---     antes e depois da migration (nenhum deploy fora de ordem quebra);
+--   * mensalidades: o alvo de upsert é (club_id, desbravador_id, mes, ano). O alvo legado
+--     (desbravador_id, mes, ano) existiu para o front publicado até a migration 74, que o removeu
+--     porque ele impedia a mesma pessoa de ter o mesmo mês em dois clubes — e a recusa era um
+--     oráculo do caixa do outro clube. A ORDEM DE DEPLOY que isso exige está escrita na 74;
 --   * ninguém sem login executa RPC; rotinas internas/cron não são chamáveis por usuário;
 --   * invariantes de dados (1 clube por pessoa, perfil x vínculo coerentes);
 --   * as migrations novas são idempotentes (o SQL é aplicado à mão em produção).
@@ -9,26 +10,27 @@ begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
--- ---------- compat: onConflict do front publicado e do front novo ----------
+-- ---------- compat: o alvo de upsert de mensalidades ----------
 select t.como('tesoureiro_a');
-select t.permitido('upsert do front PUBLICADO: on conflict (desbravador_id, mes, ano)',
+select t.throws('o alvo LEGADO (desbravador_id, mes, ano) não existe mais (migration 74 — ver ordem de deploy nela)',
   format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
             values (%L, 1, 2026, 55, 'pago', %L)
-            on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor, status = excluded.status$q$, t.id('membro_a'), t.id('tesoureiro_a')));
-select t.eq('o upsert atualizou a linha existente (sem duplicar)', t.n(format($q$select count(*) from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), 1);
-select t.eq('...e gravou o valor novo', t.txt(format($q$select valor::text from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), '55');
+            on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor, status = excluded.status$q$, t.id('membro_a'), t.id('tesoureiro_a')),
+  'no unique or exclusion constraint');
+select t.eq('a recusa não duplicou a linha', t.n(format($q$select count(*) from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), 1);
+select t.eq('...nem mexeu nela', t.txt(format($q$select valor::text from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), '50');
 select t.permitido('upsert do front NOVO: on conflict (club_id, desbravador_id, mes, ano)',
   format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
             values (%L, 1, 2026, 58, 'pago', %L)
             on conflict (club_id, desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('membro_a'), t.id('tesoureiro_a')));
 select t.eq('...também sem duplicar', t.n(format($q$select count(*) from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), 1);
 select t.como('lider_b');
-select t.permitido('mesmo upsert do front publicado funciona no clube B', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
+select t.permitido('o mesmo upsert funciona no clube B', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
             values (%L, 2, 2026, 60, 'pago', %L)
-            on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('membro_b'), t.id('lider_b')));
+            on conflict (club_id, desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('membro_b'), t.id('lider_b')));
 select t.bloqueado('...mas o upsert não atravessa clubes (líder B x membro do clube A)', format($q$insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por)
             values (%L, 1, 2026, 1, 'pago', %L)
-            on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('membro_a'), t.id('lider_b')));
+            on conflict (club_id, desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('membro_a'), t.id('lider_b')));
 reset role;
 select t.eq('valor do membro_a não foi alterado pelo líder B', t.txt(format($q$select valor::text from public.mensalidades where desbravador_id = %L and mes = 1 and ano = 2026$q$, t.id('membro_a'))), '58');
 

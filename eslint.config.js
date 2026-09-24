@@ -57,4 +57,9 @@ export default [
     files: ['**/*.test.{js,jsx}', 'vitest.setup.js', 'vitest.config.js', 'eslint.config.js', 'vite.config.js'],
     languageOptions: { globals: { ...globals.node, ...globals.vitest } },
   },
+  // Scripts de operação (staging, etc.): rodam no Node, fora do app
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
+  },
 ]
