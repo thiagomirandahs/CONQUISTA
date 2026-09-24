@@ -238,18 +238,18 @@ console.log('\n-- a pessoa multi-clube (pelo convite de equipe, não por SQL) --
   const { error: eConv } = await sbB.rpc('convite_equipe_criar', { p_email: emailC, p_papel: 'instrutor' })
   ok('a diretoria de B convida o fundador de C', !eConv, eConv?.message)
 
-  // Quem aceita está operando em C — o vínculo tem de nascer no clube DO CONVITE, não no da aba.
+  // O convite fica PENDENTE de propósito: aceitá-lo é a jornada de navegador do item 7 da fase 8.5.
+  // Um script aceitando por RPC prova que a RPC funciona; não prova que existe caminho na interface
+  // — e a fase 8.4 encontrou exatamente esse tipo de buraco (capacidade no banco, sem porta no app).
   const sbC = sessao(fundadorC.token, atores.clubes.C)
   const { data: pend } = await sbC.rpc('convites_da_equipe')
   ok('o convidado enxerga o convite pendente', (pend?.length || 0) === 1, `n=${pend?.length}`)
-  const { error: eAceite } = await sbC.rpc('convite_equipe_aceitar', { p_id: pend?.[0]?.id })
-  ok('...e aceita, operando na aba de C', !eAceite, eAceite?.message)
+  ok('...e ele ainda NÃO foi aceito (o aceite é a jornada de navegador)', (pend?.[0]?.id || '').length > 0)
 
   const { data: ctx } = await sessao(fundadorC.token).rpc('meu_contexto')
   const clubes = (ctx?.vinculos || []).map((v) => v.club_id)
-  ok('agora ele tem vínculo nos DOIS clubes', clubes.length === 2, `n=${clubes.length}`)
-  ok('...e são exatamente B e C', clubes.includes(atores.clubes.B) && clubes.includes(atores.clubes.C))
-  atores.pessoas.multiclube = { ...fundadorC, email: emailC, clubes: { B: atores.clubes.B, C: atores.clubes.C } }
+  ok('...e por enquanto ele tem UM clube só', clubes.length === 1, `n=${clubes.length}`)
+  atores.pessoas.convidado = { ...fundadorC, email: emailC, convite_id: pend?.[0]?.id, clube_atual: atores.clubes.C }
 }
 
 mkdirSync(dirname(join(process.cwd(), 'supabase/e2e/atores.json')), { recursive: true })

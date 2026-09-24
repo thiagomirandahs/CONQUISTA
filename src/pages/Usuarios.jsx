@@ -8,6 +8,7 @@ import {
   lancarPontosIndividual, definirAtivoUsuario, excluirUsuario, definirTesteUsuario,
 } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -116,6 +117,11 @@ export default function Usuarios() {
         <h2 className="text-2xl font-extrabold text-ink">👥 Usuários</h2>
         <p className="text-sm text-muted">Trocar cargo e unidade, lançar pontos e resetar senha</p>
       </div>
+
+      {/* Quem JA tem conta no DesbravaClube entra aqui, por convite — a lista abaixo e de quem ja
+          esta no clube. Ate a fase 8.4 nao havia caminho nenhum: o fundador de um clube novo nao
+          conseguia trazer um instrutor que ja tivesse conta em outro lugar. */}
+      <div className="mb-4"><ConvidarEquipe /></div>
 
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
         className="w-full rounded-xl border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />

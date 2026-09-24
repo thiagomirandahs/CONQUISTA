@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
 import { Card, CardAcao, Cabecalho, Selecao, Botao } from '../ui/index.jsx'
+import { MeusConvites } from '../components/ConvitesDeEquipe.jsx'
 
 // "Eu" (fase 7): identidade, TROCA DE JORNADA e ajustes.
 // Aqui mora o que antes estava espalhado: o seletor de clube ficava no fim de uma gaveta com 17
@@ -50,6 +51,9 @@ export default function Eu() {
           <li><CardAcao para="/clube"><Linha icone="🎨" titulo="Configurações do clube" desc="Identidade, recursos e plano" /></CardAcao></li>
         )}
       </ul>
+
+      {/* ---- convites recebidos: é por aqui que uma pessoa entra num SEGUNDO clube ---- */}
+      <section className="mb-5"><MeusConvites /></section>
 
       {/* ---- outras jornadas da MESMA conta ---- */}
       {(temEscopo || clubes.length > 1) && (

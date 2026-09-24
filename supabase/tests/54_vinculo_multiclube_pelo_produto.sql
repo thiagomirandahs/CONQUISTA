@@ -217,5 +217,78 @@ select t.eq('as quatro existem e são chamáveis por authenticated',
          and p.proname in ('convite_equipe_criar','convite_equipe_aceitar','convite_equipe_revogar','convites_da_equipe')
          and has_function_privilege('authenticated', p.oid, 'execute')$q$), 4);
 
+-- =============================================================================
+--  7. OS CASOS DE BORDA DO CONVITE (fase 8.5, item 7)
+--
+--  O convite de equipe nasceu na fase 8.4 a partir de uma tabela que o onboarding usava só para
+--  GUARDAR e-mails — nunca tinha sido um convite de verdade. Por isso faltavam duas coisas que a
+--  tabela irmã (o convite de responsável, `club_invites`) já tinha desde a fase 5: PRAZO, e um
+--  papel que a tabela de fato aceite.
+-- =============================================================================
+
+-- ---- VENCIDO: um convite sem prazo não é um convite, é uma chave ----
+-- Sem prazo, a diretoria convida alguém, a pessoa não entra, passam dois anos, a diretoria mudou,
+-- o clube mudou — e o link continua criando vínculo ATIVO com papel de liderança.
+\o /dev/null
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select public.convite_equipe_criar('vencido@teste.local', 'instrutor');
+reset role;
+insert into t.ids (chave, id) select 'conv_vencido', id from public.club_team_invites
+ where club_id = t.id('clube_b') and email = 'vencido@teste.local';
+-- o relógio anda: o convite fica velho
+update public.club_team_invites set expires_at = now() - interval '1 second' where id = t.id('conv_vencido');
+select t.signup('convidado_vencido', jsonb_build_object('nome', 'Vencido', 'email', 'vencido@teste.local'));
+\o
+select t.eq('[vencido] o convite tem prazo, e ele é de 14 dias',
+  t.txt($q$select ((expires_at - created_at) between interval '13 days' and interval '15 days')::text
+         from public.club_team_invites where club_id = t.id('clube_b') and email = t.email('forasteiro')$q$), 'true');
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.eq('[vencido] a liderança vê a situação "vencido" na lista do clube',
+  t.txt($q$select c ->> 'situacao' from json_array_elements(public.convites_do_clube()) c
+         where c ->> 'email' = 'vencido@teste.local'$q$), 'vencido');
+reset role;
+
+-- ---- PAPEL: a função aceitava um papel que a TABELA recusa ----
+-- `convite_equipe_criar` validava contra uma lista que incluía 'desbravador'; o CHECK da tabela
+-- não. Convidar um desbravador passava pela validação e morria no CHECK, com um 23514 cru na cara
+-- de quem convidou. O alinhamento foi da FUNÇÃO para a tabela, e a direção importa: este convite
+-- cria vínculo ATIVO sem aprovação, o que cabe para quem a liderança avaliza pessoalmente e não
+-- para uma criança, cujo cadastro existe justamente para o clube conferir quem é.
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.throws('[papel] desbravador não entra por convite de equipe — e a recusa é clara, não um erro de constraint',
+  $q$select public.convite_equipe_criar('crianca@teste.local', 'desbravador')$q$, 'Papel inválido');
+reset role;
+-- Medido FORA da RLS, como postgres: a pergunta e "nada foi gravado em lugar nenhum", e nao "eu
+-- nao consigo ver o que foi gravado" — que sao coisas diferentes e se parecem no resultado.
+select t.eq('[papel] ...e nada foi gravado',
+  (select count(*) from public.club_team_invites where email = 'crianca@teste.local'), 0);
+
+-- ---- A RECUSA NÃO É UM ORÁCULO ----
+-- vencido, alheio, já usado e inexistente respondem todos a MESMA coisa. Separar as mensagens
+-- deixaria quem tenta ids ao acaso descobrir quais existem pela diferença no texto.
+\o /dev/null
+create function t.recusa_convite(p_id text) returns text language plpgsql as $$
+begin execute format('select public.convite_equipe_aceitar(%L::uuid)', p_id); return 'SEM ERRO';
+exception when others then return sqlstate || ':' || sqlerrm; end $$;
+\o
+select t.como('convidado_vencido');
+select t.eq('[oráculo] convite VENCIDO responde igual a um id inexistente',
+  t.txt(format($q$select t.recusa_convite(%L)$q$, t.id('conv_vencido'))),
+  t.txt($q$select t.recusa_convite('11111111-2222-3333-4444-555555555555')$q$));
+reset role;
+select t.como('membro_a2');
+select t.eq('[oráculo] convite ALHEIO responde igual a um id inexistente',
+  t.txt(format($q$select t.recusa_convite(%L)$q$, t.id('conv_vencido'))),
+  t.txt($q$select t.recusa_convite('11111111-2222-3333-4444-555555555555')$q$));
+reset role;
+select t.como('forasteiro');
+select t.eq('[oráculo] convite JÁ USADO responde igual a um id inexistente',
+  t.txt(format($q$select t.recusa_convite(%L)$q$, (select id from t.conv))),
+  t.txt($q$select t.recusa_convite('11111111-2222-3333-4444-555555555555')$q$));
+reset role;
+select t.eq('[vencido] e nenhum vínculo nasceu de convite vencido',
+  t.n($q$select count(*) from public.organization_memberships
+       where user_id = t.id('convidado_vencido') and organizational_unit_id = t.id('clube_b')$q$), 0);
+
 select t.fim();
 rollback;
