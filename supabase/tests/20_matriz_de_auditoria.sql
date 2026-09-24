@@ -15,6 +15,7 @@ insert into t.excecoes values
   ('push_subscriptions',       'dispositivo da PESSOA; a Edge Function só envia via push_destinatarios(club_id)'),
   ('push_tokens',              'dispositivo da PESSOA (APK); idem'),
   ('migracoes_aplicadas',      'ledger da plataforma (não tem dado de clube)'),
+  ('entrada_tentativas',       'LIMITE DE ABUSO (fase 8.6): uma linha por tentativa de código/convite de entrada. Não tem club_id de propósito, e a ausência é a proteção: a contagem é POR PESSOA, e amarrá-la a um clube diria ao atacante qual clube ele acertou. Quem tenta entrar ainda não é de clube nenhum — é exatamente esse o caso que a tabela mede'),
   ('cron_falhas',              'registro INTERNO das falhas de cron (club_id só informativo, opcional; sem acesso de usuário)'),
   ('biblia_livros',           'conteúdo da Bíblia (plataforma)'),
   ('biblia_versiculos',        'conteúdo da Bíblia (plataforma)'),

@@ -13,20 +13,58 @@ select t.eq('anon NÃO enxerga unidade de outro clube',
             t.nv($q$select count(*) from public.unidades where nome = 'Teste B1'$q$), 0);
 reset role;
 
--- ---------- 3 cadastros: com unidade do clube A, com unidade do clube B, sem unidade ----------
-select t.signup('novo_a', jsonb_build_object('nome','Novo A','cargo','Desbravador','unidade_id',t.id('A1'),'nascimento','2014-01-01'));
-select t.signup('novo_b', jsonb_build_object('nome','Novo B','cargo','Desbravador','unidade_id',t.id('B1'),'nascimento','2014-02-02'));
+-- ---------- cadastro: IDENTIDADE, e nada além dela (fase 8.6) ----------
+--
+-- Este bloco mudou por inteiro, e o que ele dizia antes é o resumo da última suposição de clube
+-- único que o produto tinha. O cadastro público recebia `unidade_id` do formulário, tirava dali o
+-- clube, e — quando não vinha unidade nenhuma — caía no Tenant 001. Um assert do arquivo dizia
+-- isso com todas as letras: "sem unidade cai no clube legado (cadastro público = Tenant 001)".
+--
+-- Correto quando havia um clube só. Com N clubes, significava que quem se cadastrasse para entrar
+-- no clube B entrava na fila de aprovação do clube A — e que um clube novo não tinha caminho de
+-- autocadastro nenhum, porque a única lista de unidades que o formulário público enxergava era a
+-- do Tenant 001.
+--
+-- Agora: cadastrar-se cria a conta. O vínculo nasce depois, por um caminho que diz QUAL clube.
+select t.signup('novo_a', jsonb_build_object('nome','Novo A','cargo','Desbravador','nascimento','2014-01-01'));
+select t.signup('novo_b', jsonb_build_object('nome','Novo B','cargo','Desbravador','nascimento','2014-02-02'));
 select t.signup('novo_sem_unid', jsonb_build_object('nome','Novo Sem Unidade','cargo','Instrutor'));
-select t.throws('cadastro com unidade inexistente é recusado',
-                format($q$select t.signup('novo_x', %L::jsonb)$q$, jsonb_build_object('nome','X','unidade_id',gen_random_uuid())::text));
 
-select t.eq('novo_a: perfil nasce pendente', (select status from public.profiles where id = t.id('novo_a')), 'pendente');
+select t.eq('cadastro cria a identidade', (select count(*) from public.profiles where id = t.id('novo_a')), 1);
 select t.eq('novo_a: papel nasce desbravador (nunca privilegiado)', (select papel from public.profiles where id = t.id('novo_a')), 'desbravador');
-select t.eq('novo_a: ganha vínculo no clube da unidade escolhida', (select organizational_unit_id from public.organization_memberships where user_id = t.id('novo_a')), t.id('clube_a'));
-select t.eq('novo_a: vínculo nasce pendente', (select status from public.organization_memberships where user_id = t.id('novo_a')), 'pendente');
+select t.eq('novo_a: NENHUM vínculo nasce do cadastro', (select count(*) from public.organization_memberships where user_id = t.id('novo_a')), 0);
+select t.eq('...nem para quem mandou unidade no formulário: a unidade não decide mais o clube',
+  (select count(*) from public.organization_memberships where user_id = t.id('novo_b')), 0);
+select t.eq('...nem para quem não mandou nada (aqui é que caía no Tenant 001)',
+  (select count(*) from public.organization_memberships where user_id = t.id('novo_sem_unid')), 0);
+select t.eq('o Tenant 001 não ganhou ninguém com os três cadastros',
+  (select count(*) from public.organization_memberships
+    where organizational_unit_id = t.id('clube_a')
+      and user_id in (t.id('novo_a'), t.id('novo_b'), t.id('novo_sem_unid'))), 0);
+-- A conta nasce ATIVA porque não há clube que a aprove: 'pendente' só significa alguma coisa
+-- diante de uma liderança. A aprovação volta a existir quando a pessoa pede entrada num clube, e
+-- lá ela é do VÍNCULO.
+select t.eq('a conta nasce ativa (não há clube para aprová-la)', (select status from public.profiles where id = t.id('novo_a')), 'ativo');
+
+-- ---------- e entram nos clubes pelo CÓDIGO, que é o caminho novo ----------
+\o /dev/null
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.txt($q$select (public.clube_codigo_gerar() ->> 'codigo')$q$) as cod_a \gset
+reset role;
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.txt($q$select (public.clube_codigo_gerar() ->> 'codigo')$q$) as cod_b \gset
+reset role;
+select t.como('novo_a'); select public.entrada_solicitar(:'cod_a'); reset role;
+select t.como('novo_b'); select public.entrada_solicitar(:'cod_b'); reset role;
+select t.como('novo_sem_unid'); select public.entrada_solicitar(:'cod_a'); reset role;
+\o
+
+select t.eq('pelo código de A, novo_a fica PENDENTE no clube A', (select status from public.organization_memberships where user_id = t.id('novo_a')), 'pendente');
+select t.eq('...no clube A, não em outro', (select organizational_unit_id from public.organization_memberships where user_id = t.id('novo_a')), t.id('clube_a'));
 select t.eq('novo_a: tem exatamente 1 vínculo', (select count(*) from public.organization_memberships where user_id = t.id('novo_a')), 1);
-select t.eq('novo_b: vínculo no clube B (pela unidade B1)', (select organizational_unit_id from public.organization_memberships where user_id = t.id('novo_b')), t.id('clube_b'));
-select t.eq('novo_sem_unid: sem unidade cai no clube legado (cadastro público = Tenant 001)', (select organizational_unit_id from public.organization_memberships where user_id = t.id('novo_sem_unid')), t.id('clube_a'));
+select t.eq('pelo código de B, novo_b vai para o clube B', (select organizational_unit_id from public.organization_memberships where user_id = t.id('novo_b')), t.id('clube_b'));
+select t.eq('e o código NÃO dá unidade: quem atribui é a liderança',
+  (select count(*) from public.organization_memberships where user_id = t.id('novo_a') and unidade_id is not null), 0);
 
 -- ---------- pendente não enxerga nada do clube ----------
 select t.como('novo_a');

@@ -52,9 +52,23 @@ select t.eq('...mas a identidade existe (profiles)',
 select t.eq('o Tenant 001 NÃO ganhou membro nenhum por causa do fundador',
   t.n(format($q$select count(*) from public.organization_memberships where organizational_unit_id = %L and user_id in (%L, %L, %L)$q$,
       t.id('clube_a'), t.id('fundador_x'), t.id('fundador_y'), t.id('admin_saas'))), 0);
-select t.eq('CONTROLE: o cadastro público normal continua caindo no clube legado (nada mudou pra quem já usa)',
-  t.n(format($q$select count(*) from public.organization_memberships where user_id = %L and organizational_unit_id = %L$q$,
-      t.id('cadastro_normal'), t.id('clube_a'))), 1);
+-- INVERTIDO NA 8.6, e este assert é o melhor resumo do que a fase fez.
+--
+-- Ele dizia: "o cadastro público normal continua caindo no clube legado (nada mudou pra quem já
+-- usa)". Era um CONTROLE — existia para provar que a mudança daquela fase (fundador sem vínculo)
+-- não tinha mexido em quem se cadastra pelo formulário comum. Correto na época, e escrito com
+-- todas as letras: cadastrar-se, sem dizer mais nada, colocava a pessoa dentro do Tenant 001.
+--
+-- Era a última suposição de clube único do produto. Agora o cadastro cria a CONTA e nada mais; o
+-- vínculo nasce por convite ou pelo código do clube, que dizem qual clube é.
+select t.eq('cadastro público cria a IDENTIDADE e nenhum vínculo — nem no clube legado, nem em lugar nenhum',
+  t.n(format($q$select count(*) from public.organization_memberships where user_id = %L$q$,
+      t.id('cadastro_normal'))), 0);
+select t.eq('...e a conta existe, que é o ponto: identidade e vínculo são coisas diferentes',
+  t.n(format($q$select count(*) from public.profiles where id = %L$q$, t.id('cadastro_normal'))), 1);
+select t.eq('...e o Tenant 001 não ganhou ninguém',
+  t.n(format($q$select count(*) from public.organization_memberships
+       where organizational_unit_id = %L and user_id = %L$q$, t.id('clube_a'), t.id('cadastro_normal'))), 0);
 
 -- =============================================================================
 -- 2) ONBOARDING — retomável, idempotente e sem pular etapa (cliente comercial 1)
