@@ -106,7 +106,7 @@ const readdirSorted = (d) => readdirSync(d).filter((f) => f.endsWith('.sql')).so
 function aplicarSemLedger(f) {
   try {
     docker(['exec', '-i', DB, 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '--single-transaction'],
-      { input: readFileSync(join(MIG, f), 'utf8') })
+      { input: readFileSync(join(MIG, f), 'utf8').replace(/\r\n/g, '\n') })   // LF, como o SQL Editor recebe
     return { ok: true }
   } catch (e) { return { ok: false, erro: (e.stderr || e.message).split('\n').find((l) => /ERROR/.test(l)) || e.message } }
 }

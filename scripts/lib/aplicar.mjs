@@ -7,6 +7,10 @@ import { basename } from 'node:path'
 
 export function aplicarComoSqlEditor(container, nomeArquivo, corpo) {
   const [version, ...resto] = basename(nomeArquivo, '.sql').split('_')
+  // O SQL Editor recebe o texto pelo navegador, com fim de linha LF. Num checkout Windows os arquivos
+  // estão em CRLF no disco (autocrlf), e o CR iria parar dentro do corpo das funções — onde as
+  // migrations 56, 69 e 70 fazem replace() de texto com chr(10). Aplicar como a produção aplica é LF.
+  corpo = corpo.replace(/\r\n/g, '\n')
   const sql = `${corpo}\n;insert into supabase_migrations.schema_migrations (version, name, statements) values ('${version}', '${resto.join('_')}', array[]::text[]);\n`
   const t0 = Date.now()
   try {
