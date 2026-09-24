@@ -84,7 +84,5 @@
 ==============================================================
 
 == 9b. limite de login (medido separado, por último) ==
-   40 senhas erradas em 2.4s: {"400":40}; nenhum 429.
-   em seguida, outra pessoa com a senha CERTA, do mesmo IP: HTTP 200.
+   40 senhas erradas em 2.4s: {"400":40}; nenhum 429. Em seguida, outra pessoa com a senha CERTA, do mesmo IP: HTTP 200.
    causa: o CLI local não repassa [auth.rate_limit].sign_in_sign_ups ao GoTrue (a variável não existe no container).
-   => a proteção contra força bruta de senha NÃO é demonstrável no staging local; conferir no projeto de nuvem do piloto.
