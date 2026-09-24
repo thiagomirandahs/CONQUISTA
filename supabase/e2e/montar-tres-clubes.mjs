@@ -19,12 +19,45 @@
 //  Escreve supabase/e2e/atores.json com os ids e tokens, para os testes seguintes.
 // =============================================================================
 import { createClient } from '@supabase/supabase-js'
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-const API = 'http://127.0.0.1:54321'
-const ANON = process.env.ANON_KEY
-  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+// O AMBIENTE ALVO vem de fora (fase 9). Sem isto, este script so sabia falar com o stack de
+// desenvolvimento — e um seeder que so popula um ambiente nao serve para montar staging.
+//
+//   node supabase/e2e/montar-tres-clubes.mjs                  -> desenvolvimento (54321)
+//   ALVO=staging node supabase/e2e/montar-tres-clubes.mjs      -> staging (55321, chaves do .env.staging)
+//
+// As chaves do staging saem do .env.staging, que `scripts/staging.mjs` escreve quando o stack sobe.
+// NAO use `supabase status` para obte-las: ele as recalcula do segredo que enxerga, e sem a
+// variavel de ambiente devolve as chaves do DESENVOLVIMENTO apontando para a porta do staging.
+function ambiente() {
+  if (process.env.ALVO !== 'staging') {
+    return {
+      nome: 'desenvolvimento',
+      api: 'http://127.0.0.1:54321',
+      anon: process.env.ANON_KEY
+        || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
+      service: process.env.SERVICE_ROLE_KEY
+        || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU',
+    }
+  }
+  const env = Object.fromEntries(
+    readFileSync('.env.staging', 'utf8').split(/\r?\n/)
+      .filter((l) => l.includes('=') && !l.startsWith('#'))
+      .map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]))
+  if (!env.VITE_SUPABASE_ANON_KEY) throw new Error('.env.staging sem chave — rode `node scripts/staging.mjs subir`')
+  return {
+    nome: 'STAGING',
+    api: env.VITE_SUPABASE_URL,
+    anon: env.VITE_SUPABASE_ANON_KEY,
+    // a service_role sai do mesmo segredo; o script de staging a imprime em `chaves`
+    service: process.env.SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
+  }
+}
+const AMBIENTE = ambiente()
+const API = AMBIENTE.api
+const ANON = AMBIENTE.anon
 const SENHA = 'Multiclube2026'
 
 let falhas = 0
@@ -54,8 +87,8 @@ async function criarConta(email, meta) {
 // Confirma o e-mail e entra. O `confirmar` usa o service_role do GoTrue — é o equivalente a a
 // pessoa ter clicado no link, não um atalho no schema do produto.
 async function entrar(email) {
-  const SERVICE = process.env.SERVICE_ROLE_KEY
-    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+  const SERVICE = AMBIENTE.service
+  if (!SERVICE) throw new Error('sem SERVICE_ROLE_KEY para ' + AMBIENTE.nome + ' — exporte-a antes')
   const adm = createClient(API, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data: lista } = await adm.auth.admin.listUsers({ page: 1, perPage: 200 })
   const u = (lista?.users || []).find((x) => x.email === email)
@@ -181,8 +214,8 @@ atores.pessoas.fundador_c = { ...fundadorC, email: emailC }
 // ---------------------------------------------------------------------------
 console.log('\n-- a invariante do onboarding retomável --')
 {
-  const SERVICE = process.env.SERVICE_ROLE_KEY
-    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+  const SERVICE = AMBIENTE.service
+  if (!SERVICE) throw new Error('sem SERVICE_ROLE_KEY para ' + AMBIENTE.nome + ' — exporte-a antes')
   const adm = createClient(API, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } })
   const conta = async (t, f, v) => (await adm.from(t).select('id', { count: 'exact', head: true }).eq(f, v)).count
   const contaB = (await adm.from('billing_account_contacts').select('billing_account_id').eq('user_id', fundadorB.id)).data || []
@@ -253,7 +286,9 @@ console.log('\n-- a pessoa multi-clube (pelo convite de equipe, não por SQL) --
 }
 
 mkdirSync(dirname(join(process.cwd(), 'supabase/e2e/atores.json')), { recursive: true })
-writeFileSync(join(process.cwd(), 'supabase/e2e/atores.json'), JSON.stringify(atores, null, 2))
+const arquivoAtores = process.env.ALVO === 'staging' ? 'supabase/e2e/atores.staging.json' : 'supabase/e2e/atores.json'
+writeFileSync(join(process.cwd(), arquivoAtores), JSON.stringify(atores, null, 2))
+console.log(`   ·       ids em ${arquivoAtores}`)
 
 console.log(`\n${falhas === 0 ? 'MONTAGEM OK' : `${falhas} FALHA(S) NA MONTAGEM`}\n`)
 process.exit(falhas === 0 ? 0 : 1)

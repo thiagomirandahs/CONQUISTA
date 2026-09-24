@@ -16,8 +16,15 @@ vapid-keys.txt
 # mas são credenciais — não entram no repositório). Recriar com supabase/carga/gerar-tokens.mjs
 supabase/carga/usuarios.json
 
-# ids gerados por supabase/e2e/montar-tres-clubes.mjs — valem so para UM banco local
+# IDS E TOKENS gerados por supabase/e2e/montar-tres-clubes.mjs.
+#
+# O nome "atores" engana: alem dos ids, o arquivo guarda ACCESS TOKENS vivos das contas que o
+# seeder criou. Ele entrou num commit por descuido na fase 9 e foi removido no mesmo minuto — a
+# segunda vez no dia (a primeira foi a chave de assinatura do staging). As duas tem a mesma causa:
+# um `git add -A` depois de um comando que gerou credencial. A regra que ficou: arquivo gerado por
+# seeder entra no .gitignore ANTES de o seeder rodar pela primeira vez.
 supabase/e2e/atores.json
+supabase/e2e/atores.staging.json
 
 # builds temporarios do gate de ambiente (supabase/tests/e2e/build-por-ambiente.mjs)
 .tmp-build-ambiente/
