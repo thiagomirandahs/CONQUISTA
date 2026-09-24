@@ -470,5 +470,155 @@ select t.eq('e a reserva do item é 200, não 400',
   t.n($q$select (t.pontos('A1') - t.saldo('A1')) + (t.pontos('A2') - t.saldo('A2'))$q$), 200);
 reset role;
 
+-- =============================================================================
+--  11. A CONFIRMAÇÃO "devolve" a PARCELA do lance que vai superar — não o valor cheio (migration 85)
+-- =============================================================================
+-- Na confirmação do lance conjunto, o lance ATIVO do mesmo item vai ser superado; então a reserva
+-- dele volta a ficar disponível. Até a 85, essa devolução era `sum(l.valor)`: o valor CHEIO do lance
+-- ativo, uma vez por unidade — enquanto a reserva, desde a 60, é a PARCELA do rateio. Com um lance
+-- conjunto A1+A2 de 400 ativo (reservas 240 + 160, saldos 60 + 40), um novo lance de 600 das mesmas
+-- duas via 60 + 40 + 400 + 400 = 900 disponíveis e ATIVAVA, embora juntas elas tenham só 500.
+-- Aqui: saldo antes e depois de confirmar e de recusar, sempre = pontos − parcela do rateio.
+\o /dev/null
+reset role;
+delete from public.pontos where origem = 'leilao';
+update public.leiloes set status = 'aberto', encerrado_em = null where id = t.id('leilao');
+update public.leilao_lances set status = 'superado' where club_id = t.id('clube_a');
+update public.leilao_itens set vencedor_lance_id = null where leilao_id = t.id('leilao');
+-- a parcela de uma unidade num lance, pela MESMA função que a reserva e a cobrança usam
+create function t.parcela(p_lance uuid, p_unidade text) returns int
+language sql stable security definer set search_path = '' as $$
+  select parcela from public._leilao_rateio(p_lance) where unidade_id = t.id(p_unidade);
+$$;
+-- o lance pendente de um item (só existe um por vez nesta seção)
+create function t.pendente(p_item text) returns uuid
+language sql stable security definer set search_path = '' as $$
+  select id from public.leilao_lances where item_id = t.id(p_item) and status = 'pendente';
+$$;
+create function t.status_lance(p_lance uuid) returns text
+language sql stable security definer set search_path = '' as $$
+  select status from public.leilao_lances where id = p_lance;
+$$;
+\o
+select t.eq('linha de base da seção: A1 tem 300 e A2 tem 200 (500 juntas)', t.n($q$select t.pontos('A1') + t.pontos('A2')$q$), 500);
+
+-- ---------- (a) lance conjunto de 400: antes e depois de confirmar ----------
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 400 no item 5 junto com A2', $q$select public.dar_lance(t.id('item5'), 400, array[t.id('A2')])$q$, 0);
+select t.eq('ANTES de A2 confirmar: nada reservado de A1 (pendente não reserva)', t.n($q$select t.saldo('A1')$q$), 300);
+select t.eq('...nem de A2', t.n($q$select t.saldo('A2')$q$), 200);
+reset role;
+\o /dev/null
+create table t.c400 as select t.pendente('item5') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('A2 confirma: o lance de 400 ATIVA',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c400)) ->> 'ativado'$q$), 'true');
+select t.eq('DEPOIS de confirmar: A1 reserva exatamente a parcela do rateio',
+  t.n($q$select t.pontos('A1') - t.saldo('A1')$q$), t.n($q$select t.parcela((select id from t.c400), 'A1')$q$));
+select t.eq('...que é 400 x 300/500 = 240 (saldo 60)', t.n($q$select t.saldo('A1')$q$), 60);
+select t.eq('...e A2 reserva a dela, 400 x 200/500 = 160 (saldo 40)', t.n($q$select t.saldo('A2')$q$), 40);
+select t.eq('...que também é a parcela do rateio',
+  t.n($q$select t.pontos('A2') - t.saldo('A2')$q$), t.n($q$select t.parcela((select id from t.c400), 'A2')$q$));
+reset role;
+
+-- ---------- (b) RECUSAR não mexe na reserva ----------
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe subir para 450', $q$select public.dar_lance(t.id('item5'), 450, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c450 as select t.pendente('item5') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('A2 RECUSA a subida', t.txt($q$select public.recusar_lance_conjunto((select id from t.c450)) ->> 'ok'$q$), 'true');
+select t.eq('depois de recusar: A1 continua com pontos − parcela do lance de 400 (saldo 60)', t.n($q$select t.saldo('A1')$q$), 60);
+select t.eq('...e A2 também (saldo 40)', t.n($q$select t.saldo('A2')$q$), 40);
+reset role;
+select t.eq('o lance recusado ficou superado', t.txt($q$select t.status_lance((select id from t.c450))$q$), 'superado');
+select t.eq('...e o de 400 segue ativo', t.txt($q$select t.status_lance((select id from t.c400))$q$), 'ativo');
+
+-- ---------- (c) O DEFEITO: 600 com 500 pontos juntas ----------
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 600 com A2 (juntas elas têm 500)', $q$select public.dar_lance(t.id('item5'), 600, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c600 as select t.pendente('item5') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('A2 confirma, e o lance de 600 NÃO ativa (antes da 85: 60+40+400+400 = 900 >= 600, ativava)',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c600)) ->> 'ativado'$q$), 'false');
+select t.eq('a reserva não mudou: A1 continua com saldo 60', t.n($q$select t.saldo('A1')$q$), 60);
+select t.eq('...e A2 com 40', t.n($q$select t.saldo('A2')$q$), 40);
+reset role;
+select t.eq('o lance de 600 saiu de pendente (superado)', t.txt($q$select t.status_lance((select id from t.c600))$q$), 'superado');
+select t.eq('o lance de 400 continua sendo o ativo do item', t.txt($q$select t.status_lance((select id from t.c400))$q$), 'ativo');
+
+-- ---------- (d) no LIMITE exato: 500 com 500 ativa, e a reserva é a parcela do novo lance ----------
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 500 com A2', $q$select public.dar_lance(t.id('item5'), 500, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c500 as select t.pendente('item5') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('A2 confirma 500: ATIVA (60 + 40 + parcelas devolvidas 240 + 160 = 500)',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c500)) ->> 'ativado'$q$), 'true');
+select t.eq('depois: A1 reserva a parcela do lance de 500 (300), não 240 + 300',
+  t.n($q$select t.pontos('A1') - t.saldo('A1')$q$), t.n($q$select t.parcela((select id from t.c500), 'A1')$q$));
+select t.eq('...e A2 a dela (200)',
+  t.n($q$select t.pontos('A2') - t.saldo('A2')$q$), t.n($q$select t.parcela((select id from t.c500), 'A2')$q$));
+select t.eq('...a reserva total do item é 500, não 900',
+  t.n($q$select (t.pontos('A1') - t.saldo('A1')) + (t.pontos('A2') - t.saldo('A2'))$q$), 500);
+reset role;
+select t.eq('o de 400 foi superado', t.txt($q$select t.status_lance((select id from t.c400))$q$), 'superado');
+select t.eq('...e há um lance ativo só no item', t.n($q$select count(*) from public.leilao_lances where item_id = t.id('item5') and status = 'ativo'$q$), 1);
+
+-- ---------- (e) o PISO de zero: a parcela volta ANTES do piso, não depois ----------
+-- A1 tem um lance solo de 250 em OUTRO item (item 1). No item 2, A1+A2 dão 240 (ativa: 50 + 200 =
+-- 250 >= 240; parcelas 144 + 96). A1 fica com reserva 250 + 144 = 394 > 300 — o saldo dela vai ao
+-- piso, 0. Agora as duas propõem 300 no item 2. O que elas têm de verdade, se o lance de 240 sair:
+-- A1 = 300 − 250 = 50, A2 = 200 → 250 < 300: NÃO pode ativar. Somar a parcela ao saldo JÁ com piso
+-- daria 0 + 104 + 144 + 96 = 344 e ativaria; a conta antiga (valor cheio) daria 584.
+\o /dev/null
+reset role;
+update public.leilao_lances set status = 'superado' where club_id = t.id('clube_a');
+create table t.solo250 as select t.lance_conjunto('item1', 250, array['A1']) id;
+\o
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 240 no item 2 com A2', $q$select public.dar_lance(t.id('item2'), 240, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c240 as select t.pendente('item2') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('240 ativa (A1 tem 50 livres, A2 tem 200)',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c240)) ->> 'ativado'$q$), 'true');
+select t.eq('A1 foi ao piso: saldo 0 (reserva 250 + 144 passa dos 300 dela)', t.n($q$select t.saldo('A1')$q$), 0);
+select t.eq('A2 reserva a parcela dela, 96 (saldo 104)', t.n($q$select t.saldo('A2')$q$), 104);
+reset role;
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 300 no item 2 com A2', $q$select public.dar_lance(t.id('item2'), 300, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c300 as select t.pendente('item2') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('300 NÃO ativa: sem o item 2, elas têm 50 + 200 = 250 (a parcela volta antes do piso de zero)',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c300)) ->> 'ativado'$q$), 'false');
+reset role;
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('A1 propõe 250 no item 2 com A2', $q$select public.dar_lance(t.id('item2'), 250, array[t.id('A2')])$q$, 0);
+reset role;
+\o /dev/null
+create table t.c250 as select t.pendente('item2') id;
+\o
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.eq('250 — exatamente o que elas têm livre — ATIVA',
+  t.txt($q$select public.confirmar_lance_conjunto((select id from t.c250)) ->> 'ativado'$q$), 'true');
+select t.eq('A1: reserva 250 (item 1) + a parcela do novo lance; saldo no piso', t.n($q$select t.saldo('A1')$q$), 0);
+select t.eq('A2: pontos − saldo = parcela do lance de 250',
+  t.n($q$select t.pontos('A2') - t.saldo('A2')$q$), t.n($q$select t.parcela((select id from t.c250), 'A2')$q$));
+reset role;
+
 select t.fim();
 rollback;
