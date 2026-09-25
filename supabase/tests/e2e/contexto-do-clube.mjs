@@ -113,7 +113,10 @@ async function principal() {
   ok('membro A: 1 vínculo do Tenant 001, papel e status no vínculo', a1.vinculos.length === 1 && a1.vinculos[0].clubeId === clubeA && a1.vinculos[0].papel === 'desbravador' && a1.vinculos[0].status === 'ativo', JSON.stringify(a1.vinculos[0]?.papel))
   ok('membro A: unidade DO VÍNCULO (nome e id)', a1.vinculos[0].unidadeNome === 'CTX A1' && !!a1.vinculos[0].unidadeId)
   ok('membro A: o servidor age no clube A e ele é selecionável', a1.servidorClubeId === clubeA && a1.vinculos[0].selecionavel === true)
-  ok('Tenant 001: a marca de sempre vem do banco', a1.vinculos[0].marca.nome === 'Filhos da Conquista' && a1.vinculos[0].marca.sigla === 'FC' && a1.vinculos[0].marca.lema === 'Desbravadores · 1994' && a1.vinculos[0].marca.desde === 1994 && a1.vinculos[0].marca.logoUrl === '/icon-192.png' && a1.vinculos[0].marca.corPrimaria === null, JSON.stringify(a1.vinculos[0].marca))
+  // logoUrl é '/clubes/tenant-001.png' desde a Fase 8.5 (migration 65): antes disso a marca do
+  // Tenant 001 apontava pro ÍCONE DO PRODUTO ('/icon-192.png'), o que vazava o brasão de um único
+  // clube pra todo push/PWA/favicon da plataforma — a migration separou as duas identidades.
+  ok('Tenant 001: a marca de sempre vem do banco', a1.vinculos[0].marca.nome === 'Filhos da Conquista' && a1.vinculos[0].marca.sigla === 'FC' && a1.vinculos[0].marca.lema === 'Desbravadores · 1994' && a1.vinculos[0].marca.desde === 1994 && a1.vinculos[0].marca.logoUrl === '/clubes/tenant-001.png' && a1.vinculos[0].marca.corPrimaria === null, JSON.stringify(a1.vinculos[0].marca))
   ok('Tenant 001: os 11 recursos de sempre + o leilão que já usavam', ['chat', 'mural', 'jogos', 'mensalidades', 'desafios', 'chefao', 'missoes', 'biblia', 'bichinho', 'agenda', 'atividades', 'leilao'].every((r) => a1.vinculos[0].recursos[r] === true), JSON.stringify(a1.vinculos[0].recursos))
   ok('o front escolhe o clube A e o papel vira permissão (desbravador: sem gestão)', escolherClubeAtual({ vinculos: a1.vinculos, servidorClubeId: a1.servidorClubeId, preferidoId: null }) === clubeA && permissoesDoPapel(a1.vinculos[0].papel).podeGerir === false)
 
@@ -176,7 +179,9 @@ async function principal() {
 
   console.log('\n== recursos: catálogo, liga/desliga por clube ==')
   const cat = await c.a1.from('recursos_catalogo').select('chave,nome,icone,padrao').order('ordem')
-  ok('membro lê o catálogo (14 recursos; leilão, classes e experiências desligados por padrão)', !cat.error && cat.data.length === 14 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).sort().join() === 'classes,experiencias,leilao', cat.error?.message)
+  // 15 recursos desde a Fase 9 (migration 83): especialidades ganhou recurso PRÓPRIO, separado de
+  // classes (o catálogo de especialidades ainda é de teste, então fica fora do piloto por padrão).
+  ok('membro lê o catálogo (15 recursos; leilão, classes, especialidades e experiências desligados por padrão)', !cat.error && cat.data.length === 15 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).sort().join() === 'classes,especialidades,experiencias,leilao', cat.error?.message)
   const catAnon = await anon.from('recursos_catalogo').select('chave')
   ok('anon não lê o catálogo', !!catAnon.error || (catAnon.data || []).length === 0)
   const catW = await c.lider_a.from('recursos_catalogo').update({ padrao: false }).eq('chave', 'chat')
