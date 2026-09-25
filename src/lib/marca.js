@@ -26,7 +26,7 @@ export const MARCA_PRODUTO = Object.freeze({
   desde: null,
   corPrimaria: null,
   corSecundaria: null,
-  logoUrl: '/icon-192.png',   // a bússola do produto (public/marca-produto.svg), não o brasão de um clube
+  logoUrl: '/icon-192.png',   // o emblema oficial do produto, não o brasão de um clube
 })
 
 // Nome antigo mantido como apelido para não quebrar import de quem ainda não foi atualizado.
