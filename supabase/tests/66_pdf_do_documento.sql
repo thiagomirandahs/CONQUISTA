@@ -75,9 +75,12 @@ select t.como('membro_b'); select t.pedir_clube('clube_b');
 select t.throws('quem não é liderança em lugar nenhum não registra PDF deste documento', format($q$select public.documento_pdf_registrar(%L, %L, %L)$q$, t.tok(), repeat('c', 64), t.id('clube_a')::text || '/x/y/3.pdf'), 'Sem permissão');
 reset role;
 
--- depois de "assinado" (simulado direto na tabela, como postgres — a Parte H desta fase ainda NÃO
--- implementa o fluxo de assinatura; isto só prova que a trava de imutabilidade já funciona pra
--- quando ele existir), documento_pdf_registrar recusa sobrescrever.
+-- aprova a revisão documental (agora exigida por documento_assinar — migration 92) e simula uma
+-- assinatura direto na tabela (como postgres) — o fluxo real de assinatura está no teste 67; aqui
+-- só prova que a trava de imutabilidade do PDF já funciona depois de assinado.
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.permitido('aprova a revisão documental', format($q$select public.documento_revisar(%L, 'aprovado')$q$, t.tok()));
+reset role;
 insert into public.document_signatures (documento_id, snapshot_id, club_id_origem, metodo, status)
 select t.id('doc'), snapshot_id, t.id('clube_a'), 'aprovacao_sistema', 'registrada' from public.class_documents where id = t.id('doc');
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');

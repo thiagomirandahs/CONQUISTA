@@ -159,9 +159,14 @@ async function principal() {
     ok(`ARQUIVO FINAL não contém "${nome}"`, !achado, achado?.[0])
   }
 
+  console.log('\n== revisão documental (exigida por documento_assinar) ==')
+  const { error: errRevisar } = await c.rpc('documento_revisar', { p_token: doc.token, p_decisao: 'aprovado' })
+  ok('documento_revisar aprova a versão atual do PDF', !errRevisar, errRevisar?.message)
+
   console.log('\n== Etapa 7: assinatura + desenho — Storage real ==')
   const { data: assinatura, error: errAssinar } = await c.rpc('documento_assinar', { p_token: doc.token, p_consentimento_texto: 'Declaro que revisei este documento [TESTE E2E-PDF].' })
   ok('documento_assinar (lider decidiu a etapa real do workflow)', !errAssinar && !!assinatura?.signature_id, errAssinar?.message)
+  if (!assinatura?.signature_id) { console.log('\nABORTADO: assinatura não foi criada (ver falha acima).'); limpar(); process.exitCode = 1; return }
 
   const clubeId = sql(`select id from public.organizational_units where slug='filhos-da-conquista';`)
   const pngMinusculo = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')

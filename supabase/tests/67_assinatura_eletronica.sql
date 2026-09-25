@@ -47,6 +47,26 @@ select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('registra o PDF', format($q$select public.documento_pdf_registrar(%L, %L, %L)$q$, t.tok(), repeat('a', 64), t.id('clube_a')::text || '/' || t.id('multi_dois_papeis')::text || '/' || t.id('doc')::text || '/1.pdf'));
 reset role;
 
+-- ==================== revisão DOCUMENTAL — diferente de avaliação curricular, obrigatória antes de assinar ====================
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('sem revisão ainda, assinar é recusado', format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento [TESTE].')$q$, t.tok()), 'revisão documental');
+select t.throws('correção sem motivo é recusada', format($q$select public.documento_revisar(%L, 'correcao_solicitada')$q$, t.tok()), 'motivo obrigatório');
+select t.permitido('solicita correção documental (dado ausente [TESTE])', format($q$select public.documento_revisar(%L, 'correcao_solicitada', 'Falta o nome da unidade [TESTE]', 'Adicione a unidade antes de gerar de novo [TESTE]')$q$, t.tok()));
+select t.throws('com correção solicitada, assinar continua recusado', format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento [TESTE].')$q$, t.tok()), 'revisão documental');
+select t.eq('documentos_do_clube mostra estado correcao_solicitada com motivo/orientação',
+  (select (x.j->>'estado') || '|' || (x.j->'revisao'->>'motivo') || '|' || (x.j->'revisao'->>'orientacao')
+   from json_array_elements((select public.documentos_do_clube())) x(j) where x.j->>'documento_id' = t.id('doc')::text),
+  'correcao_solicitada|Falta o nome da unidade [TESTE]|Adicione a unidade antes de gerar de novo [TESTE]');
+select t.permitido('regenera o PDF depois da correção (nova versão, pdf_versao=2)', format($q$select public.documento_pdf_registrar(%L, %L, %L)$q$, t.tok(), repeat('e', 64), t.id('clube_a')::text || '/' || t.id('multi_dois_papeis')::text || '/' || t.id('doc')::text || '/2.pdf'));
+select t.throws('PDF regenerado NÃO herda a revisão da versão anterior — precisa revisar de novo', format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento [TESTE].')$q$, t.tok()), 'revisão documental');
+select t.permitido('agora aprova a revisão da versão 2', format($q$select public.documento_revisar(%L, 'aprovado')$q$, t.tok()));
+reset role;
+
+-- outro clube não revisa documento alheio
+select t.como('lider_b'); select t.pedir_clube('clube_b');
+select t.throws('liderança de OUTRO clube não revisa documento do clube A', format($q$select public.documento_revisar(%L, 'aprovado')$q$, t.tok()), 'Sem permissão');
+reset role;
+
 -- ==================== quem NÃO decidiu não assina ====================
 select t.como('conselheiro_a'); select t.pedir_clube('clube_a');
 select t.throws('quem não decidiu nenhuma etapa do workflow não assina', format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento [TESTE].')$q$, t.tok()), 'Sem autoridade');
@@ -78,7 +98,8 @@ select t.eq('depois de assinar: documento_assinaturas mostra 1 de 1 exigida, ja_
 
 -- ==================== hash vinculado ao PDF exato ====================
 select t.eq('a assinatura guardou o MESMO pdf_hash do documento (não o hash do snapshot)',
-  (select (s.pdf_hash = repeat('a', 64)) and (s.pdf_hash <> snap.hash)
+  -- 'e' porque o PDF foi regenerado pra versão 2 durante o teste de revisão documental acima
+  (select (s.pdf_hash = repeat('e', 64)) and (s.pdf_hash <> snap.hash)
    from public.document_signatures s
    join public.class_documents d on d.id = s.documento_id
    join public.class_completion_snapshots snap on snap.id = d.snapshot_id
@@ -127,6 +148,7 @@ insert into t.ids_txt (chave, id) select 'token_acomp', token_publico from publi
 insert into t.ids (chave, id) select 'doc_acomp', id from public.class_documents where member_class_id = t.id('mc') and tipo = 'acompanhamento';
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('registra o PDF do acompanhamento', format($q$select public.documento_pdf_registrar(%L, %L, %L)$q$, (select id from t.ids_txt where chave = 'token_acomp'), repeat('c', 64), t.id('clube_a')::text || '/x/' || t.id('doc_acomp')::text || '/1.pdf'));
+select t.permitido('aprova a revisão documental do acompanhamento', format($q$select public.documento_revisar(%L, 'aprovado')$q$, (select id from t.ids_txt where chave = 'token_acomp')));
 reset role;
 
 select t.como('lider_a'); select t.pedir_clube('clube_a');
