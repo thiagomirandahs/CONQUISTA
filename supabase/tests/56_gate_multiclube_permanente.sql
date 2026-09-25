@@ -88,6 +88,7 @@ insert into t.superficie (tabela, classe, porque) values
   ('class_documents',             'atravessa', 'documento emitido, conferível publicamente por token'),
   ('document_signatures',          'atravessa', 'assinatura do documento emitido'),
   ('document_reviews',             'atravessa', 'revisão documental do PDF, mesma visibilidade de class_documents/document_signatures'),
+  ('responsavel_consentimentos',   'atravessa', 'consentimento é da PESSOA (responsável vê o próprio histórico, qualquer clube) ou da liderança do clube do vínculo — nunca gated pela aba'),
   ('investiture_workflow_runs',    'atravessa', 'a corrida de aprovação pode subir para distrito/região'),
   ('workflow_stage_decisions',     'atravessa', 'as decisões dessa corrida, idem'),
   ('subscription_clubs',           'atravessa', 'o contato comercial paga por VÁRIOS clubes e precisa ver todos'),
@@ -129,8 +130,8 @@ select t.ok('...e são muitas, não um punhado (a varredura não está passando 
   t.n($q$select count(*) from t.superficie$q$) > 30);
 -- O número é um assert de propósito: acrescentar uma exceção tem de ser uma decisão visível num
 -- diff, não algo que acontece sozinho quando alguém cria uma tabela.
-select t.eq('as exceções que atravessam são exatamente as 21 declaradas, uma a uma',
-  t.n($q$select count(*) from t.superficie where classe = 'atravessa'$q$), 21);
+select t.eq('as exceções que atravessam são exatamente as 22 declaradas, uma a uma',
+  t.n($q$select count(*) from t.superficie where classe = 'atravessa'$q$), 22);
 select t.ok('...e cada uma tem um porquê escrito',
   t.n($q$select count(*) from t.superficie where classe = 'atravessa' and length(porque) < 25$q$) = 0);
 
