@@ -75,21 +75,23 @@ export const CONTRASTE_MINIMO = 3   // WCAG para texto grande/negrito
 // ---- aplicação no documento ----
 const CHAVE_SALVA = 'cq.marca.v1'
 
-// Escreve a marca na página: título, cor da barra, favicon (só se o clube tem logo própria) e as variáveis de cor do tema.
-// Sem cor definida, REMOVE a sobrescrita (o tema padrão volta idêntico ao de sempre).
+// A identidade GLOBAL da página (título da aba, favicon, cor da barra do navegador) é SEMPRE a do
+// produto DesbravaClube — é o que aparece no ícone instalado, na aba e na abertura do PWA. O clube só
+// empresta as CORES do tema, e só depois de o clube em uso estar resolvido (o brasão e o nome dele
+// aparecem nas superfícies internas: cabeçalho, Início). Sem cor definida, REMOVE a sobrescrita.
 export function aplicarMarca(marca, doc = typeof document !== 'undefined' ? document : null) {
   if (!doc) return
-  const m = marca || MARCA_LEGADA
+  const m = marca || MARCA_PRODUTO
   const raiz = doc.documentElement
-  doc.title = m.nome
+  doc.title = MARCA_PRODUTO.nome
 
   const tema = doc.querySelector('meta[name="theme-color"]')
-  if (tema) tema.setAttribute('content', m.corPrimaria || COR_TEMA_PADRAO)
+  if (tema) tema.setAttribute('content', COR_TEMA_PADRAO)
 
   const icone = doc.querySelector('link[rel="icon"]')
   if (icone) {
     if (!icone.dataset.padrao) icone.dataset.padrao = icone.getAttribute('href') || ''
-    icone.setAttribute('href', m.logoUrl || icone.dataset.padrao)
+    icone.setAttribute('href', icone.dataset.padrao)
   }
 
   const p1 = m.corPrimaria
@@ -110,28 +112,9 @@ export function aplicarMarca(marca, doc = typeof document !== 'undefined' ? docu
   escolher('--marca-1-legivel', contraste['--marca-1-legivel'] || null)
 }
 
-// A última marca vista fica guardada para o 1º quadro não "piscar" o tema do produto antes de a
-// resposta do servidor chegar. Não é dado sensível — é a identidade pública do clube.
-//
-// MAS ELA É DE UMA PESSOA (fase 8.5, item 4). Antes, o registro guardava só `{clubeId, marca}`, e
-// `lerMarcaSalva()` devolvia isso para QUEM QUER QUE FOSSE. O comentário antigo dizia "trocou de
-// conta => a próxima resposta do servidor sobrescreve", e é verdade — só que "a próxima resposta"
-// leva um round-trip inteiro. Nesse intervalo, quem acabou de entrar via a marca do clube da
-// pessoa ANTERIOR: nome, sigla, lema, cores e logo. É a janela de frames que o item 4 proíbe.
-//
-// Agora o registro carrega o `uid` e a leitura exige que ele bata. Sem uid (tela de login, antes de
-// alguém se identificar), não há a quem devolver: o produto aparece com a marca do produto.
-export function lerMarcaSalva(uid) {
-  try {
-    const o = JSON.parse(localStorage.getItem(CHAVE_SALVA) || 'null')
-    if (!o || !o.marca) return null
-    if (!uid || o.uid !== uid) return null
-    return marcaDaResposta(o.marca)      // marcaDaResposta aceita camelCase e snake_case
-  } catch { return null }
-}
-export function salvarMarca(clubeId, marca, uid) {
-  try { localStorage.setItem(CHAVE_SALVA, JSON.stringify({ uid: uid || null, clubeId, marca })) } catch { /* sem storage */ }
-}
+// Não há mais cache da marca do clube: antes de o clube em uso estar resolvido, a identidade é a do
+// produto (sem flash do brasão de um clube na abertura). A chave antiga só é APAGADA, para limpar o
+// que versões anteriores deixaram nos aparelhos.
 export function esquecerMarcaSalva() {
   try { localStorage.removeItem(CHAVE_SALVA) } catch { /* sem storage */ }
 }

@@ -73,11 +73,14 @@ describe('usuário com UM clube', () => {
     expect(result.current).toMatchObject({ podeGerir: false, podeFinanceiro: false, temGestao: false, ehPais: false, ehMembroAtivo: true })
   })
 
-  it('aplica a marca do clube na página (título e cor da barra)', async () => {
+  // Decisão de produto (25/09): título da aba e cor da barra são SEMPRE DesbravaClube; o clube
+  // empresta as cores do tema e aparece (nome, brasão) nas superfícies internas.
+  it('dentro do clube: cores do clube no tema, mas título e barra continuam DesbravaClube', async () => {
     responder(servidor([vincB({ selecionavel: true })], 'B'))
-    await montar()
-    expect(document.title).toBe('Clube B Oficial')
-    expect(document.querySelector('meta[name="theme-color"]').getAttribute('content')).toBe('#112233')
+    const { result } = await montar()
+    expect(result.current.marca.nome).toBe('Clube B Oficial')
+    expect(document.title).toBe('DesbravaClube')
+    expect(document.querySelector('meta[name="theme-color"]').getAttribute('content')).toBe('#1e3a8a')
     expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('#112233')
   })
 
@@ -85,7 +88,7 @@ describe('usuário com UM clube', () => {
     responder(servidor([vinc()]))
     await montar()
     expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('')
-    expect(document.title).toBe('Filhos da Conquista')
+    expect(document.title).toBe('DesbravaClube')
   })
 })
 
@@ -143,7 +146,8 @@ describe('troca de clube', () => {
     await act(async () => { r = await result.current.trocarClube('B') })
     expect(r).toEqual({ ok: true })
     expect(result.current.clubeId).toBe('B')
-    expect(document.title).toBe('Clube B Oficial')
+    expect(result.current.marca.nome).toBe('Clube B Oficial')
+    expect(document.title).toBe('DesbravaClube')
     expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('#112233')
     expect(JSON.parse(localStorage.getItem('cq.clube.v1'))).toEqual({ uid: 'u1', clubeId: 'B' })
   })
@@ -163,7 +167,7 @@ describe('troca de clube', () => {
     await act(async () => { await result.current.trocarClube('A') })
     expect(result.current.clubeId).toBe('A')
     expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('')
-    expect(document.title).toBe('Filhos da Conquista')
+    expect(document.title).toBe('DesbravaClube')
   })
 
   it('reabrir o app volta ao clube escolhido (por usuário)', async () => {
@@ -305,7 +309,7 @@ describe('falhas e sessão', () => {
     responder(servidor([vinc({ marca: { nome: 'Nome Novo', sigla: 'NN', cor_primaria: '#445566' } })]))
     await act(async () => { await result.current.recarregar() })
     expect(result.current.marca).toMatchObject({ nome: 'Nome Novo', corPrimaria: '#445566' })
-    expect(document.title).toBe('Nome Novo')
+    expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('#445566')
   })
 
   it('sem sessão (login/logout): sem contexto, sem carregar, e a escolha de clube é esquecida', async () => {
@@ -383,25 +387,36 @@ describe('marca guardada: de quem ela e, e onde ela vale', () => {
   //
   // O beneficio original (nao piscar o tema padrao) continua existindo, so que no lugar certo: o
   // primeiro quadro DEPOIS de a sessao ser reconhecida.
-  it('sem sessao, a tela de entrada e do PRODUTO — nunca do ultimo clube visto', async () => {
+  it('sem sessao, a tela de entrada e do PRODUTO — e nada da marca do clube fica guardado no aparelho', async () => {
     responder(servidor([vincB({ selecionavel: true })], 'B'))
     const primeira = await montar()
     primeira.unmount()
-    expect(JSON.parse(localStorage.getItem('cq.marca.v1')).marca.nome).toBe('Clube B Oficial')
+    expect(localStorage.getItem('cq.marca.v1')).toBeNull()
     logar(null)
     const semSessao = renderHook(() => useClube(), { wrapper })
     expect(semSessao.result.current.marca.nome).toBe('DesbravaClube')
   })
 
-  it('com a sessao ja reconhecida, o primeiro quadro ja e do clube dela (sem piscar)', async () => {
+  // Decisão de produto (25/09): reabrir o app (PWA) com sessão viva mostra DesbravaClube até o clube
+  // em uso estar resolvido — o app não "parece" ser de um clube antes de entrar nele.
+  it('reabrindo com sessao viva: antes de o clube resolver, a marca e a do PRODUTO', async () => {
     responder(servidor([vincB({ selecionavel: true })], 'B'))
     const primeira = await montar()
     primeira.unmount()
-    // reabrindo com a MESMA identidade: a marca guardada serve antes de o servidor responder
     carregarContexto.mockReturnValue(new Promise(() => {}))   // resposta que nunca chega
     const reabrindo = renderHook(() => useClube(), { wrapper })
     expect(reabrindo.result.current.carregando).toBe(true)
-    expect(reabrindo.result.current.marca.nome).toBe('Clube B Oficial')
+    expect(reabrindo.result.current.marca.nome).toBe('DesbravaClube')
+    expect(document.title).toBe('DesbravaClube')
+    expect(document.documentElement.style.getPropertyValue('--marca-1')).toBe('')
+  })
+
+  it('a chave antiga de marca guardada em versoes anteriores e apagada na abertura', async () => {
+    localStorage.setItem('cq.marca.v1', JSON.stringify({ uid: 'u1', clubeId: 'B', marca: { nome: 'Clube B Oficial' } }))
+    carregarContexto.mockReturnValue(new Promise(() => {}))
+    const r = renderHook(() => useClube(), { wrapper })
+    await waitFor(() => expect(localStorage.getItem('cq.marca.v1')).toBeNull())
+    expect(r.result.current.marca.nome).toBe('DesbravaClube')
   })
 
   // A JANELA DE FRAMES do item 4: trocar de conta sem passar por logout (o servidor devolve outra

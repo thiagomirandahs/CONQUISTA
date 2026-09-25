@@ -80,7 +80,7 @@ function Carregando() {
   return (
     <div className="min-h-full grid place-items-center bg-azul text-white">
       <div className="text-center">
-        <Logo className="w-16 h-16 mx-auto mb-3" />
+        <Logo produto className="w-16 h-16 mx-auto mb-3" />
         <p className="text-blue-100 text-sm">Carregando...</p>
       </div>
     </div>

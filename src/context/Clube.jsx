@@ -7,7 +7,7 @@ import {
   permissoesDoPapel, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo, clubePadraoSemCabecalho,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from '../lib/clube.js'
-import { MARCA_PRODUTO, aplicarMarca, lerMarcaSalva, salvarMarca, esquecerMarcaSalva } from '../lib/marca.js'
+import { MARCA_PRODUTO, aplicarMarca, esquecerMarcaSalva } from '../lib/marca.js'
 
 // ClubeContext (o "OrganizationContext" do produto): a SESSÃO resolve, de uma vez, em quais clubes a pessoa está, qual está em uso, o papel dela
 // NESSE clube, a unidade, as permissões, os recursos ligados e a marca. As telas perguntam aqui — nunca mais a `profiles.papel`/`unidade_id`
@@ -34,14 +34,9 @@ export function ClubeProvider({ children }) {
   // resposta do servidor JÁ ligada ao usuário que a pediu (nunca mostra o contexto de outra pessoa)
   const [estado, setEstado] = useState({ uid: null, contexto: null, erro: null })
   const [escolha, setEscolha] = useState({ uid: null, clubeId: null })
-  // A marca guardada é DE QUEM está logado, e é relida quando a identidade muda. Ela existe para o
-  // primeiro quadro depois de a sessão ser reconhecida (o app reabrindo com sessão viva) não piscar
-  // o tema do produto antes da resposta do servidor.
-  //
-  // Sem `uid` — a tela de entrada, antes de alguém se identificar — ela é NULA por definição: ali
-  // não há contexto de clube, e sem contexto de clube a identidade é a do produto. Era aqui que a
-  // marca do clube de quem saiu (ou de quem usou o aparelho antes) aparecia para a próxima pessoa.
-  const marcaSalva = useMemo(() => lerMarcaSalva(uid), [uid])
+  // Sem cache de marca de clube: a identidade antes de o clube em uso estar resolvido é SEMPRE a
+  // do produto. A chave que versões anteriores gravavam é apagada uma vez, na abertura.
+  useEffect(() => { esquecerMarcaSalva() }, [])
   // "a sessão acabou NESTA aba" — ver o efeito de saída mais abaixo. Fica declarado aqui, junto do
   // resto do estado, porque `marca` o consulta antes daquele ponto do arquivo.
   const [saiu, setSaiu] = useState(false)
@@ -98,12 +93,8 @@ export function ClubeProvider({ children }) {
   // A marca some NO MESMO QUADRO em que o clube deixa de valer. Se dependesse da próxima resposta
   // do servidor, a tela de "escolha outro clube" apareceria vestida com as cores e o logo do clube
   // que a pessoa acabou de perder.
-  const marcaGuardada = saiu || precisaEscolher ? null : marcaSalva
-  const marca = vinculo?.marca || marcaGuardada || MARCA_PRODUTO
+  const marca = (!saiu && !precisaEscolher && vinculo?.marca) || MARCA_PRODUTO
   useEffect(() => { aplicarMarca(marca) }, [marca])
-  useEffect(() => {
-    if (vinculo && contexto && !contexto.legado) salvarMarca(vinculo.clubeId, vinculo.marca, uid)
-  }, [vinculo, contexto, uid])
   // SAIR é diferente de FECHAR, e a marca guardada tem de tratar os dois casos de formas opostas.
   //
   // Guardar a marca (`cq.marca.v1`) existe por um bom motivo: quem fecha o app e volta vê o nome e

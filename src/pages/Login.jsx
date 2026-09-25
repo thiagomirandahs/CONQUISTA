@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
-import { useClube } from '../context/Clube.jsx'
+import { MARCA_PRODUTO as marca } from '../lib/marca.js'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 
 const inputClass =
@@ -13,7 +13,7 @@ const inputClass =
 export default function Login() {
   const navigate = useNavigate()
   const { search } = useLocation()
-  const { marca } = useClube()    // a marca do ÚLTIMO clube neste aparelho (ou a padrão): antes de entrar ainda não há clube em uso
+  // Tela GLOBAL: sempre a identidade DesbravaClube (o clube só aparece depois de entrar)
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -60,7 +60,7 @@ export default function Login() {
         <div className="flex flex-col items-center mb-6">
           <motion.div initial={{ scale: 0.6, rotate: -8, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 14, delay: 0.1 }}>
-            <Logo className="w-24 h-24 mb-3" />
+            <Logo produto className="w-24 h-24 mb-3" />
           </motion.div>
           <h1 className="text-brand text-xl font-extrabold text-center leading-tight">{marca.nome}</h1>
           {(marca.descricao || marca.lema) && <p className="text-muted text-sm">{marca.descricao || marca.lema}</p>}

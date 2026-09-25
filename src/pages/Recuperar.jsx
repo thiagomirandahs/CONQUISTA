@@ -17,16 +17,16 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
-import { useClube } from '../context/Clube.jsx'
+import { MARCA_PRODUTO } from '../lib/marca.js'
 import { Botao, Campo, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 function Moldura({ titulo, children }) {
-  const { marca } = useClube()
+  const marca = MARCA_PRODUTO
   return (
     <div className="min-h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-brand via-brand2 to-brand">
       <div className="w-full max-w-sm bg-surface rounded-2xl shadow-soft p-7">
         <div className="flex flex-col items-center mb-5">
-          <Logo className="w-20 h-20 mb-3" />
+          <Logo produto className="w-20 h-20 mb-3" />
           <h1 className="text-brand text-lg font-extrabold text-center leading-tight">{titulo}</h1>
           <p className="text-muted text-sm text-center">{marca.nome}</p>
         </div>

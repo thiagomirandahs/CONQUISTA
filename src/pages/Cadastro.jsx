@@ -131,7 +131,7 @@ export default function Cadastro() {
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut' }}
         className="w-full max-w-sm bg-surface rounded-2xl shadow-soft p-7">
         <div className="flex flex-col items-center mb-5">
-          <Logo className="w-16 h-16 mb-2" />
+          <Logo produto className="w-16 h-16 mb-2" />
           <h1 className="text-brand text-lg font-extrabold">Criar cadastro</h1>
           <p className="text-faint text-xs text-center">Preencha seus dados para participar do clube</p>
         </div>

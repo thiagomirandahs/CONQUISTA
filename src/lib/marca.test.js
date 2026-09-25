@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
-  MARCA_LEGADA, marcaDaResposta, aplicarMarca, contrasteComBranco, CONTRASTE_MINIMO, COR_TEMA_PADRAO,
-  lerMarcaSalva, salvarMarca, esquecerMarcaSalva,
+  MARCA_LEGADA, marcaDaResposta, aplicarMarca, contrasteComBranco, CONTRASTE_MINIMO, COR_TEMA_PADRAO, esquecerMarcaSalva,
 } from './marca.js'
 
 function montarDocumento() {
@@ -64,11 +63,13 @@ describe('contraste da cor da marca (o texto sobre ela é branco)', () => {
 describe('aplicarMarca: escreve a marca na página', () => {
   beforeEach(montarDocumento)
 
-  it('título, cor da barra e logo do clube', () => {
+  // Decisão de produto (25/09): a identidade GLOBAL é sempre DesbravaClube — título da aba, favicon e
+  // cor da barra (o que o PWA instalado e a aba mostram). O clube empresta só as cores do tema.
+  it('clube em uso NÃO troca título, cor da barra nem favicon: continuam DesbravaClube', () => {
     aplicarMarca({ nome: 'Clube B', sigla: 'CB', corPrimaria: '#112233', corSecundaria: null, logoUrl: 'https://p/x/logo.png' })
-    expect(document.title).toBe('Clube B')
-    expect(document.querySelector('meta[name="theme-color"]').getAttribute('content')).toBe('#112233')
-    expect(document.querySelector('link[rel="icon"]').getAttribute('href')).toBe('https://p/x/logo.png')
+    expect(document.title).toBe('DesbravaClube')
+    expect(document.querySelector('meta[name="theme-color"]').getAttribute('content')).toBe(COR_TEMA_PADRAO)
+    expect(document.querySelector('link[rel="icon"]').getAttribute('href')).toBe('/logo.png')
   })
 
   it('cores viram variáveis CSS; só a primária => a secundária é derivada dela (não a do outro clube)', () => {
@@ -84,14 +85,14 @@ describe('aplicarMarca: escreve a marca na página', () => {
     expect(document.documentElement.style.getPropertyValue('--marca-2')).toBe('#aabbcc')
   })
 
-  it('sem cor: REMOVE a sobrescrita (o tema padrão volta idêntico) e restaura a cor da barra e o ícone padrão', () => {
+  it('sem cor: REMOVE a sobrescrita (o tema padrão volta idêntico); identidade global intacta', () => {
     aplicarMarca({ nome: 'A', corPrimaria: '#112233', corSecundaria: '#aabbcc', logoUrl: 'https://p/x/logo.png' })
     aplicarMarca({ nome: 'B', corPrimaria: null, corSecundaria: null, logoUrl: null })
     const st = document.documentElement.style
     for (const v of ['--marca-1', '--marca-2', '--marca-1-dark', '--marca-2-dark']) expect(st.getPropertyValue(v)).toBe('')
     expect(document.querySelector('meta[name="theme-color"]').getAttribute('content')).toBe(COR_TEMA_PADRAO)
     expect(document.querySelector('link[rel="icon"]').getAttribute('href')).toBe('/logo.png')
-    expect(document.title).toBe('B')
+    expect(document.title).toBe('DesbravaClube')
   })
 
   it('trocar de clube não deixa resto da marca do anterior', () => {
@@ -110,33 +111,12 @@ describe('aplicarMarca: escreve a marca na página', () => {
   })
 })
 
-describe('última marca vista (login sem "piscar")', () => {
+describe('cache da marca do clube (removido: a abertura é sempre DesbravaClube)', () => {
   beforeEach(() => { localStorage.clear() })
-  it('salva e le a marca do clube, para a MESMA identidade', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B', sigla: 'CB', cor_primaria: '#112233' }), 'u1')
-    expect(lerMarcaSalva('u1')).toMatchObject({ nome: 'Clube B', corPrimaria: '#112233' })
-  })
-  // O CERNE DO ITEM 4 DA FASE 8.5: a marca guardada e DE UMA PESSOA. Sem esta regra, quem entrasse
-  // depois no mesmo aparelho via a identidade do clube de quem usou antes durante o round-trip
-  // inteiro do contexto — nome, sigla, lema, cores e logo.
-  it('outra identidade no mesmo aparelho NAO herda a marca', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B' }), 'u1')
-    expect(lerMarcaSalva('u2')).toBeNull()
-  })
-  it('sem identidade (tela de entrada) tambem nao: la nao ha contexto de clube nenhum', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'Clube B' }), 'u1')
-    expect(lerMarcaSalva(null)).toBeNull()
-    expect(lerMarcaSalva(undefined)).toBeNull()
-  })
-  it('sem nada salvo ou com lixo: null (a tela usa a do produto)', () => {
-    expect(lerMarcaSalva('u1')).toBeNull()
-    localStorage.setItem('cq.marca.v1', '{lixo')
-    expect(lerMarcaSalva('u1')).toBeNull()
-  })
-  it('esquecer apaga', () => {
-    salvarMarca('c1', marcaDaResposta({ nome: 'x' }), 'u1')
+  it('esquecer apaga a chave que versões anteriores gravaram', () => {
+    localStorage.setItem('cq.marca.v1', JSON.stringify({ uid: 'u1', clubeId: 'c1', marca: { nome: 'Clube B' } }))
     esquecerMarcaSalva()
-    expect(lerMarcaSalva('u1')).toBeNull()
+    expect(localStorage.getItem('cq.marca.v1')).toBeNull()
   })
 })
 

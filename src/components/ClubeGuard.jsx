@@ -26,7 +26,7 @@ export default function ClubeGuard({ children }) {
     return (
       <div className="min-h-full grid place-items-center bg-azul text-white p-6">
         <div className="text-center" role="status">
-          <Logo className="w-16 h-16 mx-auto mb-3" />
+          <Logo produto className="w-16 h-16 mx-auto mb-3" />
           <p className="text-blue-100 text-sm">Carregando…</p>
         </div>
       </div>
