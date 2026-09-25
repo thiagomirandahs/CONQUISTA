@@ -557,5 +557,33 @@ select t.throws('um plano não pode citar módulo que o app não tem',
 select t.eq('nenhum gateway real foi integrado: o único provedor é o mock local',
   t.txt($q$select string_agg(chave, ',' order by chave) from public.billing_providers$q$), 'mock');
 
+-- =============================================================================
+-- 14) VITRINE mostra só a versão VIGENTE de cada plano (item 6 da rodada de fechamento) — o seed já
+--     traz 'essencial' em 2 versões publicadas de propósito (v1 legado + v2 com Experiências, migration
+--     49): a vitrine pra NOVA aquisição não pode mostrar as duas ao mesmo tempo, e a versão antiga não
+--     pode ser apagada (quem já assinou a v1 continua nela).
+-- =============================================================================
+select t.eq('billing_plans REALMENTE tem 2 versões publicadas de "essencial" (o cenário existe de verdade, não é hipotético)',
+  t.n($q$select count(*) from public.billing_plans where chave = 'essencial' and publico and ativo and status = 'publicado'$q$), 2);
+select t.eq('a vitrine (planos_disponiveis) mostra a versão MAIS RECENTE (2, com Experiências)',
+  t.txt($q$select (j ->> 'versao') from json_array_elements(public.planos_disponiveis()) j where j ->> 'chave' = 'essencial'$q$), '2');
+select t.eq('...nenhuma chave aparece duas vezes na vitrine',
+  t.n($q$select count(*) from (
+    select (j ->> 'chave') as chave, count(*) from json_array_elements(public.planos_disponiveis()) j
+    group by 1 having count(*) > 1
+  ) x$q$), 0);
+select t.eq('a versão ANTIGA (v1) continua existindo no catálogo — nunca foi apagada',
+  t.n($q$select count(*) from public.billing_plans where chave = 'essencial' and versao = 1$q$), 1);
+
+\o /dev/null
+insert into public.billing_accounts (id, nome) values ('00000000-0000-4000-8000-000000000003', 'Conta presa à v1 do essencial [TESTE]');
+insert into public.subscriptions (id, billing_account_id, plan_id, status)
+select '00000000-0000-4000-8000-000000000004', '00000000-0000-4000-8000-000000000003', id, 'ativa'
+  from public.billing_plans where chave = 'essencial' and versao = 1;
+\o
+select t.eq('quem JÁ assinou a v1 do essencial continua nela, intocado (a vitrine só afeta NOVA aquisição)',
+  t.txt($q$select p.versao::text from public.subscriptions s join public.billing_plans p on p.id = s.plan_id
+         where s.id = '00000000-0000-4000-8000-000000000004'$q$), '1');
+
 select t.fim();
 rollback;
