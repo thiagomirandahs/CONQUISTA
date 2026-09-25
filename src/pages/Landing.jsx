@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
+import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 import { Icone } from './landing/Icones.jsx'
 import { NotebookPainel, CelularClasse, CardTentativas, ArvoreMulticlube } from './landing/Mockups.jsx'
@@ -68,7 +69,7 @@ function Cabecalho() {
           </ul>
         </nav>
         <div className="hidden lg:flex items-center gap-3">
-          <Link to="/login" className={`inline-flex min-h-[44px] items-center text-sm font-bold ${NAVY} px-3 hover:underline ${FOCO}`}>Entrar</Link>
+          <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center text-sm font-bold ${NAVY} px-3 hover:underline ${FOCO}`}>Entrar</LinkApp>
           <Link to="/adquirir" className={`${BOTAO_PRIMARIO} min-h-[42px] px-5 text-sm`}>Começar agora</Link>
         </div>
         <button
@@ -93,7 +94,7 @@ function Cabecalho() {
             ))}
           </ul>
           <div className="mt-3 grid grid-cols-2 gap-3 pb-2">
-            <Link to="/login" className={BOTAO_SECUNDARIO}>Entrar</Link>
+            <LinkApp to="/login" className={BOTAO_SECUNDARIO}>Entrar</LinkApp>
             <Link to="/adquirir" className={BOTAO_PRIMARIO}>Começar agora</Link>
           </div>
         </nav>
@@ -122,7 +123,7 @@ function Hero() {
             <a href="#funcionalidades" className={BOTAO_SECUNDARIO}>Conhecer funcionalidades</a>
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            Já usa o DesbravaClube? <Link to="/login" className={`inline-flex min-h-[44px] items-center font-bold text-[#1d4ed8] underline ${FOCO}`}>Já tenho conta — entrar</Link>
+            Já usa o DesbravaClube? <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center font-bold text-[#1d4ed8] underline ${FOCO}`}>Já tenho conta — entrar</LinkApp>
           </p>
           <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 max-w-lg">
             {indicadores.map((t) => (
@@ -436,7 +437,7 @@ function CartaoPlano({ plano }) {
         </div>
       )}
       {destaques.length > 0 && <div className="mt-6"><Lista itens={destaques} /></div>}
-      <Link to={destino} className={`mt-8 w-full ${BOTAO_PRIMARIO}`}>Começar agora</Link>
+      <LinkApp to={destino} className={`mt-8 w-full ${BOTAO_PRIMARIO}`}>Começar agora</LinkApp>
     </li>
   )
 }
@@ -528,7 +529,7 @@ function Rodape() {
           <ul className="mt-3 space-y-2 text-sm">
             <li><a href="#funcionalidades" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Funcionalidades</a></li>
             <li><a href="#planos" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
-            <li><Link to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</Link></li>
+            <li><LinkApp to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</LinkApp></li>
           </ul>
         </nav>
         <div>

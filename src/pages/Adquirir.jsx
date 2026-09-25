@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 
 // Catálogo público de planos + entrada do fluxo de aquisição (item 4). PÚBLICA de propósito — quem
@@ -76,10 +77,10 @@ export default function Adquirir() {
                   : `Inclui: ${(p.recursos || []).map((r) => RECURSO_NOME[r] || r).join(', ')}.`}
               </p>
               {p.provisorio && <p className="text-xs text-amber-700 mt-1">Preço e composição provisórios.</p>}
-              <Link to={`/criar-clube?plano=${encodeURIComponent(p.chave)}&ciclo=anual`}
+              <LinkApp to={`/criar-clube?plano=${encodeURIComponent(p.chave)}${preco ? `&ciclo=${encodeURIComponent(preco.ciclo)}` : ''}`}
                 className="block text-center mt-3 min-h-[44px] leading-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold">
                 Quero este plano
-              </Link>
+              </LinkApp>
             </li>
           )
         })}

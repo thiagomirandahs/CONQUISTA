@@ -242,7 +242,8 @@ describe('o app não conhece nenhum clube pelo nome', () => {
 })
 
 describe('recursos (feature flags) e rotas', () => {
-  const app = ler('App.jsx')
+  // só a árvore de rotas do APP: o site público (RotasDoSite) tem um /planos próprio, que é a vitrine
+  const app = ler('App.jsx').split('export default function App')[1]
   const rotaDe = (caminho) => app.match(new RegExp(`<Route path="${caminho}" element=\\{([^\\n]*)\\} />`))?.[1] || ''
 
   it('todo recurso citado na matriz existe no catálogo', () => {

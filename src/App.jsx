@@ -5,6 +5,7 @@ import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
+import { modoDoHost, rotaDoSite, urlDoApp } from './lib/dominios.js'
 import Entrar from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
@@ -91,9 +92,9 @@ function Protegido({ children }) {
   const location = useLocation()
   if (carregando) return <Carregando />
   if (!session) {
-    // a raiz "/" sem sessão é a landing PÚBLICA (item 4) — as demais rotas protegidas continuam
-    // mandando pro login normalmente, sem virar acesso público por engano.
-    if (location.pathname === '/') return <Landing />
+    // a raiz "/" sem sessão é a landing PÚBLICA — mas só onde o site e o app moram juntos
+    // (localhost, preview, APK). Em app.desbravaclube.com.br a raiz é o login: a vitrine é do site.
+    if (location.pathname === '/' && modoDoHost() === 'unico') return <Landing />
     return <Navigate to="/login" replace />
   }
   // só entra quem tem vínculo ATIVO com um clube em uso (o contexto do clube é resolvido aqui, uma vez por sessão)
@@ -172,7 +173,36 @@ class ErroApp extends Component {
   }
 }
 
+// No domínio do SITE, só as rotas públicas moram aqui; qualquer outra (login, /criar-clube?plano=…,
+// /entrar?codigo=…, /admin) segue para o app com o MESMO caminho e parâmetros — é a URL que carrega o
+// plano/ciclo entre os domínios (sessão e sessionStorage não atravessam de uma origem para outra).
+function IrParaApp() {
+  const { pathname, search, hash } = useLocation()
+  window.location.replace(urlDoApp(pathname + search + hash))
+  return <Carregando />
+}
+
+function RotasDoSite() {
+  const { pathname } = useLocation()
+  if (!rotaDoSite(pathname)) return <IrParaApp />
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/planos" element={<Adquirir />} />
+      <Route path="/adquirir" element={<Adquirir />} />
+      <Route path="/verificar/:token" element={<VerificarDocumento />} />
+    </Routes>
+  )
+}
+
 export default function App() {
+  if (modoDoHost() === 'site') {
+    return (
+      <ErroApp>
+        <Suspense fallback={<Carregando />}><RotasDoSite /></Suspense>
+      </ErroApp>
+    )
+  }
   return (
     <ErroApp>
     <Suspense fallback={<Carregando />}>
