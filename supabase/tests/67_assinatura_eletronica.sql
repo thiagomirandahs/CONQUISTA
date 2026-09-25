@@ -85,6 +85,12 @@ select t.eq('documento_assinaturas: lider_a PODE assinar, ainda não assinou, 0 
   (select (a->>'posso_assinar') || '|' || (a->>'ja_assinei') || '|' || jsonb_array_length(a->'registradas') || '|' || (a->>'exigidas')
    from (select public.documento_assinaturas(t.tok()) a) x), 'true|false|0|1');
 
+-- ==================== H2: sem NENHUMA assinatura ainda, nada de representação final ====================
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('sem assinatura nenhuma, documento_pdf_final_dados recusa', format($q$select public.documento_pdf_final_dados(%L)$q$, t.tok()), 'depois da primeira assinatura');
+select t.throws('sem assinatura nenhuma, documento_pdf_final_registrar recusa', format($q$select public.documento_pdf_final_registrar(%L, %L, %L, 2)$q$, t.tok(), repeat('1', 64), t.id('clube_a')::text || '/x/y/final/z.pdf'), 'nenhuma assinatura registrada');
+reset role;
+
 -- ==================== assina de verdade ====================
 select t.permitido('lider_a assina (decidiu as duas etapas — revisão e investidura — do workflow real)',
   format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento e confirmo sua assinatura eletrônica [TESTE].')$q$, t.tok()));
@@ -95,6 +101,34 @@ reset role;
 select t.eq('depois de assinar: documento_assinaturas mostra 1 de 1 exigida, ja_assinei=true',
   (select (a->>'ja_assinei') || '|' || jsonb_array_length(a->'registradas') || '|' || (a->>'exigidas')
    from (select public.documento_assinaturas(t.tok()) a) x), 'true|1|1');
+
+-- ==================== H2: 1ª assinatura já registrada — agora a representação final existe ====================
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.eq('documento_pdf_final_dados: 1 assinatura na lista, sem desenho, sem render existente ainda',
+  (select jsonb_array_length(d->'assinaturas') || '|' || (d->'assinaturas'->0->>'tem_desenho') || '|' || (d->>'render_existente' is not null)
+   from (select public.documento_pdf_final_dados(t.tok()) d) x), '1|false|false');
+-- membro_b (não lider_b): lider_b é liderança de um clube onde multi_dois_papeis TAMBÉM tem vínculo
+-- ativo, e _pode_ver_conquista_curricular libera por desenho quem tem essa autoridade em QUALQUER
+-- clube da pessoa (mesma ressalva já documentada nos testes 66/67 acima) — não é "outro clube" de
+-- verdade pra este propósito. membro_b não é liderança em lugar nenhum: serve de estranho de verdade.
+select t.como('membro_b'); select t.pedir_clube('clube_b');
+select t.ok('quem não é liderança em lugar nenhum não vê nada em documento_pdf_final_dados (null)', public.documento_pdf_final_dados(t.tok()) is null);
+reset role;
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('caminho de outro clube é recusado', format($q$select public.documento_pdf_final_registrar(%L, %L, %L, 2)$q$, t.tok(), repeat('2', 64), t.id('clube_b')::text || '/x/y/final/z.pdf'), 'não corresponde a este documento');
+select t.throws('versão do H1 divergente é recusada (H1 mudou desde que os dados foram lidos)', format($q$select public.documento_pdf_final_registrar(%L, %L, %L, 1)$q$, t.tok(), repeat('2', 64), t.id('clube_a')::text || '/x/y/final/z.pdf'), 'mudou de versão');
+select t.eq('registra o H2 pela 1ª vez: gerado_agora=true', (select (public.documento_pdf_final_registrar(t.tok(), repeat('2', 64), t.id('clube_a')::text || '/x/y/final/estado1.pdf', 2) ->> 'gerado_agora')), 'true');
+select t.eq('chamando DE NOVO pro MESMO estado: gerado_agora=false (idempotência real, não por bytes iguais)', (select (public.documento_pdf_final_registrar(t.tok(), repeat('2', 64), t.id('clube_a')::text || '/x/y/final/estado1.pdf', 2) ->> 'gerado_agora')), 'false');
+select t.eq('documento_pdf_final_dados agora devolve render_existente com o MESMO hash — idempotência real',
+  (select (d->'render_existente'->>'pdf_hash') from (select public.documento_pdf_final_dados(t.tok()) d) x), repeat('2', 64));
+reset role;
+-- document_final_renders não tem policy nenhuma pra `authenticated` (tudo passa por RPC) — a
+-- contagem abaixo roda fora da impersonação, igual o resto do arquivo já faz com document_signatures.
+select t.eq('só existe 1 linha de H2 pra este documento (a chamada repetida não duplicou nada)',
+  (select count(*) from public.document_final_renders where documento_id = t.id('doc')), 1::bigint);
+select t.como_anon();
+select t.eq('/verificar mostra o H2 vigente: hash e 1 assinatura incluída', (select (public.documento_verificar(t.tok()) -> 'h2' ->> 'pdf_hash') || '|' || (public.documento_verificar(t.tok()) -> 'h2' ->> 'assinaturas_incluidas')), repeat('2', 64) || '|1');
+reset role;
 
 -- ==================== hash vinculado ao PDF exato ====================
 select t.eq('a assinatura guardou o MESMO pdf_hash do documento (não o hash do snapshot)',
@@ -136,6 +170,23 @@ select t.eq('depois de revogada: documento_assinaturas volta a mostrar 0 de 1, p
 -- assinar de novo depois de revogada É permitido (índice único é parcial, só bloqueia 'registrada')
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.permitido('assina de novo depois de revogar a anterior', format($q$select public.documento_assinar(%L, 'Declaro que revisei este documento de novo [TESTE].')$q$, t.tok()));
+reset role;
+
+-- ==================== H2: revogar+reassinar muda o ESTADO — o H2 antigo fica (histórico), o novo é outra linha ====================
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.eq('depois de revogar+reassinar, o estado mudou: render_existente é NULL de novo (mesmo já tendo 1 H2 no histórico)',
+  (select (d->>'render_existente' is not null) from (select public.documento_pdf_final_dados(t.tok()) d) x), 'false');
+select t.eq('registra o H2 do NOVO estado: gerado_agora=true', (select (public.documento_pdf_final_registrar(t.tok(), repeat('3', 64), t.id('clube_a')::text || '/x/y/final/estado2.pdf', 2) ->> 'gerado_agora')), 'true');
+reset role;
+select t.eq('agora existem 2 linhas de H2 pra este documento — a antiga NÃO foi apagada nem sobrescrita (histórico)',
+  (select count(*) from public.document_final_renders where documento_id = t.id('doc')), 2::bigint);
+select t.eq('a linha ANTIGA do H2 continua com o hash de antes (imutável)',
+  (select count(*) from public.document_final_renders where documento_id = t.id('doc') and pdf_hash = repeat('2', 64)), 1::bigint);
+select t.throws('H2 é histórico imutável: UPDATE é recusado', format($q$update public.document_final_renders set pdf_hash = %L where documento_id = %L$q$, repeat('9', 64), t.id('doc')), '');
+select t.throws('H2 é histórico imutável: DELETE é recusado', format($q$delete from public.document_final_renders where documento_id = %L$q$, t.id('doc')), '');
+select t.como_anon();
+select t.eq('/verificar agora mostra o H2 MAIS RECENTE (2 assinaturas incluídas — a atual, não a revogada)',
+  (select (public.documento_verificar(t.tok()) -> 'h2' ->> 'pdf_hash') || '|' || (public.documento_verificar(t.tok()) -> 'h2' ->> 'assinaturas_incluidas')), repeat('3', 64) || '|1');
 reset role;
 
 -- ==================== assinatura em LOTE ====================

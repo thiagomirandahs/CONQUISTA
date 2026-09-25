@@ -188,6 +188,57 @@ async function principal() {
   const { error: errUploadRuim } = await c.storage.from('assinaturas-desenhadas').upload(pathRuim, pngMinusculo, { contentType: 'image/png', upsert: false })
   ok('upload em path de documento inexistente/outro é recusado', !!errUploadRuim, errUploadRuim ? 'recusado corretamente' : 'DEVERIA TER RECUSADO')
 
+  console.log('\n== H2: representação final assinada, Edge Function real ==')
+  const { data: h2Resp, error: errH2 } = await c.functions.invoke('gerar-documento-pdf-final', { body: { token: doc.token } })
+  ok('gerar-documento-pdf-final respondeu ok, gerado_agora=true (1ª vez)', !errH2 && h2Resp?.ok && h2Resp?.gerado_agora === true, errH2?.message)
+  if (h2Resp?.ok) {
+    const { data: h2Signed, error: errH2Signed } = await c.storage.from('documentos-emitidos').createSignedUrl(h2Resp.storage_path, 60)
+    ok('signed url do H2 gerada', !errH2Signed, errH2Signed?.message)
+    const h2Buf = Buffer.from(await (await fetch(h2Signed.signedUrl)).arrayBuffer())
+    const h2HashBaixado = createHash('sha256').update(h2Buf).digest('hex')
+    ok('H2 baixado começa com %PDF-', h2Buf.slice(0, 5).toString() === '%PDF-')
+    ok('hash calculado antes do upload === hash do H2 baixado (SHA-256 confere)', h2HashBaixado === h2Resp.hash, `${h2HashBaixado} vs ${h2Resp.hash}`)
+    ok('H2 tem hash DIFERENTE de H1 — não é o mesmo arquivo, não é circular', h2Resp.hash !== reg.pdf_hash)
+
+    // idempotência real: chamar de novo pro MESMO estado de assinaturas devolve o MESMO hash/path, gerado_agora=false
+    const { data: h2Resp2, error: errH2b } = await c.functions.invoke('gerar-documento-pdf-final', { body: { token: doc.token } })
+    ok('chamar de novo (mesmo estado): gerado_agora=false', !errH2b && h2Resp2?.ok && h2Resp2?.gerado_agora === false, errH2b?.message)
+    ok('...e devolve o MESMO hash/path (idempotência real, não regenerou nada)', h2Resp2?.hash === h2Resp.hash && h2Resp2?.storage_path === h2Resp.storage_path)
+
+    // verificação pública mostra o H2 vigente
+    const verif = await c.rpc('documento_verificar', { p_token: doc.token })
+    ok('/verificar mostra o H2 vigente com o mesmo hash', verif.data?.h2?.pdf_hash === h2Resp.hash, JSON.stringify(verif.data?.h2))
+    ok('/verificar mostra o hash do H1 também (a cadeia documento→H1→assinaturas→H2)', verif.data?.pdf_hash_h1 === reg.pdf_hash)
+
+    // H1/H2 "adulterado": se os bytes baixados não forem os originais, o hash recalculado tem que
+    // divergir do hash registrado — é exatamente essa comparação que expõe adulteração (não existe
+    // um "detector" separado: a prova de integridade JÁ É o hash não bater).
+    const h2Adulterado = Buffer.concat([h2Buf, Buffer.from('X')])
+    ok('H2 "adulterado" (1 byte a mais) teria hash diferente do registrado — prova a detecção', createHash('sha256').update(h2Adulterado).digest('hex') !== h2Resp.hash)
+    const h1Adulterado = Buffer.concat([buf, Buffer.from('X')])
+    ok('H1 "adulterado" (1 byte a mais) teria hash diferente do registrado — prova a detecção', createHash('sha256').update(h1Adulterado).digest('hex') !== reg.pdf_hash)
+
+    // privacidade dos bytes do H2 (mesma bateria da Etapa 4, sobre o arquivo H2)
+    const rawH2 = h2Buf.toString('latin1')
+    let textoH2 = ''
+    const reStream2 = /stream\r?\n([\s\S]*?)endstream/g
+    let m2
+    while ((m2 = reStream2.exec(rawH2))) { try { textoH2 += zlib.inflateSync(Buffer.from(m2[1], 'latin1')).toString('latin1') + '\n' } catch { /* fonte */ } }
+    let textoLegivelH2 = ''
+    const reHex2 = /<([0-9A-Fa-f]+)>\s*Tj/g
+    let h2m
+    while ((h2m = reHex2.exec(textoH2))) textoLegivelH2 += Buffer.from(h2m[1], 'hex').toString('utf8') + '\n'
+    // o H2 IMPRIME de propósito o hash SHA-256 do H1 (é o que prova a cadeia documento→H1→H2) — um
+    // hash hex de 64 caracteres tem sequências longas de dígitos que o regex solto de telefone (BR)
+    // e o de "_id" confundem com falso positivo. Não é vazamento: hash não é segredo, é o contrário —
+    // é exatamente o que a verificação pública precisa poder conferir.
+    for (const [nome, re] of PROIBIDOS) {
+      if (nome === 'chave técnica (_id)' || nome === 'telefone (padrão BR)') continue
+      const achado = textoLegivelH2.match(re)
+      ok(`H2 não contém "${nome}"`, !achado, achado?.[0])
+    }
+  }
+
   limpar()
   console.log(`\n${total - reprovados}/${total} ok${reprovados ? ` — ${reprovados} FALHA(S)` : ' — TUDO OK'}`)
   process.exitCode = reprovados > 0 ? 1 : 0

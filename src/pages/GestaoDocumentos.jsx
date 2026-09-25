@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Cabecalho, Card, Botao, Aviso, Selo, Carregando, Vazio, Selecao, Campo } from '../ui/index.jsx'
-import { carregarDocumentosDoClube, gerarPdf, baixarPdf, assinarLote, ROTULO_ESTADO } from '../services/documentos.js'
+import { carregarDocumentosDoClube, gerarPdf, baixarPdf, assinarLote, gerarRepresentacaoFinal, ROTULO_ESTADO } from '../services/documentos.js'
 import AssinarDocumentoModal from '../components/AssinarDocumentoModal.jsx'
 import RevisarDocumentoModal from '../components/RevisarDocumentoModal.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -46,6 +46,16 @@ export default function GestaoDocumentos() {
   async function gerar(token) {
     setOcupado(token)
     try { await gerarPdf(token); avisar.sucesso('PDF gerado.'); carregar() } catch (e) { avisar.erro(e) }
+    setOcupado(null)
+  }
+
+  async function gerarFinal(token) {
+    setOcupado(token)
+    try {
+      const r = await gerarRepresentacaoFinal(token)
+      avisar.sucesso(r.gerado_agora ? 'Representação final (H2) gerada.' : 'Representação final já existia para estas assinaturas.')
+      carregar()
+    } catch (e) { avisar.erro(e) }
     setOcupado(null)
   }
 
@@ -141,6 +151,11 @@ export default function GestaoDocumentos() {
                   )}
                   {ASSINAVEIS.includes(d.estado) && (
                     <Botao aoTocar={() => setAssinando(d)} data-testid="abrir-assinatura">Assinar</Botao>
+                  )}
+                  {['assinado', 'parcialmente_assinado'].includes(d.estado) && (
+                    <Botao variacao="contorno" aoTocar={() => gerarFinal(d.token)} carregando={ocupado === d.token} data-testid="gerar-h2">
+                      Gerar representação final (H2)
+                    </Botao>
                   )}
                 </div>
                 {d.estado === 'correcao_solicitada' && d.revisao && (

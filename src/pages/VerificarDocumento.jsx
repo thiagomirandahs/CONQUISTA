@@ -106,6 +106,19 @@ function Resultado({ d }) {
           <p className="text-[11px] text-faint mt-2">Assinatura eletrônica registrada pelo DesbravaClube.</p>
         </div>
       )}
+
+      {d.h2 && (
+        <div className="px-5 py-4 border-t border-line">
+          <p className="text-xs font-extrabold text-ink mb-1">Representação final (H2)</p>
+          <p className="text-xs text-faint">
+            Gerada em {fmtData(d.h2.gerado_em)}, incluindo {d.h2.assinaturas_incluidas} assinatura(s).
+            A assinatura eletrônica foi feita sobre o PDF base (hash abaixo) — o H2 é só uma representação
+            de leitura, com hash próprio.
+          </p>
+          <p className="text-[11px] font-mono text-faint break-all mt-1">H1: {d.pdf_hash_h1}</p>
+          <p className="text-[11px] font-mono text-faint break-all">H2: {d.h2.pdf_hash}</p>
+        </div>
+      )}
     </div>
   )
 }

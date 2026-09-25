@@ -142,15 +142,15 @@ select t.eq('FKs para profiles/auth.users sem on delete: só avaliou/revisou/rev
     where c.contype = 'f' and c.connamespace = 'public'::regnamespace
       and c.confrelid in ('public.profiles'::regclass, 'auth.users'::regclass)
       and c.confdeltype in ('a', 'r')),
-  'curriculum_achievements.revogada_por, investiture_reviews.revisado_por, requirement_approvals.avaliado_por');
+  'curriculum_achievements.revogada_por, document_final_renders.criado_por, investiture_reviews.revisado_por, requirement_approvals.avaliado_por');
 select t.eq('as colunas "quem criou / é responsável" viraram ON DELETE SET NULL',
   (select count(*) from pg_constraint c join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
     where c.contype = 'f' and c.confrelid = 'public.profiles'::regclass and c.confdeltype = 'n'
       and c.conrelid::regclass::text || '.' || a.attname in ('curriculum_versions.criado_por', 'curriculum_versions.importado_por',
                                                              'specialty_offerings.criado_por', 'specialty_offerings.instrutor_responsavel_id')), 4);
 select t.ok('as constraints da trilha dizem, no catálogo, por que não têm on delete',
-  (select count(*) from pg_constraint c where c.conname in ('requirement_approvals_avaliado_por_fkey', 'investiture_reviews_revisado_por_fkey', 'curriculum_achievements_revogada_por_fkey')
-      and obj_description(c.oid, 'pg_constraint') ilike '%SEM on delete DE PROPÓSITO%') = 3);
+  (select count(*) from pg_constraint c where c.conname in ('requirement_approvals_avaliado_por_fkey', 'investiture_reviews_revisado_por_fkey', 'curriculum_achievements_revogada_por_fkey', 'document_final_renders_criado_por_fkey')
+      and obj_description(c.oid, 'pg_constraint') ilike '%SEM on delete DE PROPÓSITO%') = 4);
 
 -- =============================================================================
 --  2. Reconciliação do armazenamento: o job roda sem sessão; a RPC continua exigindo admin

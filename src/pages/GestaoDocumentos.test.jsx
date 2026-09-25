@@ -12,6 +12,7 @@ const baixarPdf = vi.fn()
 const assinarLote = vi.fn()
 const assinarDocumento = vi.fn()
 const subirDesenhoAssinatura = vi.fn()
+const gerarRepresentacaoFinal = vi.fn()
 vi.mock('../services/documentos.js', async (importOriginal) => {
   const real = await importOriginal()
   return {
@@ -22,6 +23,7 @@ vi.mock('../services/documentos.js', async (importOriginal) => {
     assinarLote: (...a) => assinarLote(...a),
     assinarDocumento: (...a) => assinarDocumento(...a),
     subirDesenhoAssinatura: (...a) => subirDesenhoAssinatura(...a),
+    gerarRepresentacaoFinal: (...a) => gerarRepresentacaoFinal(...a),
   }
 })
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => ({ clubeId: 'clube-1' }) }))
@@ -46,6 +48,7 @@ beforeEach(() => {
   assinarLote.mockReset()
   assinarDocumento.mockReset()
   subirDesenhoAssinatura.mockReset()
+  gerarRepresentacaoFinal.mockReset()
 })
 
 describe('GestaoDocumentos', () => {
@@ -73,6 +76,22 @@ describe('GestaoDocumentos', () => {
     expect(botao.closest('button')).toBeDisabled()
     await userEvent.click(botao)
     expect(gerarPdf).not.toHaveBeenCalled()
+  })
+
+  it('documento assinado mostra o botão de gerar H2, que chama o serviço com o token certo', async () => {
+    carregarDocumentosDoClube.mockResolvedValue([DOC_ASSINADO])
+    gerarRepresentacaoFinal.mockResolvedValue({ ok: true, gerado_agora: true, hash: 'x', storage_path: 'y' })
+    render(<GestaoDocumentos />)
+    const item = within(await screen.findByTestId('documento-item'))
+    await userEvent.click(item.getByTestId('gerar-h2'))
+    expect(gerarRepresentacaoFinal).toHaveBeenCalledWith('tok2')
+  })
+
+  it('documento em preparação NÃO mostra o botão de gerar H2 (ainda não há assinatura)', async () => {
+    carregarDocumentosDoClube.mockResolvedValue([DOC_PREPARO])
+    render(<GestaoDocumentos />)
+    const item = within(await screen.findByTestId('documento-item'))
+    expect(item.queryByTestId('gerar-h2')).not.toBeInTheDocument()
   })
 
   it('filtro por status restringe a lista', async () => {

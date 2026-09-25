@@ -109,6 +109,18 @@ export async function revogarAssinatura(signatureId, motivo) {
   return data
 }
 
+// H2 — representação final assinada, gerada depois da 1ª assinatura (nunca antes). Idempotente pro
+// mesmo conjunto de assinaturas: `gerado_agora: false` quando já existia. NÃO substitui o H1 (o PDF
+// que a assinatura declara continua sendo aquele, ver documento_assinar) — é só a página de leitura.
+export async function gerarRepresentacaoFinal(token) {
+  const { data, error } = await supabase.functions.invoke('gerar-documento-pdf-final', { body: { token } })
+  if (error) {
+    const corpo = await error.context?.json?.().catch(() => null)
+    throw new Error(corpo?.erro || error.message)
+  }
+  return data
+}
+
 // Sobe o desenho da assinatura (PNG) no bucket privado — path escopado por clube/documento/assinatura
 // (a policy do Storage já garante isso; o path aqui só segue a MESMA convenção). Depois registra a
 // referência na linha da assinatura (é a única coluna que pode mudar depois do INSERT).

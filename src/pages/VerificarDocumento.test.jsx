@@ -78,6 +78,24 @@ describe('VerificarDocumento (público)', () => {
     expect(screen.queryByText('Assinaturas eletrônicas')).toBeNull()
   })
 
+  it('mostra o H2 vigente (hash do H1 e do H2, quantas assinaturas) quando existe', async () => {
+    verificarDocumento.mockResolvedValue({
+      ...RESUMO, pdf_hash_h1: 'a'.repeat(64),
+      h2: { pdf_hash: 'b'.repeat(64), gerado_em: '2026-09-22T10:00:00Z', assinaturas_incluidas: 1 },
+    })
+    renderT()
+    expect(await screen.findByText('Representação final (H2)')).toBeInTheDocument()
+    expect(screen.getByText(`H1: ${'a'.repeat(64)}`)).toBeInTheDocument()
+    expect(screen.getByText(`H2: ${'b'.repeat(64)}`)).toBeInTheDocument()
+  })
+
+  it('sem H2 gerado ainda: não mostra a seção', async () => {
+    verificarDocumento.mockResolvedValue({ ...RESUMO, h2: null })
+    renderT()
+    await screen.findByText('Documento válido')
+    expect(screen.queryByText('Representação final (H2)')).toBeNull()
+  })
+
   it('token inexistente: mensagem de não encontrado, sem vazar nada', async () => {
     verificarDocumento.mockResolvedValue({ encontrado: false })
     renderT('INEXISTENTE')

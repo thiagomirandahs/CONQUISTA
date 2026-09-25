@@ -43,6 +43,7 @@ insert into t.excecoes values
   ('workflow_stage_decisions',   'decisão IMUTÁVEL de uma etapa (fase 4.2): segue a visibilidade da conquista; escopo_organizational_unit_id é a unidade RESOLVIDA pela hierarquia (clube, distrito, região...) — pode não ser o clube da pessoa. Gatilho recusa UPDATE/DELETE (teste 41)'),
   ('document_signatures',        'INTERFACE DE DADOS preparada pra futura assinatura eletrônica (fase 4.3): nasce e fica VAZIA — nenhuma RPC escreve nela; hoje só existe aprovacao_sistema (que não é assinatura digital). Segue a visibilidade da conquista (usuario_id + club_id_origem); club_id_origem é proveniência do emissor, não escopo (teste 42)'),
   ('document_reviews',           'REVISÃO DOCUMENTAL do PDF gerado (fase de fechamento): diferente de investiture_reviews (que é curricular). Mesma convenção de class_documents/document_signatures: club_id_origem, não club_id (teste 67)'),
+  ('document_final_renders',     'H2: representação final assinada (fase de fechamento). Mesma convenção de class_documents/document_signatures: club_id_origem, não club_id (teste 67)'),
   -- ----- fase 5: camada COMERCIAL. Deliberadamente NÃO é por clube: quem contrata é a conta/cliente,
   -- que pode cobrir N clubes. O elo com o clube mora em subscription_clubs (que tem club_id). Misturar
   -- assinatura com clube é justamente o erro que o teste 43 impede (assinatura não é vínculo).
