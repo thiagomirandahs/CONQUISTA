@@ -1,9 +1,10 @@
 import { lazy, Suspense, Component } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
+import { guardarRetorno } from './lib/retornoPosLogin.js'
 import Entrar from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
@@ -55,10 +56,14 @@ const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
 const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
+const Admin = lazy(() => import('./pages/Admin.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
 const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Eu = lazy(() => import('./pages/Eu.jsx'))
 const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
+const GestaoAvaliacoes = lazy(() => import('./pages/GestaoAvaliacoes.jsx'))
+const GestaoInscricoes = lazy(() => import('./pages/GestaoInscricoes.jsx'))
+const GestaoDocumentos = lazy(() => import('./pages/GestaoDocumentos.jsx'))
 const Jornada = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jornada })))
 const MeuClubeHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.MeuClube })))
 const JogosHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jogos })))
@@ -89,10 +94,17 @@ function Protegido({ children }) {
 
 // Só exige sessão — sem ClubeGuard. É o que a jornada institucional precisa: a autoridade
 // distrital/regional pode não ter (e normalmente não tem) vínculo de clube nenhum.
+// Antes de mandar pro login, guarda ONDE a pessoa estava tentando chegar (ex.: /entrar?codigo=...)
+// — nunca um club_id, só o caminho: o mesmo segredo que já ia na URL, só sobrevive ao login/cadastro
+// em vez de se perder. Login.jsx lê isso depois de autenticar e volta pra cá sozinho.
 function SessaoObrigatoria({ children }) {
   const { session, carregando } = useAuth()
+  const location = useLocation()
   if (carregando) return <Carregando />
-  if (!session) return <Navigate to="/login" replace />
+  if (!session) {
+    guardarRetorno(location.pathname + location.search)
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
@@ -175,6 +187,12 @@ export default function App() {
             pra abrir um clube ainda não tem clube nenhum (é justamente o que o onboarding cria). */}
         <Route path="/criar-clube" element={<SessaoObrigatoria><Onboarding /></SessaoObrigatoria>} />
 
+        {/* Administração da PLATAFORMA: exige sessão, mas não passa pelo ClubeGuard — é autoridade
+            comercial (contas, planos, assinaturas, provisionamento, suporte, auditoria), nunca
+            autoridade de clube. O guard de verdade é dentro de Admin.jsx (eh_admin_plataforma() no
+            servidor); não há link nenhum pra esta rota em nenhum menu — quem não é admin nem a vê. */}
+        <Route path="/admin" element={<SessaoObrigatoria><Admin /></SessaoObrigatoria>} />
+
         {/* Entrar num clube por código/QR ou por link de convite (fase 8.6). Exige SESSÃO e não
             passa pelo ClubeGuard, pela mesma razão do onboarding: quem chega aqui ainda não tem
             clube — é exatamente isso que esta tela resolve.
@@ -192,6 +210,9 @@ export default function App() {
           <Route path="/jogos" element={<JogosHub />} />
           <Route path="/eu" element={<Eu />} />
           <Route path="/gestao/avaliar" element={<RotaRestrita><GestaoAvaliar /></RotaRestrita>} />
+          <Route path="/gestao/avaliacoes" element={<RotaRestrita><GestaoAvaliacoes /></RotaRestrita>} />
+          <Route path="/gestao/inscricoes" element={<RotaRestrita><GestaoInscricoes /></RotaRestrita>} />
+          <Route path="/gestao/documentos" element={<RotaRestrita><GestaoDocumentos /></RotaRestrita>} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/meu-filho" element={<MeuFilho />} />
           <Route path="/vinculos-pais" element={<RotaRestrita><VinculosPais /></RotaRestrita>} />

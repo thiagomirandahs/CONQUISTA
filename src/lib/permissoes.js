@@ -11,6 +11,8 @@
 // não mostra o card nem abre a rota.
 export const FERRAMENTAS = [
   { to: '/aprovacoes', icon: '✅', titulo: 'Aprovações', desc: 'Liberar novos cadastros', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
+  { to: '/gestao/inscricoes', icon: '🎟️', titulo: 'Inscrições', desc: 'Código/link/QR do clube e quem está pedindo entrada', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
+  { to: '/gestao/documentos', icon: '📄', titulo: 'Documentos', desc: 'PDF dos documentos de classe emitidos', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar' },
   { to: '/apontamentos', icon: '✍️', titulo: 'Apontamentos', desc: 'Pontos da reunião por desbravador', papeis: ['conselheiro', 'instrutor', 'diretoria'] , grupo: 'pessoas' },
   { to: '/mensalidades', icon: '💰', titulo: 'Mensalidades', desc: 'Controle de pagamentos', papeis: ['tesoureiro', 'diretoria'], recurso: 'mensalidades' , grupo: 'clube' },
   { to: '/usuarios', icon: '👥', titulo: 'Usuários', desc: 'Resetar senha de quem não entra', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
@@ -52,6 +54,10 @@ export const PAPEIS_POR_ROTA = Object.fromEntries([
   ...FERRAMENTAS.map((f) => [f.to, f.papeis]),
   // fase 7: a fila ÚNICA de avaliação (reúne o que antes eram 6 cards espalhados em Gestão)
   ['/gestao/avaliar', ['diretoria', 'instrutor']],
+  // Classes + Especialidades numa central de trabalho só (Etapa 3 desta rodada).
+  ['/gestao/avaliacoes', ['diretoria', 'instrutor']],
+  // Gestão → Inscrições: mesmos papéis que já geravam o código dentro de Aprovações.
+  ['/gestao/inscricoes', ['diretoria', 'instrutor']],
 ])
 
 // Rota -> recurso do clube de que ela depende (abas do menu, telas da criançada e ferramentas). Sem entrada = tela do núcleo (sempre existe).

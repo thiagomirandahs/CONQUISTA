@@ -91,6 +91,21 @@ function Resultado({ d }) {
         <Linha rotulo="Emitido em" valor={fmtData(d.emitido_em)} />
         <Linha rotulo="Código de conferência" valor={<code className="font-mono">{fmtConf(d.conferencia)}</code>} />
       </dl>
+
+      {d.assinaturas?.length > 0 && (
+        <div className="px-5 py-4 border-t border-line">
+          <p className="text-xs font-extrabold text-ink mb-2">Assinaturas eletrônicas</p>
+          <ul className="space-y-2">
+            {d.assinaturas.map((a, i) => (
+              <li key={i} className="text-sm">
+                <p className="font-semibold text-ink">{a.nome} <span className="text-xs font-normal text-muted">({a.papel})</span></p>
+                <p className="text-xs text-faint">Assinado eletronicamente em {fmtData(a.data)} — {a.status === 'registrada' ? 'registrada' : a.status}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-faint mt-2">Assinatura eletrônica registrada pelo DesbravaClube.</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -30,3 +30,80 @@ export async function verificarDocumento(token) {
   if (error) throw new Error(error.message)
   return data
 }
+
+// ---------------------------------------------------------------------------------------------
+// Fase 4 (Bloco 1) — Central de Documentos (Gestão → Documentos): só LEITURA + geração de PDF.
+// Nenhuma correção pedagógica passa por aqui (isso continua no fluxo de requisito/avaliação).
+// ---------------------------------------------------------------------------------------------
+export async function carregarDocumentosDoClube() {
+  const { data, error } = await supabase.rpc('documentos_do_clube')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+// Chama a Edge Function que monta o PDF no SERVIDOR (pdf-lib, dentro da função) e registra
+// hash+caminho via documento_pdf_registrar. O cliente nunca monta o PDF.
+export async function gerarPdf(token) {
+  const { data, error } = await supabase.functions.invoke('gerar-documento-pdf', { body: { token } })
+  if (error) {
+    const corpo = await error.context?.json?.().catch(() => null)
+    throw new Error(corpo?.erro || error.message)
+  }
+  return data
+}
+
+export async function baixarPdf(storagePath) {
+  const { data, error } = await supabase.storage.from('documentos-emitidos').createSignedUrl(storagePath, 300)
+  if (error) throw new Error(error.message)
+  return data.signedUrl
+}
+
+export const ROTULO_ESTADO = {
+  em_preparacao: 'Em preparação',
+  pronto_para_assinatura: 'Pronto para assinatura',
+  parcialmente_assinado: 'Parcialmente assinado',
+  assinado: 'Assinado',
+  substituido: 'Substituído',
+  revogado: 'Revogado',
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fase 4 (Bloco 2) — Assinatura eletrônica interna do DesbravaClube. NÃO existe assinatura por
+// requisito/tentativa — só no documento final, depois do PDF gerado. Quem pode assinar vem de
+// workflow_stage_decisions (o servidor decide; o cliente nunca declara autoridade).
+// ---------------------------------------------------------------------------------------------
+export async function carregarAssinaturas(token) {
+  const { data, error } = await supabase.rpc('documento_assinaturas', { p_token: token })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function assinarDocumento(token, consentimentoTexto) {
+  const { data, error } = await supabase.rpc('documento_assinar', { p_token: token, p_consentimento_texto: consentimentoTexto })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function assinarLote(tokens, consentimentoTexto) {
+  const { data, error } = await supabase.rpc('documento_assinar_lote', { p_tokens: tokens, p_consentimento_texto: consentimentoTexto })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function revogarAssinatura(signatureId, motivo) {
+  const { data, error } = await supabase.rpc('documento_assinatura_revogar', { p_signature_id: signatureId, p_motivo: motivo })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Sobe o desenho da assinatura (PNG) no bucket privado — path escopado por clube/documento/assinatura
+// (a policy do Storage já garante isso; o path aqui só segue a MESMA convenção). Depois registra a
+// referência na linha da assinatura (é a única coluna que pode mudar depois do INSERT).
+export async function subirDesenhoAssinatura(clubId, documentoId, signatureId, blobPng) {
+  const path = `${clubId}/${documentoId}/${signatureId}.png`
+  const { error: erroUpload } = await supabase.storage.from('assinaturas-desenhadas').upload(path, blobPng, { contentType: 'image/png', upsert: false })
+  if (erroUpload) throw new Error(erroUpload.message)
+  const { data, error } = await supabase.rpc('documento_assinatura_desenho_registrar', { p_signature_id: signatureId, p_path: path })
+  if (error) throw new Error(error.message)
+  return data
+}

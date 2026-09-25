@@ -59,6 +59,25 @@ describe('VerificarDocumento (público)', () => {
     expect(await screen.findByText(/integridade deste documento não pôde ser confirmada/)).toBeInTheDocument()
   })
 
+  it('mostra assinaturas eletrônicas (nome, papel, data) — sem UUID/desenho/e-mail', async () => {
+    verificarDocumento.mockResolvedValue({
+      ...RESUMO,
+      assinaturas: [{ nome: 'Lider A', papel: 'diretoria', data: '2026-09-22T10:00:00Z', status: 'registrada' }],
+    })
+    renderT()
+    expect(await screen.findByText('Assinaturas eletrônicas')).toBeInTheDocument()
+    expect(screen.getByText('Lider A')).toBeInTheDocument()
+    expect(screen.getByText('(diretoria)')).toBeInTheDocument()
+    expect(screen.getByText(/Assinatura eletrônica registrada pelo DesbravaClube/)).toBeInTheDocument()
+  })
+
+  it('sem assinatura nenhuma: não mostra a seção', async () => {
+    verificarDocumento.mockResolvedValue({ ...RESUMO, assinaturas: [] })
+    renderT()
+    await screen.findByText('Documento válido')
+    expect(screen.queryByText('Assinaturas eletrônicas')).toBeNull()
+  })
+
   it('token inexistente: mensagem de não encontrado, sem vazar nada', async () => {
     verificarDocumento.mockResolvedValue({ encontrado: false })
     renderT('INEXISTENTE')

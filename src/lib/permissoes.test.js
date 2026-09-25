@@ -11,9 +11,12 @@ describe('matriz de permissões', () => {
   })
 
   it('PAPEIS_POR_ROTA reflete exatamente a lista', () => {
-    // fase 7: +1 rota que não é card de Gestão — a fila ÚNICA de avaliação (/gestao/avaliar)
-    expect(Object.keys(PAPEIS_POR_ROTA).length).toBe(FERRAMENTAS.length + 1)
+    // +2 rotas que não são card de Gestão: a fila ÚNICA de avaliação (/gestao/avaliar, fase 7) e a
+    // central Classes+Especialidades (/gestao/avaliacoes, Etapa 3). /gestao/inscricoes JÁ é um card
+    // (está em FERRAMENTAS), então não soma aqui.
+    expect(Object.keys(PAPEIS_POR_ROTA).length).toBe(FERRAMENTAS.length + 2)
     expect(PAPEIS_POR_ROTA['/gestao/avaliar']).toEqual(['diretoria', 'instrutor'])
+    expect(PAPEIS_POR_ROTA['/gestao/avaliacoes']).toEqual(['diretoria', 'instrutor'])
     for (const f of FERRAMENTAS) {
       expect(PAPEIS_POR_ROTA[f.to]).toEqual(f.papeis)
     }
