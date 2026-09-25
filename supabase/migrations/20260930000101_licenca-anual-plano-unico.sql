@@ -18,7 +18,7 @@ alter table public.billing_prices add column if not exists metadata jsonb not nu
 insert into public.billing_plans (chave, versao, nome, descricao, publico, status, ativo, recursos, limites, provisorio)
 values (
   'anual', 1, 'Licença Anual',
-  'Tudo o que o DesbravaClube oferece — Classes, especialidades, documentos com assinatura eletrônica, Storage, tudo incluso.',
+  'Tudo o que o DesbravaClube oferece — Classes, especialidades, documentos com assinatura eletrônica e armazenamento de arquivos, tudo incluso.',
   true, 'publicado', true,
   null, -- todos os recursos, sem exceção (é o único plano vendido agora)
   '{"membros": 300, "administradores": 20, "clubes": 3, "fotos": 20000, "armazenamento_mb": 10240}'::jsonb,

@@ -6,7 +6,6 @@ import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
 import Entrar from './pages/Entrar.jsx'
-import Landing from './pages/Landing.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
@@ -14,6 +13,7 @@ import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
 
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
+const Landing = lazy(() => import('./pages/Landing.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
 const Adquirir = lazy(() => import('./pages/Adquirir.jsx'))

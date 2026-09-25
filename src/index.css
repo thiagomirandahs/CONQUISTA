@@ -103,6 +103,7 @@ button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  html { scroll-behavior: auto; }
 }
 
 /* ===== Polimento do app nativo (Android/Capacitor) — só quando empacotado.
