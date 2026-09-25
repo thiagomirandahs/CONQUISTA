@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaClasse, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
+  carregarHistoricoRequisito,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
@@ -321,24 +322,14 @@ function Requisito({ r, userId, onMudou }) {
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {(r.avaliacoes || []).length > 0 && (
+        {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
           <button onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} className="text-xs font-semibold text-faint underline">
-            {mostrarHistorico ? 'Esconder' : 'Ver'} histórico de avaliação ({r.avaliacoes.length})
+            {mostrarHistorico ? 'Esconder' : 'Ver'} histórico ({r.avaliacoes.length} avaliaç{r.avaliacoes.length === 1 ? 'ão' : 'ões'})
           </button>
         )}
         <OrigemDoRequisito requirementId={r.id} />
       </div>
-      {mostrarHistorico && (
-        <ul className="mt-1.5 space-y-1">
-          {r.avaliacoes.map((a, i) => (
-            <li key={i} className="text-xs text-muted bg-surface2 rounded-lg px-3 py-1.5">
-              <span className="font-semibold">{a.decisao === 'aprovado' ? '✅ Aprovado' : '↺ Correção solicitada'}</span>
-              {' '}por {a.avaliado_por_nome} ({a.avaliado_papel}) em {fmtData(a.created_at)}
-              {a.comentario && <div className="italic mt-0.5">"{a.comentario}"</div>}
-            </li>
-          ))}
-        </ul>
-      )}
+      {mostrarHistorico && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
     </article>
   )
 }
@@ -464,6 +455,48 @@ function Escolha({ r, podeEditar, onMudou }) {
         </button>
       )}
     </fieldset>
+  )
+}
+
+// Histórico por TENTATIVA (requisito_historico, migration 87): cada tentativa mostra a evidência
+// enviada NAQUELE momento (não só a atual — a Tentativa 1 continua existindo mesmo depois da
+// correção/reenvio) e a decisão que recebeu. Buscado sob demanda pra não pesar a carga inicial.
+function HistoricoPorTentativa({ memberRequirementId }) {
+  const [dados, setDados] = useState(null)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let vivo = true
+    if (!memberRequirementId) return
+    carregarHistoricoRequisito(memberRequirementId)
+      .then((d) => { if (vivo) setDados(d) })
+      .catch((e) => { if (vivo) setErro(e?.message || 'Não consegui carregar o histórico.') })
+    return () => { vivo = false }
+  }, [memberRequirementId])
+
+  if (erro) return <p className="text-xs text-red-700 mt-1.5">{erro}</p>
+  if (!dados) return <p className="text-xs text-faint mt-1.5">Carregando histórico...</p>
+
+  const tentativas = dados.tentativas || []
+  return (
+    <ol className="mt-1.5 space-y-2">
+      {tentativas.map((tt) => (
+        <li key={tt.submission_id} className="text-xs bg-surface2 rounded-lg px-3 py-2 border-l-2 border-line">
+          <div className="font-semibold text-ink mb-1">Tentativa {tt.tentativa_numero} · enviado em {fmtData(tt.enviado_em)}</div>
+          {tt.evidencia_texto && <p className="text-muted italic mb-1">"{tt.evidencia_texto}"</p>}
+          {tt.evidencia_path && <Comprovacao valor={tt.evidencia_path} alt={`evidência da tentativa ${tt.tentativa_numero}`} classImg="w-24 h-24 object-cover rounded-lg mb-1" />}
+          {tt.decisao ? (
+            <div className={tt.decisao === 'aprovado' ? 'text-green-700' : 'text-red-700'}>
+              <span className="font-semibold">{tt.decisao === 'aprovado' ? '✅ Aprovado' : '↺ Correção solicitada'}</span>
+              {' '}por {tt.avaliado_por_nome} ({tt.avaliado_papel}) em {fmtData(tt.avaliado_em)}
+              {tt.comentario && <div className="italic mt-0.5 text-ink">"{tt.comentario}"</div>}
+            </div>
+          ) : (
+            <div className="text-amber-800">⏳ Ainda aguardando avaliação.</div>
+          )}
+        </li>
+      ))}
+    </ol>
   )
 }
 

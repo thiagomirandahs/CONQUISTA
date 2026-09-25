@@ -79,11 +79,30 @@ export async function carregarAvaliacoesPendentesDeClasse() {
   return data || []
 }
 
-export async function avaliarRequisito(memberRequirementId, decisao, comentario = null) {
+// submissionId é a tentativa que a tela VIU na fila (classe_avaliacoes_pendentes já devolve
+// `submission_id`) — passar ela ativa a trava de concorrência no servidor: se outra pessoa decidiu
+// essa mesma tentativa primeiro, ou o membro já reenviou, o servidor recusa com mensagem clara em
+// vez de sobrescrever silenciosamente.
+export async function avaliarRequisito(memberRequirementId, decisao, comentario = null, submissionId = null) {
   const { error } = await supabase.rpc('requisito_avaliar', {
-    p_member_requirement_id: memberRequirementId, p_decisao: decisao, p_comentario: comentario,
+    p_member_requirement_id: memberRequirementId, p_decisao: decisao, p_comentario: comentario, p_submission_id: submissionId,
   })
   if (error) throw new Error(error.message)
+}
+
+// Histórico completo de tentativas de um requisito (dono ou liderança do clube em uso) — "Ver
+// histórico" em Minha Classe, e o painel de contexto na fila de avaliação.
+export async function carregarHistoricoRequisito(memberRequirementId) {
+  const { data, error } = await supabase.rpc('requisito_historico', { p_member_requirement_id: memberRequirementId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Fila unificada (Classes + Especialidades, por ora) — Gestão → Avaliações.
+export async function carregarFilaDeAvaliacao(tipo = null, unidadeId = null) {
+  const { data, error } = await supabase.rpc('fila_avaliacao_unificada', { p_tipo: tipo, p_unidade_id: unidadeId })
+  if (error) throw new Error(error.message)
+  return data || []
 }
 
 // ---- conclusão / revisão final / investidura (fase 4) — liderança do clube em uso ----

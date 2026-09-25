@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
-import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito } from '../lib/dados.js'
+import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoricoRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -60,16 +60,28 @@ export default function AvaliarClasse() {
 function Item({ it, onFeito }) {
   const [comentario, setComentario] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [historico, setHistorico] = useState(null)
 
   async function avaliar(decisao) {
+    if (decisao === 'correcao_solicitada' && !comentario.trim()) {
+      avisar.erro(new Error('Explique o que precisa ser corrigido antes de enviar.'))
+      return
+    }
     setOcupado(true)
     try {
-      await avaliarRequisito(it.member_requirement_id, decisao, comentario.trim() || null)
+      // it.submission_id é a tentativa que ESTA TELA viu — se outra pessoa já decidiu ela, ou o
+      // membro reenviou nesse meio-tempo, o servidor recusa com mensagem clara (nunca sobrescreve).
+      await avaliarRequisito(it.member_requirement_id, decisao, comentario.trim() || null, it.submission_id)
       onFeito(it.member_requirement_id)
     } catch (e) {
       avisar.erro(e)
       setOcupado(false)
     }
+  }
+
+  async function verHistorico() {
+    if (historico) { setHistorico(null); return }
+    try { setHistorico(await carregarHistoricoRequisito(it.member_requirement_id)) } catch (e) { avisar.erro(e) }
   }
 
   // regras do servidor: a mesma lista que recusa a aprovação (aprovar NÃO contorna regra curricular)
@@ -83,7 +95,14 @@ function Item({ it, onFeito }) {
         <div className="font-bold text-ink truncate">{it.usuario_nome}</div>
         <span className="text-xs text-faint shrink-0">{it.classe_nome} · {it.secao_nome}</span>
       </div>
-      <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm text-ink">{it.requisito_codigo}. {it.requisito_descricao}</p>
+        {it.tentativa_numero > 1 && (
+          <span className="shrink-0 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+            Tentativa {it.tentativa_numero}
+          </span>
+        )}
+      </div>
       {it.conteudo_dinamico && (
         <p className="text-xs text-muted mb-2">📖 {it.conteudo_dinamico.ano ? `Conteúdo de ${it.conteudo_dinamico.ano}` : 'Conteúdo do período'}: {it.conteudo_dinamico.valor || <span className="text-amber-800">ainda não cadastrado</span>}</p>
       )}
@@ -106,9 +125,24 @@ function Item({ it, onFeito }) {
           {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
         </ul>
       )}
+      {it.tentativa_numero > 1 && (
+        <button type="button" onClick={verHistorico} className="text-xs font-semibold text-brand mb-2 underline">
+          {historico ? 'Ocultar histórico' : `Ver histórico (${it.tentativa_numero} tentativas)`}
+        </button>
+      )}
+      {historico && (
+        <ol className="text-xs bg-surface2 rounded-lg p-2 mb-2 space-y-1.5">
+          {(historico.tentativas || []).map((h) => (
+            <li key={h.submission_id} className="border-l-2 border-line pl-2">
+              <div className="font-semibold text-ink">Tentativa {h.tentativa_numero} — {h.decisao === 'aprovado' ? '✅ aprovada' : h.decisao === 'correcao_solicitada' ? '✏️ correção solicitada' : '⏳ aguardando'}</div>
+              {h.comentario && <div className="text-muted italic">"{h.comentario}"</div>}
+            </li>
+          ))}
+        </ol>
+      )}
       <label className="block mb-2">
-        <span className="sr-only">Comentário (opcional)</span>
-        <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="Comentário (opcional)"
+        <span className="sr-only">Orientação (obrigatória para pedir correção)</span>
+        <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="O que precisa corrigir? (obrigatório para pedir correção)"
           className="w-full text-sm rounded-lg border border-line px-3 py-1.5" />
       </label>
       <div className="flex gap-2">

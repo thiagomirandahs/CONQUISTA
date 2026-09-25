@@ -17,6 +17,7 @@ const iniciarClasse = vi.fn()
 const enviarRequisito = vi.fn()
 const escolherOpcoesRequisito = vi.fn()
 const carregarOrigemRequisito = vi.fn()
+const carregarHistoricoRequisito = vi.fn()
 vi.mock('../lib/dados.js', () => ({
   carregarMinhaClasse: (...a) => carregarMinhaClasse(...a),
   carregarClassesDisponiveis: (...a) => carregarClassesDisponiveis(...a),
@@ -25,6 +26,7 @@ vi.mock('../lib/dados.js', () => ({
   enviarRequisito: (...a) => enviarRequisito(...a),
   escolherOpcoesRequisito: (...a) => escolherOpcoesRequisito(...a),
   carregarOrigemRequisito: (...a) => carregarOrigemRequisito(...a),
+  carregarHistoricoRequisito: (...a) => carregarHistoricoRequisito(...a),
 }))
 
 const { default: MinhaClasse, situacaoDoRequisito, fmtData } = await import('./MinhaClasse.jsx')
@@ -66,7 +68,7 @@ const MINHA = {
       base({ id: 'r6', codigo: '6', descricao: 'Requisito cumprido pelo histórico.', escolha: escolhaBase({ satisfeitas_automaticamente: 1, opcoes_automaticas: ['o2'], validas: 1, satisfeito: true }) }),
       base({ id: 'r7', codigo: '7', descricao: 'Requisito aguardando.', status: 'aguardando_avaliacao' }),
       base({ id: 'r8', codigo: '8', descricao: 'Requisito aprovado.', status: 'aprovado', avaliacoes: [{ decisao: 'aprovado', avaliado_por_nome: 'Líder', avaliado_papel: 'diretoria', created_at: '2026-09-02' }] }),
-      base({ id: 'r9', codigo: '9', descricao: 'Requisito com correção.', status: 'correcao_solicitada', avaliacoes: [{ decisao: 'correcao_solicitada', avaliado_por_nome: 'Líder', avaliado_papel: 'diretoria', comentario: 'Refaça', created_at: '2026-09-02' }] }),
+      base({ id: 'r9', codigo: '9', descricao: 'Requisito com correção.', status: 'correcao_solicitada', member_requirement_id: 'mr9', avaliacoes: [{ decisao: 'correcao_solicitada', avaliado_por_nome: 'Líder', avaliado_papel: 'diretoria', comentario: 'Refaça', created_at: '2026-09-02' }] }),
       base({ id: 'r10', codigo: '10', descricao: 'Escolha aberta (sem lista).', escolha: escolhaBase({ total_opcoes: 0, aceita_texto_livre: true, opcoes: [], sem_repeticao: true }), bloqueios: ['Escolha pelo menos 1 e informe qual foi (0 de 1 até agora).'] }),
     ],
   }],
@@ -203,6 +205,10 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('aguardando/aprovado/correção: sem formulário, com o histórico e o pedido de correção', async () => {
+    carregarHistoricoRequisito.mockResolvedValue({
+      status_atual: 'correcao_solicitada',
+      tentativas: [{ submission_id: 's1', tentativa_numero: 1, evidencia_texto: null, evidencia_path: null, enviado_em: '2026-09-01', decisao: 'correcao_solicitada', avaliado_por_nome: 'Líder', avaliado_papel: 'diretoria', comentario: 'Refaça', avaliado_em: '2026-09-02' }],
+    })
     render(<MinhaClasse />)
     await screen.findByRole('heading', { level: 4 })
     expect(within(card('7')).getByText(/Aguardando a liderança avaliar/)).toBeInTheDocument()
@@ -210,8 +216,8 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(within(card('8')).queryByRole('button', { name: /Enviar/ })).not.toBeInTheDocument()
     const c9 = card('9')
     expect(within(c9).getByText(/A liderança pediu correção/)).toBeInTheDocument()
-    await userEvent.click(within(c9).getByRole('button', { name: /histórico de avaliação/ }))
-    expect(within(c9).getByText('"Refaça"')).toBeInTheDocument()
+    await userEvent.click(within(c9).getByRole('button', { name: /histórico/ }))
+    expect(await within(c9).findByText('"Refaça"')).toBeInTheDocument()
   })
 
   it('"Origem do requisito" é secundária (um link por card) e abre a proveniência sob demanda', async () => {
