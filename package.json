@@ -21,6 +21,7 @@
     "storage:fix-local": "bash supabase/tests/e2e/fix-storage-local.sh",
     "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:pdf:e2e": "node supabase/tests/e2e/pdf-ponta-a-ponta.mjs",
+    "test:lote:e2e": "node supabase/tests/e2e/assinatura-lote-ponta-a-ponta.mjs",
     "test:edge:bundle": "bash supabase/tests/e2e/edge-bundle.sh",
     "test:edge:bundle:pdf": "bash supabase/tests/e2e/edge-bundle-pdf.sh",
     "curriculo:validar": "node supabase/curriculo-manifesto/validar.mjs",
