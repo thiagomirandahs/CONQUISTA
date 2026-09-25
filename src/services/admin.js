@@ -36,6 +36,24 @@ export async function assinaturaTransicionar(subscriptionId, novoStatus, motivo)
   return data
 }
 
+// Visão por CLUBE (migration 103): leitura administrativa, só metadado comercial + contagens.
+async function rpcAdmin(nome, args) {
+  const { data, error } = await supabase.rpc(nome, args)
+  if (error) throw new Error(error.message)
+  return data
+}
+export const visaoGeral = () => rpcAdmin('admin_visao_geral')
+export const clubesListar = async () => (await rpcAdmin('admin_clubes_listar')) || []
+export const clubeDetalhe = (clubId) => rpcAdmin('admin_clube_detalhe', { p_club_id: clubId })
+export const planosAdminListar = async () => (await rpcAdmin('admin_planos_listar')) || []
+export const assinaturasListar = async () => (await rpcAdmin('admin_assinaturas_listar')) || []
+export const onboardingListar = async () => (await rpcAdmin('admin_onboarding_listar')) || []
+
+// plano_mudar (migration 48) já é exclusiva do admin e devolve o excedente em vez de aplicar
+// quando o plano novo fica abaixo do uso — só aplica com confirmação explícita.
+export const planoMudar = (subscriptionId, chave, versao = null, confirmarExcedente = false) =>
+  rpcAdmin('plano_mudar', { p_subscription_id: subscriptionId, p_plano_chave: chave, p_plano_versao: versao, p_confirmar_excedente: confirmarExcedente })
+
 // support_grants tem select direto liberado por RLS pra admin (mesma policy que libera a
 // liderança do clube) — não precisa de RPC de leitura própria.
 export async function suporteListar() {

@@ -1,33 +1,67 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Cabecalho, Card, Botao, Aviso, Selo, Carregando, Vazio, Abas, Campo } from '../ui/index.jsx'
-import { ROTULO_STATUS, carregarPlanos, formatarPreco } from '../services/comercial.js'
+import { ROTULO_STATUS, formatarPreco } from '../services/comercial.js'
 import {
-  souAdminPlataforma, contasListar, provisionamentoPendencias, provisionamentoReexecutar,
+  souAdminPlataforma, visaoGeral, clubesListar, clubeDetalhe, planosAdminListar, assinaturasListar,
+  onboardingListar, planoMudar, provisionamentoPendencias, provisionamentoReexecutar,
   assinaturaTransicionar, suporteListar, suporteRevogar, auditoriaListar,
 } from '../services/admin.js'
 import { avisar } from '../ui/avisos.jsx'
 
-// /admin — painel da OPERAÇÃO da plataforma (Fase 4 desta rodada, motor comercial da Fase 5).
-//
-// Isolamento que este painel EXISTE para preservar, não pra contornar: é autoridade COMERCIAL
-// (contas, planos, assinaturas, provisionamento, suporte assistido, auditoria da plataforma) —
-// nunca autoridade ECLESIÁSTICA de um clube. Nenhuma tela aqui lê chat, foto, evidência,
-// mensalidade interna ou qualquer dado privado de clube: as RPCs que ele chama (todas da migration
-// 20260921000048) nunca tiveram policy que alcançasse essas tabelas, e este arquivo não adiciona
-// nenhuma. O guard (RotaAdmin, ver App.jsx) barra quem não é `eh_admin_plataforma()` — inclusive
-// diretoria/instrutor/coordenador do maior clube do sistema.
+// /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
+// onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
+// tela aqui lê chat, foto, evidência, documento, mensalidade individual ou dado de criança — as RPCs
+// (migrations 48 e 103) só devolvem metadado e contagens, e todas exigem eh_admin_plataforma() no
+// servidor. O admin não ganha vínculo de clube; a Gestão do clube continua sendo da diretoria.
 const ABAS = [
   { chave: 'visao', rotulo: 'Visão geral', icone: '📊' },
-  { chave: 'contas', rotulo: 'Contas', icone: '🏢' },
+  { chave: 'clubes', rotulo: 'Clubes', icone: '🏕️' },
+  { chave: 'planos', rotulo: 'Planos', icone: '💳' },
+  { chave: 'assinaturas', rotulo: 'Assinaturas', icone: '🧾' },
+  { chave: 'armazenamento', rotulo: 'Armazenamento', icone: '💾' },
+  { chave: 'onboarding', rotulo: 'Onboarding', icone: '🧭' },
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️' },
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟' },
-  { chave: 'planos', rotulo: 'Planos', icone: '💳' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜' },
 ]
 
+const ROTULO_ARMAZENAMENTO = { sem_limite: 'Sem limite', normal: 'Normal', proximo: 'Próximo do limite', atingido: 'Limite atingido' }
+const TOM_ARMAZENAMENTO = { sem_limite: 'neutro', normal: 'ok', proximo: 'atencao', atingido: 'perigo' }
+const ROTULO_ONBOARDING = { em_andamento: 'Em andamento', concluido: 'Concluído', abandonado: 'Abandonado' }
+const tomAssinatura = (s) => (s === 'ativa' ? 'ok' : ['inadimplente', 'suspensa', 'cancelada'].includes(s) ? 'perigo' : 'atencao')
+
+export function formatarBytes(b) {
+  const n = Number(b || 0)
+  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1).replace('.', ',')} GB`
+  if (n >= 1024 ** 2) return `${Math.round(n / 1024 ** 2)} MB`
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`
+  return `${n} B`
+}
+const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
+const dataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—')
+
+// carrega uma fonte uma vez; `recarregar` refaz
+function useFonte(fn) {
+  const [dados, setDados] = useState(null)
+  const [erro, setErro] = useState('')
+  const recarregar = useCallback(() => {
+    fn().then((d) => { setErro(''); setDados(d) }).catch((e) => setErro(e?.message || String(e)))
+  }, [fn])
+  useEffect(() => { recarregar() }, [recarregar])
+  return { dados, erro, recarregar }
+}
+
+function Estado({ erro, dados, vazio, children }) {
+  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
+  if (dados == null) return <Carregando />
+  if (Array.isArray(dados) && dados.length === 0 && vazio) return vazio
+  return children
+}
+
 export default function Admin() {
   const [aba, setAba] = useState('visao')
-  const [autorizado, setAutorizado] = useState(null) // null = ainda checando
+  const [clubeAberto, setClubeAberto] = useState(null)
+  const [autorizado, setAutorizado] = useState(null)
   const [erroAcesso, setErroAcesso] = useState('')
 
   useEffect(() => {
@@ -46,113 +80,251 @@ export default function Admin() {
     )
   }
 
+  const abrirClube = (id) => { setClubeAberto(id); setAba('clubes') }
+  const trocarAba = (a) => { setClubeAberto(null); setAba(a) }
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <Cabecalho icone="🛠️" titulo="Administração DesbravaClube" descricao="Operação da plataforma — contas, planos, assinaturas, provisionamento, suporte e auditoria" />
-      <Abas abas={ABAS} ativa={aba} aoTrocar={setAba} rotulo="Áreas do admin" />
-      {aba === 'visao' && <VisaoGeral />}
-      {aba === 'contas' && <Contas />}
+    <div className="max-w-5xl mx-auto">
+      <Cabecalho icone="🛠️" titulo="Administração da Plataforma" descricao="Clubes, planos, assinaturas, armazenamento, onboarding e auditoria do DesbravaClube" />
+      <Abas abas={ABAS} ativa={aba} aoTrocar={trocarAba} rotulo="Áreas da administração" />
+      {aba === 'visao' && <VisaoGeral irPara={trocarAba} />}
+      {aba === 'clubes' && (clubeAberto
+        ? <DetalheClube clubId={clubeAberto} aoVoltar={() => setClubeAberto(null)} />
+        : <Clubes aoAbrir={abrirClube} />)}
+      {aba === 'planos' && <Planos />}
+      {aba === 'assinaturas' && <Assinaturas aoAbrirClube={abrirClube} />}
+      {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}
+      {aba === 'onboarding' && <Onboarding aoAbrirClube={abrirClube} />}
       {aba === 'provisionamento' && <Provisionamento />}
       {aba === 'suporte' && <Suporte />}
-      {aba === 'planos' && <PlanosAdmin />}
       {aba === 'auditoria' && <Auditoria />}
     </div>
   )
 }
 
 // ---------------------------------------------------------------- Visão geral
-// Agregada em memória a partir de admin_contas_listar/admin_provisionamento_pendencias — não existe
-// hoje uma RPC de agregação dedicada no backend (auditado); nenhum dado pessoal novo é exposto,
-// só contagens sobre o que as duas RPCs já devolvem.
-function VisaoGeral() {
-  const [contas, setContas] = useState(null)
-  const [pendencias, setPendencias] = useState(null)
-  const [erro, setErro] = useState('')
+function Metrica({ valor, rotulo, testid, aoTocar }) {
+  const conteudo = (<><p className="text-3xl font-extrabold text-ink" data-testid={testid}>{valor}</p><p className="text-xs text-muted">{rotulo}</p></>)
+  return aoTocar
+    ? <button type="button" onClick={aoTocar} className="bg-surface rounded-2xl shadow-soft p-4 text-center min-h-[44px] hover:ring-2 hover:ring-brand/30">{conteudo}</button>
+    : <Card className="text-center">{conteudo}</Card>
+}
 
-  useEffect(() => {
-    Promise.all([contasListar(), provisionamentoPendencias()])
-      .then(([c, p]) => { setContas(c); setPendencias(p) })
-      .catch((e) => setErro(e.message))
-  }, [])
+function VisaoGeral({ irPara }) {
+  const { dados: v, erro } = useFonte(visaoGeral)
+  return (
+    <Estado erro={erro} dados={v}>
+      {v && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Metrica valor={v.clubes_total} rotulo="Clubes" testid="visao-clubes" aoTocar={() => irPara('clubes')} />
+            <Metrica valor={v.clubes_ativos} rotulo="Clubes ativos" />
+            <Metrica valor={v.onboarding_em_andamento} rotulo="Em onboarding" aoTocar={() => irPara('onboarding')} />
+            <Metrica valor={v.clubes_inativos} rotulo="Inativos" />
+            <Metrica valor={formatarBytes(v.armazenamento_total_bytes)} rotulo="Armazenamento total" aoTocar={() => irPara('armazenamento')} />
+            <Metrica valor={v.clubes_proximos_do_limite + v.clubes_no_limite} rotulo="Clubes perto/no limite" aoTocar={() => irPara('armazenamento')} />
+            <Metrica valor={v.provisionamentos_pendentes} rotulo="Provisionamentos pendentes" aoTocar={() => irPara('provisionamento')} />
+            <Metrica valor={`${v.planos_publicos}/${v.planos_total}`} rotulo="Planos na vitrine / total" aoTocar={() => irPara('planos')} />
+          </div>
+          <Card>
+            <p className="font-bold text-ink mb-2 text-sm">Assinaturas por status</p>
+            {Object.keys(v.assinaturas_por_status || {}).length === 0
+              ? <p className="text-sm text-muted">Nenhuma assinatura.</p>
+              : (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(v.assinaturas_por_status).map(([s, n]) => (
+                    <Selo key={s} tom={tomAssinatura(s)}>{ROTULO_STATUS[s] || s}: {n}</Selo>
+                  ))}
+                </div>
+              )}
+          </Card>
+          <Card>
+            <p className="font-bold text-ink mb-1 text-sm">Últimos 7 dias</p>
+            <p className="text-sm text-muted">{v.eventos_admin_7d} ação(ões) de administração · {v.eventos_assinatura_7d} evento(s) de assinatura</p>
+          </Card>
+        </div>
+      )}
+    </Estado>
+  )
+}
 
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!contas || !pendencias) return <Carregando />
+// ---------------------------------------------------------------- Clubes
+function Clubes({ aoAbrir }) {
+  const { dados, erro } = useFonte(clubesListar)
+  const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState('todos')
 
-  const porStatus = {}
-  let clubes = 0
-  let cobrancasAbertas = 0
-  for (const c of contas) {
-    const s = c.assinatura?.status || 'sem_assinatura'
-    porStatus[s] = (porStatus[s] || 0) + 1
-    clubes += (c.clubes || []).length
-    cobrancasAbertas += c.cobrancas_abertas || 0
-  }
+  const lista = useMemo(() => (dados || []).filter((c) => {
+    const t = busca.trim().toLowerCase()
+    if (t && !`${c.nome} ${c.slug || ''}`.toLowerCase().includes(t)) return false
+    if (filtro === 'onboarding') return c.onboarding_status === 'em_andamento'
+    if (filtro === 'sem_assinatura') return !c.assinatura_id
+    if (filtro === 'armazenamento') return ['proximo', 'atingido'].includes(c.armazenamento_situacao)
+    if (filtro === 'inativos') return c.status !== 'ativo'
+    return true
+  }), [dados, busca, filtro])
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="text-center"><p className="text-3xl font-extrabold text-ink" data-testid="visao-contas">{contas.length}</p><p className="text-xs text-muted">Contas comerciais</p></Card>
-        <Card className="text-center"><p className="text-3xl font-extrabold text-ink">{clubes}</p><p className="text-xs text-muted">Clubes cobertos</p></Card>
-        <Card className="text-center"><p className="text-3xl font-extrabold text-ink">{cobrancasAbertas}</p><p className="text-xs text-muted">Cobranças em aberto/vencidas</p></Card>
-        <Card className="text-center"><p className="text-3xl font-extrabold text-ink">{pendencias.length}</p><p className="text-xs text-muted">Provisionamentos pendentes</p></Card>
-      </div>
-      <Card>
-        <p className="font-bold text-ink mb-2 text-sm">Assinaturas por status</p>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(porStatus).map(([s, n]) => (
-            <Selo key={s} tom={s === 'ativa' ? 'ok' : s === 'inadimplente' || s === 'suspensa' ? 'perigo' : 'atencao'}>
-              {ROTULO_STATUS[s] || s}: {n}
-            </Selo>
-          ))}
+    <Estado erro={erro} dados={dados} vazio={<Vazio icone="🏕️" titulo="Nenhum clube ainda" />}>
+      <div className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <Campo id="admin-busca-clube" rotulo="Buscar clube" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nome ou código" />
+          <div>
+            <label htmlFor="admin-filtro-clube" className="block text-sm font-medium text-ink mb-1">Filtro</label>
+            <select id="admin-filtro-clube" value={filtro} onChange={(e) => setFiltro(e.target.value)}
+              className="w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink">
+              <option value="todos">Todos</option>
+              <option value="onboarding">Em onboarding</option>
+              <option value="sem_assinatura">Sem assinatura</option>
+              <option value="armazenamento">Perto/no limite de armazenamento</option>
+              <option value="inativos">Inativos</option>
+            </select>
+          </div>
         </div>
-      </Card>
+        <p className="text-xs text-muted" role="status">{lista.length} de {(dados || []).length} clube(s)</p>
+        {lista.map((c) => (
+          <Card key={c.club_id} data-testid="clube-item">
+            <button type="button" onClick={() => aoAbrir(c.club_id)} className="w-full text-left min-h-[44px]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-bold text-ink">{c.nome}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {c.assinatura_status
+                    ? <Selo tom={tomAssinatura(c.assinatura_status)}>{ROTULO_STATUS[c.assinatura_status] || c.assinatura_status}</Selo>
+                    : <Selo tom="neutro">Sem assinatura</Selo>}
+                  {c.onboarding_status === 'em_andamento' && <Selo tom="atencao">Onboarding: {c.onboarding_etapa}</Selo>}
+                  {c.status !== 'ativo' && <Selo tom="perigo">Inativo</Selo>}
+                </div>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                {c.slug || '—'} · criado em {data(c.criado_em)} · {c.plano_nome ? `${c.plano_nome} v${c.plano_versao}${c.ciclo ? ` (${c.ciclo})` : ''}` : 'sem plano'}
+                {' · '}{formatarBytes(c.armazenamento_bytes)}{c.armazenamento_limite_mb ? ` de ${formatarBytes(c.armazenamento_limite_mb * 1048576)} (${c.armazenamento_pct}%)` : ' (sem limite)'}
+              </p>
+            </button>
+          </Card>
+        ))}
+      </div>
+    </Estado>
+  )
+}
+
+// ---------------------------------------------------------------- Detalhe do clube
+function Secao({ titulo, children }) {
+  return (
+    <Card>
+      <h3 className="font-bold text-ink text-sm mb-2">{titulo}</h3>
+      {children}
+    </Card>
+  )
+}
+
+function Linha({ rotulo, children }) {
+  return (
+    <div className="flex justify-between gap-3 py-1 text-sm border-b border-line last:border-0">
+      <span className="text-muted">{rotulo}</span><span className="text-ink font-semibold text-right">{children}</span>
     </div>
   )
 }
 
-// ---------------------------------------------------------------- Contas
-function Contas() {
-  const [contas, setContas] = useState(null)
-  const [erro, setErro] = useState('')
-  const [aberta, setAberta] = useState(null)
+function DetalheClube({ clubId, aoVoltar }) {
+  const buscar = useCallback(() => clubeDetalhe(clubId), [clubId])
+  const { dados: d, erro, recarregar } = useFonte(buscar)
+  const [ocupado, setOcupado] = useState(false)
 
-  const carregar = useCallback(() => {
-    contasListar().then(setContas).catch((e) => setErro(e.message))
-  }, [])
-  useEffect(() => { carregar() }, [carregar])
-
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!contas) return <Carregando />
-  if (contas.length === 0) return <Vazio icone="🏢" titulo="Nenhuma conta comercial ainda" />
+  async function reexecutar() {
+    setOcupado(true)
+    try {
+      const r = await provisionamentoReexecutar(clubId)
+      if (r?.status === 'ok') avisar.sucesso('Provisionamento concluído.')
+      else avisar.erro(new Error(r?.erro || 'Continua pendente.'))
+      recarregar()
+    } catch (e) { avisar.erro(e) }
+    setOcupado(false)
+  }
 
   return (
     <div className="space-y-3">
-      {contas.map((c) => (
-        <Card key={c.conta_id} data-testid="conta-item">
-          <button type="button" onClick={() => setAberta(aberta === c.conta_id ? null : c.conta_id)}
-            className="w-full text-left flex items-center justify-between gap-2 min-h-[44px]">
-            <div className="min-w-0">
-              <p className="font-bold text-ink truncate">{c.nome}</p>
-              <p className="text-xs text-muted">{(c.clubes || []).length} clube(s) · {c.assinatura?.plano_nome || 'sem plano'}</p>
-            </div>
-            {c.assinatura && (
-              <Selo tom={c.assinatura.status === 'ativa' ? 'ok' : ['inadimplente', 'suspensa'].includes(c.assinatura.status) ? 'perigo' : 'atencao'}>
-                {ROTULO_STATUS[c.assinatura.status] || c.assinatura.status}
-              </Selo>
-            )}
-          </button>
-          {aberta === c.conta_id && (
-            <div className="mt-3 pt-3 border-t border-line space-y-3">
-              <ul className="text-xs text-muted space-y-1">
-                {(c.clubes || []).map((cl) => (
-                  <li key={cl.club_id}>🏕️ {cl.nome} — {cl.membros ?? '—'} membros, provisionamento: {cl.provisionamento}</li>
+      <Botao variacao="secundario" aoTocar={aoVoltar}>← Voltar para os clubes</Botao>
+      <Estado erro={erro} dados={d}>
+        {d && (() => {
+          const c = d.clube
+          return (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Secao titulo="Identificação">
+                <Linha rotulo="Nome">{c.nome}</Linha>
+                <Linha rotulo="Código">{c.slug || '—'}</Linha>
+                <Linha rotulo="Situação">{c.status === 'ativo' ? 'Ativo' : 'Inativo'}</Linha>
+                <Linha rotulo="Criado em">{data(c.criado_em)}</Linha>
+                <Linha rotulo="Vinculado a">{d.hierarquia ? `${d.hierarquia.nome} (${d.hierarquia.tipo})` : '—'}</Linha>
+              </Secao>
+
+              <Secao titulo="Plano e assinatura">
+                {c.assinatura_id ? (
+                  <>
+                    <Linha rotulo="Plano">{c.plano_nome} v{c.plano_versao}</Linha>
+                    <Linha rotulo="Ciclo">{c.ciclo || '—'}</Linha>
+                    <Linha rotulo="Situação"><Selo tom={tomAssinatura(c.assinatura_status)}>{ROTULO_STATUS[c.assinatura_status] || c.assinatura_status}</Selo></Linha>
+                    {c.trial_ate && <Linha rotulo="Teste até">{data(c.trial_ate)}</Linha>}
+                    {c.periodo_fim && <Linha rotulo="Período até">{data(c.periodo_fim)}</Linha>}
+                    <Linha rotulo="Pagamento">{c.provider === 'mock' || !c.provider ? 'Sem gateway — combinado fora do sistema' : c.provider}</Linha>
+                    <div className="mt-3 space-y-4">
+                      <TransicaoAssinatura assinatura={{ id: c.assinatura_id, status: c.assinatura_status }} onFeito={recarregar} />
+                      <MudarPlano assinaturaId={c.assinatura_id} atual={`${c.plano_chave}|${c.plano_versao}`} onFeito={recarregar} />
+                    </div>
+                  </>
+                ) : <p className="text-sm text-muted">Sem assinatura nem conta comercial (clube anterior ao modelo comercial, ou cadastro que ainda não chegou à etapa do clube).</p>}
+              </Secao>
+
+              <Secao titulo="Armazenamento e limites">
+                <Linha rotulo="Uso">{formatarBytes(c.armazenamento_bytes)} · {c.armazenamento_objetos} arquivo(s)</Linha>
+                <Linha rotulo="Limite">{c.armazenamento_limite_mb ? formatarBytes(c.armazenamento_limite_mb * 1048576) : 'Sem limite'}</Linha>
+                <Linha rotulo="Situação"><Selo tom={TOM_ARMAZENAMENTO[c.armazenamento_situacao]}>{ROTULO_ARMAZENAMENTO[c.armazenamento_situacao]}{c.armazenamento_pct != null ? ` · ${c.armazenamento_pct}%` : ''}</Selo></Linha>
+                {(d.limites || []).filter((l) => l.chave !== 'armazenamento_mb').map((l) => (
+                  <Linha key={l.chave} rotulo={`Limite de ${l.chave}`}>{l.uso ?? '—'} de {l.teto}</Linha>
                 ))}
-              </ul>
-              {c.assinatura && <TransicaoAssinatura assinatura={c.assinatura} onFeito={carregar} />}
+              </Secao>
+
+              <Secao titulo="Onboarding e provisionamento">
+                {(d.onboarding || []).length === 0
+                  ? <p className="text-sm text-muted">Sem sessão de onboarding registrada.</p>
+                  : d.onboarding.map((o, i) => (
+                    <div key={i} className="mb-2">
+                      <Linha rotulo="Onboarding">{ROTULO_ONBOARDING[o.status] || o.status} · etapa {o.etapa}</Linha>
+                      <Linha rotulo="Atualizado em">{dataHora(o.atualizado_em)}</Linha>
+                      {o.ultimo_erro && <Linha rotulo="Último erro">{o.ultimo_erro}</Linha>}
+                    </div>
+                  ))}
+                <Linha rotulo="Provisionamento">{d.provisionamento?.status || 'não verificado'}{d.provisionamento?.erro ? ` · ${d.provisionamento.erro}` : ''}</Linha>
+                {d.provisionamento && d.provisionamento.status !== 'ok' && (
+                  <div className="mt-2"><Botao variacao="secundario" aoTocar={reexecutar} carregando={ocupado}>Reexecutar provisionamento</Botao></div>
+                )}
+              </Secao>
+
+              <Secao titulo="Recursos habilitados">
+                {(d.recursos || []).length === 0
+                  ? <p className="text-sm text-muted">Sem ajuste por clube — vale o que o plano define.</p>
+                  : <div className="flex flex-wrap gap-1.5">{d.recursos.map((r) => <Selo key={r.recurso} tom={r.ligado ? 'ok' : 'neutro'}>{r.recurso}: {r.ligado ? 'ligado' : 'desligado'}</Selo>)}</div>}
+              </Secao>
+
+              <Secao titulo="Pessoas (só contagens)">
+                {(d.vinculos_por_papel || []).length === 0
+                  ? <p className="text-sm text-muted">Nenhum vínculo.</p>
+                  : d.vinculos_por_papel.map((v) => <Linha key={`${v.papel}-${v.status}`} rotulo={`${v.papel} (${v.status})`}>{v.total}</Linha>)}
+                <p className="text-xs text-faint mt-2">A administração da plataforma não vê nomes, fotos, chat, evidências nem mensalidades do clube.</p>
+              </Secao>
+
+              <div className="md:col-span-2">
+                <Secao titulo="Histórico administrativo">
+                  {[...(d.assinatura_eventos || []).map((e) => ({ em: e.em, texto: `${e.motivo || `${e.de} → ${e.para}`} (${e.origem})` })),
+                    ...(d.auditoria || []).map((a) => ({ em: a.em, texto: `${a.acao} · ${a.alvo_tipo}${a.detalhe?.motivo ? ` · ${a.detalhe.motivo}` : ''}` }))]
+                    .sort((a, b) => String(b.em).localeCompare(String(a.em)))
+                    .map((h, i) => <Linha key={i} rotulo={dataHora(h.em)}>{h.texto}</Linha>)}
+                  {(d.assinatura_eventos || []).length + (d.auditoria || []).length === 0 && <p className="text-sm text-muted">Nenhum evento ainda.</p>}
+                </Secao>
+              </div>
             </div>
-          )}
-        </Card>
-      ))}
+          )
+        })()}
+      </Estado>
     </div>
   )
 }
@@ -179,8 +351,8 @@ function TransicaoAssinatura({ assinatura, onFeito }) {
 
   return (
     <div>
-      <p className="text-xs font-bold text-ink mb-1">Mudar status da assinatura</p>
-      <select value={novo} onChange={(e) => setNovo(e.target.value)} data-testid="assinatura-status"
+      <label htmlFor={`status-${assinatura.id}`} className="block text-xs font-bold text-ink mb-1">Mudar status da assinatura</label>
+      <select id={`status-${assinatura.id}`} value={novo} onChange={(e) => setNovo(e.target.value)} data-testid="assinatura-status"
         className="w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink mb-2">
         {STATUS_ASSINATURA.map((s) => <option key={s} value={s}>{ROTULO_STATUS[s] || s}</option>)}
       </select>
@@ -193,48 +365,208 @@ function TransicaoAssinatura({ assinatura, onFeito }) {
   )
 }
 
+function MudarPlano({ assinaturaId, atual, onFeito }) {
+  const { dados: planos } = useFonte(planosAdminListar)
+  const [escolha, setEscolha] = useState(atual)
+  const [excedentes, setExcedentes] = useState(null)
+  const [ocupado, setOcupado] = useState(false)
+  const opcoes = (planos || []).filter((p) => p.ativo && p.status === 'publicado')
+
+  async function aplicar(confirmar = false) {
+    const [chave, versao] = escolha.split('|')
+    setOcupado(true)
+    try {
+      const r = await planoMudar(assinaturaId, chave, Number(versao), confirmar)
+      if (r?.precisa_confirmar) { setExcedentes(r); setOcupado(false); return }
+      avisar.sucesso('Plano alterado. Nada foi apagado.')
+      setExcedentes(null)
+      onFeito?.()
+    } catch (e) { avisar.erro(e) }
+    setOcupado(false)
+  }
+
+  return (
+    <div>
+      <label htmlFor={`plano-${assinaturaId}`} className="block text-xs font-bold text-ink mb-1">Alterar plano</label>
+      <select id={`plano-${assinaturaId}`} value={escolha} onChange={(e) => { setEscolha(e.target.value); setExcedentes(null) }}
+        className="w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink mb-1">
+        {opcoes.map((p) => <option key={`${p.chave}|${p.versao}`} value={`${p.chave}|${p.versao}`}>{p.nome} v{p.versao}{p.publico ? '' : ' (fora da vitrine)'}</option>)}
+      </select>
+      <p className="text-xs text-faint mb-2">Troca só o plano (limites e recursos). O ciclo e o preço da assinatura não mudam por aqui.</p>
+      {excedentes && (
+        <Aviso tom="atencao" titulo="O plano novo é menor que o uso atual">
+          {excedentes.mensagem}
+          <ul className="mt-1 text-xs">{(excedentes.excedentes || []).map((x, i) => <li key={i}>{x.clube}: {x.limite} {x.uso} de {x.teto}</li>)}</ul>
+        </Aviso>
+      )}
+      <Botao variacao={excedentes ? 'perigo' : 'secundario'} aoTocar={() => aplicar(!!excedentes)} carregando={ocupado} desabilitado={escolha === atual}>
+        {excedentes ? 'Confirmar mesmo assim' : 'Aplicar plano'}
+      </Botao>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------- Planos (todas as versões)
+function Planos() {
+  const { dados, erro } = useFonte(planosAdminListar)
+  return (
+    <Estado erro={erro} dados={dados} vazio={<Vazio icone="💳" titulo="Nenhum plano no catálogo" />}>
+      <div className="space-y-3">
+        <Aviso tom="info">Somente leitura. Cada versão de plano é histórica: mudar o catálogo cria versão nova e não altera assinatura antiga em silêncio.</Aviso>
+        {(dados || []).map((p) => (
+          <Card key={p.id} data-testid="plano-item">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-bold text-ink">{p.nome} <span className="text-muted font-normal">· {p.chave} v{p.versao}</span></p>
+              <div className="flex flex-wrap gap-1.5">
+                <Selo tom={p.publico ? 'ok' : 'neutro'}>{p.publico ? 'Na vitrine' : 'Fora da vitrine'}</Selo>
+                <Selo tom={p.ativo && p.status === 'publicado' ? 'ok' : 'perigo'}>{p.status}{p.ativo ? '' : ' · inativo'}</Selo>
+                {p.provisorio && <Selo tom="atencao">Provisório</Selo>}
+              </div>
+            </div>
+            <p className="text-xs text-muted mt-1">{p.assinaturas} assinatura(s) neste plano</p>
+            <div className="mt-2 text-sm text-ink space-y-0.5">
+              {(p.precos || []).length === 0
+                ? <p className="text-muted">Sem preço.</p>
+                : p.precos.map((pr, i) => (
+                  <p key={i}>{formatarPreco(pr.valor_centavos, pr.moeda)} / {pr.ciclo}{pr.ativo ? '' : ' (inativo)'} <span className="text-xs text-faint">vigente de {data(pr.vigente_de)}{pr.vigente_ate ? ` até ${data(pr.vigente_ate)}` : ''}</span></p>
+                ))}
+            </div>
+            <p className="text-xs text-muted mt-2">
+              Limites: {Object.keys(p.limites || {}).length === 0 ? 'sem limite' : Object.entries(p.limites).map(([k, v]) => `${k} ${v}`).join(' · ')}
+            </p>
+            <p className="text-xs text-muted">Recursos: {p.recursos ? p.recursos.join(', ') : 'todos'}</p>
+          </Card>
+        ))}
+      </div>
+    </Estado>
+  )
+}
+
+// ---------------------------------------------------------------- Assinaturas
+function Assinaturas({ aoAbrirClube }) {
+  const { dados, erro } = useFonte(assinaturasListar)
+  return (
+    <Estado erro={erro} dados={dados} vazio={<Vazio icone="🧾" titulo="Nenhuma assinatura" />}>
+      <div className="space-y-3">
+        <Aviso tom="info">
+          Licença/assinatura interna não é pagamento. Sem gateway integrado, nenhum pagamento aparece como confirmado aqui.
+        </Aviso>
+        {(dados || []).map((s) => (
+          <Card key={s.id} data-testid="assinatura-item">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-bold text-ink">{(s.clubes || []).map((c) => c.nome).join(', ') || s.conta || 'Sem clube'}</p>
+              <Selo tom={tomAssinatura(s.status)}>{ROTULO_STATUS[s.status] || s.status}</Selo>
+            </div>
+            <p className="text-xs text-muted mt-1">
+              {s.plano_nome} v{s.plano_versao} · {s.ciclo || 'ciclo —'} · início {data(s.criada_em)}
+              {s.trial_ate ? ` · teste até ${data(s.trial_ate)}` : ''}{s.periodo_fim ? ` · período até ${data(s.periodo_fim)}` : ''}
+            </p>
+            <p className="text-xs mt-1">
+              {s.faturas_pagas_gateway > 0
+                ? <span className="text-green-700 font-semibold">{s.faturas_pagas_gateway} pagamento(s) confirmado(s) pelo gateway</span>
+                : <span className="text-faint">Pagamento não confirmado por gateway</span>}
+              {s.faturas_abertas > 0 && <span className="text-amber-800"> · {s.faturas_abertas} fatura(s) em aberto</span>}
+            </p>
+            {(s.clubes || [])[0] && (
+              <button type="button" onClick={() => aoAbrirClube(s.clubes[0].club_id)} className="mt-2 text-xs font-bold text-brand underline min-h-[44px]">Abrir clube</button>
+            )}
+          </Card>
+        ))}
+      </div>
+    </Estado>
+  )
+}
+
+// ---------------------------------------------------------------- Armazenamento
+function Armazenamento({ aoAbrirClube }) {
+  const { dados, erro } = useFonte(clubesListar)
+  const ordem = { atingido: 0, proximo: 1, normal: 2, sem_limite: 3 }
+  const lista = [...(dados || [])].sort((a, b) => ordem[a.armazenamento_situacao] - ordem[b.armazenamento_situacao] || b.armazenamento_bytes - a.armazenamento_bytes)
+  return (
+    <Estado erro={erro} dados={dados} vazio={<Vazio icone="💾" titulo="Nenhum clube" />}>
+      <div className="space-y-2">
+        <Aviso tom="info">Só o tamanho usado. A administração não abre os arquivos dos clubes.</Aviso>
+        {lista.map((c) => (
+          <Card key={c.club_id} className="p-3" data-testid="armazenamento-item">
+            <button type="button" onClick={() => aoAbrirClube(c.club_id)} className="w-full text-left min-h-[44px]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold text-ink">{c.nome}</p>
+                <Selo tom={TOM_ARMAZENAMENTO[c.armazenamento_situacao]}>{ROTULO_ARMAZENAMENTO[c.armazenamento_situacao]}</Selo>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                {formatarBytes(c.armazenamento_bytes)}{c.armazenamento_limite_mb ? ` de ${formatarBytes(c.armazenamento_limite_mb * 1048576)} · ${c.armazenamento_pct}%` : ' · sem limite'}
+              </p>
+              {c.armazenamento_limite_mb > 0 && (
+                <div className="h-1.5 mt-2 rounded-full bg-surface2 overflow-hidden" aria-hidden="true">
+                  <div className={`h-full rounded-full ${c.armazenamento_situacao === 'atingido' ? 'bg-red-600' : c.armazenamento_situacao === 'proximo' ? 'bg-amber-500' : 'bg-green-600'}`}
+                    style={{ width: `${Math.min(100, c.armazenamento_pct || 0)}%` }} />
+                </div>
+              )}
+            </button>
+          </Card>
+        ))}
+      </div>
+    </Estado>
+  )
+}
+
+// ---------------------------------------------------------------- Onboarding
+function Onboarding({ aoAbrirClube }) {
+  const { dados, erro } = useFonte(onboardingListar)
+  return (
+    <Estado erro={erro} dados={dados} vazio={<Vazio icone="🧭" titulo="Nenhum onboarding iniciado" />}>
+      <div className="space-y-2">
+        {(dados || []).map((o) => (
+          <Card key={o.id} className="p-3" data-testid="onboarding-item">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-semibold text-ink">{o.clube || 'Clube ainda não criado'}</p>
+              <Selo tom={o.status === 'concluido' ? 'ok' : o.status === 'abandonado' ? 'perigo' : 'atencao'}>{ROTULO_ONBOARDING[o.status] || o.status}</Selo>
+            </div>
+            <p className="text-xs text-muted mt-1">
+              Etapa atual: {o.etapa} · {(o.etapas_concluidas || []).length} etapa(s) concluída(s) · iniciado {data(o.iniciado_em)} · atualizado {dataHora(o.atualizado_em)}
+              {o.provisionamento ? ` · provisionamento ${o.provisionamento}` : ''}
+            </p>
+            {o.ultimo_erro && <p className="text-xs text-red-700 mt-1">Último erro: {o.ultimo_erro}</p>}
+            {o.club_id && <button type="button" onClick={() => aoAbrirClube(o.club_id)} className="mt-1 text-xs font-bold text-brand underline min-h-[44px]">Abrir clube</button>}
+          </Card>
+        ))}
+      </div>
+    </Estado>
+  )
+}
+
 // ---------------------------------------------------------------- Provisionamento
 function Provisionamento() {
-  const [lista, setLista] = useState(null)
-  const [erro, setErro] = useState('')
+  const { dados: lista, erro, recarregar } = useFonte(provisionamentoPendencias)
   const [ocupado, setOcupado] = useState(null)
-
-  const carregar = useCallback(() => {
-    provisionamentoPendencias().then(setLista).catch((e) => setErro(e.message))
-  }, [])
-  useEffect(() => { carregar() }, [carregar])
 
   async function reexecutar(clubId) {
     setOcupado(clubId)
     try {
       const r = await provisionamentoReexecutar(clubId)
-      avisar[r?.status === 'ok' ? 'sucesso' : 'erro'](r?.status === 'ok' ? null : new Error(r?.erro || 'Continua pendente.'),
-        r?.status === 'ok' ? 'Provisionamento concluído.' : undefined)
-      carregar()
+      if (r?.status === 'ok') avisar.sucesso('Provisionamento concluído.')
+      else avisar.erro(new Error(r?.erro || 'Continua pendente.'))
+      recarregar()
     } catch (e) { avisar.erro(e) }
     setOcupado(null)
   }
 
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!lista) return <Carregando />
-  if (lista.length === 0) return <Vazio icone="✅" titulo="Nenhuma pendência de provisionamento" />
-
   return (
-    <div className="space-y-3">
-      {lista.map((p) => (
-        <Card key={p.club_id}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-bold text-ink truncate">{p.clube}</p>
-              <p className="text-xs text-muted">{p.status} · {p.tentativas} tentativa(s){p.erro ? ` · ${p.erro}` : ''}</p>
+    <Estado erro={erro} dados={lista} vazio={<Vazio icone="✅" titulo="Nenhuma pendência de provisionamento" />}>
+      <div className="space-y-3">
+        {(lista || []).map((p) => (
+          <Card key={p.club_id}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-bold text-ink truncate">{p.clube}</p>
+                <p className="text-xs text-muted">{p.status} · {p.tentativas} tentativa(s){p.erro ? ` · ${p.erro}` : ''}</p>
+              </div>
+              <Botao variacao="secundario" aoTocar={() => reexecutar(p.club_id)} carregando={ocupado === p.club_id}>Reexecutar</Botao>
             </div>
-            <Botao variacao="secundario" aoTocar={() => reexecutar(p.club_id)} carregando={ocupado === p.club_id}>
-              Reexecutar
-            </Botao>
-          </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))}
+      </div>
+    </Estado>
   )
 }
 
@@ -245,91 +577,51 @@ const ROTULO_SUPORTE = {
 }
 
 function Suporte() {
-  const [lista, setLista] = useState(null)
-  const [erro, setErro] = useState('')
-
-  const carregar = useCallback(() => { suporteListar().then(setLista).catch((e) => setErro(e.message)) }, [])
-  useEffect(() => { carregar() }, [carregar])
-
+  const { dados: lista, erro, recarregar } = useFonte(suporteListar)
   async function revogar(id) {
-    try { await suporteRevogar(id, 'Revogado pelo admin.'); carregar() } catch (e) { avisar.erro(e) }
+    try { await suporteRevogar(id, 'Revogado pelo admin.'); recarregar() } catch (e) { avisar.erro(e) }
   }
-
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!lista) return <Carregando />
-
   return (
-    <div className="space-y-3">
-      <Aviso tom="info">
-        Nesta versão, autorizar um pedido aqui <strong>não concede acesso real</strong> a dado de
-        clube — fica registrado e auditado. Só a liderança do clube autoriza; o admin nunca autoriza
-        o próprio pedido.
-      </Aviso>
-      {lista.length === 0
-        ? <Vazio icone="🛟" titulo="Nenhum pedido de suporte" />
-        : lista.map((g) => (
-          <Card key={g.id}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm text-ink">{g.motivo}</p>
-                <p className="text-xs text-muted">{ROTULO_SUPORTE[g.status] || g.status}</p>
+    <Estado erro={erro} dados={lista}>
+      <div className="space-y-3">
+        <Aviso tom="info">
+          Nesta versão, autorizar um pedido aqui <strong>não concede acesso real</strong> a dado de
+          clube — fica registrado e auditado. Só a liderança do clube autoriza; o admin nunca autoriza
+          o próprio pedido.
+        </Aviso>
+        {(lista || []).length === 0
+          ? <Vazio icone="🛟" titulo="Nenhum pedido de suporte" />
+          : lista.map((g) => (
+            <Card key={g.id}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm text-ink">{g.motivo}</p>
+                  <p className="text-xs text-muted">{ROTULO_SUPORTE[g.status] || g.status}</p>
+                </div>
+                {['solicitado', 'autorizado'].includes(g.status) && (
+                  <Botao variacao="perigo" aoTocar={() => revogar(g.id)}>Revogar</Botao>
+                )}
               </div>
-              {['solicitado', 'autorizado'].includes(g.status) && (
-                <Botao variacao="perigo" aoTocar={() => revogar(g.id)}>Revogar</Botao>
-              )}
-            </div>
-          </Card>
-        ))}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------- Planos (somente leitura)
-// CRUD de catálogo NÃO existe no backend auditado (billing_plans/billing_prices não têm RPC de
-// escrita) — esta aba é deliberadamente só leitura, reaproveitando o MESMO catálogo público que
-// /planos já usa (nenhum preço no React).
-function PlanosAdmin() {
-  const [planos, setPlanos] = useState(null)
-  const [erro, setErro] = useState('')
-  useEffect(() => { carregarPlanos().then(setPlanos).catch((e) => setErro(e.message)) }, [])
-
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!planos) return <Carregando />
-
-  return (
-    <div className="space-y-3">
-      <Aviso tom="info">Somente leitura nesta fase: não há RPC de escrita no catálogo — editar plano continua sendo via banco.</Aviso>
-      {planos.map((p) => (
-        <Card key={`${p.chave}-${p.versao}`}>
-          <div className="flex items-center justify-between">
-            <p className="font-bold text-ink">{p.nome}</p>
-            {p.provisorio && <Selo tom="atencao">PROVISÓRIO</Selo>}
-          </div>
-          <p className="text-xs text-muted mt-1">{(p.precos || []).map((pr) => `${formatarPreco(pr.valor_centavos, pr.moeda)}/${pr.ciclo}`).join(' · ')}</p>
-        </Card>
-      ))}
-    </div>
+            </Card>
+          ))}
+      </div>
+    </Estado>
   )
 }
 
 // ---------------------------------------------------------------- Auditoria
 function Auditoria() {
-  const [lista, setLista] = useState(null)
-  const [erro, setErro] = useState('')
-  useEffect(() => { auditoriaListar().then(setLista).catch((e) => setErro(e.message)) }, [])
-
-  if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!lista) return <Carregando />
-  if (lista.length === 0) return <Vazio icone="📜" titulo="Nenhum evento ainda" />
-
+  const { dados: lista, erro } = useFonte(auditoriaListar)
   return (
-    <div className="space-y-2">
-      {lista.map((e) => (
-        <Card key={e.id} className="p-3">
-          <p className="text-sm font-semibold text-ink">{e.acao}</p>
-          <p className="text-xs text-muted">{e.alvo_tipo} · {new Date(e.created_at).toLocaleString('pt-BR')}</p>
-        </Card>
-      ))}
-    </div>
+    <Estado erro={erro} dados={lista} vazio={<Vazio icone="📜" titulo="Nenhum evento ainda" />}>
+      <div className="space-y-2">
+        {(lista || []).map((e) => (
+          <Card key={e.id} className="p-3">
+            <p className="text-sm font-semibold text-ink">{e.acao}</p>
+            <p className="text-xs text-muted">{e.alvo_tipo} · {dataHora(e.created_at)}{e.detalhe?.motivo ? ` · ${e.detalhe.motivo}` : ''}{e.detalhe?.para ? ` · ${e.detalhe.para}` : ''}</p>
+          </Card>
+        ))}
+      </div>
+    </Estado>
   )
 }
