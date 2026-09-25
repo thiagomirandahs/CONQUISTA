@@ -6,6 +6,7 @@ import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
 import Entrar from './pages/Entrar.jsx'
+import Landing from './pages/Landing.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
@@ -15,6 +16,7 @@ import RecursoOpcional from './components/RecursoOpcional.jsx'
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
+const Adquirir = lazy(() => import('./pages/Adquirir.jsx'))
 const Recuperar = lazy(() => import('./pages/Recuperar.jsx'))
 const NovaSenha = lazy(() => import('./pages/Recuperar.jsx').then((m) => ({ default: m.NovaSenha })))
 const Ranking = lazy(() => import('./pages/Ranking.jsx'))
@@ -86,8 +88,14 @@ function Carregando() {
 
 function Protegido({ children }) {
   const { session, carregando } = useAuth()
+  const location = useLocation()
   if (carregando) return <Carregando />
-  if (!session) return <Navigate to="/login" replace />
+  if (!session) {
+    // a raiz "/" sem sessão é a landing PÚBLICA (item 4) — as demais rotas protegidas continuam
+    // mandando pro login normalmente, sem virar acesso público por engano.
+    if (location.pathname === '/') return <Landing />
+    return <Navigate to="/login" replace />
+  }
   // só entra quem tem vínculo ATIVO com um clube em uso (o contexto do clube é resolvido aqui, uma vez por sessão)
   return <ClubeGuard>{children}</ClubeGuard>
 }
@@ -171,6 +179,10 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        {/* Catálogo público de planos + entrada da aquisição (item 4): sem sessão, de propósito — é
+            a vitrine que a landing usa. "Quero este plano" manda pra /criar-clube?plano=..., que já
+            exige sessão e devolve pra cá sozinho via retornoPosLogin se a pessoa ainda não tem conta. */}
+        <Route path="/adquirir" element={<Adquirir />} />
         {/* Recuperacao de senha: as duas pernas sao PUBLICAS. /nova-senha recebe quem volta pelo
             link do e-mail, e nesse momento a sessao de recuperacao ainda esta sendo montada pelo
             supabase-js — passar por SessaoObrigatoria jogaria a pessoa de volta pro login. */}

@@ -40,9 +40,12 @@ select t.ok('criar_convite_responsavel devolve {token, expires_at}', t.txt('sele
 reset role;
 
 -- ---------- hardening: ACL de funções ----------
-select t.eq('nenhuma função do public é chamável por anon (exceto a verificação pública de documento)',
+-- planos_disponiveis (item 4, migration 95): catálogo de planos pra landing/aquisição PÚBLICAS —
+-- já filtra pra só o que é vitrine (publico e ativo e status='publicado'), nenhum dado de conta.
+select t.eq('nenhuma função do public é chamável por anon (exceto a verificação pública de documento e o catálogo público de planos)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute') and p.proname not in ('documento_verificar')), 0);
+    where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
+      and p.proname not in ('documento_verificar', 'planos_disponiveis')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções

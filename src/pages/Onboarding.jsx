@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import {
   carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco,
@@ -25,6 +25,14 @@ export default function Onboarding() {
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [form, setForm] = useState({})
+
+  // Plano vindo de /adquirir?plano=... (item 4): só pré-preenche a etapa "clube", nunca decide nada
+  // sozinho — a pessoa ainda escolhe e confirma no próprio formulário.
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const p = searchParams.get('plano')
+    if (p) setForm((f) => (f.plano ? f : { ...f, plano: p }))
+  }, [searchParams])
 
   const buscar = useCallback(async () => {
     try { setEstado(await carregarOnboarding()) } catch (e) { setErro(e?.message || String(e)) }
