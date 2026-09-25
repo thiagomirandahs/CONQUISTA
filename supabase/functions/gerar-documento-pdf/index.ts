@@ -37,8 +37,17 @@ const TITULO_TIPO: Record<string, string> = {
   acompanhamento: 'Caderno de Acompanhamento',
 }
 
+// O navegador chama esta função de OUTRA origem (app.desbravaclube.com.br → *.supabase.co) com o
+// cabeçalho Authorization: sem responder ao preflight OPTIONS e sem estes cabeçalhos em TODA
+// resposta, ele bloqueia a chamada. Origem liberada porque a autorização é o Bearer, não cookie.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 function erroJson(mensagem: string, status: number) {
-  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { 'content-type': 'application/json' } })
+  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { ...CORS, 'content-type': 'application/json' } })
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -137,6 +146,7 @@ async function montarPdf(dados: any, origem: string, token: string): Promise<Uin
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return erroJson('Método não permitido.', 405)
 
   const auth = req.headers.get('Authorization') ?? ''
@@ -184,6 +194,6 @@ Deno.serve(async (req) => {
   if (erroRegistrar) return erroJson(erroRegistrar.message, 409)
 
   return new Response(JSON.stringify({ ok: true, hash, storage_path: path, pdf_versao: registrado?.pdf_versao }), {
-    status: 200, headers: { 'content-type': 'application/json' },
+    status: 200, headers: { ...CORS, 'content-type': 'application/json' },
   })
 })

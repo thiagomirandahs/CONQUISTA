@@ -37,8 +37,17 @@ const TITULO_TIPO: Record<string, string> = {
   acompanhamento: 'Caderno de Acompanhamento',
 }
 
+// O navegador chama esta função de OUTRA origem (app.desbravaclube.com.br → *.supabase.co) com o
+// cabeçalho Authorization: sem responder ao preflight OPTIONS e sem estes cabeçalhos em TODA
+// resposta, ele bloqueia a chamada. Origem liberada porque a autorização é o Bearer, não cookie.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 function erroJson(mensagem: string, status: number) {
-  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { 'content-type': 'application/json' } })
+  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { ...CORS, 'content-type': 'application/json' } })
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -135,6 +144,7 @@ async function montarH2(dados: any, desenhos: Map<string, Uint8Array>, origem: s
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return erroJson('Método não permitido.', 405)
 
   const auth = req.headers.get('Authorization') ?? ''
@@ -153,7 +163,7 @@ Deno.serve(async (req) => {
   if (dados.render_existente) {
     return new Response(JSON.stringify({
       ok: true, hash: dados.render_existente.pdf_hash, storage_path: dados.render_existente.storage_path, gerado_agora: false,
-    }), { status: 200, headers: { 'content-type': 'application/json' } })
+    }), { status: 200, headers: { ...CORS, 'content-type': 'application/json' } })
   }
 
   const comoServico = createClient(SUPABASE_URL, SERVICE_ROLE)
@@ -193,5 +203,5 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify({
     ok: true, hash, storage_path: path, gerado_agora: registrado?.gerado_agora ?? true,
-  }), { status: 200, headers: { 'content-type': 'application/json' } })
+  }), { status: 200, headers: { ...CORS, 'content-type': 'application/json' } })
 })
