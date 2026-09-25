@@ -24,6 +24,7 @@ import { Card, Botao } from '../ui/index.jsx'
 export default function Entrar() {
   const [params] = useSearchParams()
   const tokenDaUrl = params.get('convite') || ''
+  const codigoDaUrl = (params.get('codigo') || '').trim()
   const { recarregar } = useClube()
 
   const [codigo, setCodigo] = useState('')
@@ -42,6 +43,20 @@ export default function Entrar() {
       .catch((e) => setErro(e.message))
       .finally(() => setOcupado(false))
   }, [tokenDaUrl])
+
+  // Idem para o código do clube: um QR/link (/entrar?codigo=XXXX) já resolve o destino sozinho —
+  // a pessoa não precisa digitar o que acabou de escanear. O servidor continua sendo quem decide
+  // se o código vale; isto só evita a etapa de digitação quando ele já veio pronto na URL.
+  useEffect(() => {
+    if (!codigoDaUrl || tokenDaUrl) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mesmo padrão já usado acima para `?convite=`
+    setCodigo(codigoDaUrl)
+    setOcupado(true)
+    abrirCodigo(codigoDaUrl)
+      .then((d) => { if (d) setDestino(d); else setErro('Código não encontrado. Confira com a liderança do clube.') })
+      .catch((e) => setErro(e.message))
+      .finally(() => setOcupado(false))
+  }, [codigoDaUrl, tokenDaUrl])
 
   async function conferir(e) {
     e.preventDefault()

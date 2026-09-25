@@ -121,3 +121,47 @@ describe('Entrar por convite', () => {
     expect(texto).toHaveTextContent('Você já tinha um cadastro em Clube do Teste')
   })
 })
+
+// `?codigo=` (Gestão → Inscrições, Etapa 3 desta rodada): o QR/link do clube já resolve o destino
+// sozinho, igual ao `?convite=` — a pessoa não digita o que acabou de escanear. O servidor continua
+// sendo quem decide (mesma abrirCodigo do passo 1 manual); a URL só evita a etapa de digitação.
+describe('Entrar por ?codigo= (link/QR do clube)', () => {
+  it('abre direto no passo 2 (confirmar), sem exigir digitação', async () => {
+    render(<MemoryRouter initialEntries={['/entrar?codigo=df4a3bee']}><Entrar /></MemoryRouter>)
+    await screen.findByTestId('destino')
+    expect(abrirCodigo).toHaveBeenCalledWith('df4a3bee')
+    expect(screen.getByText('Clube do Teste')).toBeInTheDocument()
+  })
+
+  it('código inexistente/revogado/vencido: mesma mensagem genérica do passo 1 manual', async () => {
+    abrirCodigo.mockResolvedValue(null)
+    render(<MemoryRouter initialEntries={['/entrar?codigo=xxxxxxxx']}><Entrar /></MemoryRouter>)
+    expect(await screen.findByTestId('erro-codigo')).toHaveTextContent('Código não encontrado')
+    expect(screen.queryByTestId('destino')).toBeNull()
+  })
+
+  it('confirmar a partir do link segue solicitando entrada (nunca aceita convite)', async () => {
+    solicitarEntrada.mockResolvedValue({ encontrado: true, ok: true, ja_era: false, situacao: 'pendente' })
+    render(<MemoryRouter initialEntries={['/entrar?codigo=df4a3bee']}><Entrar /></MemoryRouter>)
+    await userEvent.click(await screen.findByTestId('confirmar-entrada'))
+    await screen.findByTestId('resultado-entrada')
+    expect(solicitarEntrada).toHaveBeenCalledWith('df4a3bee')
+    expect(aceitarConvite).not.toHaveBeenCalled()
+  })
+
+  it('manipular a URL para um club_id/uuid não muda nada: só o código (segredo) é lido', async () => {
+    render(<MemoryRouter initialEntries={['/entrar?codigo=df4a3bee&club_id=11111111-1111-1111-1111-111111111111']}><Entrar /></MemoryRouter>)
+    await screen.findByTestId('destino')
+    // abrirCodigo só recebe o código — nenhum parâmetro extra da URL chega ao servidor por aqui.
+    expect(abrirCodigo).toHaveBeenCalledWith('df4a3bee')
+    expect(abrirCodigo).toHaveBeenCalledTimes(1)
+  })
+
+  it('convite tem prioridade quando os dois vierem juntos na URL (caso não deveria acontecer, mas não pode travar)', async () => {
+    abrirConvite.mockResolvedValue(DESTINO)
+    render(<MemoryRouter initialEntries={['/entrar?convite=tok123&codigo=df4a3bee']}><Entrar /></MemoryRouter>)
+    await screen.findByTestId('destino')
+    expect(abrirConvite).toHaveBeenCalledWith('tok123')
+    expect(abrirCodigo).not.toHaveBeenCalled()
+  })
+})
