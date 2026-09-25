@@ -188,8 +188,12 @@ describe('os assets embarcados são do produto, não de um clube', () => {
     expect(NOME_DE_TENANT.test(sw)).toBe(false)
   })
 
-  it('o desenho do ícone do produto fica versionado, para poder ser regerado sem perda', () => {
-    expect(existsSync(join(RAIZ, 'public/marca-produto.svg'))).toBe(true)
-    expect(NOME_DE_TENANT.test(ler('public/marca-produto.svg'))).toBe(false)
+  it('o original do emblema do produto fica versionado (fora do caminho servido), para regerar os ícones sem perda', () => {
+    const original = join(RAIZ, 'assets/logo-desbravaclube-original.png')
+    expect(existsSync(original)).toBe(true)
+    expect(bytes('assets/logo-desbravaclube-original.png').equals(bytes('public/clubes/tenant-001.png'))).toBe(false)
+  })
+  it('a bússola provisória não é mais publicada', () => {
+    expect(existsSync(join(RAIZ, 'public/marca-produto.svg'))).toBe(false)
   })
 })
