@@ -145,5 +145,13 @@ select t.como_anon();
 select t.eq('/verificar continua funcionando e mostra REVOGADO (nunca 404/apaga)', (public.documento_verificar((select id from t.ids_txt where chave = 'token_acomp')) ->> 'estado'), 'revogado');
 reset role;
 
+-- ==================== observabilidade: assinar/revogar deixam rastro em auditoria_operacoes ====================
+-- (achado da auditoria de fechamento: essas ações não apareciam na trilha genérica que o painel do
+-- admin da plataforma lê — só na trilha específica de classe. Migration 90 corrigiu.)
+select t.eq('documento_assinado registrado em auditoria_operacoes', (select count(*) from public.auditoria_operacoes where operacao = 'documento_assinado'), 3); -- 'doc' (1ª vez) + 'doc' de novo depois de revogar + 'doc_acomp' pelo lote
+select t.eq('documento_assinatura_revogada registrada em auditoria_operacoes', (select count(*) from public.auditoria_operacoes where operacao = 'documento_assinatura_revogada'), 1);
+select t.eq('documento_snapshot_revogado registrado em auditoria_operacoes', (select count(*) from public.auditoria_operacoes where operacao = 'documento_snapshot_revogado'), 1);
+select t.eq('o detalhe da revogação do snapshot guarda o motivo, não dado sensível', (select detalhe ->> 'motivo' from public.auditoria_operacoes where operacao = 'documento_snapshot_revogado'), 'engano de teste [TESTE]');
+
 select t.fim();
 rollback;

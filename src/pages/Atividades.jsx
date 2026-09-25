@@ -229,7 +229,7 @@ export default function Atividades() {
         <div className="bg-surface rounded-xl p-1 flex shadow-soft mb-4 max-w-md">
           {[['atividades', '📋 Atividades'], ['corrigir', `✅ Corrigir${pendentes.length ? ` (${pendentes.length})` : ''}`], ['entregas', '📦 Entregas']].map(([k, lbl]) => (
             <button key={k} onClick={() => setAba(k)}
-              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
+              className={`flex-1 rounded-lg min-h-[44px] py-2 text-sm font-bold transition-colors ${aba === k ? 'bg-gradient-to-r from-brand to-brand2 text-white shadow-glow' : 'text-muted'}`}>{lbl}</button>
           ))}
         </div>
       )}
@@ -245,7 +245,7 @@ export default function Atividades() {
           const ativo = filtro === c.nome
           return (
             <button key={c.nome} onClick={() => setFiltro(c.nome)}
-              className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${ativo ? 'text-white' : 'text-muted bg-surface border border-line hover:border-brand'}`}>
+              className={`relative shrink-0 rounded-full min-h-[44px] px-4 py-2 text-sm font-medium transition-colors ${ativo ? 'text-white' : 'text-muted bg-surface border border-line hover:border-brand'}`}>
               {ativo && <motion.span layoutId="cat-pill" className="absolute inset-0 bg-gradient-to-r from-brand to-brand2 rounded-full shadow-glow" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
               <span className="relative z-10"><span className="mr-1">{c.icon}</span>{c.nome}</span>
             </button>
@@ -406,9 +406,9 @@ function CorrigirView({ pendentes, onAprovar, onReprovar, avaliando }) {
             className="w-full mt-3 rounded-lg border border-line bg-surface2 px-3 py-2 text-xs text-ink outline-none placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30" />
           <div className="flex gap-2 mt-2">
             <button onClick={() => onReprovar(e, motivos[e.id])} disabled={!!avaliando}
-              className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-50">Reprovar</button>
+              className="flex-1 rounded-lg border border-line min-h-[44px] py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-50">Reprovar</button>
             <button onClick={() => onAprovar(e)} disabled={!!avaliando}
-              className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">{avaliando === e.id ? '...' : `✅ Aprovar (+${e.atividade?.pontos || 0})`}</button>
+              className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white min-h-[44px] py-2 text-sm font-semibold disabled:opacity-60">{avaliando === e.id ? '...' : `✅ Aprovar (+${e.atividade?.pontos || 0})`}</button>
           </div>
         </div>
       ))}
@@ -476,7 +476,7 @@ function EntregasView({ entregas, onExcluir }) {
             </div>
           )}
           <button onClick={() => onExcluir(e)}
-            className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 py-2 text-sm font-semibold">
+            className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 min-h-[44px] py-2 text-sm font-semibold">
             🗑️ Apagar entrega{e.status === 'aprovada' ? ' (e os pontos)' : ''}
           </button>
         </div>
@@ -555,8 +555,8 @@ function NovaAtividadeModal({ onFechar, onSalvar, inicial }) {
             </div>
           </Campo>
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-line py-2.5 font-semibold text-muted">Cancelar</button>
-            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white py-2.5 font-semibold shadow-glow disabled:opacity-60">{salvando ? 'Salvando...' : (inicial ? 'Salvar alterações' : 'Salvar atividade')}</button>
+            <button type="button" onClick={onFechar} className="flex-1 rounded-lg border border-line min-h-[44px] py-2.5 font-semibold text-muted">Cancelar</button>
+            <button type="submit" disabled={salvando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white min-h-[44px] py-2.5 font-semibold shadow-glow disabled:opacity-60">{salvando ? 'Salvando...' : (inicial ? 'Salvar alterações' : 'Salvar atividade')}</button>
           </div>
         </form>
       </Painel>
@@ -622,8 +622,8 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
           )}
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
           <div className="flex gap-2 pt-2">
-            <button onClick={onFechar} className="flex-1 rounded-lg border border-line py-2.5 font-semibold text-muted">Cancelar</button>
-            <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white py-2.5 font-semibold shadow-glow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
+            <button onClick={onFechar} className="flex-1 rounded-lg border border-line min-h-[44px] py-2.5 font-semibold text-muted">Cancelar</button>
+            <button onClick={confirmar} disabled={enviando} className="flex-1 rounded-lg bg-gradient-to-r from-brand to-brand2 text-white min-h-[44px] py-2.5 font-semibold shadow-glow disabled:opacity-60">{enviando ? 'Enviando...' : 'Confirmar entrega'}</button>
           </div>
         </div>
       </Painel>
@@ -665,7 +665,7 @@ function Campo({ label, children }) {
 function Toggle({ ativo, onClick, children }) {
   return (
     <button type="button" onClick={onClick}
-      className={`flex-1 rounded-xl px-2 py-2 text-sm font-medium border transition ${ativo ? 'bg-gradient-to-r from-brand to-brand2 text-white border-brand shadow-glow' : 'bg-surface text-muted border-line'}`}>
+      className={`flex-1 rounded-xl min-h-[44px] px-2 py-2 text-sm font-medium border transition ${ativo ? 'bg-gradient-to-r from-brand to-brand2 text-white border-brand shadow-glow' : 'bg-surface text-muted border-line'}`}>
       {children}
     </button>
   )
