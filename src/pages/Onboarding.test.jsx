@@ -22,7 +22,7 @@ vi.mock('../services/comercial.js', async () => {
 })
 const { default: Onboarding } = await import('./Onboarding.jsx')
 
-const PLANOS = [{ chave: 'essencial', nome: 'Essencial', precos: [{ ciclo: 'mensal', moeda: 'BRL', valor_centavos: 4900 }] }]
+const PLANOS = [{ chave: 'essencial', nome: 'Essencial', precos: [{ ciclo: 'mensal', moeda: 'BRL', valor_centavos: 4900 }, { ciclo: 'anual', moeda: 'BRL', valor_centavos: 49000 }] }]
 const sessao = (etapa, concluidas = []) => ({
   tem_sessao: true, id: 's1', status: 'em_andamento', etapa,
   etapas_concluidas: concluidas, planos: PLANOS, dados: {},
@@ -93,6 +93,26 @@ describe('Onboarding', () => {
     expect(await screen.findByLabelText(/Nome do clube/)).toBeInTheDocument()
     expect(screen.getByRole('option', { name: /Essencial — R\$\s?49,00\/mês/ })).toBeInTheDocument()
     expect(screen.getByText(/Valores provisórios: nada será cobrado/)).toBeInTheDocument()
+  })
+
+  it('a etapa do clube envia ciclo=mensal por padrão, e Anual muda o preço e o que é enviado', async () => {
+    carregarOnboarding.mockResolvedValue(sessao('clube', ['conta', 'dados_basicos']))
+    renderT()
+    await userEvent.type(await screen.findByLabelText(/Nome do clube/), 'Meu Clube')
+    expect(screen.getByText('R$ 49,00 por mês')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Anual' }))
+    expect(screen.getByText('R$ 490,00 por ano')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Criar o clube' }))
+    expect(salvarEtapaOnboarding).toHaveBeenCalledWith('clube', { nome: 'Meu Clube', plano: 'essencial', ciclo: 'anual' })
+  })
+
+  it('plano e ciclo vindos de /adquirir?plano=...&ciclo=... pré-preenchem a etapa (item 7)', async () => {
+    carregarOnboarding.mockResolvedValue(sessao('clube', ['conta', 'dados_basicos']))
+    render(<MemoryRouter initialEntries={['/criar-clube?plano=essencial&ciclo=anual']}>
+      <Routes><Route path="/criar-clube" element={<Onboarding />} /></Routes>
+    </MemoryRouter>)
+    await screen.findByLabelText(/Nome do clube/)
+    expect(screen.getByRole('button', { name: 'Anual', pressed: true })).toBeInTheDocument()
   })
 
   it('erro do servidor (ex.: tentativa de pular etapa) aparece pro usuário', async () => {

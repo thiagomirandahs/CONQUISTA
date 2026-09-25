@@ -26,12 +26,18 @@ export default function Onboarding() {
   const [salvando, setSalvando] = useState(false)
   const [form, setForm] = useState({})
 
-  // Plano vindo de /adquirir?plano=... (item 4): só pré-preenche a etapa "clube", nunca decide nada
-  // sozinho — a pessoa ainda escolhe e confirma no próprio formulário.
+  // Plano/ciclo vindos de /adquirir?plano=...&ciclo=... (itens 4 e 7): só pré-preenchem a etapa
+  // "clube", nunca decidem nada sozinhos — a pessoa ainda escolhe e confirma no próprio formulário.
   const [searchParams] = useSearchParams()
   useEffect(() => {
     const p = searchParams.get('plano')
-    if (p) setForm((f) => (f.plano ? f : { ...f, plano: p }))
+    const cic = searchParams.get('ciclo')
+    setForm((f) => {
+      const novo = {}
+      if (p && !f.plano) novo.plano = p
+      if (cic && !f.ciclo) novo.ciclo = cic
+      return Object.keys(novo).length ? { ...f, ...novo } : f
+    })
   }, [searchParams])
 
   const buscar = useCallback(async () => {
@@ -176,8 +182,11 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
     )
   }
   if (etapa === 'clube') {
+    const cicloAtual = form.ciclo === 'anual' ? 'anual' : 'mensal'
+    const planoAtual = planos.find((p) => p.chave === (form.plano || 'essencial'))
+    const precoAtual = (planoAtual?.precos || []).find((x) => x.ciclo === cicloAtual)
     return (
-      <form onSubmit={submeter({ nome: form.nome || '', plano: form.plano || 'essencial' })}>
+      <form onSubmit={submeter({ nome: form.nome || '', plano: form.plano || 'essencial', ciclo: cicloAtual })}>
         <h2 className="font-bold text-ink mb-3">🏕️ O clube</h2>
         <Campo id="ob-clube" rotulo="Nome do clube" value={form.nome || ''} onChange={set('nome')} required />
         <label htmlFor="ob-plano" className="block mb-3">
@@ -190,6 +199,21 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
             })}
           </select>
         </label>
+        <div className="mb-3">
+          <span className="text-xs text-muted block mb-1">Ciclo de cobrança</span>
+          <div className="bg-surface2 rounded-xl p-1 flex" role="radiogroup" aria-label="Ciclo de cobrança">
+            {[['mensal', 'Mensal'], ['anual', 'Anual']].map(([v, lbl]) => (
+              <button type="button" key={v} onClick={() => setForm((f) => ({ ...f, ciclo: v }))}
+                aria-pressed={cicloAtual === v}
+                className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${cicloAtual === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+          {precoAtual && (
+            <p className="text-xs text-faint mt-1">{formatarPreco(precoAtual.valor_centavos, precoAtual.moeda)} por {cicloAtual === 'anual' ? 'ano' : 'mês'}</p>
+          )}
+        </div>
         <p className="text-xs text-amber-700 mb-3">Valores provisórios: nada será cobrado nesta fase.</p>
         <Botao salvando={salvando}>Criar o clube</Botao>
       </form>

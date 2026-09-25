@@ -104,6 +104,14 @@ select t.eq('IDEMPOTENTE: continua existindo UM clube novo', t.n($q$select count
 select t.eq('IDEMPOTENTE: continua existindo UMA assinatura', t.n($q$select count(*) from public.subscriptions$q$), 1);
 select t.eq('IDEMPOTENTE: continua existindo UM clube coberto', t.n($q$select count(*) from public.subscription_clubs$q$), 1);
 
+-- item 7 da rodada de fechamento: sem ciclo no formulário, a assinatura nasce mensal E com o
+-- price_id do plano/ciclo certo (antes ficava NULO — motor pronto, onboarding não usava).
+select t.eq('sem ciclo informado: assinatura nasce "mensal"', t.txt($q$select ciclo from public.subscriptions limit 1$q$), 'mensal');
+select t.eq('...e com o price_id do preço MENSAL do plano escolhido (não fica nulo)',
+  t.txt($q$select (s.price_id = pr.id)::text from public.subscriptions s
+         join public.billing_prices pr on pr.plan_id = s.plan_id and pr.ciclo = 'mensal' and pr.ativo
+         limit 1$q$), 'true');
+
 reset role;
 \o /dev/null
 insert into t.ids select 'clube1', club_id from public.onboarding_sessions where user_id = t.id('fundador_x');
@@ -167,7 +175,7 @@ select t.como('fundador_y');
 select t.permitido('cliente 2: inicia', $q$select public.onboarding_iniciar()$q$);
 select t.permitido('cliente 2: conta',  $q$select public.onboarding_etapa('conta', '{"nome":"Cliente Dois"}'::jsonb)$q$);
 select t.permitido('cliente 2: dados',  $q$select public.onboarding_etapa('dados_basicos', '{}'::jsonb)$q$);
-select t.permitido('cliente 2: clube',  $q$select public.onboarding_etapa('clube', '{"nome":"Clube Beta","plano":"essencial"}'::jsonb)$q$);
+select t.permitido('cliente 2: clube, escolhendo ciclo ANUAL', $q$select public.onboarding_etapa('clube', '{"nome":"Clube Beta","plano":"essencial","ciclo":"anual"}'::jsonb)$q$);
 select t.permitido('cliente 2: diretor', $q$select public.onboarding_etapa('identidade', '{}'::jsonb)$q$);
 select t.permitido('cliente 2: vira diretoria', $q$select public.onboarding_etapa('diretor', '{}'::jsonb)$q$);
 reset role;
@@ -180,6 +188,15 @@ select t.eq('dois clientes comerciais independentes', t.n($q$select count(*) fro
 select t.eq('duas assinaturas independentes', t.n($q$select count(*) from public.subscriptions$q$), 2);
 select t.ok('...e cada uma com o seu próprio clube',
   t.txt(format($q$select (%L::uuid <> %L::uuid)::text$q$, t.id('clube1'), t.id('clube2'))) = 'true');
+select t.eq('cliente 2 escolheu ANUAL: a assinatura dele guardou "anual" (não sobrescreveu a mensal do cliente 1)',
+  t.txt(format($q$select ciclo from public.subscriptions where id = %L$q$, t.id('assin2'))), 'anual');
+select t.eq('...com o price_id do preço ANUAL (valor real do catálogo, não inventado)',
+  t.txt(format($q$select pr.valor_centavos::text from public.subscriptions s join public.billing_prices pr on pr.id = s.price_id
+               where s.id = %L and pr.ciclo = 'anual'$q$, t.id('assin2'))),
+  t.txt($q$select (select valor_centavos from public.billing_prices pr join public.billing_plans p on p.id = pr.plan_id
+                    where p.chave='essencial' and p.status='publicado' and p.ativo and pr.ciclo='anual' order by p.versao desc limit 1)::text$q$));
+select t.eq('cliente 1 continua mensal, intocado pela escolha do cliente 2',
+  t.txt(format($q$select ciclo from public.subscriptions where id = (select subscription_id from public.onboarding_sessions where user_id = %L)$q$, t.id('fundador_x'))), 'mensal');
 
 -- slug gerado sem colisão e sem acento
 select t.eq('o clube novo ganhou slug próprio', t.txt(format($q$select slug from public.organizational_units where id = %L$q$, t.id('clube1'))), 'clube-alfa');

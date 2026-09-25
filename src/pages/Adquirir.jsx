@@ -17,6 +17,7 @@ const RECURSO_NOME = {
 export default function Adquirir() {
   const [planos, setPlanos] = useState(null)
   const [erro, setErro] = useState('')
+  const [ciclo, setCiclo] = useState('mensal')
 
   useEffect(() => {
     let vivo = true
@@ -40,36 +41,45 @@ export default function Adquirir() {
       {erro && <div role="alert" className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 mb-4">{erro}</div>}
       {planos === null && !erro && <p className="text-faint text-sm text-center" role="status">Carregando…</p>}
 
+      {planos !== null && planos.length > 0 && (
+        <div className="bg-surface2 rounded-xl p-1 flex mb-4" role="radiogroup" aria-label="Ciclo de cobrança">
+          {[['mensal', 'Mensal'], ['anual', 'Anual']].map(([v, lbl]) => (
+            <button type="button" key={v} onClick={() => setCiclo(v)} aria-pressed={ciclo === v}
+              className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${ciclo === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+      )}
+
       <ul className="space-y-3">
-        {(planos || []).map((p) => (
-          <li key={`${p.chave}-${p.versao}`} className="bg-surface rounded-2xl p-4 shadow-soft">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="font-bold text-ink">{p.nome}</div>
-                <p className="text-xs text-muted leading-snug mt-0.5">{p.descricao}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="font-extrabold text-ink">
-                  {(() => {
-                    const mensal = (p.precos || []).find((x) => x.ciclo === 'mensal')
-                    return mensal ? formatarPreco(mensal.valor_centavos, mensal.moeda) : '—'
-                  })()}
+        {(planos || []).map((p) => {
+          const preco = (p.precos || []).find((x) => x.ciclo === ciclo) || (p.precos || []).find((x) => x.ciclo === 'mensal')
+          return (
+            <li key={`${p.chave}-${p.versao}`} className="bg-surface rounded-2xl p-4 shadow-soft">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-bold text-ink">{p.nome}</div>
+                  <p className="text-xs text-muted leading-snug mt-0.5">{p.descricao}</p>
                 </div>
-                <div className="text-xs text-faint">por mês</div>
+                <div className="text-right shrink-0">
+                  <div className="font-extrabold text-ink">{preco ? formatarPreco(preco.valor_centavos, preco.moeda) : '—'}</div>
+                  <div className="text-xs text-faint">por {ciclo === 'anual' ? 'ano' : 'mês'}</div>
+                </div>
               </div>
-            </div>
-            <p className="text-xs text-faint mt-2 leading-snug">
-              {p.recursos === null
-                ? 'Inclui todos os recursos do DesbravaClube.'
-                : `Inclui: ${(p.recursos || []).map((r) => RECURSO_NOME[r] || r).join(', ')}.`}
-            </p>
-            {p.provisorio && <p className="text-xs text-amber-700 mt-1">Preço e composição provisórios.</p>}
-            <Link to={`/criar-clube?plano=${encodeURIComponent(p.chave)}`}
-              className="block text-center mt-3 min-h-[44px] leading-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold">
-              Quero este plano
-            </Link>
-          </li>
-        ))}
+              <p className="text-xs text-faint mt-2 leading-snug">
+                {p.recursos === null
+                  ? 'Inclui todos os recursos do DesbravaClube.'
+                  : `Inclui: ${(p.recursos || []).map((r) => RECURSO_NOME[r] || r).join(', ')}.`}
+              </p>
+              {p.provisorio && <p className="text-xs text-amber-700 mt-1">Preço e composição provisórios.</p>}
+              <Link to={`/criar-clube?plano=${encodeURIComponent(p.chave)}&ciclo=${encodeURIComponent(ciclo)}`}
+                className="block text-center mt-3 min-h-[44px] leading-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold">
+                Quero este plano
+              </Link>
+            </li>
+          )
+        })}
       </ul>
 
       {planos !== null && planos.length === 0 && !erro && (
