@@ -91,7 +91,7 @@ describe('Onboarding', () => {
     carregarOnboarding.mockResolvedValue(sessao('clube', ['conta', 'dados_basicos']))
     renderT()
     expect(await screen.findByLabelText(/Nome do clube/)).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /Essencial — R\$\s?49,00\/mês/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Essencial — R\$\s?49,00/ })).toBeInTheDocument()
     expect(screen.getByText(/Valores provisórios: nada será cobrado/)).toBeInTheDocument()
   })
 

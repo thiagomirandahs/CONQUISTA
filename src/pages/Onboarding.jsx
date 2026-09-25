@@ -182,36 +182,44 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
     )
   }
   if (etapa === 'clube') {
-    const cicloAtual = form.ciclo === 'anual' ? 'anual' : 'mensal'
-    const planoAtual = planos.find((p) => p.chave === (form.plano || 'essencial'))
+    const planoPadrao = form.plano || planos[0]?.chave || ''
+    const planoAtual = planos.find((p) => p.chave === planoPadrao)
+    const ciclosDisponiveis = (planoAtual?.precos || []).map((x) => x.ciclo)
+    // sem escolha do usuário ainda: usa o ciclo que o plano realmente tem (evita "mensal" fixo pra
+    // um plano que só vende anual, como a Licença Anual única).
+    const cicloAtual = form.ciclo && ciclosDisponiveis.includes(form.ciclo) ? form.ciclo : (ciclosDisponiveis[0] || 'anual')
     const precoAtual = (planoAtual?.precos || []).find((x) => x.ciclo === cicloAtual)
     return (
-      <form onSubmit={submeter({ nome: form.nome || '', plano: form.plano || 'essencial', ciclo: cicloAtual })}>
+      <form onSubmit={submeter({ nome: form.nome || '', plano: planoPadrao, ciclo: cicloAtual })}>
         <h2 className="font-bold text-ink mb-3">🏕️ O clube</h2>
         <Campo id="ob-clube" rotulo="Nome do clube" value={form.nome || ''} onChange={set('nome')} required />
         <label htmlFor="ob-plano" className="block mb-3">
           <span className="text-xs text-muted">Plano (começa em período de teste)</span>
-          <select id="ob-plano" value={form.plano || 'essencial'} onChange={set('plano')}
+          <select id="ob-plano" value={planoPadrao} onChange={set('plano')}
             className="mt-1 w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink">
             {planos.map((p) => {
-              const mensal = (p.precos || []).find((x) => x.ciclo === 'mensal')
-              return <option key={p.chave} value={p.chave}>{p.nome} — {mensal ? formatarPreco(mensal.valor_centavos, mensal.moeda) : '—'}/mês</option>
+              const preco = (p.precos || [])[0]
+              return <option key={p.chave} value={p.chave}>{p.nome} — {preco ? formatarPreco(preco.valor_centavos, preco.moeda) : '—'}</option>
             })}
           </select>
         </label>
-        <div className="mb-3">
-          <span className="text-xs text-muted block mb-1">Ciclo de cobrança</span>
-          <div className="bg-surface2 rounded-xl p-1 flex" role="radiogroup" aria-label="Ciclo de cobrança">
-            {[['mensal', 'Mensal'], ['anual', 'Anual']].map(([v, lbl]) => (
-              <button type="button" key={v} onClick={() => setForm((f) => ({ ...f, ciclo: v }))}
-                aria-pressed={cicloAtual === v}
-                className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${cicloAtual === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
-                {lbl}
-              </button>
-            ))}
+        {ciclosDisponiveis.length > 1 && (
+          <div className="mb-3">
+            <span className="text-xs text-muted block mb-1">Ciclo de cobrança</span>
+            <div className="bg-surface2 rounded-xl p-1 flex" role="radiogroup" aria-label="Ciclo de cobrança">
+              {[['mensal', 'Mensal'], ['anual', 'Anual']].filter(([v]) => ciclosDisponiveis.includes(v)).map(([v, lbl]) => (
+                <button type="button" key={v} onClick={() => setForm((f) => ({ ...f, ciclo: v }))}
+                  aria-pressed={cicloAtual === v}
+                  className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${cicloAtual === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
+        <div className="mb-3">
           {precoAtual && (
-            <p className="text-xs text-faint mt-1">{formatarPreco(precoAtual.valor_centavos, precoAtual.moeda)} por {cicloAtual === 'anual' ? 'ano' : 'mês'}</p>
+            <p className="text-xs text-faint">{formatarPreco(precoAtual.valor_centavos, precoAtual.moeda)} por {cicloAtual === 'anual' ? 'ano' : 'mês'}</p>
           )}
         </div>
         <p className="text-xs text-amber-700 mb-3">Valores provisórios: nada será cobrado nesta fase.</p>

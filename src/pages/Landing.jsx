@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 
 // Landing PÚBLICA (item 4): a raiz "/" sem sessão. Não usa <Logo/> de propósito — aquele componente
 // lê a marca do CLUBE em uso (useClube()), e aqui ainda não existe clube nenhum escolhido; esta tela
-// é da PLATAFORMA, não de um clube. Identidade visual da plataforma (o arquivo de logo em si) ainda
-// não foi anexado ao repositório — o emblema abaixo é só um placeholder textual até isso acontecer.
+// é da PLATAFORMA, não de um clube. Usa /logo.png (identidade oficial da plataforma, fornecida pelo
+// usuário) — mesmo arquivo do favicon e dos ícones do PWA.
 const BENEFICIOS = [
   { icone: '🗺️', titulo: 'Jornada do desbravador', texto: 'Classes, especialidades, pontos e presença num só lugar — a criança acompanha o próprio progresso.' },
   { icone: '🧑‍🤝‍🧑', titulo: 'Gestão da diretoria', texto: 'Aprovações, avaliações, mensalidades e documentos oficiais sem planilha nem grupo de WhatsApp perdido.' },
@@ -15,9 +15,7 @@ export default function Landing() {
   return (
     <div className="min-h-full bg-surface2">
       <header className="max-w-3xl mx-auto px-5 pt-10 pb-8 text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-brand to-brand2 grid place-items-center text-white font-extrabold text-2xl shadow-glow">
-          DC
-        </div>
+        <img src="/logo.png" alt="DesbravaClube" className="w-20 h-20 mx-auto mb-4 rounded-full shadow-glow object-contain" />
         <h1 className="text-3xl font-extrabold text-ink">DesbravaClube</h1>
         <p className="text-muted mt-2 leading-snug">
           O app do clube de Desbravadores: jornada, gestão e documentos oficiais — tudo pelo celular.

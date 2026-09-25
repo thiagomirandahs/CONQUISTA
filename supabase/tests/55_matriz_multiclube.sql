@@ -431,7 +431,9 @@ insert into public.billing_accounts (nome) values ('Conta do B');
 insert into t.ids select 'conta_b', id from public.billing_accounts where nome = 'Conta do B';
 insert into public.subscriptions (billing_account_id, plan_id, status, ciclo, provider_ref)
 select t.id('conta_b'), p.id, 'ativa', 'mensal', 'ref-b'
-  from public.billing_plans p where p.chave = 'essencial' and p.publico order by versao desc limit 1;
+  -- 'essencial' pode estar arquivado da vitrine (item comercial de fechamento) — não precisa estar
+  -- público pra uma assinatura EXISTENTE continuar funcionando, só precisa existir no catálogo.
+  from public.billing_plans p where p.chave = 'essencial' order by versao desc limit 1;
 insert into t.ids select 'sub_b', id from public.subscriptions where provider_ref = 'ref-b';
 insert into public.subscription_clubs (subscription_id, club_id) values (t.id('sub_b'), t.id('clube_b'));
 \o

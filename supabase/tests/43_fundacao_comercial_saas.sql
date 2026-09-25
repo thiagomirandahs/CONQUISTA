@@ -94,7 +94,7 @@ select t.como('fundador_x');
 
 select t.permitido('etapa "dados_basicos"',
   $q$select public.onboarding_etapa('dados_basicos', '{"documento":"00.000.000/0001-00","telefone":"81999999999"}'::jsonb)$q$);
-select t.permitido('etapa "clube" cria o clube e a assinatura em trial',
+select t.permitido('etapa "clube" cria o clube e a assinatura em trial (pede "essencial" explicitamente — arquivado da vitrine, então o servidor cai pro plano público real, "anual")',
   $q$select public.onboarding_etapa('clube', '{"nome":"Clube Alfa","plano":"essencial"}'::jsonb)$q$);
 
 -- ⬇ o coração da idempotência: repetir a etapa 4 não pode duplicar nada
@@ -104,14 +104,31 @@ select t.eq('IDEMPOTENTE: continua existindo UM clube novo', t.n($q$select count
 select t.eq('IDEMPOTENTE: continua existindo UMA assinatura', t.n($q$select count(*) from public.subscriptions$q$), 1);
 select t.eq('IDEMPOTENTE: continua existindo UM clube coberto', t.n($q$select count(*) from public.subscription_clubs$q$), 1);
 
--- item 7 da rodada de fechamento: sem ciclo no formulário, a assinatura nasce mensal E com o
--- price_id do plano/ciclo certo (antes ficava NULO — motor pronto, onboarding não usava).
-select t.eq('sem ciclo informado: assinatura nasce "mensal"', t.txt($q$select ciclo from public.subscriptions limit 1$q$), 'mensal');
-select t.eq('...e com o price_id do preço MENSAL do plano escolhido (não fica nulo)',
+-- item 7 da rodada de fechamento: sem ciclo no formulário, a assinatura nasce no ciclo que o PLANO
+-- realmente tem (o único plano público hoje, "anual", só vende anual) E com o price_id certo (antes
+-- ficava NULO — motor pronto, onboarding não usava; depois caiu num bug simétrico: supor 'mensal'
+-- pra um plano que só tem anual. migration 102 corrige as duas pontas).
+select t.eq('sem ciclo informado: assinatura nasce no ciclo que o plano PÚBLICO realmente vende ("anual")', t.txt($q$select ciclo from public.subscriptions limit 1$q$), 'anual');
+select t.eq('...e com o price_id do preço certo (não fica nulo)',
   t.txt($q$select (s.price_id = pr.id)::text from public.subscriptions s
-         join public.billing_prices pr on pr.plan_id = s.plan_id and pr.ciclo = 'mensal' and pr.ativo
+         join public.billing_prices pr on pr.plan_id = s.plan_id and pr.ciclo = s.ciclo and pr.ativo
          limit 1$q$), 'true');
 
+-- a partir daqui o resto da seção (camadas de permissão, upgrade/downgrade) precisa de um plano que
+-- EXCLUA algum recurso pra testar a camada 1 de verdade — "anual" inclui tudo (é o único plano
+-- vendido). Força esta assinatura EXISTENTE pro "essencial" (arquivado, mas continua um plano real —
+-- é exatamente o caso de uma conta antiga numa versão descontinuada, que também precisa continuar
+-- funcionando).
+\o /dev/null
+reset role;
+update public.subscriptions s set
+  plan_id = p.id,
+  price_id = (select id from public.billing_prices where plan_id = p.id and ciclo = 'mensal' and ativo limit 1),
+  ciclo = 'mensal'
+from public.billing_plans p
+where p.chave = 'essencial' and p.versao = 1
+  and s.id = (select subscription_id from public.onboarding_sessions where user_id = t.id('fundador_x'));
+\o
 reset role;
 \o /dev/null
 insert into t.ids select 'clube1', club_id from public.onboarding_sessions where user_id = t.id('fundador_x');
@@ -190,11 +207,11 @@ select t.ok('...e cada uma com o seu próprio clube',
   t.txt(format($q$select (%L::uuid <> %L::uuid)::text$q$, t.id('clube1'), t.id('clube2'))) = 'true');
 select t.eq('cliente 2 escolheu ANUAL: a assinatura dele guardou "anual" (não sobrescreveu a mensal do cliente 1)',
   t.txt(format($q$select ciclo from public.subscriptions where id = %L$q$, t.id('assin2'))), 'anual');
-select t.eq('...com o price_id do preço ANUAL (valor real do catálogo, não inventado)',
+select t.eq('...com o price_id do preço ANUAL (valor real do catálogo, não inventado — "essencial" pedido, mas arquivado, então caiu no plano público "anual")',
   t.txt(format($q$select pr.valor_centavos::text from public.subscriptions s join public.billing_prices pr on pr.id = s.price_id
                where s.id = %L and pr.ciclo = 'anual'$q$, t.id('assin2'))),
   t.txt($q$select (select valor_centavos from public.billing_prices pr join public.billing_plans p on p.id = pr.plan_id
-                    where p.chave='essencial' and p.status='publicado' and p.ativo and pr.ciclo='anual' order by p.versao desc limit 1)::text$q$));
+                    where p.chave='anual' and p.status='publicado' and p.ativo and pr.ciclo='anual' order by p.versao desc limit 1)::text$q$));
 select t.eq('cliente 1 continua mensal, intocado pela escolha do cliente 2',
   t.txt(format($q$select ciclo from public.subscriptions where id = (select subscription_id from public.onboarding_sessions where user_id = %L)$q$, t.id('fundador_x'))), 'mensal');
 
@@ -402,7 +419,9 @@ select t.eq('...nem a nenhuma assinatura', t.nv($q$select count(*) from public.s
 -- 3 planos públicos (o legado-fundador não é público); contam-se as CHAVES, não as versões — a fase 6
 -- publicou a v2 do essencial, e é assim mesmo que módulo novo entra: por versão nova de plano.
 select t.eq('o catálogo de planos, esse sim, é público pra quem está logado (o preço vem do banco)',
-  t.n($q$select count(distinct chave) from public.billing_plans where publico$q$), 3);
+  -- só 'anual' é público agora — os 3 tiers antigos (gratuito/essencial/completo) foram arquivados
+  -- na decisão comercial real de fechamento (Licença Anual única); 'legado-fundador' nunca foi público.
+  t.n($q$select count(distinct chave) from public.billing_plans where publico$q$), 1);
 
 -- =============================================================================
 -- 10) ADMIN DA PLATAFORMA: opera o SaaS, não enxerga o clube
@@ -564,10 +583,11 @@ select t.eq('...e o leilão segue ligado', t.txt(format($q$select public.recurso
 -- =============================================================================
 select t.eq('o catálogo é versionado (chave + versão únicos)',
   t.n($q$select count(*) from pg_constraint where conrelid = 'public.billing_plans'::regclass and contype = 'u'$q$), 1);
-select t.eq('TODO preço do catálogo está marcado como provisório (nada foi decidido comercialmente)',
-  t.n($q$select count(*) from public.billing_prices where not provisorio$q$), 0);
-select t.eq('TODO plano do catálogo está marcado como provisório',
-  t.n($q$select count(*) from public.billing_plans where not provisorio$q$), 0);
+select t.eq('só o plano REALMENTE decidido comercialmente ("anual", preço real) não é provisório — o resto do catálogo (tiers arquivados + legado) continua provisório',
+  t.n($q$select count(*) from public.billing_prices where not provisorio and not exists (
+    select 1 from public.billing_plans p where p.id = plan_id and p.chave = 'anual')$q$), 0);
+select t.eq('...mesma regra pros planos',
+  t.n($q$select count(*) from public.billing_plans where not provisorio and chave <> 'anual'$q$), 0);
 select t.throws('um plano não pode citar módulo que o app não tem',
   $q$insert into public.billing_plans (chave, versao, nome, recursos) values ('inventado', 1, 'Inventado', array['teletransporte'])$q$,
   'não existe no catálogo');
@@ -575,22 +595,29 @@ select t.eq('nenhum gateway real foi integrado: o único provedor é o mock loca
   t.txt($q$select string_agg(chave, ',' order by chave) from public.billing_providers$q$), 'mock');
 
 -- =============================================================================
--- 14) VITRINE mostra só a versão VIGENTE de cada plano (item 6 da rodada de fechamento) — o seed já
---     traz 'essencial' em 2 versões publicadas de propósito (v1 legado + v2 com Experiências, migration
---     49): a vitrine pra NOVA aquisição não pode mostrar as duas ao mesmo tempo, e a versão antiga não
---     pode ser apagada (quem já assinou a v1 continua nela).
+-- 14) VITRINE mostra só a versão VIGENTE de cada plano (item 6 da rodada de fechamento) — publica
+--     uma v2 REAL de "anual" (mesmo mecanismo do antigo essencial v1→v2) dentro desta transação: a
+--     vitrine pra NOVA aquisição não pode mostrar as duas ao mesmo tempo, e a versão antiga não pode
+--     ser apagada (quem já assinou a v1 continua nela).
 -- =============================================================================
-select t.eq('billing_plans REALMENTE tem 2 versões publicadas de "essencial" (o cenário existe de verdade, não é hipotético)',
-  t.n($q$select count(*) from public.billing_plans where chave = 'essencial' and publico and ativo and status = 'publicado'$q$), 2);
-select t.eq('a vitrine (planos_disponiveis) mostra a versão MAIS RECENTE (2, com Experiências)',
-  t.txt($q$select (j ->> 'versao') from json_array_elements(public.planos_disponiveis()) j where j ->> 'chave' = 'essencial'$q$), '2');
+\o /dev/null
+insert into public.billing_plans (chave, versao, nome, descricao, publico, status, ativo, recursos, limites, provisorio)
+select 'anual', 2, nome, 'Versão de teste [TESTE] — só pra provar o dedup da vitrine.', publico, status, ativo, recursos, limites, provisorio
+  from public.billing_plans where chave = 'anual' and versao = 1;
+insert into public.billing_prices (plan_id, ciclo, valor_centavos, provisorio, metadata)
+select p.id, 'anual', 23990, false, '{}'::jsonb from public.billing_plans p where p.chave = 'anual' and p.versao = 2;
+\o
+select t.eq('billing_plans REALMENTE tem 2 versões publicadas de "anual" (o cenário existe de verdade, não é hipotético)',
+  t.n($q$select count(*) from public.billing_plans where chave = 'anual' and publico and ativo and status = 'publicado'$q$), 2);
+select t.eq('a vitrine (planos_disponiveis) mostra a versão MAIS RECENTE (2)',
+  t.txt($q$select (j ->> 'versao') from json_array_elements(public.planos_disponiveis()) j where j ->> 'chave' = 'anual'$q$), '2');
 select t.eq('...nenhuma chave aparece duas vezes na vitrine',
   t.n($q$select count(*) from (
     select (j ->> 'chave') as chave, count(*) from json_array_elements(public.planos_disponiveis()) j
     group by 1 having count(*) > 1
   ) x$q$), 0);
-select t.eq('a versão ANTIGA (v1) continua existindo no catálogo — nunca foi apagada',
-  t.n($q$select count(*) from public.billing_plans where chave = 'essencial' and versao = 1$q$), 1);
+select t.eq('a versão ANTIGA (v1, com o preço real R$229,90) continua existindo no catálogo — nunca foi apagada',
+  t.n($q$select count(*) from public.billing_plans where chave = 'anual' and versao = 1$q$), 1);
 
 \o /dev/null
 insert into public.billing_accounts (id, nome) values ('00000000-0000-4000-8000-000000000003', 'Conta presa à v1 do essencial [TESTE]');
