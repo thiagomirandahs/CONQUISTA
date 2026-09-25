@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
@@ -132,8 +132,8 @@ export default function Cadastro() {
         <form onSubmit={cadastrar} className="space-y-3.5">
           <Campo label="Nome completo" type="text" value={form.nome} onChange={(v) => set('nome', v)} placeholder={ehPai ? 'Seu nome (do responsável)' : 'Seu nome'} />
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">Foto de perfil</label>
-            <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files?.[0] || null)} className="text-sm w-full text-muted" />
+            <label htmlFor="cadastro-foto" className="block text-sm font-medium text-ink mb-1">Foto de perfil</label>
+            <input id="cadastro-foto" type="file" accept="image/*" onChange={(e) => setFoto(e.target.files?.[0] || null)} className="text-sm w-full text-muted" />
             <p className="text-xs text-faint mt-1">
               {foto ? `Selecionada: ${foto.name}` : 'Ajuda líderes e colegas a te reconhecerem 😊 (opcional)'}
             </p>
@@ -144,8 +144,8 @@ export default function Cadastro() {
             <>
               <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Função no clube</label>
-                <select required className={inputClass} value={form.cargo} onChange={(e) => set('cargo', e.target.value)}>
+                <label htmlFor="cadastro-cargo" className="block text-sm font-medium text-ink mb-1">Função no clube</label>
+                <select id="cadastro-cargo" required className={inputClass} value={form.cargo} onChange={(e) => set('cargo', e.target.value)}>
                   {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -178,10 +178,11 @@ export default function Cadastro() {
 }
 
 function Campo({ label, value, onChange, ...props }) {
+  const id = useId()
   return (
     <div>
-      <label className="block text-sm font-medium text-ink mb-1">{label}</label>
-      <input {...props} required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+      <label htmlFor={id} className="block text-sm font-medium text-ink mb-1">{label}</label>
+      <input id={id} {...props} required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
     </div>
   )
 }

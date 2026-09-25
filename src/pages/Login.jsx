@@ -5,6 +5,7 @@ import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
 import { useClube } from '../context/Clube.jsx'
+import { lerRetorno, limparRetorno } from '../lib/retornoPosLogin.js'
 
 const inputClass =
   'w-full rounded-lg border border-line px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
@@ -35,6 +36,11 @@ export default function Login() {
     // código de outro clube (e a mensagem de "rejeitado" nunca casava). Quem decide agora é a
     // ClubeGuard, pelos VÍNCULOS (meu_contexto): cadastro pendente vê "Seu cadastro aguarda
     // aprovação"; sem clube vê "Entrar com código" / "Criar um clube"; clube perdido pede escolha.
+    //
+    // Se a pessoa veio de um fluxo que exigiu login no meio (ex.: abriu um link de clube sem estar
+    // logada), volta exatamente pra lá em vez de cair no ranking e perder o código/convite.
+    const retorno = lerRetorno()
+    if (retorno) { limparRetorno(); navigate(retorno); return }
     navigate('/ranking')
   }
 
@@ -61,13 +67,13 @@ export default function Login() {
 
         <form onSubmit={entrar} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">E-mail</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            <label htmlFor="login-email" className="block text-sm font-medium text-ink mb-1">E-mail</label>
+            <input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="voce@email.com" className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">Senha</label>
-            <input type="password" required value={senha} onChange={(e) => setSenha(e.target.value)}
+            <label htmlFor="login-senha" className="block text-sm font-medium text-ink mb-1">Senha</label>
+            <input id="login-senha" type="password" required value={senha} onChange={(e) => setSenha(e.target.value)}
               placeholder="••••••••" className={inputClass} />
           </div>
 

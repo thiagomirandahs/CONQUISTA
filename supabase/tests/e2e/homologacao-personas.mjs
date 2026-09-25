@@ -147,6 +147,59 @@ async function principal() {
   const distListaUsuarios = await coordDist.c.rpc('listar_usuarios')
   ok('coordenador distrital NÃO vira liderança de clube (listar_usuarios do clube A recusado/vazio)', semVazar(distListaUsuarios), JSON.stringify(distListaUsuarios.data))
 
+  console.log('\n== REGIONAL — ataque dedicado ==')
+  const { coord_reg: coordReg } = sessoes
+  const regiaoId = sql(`select id from public.organizational_units where slug='hml-regiao';`)
+  coordReg.usarEscopo(regiaoId)
+  const ctxReg = await coordReg.c.rpc('meu_contexto_institucional')
+  ok('regional: meu_contexto_institucional funciona e mostra a região certa', !ctxReg.error && ctxReg.data?.escopo_atual_id === regiaoId, JSON.stringify(ctxReg.data))
+  const painelReg = await coordReg.c.rpc('escopo_painel')
+  ok('regional: escopo_painel funciona (visão institucional PERMITIDA)', !painelReg.error, painelReg.error?.message)
+  const clubesReg = await coordReg.c.rpc('escopo_painel')
+  ok('regional VÊ os clubes A e B (os dois distritos estão sob a mesma região) — visão institucional correta',
+    !clubesReg.error && JSON.stringify(clubesReg.data)?.includes(clubeAId) && JSON.stringify(clubesReg.data)?.includes(clubeBId), JSON.stringify(clubesReg.data))
+  console.log('   -- ataques: visão institucional PERMITIDA ≠ acesso privado irrestrito --')
+  const regMensalidade = await coordReg.c.from('mensalidades').select('*').eq('desbravador_id', idDe('desbravador'))
+  ok('regional NÃO lê mensalidade individual pela tabela (mesmo de um clube do PRÓPRIO escopo)', (regMensalidade.data || []).length === 0, JSON.stringify(regMensalidade.data))
+  const regChat = await coordReg.c.from('chat_mensagens').select('*').eq('club_id', clubeAId).limit(1)
+  ok('regional NÃO lê chat privado do clube', !regChat.data || regChat.data.length === 0, JSON.stringify(regChat.data))
+  const regFoto = await coordReg.c.from('fotos').select('*').eq('autor_id', idDe('desbravador'))
+  ok('regional NÃO lê foto/evidência privada', !regFoto.data || regFoto.data.length === 0, JSON.stringify(regFoto.data))
+  const regResponsaveis = await coordReg.c.from('responsaveis').select('*')
+  ok('regional NÃO lê a tabela de vínculos de responsável (dado de família, não institucional)', (regResponsaveis.data || []).length === 0, JSON.stringify(regResponsaveis.data))
+  const regListaUsuarios = await coordReg.c.rpc('listar_usuarios')
+  ok('regional NÃO vira liderança de clube nenhum (listar_usuarios recusado/vazio)', semVazar(regListaUsuarios), JSON.stringify(regListaUsuarios.data))
+  coordReg.usarEscopo(distritoAId) // regional TENTA se passar por autoridade distrital forjando o header
+  const regComoDistrital = await coordReg.c.rpc('meu_contexto_institucional')
+  ok('regional NÃO assume escopo distrital só forjando o header (sem vínculo LÁ, escopo_atual_id não honra)', regComoDistrital.data?.escopo_atual_id !== distritoAId, JSON.stringify(regComoDistrital.data))
+  const regStorage = await coordReg.c.storage.from('imagens').list(clubeAId)
+  ok('regional NÃO lista Storage privado do clube A (bucket imagens é escopado por clube, não por hierarquia)', !!regStorage.error || (regStorage.data || []).length === 0, JSON.stringify(regStorage.data))
+
+  console.log('\n== CAMPO/ASSOCIAÇÃO/MISSÃO — ataque dedicado ==')
+  const { coord_campo: coordCampo, diretor_mda: diretorMda } = sessoes
+  const campoId = sql(`select id from public.organizational_units where slug='hml-campo';`)
+  const uniaoId = sql(`select id from public.organizational_units where slug='hml-uniao';`)
+  coordCampo.usarEscopo(campoId)
+  const ctxCampo = await coordCampo.c.rpc('meu_contexto_institucional')
+  ok('campo: meu_contexto_institucional funciona e mostra o campo certo', !ctxCampo.error && ctxCampo.data?.escopo_atual_id === campoId, JSON.stringify(ctxCampo.data))
+  const clubesCampo = await coordCampo.c.rpc('escopo_painel')
+  ok('campo VÊ os clubes A e B (toda a árvore região→distritos→clubes abaixo dele) — visão institucional correta',
+    !clubesCampo.error && JSON.stringify(clubesCampo.data)?.includes(clubeAId) && JSON.stringify(clubesCampo.data)?.includes(clubeBId), JSON.stringify(clubesCampo.data))
+  console.log('   -- ataques: autoridade institucional superior NÃO equivale a admin interno de cada clube --')
+  const campoMensalidade = await coordCampo.c.from('mensalidades').select('*').eq('desbravador_id', idDe('desbravador'))
+  ok('campo NÃO lê mensalidade individual pela tabela', (campoMensalidade.data || []).length === 0, JSON.stringify(campoMensalidade.data))
+  const campoChat = await coordCampo.c.from('chat_mensagens').select('*').eq('club_id', clubeBId).limit(1)
+  ok('campo NÃO lê chat privado do clube', !campoChat.data || campoChat.data.length === 0, JSON.stringify(campoChat.data))
+  const campoDoc = await coordCampo.c.from('class_documents').select('*').limit(1)
+  ok('campo NÃO lê documento privado pela tabela (verificação pública é só por RPC/token)', (campoDoc.data || []).length === 0, JSON.stringify(campoDoc.data))
+  const campoListaUsuarios = await coordCampo.c.rpc('listar_usuarios')
+  ok('campo NÃO vira liderança/admin interno de clube nenhum', semVazar(campoListaUsuarios), JSON.stringify(campoListaUsuarios.data))
+  diretorMda.usarEscopo(uniaoId)
+  const ctxUniao = await diretorMda.c.rpc('meu_contexto_institucional')
+  ok('diretor MDA (união): meu_contexto_institucional funciona no topo da árvore', !ctxUniao.error && ctxUniao.data?.escopo_atual_id === uniaoId, JSON.stringify(ctxUniao.data))
+  const uniaoMensalidade = await diretorMda.c.from('mensalidades').select('*').eq('desbravador_id', idDe('desbravador'))
+  ok('nem no TOPO da árvore institucional (união) alguém lê mensalidade individual pela tabela', (uniaoMensalidade.data || []).length === 0, JSON.stringify(uniaoMensalidade.data))
+
   // ---------------- MULTI-CLUBE ----------------
   console.log('\n== MULTI-CLUBE ==')
   multi.usarClube(clubeAId)
@@ -174,6 +227,34 @@ async function principal() {
   const pathOutroClube = `${clubeBId}/${idDe('desbravador')}-x.jpg`
   const { error: errUploadCruzado } = await diretoriaA.c.storage.from('imagens').upload(pathOutroClube, Buffer.from('x'), { contentType: 'image/jpeg' })
   ok('diretoria do clube A NÃO sobe arquivo na pasta do clube B (path cruzado)', !!errUploadCruzado, errUploadCruzado ? 'recusado' : 'DEVERIA TER RECUSADO')
+
+  // ---------------- AUTH ----------------
+  console.log('\n== AUTH ==')
+  const cAnon1 = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const loginSenhaErrada = await cAnon1.auth.signInWithPassword({ email: 'hml-desbravador@teste.local', password: 'senha-errada-de-proposito' })
+  ok('senha errada pra conta REAL é recusada', !!loginSenhaErrada.error, JSON.stringify(loginSenhaErrada.data?.user))
+  const cAnon2 = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const loginInexistente = await cAnon2.auth.signInWithPassword({ email: 'hml-nao-existe-nunca@teste.local', password: 'qualquer-coisa-123' })
+  ok('e-mail que NÃO existe é recusado', !!loginInexistente.error, JSON.stringify(loginInexistente.data?.user))
+  ok('...com a MESMA mensagem de "senha errada" (sem oráculo de e-mail existente — não dá pra enumerar contas pelo erro de login)',
+    loginInexistente.error?.message === loginSenhaErrada.error?.message, `"${loginSenhaErrada.error?.message}" vs "${loginInexistente.error?.message}"`)
+  ok('...e o MESMO status HTTP também', loginInexistente.error?.status === loginSenhaErrada.error?.status, `${loginSenhaErrada.error?.status} vs ${loginInexistente.error?.status}`)
+
+  console.log('   -- vínculo suspenso: a pessoa continua logando (é da CONTA), mas perde o acesso ao clube --')
+  sql(`update public.organization_memberships set status='suspenso' where user_id='${idDe('desbravador2')}' and organizational_unit_id='${clubeBId}';`)
+  const cSuspenso = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const loginSuspenso = await cSuspenso.auth.signInWithPassword({ email: 'hml-desbravador2@teste.local', password: SENHA })
+  ok('conta com vínculo suspenso AINDA consegue autenticar (a suspensão é do VÍNCULO, não da conta)', !loginSuspenso.error, loginSuspenso.error?.message)
+  let clubeSuspenso = null
+  const fetchSusp = (input, init) => { const o = { ...(init || {}) }; const h = new Headers(o.headers || {}); if (clubeSuspenso) h.set('x-clube-atual', clubeSuspenso); o.headers = h; return fetch(input, o) }
+  const cSuspensoAutenticado = createClient(API_URL, ANON, { auth: { persistSession: false }, global: { fetch: fetchSusp } })
+  await cSuspensoAutenticado.auth.setSession(loginSuspenso.data.session)
+  clubeSuspenso = clubeBId
+  const ctxSuspenso = await cSuspensoAutenticado.rpc('meu_contexto')
+  const vinculoSuspensoNoContexto = (ctxSuspenso.data?.vinculos || []).find((v) => v.club_id === clubeBId)
+  ok('...mas o vínculo suspenso aparece como NÃO selecionável (a UI barra o acesso, o servidor barra de novo)', vinculoSuspensoNoContexto?.selecionavel === false, JSON.stringify(vinculoSuspensoNoContexto))
+  ok('...e clube_atual_id NÃO assume o clube suspenso mesmo com o header pedindo', ctxSuspenso.data?.clube_atual_id !== clubeBId, JSON.stringify(ctxSuspenso.data?.clube_atual_id))
+  sql(`update public.organization_memberships set status='ativo' where user_id='${idDe('desbravador2')}' and organizational_unit_id='${clubeBId}';`)
 
   console.log(`\n${total - reprovados}/${total} ok${reprovados ? ` — ${reprovados} FALHA(S)` : ' — TUDO OK'}`)
   process.exitCode = reprovados > 0 ? 1 : 0
