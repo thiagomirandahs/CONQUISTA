@@ -2,13 +2,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Cabecalho, Card, Botao, Aviso, Selo, Carregando, Vazio, Selecao, Campo } from '../ui/index.jsx'
 import { carregarDocumentosDoClube, gerarPdf, baixarPdf, assinarLote, ROTULO_ESTADO } from '../services/documentos.js'
 import AssinarDocumentoModal from '../components/AssinarDocumentoModal.jsx'
+import RevisarDocumentoModal from '../components/RevisarDocumentoModal.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { avisar } from '../ui/avisos.jsx'
 
 const TOM_ESTADO = {
-  em_preparacao: 'atencao', pronto_para_assinatura: 'info', parcialmente_assinado: 'info',
+  em_preparacao: 'atencao', pronto_revisao: 'atencao', correcao_solicitada: 'perigo',
+  pronto_para_assinatura: 'info', parcialmente_assinado: 'info',
   assinado: 'ok', substituido: 'neutro', revogado: 'perigo',
 }
+const REVISAVEIS = ['pronto_revisao', 'correcao_solicitada']
 const ASSINAVEIS = ['pronto_para_assinatura', 'parcialmente_assinado']
 const DECLARACAO_LOTE = 'Declaro que revisei os documentos selecionados e confirmo suas assinaturas eletrônicas.'
 
@@ -24,6 +27,7 @@ export default function GestaoDocumentos() {
   const [filtroEstado, setFiltroEstado] = useState('')
   const [ocupado, setOcupado] = useState(null)
   const [assinando, setAssinando] = useState(null) // documento sendo assinado (abre o modal)
+  const [revisando, setRevisando] = useState(null) // documento sendo revisado (abre o modal)
   const [selecionados, setSelecionados] = useState(() => new Set())
   const [loteAberto, setLoteAberto] = useState(false)
   const [consentimentoLote, setConsentimentoLote] = useState('')
@@ -130,10 +134,21 @@ export default function GestaoDocumentos() {
                   {d.pdf_versao > 0 && (
                     <Botao variacao="contorno" aoTocar={() => baixar(d)} carregando={ocupado === d.token}>Ver/baixar</Botao>
                   )}
+                  {REVISAVEIS.includes(d.estado) && (
+                    <Botao aoTocar={() => setRevisando(d)} data-testid="abrir-revisao">
+                      {d.estado === 'correcao_solicitada' ? 'Revisar de novo' : 'Revisar'}
+                    </Botao>
+                  )}
                   {ASSINAVEIS.includes(d.estado) && (
                     <Botao aoTocar={() => setAssinando(d)} data-testid="abrir-assinatura">Assinar</Botao>
                   )}
                 </div>
+                {d.estado === 'correcao_solicitada' && d.revisao && (
+                  <div className="mt-2 text-xs bg-amber-50 border border-amber-200 rounded-lg p-2 text-amber-900">
+                    <p><strong>O que corrigir:</strong> {d.revisao.motivo}</p>
+                    {d.revisao.orientacao && <p className="mt-0.5">{d.revisao.orientacao}</p>}
+                  </div>
+                )}
                 {['assinado', 'parcialmente_assinado'].includes(d.estado) && (
                   <p className="text-xs text-faint mt-2">
                     {d.estado === 'assinado'
@@ -148,6 +163,8 @@ export default function GestaoDocumentos() {
 
       <AssinarDocumentoModal aberta={!!assinando} aoFechar={() => setAssinando(null)} documento={assinando}
         clubId={clubeId} aoAssinado={carregar} />
+      <RevisarDocumentoModal aberta={!!revisando} aoFechar={() => setRevisando(null)} documento={revisando}
+        aoDecidido={carregar} />
 
       {loteAberto && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">

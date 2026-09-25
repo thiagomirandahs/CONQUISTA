@@ -35,6 +35,8 @@ const DOC_PREPARO = {
   assinaturas_registradas: 0, assinaturas_exigidas: 0, estado: 'em_preparacao',
 }
 const DOC_PRONTO = { ...DOC_PREPARO, documento_id: 'doc-3', token: 'tok3', pdf_versao: 1, pdf_storage_path: 'clube/user/doc-3/1.pdf', assinaturas_exigidas: 1, estado: 'pronto_para_assinatura' }
+const DOC_PRONTO_REVISAO = { ...DOC_PREPARO, documento_id: 'doc-5', token: 'tok5', pdf_versao: 1, pdf_storage_path: 'clube/user/doc-5/1.pdf', estado: 'pronto_revisao' }
+const DOC_CORRECAO = { ...DOC_PREPARO, documento_id: 'doc-6', token: 'tok6', pdf_versao: 2, pdf_storage_path: 'clube/user/doc-6/2.pdf', estado: 'correcao_solicitada', revisao: { status: 'correcao_solicitada', motivo: 'Falta a unidade', orientacao: 'Preencha a unidade' } }
 const DOC_ASSINADO = { ...DOC_PREPARO, documento_id: 'doc-2', token: 'tok2', pdf_versao: 3, pdf_storage_path: 'clube/user/doc-2/3.pdf', assinaturas_registradas: 1, assinaturas_exigidas: 1, estado: 'assinado' }
 
 beforeEach(() => {
@@ -150,5 +152,23 @@ describe('GestaoDocumentos', () => {
     await userEvent.click(screen.getByTestId('confirmar-lote'))
     expect(erroSpy).toHaveBeenCalledWith(null, expect.stringContaining('Sem autoridade'))
     erroSpy.mockRestore()
+  })
+
+  it('documento pronto_revisao mostra "Revisar", nunca "Assinar" (assinatura exige revisão aprovada primeiro)', async () => {
+    carregarDocumentosDoClube.mockResolvedValue([DOC_PRONTO_REVISAO])
+    render(<GestaoDocumentos />)
+    const item = within(await screen.findByTestId('documento-item'))
+    expect(item.getByTestId('abrir-revisao')).toHaveTextContent('Revisar')
+    expect(item.queryByTestId('abrir-assinatura')).toBeNull()
+    expect(item.queryByRole('checkbox')).toBeNull()
+  })
+
+  it('documento correcao_solicitada mostra motivo/orientação e botão "Revisar de novo"', async () => {
+    carregarDocumentosDoClube.mockResolvedValue([DOC_CORRECAO])
+    render(<GestaoDocumentos />)
+    const item = within(await screen.findByTestId('documento-item'))
+    expect(item.getByText('Falta a unidade')).toBeInTheDocument()
+    expect(item.getByText('Preencha a unidade')).toBeInTheDocument()
+    expect(item.getByTestId('abrir-revisao')).toHaveTextContent('Revisar de novo')
   })
 })

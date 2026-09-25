@@ -60,11 +60,24 @@ export async function baixarPdf(storagePath) {
 
 export const ROTULO_ESTADO = {
   em_preparacao: 'Em preparação',
+  pronto_revisao: 'Pronto para revisão',
+  correcao_solicitada: 'Correção solicitada',
   pronto_para_assinatura: 'Pronto para assinatura',
   parcialmente_assinado: 'Parcialmente assinado',
   assinado: 'Assinado',
   substituido: 'Substituído',
   revogado: 'Revogado',
+}
+
+// ---------------------------------------------------------------------------------------------
+// Revisão DOCUMENTAL — diferente de avaliação curricular (isso continua em Avaliar Classes/
+// Especialidades). Aponta problema do DOCUMENTO/PDF (dado ausente, inconsistência, apresentação),
+// nunca reabre requisito/evidência/aprovação. Exigida (aprovada) antes de assinar.
+// ---------------------------------------------------------------------------------------------
+export async function revisarDocumento(token, decisao, motivo = null, orientacao = null) {
+  const { data, error } = await supabase.rpc('documento_revisar', { p_token: token, p_decisao: decisao, p_motivo: motivo, p_orientacao: orientacao })
+  if (error) throw new Error(error.message)
+  return data
 }
 
 // ---------------------------------------------------------------------------------------------
