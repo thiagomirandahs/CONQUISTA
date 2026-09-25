@@ -39,11 +39,26 @@ export async function meusPedidosVinculo() {
   return data || []
 }
 
-// Dados dos filhos aprovados (pontos, presença, mensalidade). RLS/segurança no banco.
+// Dados dos filhos aprovados (pontos, presença, mensalidade, vinculo_id, consentimento_id quando
+// já concedido). RLS/segurança no banco.
 export async function carregarMeusFilhos() {
   const { data, error } = await supabase.rpc('meus_filhos')
   if (error) throw new Error(error.message)
   return data || []
+}
+
+// Consentimento AUDITÁVEL do responsável (infraestrutura real; texto do termo pendente de revisão
+// jurídica, marcado explicitamente). Só sobre o PRÓPRIO vínculo já aprovado.
+export async function concederConsentimento(vinculoId) {
+  const { data, error } = await supabase.rpc('consentimento_conceder', { p_vinculo_id: vinculoId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function revogarConsentimento(consentimentoId, motivo = null) {
+  const { data, error } = await supabase.rpc('consentimento_revogar', { p_consentimento_id: consentimentoId, p_motivo: motivo })
+  if (error) throw new Error(error.message)
+  return data
 }
 
 // Diretoria: pedidos de vínculo aguardando aprovação.

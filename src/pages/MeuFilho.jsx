@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
-import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPix } from '../lib/dados.js'
+import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPix, concederConsentimento, revogarConsentimento } from '../lib/dados.js'
 
 const MESES = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -35,6 +35,18 @@ export default function MeuFilho() {
     try { await pedirVinculo(nome.trim()); setNome(''); setMsg('Pedido enviado! A diretoria vai confirmar. 🙂'); await carregar() }
     catch (err) { setMsg(err?.message || 'Erro') }
     setEnviando(false)
+  }
+
+  const [consentindo, setConsentindo] = useState(null)
+  async function conceder(vinculoId) {
+    setConsentindo(vinculoId)
+    try { await concederConsentimento(vinculoId); await carregar() } catch (err) { setMsg(err?.message || 'Erro') }
+    setConsentindo(null)
+  }
+  async function revogar(consentimentoId) {
+    setConsentindo(consentimentoId)
+    try { await revogarConsentimento(consentimentoId); await carregar() } catch (err) { setMsg(err?.message || 'Erro') }
+    setConsentindo(null)
   }
 
   function copiarPix() {
@@ -83,6 +95,25 @@ export default function MeuFilho() {
               )}
             </div>
           )}
+          <div className="p-4 border-t border-line">
+            {c.consentimento_id ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-emerald-700">✅ Consentimento concedido</p>
+                <button onClick={() => revogar(c.consentimento_id)} disabled={consentindo === c.consentimento_id}
+                  className="text-xs text-muted underline min-h-[44px] px-2 disabled:opacity-60">Revogar</button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-faint mb-2">
+                  Consentimento como responsável por {c.nome} ainda não registrado.
+                </p>
+                <button onClick={() => conceder(c.vinculo_id)} disabled={consentindo === c.vinculo_id}
+                  className="w-full min-h-[44px] rounded-xl border border-line text-sm font-semibold text-ink disabled:opacity-60">
+                  {consentindo === c.vinculo_id ? 'Registrando...' : 'Conceder consentimento'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
