@@ -60,3 +60,6 @@ restore/
 *.backup
 *.backup.gz
 db_cluster-*
+
+# backup real do Conquista (Etapa 2 da migracao) -- tem dado real de crianca, nunca versionar
+backup-conquista-*/
