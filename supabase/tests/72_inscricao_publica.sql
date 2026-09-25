@@ -82,6 +82,28 @@ select t.eq('...e o vínculo nasce como responsável PENDENTE (não como desbrav
 select t.eq('entrar no clube NÃO cria vínculo responsável → filho',
   t.n(format($q$select count(*) from public.responsaveis where responsavel_id = %L$q$, t.id('resp72'))), 0);
 
+-- ==================== 4b) responsável SEM convite: não vê criança, não se promove ====================
+select t.como('resp72'); select t.pedir_clube('clube_a');
+select t.eq('responsável pendente NÃO vê filho nenhum (meus_filhos vazio)',
+  t.txt($q$select coalesce(json_array_length(public.meus_filhos()::json), 0)::text$q$), '0');
+select t.eq('...NÃO lê perfis de crianças do clube (só o próprio)', t.n($q$select count(*) from public.profiles where id <> auth.uid()$q$), 0);
+select t.eq('...NÃO lê pontos do clube', t.n($q$select count(*) from public.pontos$q$), 0);
+select t.eq('...NÃO lê mensalidades do clube', t.n($q$select count(*) from public.mensalidades$q$), 0);
+select t.bloqueado('...NÃO se ativa sozinho (update no próprio vínculo)',
+  format($q$update public.organization_memberships set status = 'ativo' where user_id = %L$q$, t.id('resp72')));
+select t.bloqueado('...NÃO se promove a diretoria (update de papel)',
+  format($q$update public.organization_memberships set role = 'diretoria' where user_id = %L$q$, t.id('resp72')));
+select t.bloqueado('...NÃO cria vínculo escolhendo club_id (insert direto)',
+  format($q$insert into public.organization_memberships (user_id, organizational_unit_id, role, status) values (%L, %L, 'pais', 'ativo')$q$, t.id('resp72'), t.id('clube_b')));
+select t.bloqueado('...NÃO se declara responsável de uma criança (insert direto em responsaveis)',
+  format($q$insert into public.responsaveis (responsavel_id, desbravador_id, status, club_id) values (%L, %L, 'aprovado', %L)$q$, t.id('resp72'), t.id('membro_a'), t.id('clube_a')));
+select t.throws('...NÃO usa a vitrine de admin', $q$select public.admin_clubes_listar()$q$, 'Sem permissão');
+reset role;
+select t.eq('depois de tudo isso: continua 1 vínculo, pais e PENDENTE, e 0 filhos',
+  (select count(*)::text || ':' || min(role) || ':' || min(status) from public.organization_memberships where user_id = t.id('resp72'))
+  || ':' || (select count(*) from public.responsaveis where responsavel_id = t.id('resp72'))::text, '1:pais:pendente:0');
+select t.eq('ser responsável não é admin da plataforma', (select count(*) from public.platform_admins where user_id = t.id('resp72')), 0);
+
 -- ==================== 5) multiclube: mesma identidade, novo vínculo ====================
 select t.como('membro_a');
 select t.eq('membro do clube A usa o link do clube B: pedido pendente em B',
