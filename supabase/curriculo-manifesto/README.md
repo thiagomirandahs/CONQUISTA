@@ -185,6 +185,14 @@ Liderança, catálogo de Especialidades.
 Cada `classes/*.json` pode ter uma chave de topo `revisoes` (fora de `classe_regular`; o gerador não a
 inclui no pacote — é proveniência da revisão, não conteúdo): `versao`, `data`, `itens`, `fonte` e `motivo`.
 
+- **2026.3 (25/09/2026)** — achado em produção: todo requisito nascia com `tipo_evidencia='nenhuma'` e a tela
+  não oferecia como comprovar nada. Cada requisito passa a ter a chave opcional **`tipo_evidencia`**
+  (`nenhuma` = a liderança confere pessoalmente | `texto` = produção escrita/explicação | `foto` = atividade
+  prática, serviço, evento) e, opcional, **`evidencia_obrigatoria`** (padrão: true para texto/foto). O importador
+  aceita as duas desde a migration `20260930000105_importador-tipo-de-comprovacao.sql`; a 2026.3 é publicada pela
+  `20260930000106` (gerada), que arquiva a 2026.2. Também: `descricao_resumida` enriquecida (paráfrase própria) e
+  escolhas nominadas; divergências site × cartão agrupado resolvidas pelo site oficial + OMD 021/2024 (ver `revisoes`
+  de cada `classes/*.json`).
 - **2026.2 (22/09/2026)** — revisão pontual de `amigo.IX.1` contra a página oficial (texto bruto): o oficial é
   "Completar uma especialidade na área de Artes e habilidades manuais." — categoria **aberta**, sem lista.
   A 2026.1 representava isso como uma opção artificial entre parênteses (erro de representação nosso). Passa

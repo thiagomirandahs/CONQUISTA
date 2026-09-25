@@ -89,7 +89,7 @@ reset role;
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
 select t.eq('conteúdo (dono): nome, clube, classe, versão curricular, período com investidura (data + registrador + papel)',
   (select (d->'pessoa'->>'nome') || '|' || (d->'clube_emissor'->>'nome') || '|' || (d->'classe'->>'nome') || '|' || (d->'curriculum_version'->>'versao') || '|' || (d->'periodo'->'investidura'->>'registrado_papel') || '|' || ((d->'periodo'->'investidura'->>'data') = current_date::text)::text
-     from (select public.documento_conteudo(t.tok()) d) x), 'Multi Dois Papeis|Filhos da Conquista|Amigo|2026.2|diretoria|true');
+     from (select public.documento_conteudo(t.tok()) d) x), 'Multi Dois Papeis|Filhos da Conquista|Amigo|2026.3|diretoria|true');
 select t.eq('conteúdo: 9 seções, 25 requisitos, cada um com situação e responsável pela aprovação (nome+papel+data)',
   (select jsonb_array_length(d->'secoes') || '|' || (select count(*) from jsonb_array_elements(d->'secoes') s, jsonb_array_elements(s->'requisitos') r) || '|'
      || (select count(*) from jsonb_array_elements(d->'secoes') s, jsonb_array_elements(s->'requisitos') r where r->>'situacao' = 'aprovado' and r->'aprovado_por'->>'nome' = 'Lider A' and r->'aprovado_por'->>'papel' = 'diretoria' and (r->'aprovado_por'->>'em') is not null)
@@ -113,7 +113,7 @@ select t.como_anon();
 select t.eq('QR VÁLIDO (anon resolve o token): estado=valido, integro=true, tipo=final, com nome/classe/clube/versão/conferência',
   (select (d->>'encontrado') || '|' || (d->>'estado') || '|' || (d->>'integro') || '|' || (d->>'tipo') || '|' || (d->>'nome') || '|' || (d->>'classe') || '|' || (d->>'clube_emissor') || '|' || (d->>'versao_curricular') || '|' || (d->>'conferencia')
      from (select public.documento_verificar(t.tok()) d) x),
-  'true|valido|true|final|Multi Dois Papeis|Amigo|Filhos da Conquista|classes-regulares-dsa 2026.2|' || (select id from t.ids_txt where chave = 'conf_final'));
+  'true|valido|true|final|Multi Dois Papeis|Amigo|Filhos da Conquista|classes-regulares-dsa 2026.3|' || (select id from t.ids_txt where chave = 'conf_final'));
 select t.eq('resumo público NÃO expõe requisitos, avaliadores, evidências, comentários, snapshot_id/club_id/user_id nem member_class_id',
   ((public.documento_verificar(t.tok())::text like '%secoes%' or public.documento_verificar(t.tok())::text like '%Lider A%' or public.documento_verificar(t.tok())::text like '%Natação%'
     or public.documento_verificar(t.tok())::text like '%' || t.snap(1)::text || '%' or public.documento_verificar(t.tok())::text like '%' || t.id('clube_a')::text || '%'
@@ -140,9 +140,9 @@ select t.eq('catálogo oficial arquivado: a verificação pública continua (sel
   (public.documento_verificar(t.tok()) ->> 'estado') || '|' || (public.documento_verificar(t.tok()) ->> 'integro'), 'valido|true');
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
 select t.eq('...e o conteúdo do documento NÃO mudou (nome da classe e versão vêm do snapshot, não do catálogo arquivado)',
-  (public.documento_conteudo(t.tok()) -> 'classe' ->> 'nome') || '|' || (public.documento_conteudo(t.tok()) -> 'curriculum_version' ->> 'versao'), 'Amigo|2026.2');
+  (public.documento_conteudo(t.tok()) -> 'classe' ->> 'nome') || '|' || (public.documento_conteudo(t.tok()) -> 'curriculum_version' ->> 'versao'), 'Amigo|2026.3');
 reset role;
-update public.curriculum_versions set status = 'publicado' where origem = 'oficial' and versao = '2026.2';
+update public.curriculum_versions set status = 'publicado' where origem = 'oficial' and versao = '2026.3';
 
 -- ==================== 3) snapshot SUBSTITUÍDO — verificação reflete ====================
 -- força um snapshot novo: revoga NÃO (isso é o caso 4); aqui simulamos substituição selando de novo.

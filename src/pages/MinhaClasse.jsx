@@ -221,6 +221,7 @@ function Requisito({ r, userId, onMudou }) {
   const podeEnviar = podeEditar && bloqueios.length === 0
   const precisaTexto = r.tipo_evidencia === 'texto'
   const precisaFoto = r.tipo_evidencia === 'foto'
+  const obrigatoria = !!r.evidencia_obrigatoria
   const idTitulo = `req-${r.id}`
   const idBloqueios = `bloq-${r.id}`
 
@@ -240,7 +241,11 @@ function Requisito({ r, userId, onMudou }) {
   }
 
   async function enviar() {
-    setOcupado(true); setErro('')
+    setErro('')
+    // Comprovação obrigatória: avisa na hora, com o que falta, em vez de esperar o servidor recusar.
+    if (obrigatoria && precisaTexto && !texto.trim()) { setErro('Escreva sua resposta antes de enviar para avaliação.'); return }
+    if (obrigatoria && precisaFoto && !foto && !r.evidencia_path) { setErro('Escolha uma foto de comprovação antes de enviar para avaliação.'); return }
+    setOcupado(true)
     try {
       if ((precisaTexto && texto.trim()) || (precisaFoto && foto)) {
         await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
@@ -281,15 +286,15 @@ function Requisito({ r, userId, onMudou }) {
           )}
           {precisaTexto && (
             <label className="block">
-              <span className="text-xs text-muted">Sua resposta</span>
-              <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva aqui..."
+              <span className="text-xs text-muted">Sua resposta{obrigatoria ? ' (obrigatória)' : ''}</span>
+              <textarea value={texto} required={obrigatoria} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva aqui..."
                 className="mt-1 w-full text-sm rounded-lg border border-line px-3 py-2" />
             </label>
           )}
           {precisaFoto && (
             <div>
               <label className="block">
-                <span className="text-xs text-muted">Foto de evidência</span>
+                <span className="text-xs text-muted">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
                 <input type="file" accept="image/*" className="mt-1 block text-sm" onChange={(e) => escolherFoto(e.target.files?.[0])} />
               </label>
               {(previa || r.evidencia_path) && (

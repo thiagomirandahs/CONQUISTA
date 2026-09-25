@@ -86,10 +86,10 @@ select t.eq('API: N-de-M — os 25 grupos chegam como estrutura (n_minimo, sem_r
   (select count(*) from t.api a join t.man m on m.classe_id = a.classe_id and m.req_id = a.req_id
     where a.n_minimo is distinct from m.n_minimo or a.sem_repeticao is distinct from m.sem_repeticao or a.pool is distinct from m.pool
        or (coalesce(jsonb_array_length(a.opcoes), 0) > 0 or coalesce(jsonb_array_length(m.opcoes), 0) > 0) and a.opcoes is distinct from m.opcoes), 0);
-select t.eq('API: 25 requisitos com escolha', (select count(*) from t.api where n_minimo is not null), 25);
+select t.eq('API: 26 requisitos com escolha (2026.3: +pesquisador.I.3 e V.1, -pioneiro.VI.1)', (select count(*) from t.api where n_minimo is not null), 26);
 select t.eq('API: estado inicial — todos nao_iniciado', (select count(*) from t.api where status <> 'nao_iniciado'), 0);
-select t.eq('API: bloqueios iniciais — SÓ os 6 dinâmicos (sem conteúdo do ano) e os 25 de escolha (sem escolha registrada) vêm bloqueados; os outros 118 livres',
-  (select count(*) from t.api where jsonb_array_length(bloqueios) > 0) * 1000 + (select count(*) from t.api where jsonb_array_length(bloqueios) = 0), 31118);
+select t.eq('API: bloqueios iniciais — SÓ os 6 dinâmicos (sem conteúdo do ano) e os 26 de escolha (sem escolha registrada) vêm bloqueados; os outros 117 livres',
+  (select count(*) from t.api where jsonb_array_length(bloqueios) > 0) * 1000 + (select count(*) from t.api where jsonb_array_length(bloqueios) = 0), 32117);
 select t.eq('API: o texto do bloqueio dinâmico nomeia o conteúdo do período; o de escolha diz quantas faltam',
   (select count(*) from t.api where dyn_chave is not null and bloqueios::text not like '%ainda não está disponível%')
   + (select count(*) from t.api where n_minimo is not null and bloqueios::text not like '%Escolha pelo menos%'), 0);

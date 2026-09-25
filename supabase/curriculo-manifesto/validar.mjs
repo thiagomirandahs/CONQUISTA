@@ -36,6 +36,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const STATUS_VALIDOS = ['CONFIRMADO', 'ALTERADO_POR_OMD', 'PENDENTE_DE_VALIDACAO']
+// Tipos de comprovação que o importador (migration 105) aceita; ausente = 'nenhuma'.
+export const TIPOS_EVIDENCIA = ['nenhuma', 'texto', 'foto']
 
 // Fase 2.6 (migration 20260921000038_motor-de-regras-curriculares.sql): cada lacuna_schema
 // que o manifesto pode marcar → o mecanismo do banco que a representa SEM achatar. Toda
@@ -213,6 +215,17 @@ export function validarDados({ omds, arquivosClasses }) {
         if (req.tipo === 'escolha_n_de_m_sem_repeticao' && !req.grupo_sem_repeticao) {
           avisos.push(`${onde}: tipo=escolha_n_de_m_sem_repeticao sem grupo_sem_repeticao — recomendado declarar o pool de especialidades já usadas que este item respeita.`)
         }
+        // (migration 105) como o requisito se comprova: nenhuma (liderança confere), texto ou foto.
+        if (Object.hasOwn(req, 'tipo_evidencia') && !TIPOS_EVIDENCIA.includes(req.tipo_evidencia)) {
+          erro(erros, `${onde}: tipo_evidencia "${req.tipo_evidencia}" inválido — precisa ser um de ${TIPOS_EVIDENCIA.join(', ')}.`)
+        }
+        if (Object.hasOwn(req, 'evidencia_obrigatoria')) {
+          if (typeof req.evidencia_obrigatoria !== 'boolean') {
+            erro(erros, `${onde}: evidencia_obrigatoria precisa ser booleano (true/false).`)
+          } else if (req.evidencia_obrigatoria && (req.tipo_evidencia || 'nenhuma') === 'nenhuma') {
+            erro(erros, `${onde}: evidencia_obrigatoria=true com tipo_evidencia "nenhuma" — não haveria o que enviar.`)
+          }
+        }
         if (req.lacuna_schema && !Object.hasOwn(REPRESENTACAO_DAS_LACUNAS, req.lacuna_schema)) {
           erro(erros, `${onde}: lacuna_schema "${req.lacuna_schema}" sem representação suportada no schema (não está em REPRESENTACAO_DAS_LACUNAS) — o banco ainda achataria este requisito.`)
         }
@@ -297,6 +310,15 @@ if (ehCli) {
   console.log(formatarTabela(linhas))
   console.log('')
   console.log(`TOTAL GERAL — CONFIRMADO: ${totalGeral.CONFIRMADO}  ALTERADO_POR_OMD: ${totalGeral.ALTERADO_POR_OMD}  PENDENTE_DE_VALIDACAO: ${totalGeral.PENDENTE_DE_VALIDACAO}  (${totalGeral.CONFIRMADO + totalGeral.ALTERADO_POR_OMD + totalGeral.PENDENTE_DE_VALIDACAO} requisitos no manifesto)`)
+
+  console.log('\n=== Tipo de comprovação por Classe Regular (tipo_evidencia; ausente = nenhuma) ===\n')
+  for (const { arquivo, dados } of arquivosClasses) {
+    const b = dados.classe_regular
+    if (!b) continue
+    const cont = { nenhuma: 0, texto: 0, foto: 0 }
+    for (const { req } of achatarRequisitos(b, 'regular', arquivo)) cont[req.tipo_evidencia || 'nenhuma'] = (cont[req.tipo_evidencia || 'nenhuma'] || 0) + 1
+    console.log(`  ${b.nome.padEnd(14)} nenhuma=${cont.nenhuma}  texto=${cont.texto}  foto=${cont.foto}`)
+  }
 
   console.log('\n=== Lacunas de schema × representação no banco (fase 2.6, migration 38) ===\n')
   const usoPorLacuna = {}

@@ -111,7 +111,7 @@ reset role;
 -- =============================================================================
 -- C3 + C4) A publicação do conteúdo anual confere o que recebe
 -- =============================================================================
--- A serialização canônica do banco é a MESMA do gerador JS: o fixture do manifesto 2026.2 guarda o
+-- A serialização canônica do banco é a MESMA do gerador JS: o fixture do manifesto 2026.3 guarda o
 -- texto canônico que o JS gerou e o sha256 dele (acentos, travessões, aspas, barras — dado real).
 select t.eq('[C4] _json_canonico reproduz, byte a byte, o texto canônico que o gerador JS produziu',
   t.txt($q$select (public._json_canonico(texto::jsonb) = texto)::text from t.manifesto$q$), 'true');

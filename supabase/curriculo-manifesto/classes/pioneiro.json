@@ -1,6 +1,13 @@
 {
-  "manifesto_versao": "2026.2",
-  "gerado_em": "2026-09-22",
+  "manifesto_versao": "2026.3",
+  "gerado_em": "2026-09-25",
+  "revisoes": [
+    {
+      "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
+      "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
+      "motivo": "Achado em produção: todo requisito nascia com tipo_evidencia=nenhuma e o desbravador não tinha como comprovar nada pela tela (ex.: redação sem caixa de texto). Cada requisito passa a declarar tipo_evidencia (nenhuma = liderança confere pessoalmente; texto = produção escrita/explicação; foto = atividade prática, serviço ou evento), aceito pelo importador desde a migration 20260930000105. Também: descricao_resumida enriquecida (paráfrase própria com versículos, nós, \"N de…\", exigência escrita do livro do ano) e escolhas nominadas. Divergências entre site oficial e cartão agrupado resolvidas pelo SITE OFICIAL + OMD 021/2024 (decisão do dono do produto): livro de Amigo \"Vaso de Barro\"; pesquisador.VIII.2 = 1 de 2; excursionista.VII.2 = 1 especialidade; Pioneiro sem Classe Bíblica; amigo.V.1 com \"Segurança básica na água\"; pioneiro.VI.1 = Ministério Pessoal E Evangelismo (deixa de ser escolha). Nenhum requisito entrou ou saiu. A 2026.2 já importada NÃO é editada: a 2026.3 entra como curriculum_version nova e a 2026.2 é arquivada (quem começou nela continua nela)."
+    }
+  ],
   "classe_regular": {
     "id": "pioneiro",
     "nome": "Pioneiro",
@@ -17,82 +24,70 @@
       {
         "id": "pioneiro.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
         "requisitos": [
-          {"id": "pioneiro.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 13 anos."},
-          {"id": "pioneiro.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
-          {"id": "pioneiro.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e entender o Alvo e o Lema JA."},
-          {"id": "pioneiro.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
-            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
-          {"id": "pioneiro.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Expedição Galápagos\".",
-            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
-            "observacao": "Livro anterior (pré-2026): \"A história da vida\". Confirmado literalmente na página viva."}
+          {"id": "pioneiro.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ter pelo menos 13 anos de idade.", "tipo_evidencia": "nenhuma"},
+          {"id": "pioneiro.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube.", "tipo_evidencia": "nenhuma"},
+          {"id": "pioneiro.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e entender o Alvo e o Lema JA.", "tipo_evidencia": "nenhuma"},
+          {"id": "pioneiro.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano e fazer um resumo dele em 1 página.", "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Expedição Galápagos\".", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024", "observacao": "Livro anterior (pré-2026): \"A história da vida\". Confirmado literalmente na página viva.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pioneiro.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
         "requisitos": [
-          {"id": "pioneiro.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as Bem-Aventuranças (Sermão da Montanha)."},
-          {"id": "pioneiro.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 7 versículos indicados."},
-          {"id": "pioneiro.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Conversar sobre o que é cristianismo / características de um discípulo."},
-          {"id": "pioneiro.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudo especial sobre inspiração da Bíblia com um pastor."},
-          {"id": "pioneiro.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Convidar 3+ pessoas para Classe Bíblica ou Pequeno Grupo."},
-          {"id": "pioneiro.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica extensa (Eclesiastes, Isaías, Jeremias, Daniel, Mateus, entre outros)."}
+          {"id": "pioneiro.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as Bem-Aventuranças (Sermão da Montanha).", "tipo_evidencia": "nenhuma"},
+          {"id": "pioneiro.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar com suas palavras: Isaías 26:3, Romanos 12:12, João 14:1-3, Salmo 37:5, Filipenses 3:12-14, Salmo 23 e I Samuel 15:22.", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Conversar no Clube ou na Unidade sobre: o que é cristianismo, as marcas de um verdadeiro discípulo e o que fazer para ser um cristão verdadeiro.", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Participar de um estudo com um pastor sobre a inspiração da Bíblia (inspiração, revelação e iluminação).", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Convidar 3 ou mais pessoas para uma classe bíblica ou um pequeno grupo.", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica dos capítulos indicados de Eclesiastes, Isaías, Jeremias, Daniel, Joel, Amós, Jonas, Miqueias, Ageu, Zacarias, Malaquias e Mateus 1 a 23 (conte o que leu).", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pioneiro.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
         "requisitos": [
-          {"id": "pioneiro.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de 2 projetos missionários definidos pelo Clube."},
-          {"id": "pioneiro.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Trabalhar em projeto comunitário (igreja/escola/comunidade)."}
+          {"id": "pioneiro.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de 2 projetos missionários definidos pelo Clube.", "tipo_evidencia": "foto"},
+          {"id": "pioneiro.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Trabalhar em um projeto comunitário da igreja, da escola ou da comunidade.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pioneiro.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
         "requisitos": [
-          {"id": "pioneiro.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Debate/autoavaliação sobre 2 de 4 temas à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 2, "opcoes": ["Autoestima", "Amizade", "Relacionamentos", "Otimismo e pessimismo"]}}
+          {"id": "pioneiro.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de um debate e fazer uma avaliação pessoal das suas atitudes em 2 destes temas: autoestima, amizade, relacionamentos, otimismo e pessimismo.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 2, "opcoes": ["Autoestima", "Amizade", "Relacionamentos", "Otimismo e pessimismo"]}, "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pioneiro.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
         "requisitos": [
-          {"id": "pioneiro.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Programa pessoal de exercícios; compromisso assinado."},
-          {"id": "pioneiro.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir vantagens do estilo de vida adventista."}
+          {"id": "pioneiro.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Montar um programa de exercícios diários, conversar com o líder sobre aptidão física e fazer e assinar um compromisso de se exercitar com regularidade.", "tipo_evidencia": "foto"},
+          {"id": "pioneiro.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir as vantagens do estilo de vida adventista segundo a Bíblia.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pioneiro.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
         "requisitos": [
-          {"id": "pioneiro.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Assistir a seminário/treinamento (Ministério Pessoal ou Evangelismo).",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Ministério Pessoal", "Evangelismo"]}},
-          {"id": "pioneiro.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de atividade social da igreja."}
+          {"id": "pioneiro.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Assistir a um seminário ou treinamento da igreja ou do distrito nos departamentos de Ministério Pessoal e de Evangelismo.", "observacao": "Revisão 2026.3: a página oficial pede Ministério Pessoal E Evangelismo (o cartão SGC tem os dois como alíneas a) e b), cada uma com resposta). A 2026.2 modelava como escolha de 1 de 2 — erro nosso; passa a requisito simples.", "tipo_evidencia": "foto"},
+          {"id": "pioneiro.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de uma atividade social da igreja.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pioneiro.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
         "requisitos": [
-          {"id": "pioneiro.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Estudar a história do dilúvio e o processo de fossilização."},
-          {"id": "pioneiro.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade de Estudo da natureza não realizada anteriormente.",
-            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-            "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa"}
+          {"id": "pioneiro.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Estudar a história do dilúvio e o processo de fossilização.", "tipo_evidencia": "texto"},
+          {"id": "pioneiro.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade de Estudo da natureza não realizada anteriormente.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "pioneiro.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
         "requisitos": [
-          {"id": "pioneiro.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Fazer fogo refletor e demonstrar seu uso."},
-          {"id": "pioneiro.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Acampamento de fim de semana; arrumar mochila com equipamento pessoal."},
-          {"id": "pioneiro.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Resgate básico."}
+          {"id": "pioneiro.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Fazer um fogo refletor e mostrar seu uso.", "tipo_evidencia": "foto"},
+          {"id": "pioneiro.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de um acampamento de fim de semana, arrumando de forma apropriada a mochila com o equipamento pessoal.", "tipo_evidencia": "foto"},
+          {"id": "pioneiro.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Resgate básico.", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "pioneiro.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
         "requisitos": [
-          {"id": "pioneiro.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, em área à escolha.",
-            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-            "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa",
-            "escolha": {"n": 1, "opcoes": ["Atividades missionárias e comunitárias", "Atividades profissionais", "Atividades agrícolas"]}}
+          {"id": "pioneiro.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente em 1 destas áreas: Atividades missionárias, Atividades profissionais ou Atividades agrícolas.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "pioneiro.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1, "opcoes": ["Atividades missionárias e comunitárias", "Atividades profissionais", "Atividades agrícolas"]}, "tipo_evidencia": "nenhuma"}
         ]
       }
     ]

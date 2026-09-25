@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.2",
-  "gerado_em": "2026-09-22",
+  "manifesto_versao": "2026.3",
+  "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
+      "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
+      "motivo": "Achado em produção: todo requisito nascia com tipo_evidencia=nenhuma e o desbravador não tinha como comprovar nada pela tela (ex.: redação sem caixa de texto). Cada requisito passa a declarar tipo_evidencia (nenhuma = liderança confere pessoalmente; texto = produção escrita/explicação; foto = atividade prática, serviço ou evento), aceito pelo importador desde a migration 20260930000105. Também: descricao_resumida enriquecida (paráfrase própria com versículos, nós, \"N de…\", exigência escrita do livro do ano) e escolhas nominadas. Divergências entre site oficial e cartão agrupado resolvidas pelo SITE OFICIAL + OMD 021/2024 (decisão do dono do produto): livro de Amigo \"Vaso de Barro\"; pesquisador.VIII.2 = 1 de 2; excursionista.VII.2 = 1 especialidade; Pioneiro sem Classe Bíblica; amigo.V.1 com \"Segurança básica na água\"; pioneiro.VI.1 = Ministério Pessoal E Evangelismo (deixa de ser escolha). Nenhum requisito entrou ou saiu. A 2026.2 já importada NÃO é editada: a 2026.3 entra como curriculum_version nova e a 2026.2 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.2", "data": "2026-09-22", "itens": ["amigo.VII.1", "amigo.IX.1"],
       "fonte": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/ (página oficial da classe, texto bruto reconferido em 22/09/2026; carimbo 04/11/2017)",
@@ -23,84 +28,71 @@
       {
         "id": "amigo.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
         "requisitos": [
-          {"id": "amigo.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 10 anos."},
-          {"id": "amigo.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
-          {"id": "amigo.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto e a Lei do Desbravador."},
-          {"id": "amigo.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
-            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico",
-            "observacao": "O título correto deste item muda todo ano civil — é DIFERENTE do item I.5 (o \"livro da classe\", que só muda por OMD)."},
-          {"id": "amigo.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Vaso de Barro\".",
-            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017", "confirmado_por_omd": "OMD-021-2024"},
-          {"id": "amigo.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica."}
+          {"id": "amigo.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ter pelo menos 10 anos de idade.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto e a Lei do Desbravador.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.", "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico", "observacao": "O título correto deste item muda todo ano civil — é DIFERENTE do item I.5 (o \"livro da classe\", que só muda por OMD).", "tipo_evidencia": "texto"},
+          {"id": "amigo.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Vaso de Barro\".", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017", "confirmado_por_omd": "OMD-021-2024", "tipo_evidencia": "texto"},
+          {"id": "amigo.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica.", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "amigo.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
         "requisitos": [
-          {"id": "amigo.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar Criação, 10 Pragas, 12 Tribos de Israel e os 39 livros do Antigo Testamento."},
-          {"id": "amigo.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar versículos indicados (João 3:16, Efésios 6:1-3, II Timóteo 3:16, Salmo 1)."},
-          {"id": "amigo.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica de Gênesis até Êxodo (trechos indicados)."}
+          {"id": "amigo.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar e mostrar que sabe: o que Deus criou em cada dia, as 10 pragas do Egito, as 12 tribos de Israel e os 39 livros do Antigo Testamento (e encontrar qualquer um deles).", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar com suas palavras: João 3:16, Efésios 6:1-3, II Timóteo 3:16 e Salmo 1.", "tipo_evidencia": "texto"},
+          {"id": "amigo.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica dos capítulos indicados de Gênesis e Êxodo (conte o que leu).", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "amigo.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
         "requisitos": [
-          {"id": "amigo.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dedicar 2 horas ajudando a comunidade."},
-          {"id": "amigo.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Escrever redação sobre ser bom cidadão."}
+          {"id": "amigo.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dedicar 2 horas ajudando alguém da comunidade por meio de 2 destas 3 atividades: visitar e orar com quem precisa de amizade; oferecer alimento a alguém carente; participar de um projeto ecológico ou educativo.", "tipo_evidencia": "foto"},
+          {"id": "amigo.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Escrever uma redação sobre como ser um bom cidadão em casa e na escola.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "amigo.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
         "requisitos": [
-          {"id": "amigo.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Mencionar 10 qualidades de um amigo; situações da Regra Áurea."},
-          {"id": "amigo.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Saber cantar o Hino Nacional e conhecer sua história/autores."}
+          {"id": "amigo.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Listar 10 qualidades de um bom amigo e contar 4 situações do dia a dia em que praticou a Regra Áurea (Mateus 7:12).", "tipo_evidencia": "texto"},
+          {"id": "amigo.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Cantar o Hino Nacional, conhecer sua história e saber quem escreveu a letra e a música.", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "amigo.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
         "requisitos": [
-          {"id": "amigo.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Natação principiante I", "Cultura física", "Nós e amarras", "Segurança básica na água"]},
-            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017",
-            "observacao": "Opção \"Nós e amarras\" veio da OMD 007/2014; \"Segurança básica na água\" veio da OMD 012/2017."},
-          {"id": "amigo.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Explicar os princípios de temperança de Daniel."},
-          {"id": "amigo.V.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender princípios de dieta saudável."}
+          {"id": "amigo.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 destas especialidades: Natação principiante I, Cultura física, Nós e amarras ou Segurança básica na água.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Natação principiante I", "Cultura física", "Nós e amarras", "Segurança básica na água"]}, "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-012-2017", "observacao": "Opção \"Nós e amarras\" veio da OMD 007/2014; \"Segurança básica na água\" veio da OMD 012/2017.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Com base em Daniel 1: explicar (ou encenar) os princípios de temperança de Daniel, memorizar e explicar Daniel 1:8 e escrever seu compromisso pessoal com um estilo de vida saudável.", "tipo_evidencia": "texto"},
+          {"id": "amigo.V.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender os princípios de uma dieta saudável e ajudar a montar um quadro com os grupos básicos de alimentos.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "amigo.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
         "requisitos": [
-          {"id": "amigo.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Acompanhar planejamento e execução de caminhada de 5 km."}
+          {"id": "amigo.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Acompanhar, observando, todo o planejamento e a execução de uma caminhada de 5 km.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "amigo.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
         "requisitos": [
-          {"id": "amigo.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Felinos", "Cães", "Mamíferos", "Sementes", "Aves de estimação"]},
-            "observacao": "Revisão 2026.2: a alínea e) na página oficial é \"Aves de estimação\" (a 2026.1 trazia \"Aves\"). Nome de especialidade é identificador — copiado literalmente."},
-          {"id": "amigo.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Aprender a purificar água; escrever sobre Jesus como água da vida."},
-          {"id": "amigo.VII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender a montar barraca."}
+          {"id": "amigo.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 destas especialidades: Felinos, Cães, Mamíferos, Sementes ou Aves de estimação.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Felinos", "Cães", "Mamíferos", "Sementes", "Aves de estimação"]}, "observacao": "Revisão 2026.2: a alínea e) na página oficial é \"Aves de estimação\" (a 2026.1 trazia \"Aves\"). Nome de especialidade é identificador — copiado literalmente.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Aprender e demonstrar um jeito de purificar a água e escrever um parágrafo sobre Jesus como a água da vida.", "tipo_evidencia": "foto"},
+          {"id": "amigo.VII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender a montar uma barraca e montá-la em local apropriado.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "amigo.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
         "requisitos": [
-          {"id": "amigo.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Demonstrar cuidado com corda e fazer 14 nós específicos."},
-          {"id": "amigo.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar a especialidade de Acampamento I."},
-          {"id": "amigo.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Apresentar 10 regras para caminhada."},
-          {"id": "amigo.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Aprender sinais de pista."}
+          {"id": "amigo.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Mostrar como cuidar de uma corda e fazer e explicar o uso de 14 nós: simples, cego, direito, cirurgião, lais de guia, lais de guia duplo, escota, catau, pescador, fateixa, volta do fiel, nó de gancho, volta da ribeira e ordinário.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar a especialidade de Acampamento I.", "tipo_evidencia": "nenhuma"},
+          {"id": "amigo.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Apresentar 10 regras para uma caminhada e explicar o que fazer quando estiver perdido.", "tipo_evidencia": "texto"},
+          {"id": "amigo.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Aprender os sinais de pista e preparar uma pista de pelo menos 10 sinais para outros seguirem.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "amigo.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
         "requisitos": [
-          {"id": "amigo.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade na área de Artes e habilidades manuais.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1},
-            "observacao": "Revisão 2026.2: o texto oficial é \"Completar uma especialidade na área de Artes e habilidades manuais.\" — categoria ABERTA, sem lista de opções (a 2026.1 modelava uma opção artificial entre parênteses, que na tela virava um checkbox sem sentido). Sem opcoes, a pessoa informa qual especialidade fez (texto livre) e a liderança confere se é da área. Mesma estrutura de companheiro.IX.1."}
+          {"id": "amigo.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade na área de Artes e habilidades manuais.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1}, "observacao": "Revisão 2026.2: o texto oficial é \"Completar uma especialidade na área de Artes e habilidades manuais.\" — categoria ABERTA, sem lista de opções (a 2026.1 modelava uma opção artificial entre parênteses, que na tela virava um checkbox sem sentido). Sem opcoes, a pessoa informa qual especialidade fez (texto livre) e a liderança confere se é da área. Mesma estrutura de companheiro.IX.1.", "tipo_evidencia": "nenhuma"}
         ]
       }
     ]

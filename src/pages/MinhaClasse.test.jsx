@@ -240,3 +240,48 @@ describe('MinhaClasse — os estados de requisito', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })
+
+// Achado em produção (manifesto 2026.3 / migration 105): requisitos oficiais passam a exigir comprovação
+// (texto ou foto, evidencia_obrigatoria=true). Enviar vazio é barrado NA TELA, com mensagem clara, sem chamar o servidor.
+describe('MinhaClasse — comprovação obrigatória', () => {
+  const comObrigatorios = (over = {}) => ({
+    ...MINHA,
+    secoes: [{ id: 's1', codigo: 'I', nome: 'Seção de Teste', ordem: 10, requisitos: [
+      base({ id: 'rt', codigo: '1', descricao: 'Escrever uma redação de teste.', tipo_evidencia: 'texto', evidencia_obrigatoria: true, ...over.rt }),
+      base({ id: 'rf', codigo: '2', descricao: 'Atividade prática de teste.', tipo_evidencia: 'foto', evidencia_obrigatoria: true, ...over.rf }),
+    ] }],
+  })
+
+  it('texto obrigatório vazio: não envia e diz o que falta; com texto, salva e envia', async () => {
+    carregarMinhaClasse.mockResolvedValue(comObrigatorios())
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 4 })
+    const c = card('1')
+    const caixa = within(c).getByLabelText('Sua resposta (obrigatória)')
+    expect(caixa).toBeRequired()
+    await userEvent.click(within(c).getByRole('button', { name: 'Enviar para avaliação' }))
+    expect(within(c).getByRole('alert')).toHaveTextContent('Escreva sua resposta antes de enviar')
+    expect(enviarRequisito).not.toHaveBeenCalled()
+    await userEvent.type(caixa, 'Minha redação [TESTE]')
+    await userEvent.click(within(c).getByRole('button', { name: 'Enviar para avaliação' }))
+    await waitFor(() => expect(enviarRequisito).toHaveBeenCalledWith('rt'))
+  })
+
+  it('foto obrigatória sem foto: não envia e pede a foto; com foto já salva, envia', async () => {
+    carregarMinhaClasse.mockResolvedValue(comObrigatorios())
+    const { unmount } = render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 4 })
+    const c = card('2')
+    expect(within(c).getByText('Foto de comprovação (obrigatória)')).toBeInTheDocument()
+    await userEvent.click(within(c).getByRole('button', { name: 'Enviar para avaliação' }))
+    expect(within(c).getByRole('alert')).toHaveTextContent('Escolha uma foto de comprovação')
+    expect(enviarRequisito).not.toHaveBeenCalled()
+    unmount()
+
+    carregarMinhaClasse.mockResolvedValue(comObrigatorios({ rf: { evidencia_path: 'caminho/foto.jpg', status: 'em_andamento' } }))
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 4 })
+    await userEvent.click(within(card('2')).getByRole('button', { name: 'Enviar para avaliação' }))
+    await waitFor(() => expect(enviarRequisito).toHaveBeenCalledWith('rf'))
+  })
+})

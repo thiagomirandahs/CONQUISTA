@@ -45,6 +45,11 @@ select t.eq('...com as 6 classes e os 149 requisitos dela intactos (inclusive o 
   + (select count(*) from public.requirement_options where id = public.curriculo_uuid('option:2026.1:amigo.IX.1:1')) * 10
   + (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
       where c.curriculum_version_id = public.curriculo_uuid('version:classes-regulares-dsa:2026.1')) - 149, 6110);
+-- a 2026.2 (migration 43) também NÃO foi editada pela revisão 2026.3: arquivada, com os requisitos dela como eram (evidência 'nenhuma')
+select t.eq('a versão 2026.2 continua no banco, arquivada, com 149 requisitos todos "nenhuma" (como foi importada)',
+  (select status from public.curriculum_versions where id = public.curriculo_uuid('version:classes-regulares-dsa:2026.2')) || '|' ||
+  (select count(*) filter (where r.tipo_evidencia = 'nenhuma' and not r.evidencia_obrigatoria) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
+      where c.curriculum_version_id = public.curriculo_uuid('version:classes-regulares-dsa:2026.2')), 'arquivado|149');
 select t.eq('as duas versões compartilham os MESMOS slots dinâmicos (curso_leitura_<classe>: 6, não 12)', (select count(*) from public.dynamic_content_definitions where chave like 'curso_leitura_%'), 6);
 select t.eq('classes: manifesto → banco sem diferença (manifesto_id, nome, idade_minima, vigente_desde, fonte_url, publicado_em, id determinístico)',
   (select count(*) from (
@@ -84,7 +89,9 @@ create view t.m_req as
          r ->> 'descricao_resumida' as descricao, coalesce(r ->> 'tipo', 'simples') as tipo, coalesce(r ->> 'status', 'CONFIRMADO') as status,
          r ->> 'alterado_por_omd' as alterado_por_omd, r ->> 'confirmado_por_omd' as confirmado_por_omd, r ->> 'observacao' as observacao,
          case when coalesce(r ->> 'tipo', 'simples') like 'escolha%' then coalesce((r -> 'escolha' ->> 'n')::int, 1) end as n_minimo,
-         r -> 'escolha' -> 'opcoes' as opcoes, r ->> 'grupo_sem_repeticao' as pool
+         r -> 'escolha' -> 'opcoes' as opcoes, r ->> 'grupo_sem_repeticao' as pool,
+         coalesce(r ->> 'tipo_evidencia', 'nenhuma') as tipo_evidencia,
+         coalesce((r ->> 'evidencia_obrigatoria')::boolean, coalesce(r ->> 'tipo_evidencia', 'nenhuma') in ('texto', 'foto')) as evidencia_obrigatoria
   from jsonb_array_elements(t.pacote() -> 'classes') c, jsonb_array_elements(c -> 'secoes') s, jsonb_array_elements(s -> 'requisitos') r;
 create view t.b_req as
   select cl.manifesto_id as classe_id, s.manifesto_id as secao_id, r.manifesto_id as req_id, r.codigo, r.ordem, r.descricao,
@@ -92,7 +99,8 @@ create view t.b_req as
               when g.id is not null and g.sem_repeticao then 'escolha_n_de_m_sem_repeticao'
               when g.id is not null then 'escolha_n_de_m' else 'simples' end as tipo,
          r.status_fonte as status, r.alterado_por_omd, r.confirmado_por_omd, r.observacao_fonte as observacao,
-         g.n_minimo, (select jsonb_agg(o.rotulo order by o.ordem) from public.requirement_options o where o.grupo_id = g.id) as opcoes, g.pool_sem_repeticao as pool
+         g.n_minimo, (select jsonb_agg(o.rotulo order by o.ordem) from public.requirement_options o where o.grupo_id = g.id) as opcoes, g.pool_sem_repeticao as pool,
+         r.tipo_evidencia, r.evidencia_obrigatoria
   from public.class_requirements r
   join public.class_sections s on s.id = r.section_id
   join public.classes cl on cl.id = s.class_id
@@ -103,13 +111,20 @@ create function t.divergencias_req() returns bigint language sql stable as $$
 
 select t.eq('requisitos: contagem banco = manifesto (149)', (select count(*) from t.b_req), (select count(*) from t.m_req));
 select t.eq('requisitos: 149 mesmo (o número que a fase 2.5 publicou pras 6 Regulares)', (select count(*) from t.m_req), 149);
-select t.eq('requisitos: manifesto → banco SEM diferença (texto exato, tipo, status, OMDs, observação, n, opções em ordem, pool)', t.divergencias_req(), 0);
+select t.eq('requisitos: manifesto → banco SEM diferença (texto exato, tipo, status, OMDs, observação, n, opções em ordem, pool, tipo_evidencia, obrigatoriedade)', t.divergencias_req(), 0);
 select t.eq('requisitos: ids determinísticos (req:<versão>:<manifesto_id>)',
   (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes cl on cl.id = s.class_id
     where cl.curriculum_version_id = t.versao_id() and r.id <> public.curriculo_uuid('req:' || (t.pacote() ->> 'manifesto_versao') || ':' || r.manifesto_id)), 0);
-select t.eq('requisitos: todos ativos, evidência "nenhuma" e não obrigatória (o manifesto não declara tipo de evidência — nada foi inventado)',
+select t.eq('requisitos: todos ativos, tipo_evidencia só nenhuma/texto/foto, obrigatória exatamente quando é texto/foto (2026.3, migration 105)',
   (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes cl on cl.id = s.class_id
-    where cl.curriculum_version_id = t.versao_id() and not (r.ativo and r.tipo_evidencia = 'nenhuma' and not r.evidencia_obrigatoria)), 0);
+    where cl.curriculum_version_id = t.versao_id()
+      and not (r.ativo and r.tipo_evidencia in ('nenhuma', 'texto', 'foto') and r.evidencia_obrigatoria = (r.tipo_evidencia in ('texto', 'foto')))), 0);
+select t.eq('requisitos: o desbravador consegue comprovar — há requisitos de texto E de foto em cada uma das 6 classes',
+  (select count(*) from (select cl.id from public.classes cl join public.class_sections s on s.class_id = cl.id join public.class_requirements r on r.section_id = s.id
+    where cl.curriculum_version_id = t.versao_id() group by cl.id
+    having count(*) filter (where r.tipo_evidencia = 'texto') > 0 and count(*) filter (where r.tipo_evidencia = 'foto') > 0) x), 6);
+select t.eq('a produção escrita não ficou "nenhuma": toda redação/relatório/diário do manifesto é texto',
+  (select count(*) from t.b_req where descricao ~* '(redação|relatório|diário)' and tipo_evidencia = 'nenhuma'), 0);
 select t.eq('nenhum requisito oficial PENDENTE (status_fonte só CONFIRMADO/ALTERADO_POR_OMD)',
   (select count(*) from t.b_req where status not in ('CONFIRMADO', 'ALTERADO_POR_OMD')), 0);
 select t.eq('11 requisitos ALTERADO_POR_OMD (mesma contagem do relatório de cobertura das 6 Regulares)', (select count(*) from t.b_req where status = 'ALTERADO_POR_OMD'),

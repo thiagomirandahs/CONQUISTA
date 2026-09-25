@@ -93,6 +93,9 @@ reset role;
 
 -- ==================== 4) dinâmico: referencia o mecanismo; 2026 resolve o valor cadastrado ====================
 insert into t.ids (chave, id) select 'mr_amigo_I4', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.req('amigo.I.4');
+-- 2026.3: I.4 exige comprovação escrita (tipo_evidencia=texto, obrigatória); a evidência é preenchida aqui para o teste
+-- isolar o bloqueio do conteúdo do período (sem ela, o envio seria recusado antes, por falta de evidência)
+update public.member_requirements set evidencia_texto = 'Li o livro [DADO DE TESTE]' where id = t.id('mr_amigo_I4');
 select t.eq('(4) Amigo I.4 referencia o slot curso_leitura_amigo (não tem "2026" no texto)',
   (select count(*) from public.class_requirements r join public.dynamic_content_definitions d on d.id = r.conteudo_dinamico_definicao_id where r.id = t.req('amigo.I.4') and d.chave = 'curso_leitura_amigo' and r.descricao !~ '20[0-9][0-9]'), 1);
 select t.como('membro_a'); select t.pedir_clube('clube_a');

@@ -1,6 +1,13 @@
 {
-  "manifesto_versao": "2026.2",
-  "gerado_em": "2026-09-22",
+  "manifesto_versao": "2026.3",
+  "gerado_em": "2026-09-25",
+  "revisoes": [
+    {
+      "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
+      "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
+      "motivo": "Achado em produção: todo requisito nascia com tipo_evidencia=nenhuma e o desbravador não tinha como comprovar nada pela tela (ex.: redação sem caixa de texto). Cada requisito passa a declarar tipo_evidencia (nenhuma = liderança confere pessoalmente; texto = produção escrita/explicação; foto = atividade prática, serviço ou evento), aceito pelo importador desde a migration 20260930000105. Também: descricao_resumida enriquecida (paráfrase própria com versículos, nós, \"N de…\", exigência escrita do livro do ano) e escolhas nominadas. Divergências entre site oficial e cartão agrupado resolvidas pelo SITE OFICIAL + OMD 021/2024 (decisão do dono do produto): livro de Amigo \"Vaso de Barro\"; pesquisador.VIII.2 = 1 de 2; excursionista.VII.2 = 1 especialidade; Pioneiro sem Classe Bíblica; amigo.V.1 com \"Segurança básica na água\"; pioneiro.VI.1 = Ministério Pessoal E Evangelismo (deixa de ser escolha). Nenhum requisito entrou ou saiu. A 2026.2 já importada NÃO é editada: a 2026.3 entra como curriculum_version nova e a 2026.2 é arquivada (quem começou nela continua nela)."
+    }
+  ],
   "classe_regular": {
     "id": "pesquisador",
     "nome": "Pesquisador",
@@ -17,81 +24,69 @@
       {
         "id": "pesquisador.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
         "requisitos": [
-          {"id": "pesquisador.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 12 anos."},
-          {"id": "pesquisador.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
-          {"id": "pesquisador.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Demonstrar compreensão da Lei do Desbravador."},
-          {"id": "pesquisador.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
-            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
-          {"id": "pesquisador.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Além da magia\".",
-            "status": "CONFIRMADO", "confirmado_por_omd": "OMD-021-2024",
-            "observacao": "A OMD 021/2024 confirma explicitamente \"sem alteração\" para esta classe."},
-          {"id": "pesquisador.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica."}
+          {"id": "pesquisador.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ter pelo menos 12 anos de idade.", "tipo_evidencia": "nenhuma"},
+          {"id": "pesquisador.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube.", "tipo_evidencia": "nenhuma"},
+          {"id": "pesquisador.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Mostrar que entende a Lei do Desbravador por 1 destas atividades: representação, debate ou redação.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Representação", "Debate", "Redação"]}, "observacao": "Revisão 2026.3: a fonte lista as 3 formas; antes era texto simples, sem a regra de escolha.", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano e escrever 2 parágrafos sobre o que mais chamou sua atenção.", "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"Além da magia\".", "status": "CONFIRMADO", "confirmado_por_omd": "OMD-021-2024", "observacao": "A OMD 021/2024 confirma explicitamente \"sem alteração\" para esta classe.", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.I.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar ativamente da Classe Bíblica.", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "pesquisador.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
         "requisitos": [
-          {"id": "pesquisador.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar Levítico 11 (alimentos comestíveis/não comestíveis)."},
-          {"id": "pesquisador.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 6 passagens bíblicas indicadas."},
-          {"id": "pesquisador.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica extensa do Antigo Testamento."},
-          {"id": "pesquisador.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escolher 1 de 5 histórias de Jesus e demonstrar compreensão por 1 método à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["(5 histórias de Jesus, conforme cartão)"]},
-            "observacao": "Resumo automatizado não capturou a lista literal das 5 histórias — pendente refinar quando a fonte for lida bruta."}
+          {"id": "pesquisador.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar e mostrar que conhece Levítico 11 (alimentos considerados comestíveis e não comestíveis).", "tipo_evidencia": "nenhuma"},
+          {"id": "pesquisador.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar com suas palavras: Eclesiastes 12:13-14, Romanos 6:23, Apocalipse 1:3, Isaías 43:1-2, Salmo 51:10 e Salmo 16.", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Leitura bíblica dos capítulos indicados de 1 e 2 Reis, 2 Crônicas, Esdras, Neemias, Ester, Jó, Salmos, Provérbios e Eclesiastes (conte o que leu).", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Com o líder, escolher 1 destas histórias e mostrar como Jesus salva as pessoas por 1 método: conversa em grupo com o líder, mensagem numa reunião do Clube, série de cartazes ou maquete, ou poesia/hino.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["João 3 – Nicodemos", "João 4 – A mulher samaritana", "Lucas 10 – O bom samaritano", "Lucas 15 – O filho pródigo", "Lucas 19 – Zaqueu"]}, "observacao": "Revisão 2026.3: as 5 histórias passam a ser nominadas (a 2026.2 tinha uma opção genérica entre parênteses, porque o resumo automatizado não as capturou).", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pesquisador.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
         "requisitos": [
-          {"id": "pesquisador.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer projetos comunitários e participar de 1."},
-          {"id": "pesquisador.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 3 atividades missionárias."}
+          {"id": "pesquisador.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer os projetos comunitários da cidade e participar de pelo menos 1 com a Unidade ou o Clube.", "tipo_evidencia": "foto"},
+          {"id": "pesquisador.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 3 atividades missionárias da igreja.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pesquisador.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
         "requisitos": [
-          {"id": "pesquisador.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de debate/representação sobre pressão de grupo."},
-          {"id": "pesquisador.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Visitar órgão público da cidade."}
+          {"id": "pesquisador.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar de um debate ou representação sobre pressão de grupo e identificar como ela influencia as decisões.", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.IV.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Visitar um órgão público da cidade ou do bairro e descobrir como o Clube pode ser útil à comunidade.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pesquisador.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
         "requisitos": [
-          {"id": "pesquisador.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Escolher atividade sobre estilo de vida livre de álcool."}
+          {"id": "pesquisador.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Escolher 1 destas atividades e escrever um texto pessoal por uma vida livre do álcool: discussão em classe sobre os efeitos do álcool no corpo, ou vídeo sobre álcool/drogas seguido de conversa.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Discussão em classe sobre os efeitos do álcool no organismo", "Vídeo sobre os efeitos do álcool ou de outras drogas, com conversa"]}, "observacao": "Revisão 2026.3: a fonte lista as 2 atividades e exige o texto pessoal; antes era texto simples, sem a regra de escolha.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "pesquisador.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
         "requisitos": [
-          {"id": "pesquisador.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dirigir cerimônia de abertura ou programa."},
-          {"id": "pesquisador.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ajudar a organizar a Classe Bíblica."}
+          {"id": "pesquisador.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Dirigir a cerimônia de abertura da reunião do Clube ou um programa de Escola Sabatina.", "tipo_evidencia": "foto"},
+          {"id": "pesquisador.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ajudar a organizar a Classe Bíblica.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pesquisador.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
         "requisitos": [
-          {"id": "pesquisador.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Identificar Alfa de Centauro e a constelação de Órion."},
-          {"id": "pesquisador.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Astronomia", "Cactos", "Climatologia", "Flores", "Rastreio"]}}
+          {"id": "pesquisador.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Identificar a estrela Alfa do Centauro e a constelação de Órion, e explicar o significado espiritual de Órion (Primeiros Escritos, p. 41).", "tipo_evidencia": "texto"},
+          {"id": "pesquisador.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 destas especialidades: Astronomia, Cactos, Climatologia, Flores ou Rastreio de animais.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Astronomia", "Cactos", "Climatologia", "Flores", "Rastreio de animais"]}, "observacao": "Revisão 2026.3: a alínea e) é \"Rastreio de animais\" na fonte (a 2026.2 trazia \"Rastreio\").", "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "pesquisador.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
         "requisitos": [
-          {"id": "pesquisador.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentar 6 segredos de bom acampamento; planejar 2 refeições."},
-          {"id": "pesquisador.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Acampamento III", "Primeiros Socorros Básico"]}},
-          {"id": "pesquisador.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender bússola/GPS; demonstrar habilidade em zona urbana."}
+          {"id": "pesquisador.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentar 6 segredos de um bom acampamento e participar de um acampamento de fim de semana, planejando e cozinhando 2 refeições.", "tipo_evidencia": "foto"},
+          {"id": "pesquisador.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 destas especialidades: Acampamento III ou Primeiros socorros básico.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Acampamento III", "Primeiros Socorros Básico"]}, "observacao": "Revisão 2026.3: segue a página oficial da classe (\"ou\" — 1 de 2). O cartão agrupado do SGC diz \"as seguintes\" (ambas); decisão do dono do produto: vale o site oficial + OMD 021/2024.", "tipo_evidencia": "nenhuma"},
+          {"id": "pesquisador.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Aprender a usar bússola ou GPS e mostrar a habilidade encontrando endereços na zona urbana.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "pesquisador.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
         "requisitos": [
-          {"id": "pesquisador.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade em Artes e habilidades manuais.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["(qualquer especialidade da categoria Artes e habilidades manuais)"]}}
+          {"id": "pesquisador.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade de Artes e habilidades manuais não realizada anteriormente.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "pesquisador.especialidades_ja_concluidas_pela_pessoa", "observacao": "Revisão 2026.3: a fonte diz \"não realizada anteriormente\" (histórico inteiro da pessoa) e é categoria ABERTA, sem lista — a 2026.2 tinha uma opção artificial entre parênteses. Mesma estrutura de companheiro.IX.1.", "tipo_evidencia": "nenhuma"}
         ]
       }
     ]

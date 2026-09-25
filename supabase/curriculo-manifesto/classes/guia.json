@@ -1,6 +1,13 @@
 {
-  "manifesto_versao": "2026.2",
-  "gerado_em": "2026-09-22",
+  "manifesto_versao": "2026.3",
+  "gerado_em": "2026-09-25",
+  "revisoes": [
+    {
+      "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
+      "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
+      "motivo": "Achado em produção: todo requisito nascia com tipo_evidencia=nenhuma e o desbravador não tinha como comprovar nada pela tela (ex.: redação sem caixa de texto). Cada requisito passa a declarar tipo_evidencia (nenhuma = liderança confere pessoalmente; texto = produção escrita/explicação; foto = atividade prática, serviço ou evento), aceito pelo importador desde a migration 20260930000105. Também: descricao_resumida enriquecida (paráfrase própria com versículos, nós, \"N de…\", exigência escrita do livro do ano) e escolhas nominadas. Divergências entre site oficial e cartão agrupado resolvidas pelo SITE OFICIAL + OMD 021/2024 (decisão do dono do produto): livro de Amigo \"Vaso de Barro\"; pesquisador.VIII.2 = 1 de 2; excursionista.VII.2 = 1 especialidade; Pioneiro sem Classe Bíblica; amigo.V.1 com \"Segurança básica na água\"; pioneiro.VI.1 = Ministério Pessoal E Evangelismo (deixa de ser escolha). Nenhum requisito entrou ou saiu. A 2026.2 já importada NÃO é editada: a 2026.3 entra como curriculum_version nova e a 2026.2 é arquivada (quem começou nela continua nela)."
+    }
+  ],
   "classe_regular": {
     "id": "guia",
     "nome": "Guia",
@@ -17,91 +24,72 @@
       {
         "id": "guia.I", "codigo": "I", "nome": "Gerais", "ordem": 10,
         "requisitos": [
-          {"id": "guia.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Idade mínima de 15 anos."},
-          {"id": "guia.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube."},
-          {"id": "guia.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto de Fidelidade à Bíblia."},
-          {"id": "guia.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano.",
-            "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico"},
-          {"id": "guia.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"O Livro Amargo\".",
-            "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024",
-            "observacao": "Livro anterior (pré-2026): \"Nossa herança\". Confirmado literalmente na página viva."}
+          {"id": "guia.I.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ter pelo menos 15 anos de idade.", "tipo_evidencia": "nenhuma"},
+          {"id": "guia.I.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ser membro ativo do Clube.", "tipo_evidencia": "nenhuma"},
+          {"id": "guia.I.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Memorizar e explicar o Voto de Fidelidade à Bíblia.", "tipo_evidencia": "nenhuma"},
+          {"id": "guia.I.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Ler o livro do Curso de Leitura do ano e fazer um resumo dele em 1 página.", "tipo": "anual_dinamico", "lacuna_schema": "requisito_anual_dinamico", "tipo_evidencia": "texto"},
+          {"id": "guia.I.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler o livro da classe: \"O Livro Amargo\".", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-021-2024", "observacao": "Livro anterior (pré-2026): \"Nossa herança\". Confirmado literalmente na página viva.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "guia.II", "codigo": "II", "nome": "Descoberta Espiritual", "ordem": 20,
         "requisitos": [
-          {"id": "guia.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as 3 Mensagens Angélicas, as 7 Igrejas e as 12 Pedras Preciosas do Apocalipse."},
-          {"id": "guia.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar 6 versículos indicados."},
-          {"id": "guia.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Descrever os dons espirituais nos escritos de Paulo."},
-          {"id": "guia.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudar a estrutura do santuário no AT e relacionar ao ministério de Jesus."},
-          {"id": "guia.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler e resumir 3 histórias de pioneiros adventistas; contá-las publicamente."},
-          {"id": "guia.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica extensa (Atos a Apocalipse, trechos indicados)."}
+          {"id": "guia.II.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar as 3 mensagens angélicas (Apocalipse 14:6-12), as 7 igrejas e as 12 pedras preciosas da Nova Jerusalém.", "tipo_evidencia": "nenhuma"},
+          {"id": "guia.II.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler e explicar com suas palavras: I Coríntios 13, II Crônicas 7:14, Apocalipse 22:18-20, II Timóteo 4:6-7, Romanos 8:38-39 e Mateus 6:33-34.", "tipo_evidencia": "texto"},
+          {"id": "guia.II.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Descrever os dons espirituais citados por Paulo (Coríntios, Efésios, Filipenses) e para que a igreja os recebe.", "tipo_evidencia": "texto"},
+          {"id": "guia.II.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Estudar a estrutura do santuário no AT e relacionar ao ministério de Jesus.", "tipo_evidencia": "texto"},
+          {"id": "guia.II.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Ler e resumir 3 histórias de pioneiros adventistas e contá-las numa reunião do Clube, no Culto JA ou na Escola Sabatina.", "tipo_evidencia": "texto"},
+          {"id": "guia.II.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Leitura bíblica dos capítulos indicados de Atos 9 a 28, das epístolas e do Apocalipse (conte o que leu).", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "guia.III", "codigo": "III", "nome": "Servindo a Outros", "ordem": 30,
         "requisitos": [
-          {"id": "guia.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ajudar a organizar 1 atividade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Visita a pessoa doente", "Adotar pessoa/família em necessidade", "Projeto de escolha própria aprovado pelo líder"]}},
-          {"id": "guia.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir métodos de evangelismo pessoal e praticar princípios."}
+          {"id": "guia.III.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ajudar a organizar e participar de 1 destas atividades: visita a uma pessoa doente, adotar e ajudar uma pessoa ou família em necessidade, ou um projeto aprovado pelo líder.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Visita a pessoa doente", "Adotar pessoa/família em necessidade", "Projeto de escolha própria aprovado pelo líder"]}, "tipo_evidencia": "foto"},
+          {"id": "guia.III.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Discutir com a Unidade métodos de evangelismo pessoal e colocar alguns princípios em prática.", "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "guia.IV", "codigo": "IV", "nome": "Desenvolvendo Amizade", "ordem": 40,
         "requisitos": [
-          {"id": "guia.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Examinar atitudes em 2 de 4 temas à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 2, "opcoes": ["Escolha profissional", "Relacionamento com pais", "Escolha de namoro", "Plano de Deus para o sexo"]}}
+          {"id": "guia.IV.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Assistir a uma palestra ou aula e examinar suas atitudes em 2 destes temas: escolha profissional, relacionamento com os pais, escolha de quem namorar, plano de Deus para o sexo.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 2, "opcoes": ["Escolha profissional", "Relacionamento com pais", "Escolha de namoro", "Plano de Deus para o sexo"]}, "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "guia.V", "codigo": "V", "nome": "Saúde e Aptidão Física", "ordem": 50,
         "requisitos": [
-          {"id": "guia.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentação sobre os 8 remédios naturais."},
-          {"id": "guia.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 atividade de saúde à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Poesia/artigo sobre saúde", "Organizar corrida com programa de treino", "Ler Temperança p.102-125 (Ellen White)", "Especialidade de Nutrição ou liderar Cultura física"]}}
+          {"id": "guia.V.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Fazer uma apresentação para alunos do Ensino Fundamental sobre os 8 remédios naturais.", "tipo_evidencia": "foto"},
+          {"id": "guia.V.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 destas atividades: poesia ou artigo sobre saúde para publicação na igreja; organizar uma corrida com programa de treino; ler Temperança (p. 102-125) e apresentar 10 textos selecionados; ou especialidade de Nutrição / liderar Cultura física.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Poesia/artigo sobre saúde", "Organizar corrida com programa de treino", "Ler Temperança p.102-125 (Ellen White)", "Especialidade de Nutrição ou liderar Cultura física"]}, "tipo_evidencia": "texto"}
         ]
       },
       {
         "id": "guia.VI", "codigo": "VI", "nome": "Organização e Liderança", "ordem": 60,
         "requisitos": [
-          {"id": "guia.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Preparar organograma da estrutura administrativa da Divisão."},
-          {"id": "guia.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 1 item à escolha (curso/convenção/reuniões de diretoria).",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Curso para conselheiros", "Convenção de liderança da Associação/Missão", "2 reuniões de diretoria do Clube"]}},
-          {"id": "guia.VI.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Planejar e ensinar 2 requisitos de uma especialidade para um grupo/Unidade."}
+          {"id": "guia.VI.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Preparar um organograma da estrutura administrativa da Igreja Adventista na Divisão.", "tipo_evidencia": "foto"},
+          {"id": "guia.VI.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Participar de 1 destes: curso de conselheiros, convenção de liderança da Associação/Missão ou 2 reuniões de diretoria do Clube.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Curso para conselheiros", "Convenção de liderança da Associação/Missão", "2 reuniões de diretoria do Clube"]}, "tipo_evidencia": "foto"},
+          {"id": "guia.VI.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Planejar e ensinar 2 requisitos de uma especialidade para um grupo/Unidade.", "tipo_evidencia": "foto"}
         ]
       },
       {
         "id": "guia.VII", "codigo": "VII", "nome": "Estudo da Natureza", "ordem": 70,
         "requisitos": [
-          {"id": "guia.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ler cap. 7 de \"O Desejado de Todas as Nações\"; apresentar lições."},
-          {"id": "guia.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 especialidade à escolha.",
-            "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-            "escolha": {"n": 1, "opcoes": ["Ecologia", "Conservação ambiental"]}}
+          {"id": "guia.VII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Ler o capítulo 7 de \"O Desejado de Todas as Nações\" e apresentar as lições sobre a importância da natureza na educação e no ministério de Jesus.", "tipo_evidencia": "texto"},
+          {"id": "guia.VII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Completar 1 destas especialidades: Ecologia ou Conservação ambiental.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Ecologia", "Conservação ambiental"]}, "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "guia.VIII", "codigo": "VIII", "nome": "Arte de Acampar", "ordem": 80,
         "requisitos": [
-          {"id": "guia.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Acampamento com estrutura de pioneiria, com a Unidade."},
-          {"id": "guia.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Planejar, preparar e cozinhar 3 refeições ao ar livre."},
-          {"id": "guia.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Construir e utilizar móvel de acampamento em tamanho real."},
-          {"id": "guia.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, contável para 1 mestrado.",
-            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-            "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa",
-            "escolha": {"n": 1, "opcoes": ["Aquática", "Esportes", "Atividades recreativas", "Vida campestre"]}}
+          {"id": "guia.VIII.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Participar com a Unidade de um acampamento com estrutura de pioneiria, ajudando a planejá-lo.", "tipo_evidencia": "foto"},
+          {"id": "guia.VIII.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Planejar, preparar e cozinhar 3 refeições ao ar livre.", "tipo_evidencia": "foto"},
+          {"id": "guia.VIII.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Construir e usar um móvel de acampamento em tamanho real, com nós e amarras.", "tipo_evidencia": "foto"},
+          {"id": "guia.VIII.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente que conte para 1 destes mestrados: Aquática, Esportes, Atividades recreativas ou Vida campestre.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1, "opcoes": ["Aquática", "Esportes", "Atividades recreativas", "Vida campestre"]}, "tipo_evidencia": "nenhuma"}
         ]
       },
       {
         "id": "guia.IX", "codigo": "IX", "nome": "Estilo de Vida", "ordem": 90,
         "requisitos": [
-          {"id": "guia.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, em área à escolha.",
-            "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-            "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa",
-            "escolha": {"n": 1, "opcoes": ["Atividades recreativas", "Ciência e saúde", "Habilidades domésticas", "Atividades profissionais"]}}
+          {"id": "guia.IX.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente em 1 destas áreas: Atividades recreativas, Ciência e saúde, Habilidades domésticas ou Atividades profissionais.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "guia.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1, "opcoes": ["Atividades recreativas", "Ciência e saúde", "Habilidades domésticas", "Atividades profissionais"]}, "tipo_evidencia": "nenhuma"}
         ]
       }
     ],

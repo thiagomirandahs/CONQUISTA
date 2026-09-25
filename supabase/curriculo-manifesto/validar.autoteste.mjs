@@ -179,6 +179,38 @@ console.log('=== Autoteste do validador (fixtures sintéticas) ===\n')
   esperar('aceita as 4 lacunas conhecidas (todas representadas: conteúdo dinâmico, N-de-M, sem repetição, prazo)', r.erros.length === 0, JSON.stringify(r.erros))
 }
 
+// 11) (migration 105) tipo_evidencia / evidencia_obrigatoria
+{
+  const dados = classeValidaBase()
+  const reqs = dados.classe_regular.secoes[0].requisitos
+  reqs.length = 0
+  reqs.push({ id: 'teste.I.1', codigo: '1', ordem: 10, descricao_resumida: 'Requisito de teste 1.', tipo_evidencia: 'nenhuma' })
+  reqs.push({ id: 'teste.I.2', codigo: '2', ordem: 20, descricao_resumida: 'Requisito de teste 2.', tipo_evidencia: 'texto' })
+  reqs.push({ id: 'teste.I.3', codigo: '3', ordem: 30, descricao_resumida: 'Requisito de teste 3.', tipo_evidencia: 'foto', evidencia_obrigatoria: false })
+  reqs.push({ id: 'teste.I.4', codigo: '4', ordem: 40, descricao_resumida: 'Requisito de teste 4.' })
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('aceita tipo_evidencia nenhuma/texto/foto (e ausente), com ou sem evidencia_obrigatoria', r.erros.length === 0, JSON.stringify(r.erros))
+}
+{
+  const dados = classeValidaBase()
+  dados.classe_regular.secoes[0].requisitos[0].tipo_evidencia = 'video'
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita tipo_evidencia fora de nenhuma/texto/foto', r.erros.some((e) => e.includes('tipo_evidencia "video" inválido')))
+}
+{
+  const dados = classeValidaBase()
+  dados.classe_regular.secoes[0].requisitos[0].tipo_evidencia = 'texto'
+  dados.classe_regular.secoes[0].requisitos[0].evidencia_obrigatoria = 'sim'
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita evidencia_obrigatoria não booleano', r.erros.some((e) => e.includes('evidencia_obrigatoria precisa ser booleano')))
+}
+{
+  const dados = classeValidaBase()
+  dados.classe_regular.secoes[0].requisitos[0].evidencia_obrigatoria = true
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita evidencia_obrigatoria=true sem tipo_evidencia (nenhuma: não haveria o que enviar)', r.erros.some((e) => e.includes('não haveria o que enviar')))
+}
+
 console.log('')
 if (falhas === 0) {
   console.log(`Todos os casos do autoteste passaram (o validador rejeita corretamente cada violação pedida).`)
