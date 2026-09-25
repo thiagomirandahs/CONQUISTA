@@ -16,6 +16,7 @@ insert into t.excecoes values
   ('push_tokens',              'dispositivo da PESSOA (APK); idem'),
   ('migracoes_aplicadas',      'ledger da plataforma (não tem dado de clube)'),
   ('entrada_tentativas',       'LIMITE DE ABUSO (fase 8.6): uma linha por tentativa de código/convite de entrada. Não tem club_id de propósito, e a ausência é a proteção: a contagem é POR PESSOA, e amarrá-la a um clube diria ao atacante qual clube ele acertou. Quem tenta entrar ainda não é de clube nenhum — é exatamente esse o caso que a tabela mede'),
+  ('entrada_tentativas_publicas', 'LIMITE DE ABUSO do link/QR aberto SEM conta (migration 104): uma linha por tentativa, por hash da origem. Sem club_id pelo mesmo motivo de entrada_tentativas: amarrar ao clube diria ao atacante qual clube ele acertou'),
   ('cron_falhas',              'registro INTERNO das falhas de cron (club_id só informativo, opcional; sem acesso de usuário)'),
   ('biblia_livros',           'conteúdo da Bíblia (plataforma)'),
   ('biblia_versiculos',        'conteúdo da Bíblia (plataforma)'),

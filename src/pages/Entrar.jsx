@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { guardarRetorno } from '../lib/retornoPosLogin.js'
 import { useClube } from '../context/Clube.jsx'
-import { abrirCodigo, solicitarEntrada, abrirConvite, aceitarConvite } from '../services/entrada.js'
+import { abrirCodigo, abrirCodigoPublico, solicitarEntrada, abrirConvite, aceitarConvite } from '../services/entrada.js'
 import { Card, Botao } from '../ui/index.jsx'
 
 // A porta de entrada em um clube (fase 8.6).
@@ -25,6 +26,10 @@ export default function Entrar() {
   const [params] = useSearchParams()
   const tokenDaUrl = params.get('convite') || ''
   const codigoDaUrl = (params.get('codigo') || '').trim()
+  // `pedir=1`: a pessoa já viu o clube na página pública do link e escolheu entrar/criar conta para
+  // ele — ao voltar autenticada, o pedido segue sozinho (ela não procura o link de novo).
+  const pedirDireto = params.get('pedir') === '1'
+  const jaPediu = useRef(false)
   const { recarregar } = useClube()
 
   const [codigo, setCodigo] = useState('')
@@ -53,10 +58,19 @@ export default function Entrar() {
     setCodigo(codigoDaUrl)
     setOcupado(true)
     abrirCodigo(codigoDaUrl)
-      .then((d) => { if (d) setDestino(d); else setErro('Código não encontrado. Confira com a liderança do clube.') })
+      .then(async (d) => {
+        if (!d) { setErro('Código não encontrado. Confira com a liderança do clube.'); return }
+        setDestino(d)
+        if (!pedirDireto || jaPediu.current) return
+        jaPediu.current = true
+        const r = await solicitarEntrada(codigoDaUrl)
+        if (!r) { setErro('Não vale mais. Peça outro à liderança do clube.'); return }
+        setPronto({ clube: d.clube, jaEra: !!r.ja_era, situacao: r.situacao || null, convite: false })
+        await recarregar()
+      })
       .catch((e) => setErro(e.message))
       .finally(() => setOcupado(false))
-  }, [codigoDaUrl, tokenDaUrl])
+  }, [codigoDaUrl, tokenDaUrl, pedirDireto, recarregar])
 
   async function conferir(e) {
     e.preventDefault()
@@ -183,5 +197,67 @@ function Tela({ titulo, children }) {
         {children}
       </Card>
     </div>
+  )
+}
+
+// Quem abre o link/QR do clube SEM conta. O servidor resolve o clube pelo código (e só mostra a
+// identidade pública dele); a pessoa decide entre entrar ou criar conta, e o caminho de volta —
+// com o código e a intenção de pedir entrada — vai junto na URL e no retorno pós-login, para
+// sobreviver a refresh e à navegação entre login e cadastro.
+const iniciais = (nome = '') => nome.split(/\s+/).filter((p) => p.length > 2).slice(0, 2).map((p) => p[0]).join('').toUpperCase() || '•'
+
+export function InscricaoPublica() {
+  const [params] = useSearchParams()
+  const codigo = (params.get('codigo') || '').trim()
+  const [clube, setClube] = useState(null)
+  const [estado, setEstado] = useState(codigo ? 'carregando' : 'sem_codigo')
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    if (!codigo) return
+    abrirCodigoPublico(codigo)
+      .then((d) => { if (d) { setClube(d); setEstado('ok') } else setEstado('invalido') })
+      .catch((e) => { setErro(e.message); setEstado('erro') })
+  }, [codigo])
+
+  const volta = `/entrar?codigo=${encodeURIComponent(codigo)}&pedir=1`
+  const lembrar = () => guardarRetorno(volta)
+  const proximo = `?proximo=${encodeURIComponent(volta)}`
+
+  if (estado === 'carregando') return <Tela titulo="Inscrição no clube"><p className="text-sm text-muted" role="status">Conferindo o link…</p></Tela>
+  if (estado !== 'ok') {
+    return (
+      <Tela titulo="Inscrição no clube">
+        <p className="text-sm text-muted mb-4" data-testid="inscricao-invalida">
+          {estado === 'erro' ? erro
+            : estado === 'sem_codigo' ? 'Para entrar num clube, use o link ou o QR Code que a liderança do seu clube compartilhou.'
+              : 'Este link não é válido ou não está mais ativo. Peça um link novo à liderança do clube.'}
+        </p>
+        <Link to="/login" className="block w-full min-h-[44px] leading-[44px] text-sm font-semibold text-brand">Ir para o login</Link>
+      </Tela>
+    )
+  }
+
+  return (
+    <Tela titulo="Inscrição no clube">
+      <div className="flex flex-col items-center gap-2 my-4" data-testid="inscricao-clube">
+        {clube.logo_url
+          ? <img src={clube.logo_url} alt="" className="w-16 h-16 rounded-2xl object-cover" />
+          : <div className="w-16 h-16 rounded-2xl bg-surface2 grid place-items-center font-extrabold text-ink">{clube.sigla || iniciais(clube.clube)}</div>}
+        <p className="font-extrabold text-ink text-xl">{clube.clube}</p>
+        {clube.lema && <p className="text-xs text-muted">{clube.lema}</p>}
+      </div>
+      <p className="text-sm text-muted mb-5">Você está solicitando participação neste clube. A liderança recebe o seu pedido e aprova a sua entrada.</p>
+      <div className="space-y-2">
+        <Link to={`/login${proximo}`} onClick={lembrar} data-testid="ja-tenho-conta"
+          className="block w-full min-h-[48px] leading-[48px] rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold">
+          Já tenho conta
+        </Link>
+        <Link to={`/cadastro${proximo}`} onClick={lembrar} data-testid="criar-conta"
+          className="block w-full min-h-[48px] leading-[48px] rounded-xl border border-line text-ink font-bold">
+          Criar minha conta
+        </Link>
+      </div>
+    </Tela>
   )
 }

@@ -44,8 +44,12 @@ select t.eq('anônimo não lista convites', t.nv('select count(*) from public.li
 
 -- ---------- uso: cadastro de responsável só com convite válido, uma vez ----------
 reset role;
-select t.throws('cadastro de responsável SEM convite é recusado',
-  $q$select t.signup('pais_sem_convite', '{"nome":"Sem Convite","tipo":"pais"}'::jsonb)$q$, 'convite');
+-- migration 104: sem convite o cadastro de responsável é aceito, mas NÃO dá clube nem filho — entra
+-- num clube só pedindo pelo link (pendente, a liderança aprova) e o filho continua por convite/diretoria.
+select t.signup('pais_sem_convite', '{"nome":"Sem Convite","tipo":"pais"}'::jsonb);
+select t.eq('responsável SEM convite: conta criada como responsável', (select papel from public.profiles where id = t.id('pais_sem_convite')), 'pais');
+select t.eq('...mas SEM vínculo de clube nenhum', (select count(*) from public.organization_memberships where user_id = t.id('pais_sem_convite')), 0);
+select t.eq('...e SEM filho nenhum', (select count(*) from public.responsaveis where responsavel_id = t.id('pais_sem_convite')), 0);
 select t.throws('cadastro de responsável com convite inexistente é recusado',
   $q$select t.signup('pais_lixo', '{"nome":"Lixo","tipo":"pais","convite_responsavel":"0000000000000000000000000000000000000000000000ff"}'::jsonb)$q$, 'inválido');
 select t.signup('pais_novo', jsonb_build_object('nome', 'Pais Novo', 'tipo', 'pais', 'convite_responsavel', :'tok_a1'));
@@ -87,7 +91,7 @@ select t.eq('convite revogado aparece como revogado', t.txt(format($q$select sta
 reset role;
 select t.throws('convite REVOGADO é recusado no cadastro',
   format($q$select t.signup('pais_revogado', %L::jsonb)$q$, jsonb_build_object('nome','Revogado','tipo','pais','convite_responsavel', :'tok_a3')::text), 'inválido');
-select t.eq('nenhum perfil criado por cadastro recusado', (select count(*) from public.profiles where id in (md5('cq-test:pais_revogado')::uuid, md5('cq-test:pais_expirado')::uuid, md5('cq-test:pais_reuso')::uuid, md5('cq-test:pais_sem_convite')::uuid)), 0);
+select t.eq('nenhum perfil criado por cadastro recusado', (select count(*) from public.profiles where id in (md5('cq-test:pais_revogado')::uuid, md5('cq-test:pais_expirado')::uuid, md5('cq-test:pais_reuso')::uuid)), 0);
 
 -- ---------- papel padronizado ----------
 select t.eq('nenhum vínculo com papel legado "responsavel"', (select count(*) from public.organization_memberships where role = 'responsavel'), 0);

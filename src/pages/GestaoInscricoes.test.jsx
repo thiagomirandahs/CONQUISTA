@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-let clube = { podeGerir: true, clubeId: 'clube-a' }
+let clube = { podeGerir: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => clube }))
 
 const codigoAtual = vi.fn()
@@ -27,7 +27,7 @@ Object.assign(navigator, { clipboard: { writeText: (...a) => escrever(...a) } })
 const { default: GestaoInscricoes } = await import('./GestaoInscricoes.jsx')
 
 beforeEach(() => {
-  clube = { podeGerir: true, clubeId: 'clube-a' }
+  clube = { podeGerir: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
   codigoAtual.mockReset().mockResolvedValue({ existe: false })
   gerarCodigo.mockReset()
   revogarCodigo.mockReset()
@@ -90,5 +90,21 @@ describe('GestaoInscricoes: código em claro só aparece ao gerar', () => {
     await userEvent.click(screen.getByTestId('codigo-revogar'))
     expect(revogarCodigo).toHaveBeenCalledTimes(1)
     expect(screen.queryByTestId('codigo-novo')).toBeNull()
+  })
+})
+
+describe('GestaoInscricoes: nome do clube, link completo e compartilhar', () => {
+  it('mostra o clube e, ao gerar, o link completo; compartilhar usa o menu nativo com o link', async () => {
+    const share = vi.fn().mockResolvedValue()
+    Object.assign(navigator, { share })
+    gerarCodigo.mockResolvedValue({ codigo: 'AB12CD34EF56AB78', prefixo: 'AB12', expira_em: null })
+    render(<GestaoInscricoes />)
+    expect(await screen.findByTestId('clube-da-inscricao')).toHaveTextContent('Clube Águia')
+    await userEvent.click(await screen.findByRole('button', { name: /Gerar código/ }))
+    const link = `${window.location.origin}/entrar?codigo=AB12CD34EF56AB78`
+    expect(await screen.findByTestId('link-completo')).toHaveTextContent(link)
+    await userEvent.click(screen.getByTestId('compartilhar-link'))
+    expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: link, title: 'Inscrição no Clube Águia' }))
+    delete navigator.share
   })
 })

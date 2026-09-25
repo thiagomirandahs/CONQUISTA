@@ -1,5 +1,6 @@
 import { useState, useEffect, useId } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { motion } from 'framer-motion'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import Logo from '../components/Logo.jsx'
@@ -13,6 +14,10 @@ const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Cadastro() {
+  const navigate = useNavigate()
+  const { search } = useLocation()
+  // veio do link de inscrição de um clube: depois de criar a conta, volta para pedir a entrada nele
+  const retorno = retornoDaUrl(search) || lerRetorno()
   // O token vem no fragmento da URL (não vai pro servidor nem pros logs); guardamos em memória e
   // tiramos da barra de endereço.
   const [convite] = useState(() => lerTokenConvite(window.location))
@@ -78,7 +83,14 @@ export default function Cadastro() {
       /* foto é opcional: ignora qualquer erro de upload */
     }
 
-    // Cadastro fica pendente de aprovação — não deixa o usuário logado.
+    // Veio do link de um clube e a conta já tem sessão: segue direto para o pedido de entrada nele
+    // (a pessoa não precisa procurar o link de novo). O pedido nasce PENDENTE — a liderança aprova.
+    if (retorno && data?.session) {
+      limparRetorno()
+      navigate(retorno, { replace: true })
+      return
+    }
+    // Sem link de clube: a conta existe, mas ainda não pertence a clube nenhum.
     await supabase.auth.signOut()
     setEnviado(true)
   }
@@ -92,8 +104,12 @@ export default function Cadastro() {
           <div className="text-5xl mb-3">{ehPai ? '👋' : '✅'}</div>
           <h1 className="text-brand text-lg font-extrabold mb-2">Cadastro {ehPai ? 'criado' : 'enviado'}!</h1>
           <p className="text-muted text-sm mb-5">
-            {ehPai ? (
+            {ehPai && retorno ? (
+              <>Pronto! Agora é só <strong>entrar</strong> para concluir o seu <strong>pedido de entrada no clube</strong>. Depois que a liderança aprovar, peça o vínculo com seu filho(a) — a diretoria confirma. 🎉</>
+            ) : ehPai ? (
               <>Pronto! Agora é só <strong>entrar</strong> e <strong>pedir o vínculo com seu filho(a)</strong>. A diretoria confirma e você já acompanha tudo. 🎉</>
+            ) : retorno ? (
+              <>Sua conta está pronta! Agora é só <strong>entrar</strong> para concluir o seu <strong>pedido de entrada no clube</strong> — o link do clube já está guardado. 🎉</>
             ) : (
               /* MUDOU NA 8.6: esta frase dizia "aguardando a aprovação da diretoria" — e agora não
                  há diretoria nenhuma esperando, porque o cadastro não coloca mais ninguém em clube
@@ -102,8 +118,8 @@ export default function Cadastro() {
               <>Sua conta está pronta! Agora é só <strong>entrar</strong> e usar o <strong>código do seu clube</strong> para pedir a sua vaga. 🎉</>
             )}
           </p>
-          <Link to="/login" className="block w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5">
-            {ehPai ? 'Entrar agora' : 'Voltar para o login'}
+          <Link to={`/login${retorno ? `?proximo=${encodeURIComponent(retorno)}` : ''}`} className="block w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5">
+            {ehPai || retorno ? 'Entrar agora' : 'Voltar para o login'}
           </Link>
         </motion.div>
       </div>
@@ -170,7 +186,7 @@ export default function Cadastro() {
 
         <p className="text-center text-sm mt-4 text-muted">
           Já tem conta?{' '}
-          <Link to="/login" className="text-brand font-semibold hover:underline">Entrar</Link>
+          <Link to={`/login${retorno ? `?proximo=${encodeURIComponent(retorno)}` : ''}`} className="text-brand font-semibold hover:underline">Entrar</Link>
         </p>
       </motion.div>
     </div>

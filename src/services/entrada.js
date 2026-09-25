@@ -18,6 +18,12 @@ const conferir = (data, error) => {
 }
 
 // "Você está entrando em…" — a identidade PÚBLICA do clube de destino, e nada além dela.
+// A mesma identidade pública, para quem abre o link SEM conta (limite por origem no servidor).
+export async function abrirCodigoPublico(codigo) {
+  const { data, error } = await supabase.rpc('entrada_abrir_publico', { p_codigo: codigo })
+  return conferir(data, error)
+}
+
 export async function abrirCodigo(codigo) {
   const { data, error } = await supabase.rpc('entrada_abrir', { p_codigo: codigo })
   return conferir(data, error)

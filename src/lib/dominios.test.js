@@ -36,3 +36,16 @@ describe('rotaDoSite', () => {
     ['/login', false], ['/criar-clube', false], ['/admin', false], ['/inicio', false], ['/verificar', false]])(
     '%s → %s', (c, v) => expect(rotaDoSite(c)).toBe(v))
 })
+
+describe('Gestão → Pessoas: Inscrições vem antes de Aprovações', async () => {
+  const { FERRAMENTAS } = await import('./permissoes.js')
+  it('ordem do grupo Pessoas', () => {
+    const pessoas = FERRAMENTAS.filter((f) => f.grupo === 'pessoas').map((f) => f.titulo)
+    expect(pessoas).toEqual(['Inscrições', 'Aprovações', 'Apontamentos', 'Usuários', 'Radar de faltas', 'Vínculos dos pais'])
+  })
+  it('Inscrições é só da liderança (desbravador e responsável não veem)', () => {
+    const ins = FERRAMENTAS.find((f) => f.to === '/gestao/inscricoes')
+    expect(ins.papeis).toEqual(['diretoria', 'instrutor'])
+    expect(ins.desc).toBe('Link e QR Code para novos membros')
+  })
+})

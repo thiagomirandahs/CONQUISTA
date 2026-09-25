@@ -26,6 +26,12 @@ export function lerRetorno() {
   } catch { return null }
 }
 
+// O mesmo destino vindo na URL (`?proximo=/entrar?codigo=...`): sobrevive a refresh e a abrir o
+// login/cadastro por outro caminho. Passa pela mesma validação de caminho relativo.
+export function retornoDaUrl(search) {
+  try { return caminhoSeguro(new URLSearchParams(search).get('proximo')) } catch { return null }
+}
+
 export function limparRetorno() {
   try { sessionStorage.removeItem(CHAVE) } catch { /* ignora */ }
 }

@@ -10,8 +10,8 @@
 // `recurso` (opcional) é o recurso do clube (feature flag, catálogo `recursos_catalogo`) de que a ferramenta depende: clube que o desligou
 // não mostra o card nem abre a rota.
 export const FERRAMENTAS = [
+  { to: '/gestao/inscricoes', icon: '🔗', titulo: 'Inscrições', desc: 'Link e QR Code para novos membros', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
   { to: '/aprovacoes', icon: '✅', titulo: 'Aprovações', desc: 'Liberar novos cadastros', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
-  { to: '/gestao/inscricoes', icon: '🎟️', titulo: 'Inscrições', desc: 'Código/link/QR do clube e quem está pedindo entrada', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
   { to: '/gestao/documentos', icon: '📄', titulo: 'Documentos', desc: 'PDF dos documentos de classe emitidos', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar' },
   { to: '/apontamentos', icon: '✍️', titulo: 'Apontamentos', desc: 'Pontos da reunião por desbravador', papeis: ['conselheiro', 'instrutor', 'diretoria'] , grupo: 'pessoas' },
   { to: '/mensalidades', icon: '💰', titulo: 'Mensalidades', desc: 'Controle de pagamentos', papeis: ['tesoureiro', 'diretoria'], recurso: 'mensalidades' , grupo: 'clube' },

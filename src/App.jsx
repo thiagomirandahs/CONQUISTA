@@ -6,7 +6,7 @@ import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
 import { modoDoHost, rotaDoSite, urlDoApp } from './lib/dominios.js'
-import Entrar from './pages/Entrar.jsx'
+import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
 import Logo from './components/Logo.jsx'
@@ -115,6 +115,18 @@ function SessaoObrigatoria({ children }) {
     return <Navigate to="/login" replace />
   }
   return children
+}
+
+// /entrar: com sessão é a tela de pedir entrada; SEM sessão e com o código do link, a página
+// pública de inscrição (o clube vem do servidor pelo código). Sem código, é o login de sempre.
+function PortaDeEntrada() {
+  const { session, carregando } = useAuth()
+  const location = useLocation()
+  if (carregando) return <Carregando />
+  if (session) return <Entrar />
+  if (new URLSearchParams(location.search).get('codigo')) return <InscricaoPublica />
+  guardarRetorno(location.pathname + location.search)
+  return <Navigate to="/login" replace />
 }
 
 // O responsável cai direto no "Meu Filho"; os demais, no ranking.
@@ -241,7 +253,7 @@ export default function App() {
             A sessão é exigida de propósito, e é uma decisão de privacidade: sem ela, tentar códigos
             ao acaso seria uma sonda anônima e ilimitada contra a existência de clubes. Com ela,
             cada tentativa tem dono e entra no limite de abuso do servidor. */}
-        <Route path="/entrar" element={<SessaoObrigatoria><Entrar /></SessaoObrigatoria>} />
+        <Route path="/entrar" element={<PortaDeEntrada />} />
 
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />

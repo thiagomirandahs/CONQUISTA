@@ -1,17 +1,18 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
 import { useClube } from '../context/Clube.jsx'
-import { lerRetorno, limparRetorno } from '../lib/retornoPosLogin.js'
+import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 
 const inputClass =
   'w-full rounded-lg border border-line px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { search } = useLocation()
   const { marca } = useClube()    // a marca do ÚLTIMO clube neste aparelho (ou a padrão): antes de entrar ainda não há clube em uso
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -39,7 +40,7 @@ export default function Login() {
     //
     // Se a pessoa veio de um fluxo que exigiu login no meio (ex.: abriu um link de clube sem estar
     // logada), volta exatamente pra lá em vez de cair no ranking e perder o código/convite.
-    const retorno = lerRetorno()
+    const retorno = lerRetorno() || retornoDaUrl(search)
     if (retorno) { limparRetorno(); navigate(retorno); return }
     navigate('/ranking')
   }
@@ -89,7 +90,7 @@ export default function Login() {
 
         <p className="text-center text-sm mt-5 text-muted">
           Ainda não tem conta?{' '}
-          <Link to="/cadastro" className="text-brand font-semibold hover:underline">Cadastre-se</Link>
+          <Link to={`/cadastro${retornoDaUrl(search) ? search : ''}`} className="text-brand font-semibold hover:underline">Cadastre-se</Link>
         </p>
         <p className="text-center text-sm mt-2 text-muted">
           <Link to="/recuperar" className="text-brand font-semibold hover:underline">Esqueci minha senha</Link>

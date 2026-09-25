@@ -22,7 +22,7 @@ const dia = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR') } 
 // hash) — por isso "copiar link"/"QR" só aparecem logo depois de gerar, nunca depois: não tem
 // como reexibir um código já existente, por desenho (mesmo princípio de uma senha).
 export default function GestaoInscricoes() {
-  const { podeGerir, clubeId } = useClube()
+  const { podeGerir, clubeId, marca } = useClube()
   const [estado, setEstado] = useState(null)
   const [novo, setNovo] = useState(null) // { codigo } — só nesta sessão de tela
   const [prazo, setPrazo] = useState('')
@@ -72,9 +72,16 @@ export default function GestaoInscricoes() {
     try { await navigator.clipboard.writeText(texto); avisar.sucesso(`${rotulo} copiado.`) } catch { /* clipboard indisponível — sem drama */ }
   }
 
+  async function compartilhar(link) {
+    const dados = { title: `Inscrição no ${marca?.nome || 'clube'}`, text: `Peça sua entrada no ${marca?.nome || 'clube'} pelo DesbravaClube:`, url: link }
+    if (navigator.share) { try { await navigator.share(dados); return } catch { return } }
+    copiar(link, 'Link')
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🎟️" titulo="Inscrições" descricao="Código público do clube e quem está pedindo para entrar" />
+      <Cabecalho icone="🔗" titulo="Inscrições" descricao="Link e QR Code para novos membros" />
+      <p className="text-sm text-muted -mt-2 mb-4" data-testid="clube-da-inscricao">Clube: <strong className="text-ink">{marca?.nome}</strong></p>
 
       <Card className="p-4 mb-5" data-testid="codigo-de-entrada">
         <p className="font-extrabold text-ink">Código/link de entrada do clube</p>
@@ -91,11 +98,16 @@ export default function GestaoInscricoes() {
               desta tela.
             </p>
             <div className="w-36 h-36 mx-auto mb-2" dangerouslySetInnerHTML={{ __html: qrSvg(linkDe(novo.codigo)) }} />
+            <p className="text-[11px] text-muted break-all mb-3" data-testid="link-completo">{linkDe(novo.codigo)}</p>
+            <button onClick={() => compartilhar(linkDe(novo.codigo))} data-testid="compartilhar-link"
+              className="w-full min-h-[44px] mb-2 text-sm font-bold rounded-lg bg-gradient-to-r from-brand to-brand2 text-white">
+              Compartilhar link
+            </button>
             <div className="flex gap-2">
-              <button onClick={() => copiar(linkDe(novo.codigo), 'Link')} className="flex-1 min-h-[40px] text-xs font-semibold rounded-lg border border-line">
+              <button onClick={() => copiar(linkDe(novo.codigo), 'Link')} className="flex-1 min-h-[44px] text-xs font-semibold rounded-lg border border-line">
                 Copiar link
               </button>
-              <button onClick={() => copiar(novo.codigo, 'Código')} className="flex-1 min-h-[40px] text-xs font-semibold rounded-lg border border-line">
+              <button onClick={() => copiar(novo.codigo, 'Código')} className="flex-1 min-h-[44px] text-xs font-semibold rounded-lg border border-line">
                 Copiar código
               </button>
             </div>
