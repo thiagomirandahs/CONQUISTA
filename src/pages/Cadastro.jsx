@@ -197,14 +197,7 @@ export default function Cadastro() {
           )}
 
           {mostrarClubes && !ehPai && clubes.length > 0 && (
-            <div>
-              <label htmlFor="cadastro-clube" className="block text-sm font-medium text-ink mb-1">Seu clube</label>
-              <select id="cadastro-clube" className={inputClass} value={clube} onChange={(e) => setClube(e.target.value)} data-testid="cadastro-clube">
-                <option value="">Escolha o seu clube…</option>
-                {clubes.map((c) => <option key={c.slug} value={c.slug}>{c.nome}{c.cidade ? ` — ${c.cidade}` : ''}</option>)}
-              </select>
-              <p className="text-xs text-faint mt-1">A diretoria do clube vai aprovar a sua entrada. Não achou? Deixe em branco e entre depois com o código do clube.</p>
-            </div>
+            <EscolherClube clubes={clubes} valor={clube} aoEscolher={setClube} />
           )}
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3">
@@ -238,6 +231,46 @@ function Campo({ label, value, onChange, ...props }) {
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-ink mb-1">{label}</label>
       <input id={id} {...props} required value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
+    </div>
+  )
+}
+
+// Busca do clube por DIGITAÇÃO (ignora acento e maiúscula). Mostra até 6 resultados; tocar escolhe.
+const semAcento = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+function EscolherClube({ clubes, valor, aoEscolher }) {
+  const [busca, setBusca] = useState('')
+  const escolhido = clubes.find((c) => c.slug === valor)
+  const termo = semAcento(busca).trim()
+  const achados = termo ? clubes.filter((c) => semAcento(`${c.nome} ${c.cidade || ''}`).includes(termo)).slice(0, 6) : []
+  return (
+    <div>
+      <label htmlFor="cadastro-clube" className="block text-sm font-medium text-ink mb-1">Seu clube</label>
+      {escolhido ? (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-brand bg-surface2 px-3 py-2.5" data-testid="clube-escolhido">
+          <span className="min-w-0 truncate font-semibold text-ink">🏕️ {escolhido.nome}{escolhido.cidade ? ` — ${escolhido.cidade}` : ''}</span>
+          <button type="button" onClick={() => { aoEscolher(''); setBusca('') }} className="shrink-0 min-h-[40px] px-2 text-sm font-semibold text-brand">Trocar</button>
+        </div>
+      ) : (
+        <>
+          <input id="cadastro-clube" type="search" value={busca} onChange={(e) => setBusca(e.target.value)} autoComplete="off"
+            placeholder="Digite o nome do seu clube" className={inputClass} data-testid="cadastro-clube" />
+          {termo && (
+            <ul className="mt-1 overflow-hidden rounded-lg border border-line bg-surface" role="listbox" aria-label="Clubes encontrados">
+              {achados.length === 0
+                ? <li className="px-3 py-2.5 text-sm text-muted">Nenhum clube com esse nome. Confira a escrita ou entre depois com o código do clube.</li>
+                : achados.map((c) => (
+                  <li key={c.slug}>
+                    <button type="button" role="option" aria-selected="false" onClick={() => aoEscolher(c.slug)}
+                      className="flex w-full min-h-[44px] items-center px-3 text-left text-sm text-ink active:bg-surface2">
+                      {c.nome}{c.cidade ? <span className="text-muted">&nbsp;— {c.cidade}</span> : null}
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </>
+      )}
+      <p className="text-xs text-faint mt-1">A diretoria do clube vai aprovar a sua entrada. Não achou? Deixe em branco e entre depois com o código do clube.</p>
     </div>
   )
 }
