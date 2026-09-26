@@ -2,8 +2,9 @@ import { corDaClasse } from '../lib/corDaClasse.js'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
+import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
-  carregarMinhaClasse, carregarClassesDisponiveis, iniciarClasse,
+  carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
   carregarHistoricoRequisito,
 } from '../lib/dados.js'
@@ -51,15 +52,22 @@ export default function MinhaClasse() {
   const { profile } = useAuth()
   const [carregando, setCarregando] = useState(true)
   const [minha, setMinha] = useState(null)
+  const [minhas, setMinhas] = useState([])
+  const [selecionada, setSelecionada] = useState(null) // member_class_id da aba aberta (null = o servidor escolhe)
+  const [mostrarOutras, setMostrarOutras] = useState(false)
   const [disponiveis, setDisponiveis] = useState([])
   const [erro, setErro] = useState('')
 
-  const recarregar = useCallback(async () => {
-    setCarregando(true)
+  const recarregar = useCallback(async (idAba) => {
     setErro('')
     try {
-      const m = await carregarMinhaClasse()
+      // a lista de abas é complementar: servidor antigo (sem minhas_classes) continua funcionando com uma classe só
+      const [m, lista] = await Promise.all([
+        carregarMinhaClasse(idAba),
+        carregarMinhasClasses().catch(() => []),
+      ])
       setMinha(m)
+      setMinhas(lista || [])
       if (!m) setDisponiveis(await carregarClassesDisponiveis())
     } catch (e) {
       setErro(e?.message || String(e))
@@ -68,18 +76,37 @@ export default function MinhaClasse() {
     }
   }, [])
 
-  useEffect(() => { recarregar() }, [recarregar])
+  useEffect(() => { recarregar(null) }, [recarregar])
+
+  async function trocarAba(id) {
+    setSelecionada(id)
+    setMostrarOutras(false)
+    await recarregar(id)
+  }
+
+  async function abrirOutras() {
+    const abrir = !mostrarOutras
+    setMostrarOutras(abrir)
+    if (abrir) {
+      try { setDisponiveis(await carregarClassesDisponiveis()) } catch (e) { avisar.erro(e) }
+    }
+  }
 
   async function iniciar(classId) {
     try {
-      await iniciarClasse(classId)
-      await recarregar()
+      const r = await iniciarClasse(classId)
+      setMostrarOutras(false)
+      const novoId = r?.member_class_id || null
+      setSelecionada(novoId)
+      await recarregar(novoId)
     } catch (e) {
       avisar.erro(e)
     }
   }
 
   if (carregando) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+
+  const idAberta = minha?.member_class?.id
 
   return (
     <div>
@@ -90,11 +117,53 @@ export default function MinhaClasse() {
 
       {erro && <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800 mb-4">{erro}</div>}
 
+      {minha && (
+        <AbasDeClasse minhas={minhas} idAberta={idAberta} onTrocar={trocarAba} mostrarOutras={mostrarOutras} onOutras={abrirOutras} />
+      )}
+      {minha && mostrarOutras && (
+        <div className="mb-4" data-testid="outras-classes">
+          <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
+        </div>
+      )}
+
       {!minha ? (
         <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
       ) : (
-        <Progresso dados={minha} userId={profile?.id} onMudou={recarregar} />
+        <Progresso key={idAberta} dados={minha} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
       )}
+    </div>
+  )
+}
+
+// Abas grandes (uma por classe da pessoa no clube) + "Iniciar outra classe". Rola na horizontal no
+// celular; cada aba tem o emblema, o nome e a % — e a aberta fica na cor dela, com contorno forte.
+function AbasDeClasse({ minhas, idAberta, onTrocar, mostrarOutras, onOutras }) {
+  return (
+    <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-2" role="tablist" aria-label="Minhas classes">
+      {minhas.map((c) => {
+        const cor = corDaClasse(c.nome)
+        const aberta = c.member_class_id === idAberta
+        return (
+          <button key={c.member_class_id} type="button" role="tab" aria-selected={aberta} data-testid="aba-classe"
+            onClick={() => !aberta && onTrocar(c.member_class_id)}
+            className={`shrink-0 min-h-[64px] min-w-[132px] flex items-center gap-2 rounded-2xl px-3 py-2 text-left shadow-soft border-4 transition active:scale-[0.98] ${aberta ? '' : 'bg-surface'}`}
+            style={aberta
+              ? { background: cor?.hex || '#334155', color: cor?.texto || '#fff', borderColor: cor?.escuro || '#1e293b' }
+              : { borderColor: cor?.hex || 'transparent' }}>
+            <EmblemaDaClasse nome={c.nome} tamanho={32} />
+            <span className="min-w-0">
+              <span className={`block font-extrabold text-base leading-tight ${aberta ? '' : 'text-ink'}`}>{c.nome}</span>
+              <span className={`block text-sm font-semibold ${aberta ? '' : 'text-muted'}`}>
+                {c.status === 'investida' ? '🏅 Investido' : `${c.percentual ?? 0}%`}
+              </span>
+            </span>
+          </button>
+        )
+      })}
+      <button type="button" onClick={onOutras} aria-expanded={mostrarOutras} data-testid="iniciar-outra"
+        className="shrink-0 min-h-[64px] min-w-[132px] rounded-2xl border-4 border-dashed border-line bg-surface2 px-3 py-2 text-base font-extrabold text-ink active:scale-[0.98]">
+        {mostrarOutras ? '✕ Fechar' : '+ Iniciar outra classe'}
+      </button>
     </div>
   )
 }
@@ -118,12 +187,10 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
         return (
           <li key={c.class_id} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
             style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
-            <div className="min-w-0">
-              <h3 className="font-bold text-ink truncate text-base flex items-center gap-2">
-                {cor && <span aria-hidden="true" className="inline-block h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow" style={{ background: cor.hex }} />}
-                {c.nome}
-              </h3>
-              {cor && <div className="text-xs font-semibold" style={{ color: cor.hex === '#eab308' ? '#a16207' : cor.hex }}>Cor da classe: {cor.nome}</div>}
+            <EmblemaDaClasse nome={c.nome} tamanho={44} />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-ink truncate text-base">{c.nome}</h3>
+              {cor && <div className="text-xs font-semibold" style={{ color: cor.escuro }}>Cor da classe: {cor.nome}</div>}
               {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
               {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
               {c.curriculum_version?.origem === 'piloto_teste' && (
@@ -134,7 +201,8 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
               {inelegivel && c.motivo_inelegivel && <div id={idMotivo} className="text-xs text-amber-800 mt-1">🔒 {c.motivo_inelegivel}</div>}
             </div>
             <button onClick={() => onIniciar(c.class_id)} disabled={inelegivel} aria-describedby={inelegivel ? idMotivo : undefined}
-              className="shrink-0 min-h-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold text-sm px-4 py-2 shadow-glow disabled:opacity-40 disabled:shadow-none">
+              style={cor ? { background: cor.hex, color: cor.texto } : undefined}
+              className={`shrink-0 min-h-[48px] rounded-xl font-bold text-base px-4 py-2 shadow-soft disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
               Iniciar
             </button>
           </li>
@@ -154,33 +222,37 @@ function Progresso({ dados, userId, onMudou }) {
     apto_investidura: { icon: '🎉', texto: 'Revisão final aprovada — você está apto(a) para a investidura. A liderança registra quando ela acontecer.' },
   }
   const etapa = ETAPAS[mc.status]
+  // tema da página inteira = a cor da classe (classe sem cor conhecida cai nas cores do app)
+  const cor = corDaClasse(classe?.nome)
 
   return (
-    <div className="space-y-4">
-      <div className="bg-surface rounded-2xl p-5 shadow-soft overflow-hidden"
-        style={corDaClasse(classe?.nome) ? { borderTop: `10px solid ${corDaClasse(classe?.nome).hex}` } : undefined}>
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <h3 className="font-extrabold text-ink text-lg flex items-center gap-2">
-            {corDaClasse(classe?.nome) && <span aria-hidden="true" className="inline-block h-5 w-5 shrink-0 rounded-full shadow" style={{ background: corDaClasse(classe?.nome).hex }} />}
-            {classe?.nome}
-          </h3>
+    <div className="space-y-4" data-testid="classe-tema" data-cor={cor?.hex || ''}>
+      <div className="bg-surface rounded-2xl shadow-soft overflow-hidden">
+        <div data-testid="cabecalho-classe" className={`px-5 py-4 flex items-center gap-3 ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}
+          style={cor ? { background: cor.hex, color: cor.texto } : undefined}>
+          <EmblemaDaClasse nome={classe?.nome} tamanho={56} />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-extrabold text-2xl leading-tight">{classe?.nome}</h3>
+            {versao?.origem === 'oficial' && (
+              <p className="text-xs font-semibold opacity-90">
+                Currículo oficial {versao.versao}{classe?.vigente_desde ? ` · vigente desde ${fmtData(classe.vigente_desde)}` : ''}
+              </p>
+            )}
+          </div>
           {ehTeste && (
             <span className="text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
               Dados de teste
             </span>
           )}
         </div>
+        <div className="p-5 pt-3">
         {ehTeste && <p className="text-xs text-faint mb-2">{versao.fonte_descricao}</p>}
-        {versao?.origem === 'oficial' && (
-          <p className="text-xs text-faint mb-2">
-            Currículo oficial {versao.versao}{classe?.vigente_desde ? ` · vigente desde ${fmtData(classe.vigente_desde)}` : ''}
-          </p>
-        )}
-        <div className="w-full bg-surface2 rounded-full h-3 overflow-hidden mt-2" role="progressbar" aria-valuenow={mc.percentual} aria-valuemin="0" aria-valuemax="100" aria-label="Progresso na classe">
-          <motion.div className="h-full bg-gradient-to-r from-brand to-brand2" initial={{ width: 0 }}
+        <div className="w-full rounded-full h-5 overflow-hidden mt-1 border-2" role="progressbar" aria-valuenow={mc.percentual} aria-valuemin="0" aria-valuemax="100" aria-label="Progresso na classe"
+          style={{ background: cor?.claro || undefined, borderColor: cor?.hex || 'transparent' }}>
+          <motion.div className={`h-full ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2'}`} style={cor ? { background: cor.hex } : undefined} initial={{ width: 0 }}
             animate={{ width: `${mc.percentual}%` }} transition={{ duration: 0.6 }} />
         </div>
-        <p className="text-sm text-muted mt-1.5">{mc.percentual}% concluído · iniciada em {fmtData(mc.iniciada_em)}</p>
+        <p className="text-base font-bold mt-1.5" style={{ color: cor?.escuro }}>{mc.percentual}% concluído <span className="text-sm font-normal text-muted">· iniciada em {fmtData(mc.iniciada_em)}</span></p>
 
         {etapa && (
           <div data-testid="etapa" data-etapa={mc.status} className="mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-800">
@@ -201,14 +273,17 @@ function Progresso({ dados, userId, onMudou }) {
           </div>
         )}
         {conclusao?.snapshot && <BotaoDocumento memberClassId={mc.id} ehFinal={mc.status === 'investida'} />}
+        </div>
       </div>
 
       {(secoes || []).map((s) => (
-        <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden">
-          <h4 id={`secao-${s.id}`} className="px-4 py-2.5 bg-surface2 font-bold text-ink text-sm">{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
+        <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden"
+          style={cor ? { border: `2px solid ${cor.hex}` } : undefined}>
+          <h4 id={`secao-${s.id}`} className={`px-4 py-3 font-extrabold text-base ${cor ? '' : 'bg-surface2 text-ink'}`}
+            style={cor ? { background: cor.hex, color: cor.texto } : undefined}>{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
           <div className="divide-y divide-line">
             {(s.requisitos || []).map((r) => (
-              <Requisito key={r.id} r={r} userId={userId} onMudou={onMudou} />
+              <Requisito key={r.id} r={r} cor={cor} userId={userId} onMudou={onMudou} />
             ))}
           </div>
         </section>
@@ -217,7 +292,7 @@ function Progresso({ dados, userId, onMudou }) {
   )
 }
 
-function Requisito({ r, userId, onMudou }) {
+function Requisito({ r, cor = null, userId, onMudou }) {
   const situacao = situacaoDoRequisito(r)
   const info = SITUACOES[situacao]
   const bloqueios = r.bloqueios || []
@@ -336,7 +411,8 @@ function Requisito({ r, userId, onMudou }) {
               </button>
             )}
             <button onClick={enviar} disabled={ocupado || !podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
-              className="min-h-[44px] rounded-lg bg-gradient-to-r from-brand to-brand2 text-white px-3 py-1.5 text-xs font-bold shadow-glow disabled:opacity-40 disabled:shadow-none">
+              data-testid="botao-enviar" style={cor ? { background: cor.hex, color: cor.texto } : undefined}
+              className={`min-h-[52px] flex-1 rounded-xl px-4 py-2 text-base font-extrabold shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
               {ocupado ? 'Enviando...' : !podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
             </button>
           </div>
@@ -380,17 +456,15 @@ function BotaoDocumento({ memberClassId, ehFinal }) {
   )
 }
 
-// Conteúdo anual/dinâmico: o servidor resolveu o valor pra hoje (ou não há valor cadastrado — e a
-// tela diz isso claramente; o requisito fica bloqueado, nunca "cumprido" por conta própria).
-// Desde a migration 84 o servidor manda o ANO do conteúdo (`ano`; `ano_referencia` = o ano procurado
-// quando falta) e, depois do envio/aprovação, o valor FIXADO no requisito — a tela diz de que ano é.
-// Sem o campo (servidor antigo), cai no texto de antes.
-// (sem valor + lista de bloqueios visível, o aviso não repete: a lista já diz o motivo)
+// Conteúdo anual/dinâmico (Curso de Leitura): com valor do ano, mostra o livro (desde a migration 84
+// vem o ANO e, depois do envio/aprovação, o valor FIXADO). Sem valor cadastrado, desde a migration 108
+// o requisito fica ABERTO: aviso neutro pedindo o nome do livro e o resumo na resposta (sem cadeado).
+// (se o servidor ainda mandar bloqueios — servidor antigo —, a lista já diz o motivo e o aviso não repete)
+export const AVISO_LEITURA_SEM_LIVRO = 'Escreva o nome do livro do Curso de Leitura deste ano e o seu resumo'
 function ConteudoDoPeriodo({ dinamico, mostrarAviso }) {
-  if (dinamico.valor) return <p className="text-xs text-ink bg-surface2 rounded-lg px-3 py-1.5 mb-1.5">📖 {dinamico.ano ? `Conteúdo de ${dinamico.ano}` : 'Conteúdo deste período'}: <span className="font-semibold">{dinamico.valor}</span></p>
+  if (dinamico.valor) return <p className="text-sm text-ink bg-surface2 rounded-lg px-3 py-2 mb-1.5">📖 {dinamico.ano ? `Conteúdo de ${dinamico.ano}` : 'Conteúdo deste período'}: <span className="font-semibold">{dinamico.valor}</span></p>
   if (!mostrarAviso) return null
-  const ano = dinamico.ano_referencia
-  return <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-1.5">📖 O conteúdo oficial {ano ? `de ${ano}` : 'deste período'} ainda não está disponível. Assim que for cadastrado, este requisito é liberado.</p>
+  return <p data-testid="aviso-leitura" className="text-sm text-blue-900 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-1.5">📖 {AVISO_LEITURA_SEM_LIVRO}.</p>
 }
 
 // Escolha N-de-M: opções na ordem do cartão (checkbox), texto livre só quando o cartão não lista opções.

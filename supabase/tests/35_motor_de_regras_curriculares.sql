@@ -100,9 +100,9 @@ insert into t.ids (chave, id) select 'mr_anual_a', mr.id from public.member_requ
 insert into t.ids (chave, id) select 'mr_escolha_a', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.id('req_escolha');
 
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('EXPLICAÇÃO: sem nenhum valor cadastrado pro ano, o requisito dinâmico fica BLOQUEADO',
-  t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_anual_a'))), 'bloqueado');
-select t.eq('...e a regra que bloqueou está nomeada, com a origem (tabela) que produziu o resultado',
+select t.eq('EXPLICAÇÃO (108): sem nenhum valor cadastrado pro ano, o requisito dinâmico fica ABERTO (pendente), não bloqueado',
+  t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_anual_a'))), 'pendente');
+select t.eq('...a regra do conteúdo segue nomeada (não satisfeita = sem livro do ano), com a origem (tabela) que produziu o resultado',
   t.txt(format($q$select r->>'origem' from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'conteudo_dinamico' and (r->>'satisfeito')::boolean = false$q$, t.id('mr_anual_a'))),
   'dynamic_content_definitions + dynamic_content_values');
 reset role;
@@ -155,7 +155,7 @@ select t.eq('...e UMA curriculum_version só', (select count(*) from public.curr
 select t.eq('...e o requisito da classe é UM só (o mesmo id serve para todos os anos)', (select count(*) from public.class_requirements where conteudo_dinamico_definicao_id = t.id('def_leitura')), 1);
 
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('EXPLICAÇÃO: com o valor de hoje cadastrado, o mesmo requisito passa de BLOQUEADO pra PENDENTE (ainda não aprovado)',
+select t.eq('EXPLICAÇÃO: com o valor de hoje cadastrado, o requisito segue PENDENTE (ainda não aprovado)',
   t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_anual_a'))), 'pendente');
 select t.eq('...a regra conteudo_dinamico agora está satisfeita e carrega o valor resolvido pro dia de hoje',
   t.txt(format($q$select r->'detalhe'->>'valor' from jsonb_array_elements(public.explicar_requisito_classe(%L)->'regras_aplicadas') r where r->>'regra' = 'conteudo_dinamico' and (r->>'satisfeito')::boolean$q$, t.id('mr_anual_a'))), 'Livro do ano corrente [TESTE]');
@@ -187,16 +187,13 @@ select t.como('membro_a2'); select t.pedir_clube('clube_a');
 select t.permitido('membro_a2 inicia a mesma classe (requisito anual ainda NÃO enviado)', format($q$select public.classe_iniciar(%L)$q$, t.id('classe_regras')));
 reset role;
 insert into t.ids (chave, id) select 'mr_anual_a2', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a2') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.id('req_anual');
-select t.eq('...já quem ainda NÃO enviou fica BLOQUEADO, com o ANO que falta no motivo',
-  array_to_string(public._requisito_bloqueios(t.id('mr_anual_a2')), ' '),
-  'O conteúdo oficial de ' || extract(year from public._data_no_brasil())::int || ' ([PILOTO/TESTE] Curso de Leitura do Ano) ainda não está disponível.');
-select t.como('membro_a2'); select t.pedir_clube('clube_a');
-select t.throws('...e não envia', format($q$select public.requisito_enviar(%L)$q$, t.id('req_anual')), 'ainda não está disponível');
+select t.eq('...e quem ainda NÃO enviou também NÃO fica bloqueado (108: o Curso de Leitura nunca trava por falta do livro do ano)',
+  coalesce(array_length(public._requisito_bloqueios(t.id('mr_anual_a2')), 1), 0), 0);
 reset role;
--- a plataforma publica o ano: quem ainda não enviou volta a andar
+-- a plataforma publica o ano: quem ainda não enviou envia e o livro do ano fica fixado
 update public.dynamic_content_values set ano = ano + 10, vigente_desde = make_date(ano + 10, 1, 1), vigente_ate = make_date(ano + 10, 12, 31)
  where definicao_id = t.id('def_leitura');
-select t.eq('com o valor do ano publicado, o bloqueio de quem não enviou some', coalesce(array_length(public._requisito_bloqueios(t.id('mr_anual_a2')), 1), 0), 0);
+select t.eq('com o valor do ano publicado, continua sem bloqueio', coalesce(array_length(public._requisito_bloqueios(t.id('mr_anual_a2')), 1), 0), 0);
 select t.como('membro_a2'); select t.pedir_clube('clube_a');
 select t.permitido('...e o ENVIO fixa o conteúdo daquele ano no requisito', format($q$select public.requisito_enviar(%L)$q$, t.id('req_anual')));
 reset role;

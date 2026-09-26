@@ -18,8 +18,10 @@ const enviarRequisito = vi.fn()
 const escolherOpcoesRequisito = vi.fn()
 const carregarOrigemRequisito = vi.fn()
 const carregarHistoricoRequisito = vi.fn()
+const carregarMinhasClasses = vi.fn()
 vi.mock('../lib/dados.js', () => ({
   carregarMinhaClasse: (...a) => carregarMinhaClasse(...a),
+  carregarMinhasClasses: (...a) => carregarMinhasClasses(...a),
   carregarClassesDisponiveis: (...a) => carregarClassesDisponiveis(...a),
   iniciarClasse: (...a) => iniciarClasse(...a),
   salvarRequisito: vi.fn(),
@@ -62,8 +64,8 @@ const MINHA = {
       base({ id: 'r1', codigo: '1', descricao: 'Requisito simples de teste.' }),
       base({ id: 'r2', codigo: '2', descricao: 'Requisito com evidência de texto.', tipo_evidencia: 'texto', status: 'em_andamento', evidencia_texto: 'rascunho' }),
       base({ id: 'r3', codigo: '3', descricao: 'Requisito anual com conteúdo.', conteudo_dinamico: { chave: 'slot', valor: 'Conteúdo do ano [TESTE]', ano: 2026 } }),
-      base({ id: 'r4', codigo: '4', descricao: 'Requisito anual sem conteúdo.', conteudo_dinamico: { chave: 'slot2', valor: null },
-        bloqueios: ['O conteúdo oficial deste período (Slot 2) ainda não está disponível.'] }),
+      // migration 108: sem o livro do ano, o Curso de Leitura fica ABERTO (servidor não manda bloqueio)
+      base({ id: 'r4', codigo: '4', descricao: 'Requisito anual sem conteúdo.', tipo_evidencia: 'texto', evidencia_obrigatoria: true, conteudo_dinamico: { chave: 'slot2', valor: null, ano_referencia: '2026' } }),
       base({ id: 'r5', codigo: '5', descricao: 'Requisito de escolha.', escolha: escolhaBase({ sem_repeticao: true }), bloqueios: ['Escolha pelo menos 1 das 3 opções (0 de 1 até agora).'] }),
       base({ id: 'r6', codigo: '6', descricao: 'Requisito cumprido pelo histórico.', escolha: escolhaBase({ satisfeitas_automaticamente: 1, opcoes_automaticas: ['o2'], validas: 1, satisfeito: true }) }),
       base({ id: 'r7', codigo: '7', descricao: 'Requisito aguardando.', status: 'aguardando_avaliacao' }),
@@ -76,6 +78,7 @@ const MINHA = {
 
 beforeEach(() => {
   carregarMinhaClasse.mockReset()
+  carregarMinhasClasses.mockReset().mockResolvedValue([])
   carregarClassesDisponiveis.mockReset().mockResolvedValue(DISPONIVEIS)
   iniciarClasse.mockReset().mockResolvedValue({ ok: true })
   enviarRequisito.mockReset().mockResolvedValue()
@@ -131,13 +134,13 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(situacao('1')).toBe('nao_iniciado')
     expect(situacao('2')).toBe('em_andamento')
     expect(situacao('3')).toBe('nao_iniciado')
-    expect(situacao('4')).toBe('bloqueado')
+    expect(situacao('4')).toBe('nao_iniciado')
     expect(situacao('5')).toBe('bloqueado')
     expect(situacao('6')).toBe('pronto_pelo_historico')
     expect(situacao('7')).toBe('aguardando_avaliacao')
     expect(situacao('8')).toBe('aprovado')
     expect(situacao('9')).toBe('correcao_solicitada')
-    expect(within(card('4')).getByTestId('situacao')).toHaveTextContent('Bloqueado')
+    expect(within(card('5')).getByTestId('situacao')).toHaveTextContent('Bloqueado')
     expect(within(card('6')).getByTestId('situacao')).toHaveTextContent('Cumprido pelo seu histórico')
     expect(within(card('8')).getByTestId('situacao')).toHaveTextContent('Aprovado')
   })
@@ -154,18 +157,22 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(within(c2).getByRole('button', { name: 'Salvar rascunho' })).toBeInTheDocument()
   })
 
-  it('dinâmico: mostra o conteúdo resolvido; sem conteúdo avisa claramente e BLOQUEIA o envio com o motivo ligado ao botão', async () => {
+  it('dinâmico: mostra o conteúdo resolvido; sem o livro do ano fica ABERTO com aviso neutro (sem cadeado) e envia o resumo', async () => {
     render(<MinhaClasse />)
     await screen.findByRole('heading', { level: 4 })
     expect(within(card('3')).getByText('Conteúdo do ano [TESTE]')).toBeInTheDocument()
     expect(within(card('3')).getByText(/Conteúdo de 2026/)).toBeInTheDocument() // o ano do conteúdo vem do servidor (migration 84)
     expect(within(card('3')).getByRole('button', { name: 'Enviar para avaliação' })).toBeEnabled()
     const c4 = card('4')
-    expect(within(c4).getAllByText(/ainda não está disponível/)).toHaveLength(1) // o motivo aparece UMA vez (na lista de bloqueios), não duplicado
-    const btn = within(c4).getByRole('button', { name: /Enviar para avaliação/ })
-    expect(btn).toBeDisabled()
-    expect(btn).toHaveAccessibleDescription(/ainda não está disponível/)
-    expect(within(c4).getByTestId('bloqueios')).toHaveTextContent('Slot 2')
+    expect(within(c4).getByTestId('aviso-leitura')).toHaveTextContent('Escreva o nome do livro do Curso de Leitura deste ano e o seu resumo')
+    expect(within(c4).queryByText(/ainda não está disponível/)).not.toBeInTheDocument()
+    expect(within(c4).queryByTestId('bloqueios')).not.toBeInTheDocument()
+    expect(c4.textContent).not.toMatch(/🔒/)
+    const btn = within(c4).getByRole('button', { name: 'Enviar para avaliação' })
+    expect(btn).toBeEnabled()
+    await userEvent.type(within(c4).getByLabelText('Sua resposta (obrigatória)'), 'Livro X - resumo [TESTE]')
+    await userEvent.click(btn)
+    await waitFor(() => expect(enviarRequisito).toHaveBeenCalledWith('r4'))
   })
 
   it('escolha N-de-M: opções na ordem como checkboxes, aviso de não repetir, salva a escolha pelo servidor', async () => {
@@ -283,5 +290,55 @@ describe('MinhaClasse — comprovação obrigatória', () => {
     await screen.findByRole('heading', { level: 4 })
     await userEvent.click(within(card('2')).getByRole('button', { name: 'Enviar para avaliação' }))
     await waitFor(() => expect(enviarRequisito).toHaveBeenCalledWith('rf'))
+  })
+})
+
+describe('MinhaClasse — várias classes e tema da classe', () => {
+  const COMP = { ...MINHA, member_class: { ...MINHA.member_class, id: 'mc2', percentual: 40 }, classe: { ...MINHA.classe, id: 'k2', nome: 'Companheiro' } }
+  const AMIGO = { ...MINHA, classe: { ...MINHA.classe, nome: 'Amigo' } }
+  const LISTA = [
+    { member_class_id: 'mc1', class_id: 'k1', nome: 'Amigo', status: 'em_andamento', percentual: 11 },
+    { member_class_id: 'mc2', class_id: 'k2', nome: 'Companheiro', status: 'em_andamento', percentual: 40 },
+  ]
+
+  it('abas grandes com cada classe (nome + %), alterna pela id e mostra a classe escolhida', async () => {
+    carregarMinhasClasses.mockResolvedValue(LISTA)
+    carregarMinhaClasse.mockImplementation(async (id) => (id === 'mc2' ? COMP : AMIGO))
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 3, name: 'Amigo' })
+    const abas = screen.getAllByRole('tab')
+    expect(abas).toHaveLength(2)
+    expect(abas[0]).toHaveTextContent('Amigo11%')
+    expect(abas[1]).toHaveTextContent('Companheiro40%')
+    expect(within(abas[1]).getByTestId('emblema-classe')).toBeInTheDocument()
+    expect(abas[0]).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(abas[1])
+    expect(await screen.findByRole('heading', { level: 3, name: 'Companheiro' })).toBeInTheDocument()
+    expect(carregarMinhaClasse).toHaveBeenLastCalledWith('mc2')
+  })
+
+  it('"+ Iniciar outra classe" mostra as disponíveis e inicia abrindo a nova', async () => {
+    carregarMinhasClasses.mockResolvedValue(LISTA.slice(0, 1))
+    carregarMinhaClasse.mockResolvedValue(AMIGO)
+    iniciarClasse.mockResolvedValue({ ok: true, member_class_id: 'mcN' })
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 3, name: 'Amigo' })
+    await userEvent.click(screen.getByRole('button', { name: '+ Iniciar outra classe' }))
+    const outras = await screen.findByTestId('outras-classes')
+    await userEvent.click(within(outras).getAllByRole('button', { name: 'Iniciar' })[0])
+    expect(iniciarClasse).toHaveBeenCalledWith('c1')
+    await waitFor(() => expect(carregarMinhaClasse).toHaveBeenLastCalledWith('mcN'))
+  })
+
+  it('a página fica na cor da classe: cabeçalho, seção e botão de enviar; no amarelo (Guia) o texto é escuro', async () => {
+    carregarMinhaClasse.mockResolvedValue({ ...MINHA, classe: { ...MINHA.classe, nome: 'Guia' } })
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 3, name: 'Guia' })
+    expect(screen.getByTestId('classe-tema')).toHaveAttribute('data-cor', '#eab308')
+    const cab = screen.getByTestId('cabecalho-classe')
+    expect(cab).toHaveStyle({ backgroundColor: '#eab308', color: '#1f2937' })
+    expect(within(cab).getByTestId('emblema-classe')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 4, name: 'I. Seção de Teste' })).toHaveStyle({ color: '#1f2937' })
+    expect(within(card('1')).getByTestId('botao-enviar')).toHaveStyle({ color: '#1f2937' })
   })
 })

@@ -271,8 +271,10 @@ select t.eq('[C8] o conteúdo de "hoje" é resolvido pelo dia NO CLUBE do requis
   'só hoje em Kiritimati [TESTE] / NULL');
 select t.eq('[C8] nenhuma das funções que escolhem "o conteúdo de hoje" usa mais o dia fixo de São Paulo',
   (select count(*) from pg_proc where pronamespace = 'public'::regnamespace
-      and proname in ('_conteudo_do_requisito', '_fixar_conteudo_do_requisito', '_requisito_bloqueios')
-      and prosrc ~ '_data_do_clube' and prosrc !~ '_data_no_brasil'), 3);
+      and proname in ('_conteudo_do_requisito', '_fixar_conteudo_do_requisito')
+      and prosrc ~ '_data_do_clube' and prosrc !~ '_data_no_brasil'), 2);
+select t.ok('[C8] _requisito_bloqueios não escolhe mais conteúdo do dia (108: o Curso de Leitura não bloqueia) — e nunca pelo dia de São Paulo',
+  (select prosrc !~ '_data_no_brasil' from pg_proc where pronamespace = 'public'::regnamespace and proname = '_requisito_bloqueios'));
 select t.throws('[C8] fuso que não existe é recusado ao criar um clube', $q$insert into public.organizational_units (type, nome, slug, pais, timezone) values ('clube', 'Clube Marte', 'clube-marte-64', 'BR', 'Marte/Olimpo')$q$, 'Fuso horário inválido');
 select t.throws('[C8] ...e ao trocar o de um clube', format($q$update public.organizational_units set timezone = 'hora do Brasil' where id = %L$q$, t.id('clube_a')), 'Fuso horário inválido');
 select t.throws('[C8] ...e na conta comercial (o onboarding copia de lá para o clube)', $q$insert into public.billing_accounts (nome, timezone) values ('Conta 64', 'GMT-3 Brasília')$q$, 'Fuso horário inválido');

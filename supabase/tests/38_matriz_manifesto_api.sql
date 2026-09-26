@@ -88,10 +88,10 @@ select t.eq('API: N-de-M — os 25 grupos chegam como estrutura (n_minimo, sem_r
        or (coalesce(jsonb_array_length(a.opcoes), 0) > 0 or coalesce(jsonb_array_length(m.opcoes), 0) > 0) and a.opcoes is distinct from m.opcoes), 0);
 select t.eq('API: 26 requisitos com escolha (2026.3: +pesquisador.I.3 e V.1, -pioneiro.VI.1)', (select count(*) from t.api where n_minimo is not null), 26);
 select t.eq('API: estado inicial — todos nao_iniciado', (select count(*) from t.api where status <> 'nao_iniciado'), 0);
-select t.eq('API: bloqueios iniciais — SÓ os 6 dinâmicos (sem conteúdo do ano) e os 26 de escolha (sem escolha registrada) vêm bloqueados; os outros 117 livres',
-  (select count(*) from t.api where jsonb_array_length(bloqueios) > 0) * 1000 + (select count(*) from t.api where jsonb_array_length(bloqueios) = 0), 32117);
-select t.eq('API: o texto do bloqueio dinâmico nomeia o conteúdo do período; o de escolha diz quantas faltam',
-  (select count(*) from t.api where dyn_chave is not null and bloqueios::text not like '%ainda não está disponível%')
+select t.eq('API: bloqueios iniciais — SÓ os 26 de escolha (sem escolha registrada) vêm bloqueados; os outros 123 livres (migration 108: os 6 do Curso de Leitura ficam ABERTOS mesmo sem o livro do ano)',
+  (select count(*) from t.api where jsonb_array_length(bloqueios) > 0) * 1000 + (select count(*) from t.api where jsonb_array_length(bloqueios) = 0), 26123);
+select t.eq('API: o dinâmico sem conteúdo do ano NÃO tem bloqueio (108); o de escolha diz quantas faltam',
+  (select count(*) from t.api where dyn_chave is not null and jsonb_array_length(bloqueios) > 0)
   + (select count(*) from t.api where n_minimo is not null and bloqueios::text not like '%Escolha pelo menos%'), 0);
 select t.eq('API: nenhum requisito ativo aparece fora das seções (o total por classe bate com o manifesto classe a classe)',
   (select count(*) from (select classe_id, count(*) n from t.api group by 1 except select classe_id, count(*) from t.man group by 1) d), 0);

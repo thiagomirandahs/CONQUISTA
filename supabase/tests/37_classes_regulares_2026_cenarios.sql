@@ -94,19 +94,25 @@ reset role;
 -- ==================== 4) dinâmico: referencia o mecanismo; 2026 resolve o valor cadastrado ====================
 insert into t.ids (chave, id) select 'mr_amigo_I4', mr.id from public.member_requirements mr where mr.usuario_id = t.id('membro_a') and mr.club_id = t.id('clube_a') and mr.requirement_id = t.req('amigo.I.4');
 -- 2026.3: I.4 exige comprovação escrita (tipo_evidencia=texto, obrigatória); a evidência é preenchida aqui para o teste
--- isolar o bloqueio do conteúdo do período (sem ela, o envio seria recusado antes, por falta de evidência)
+-- provar que o Curso de Leitura fica ABERTO sem o livro do ano (sem ela, o envio seria recusado por falta de evidência)
 update public.member_requirements set evidencia_texto = 'Li o livro [DADO DE TESTE]' where id = t.id('mr_amigo_I4');
 select t.eq('(4) Amigo I.4 referencia o slot curso_leitura_amigo (não tem "2026" no texto)',
   (select count(*) from public.class_requirements r join public.dynamic_content_definitions d on d.id = r.conteudo_dinamico_definicao_id where r.id = t.req('amigo.I.4') and d.chave = 'curso_leitura_amigo' and r.descricao !~ '20[0-9][0-9]'), 1);
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('(4) sem valor cadastrado pro ano: minha_classe() entrega conteudo_dinamico com valor NULL (honesto) e a explicação diz BLOQUEADO',
-  t.txt($q$select (r->'conteudo_dinamico'->>'chave') || '|' || coalesce(r->'conteudo_dinamico'->>'valor', 'NULL') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
-  'curso_leitura_amigo|NULL|bloqueado');
-select t.throws('(4) BLOQUEADO de verdade: sem o conteúdo do período, ENVIAR é recusado (fase 3.1)', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.I.4')), 'ainda não está disponível');
+select t.eq('(4) sem valor cadastrado pro ano: minha_classe() entrega conteudo_dinamico com valor NULL (honesto) e a explicação diz PENDENTE (108: aberto, não bloqueado)',
+  t.txt($q$select (r->'conteudo_dinamico'->>'chave') || '|' || coalesce(r->'conteudo_dinamico'->>'valor', 'NULL') || '|' || json_array_length(r->'bloqueios') from json_array_elements(public.minha_classe()->'secoes'->0->'requisitos') r where r->>'manifesto_id' = 'amigo.I.4'$q$) || '|' || t.txt(format($q$select public.explicar_requisito_classe(%L)->>'resultado'$q$, t.id('mr_amigo_I4'))),
+  'curso_leitura_amigo|NULL|0|pendente');
+-- envio e aprovação rodam dentro de blocos que se desfazem no fim (o erro proposital só prova que passaram
+-- sem bloqueio) — assim o requisito não entra na fila e os cenários seguintes ficam intactos
+select t.throws('(4) ABERTO de verdade: sem o livro do ano, a criança ENVIA o resumo (nome do livro vai na resposta)',
+  format($q$do $d$ begin perform public.requisito_enviar(%L); raise exception 'ENVIOU-SEM-BLOQUEIO'; end $d$$q$, t.req('amigo.I.4')), 'ENVIOU-SEM-BLOQUEIO');
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.throws('(4) ...e APROVAR também é recusado — aprovação manual não contorna a regra', format($q$select public.requisito_avaliar(%L, 'aprovado', null)$q$, t.id('mr_amigo_I4')), 'ainda não está disponível');
+select t.throws('(4) ...e a liderança consegue APROVAR sem o livro do ano cadastrado',
+  format($q$do $d$ begin perform public.requisito_avaliar(%L, 'aprovado', null); raise exception 'APROVOU-SEM-BLOQUEIO'; end $d$$q$, t.id('mr_amigo_I4')), 'APROVOU-SEM-BLOQUEIO');
 reset role;
-select t.eq('(4) o requisito continua nao_iniciado, sem avaliação registrada', (select status from public.member_requirements where id = t.id('mr_amigo_I4')) || '|' || (select count(*) from public.requirement_approvals where member_requirement_id = t.id('mr_amigo_I4')), 'nao_iniciado|0');
+select t.eq('(4) (blocos desfeitos) o requisito segue nao_iniciado, sem conteúdo fixado e sem avaliação',
+  (select status || '|' || coalesce(conteudo_fixado ->> 'valor', 'NULL') from public.member_requirements where id = t.id('mr_amigo_I4')) || '|' || (select count(*) from public.requirement_approvals where member_requirement_id = t.id('mr_amigo_I4')),
+  'nao_iniciado|NULL|0');
 -- o valor do ano entra DEPOIS, como dado com fonte e ANO explícito (aqui, sintético de teste) — nunca
 -- dentro do requisito. É o do ano CORRENTE no Brasil, para o teste não vencer na virada do ano.
 insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_descricao)
@@ -245,6 +251,23 @@ select t.permitido('o emissor revoga', format($q$select public.curriculum_achiev
 reset role;
 select t.eq('(6) revogada → deixa de contar como "já realizada" (mesmo com member_specialties do A ainda concluída)', public.especialidade_ja_concluida_pela_pessoa(t.id('multi_dois_papeis'), t.id('especialidade_piloto')), false);
 select t.eq('...member_specialties do A intocada (dado operacional não é o que a regra lê)', (select status from public.member_specialties where usuario_id = t.id('multi_dois_papeis') and club_id = t.id('clube_a') and specialty_id = t.id('especialidade_piloto')), 'concluida');
+
+-- ==================== (108) várias classes ao mesmo tempo: minhas_classes() ====================
+reset role;
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('(108) membro_a inicia Companheiro TAMBÉM (já faz Amigo)', format($q$select public.classe_iniciar(%L)$q$, t.classe('companheiro')));
+select t.eq('(108) minhas_classes() lista as DUAS do clube em uso, com nome e percentual',
+  t.txt($q$select string_agg((x->>'nome') || ':' || ((x->>'percentual') is not null)::text, ',' order by x->>'nome') from json_array_elements(public.minhas_classes()) x$q$), 'Amigo:true,Companheiro:true');
+select t.eq('(108) minha_classe(id) abre a classe escolhida na aba',
+  t.txt($q$select public.minha_classe((select (x->>'member_class_id')::uuid from json_array_elements(public.minhas_classes()) x where x->>'nome' = 'Companheiro'))->'classe'->>'nome'$q$), 'Companheiro');
+select t.eq('(108) classes_disponiveis() não oferece de novo as já iniciadas',
+  t.txt($q$select count(*)::text from json_array_elements(public.classes_disponiveis()) x where x->>'nome' in ('Amigo', 'Companheiro')$q$), '0');
+reset role;
+select t.como('multi_dois_papeis'); select t.pedir_clube('clube_b');
+select t.eq('(108) minhas_classes() só mostra as do clube EM USO (multi no B vê só a Amigo do B)',
+  t.txt($q$select string_agg(x->>'member_class_id', ',') from json_array_elements(public.minhas_classes()) x$q$), t.id('mc_multi_b')::text);
+reset role;
+select t.ok('(108) anon não executa minhas_classes()', not has_function_privilege('anon', 'public.minhas_classes()', 'execute'));
 
 select t.fim();
 rollback;

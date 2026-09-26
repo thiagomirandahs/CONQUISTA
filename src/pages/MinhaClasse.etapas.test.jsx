@@ -11,6 +11,7 @@ vi.mock('framer-motion', () => ({ motion: { div: (p) => <div {...Object.fromEntr
 const carregarMinhaClasse = vi.fn()
 vi.mock('../lib/dados.js', () => ({
   carregarMinhaClasse: (...a) => carregarMinhaClasse(...a),
+  carregarMinhasClasses: vi.fn().mockResolvedValue([]),
   carregarClassesDisponiveis: vi.fn().mockResolvedValue([]),
   iniciarClasse: vi.fn(), salvarRequisito: vi.fn(), enviarRequisito: vi.fn(), escolherOpcoesRequisito: vi.fn(), carregarOrigemRequisito: vi.fn(),
   emitirDocumento: vi.fn().mockResolvedValue({ token: 'TESTTOKEN' }),

@@ -34,6 +34,14 @@ export async function carregarMinhaClasse(memberClassId = null) {
   return data
 }
 
+// Todas as classes (não canceladas) da PRÓPRIA pessoa no clube em uso — abas de Minha Classe
+// (migration 108). Cada item: member_class_id, class_id, nome, status, percentual.
+export async function carregarMinhasClasses() {
+  const { data, error } = await supabase.rpc('minhas_classes')
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
 // "Origem do requisito": proveniência até o manifesto/OMD/página oficial (auditoria/administração —
 // não aparece em todo card; só quando alguém pede).
 export async function carregarOrigemRequisito(requirementId) {

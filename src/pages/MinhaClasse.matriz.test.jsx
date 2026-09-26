@@ -15,6 +15,7 @@ vi.mock('framer-motion', () => ({ motion: { div: (p) => <div {...Object.fromEntr
 const carregarMinhaClasse = vi.fn()
 vi.mock('../lib/dados.js', () => ({
   carregarMinhaClasse: (...a) => carregarMinhaClasse(...a),
+  carregarMinhasClasses: vi.fn().mockResolvedValue([]),
   carregarClassesDisponiveis: vi.fn().mockResolvedValue([]),
   iniciarClasse: vi.fn(), salvarRequisito: vi.fn(), enviarRequisito: vi.fn(), escolherOpcoesRequisito: vi.fn(), carregarOrigemRequisito: vi.fn(),
 }))
@@ -43,7 +44,6 @@ function payload(classe) {
         } : null
         const dinamico = r.tipo === 'anual_dinamico' ? { chave: 'curso_leitura_' + classe.id, valor: null } : null
         const bloqueios = [
-          ...(dinamico ? [`O conteúdo oficial deste período (Curso de Leitura do ano — ${classe.nome}) ainda não está disponível.`] : []),
           ...(escolha ? [`Escolha pelo menos ${escolha.n_minimo} das ${escolha.total_opcoes} opções (0 de ${escolha.n_minimo} até agora).`] : []),
         ]
         return { id: 'r:' + r.id, codigo: r.codigo, descricao: r.descricao_resumida, manifesto_id: r.id, status_fonte: r.status || 'CONFIRMADO',
@@ -82,15 +82,15 @@ describe('matriz manifesto → UI: as 6 Classes Regulares 2026', () => {
       expect(new Set(chaves).size).toBe(chaves.length)
       expect(chaves.length).toBe(classe.secoes.reduce((m, s) => m + s.requisitos.length, 0))
 
-      // requisito dinâmico: aviso de "ainda não disponível" + bloqueado; N-de-M: fieldset com as opções na ordem do cartão
+      // requisito dinâmico (108): ABERTO sem o livro do ano — aviso neutro, sem cadeado, envio liberado; N-de-M: fieldset com as opções na ordem do cartão
       const cards = screen.getAllByTestId('requisito')
       const reqs = classe.secoes.flatMap((s) => s.requisitos)
       reqs.forEach((r, i) => {
         const card = cards[i]
         if (r.tipo === 'anual_dinamico') {
-          expect(within(card).getAllByText(/ainda não está disponível/)).toHaveLength(1)
-          expect(within(card).getByTestId('situacao')).toHaveAttribute('data-situacao', 'bloqueado')
-          expect(within(card).getByRole('button', { name: /Enviar para avaliação/ })).toBeDisabled()
+          expect(within(card).getByTestId('aviso-leitura')).toHaveTextContent('Escreva o nome do livro do Curso de Leitura deste ano e o seu resumo')
+          expect(within(card).getByTestId('situacao')).toHaveAttribute('data-situacao', 'nao_iniciado')
+          expect(within(card).getByRole('button', { name: 'Enviar para avaliação' })).toBeEnabled()
           expect(within(card).getByTestId('requisito-texto').textContent).not.toMatch(/20\d\d/)
         } else if ((r.tipo || '').startsWith('escolha')) {
           const grupo = within(card).getByRole('group')
