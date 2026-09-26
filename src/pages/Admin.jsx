@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Botao, Aviso, Campo } from '../ui/index.jsx'
+import { useAuth } from '../context/Auth.jsx'
+import { Link } from 'react-router-dom'
 import { ROTULO_STATUS, formatarPreco } from '../services/comercial.js'
 import {
   souAdminPlataforma, visaoGeral, clubesListar, clubeDetalhe, planosAdminListar, assinaturasListar,
@@ -148,6 +150,26 @@ export default function Admin() {
 }
 
 // ---------------------------------------------------------------- Cabeçalho e abas
+// Conta de admin SEM clube (o dono separa a conta de admin da conta do clube): o painel precisa das
+// saídas da conta — trocar senha, suporte e SAIR — já que não passa pelo layout do clube.
+function MenuDaContaAdmin() {
+  const { sair } = useAuth() || {}
+  const [aberto, setAberto] = useState(false)
+  const item = 'flex w-full min-h-[48px] items-center gap-3 rounded-xl px-3 text-left text-[15px] font-semibold text-ink active:bg-surface2'
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-label="Minha conta" data-testid="admin-conta"
+        className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-lg ring-1 ring-white/20">👤</button>
+      {aberto && (
+        <div className="absolute right-0 top-12 z-30 w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
+          <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>
+          <Link to="/institucional" className={item}><span aria-hidden="true">🏛️</span>Portal da coordenação</Link>
+          <button type="button" className={`${item} text-red-600`} onClick={sair} data-testid="admin-sair"><span aria-hidden="true">🚪</span>Sair da conta</button>
+        </div>
+      )}
+    </div>
+  )
+}
 // Barra compacta azul-marinho (a mesma da landing), fixa no topo ao rolar.
 function CabecalhoAdmin() {
   return (
@@ -161,6 +183,7 @@ function CabecalhoAdmin() {
         <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#f5c518]/15 px-2.5 py-1 text-xs font-semibold text-[#f5c518] ring-1 ring-inset ring-[#f5c518]/30">
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#f5c518]" />Admin da plataforma
         </span>
+        <MenuDaContaAdmin />
       </div>
     </header>
   )

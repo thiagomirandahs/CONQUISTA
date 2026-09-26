@@ -43,7 +43,7 @@ export default function TrocarSenha() {
       const { error } = await supabase.auth.updateUser({ password: nova })
       if (error) { setErro(traduzErro(error.message)); setOcupado(false); return }
       avisar.sucesso('Senha trocada! Use a nova senha na próxima vez que entrar.')
-      navigate(window.location.pathname.startsWith('/conta') ? '/institucional' : '/eu', { replace: true })
+      if (window.location.pathname.startsWith('/conta')) navigate(-1); else navigate('/eu', { replace: true })
     } catch (e2) {
       setErro(traduzErro(e2?.message || String(e2)))
       setOcupado(false)
