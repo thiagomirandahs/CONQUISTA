@@ -1,4 +1,5 @@
 import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
+import Avatar from '../components/Avatar.jsx'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -39,9 +40,8 @@ export default function Eu() {
     <div className="max-w-2xl mx-auto space-y-5">
       {/* ---- identidade ---- */}
       <section className="flex items-center gap-3 pt-1">
-        {profile?.foto
-          ? <img src={profile.foto} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-line" />
-          : <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-surface2 text-lg font-extrabold text-muted ring-2 ring-line">{iniciais}</span>}
+        {/* Avatar assina a URL do bucket privado 'imagens' (img direto não carregava a foto) */}
+        <span className="shrink-0 rounded-full ring-2 ring-line"><Avatar foto={profile?.foto} nome={iniciais} size="w-14 h-14" textSize="text-lg" /></span>
         <div className="min-w-0">
           <h1 className="text-lg font-extrabold leading-tight text-ink">{nome}</h1>
           <p className="text-sm text-muted truncate">

@@ -61,6 +61,8 @@ export default function PortalInstitucional() {
   }, [escopo, verPainel, filtro, versao])
 
   const mudou = useCallback(() => setVersao((x) => x + 1), [])
+  // botão 🔄 da moldura (LayoutConta): relê painel, visitas e investiduras
+  useEffect(() => { window.addEventListener('conta:atualizar', mudou); return () => window.removeEventListener('conta:atualizar', mudou) }, [mudou])
   const abrirClube = (c) => { setClubeAberto(c); setAba('clubes'); document.documentElement.scrollTop = 0 }
 
   if (carregando) return <div className="max-w-2xl mx-auto px-4 py-6"><EsqueletoTela cartoes={3} /></div>

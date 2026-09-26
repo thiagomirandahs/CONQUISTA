@@ -40,6 +40,7 @@ const Atividade = lazy(() => import('./pages/Atividade.jsx'))
 const Trilha = lazy(() => import('./pages/Trilha.jsx'))
 const Perfil = lazy(() => import('./pages/Perfil.jsx'))
 const TrocarSenha = lazy(() => import('./pages/TrocarSenha.jsx'))
+const LayoutConta = lazy(() => import('./components/LayoutConta.jsx'))
 const Avisos = lazy(() => import('./pages/Avisos.jsx'))
 const Conteudo = lazy(() => import('./pages/Conteudo.jsx'))
 const RadarFaltas = lazy(() => import('./pages/RadarFaltas.jsx'))
@@ -287,7 +288,10 @@ export default function App() {
 
         {/* Jornada INSTITUCIONAL: exige sessão, mas NÃO passa pelo ClubeGuard — quem é só coordenador
             distrital/regional não tem vínculo de clube nenhum e ficaria trancado do lado de fora. */}
-        <Route path="/institucional" element={<SessaoObrigatoria><PortalInstitucional /></SessaoObrigatoria>} />
+        <Route path="/institucional" element={<SessaoObrigatoria><LayoutConta><PortalInstitucional /></LayoutConta></SessaoObrigatoria>} />
+        {/* Telas da CONTA para quem não tem clube (coordenação): mesma tela, moldura sem clube */}
+        <Route path="/conta/senha" element={<SessaoObrigatoria><LayoutConta><TrocarSenha /></LayoutConta></SessaoObrigatoria>} />
+        <Route path="/conta/suporte" element={<SessaoObrigatoria><LayoutConta><Suporte /></LayoutConta></SessaoObrigatoria>} />
 
         {/* Cadastro de um clube NOVO: exige sessão, mas não pode passar pelo ClubeGuard — quem chega
             pra abrir um clube ainda não tem clube nenhum (é justamente o que o onboarding cria). */}
