@@ -381,21 +381,21 @@ function Requisito({ r, cor = null, userId, onMudou }) {
             </label>
           )}
           {precisaFoto && (
-            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
-              <label className="block cursor-pointer">
-                <span className="block text-sm font-bold text-emerald-900"><span aria-hidden="true">📷 </span><span>Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span></span>
-                <span className="block text-xs text-emerald-800 mt-0.5">Tire uma foto da atividade ou escolha uma da galeria.</span>
+            <div>
+              <span className="block text-sm font-semibold text-ink mb-1.5">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
+              {/* Área de envio "clean": caixa tracejada grande, ícone de câmera e uma frase — óbvio sem gritar. */}
+              <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-surface2 px-4 py-6 text-center transition hover:border-brand active:scale-[0.99]">
                 <input aria-label={`Foto de comprovação${obrigatoria ? ' (obrigatória)' : ''}`} type="file" accept="image/*" className="sr-only" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-                <span aria-hidden="true"
-                  className={`mt-2 flex min-h-[64px] w-full items-center justify-center gap-2 rounded-xl px-3 text-lg font-extrabold text-emerald-950 bg-[#39ff14] shadow-[0_0_18px_#39ff14] ring-2 ring-emerald-600 active:scale-[0.98] ${previa || r.evidencia_path ? '' : 'animate-pulse'}`}>
-                  {previa || r.evidencia_path ? '🔄 Trocar foto' : '📤 CLIQUE AQUI para enviar a foto'}
-                </span>
+                {previa || r.evidencia_path ? (
+                  previa
+                    ? <img src={previa} alt="prévia da foto escolhida" className="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
+                    : <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
+                ) : (
+                  <span aria-hidden="true" className="grid h-14 w-14 place-items-center rounded-full bg-surface text-3xl shadow-soft">📷</span>
+                )}
+                <span aria-hidden="true" className="text-base font-bold text-ink">{previa || r.evidencia_path ? 'Trocar foto' : 'Adicionar foto'}</span>
+                <span aria-hidden="true" className="text-xs text-muted">Toque para tirar uma foto ou escolher da galeria</span>
               </label>
-              {(previa || r.evidencia_path) && (
-                previa
-                  ? <img src={previa} alt="prévia da foto escolhida" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                  : <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="mt-2 w-32 h-32 object-cover rounded-lg" />
-              )}
             </div>
           )}
           {bloqueios.length > 0 && (
