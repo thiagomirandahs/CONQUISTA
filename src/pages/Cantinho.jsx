@@ -8,6 +8,7 @@ import {
   paraCentavos, formatarReal, diaMes, ehDomingo, STATUS_CHAMADA, STATUS_PLANO,
 } from '../services/cantinho.js'
 import { avisar } from '../ui/avisos.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import { Aviso, Botao, Campo, Card, Carregando, Selecao, Selo, Vazio } from '../ui/index.jsx'
 
 // =============================================================================
@@ -122,7 +123,8 @@ function Painel({ dados, recarregar, voltar }) {
   return (
     <div className="space-y-4 pb-6">
       <header className="rounded-2xl overflow-hidden shadow-soft text-white" style={{ background: `linear-gradient(135deg, #0b1f4d, ${u.cor || '#1e3a8a'})` }}>
-        <div className="p-4">
+        <div className="p-4 relative">
+          <BotaoAjuda topico="cantinho" sobreEscuro className="absolute right-3 top-3" />
           {voltar && <button type="button" onClick={voltar} className="min-h-[44px] -ml-1 mb-1 text-sm font-semibold text-white/85">← Unidades</button>}
           <p className="text-xs uppercase tracking-wider text-amber-300 font-bold">Cantinho da unidade</p>
           <h1 className="text-2xl font-extrabold leading-tight">{u.nome}</h1>

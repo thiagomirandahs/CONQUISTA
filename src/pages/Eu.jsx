@@ -80,6 +80,7 @@ export default function Eu() {
       )}
 
       <Grupo titulo="Aplicativo">
+        <ItemLink para="/ajuda" icone="❓" titulo="Ajuda / Como usar" desc="Passo a passo de cada parte do app" testid="ir-ajuda" />
         <ItemBotao icone="🔄" titulo="Atualizar o app" desc="Buscar a versão mais nova" aoTocar={atualizarApp} />
       </Grupo>
 

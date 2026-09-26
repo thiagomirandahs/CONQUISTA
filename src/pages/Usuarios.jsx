@@ -16,6 +16,7 @@ import EditarNascimento from '../components/EditarNascimento.jsx'
 import { carregarClassesDoMembro, cancelarClasse } from '../services/classes.js'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 
 const PODE_GERIR = ['diretoria']   // migration 210: papel, unidade, status e senha são só da diretoria
 const rotuloPapel = {
@@ -153,9 +154,12 @@ export default function Usuarios() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-ink">👥 Usuários</h2>
-        <p className="text-sm text-muted">Trocar cargo e unidade, lançar pontos e resetar senha</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-extrabold text-ink">👥 Usuários</h2>
+          <p className="text-sm text-muted">Trocar cargo e unidade, lançar pontos e resetar senha</p>
+        </div>
+        <BotaoAjuda topico="usuarios-equipe" />
       </div>
 
       {/* Quem JA tem conta no DesbravaClube entra aqui, por convite — a lista abaixo e de quem ja

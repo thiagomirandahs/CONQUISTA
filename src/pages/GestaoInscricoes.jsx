@@ -5,6 +5,7 @@ import { qrSvg } from '../lib/qr.js'
 import { Card, Botao, Cabecalho } from '../ui/index.jsx'
 import SolicitacoesPendentes from '../components/SolicitacoesPendentes.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 
 const PRAZOS = [
   { valor: '', texto: 'Sem prazo' },
@@ -80,7 +81,7 @@ export default function GestaoInscricoes() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🔗" titulo="Inscrições" descricao="Link e QR Code para novos membros" />
+      <Cabecalho icone="🔗" titulo="Inscrições" descricao="Link e QR Code para novos membros" acao={<BotaoAjuda topico="inscricoes" />} />
       <p className="text-sm text-muted -mt-2 mb-4" data-testid="clube-da-inscricao">Clube: <strong className="text-ink">{marca?.nome}</strong></p>
 
       <Card className="p-4 mb-5" data-testid="codigo-de-entrada">

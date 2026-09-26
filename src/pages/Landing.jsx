@@ -30,6 +30,7 @@ const NAV = [
 const PAGINAS = [
   { to: '/clubes', rotulo: 'Clubes' },
   { to: '/parceiros', rotulo: 'Parceiros' },
+  { to: '/ajuda', rotulo: 'Como usar' },
 ]
 
 function Marca({ claro = false }) {
@@ -468,6 +469,7 @@ export function Rodape({ naLanding = true }) {
             <li><a href={ancora('#planos')} className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
             <li><Link to="/clubes" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Clubes</Link></li>
             <li><Link to="/parceiros" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Parceiros</Link></li>
+            <li><Link to="/ajuda" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Como usar</Link></li>
             <li><LinkApp to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</LinkApp></li>
           </ul>
         </nav>

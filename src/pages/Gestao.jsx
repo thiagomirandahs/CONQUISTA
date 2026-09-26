@@ -3,6 +3,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentes } from '../services/inicio.js'
 import { FERRAMENTAS, GRUPOS_GESTAO } from '../lib/permissoes.js'
 import { rotaLiberada } from '../lib/navegacao.js'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import { Card, CardAcao, Cabecalho, Vazio, Selo, Carregando, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 // Gestão (fase 7): 4 grupos em vez de uma parede de 21 cards.
@@ -20,7 +21,7 @@ export default function Gestao() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="⚙️" titulo="Gestão" descricao="As ferramentas da liderança" />
+      <Cabecalho icone="⚙️" titulo="Gestão" descricao="As ferramentas da liderança" acao={<BotaoAjuda topico="gestao" />} />
 
       {ehAdmin && <FilaDeAvaliacao />}
 

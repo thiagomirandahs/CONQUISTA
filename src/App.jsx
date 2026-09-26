@@ -83,6 +83,8 @@ const ExperienciaEditor = lazy(() => import('./pages/ExperienciaEditor.jsx'))
 const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
+const Ajuda = lazy(() => import('./pages/Ajuda.jsx'))
+const SiteAjuda = lazy(() => import('./pages/site/SiteAjuda.jsx'))
 
 // Sessão/clube ainda resolvendo: a mesma abertura do index.html (produto, nunca o clube).
 function Carregando() {
@@ -97,6 +99,8 @@ function Protegido({ children }) {
     // a raiz "/" sem sessão é a landing PÚBLICA — mas só onde o site e o app moram juntos
     // (localhost, preview, APK). Em app.desbravaclube.com.br a raiz é o login: a vitrine é do site.
     if (location.pathname === '/' && modoDoHost() === 'unico') return <Landing />
+    // /ajuda sem sessão (onde site e app moram juntos, ou link antigo): o tutorial público, sem atalhos logados
+    if (location.pathname.replace(/\/+$/, '') === '/ajuda') return <SiteAjuda />
     return <Navigate to="/login" replace />
   }
   // só entra quem tem vínculo ATIVO com um clube em uso (o contexto do clube é resolvido aqui, uma vez por sessão)
@@ -199,6 +203,7 @@ function RotasDoSite() {
       <Route path="/clubes" element={<SiteClubes />} />
       <Route path="/clubes/:slug" element={<SiteCartaoClube />} />
       <Route path="/parceiros" element={<SiteParceiros />} />
+      <Route path="/ajuda" element={<SiteAjuda />} />
     </Routes>
   )
 }
@@ -312,6 +317,8 @@ export default function App() {
           <Route path="/meu-clube" element={<MeuClubeHub />} />
           <Route path="/jogos" element={<JogosHub />} />
           <Route path="/eu" element={<Eu />} />
+          {/* Tutorial (Eu → Ajuda / Como usar): conteúdo estático, entra no precache e abre sem internet */}
+          <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/gestao/avaliar" element={<RotaRestrita><GestaoAvaliar /></RotaRestrita>} />
           <Route path="/gestao/avaliacoes" element={<RotaRestrita><GestaoAvaliacoes /></RotaRestrita>} />
           <Route path="/gestao/inscricoes" element={<RotaRestrita><GestaoInscricoes /></RotaRestrita>} />

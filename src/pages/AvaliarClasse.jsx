@@ -4,6 +4,7 @@ import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoric
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -34,9 +35,12 @@ export default function AvaliarClasse() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-ink">🎖️ Avaliar classes</h2>
-        <p className="text-sm text-muted">Requisitos aguardando avaliação neste clube</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-extrabold text-ink">🎖️ Avaliar classes</h2>
+          <p className="text-sm text-muted">Requisitos aguardando avaliação neste clube</p>
+        </div>
+        <BotaoAjuda topico="avaliar-classes" />
       </div>
 
       {carregando ? (

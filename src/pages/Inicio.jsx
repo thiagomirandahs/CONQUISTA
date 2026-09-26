@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarInicio } from '../services/inicio.js'
 import { rotaLiberada } from '../lib/navegacao.js'
+import TourPrimeiroAcesso from '../components/TourPrimeiroAcesso.jsx'
 import { Card, CardAcao, Carregando, Vazio, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 // Início contextual (fase 7). Responde UMA pergunta: "o que é mais importante para mim agora?".
@@ -44,6 +45,8 @@ export default function Inicio() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Tour de primeiro acesso (uma vez por usuário neste aparelho; reabre em Eu → Ajuda) */}
+      <TourPrimeiroAcesso uid={profile?.id} />
       <header className="mb-5">
         <p className="text-sm text-muted">{saudacao()}{primeiroNome ? `, ${primeiroNome}` : ''} 👋</p>
         <h1 className="text-2xl font-extrabold text-ink leading-tight">{marca?.nome || 'Seu clube'}</h1>

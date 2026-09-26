@@ -14,6 +14,7 @@ import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -125,9 +126,12 @@ export default function MinhaClasse() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-2xl font-extrabold text-ink">🎖️ Minha Classe</h2>
-        <p className="text-sm text-muted">Seu progresso na classe, requisito por requisito</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-extrabold text-ink">🎖️ Minha Classe</h2>
+          <p className="text-sm text-muted">Seu progresso na classe, requisito por requisito</p>
+        </div>
+        <BotaoAjuda topico="minha-classe" />
       </div>
 
       {erro && <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800 mb-4">{erro}</div>}
