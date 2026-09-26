@@ -234,10 +234,21 @@ export function validarDados({ omds, arquivosClasses }) {
 
     if (dados.classe_avancada?.classe_regular_ref) {
       const ref = dados.classe_avancada.classe_regular_ref
-      const existeAlgumaClasseComEsseId = arquivosClasses.some((a) => a.dados.classe_regular?.id === ref)
-      if (!existeAlgumaClasseComEsseId) {
+      const regular = arquivosClasses.find((a) => a.dados.classe_regular?.id === ref)?.dados.classe_regular
+      if (!regular) {
         erro(erros, `${arquivo}: classe_avancada.classe_regular_ref="${ref}" não corresponde a nenhuma classe_regular carregada (dependência inexistente).`)
+      } else if (Object.hasOwn(dados.classe_avancada, 'idade_minima') && dados.classe_avancada.idade_minima !== regular.idade_minima) {
+        // fonte: https://www.adventistas.org/pt/desbravadores/classes/ — "seguindo a idade da classe regular correspondente"
+        erro(erros, `${arquivo}#${dados.classe_avancada.id}: idade_minima (${dados.classe_avancada.idade_minima}) diferente da regular pareada ${ref} (${regular.idade_minima}) — a avançada segue a idade da regular.`)
       }
+    }
+    // (2026.4) avançada publicável: precisa de idade_minima, vigente_desde (≠ carimbo) e seção única com código/ordem
+    const av = dados.classe_avancada
+    if (av && (Object.hasOwn(av, 'idade_minima') || Object.hasOwn(av, 'vigente_desde'))) {
+      if (typeof av.idade_minima !== 'number') erro(erros, `${arquivo}#${av.id}: classe_avancada sem idade_minima numérica.`)
+      if (!dataValida(av.vigente_desde)) erro(erros, `${arquivo}#${av.id}: classe_avancada sem vigente_desde válida.`)
+      else if (av.fonte_base?.publicado_em === av.vigente_desde) erro(erros, `${arquivo}#${av.id}: vigente_desde é IDÊNTICA a fonte_base.publicado_em — cópia do carimbo da página, proibida.`)
+      if (!av.secao_unica?.codigo || typeof av.secao_unica?.ordem !== 'number') erro(erros, `${arquivo}#${av.id}: secao_unica precisa de codigo e ordem para ser importada.`)
     }
   }
 
@@ -312,12 +323,14 @@ if (ehCli) {
   console.log(`TOTAL GERAL — CONFIRMADO: ${totalGeral.CONFIRMADO}  ALTERADO_POR_OMD: ${totalGeral.ALTERADO_POR_OMD}  PENDENTE_DE_VALIDACAO: ${totalGeral.PENDENTE_DE_VALIDACAO}  (${totalGeral.CONFIRMADO + totalGeral.ALTERADO_POR_OMD + totalGeral.PENDENTE_DE_VALIDACAO} requisitos no manifesto)`)
 
   console.log('\n=== Tipo de comprovação por Classe Regular (tipo_evidencia; ausente = nenhuma) ===\n')
-  for (const { arquivo, dados } of arquivosClasses) {
-    const b = dados.classe_regular
-    if (!b) continue
-    const cont = { nenhuma: 0, texto: 0, foto: 0 }
-    for (const { req } of achatarRequisitos(b, 'regular', arquivo)) cont[req.tipo_evidencia || 'nenhuma'] = (cont[req.tipo_evidencia || 'nenhuma'] || 0) + 1
-    console.log(`  ${b.nome.padEnd(14)} nenhuma=${cont.nenhuma}  texto=${cont.texto}  foto=${cont.foto}`)
+  for (const chave of ['classe_regular', 'classe_avancada']) {
+    for (const { arquivo, dados } of arquivosClasses) {
+      const b = dados[chave]
+      if (!b) continue
+      const cont = { nenhuma: 0, texto: 0, foto: 0 }
+      for (const { req } of achatarRequisitos(b, chave, arquivo)) cont[req.tipo_evidencia || 'nenhuma'] = (cont[req.tipo_evidencia || 'nenhuma'] || 0) + 1
+      console.log(`  ${b.nome.padEnd(30)} nenhuma=${cont.nenhuma}  texto=${cont.texto}  foto=${cont.foto}`)
+    }
   }
 
   console.log('\n=== Lacunas de schema × representação no banco (fase 2.6, migration 38) ===\n')

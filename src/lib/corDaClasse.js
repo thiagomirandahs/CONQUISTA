@@ -13,8 +13,29 @@ const CORES = {
   guia: { nome: 'Amarelo', hex: '#eab308', texto: '#1f2937', escuro: '#a16207', claro: '#fef9c3' },
 }
 
+// Classe Avançada → a regular pareada (manifesto 2026.4). A avançada usa a MESMA cor da regular dela
+// (é o mesmo cartão), e a tela a identifica com o selo "Avançada" + o detalhe próprio do emblema.
+const AVANCADAS = {
+  'amigo da natureza': 'amigo',
+  'companheiro de excursionismo': 'companheiro',
+  'pesquisador de campo e bosque': 'pesquisador',
+  'pioneiro de novas fronteiras': 'pioneiro',
+  'excursionista na mata': 'excursionista',
+  'guia de exploracao': 'guia',
+}
+
 const normalizar = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
+// Regular pareada de uma Classe Avançada (chave sem acento, ex.: 'amigo'), ou null se não for avançada.
+export function regularDaAvancada(nome) {
+  return AVANCADAS[normalizar(nome)] || null
+}
+
+export function ehClasseAvancada(nome) {
+  return regularDaAvancada(nome) !== null
+}
+
 export function corDaClasse(nome) {
-  return CORES[normalizar(nome)] || null
+  const n = normalizar(nome)
+  return CORES[n] || CORES[AVANCADAS[n]] || null
 }

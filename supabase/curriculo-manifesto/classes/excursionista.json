@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada excursionista_na_mata)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/excursionista-e-excursionista-na-mata/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Excursionista na Mata no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Excursionista iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -98,29 +103,30 @@
     "id": "excursionista_na_mata",
     "nome": "Excursionista na Mata",
     "classe_regular_ref": "excursionista",
+    "idade_minima": 14,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/excursionista-e-excursionista-na-mata/",
-      "publicado_em": "2017-11-04"
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Mesma página viva da classe regular Excursionista (o carimbo NÃO é a vigência)."
     },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Excursionista (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
     "cobertura": "completa",
+    "cobertura_nota": "Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4).",
     "secao_unica": {
-      "id": "excursionista_na_mata.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "excursionista_na_mata.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "excursionista_na_mata.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentação sobre respeito à Lei de Deus e autoridades civis (10 princípios)."},
-        {"id": "excursionista_na_mata.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Acompanhar pastor/ancião em visita missionária ou estudo bíblico."},
-        {"id": "excursionista_na_mata.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Testemunho juvenil."},
-        {"id": "excursionista_na_mata.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Apresentar 5 atividades na natureza para o sábado à tarde."},
-        {"id": "excursionista_na_mata.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Construir móvel de acampamento e portal para o Clube, com a Unidade."},
-        {"id": "excursionista_na_mata.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Conversar sobre 1 tema à escolha, supervisionado pelo líder.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Modéstia cristã", "Recreação", "Saúde", "Observância do sábado"]}},
-        {"id": "excursionista_na_mata.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Encontrar alimento por plantas silvestres; diferenciar de plantas tóxicas."},
-        {"id": "excursionista_na_mata.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Procedimentos para ferimentos por animais peçonhentos/não peçonhentos."},
-        {"id": "excursionista_na_mata.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Técnicas para percorrer trilhas em terrenos diferentes."},
-        {"id": "excursionista_na_mata.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Ordem Unida.",
-          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
-          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado: ausente na regular, presente aqui como item 10."},
-        {"id": "excursionista_na_mata.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Vida silvestre."}
+        {"id": "excursionista_na_mata.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Apresentar (por escrito ou falando) o respeito devido à Lei de Deus e às autoridades civis, com 10 princípios de comportamento moral.", "tipo_evidencia": "texto"},
+        {"id": "excursionista_na_mata.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Acompanhar o pastor ou um ancião em uma visita missionária ou estudo bíblico.", "tipo_evidencia": "foto"},
+        {"id": "excursionista_na_mata.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Completar a especialidade de Testemunho juvenil.", "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Propor 5 atividades na natureza para fazer no sábado à tarde.", "tipo_evidencia": "texto"},
+        {"id": "excursionista_na_mata.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Construir com a Unidade um móvel de acampamento e um portal para o Clube.", "tipo_evidencia": "foto"},
+        {"id": "excursionista_na_mata.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Com a supervisão do líder ou conselheiro, conversar na Unidade ou no Clube sobre 1 destes temas: modéstia cristã, recreação, saúde ou observância do sábado.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Modéstia cristã", "Recreação", "Saúde", "Observância do sábado"]}, "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Mostrar que sabe achar alimento em plantas silvestres da região e diferenciá-las das tóxicas/venenosas.", "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Mostrar o que fazer em caso de ferimento causado por animais peçonhentos e não peçonhentos.", "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Mostrar técnicas para percorrer trilhas em terrenos diferentes (deserto, floresta, pântano, rio).", "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Ordem unida.", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013", "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado: ausente na regular, presente aqui como item 10.", "tipo_evidencia": "nenhuma"},
+        {"id": "excursionista_na_mata.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Vida silvestre.", "tipo_evidencia": "nenhuma"}
       ]
     }
   }

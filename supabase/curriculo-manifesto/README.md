@@ -149,12 +149,12 @@ classe) — não reconstruído de memória nem copiado deste manifesto.
 
 ## Cobertura da fonte por classe avançada
 
-`Companheiro de Excursionismo`, `Excursionista na Mata`, `Pioneiro de Novas Fronteiras` e
-`Guia de Exploração` foram lidas **integralmente**, texto bruto, direto da página oficial
-(`cobertura: "completa"`). `Amigo da Natureza` e `Pesquisador de Campo e Bosque` vieram de um resumo
-extraído automaticamente da mesma página oficial (`cobertura: "resumo_fonte_oficial"`) — confiável
-(mesma fonte primária), mas não conferido item a item contra o texto bruto. As 6 Classes Regulares
-(o pedido explícito desta fase) foram todas lidas de forma completa.
+Desde a **2026.4** as 6 avançadas estão com `cobertura: "completa"`: todas foram reconferidas item a item
+contra o texto bruto da seção "CLASSE AVANÇADA" da página oficial (25/09/2026). `Amigo da Natureza` e
+`Pesquisador de Campo e Bosque`, que até a 2026.3 vinham de um resumo automatizado, subiram para completa
+nessa conferência. A pendência do item 11 de Pesquisador de Campo e Bosque (OMD 007/2014) foi resolvida
+relendo o PDF original: "Item 11: excluído" + a transcrição do item que sai, sem "LEIA-SE" = exclusão
+simples com renumeração — é exatamente o que a página viva mostra (ver `observacao` do item e `omds.json`).
 
 ## Fase 3 — este manifesto É a fonte do catálogo oficial (migrations 39/40)
 
@@ -177,14 +177,35 @@ manifesto → banco). Ninguém copia requisito pra SQL à mão. Regras que valem
   gerador produz o SQL de plataforma (`conteudo_anual_publicar(pacote, hash)`), a única porta de publicação.
   Quem publica, quando (antes de 1º de janeiro) e como conferir: [`PUBLICACAO-CONTEUDO-ANUAL.md`](PUBLICACAO-CONTEUDO-ANUAL.md).
 
-O que ainda NÃO é importado: Classes Avançadas (a pendência de Pesquisador de Campo e Bosque bloqueia),
-Liderança, catálogo de Especialidades.
+O que ainda NÃO é importado: Liderança, catálogo de Especialidades. (As Classes Avançadas entram desde a
+2026.4 — ver abaixo.)
+
+### Classes Avançadas no pacote (2026.4, migrations 120/121)
+
+- O gerador põe a `classe_regular` das 6 em `classes` (como sempre) e cada `classe_avancada` **sem pendência** em
+  `classes_avancadas` (a `secao_unica` vira `secoes: [..]`). Avançada com requisito `PENDENTE_DE_VALIDACAO` fica
+  FORA do pacote e o gerador avisa — nunca se publica pendência.
+- Cada avançada declara `idade_minima` (= a da regular pareada; o validador e o importador recusam diferente),
+  `vigente_desde` (a do cartão da regular — é o mesmo cartão/página) e a seção única com `codigo`/`ordem`.
+- **Pré-requisito** (fonte: https://www.adventistas.org/pt/desbravadores/classes/ — "Classes Avançadas …
+  seguindo a idade da classe regular correspondente"): a avançada exige a regular pareada **iniciada ou
+  concluída** (feita junto ou depois). A fonte oficial não diz que a regular precisa estar concluída antes, então
+  isso não foi inventado. Fica em `curriculum_dependencies` (`modo = 'iniciada_ou_concluida'`, migration 120) e é
+  checado por CÓDIGO em qualquer versão oficial (Amigo feita/iniciada na 2026.3 vale para a avançada da 2026.4).
+  Se o manual/OMD exigir conclusão, basta `update curriculum_dependencies set modo = 'concluida'`.
+- Número da migration de uma versão nova: próximo livre, ou `CURRICULO_MIGRATION_NUMERO=<14 dígitos>` quando há
+  faixa reservada (a 2026.4 foi gerada com `20260930000121`).
 
 ### Revisões do manifesto (histórico)
 
 Cada `classes/*.json` pode ter uma chave de topo `revisoes` (fora de `classe_regular`; o gerador não a
 inclui no pacote — é proveniência da revisão, não conteúdo): `versao`, `data`, `itens`, `fonte` e `motivo`.
 
+- **2026.4 (25/09/2026)** — publica as **6 Classes Avançadas** (63 requisitos, cada um com `tipo_evidencia`, descrição
+  em paráfrase própria, escolhas N-de-M nominadas). Regulares **inalteradas** em conteúdo; mesmo assim é versão nova
+  do pacote (hash novo), então a `20260930000121` (gerada) publica a 2026.4 e **arquiva** a 2026.3 — quem começou na
+  2026.3 continua nela (envio/avaliação não exigem versão publicada; só iniciar exige). Importador:
+  `20260930000120_importador-classes-avancadas.sql`.
 - **2026.3 (25/09/2026)** — achado em produção: todo requisito nascia com `tipo_evidencia='nenhuma'` e a tela
   não oferecia como comprovar nada. Cada requisito passa a ter a chave opcional **`tipo_evidencia`**
   (`nenhuma` = a liderança confere pessoalmente | `texto` = produção escrita/explicação | `foto` = atividade

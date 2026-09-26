@@ -3,7 +3,7 @@
 -- OMD = versão vigente; (4) dinâmico resolve o conteúdo de 2026; (5) N-de-M depois da importação
 -- real; (6) sem_repeticao consulta curriculum_achievements; (7) iniciar/progredir/concluir por
 -- clube; (8) conquista portátil; (9) Tenant 001 × 002 isolados; (10) pessoa em 2 clubes com
--- progresso independente na MESMA Classe; (11) nenhuma Avançada publicada; (12) nenhum
+-- progresso independente na MESMA Classe; (11) as 6 Avançadas (2026.4) publicadas pareadas às regulares; (12) nenhum
 -- [PILOTO/TESTE] pro usuário normal. Mais: elegibilidade SÓ por idade_minima (o que a fonte
 -- declara), "Origem do requisito", importação sem criar progresso.
 begin;
@@ -31,26 +31,32 @@ create function t.req(p_manifesto_id text) returns uuid language sql stable as $
 insert into t.ids (chave, id) values ('classe_piloto', '00000000-0000-4000-a000-000000000002'::uuid), ('especialidade_piloto', '00000000-0000-4000-a000-000000000102'::uuid);
 
 -- ==================== 1 + 11) as 6 existem uma vez só; nenhuma Avançada ====================
-select t.eq('(1) 6 classes oficiais publicadas, uma por manifesto_id', (select count(distinct manifesto_id) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado'), 6);
+select t.eq('(1) 6 classes REGULARES oficiais publicadas, uma por manifesto_id', (select count(distinct manifesto_id) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado' and c.tipo_classe = 'regular'), 6);
 select t.eq('(1) ...exatamente Amigo, Companheiro, Pesquisador, Pioneiro, Excursionista e Guia',
-  (select string_agg(nome, ',' order by ordem) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado'),
+  (select string_agg(nome, ',' order by ordem) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado' and c.tipo_classe = 'regular'),
   'Amigo,Companheiro,Pesquisador,Pioneiro,Excursionista,Guia');
-select t.eq('(11) nenhuma Classe Avançada no banco (nem publicada, nem rascunho)',
-  (select count(*) from public.classes where nome ~* 'natureza|excursionismo|campo e bosque|fronteiras|na mata|exploração' or manifesto_id ~ '_'), 0);
-select t.eq('(2) 149 requisitos oficiais (banco = manifesto; a comparação campo a campo é o teste 36)',
-  (select count(*) from public.class_requirements r where r.id = t.req(r.manifesto_id)), (select count(*) from jsonb_array_elements((select texto::jsonb from t.manifesto) -> 'classes') c, jsonb_array_elements(c -> 'secoes') s, jsonb_array_elements(s -> 'requisitos')));
+select t.eq('(11) as 6 Classes Avançadas publicadas (2026.4), cada uma pareada à sua regular',
+  (select string_agg(c.nome || '>' || c.classe_regular_codigo, ',' order by c.ordem) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id
+    where v.origem = 'oficial' and v.status = 'publicado' and c.tipo_classe = 'avancada'),
+  'Amigo da Natureza>amigo,Companheiro de Excursionismo>companheiro,Pesquisador de Campo e Bosque>pesquisador,Pioneiro de Novas Fronteiras>pioneiro,Excursionista na Mata>excursionista,Guia de Exploração>guia');
+select t.eq('(11) ...e nenhuma avançada em versão antiga (2026.1–2026.3 eram só regulares)',
+  (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.status <> 'publicado' and c.tipo_classe = 'avancada'), 0);
+select t.eq('(2) 212 requisitos oficiais (149 regulares + 63 avançadas; banco = manifesto; a comparação campo a campo é o teste 36)',
+  (select count(*) from public.class_requirements r where r.id = t.req(r.manifesto_id)),
+  (select count(*) from jsonb_array_elements((select (texto::jsonb -> 'classes') || (texto::jsonb -> 'classes_avancadas') from t.manifesto)) c, jsonb_array_elements(c -> 'secoes') s, jsonb_array_elements(s -> 'requisitos')));
 
 -- ==================== 12) piloto preservado mas INVISÍVEL; elegibilidade só por idade ====================
 -- membro_a nasceu em 2014-05-05 → 12 anos em 2026: elegível a Amigo(10)/Companheiro(11)/Pesquisador(12), não a Pioneiro(13)/Excursionista(14)/Guia(15)
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('(12) classes_disponiveis lista as 6 oficiais...', t.n($q$select json_array_length(public.classes_disponiveis())$q$), 6);
+select t.eq('(12) classes_disponiveis lista as 12 oficiais (6 regulares + 6 avançadas)...', t.n($q$select json_array_length(public.classes_disponiveis())$q$), 12);
 select t.eq('(12) ...e NENHUM [PILOTO/TESTE]', t.txt($q$select public.classes_disponiveis()::text$q$) like '%PILOTO%', false);
 select t.throws('(12) iniciar o piloto direto pela RPC também é recusado ("não encontrada" — sem oráculo)', format($q$select public.classe_iniciar(%L)$q$, t.id('classe_piloto')), 'não encontrada');
-select t.eq('elegibilidade: 3 elegíveis (12 anos) e 3 com motivo "a partir de N anos"',
-  t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where (c->>'elegivel')::boolean$q$) * 10
-  + t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where not (c->>'elegivel')::boolean and c->>'motivo_inelegivel' like 'Esta classe é a partir de%'$q$), 33);
-select t.eq('elegibilidade: idade_minima vem do manifesto (Amigo=10 … Guia=15), nada além disso',
-  t.txt($q$select string_agg(c->>'idade_minima', ',' order by (c->>'idade_minima')::int) from json_array_elements(public.classes_disponiveis()) c$q$), '10,11,12,13,14,15');
+select t.eq('elegibilidade: 3 regulares elegíveis (12 anos); 6 com motivo "a partir de N anos" (3 regulares + 3 avançadas); 3 avançadas pedindo a regular pareada',
+  t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where (c->>'elegivel')::boolean$q$) * 100
+  + t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where not (c->>'elegivel')::boolean and c->>'motivo_inelegivel' like 'Esta classe é a partir de%'$q$) * 10
+  + t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where not (c->>'elegivel')::boolean and c->>'motivo_inelegivel' like 'Comece a classe % primeiro%'$q$), 363);
+select t.eq('elegibilidade: idade_minima vem do manifesto (Amigo=10 … Guia=15; a avançada = a regular pareada), nada além disso',
+  t.txt($q$select string_agg(c->>'idade_minima', ',' order by (c->>'idade_minima')::int) from json_array_elements(public.classes_disponiveis()) c$q$), '10,10,11,11,12,12,13,13,14,14,15,15');
 select t.throws('elegibilidade: membro_a (12) NÃO inicia Pioneiro (13)', format($q$select public.classe_iniciar(%L)$q$, t.classe('pioneiro')), 'a partir de 13 anos');
 select t.permitido('elegibilidade: membro_a inicia Amigo', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo')));
 select t.como('lider_a'); select t.pedir_clube('clube_a');
@@ -60,7 +66,10 @@ select t.throws('nem atribui o piloto', format($q$select public.classe_atribuir(
 reset role;
 select t.eq('(12) o piloto continua EXISTINDO (preservado, separado: origem piloto_teste, versão própria)',
   (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where c.id = t.id('classe_piloto') and v.origem = 'piloto_teste' and v.status = 'publicado'), 1);
-select t.eq('nenhuma sequência/pré-requisito entre classes foi inventada (0 dependências class→class)', (select count(*) from public.curriculum_dependencies where alvo_tipo = 'class' and depende_de_tipo = 'class'), 0);
+select t.eq('nenhuma sequência entre REGULARES foi inventada: as únicas dependências class→class são avançada→regular pareada (6)',
+  (select count(*) from public.curriculum_dependencies d join public.classes a on a.id = d.alvo_id join public.classes r on r.id = d.depende_de_id
+    where d.alvo_tipo = 'class' and d.depende_de_tipo = 'class' and not (a.tipo_classe = 'avancada' and r.codigo = a.classe_regular_codigo)) * 10
+  + (select count(*) from public.curriculum_dependencies where alvo_tipo = 'class' and depende_de_tipo = 'class'), 6);
 -- MUDOU NA 83: a regra DEIXOU de ser condicional. Antes, sem catálogo oficial publicado, o piloto
 -- voltava ao fluxo normal — era o "fallback" que expunha dado de TESTE a convidado justamente quando
 -- faltava o oficial (o caso das especialidades). Agora, nem assim: o fluxo normal é só o oficial.

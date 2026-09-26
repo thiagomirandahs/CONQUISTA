@@ -341,4 +341,37 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
     expect(screen.getByRole('heading', { level: 4, name: 'I. Seção de Teste' })).toHaveStyle({ color: '#1f2937' })
     expect(within(card('1')).getByTestId('botao-enviar')).toHaveStyle({ color: '#1f2937' })
   })
+
+  it('Classe Avançada (2026.4): selo "Avançada", mesma cor da regular pareada, emblema com detalhe próprio e o motivo do bloqueio', async () => {
+    carregarMinhaClasse.mockResolvedValue(null)
+    carregarClassesDisponiveis.mockResolvedValue([
+      { class_id: 'r1', nome: 'Amigo', idade_minima: 10, avancada: false, elegivel: true, motivo_inelegivel: null, curriculum_version: { origem: 'oficial', versao: '2026.4' } },
+      { class_id: 'a1', nome: 'Amigo da Natureza', idade_minima: 10, avancada: true, classe_regular_codigo: 'amigo', elegivel: false,
+        motivo_inelegivel: 'Comece a classe Amigo primeiro: a Classe Avançada é feita junto com ela ou depois dela.', curriculum_version: { origem: 'oficial', versao: '2026.4' } },
+    ])
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { name: 'Amigo da Natureza' })
+    const itens = screen.getAllByRole('listitem')
+    expect(itens[0]).toHaveAttribute('data-avancada', 'false')
+    expect(within(itens[0]).queryByTestId('selo-avancada')).toBeNull()
+    expect(within(itens[1]).getByTestId('selo-avancada')).toHaveTextContent('Avançada')
+    expect(within(itens[1]).getByText('Cor da classe: Azul')).toBeInTheDocument()
+    expect(within(itens[0]).getByTestId('emblema-classe')).toHaveAttribute('data-avancada', 'false')
+    expect(within(itens[1]).getByTestId('emblema-classe')).toHaveAttribute('data-avancada', 'true')
+    expect(within(itens[1]).getByTestId('emblema-detalhe-avancada')).toBeInTheDocument()
+    const iniciar = within(itens[1]).getByRole('button', { name: 'Iniciar' })
+    expect(iniciar).toBeDisabled()
+    expect(iniciar).toHaveAccessibleDescription('🔒 Comece a classe Amigo primeiro: a Classe Avançada é feita junto com ela ou depois dela.')
+  })
+
+  it('aba e cabeçalho da avançada: selo + a cor da regular (Pesquisador de Campo e Bosque = verde)', async () => {
+    const PCB = { ...MINHA, member_class: { ...MINHA.member_class, id: 'mc3' }, classe: { ...MINHA.classe, id: 'k3', nome: 'Pesquisador de Campo e Bosque' } }
+    carregarMinhasClasses.mockResolvedValue([{ member_class_id: 'mc3', class_id: 'k3', nome: 'Pesquisador de Campo e Bosque', status: 'em_andamento', percentual: 5 }])
+    carregarMinhaClasse.mockResolvedValue(PCB)
+    render(<MinhaClasse />)
+    await screen.findByRole('heading', { level: 3, name: 'Pesquisador de Campo e Bosque' })
+    expect(screen.getByTestId('classe-tema')).toHaveAttribute('data-cor', '#16a34a')
+    expect(within(screen.getByTestId('cabecalho-classe')).getByTestId('selo-avancada')).toBeInTheDocument()
+    expect(screen.getByRole('tab')).toHaveTextContent('Avançada')
+  })
 })

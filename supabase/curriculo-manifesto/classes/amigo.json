@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada amigo_da_natureza)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Amigo da Natureza no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Amigo iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -101,29 +106,28 @@
     "id": "amigo_da_natureza",
     "nome": "Amigo da Natureza",
     "classe_regular_ref": "amigo",
+    "idade_minima": 10,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/amigo-e-amigo-da-natureza/",
       "publicado_em": "2017-11-04",
-      "nota_publicado_em": "Mesma página viva da classe regular Amigo."
+      "nota_publicado_em": "Mesma página viva da classe regular Amigo (o carimbo NÃO é a vigência)."
     },
-    "cobertura": "resumo_fonte_oficial",
-    "cobertura_nota": "Lida via extração automatizada da página oficial (não conferida item a item, palavra por palavra, contra o texto bruto como foi feito para Companheiro/Pioneiro/Excursionista/Guia). Conteúdo confiável (mesma fonte primária), granularidade de confiança um degrau abaixo.",
+    "vigente_desde": "2018-01-01",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Amigo (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
+    "cobertura": "completa",
+    "cobertura_nota": "Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4). Antes (até 2026.3) vinha de um resumo automatizado; nenhum item mudou de sentido, mas os textos e as opções foram reconferidos e completados.",
     "secao_unica": {
-      "id": "amigo_da_natureza.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "amigo_da_natureza.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "amigo_da_natureza.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Memorizar, cantar ou tocar o Hino dos Desbravadores."},
-        {"id": "amigo_da_natureza.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Conversar sobre um personagem do Antigo Testamento à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["José", "Jonas", "Ester", "Rute"]}},
-        {"id": "amigo_da_natureza.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Levar 2 amigos não adventistas à Escola Sabatina ou ao Clube."},
-        {"id": "amigo_da_natureza.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conhecer higiene, boas maneiras à mesa e comportamento social."},
-        {"id": "amigo_da_natureza.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Completar a especialidade de Arte de acampar."},
-        {"id": "amigo_da_natureza.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Identificar 10 flores silvestres e 10 insetos da região."},
-        {"id": "amigo_da_natureza.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Começar uma fogueira com materiais naturais."},
-        {"id": "amigo_da_natureza.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Usar corretamente faca/facão/machadinha; conhecer 10 regras de segurança."},
-        {"id": "amigo_da_natureza.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar 1 especialidade à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Atividades missionárias", "Atividades agrícolas"]}}
+        {"id": "amigo_da_natureza.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Saber de cor o Hino dos Desbravadores (cantando ou tocando) e conhecer a história dele.", "tipo_evidencia": "nenhuma"},
+        {"id": "amigo_da_natureza.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Com o líder, escolher 1 personagem do Antigo Testamento (José, Jonas, Ester ou Rute) e conversar com o grupo sobre como Deus cuidou dele e o livrou.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["José", "Jonas", "Ester", "Rute"]}, "tipo_evidencia": "nenhuma"},
+        {"id": "amigo_da_natureza.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Levar ao menos 2 amigos que não são adventistas à Escola Sabatina ou ao Clube.", "tipo_evidencia": "foto"},
+        {"id": "amigo_da_natureza.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conhecer higiene, boas maneiras à mesa e como tratar pessoas de idades diferentes; mostrar como isso ajuda nas reuniões e acampamentos do Clube.", "tipo_evidencia": "nenhuma"},
+        {"id": "amigo_da_natureza.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Completar a especialidade de Arte de acampar.", "tipo_evidencia": "nenhuma"},
+        {"id": "amigo_da_natureza.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Reconhecer e identificar 10 flores silvestres e 10 insetos da sua região.", "tipo_evidencia": "foto"},
+        {"id": "amigo_da_natureza.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Acender uma fogueira só com materiais naturais e mantê-la acesa.", "tipo_evidencia": "foto"},
+        {"id": "amigo_da_natureza.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Usar do jeito certo uma faca, um facão ou uma machadinha e conhecer 10 regras de segurança para isso.", "tipo_evidencia": "nenhuma"},
+        {"id": "amigo_da_natureza.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar 1 especialidade de uma destas áreas: Atividades missionárias ou Atividades agrícolas.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Atividades missionárias", "Atividades agrícolas"]}, "observacao": "As opções são ÁREAS de especialidade (como no cartão), não especialidades: a pessoa escolhe a área e informa qual especialidade dela completou.", "tipo_evidencia": "nenhuma"}
       ]
     }
   }

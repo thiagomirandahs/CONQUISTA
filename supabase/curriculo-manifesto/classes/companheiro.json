@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada companheiro_de_excursionismo)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/companheiro-e-companheiro-de-excursionismo/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Companheiro de Excursionismo no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Companheiro iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -97,37 +102,31 @@
     "id": "companheiro_de_excursionismo",
     "nome": "Companheiro de Excursionismo",
     "classe_regular_ref": "companheiro",
+    "idade_minima": 11,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/companheiro-e-companheiro-de-excursionismo/",
       "publicado_em": "2017-11-03",
-      "nota_publicado_em": "Mesma página viva da classe regular Companheiro."
+      "nota_publicado_em": "Mesma página viva da classe regular Companheiro (o carimbo NÃO é a vigência)."
     },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Companheiro (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
     "cobertura": "completa",
-    "cobertura_nota": "Lida integralmente, texto bruto, direto da página oficial (não resumo automatizado).",
+    "cobertura_nota": "Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4).",
     "secao_unica": {
-      "id": "companheiro_de_excursionismo.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "companheiro_de_excursionismo.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "companheiro_de_excursionismo.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Composição, significado e uso correto da Bandeira Nacional."},
-        {"id": "companheiro_de_excursionismo.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler a primeira visão de Ellen White; discutir o papel dos profetas."},
-        {"id": "companheiro_de_excursionismo.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Participar de atividade missionária/comunitária com um amigo."},
-        {"id": "companheiro_de_excursionismo.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conversar sobre respeito aos pais/responsáveis; listar como cuidam de você."},
-        {"id": "companheiro_de_excursionismo.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Caminhada de 6 km com relatório de 1 página."},
-        {"id": "companheiro_de_excursionismo.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Escolher 1 atividade sobre saúde/tabagismo.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Curso como deixar de fumar", "2 filmes sobre saúde", "Cartaz sobre prejuízo das drogas", "Material para exposição/passeata sobre saúde", "Pesquisa na internet sobre saúde"]}},
-        {"id": "companheiro_de_excursionismo.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar e descrever 12 aves nativas e 12 árvores nativas."},
-        {"id": "companheiro_de_excursionismo.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Participar de 1 cerimônia (Investidura, Admissão em lenço ou Dia Mundial).",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Investidura", "Admissão em lenço", "Dia Mundial do Desbravador"]}},
-        {"id": "companheiro_de_excursionismo.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Preparar refeição em fogueira durante acampamento."},
-        {"id": "companheiro_de_excursionismo.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Preparar quadro com 15 nós diferentes."},
-        {"id": "companheiro_de_excursionismo.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Excursionismo pedestre com mochila (AR056).",
-          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-005-2013",
-          "observacao": "Texto anterior: \"Excursionismo pedestre\" (sem mochila). Confirmado literalmente na página viva: item 11 = \"Completar a especialidade de Excursionismo pedestre com mochila.\""},
-        {"id": "companheiro_de_excursionismo.12", "codigo": "12", "ordem": 120, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente.",
-          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-          "grupo_sem_repeticao": "companheiro_de_excursionismo.especialidades_ja_concluidas_pela_pessoa",
-          "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias e comunitárias", "Atividades agrícolas"]}}
+        {"id": "companheiro_de_excursionismo.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Aprender e mostrar como é composta a Bandeira Nacional, o que ela significa e como usá-la corretamente.", "tipo_evidencia": "nenhuma"},
+        {"id": "companheiro_de_excursionismo.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler a primeira visão de Ellen White (Primeiros Escritos, p. 13–20) e conversar sobre como Deus usa os profetas para falar com a igreja.", "tipo_evidencia": "texto"},
+        {"id": "companheiro_de_excursionismo.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Participar de uma atividade missionária ou comunitária levando também um amigo.", "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Conversar com o conselheiro ou a Unidade sobre respeitar os pais ou responsáveis e fazer uma lista de como eles cuidam de você.", "tipo_evidencia": "texto"},
+        {"id": "companheiro_de_excursionismo.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Fazer uma caminhada de 6 km e, no fim, escrever um relatório de uma página.", "tipo_evidencia": "texto"},
+        {"id": "companheiro_de_excursionismo.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Fazer 1 destas atividades de saúde: curso para deixar de fumar; assistir a 2 filmes sobre saúde; cartaz sobre o mal das drogas; ajudar no material de uma exposição ou passeata de saúde; ou pesquisar sobre saúde na internet e escrever uma página.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Curso para deixar de fumar", "Assistir a 2 filmes sobre saúde", "Cartaz sobre o prejuízo das drogas", "Material para exposição ou passeata sobre saúde", "Pesquisa sobre saúde na internet (1 página escrita)"]}, "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar e descrever 12 aves nativas e 12 árvores nativas.", "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Participar de 1 destas cerimônias e sugerir ideias criativas para ela: Investidura, Admissão em lenço ou Dia Mundial do Desbravador.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Investidura", "Admissão em lenço", "Dia Mundial do Desbravador"]}, "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Preparar uma refeição na fogueira durante um acampamento do Clube ou da Unidade.", "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Montar um quadro com 15 nós diferentes.", "tipo_evidencia": "foto"},
+        {"id": "companheiro_de_excursionismo.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar a especialidade de Excursionismo pedestre com mochila.", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-005-2013", "observacao": "Texto anterior: \"Excursionismo pedestre\" (sem mochila). Confirmado na página viva: item 11 = Excursionismo pedestre com mochila.", "tipo_evidencia": "nenhuma"},
+        {"id": "companheiro_de_excursionismo.12", "codigo": "12", "ordem": 120, "descricao_resumida": "Completar 1 especialidade que você ainda não tenha feito, de uma destas áreas: Habilidades domésticas, Ciência e saúde, Atividades missionárias e comunitárias ou Atividades agrícolas.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "companheiro_de_excursionismo.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias e comunitárias", "Atividades agrícolas"]}, "tipo_evidencia": "nenhuma"}
       ]
     }
   }

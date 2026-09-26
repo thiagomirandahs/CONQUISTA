@@ -100,7 +100,7 @@ values ('specialty', t.id('esp_oficial'), 'class', t.classe('amigo'), true, 'dep
 \o
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('[S4] curriculum_dependencies por REST: a dependência de TESTE não aparece, a oficial sim',
-  t.txt($q$select string_agg(observacao, ',') from public.curriculum_dependencies$q$), 'dependência oficial (fixture 64)');
+  t.txt($q$select string_agg(observacao, ',') from public.curriculum_dependencies where observacao not like 'Classe Avançada pareada%'$q$), 'dependência oficial (fixture 64)');
 select t.eq('[C2] requisito_origem do requisito da classe PILOTO não responde a membro', t.txt(format($q$select coalesce(public.requisito_origem(%L)::text, 'NULL')$q$, t.id('req_dep_piloto'))), 'NULL');
 select t.eq('[C2] (controle) o requisito oficial continua com a origem', t.txt(format($q$select public.requisito_origem(%L)->'versao'->>'origem'$q$, t.req('amigo.I.1'))), 'oficial');
 reset role;

@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada pesquisador_de_campo_e_bosque)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/pesquisador-e-pesquisador-de-campo-e-bosque/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026) + PDF original da OMD 007/2014 (http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_007-2014.pdf); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Pesquisador de Campo e Bosque no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Pesquisador iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. Pendência do item 11 (OMD 007/2014) resolvida: exclusão simples + renumeração, confirmada pela página viva. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -95,37 +100,30 @@
     "id": "pesquisador_de_campo_e_bosque",
     "nome": "Pesquisador de Campo e Bosque",
     "classe_regular_ref": "pesquisador",
+    "idade_minima": 12,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/pesquisador-e-pesquisador-de-campo-e-bosque/",
-      "publicado_em": "2017-11-03"
+      "publicado_em": "2017-11-03",
+      "nota_publicado_em": "Mesma página viva da classe regular Pesquisador (o carimbo NÃO é a vigência)."
     },
-    "cobertura": "resumo_fonte_oficial",
+    "vigente_desde": "2024-12-17",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Pesquisador (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
+    "cobertura": "completa",
+    "cobertura_nota": "Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4). Até 2026.3 vinha de um resumo automatizado e o item 11 estava PENDENTE (OMD 007/2014): resolvido nesta revisão — ver observacao do item 11 e omds.json.",
     "secao_unica": {
-      "id": "pesquisador_de_campo_e_bosque.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "pesquisador_de_campo_e_bosque.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "pesquisador_de_campo_e_bosque.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer e usar adequadamente bandeira/bandeirim de Unidade."},
-        {"id": "pesquisador_de_campo_e_bosque.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler história de J.N. Andrews ou pioneiro adventista do país."},
-        {"id": "pesquisador_de_campo_e_bosque.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Convidar pessoa para programa do Clube."},
-        {"id": "pesquisador_de_campo_e_bosque.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 especialidade à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Asseio e cortesia cristã", "Vida familiar"]}},
-        {"id": "pesquisador_de_campo_e_bosque.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Caminhada de 10 km com lista de equipamentos."},
-        {"id": "pesquisador_de_campo_e_bosque.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Participar da organização de evento especial (Investidura/Admissão/Dia Mundial)."},
-        {"id": "pesquisador_de_campo_e_bosque.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar 6 pegadas de animais/aves; molde em gesso de 3."},
-        {"id": "pesquisador_de_campo_e_bosque.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Aprender 4 amarras básicas; construir móvel de acampamento."},
-        {"id": "pesquisador_de_campo_e_bosque.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Planejar cardápio vegetariano para 3 dias."},
-        {"id": "pesquisador_de_campo_e_bosque.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Enviar/receber mensagem à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Semáforo", "Morse", "Libras", "Braille"]}},
-        {"id": "pesquisador_de_campo_e_bosque.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar 1 especialidade à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias", "Atividades agrícolas"]},
-          "status": "PENDENTE_DE_VALIDACAO",
-          "proveniencia_pendente": {
-            "motivo_pendencia": "A OMD 007/2014 diz textualmente: \"Pesquisador de Campo e Bosque — Item 11: excluído. Completar a especialidade de Excursionismo pedestre com mochila.\" — texto ambíguo (não fica claro se é uma exclusão simples seguida de OUTRA alteração em item diferente, ou uma substituição direta do item 11). O item 11 atual da página viva (lido via resumo automatizado) NÃO menciona \"Excursionismo pedestre com mochila\" em nenhum lugar. Não bate com o texto da OMD sem reinterpretação — não resolvido por inferência, conforme instruído.",
-            "omd_referida": "OMD-007-2014",
-            "acao_recomendada": "Reler o PDF original da OMD 007/2014 com atenção (não o resumo já extraído) e comparar contra o texto BRUTO (não resumido) da página viva antes de decidir."
-          }}
+        {"id": "pesquisador_de_campo_e_bosque.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Conhecer e usar do jeito certo a bandeira dos Desbravadores e o bandeirim da Unidade.", "tipo_evidencia": "nenhuma"},
+        {"id": "pesquisador_de_campo_e_bosque.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler a história de J. N. Andrews ou de um pioneiro do seu país e conversar sobre o trabalho missionário e a grande comissão (Mateus 28:18-20).", "tipo_evidencia": "texto"},
+        {"id": "pesquisador_de_campo_e_bosque.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Convidar uma pessoa para 1 destes programas: Clube de Desbravadores, Classe Bíblica ou Pequeno Grupo.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Clube de Desbravadores", "Classe Bíblica", "Pequeno Grupo"]}, "tipo_evidencia": "foto"},
+        {"id": "pesquisador_de_campo_e_bosque.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar 1 destas especialidades: Asseio e cortesia cristã ou Vida familiar.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Asseio e cortesia cristã", "Vida familiar"]}, "tipo_evidencia": "nenhuma"},
+        {"id": "pesquisador_de_campo_e_bosque.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Fazer uma caminhada de 10 km e listar o equipamento necessário, inclusive a roupa e o calçado certos.", "tipo_evidencia": "texto"},
+        {"id": "pesquisador_de_campo_e_bosque.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Ajudar a organizar 1 destes eventos do Clube: Investidura, Admissão em lenço ou Dia Mundial do Desbravador.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Investidura", "Admissão em lenço", "Dia Mundial do Desbravador"]}, "tipo_evidencia": "foto"},
+        {"id": "pesquisador_de_campo_e_bosque.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Identificar 6 pegadas de animais ou aves e fazer o molde de 3 delas (gesso, massa de modelar ou biscuit).", "tipo_evidencia": "foto"},
+        {"id": "pesquisador_de_campo_e_bosque.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Aprender as 4 amarras básicas e construir um móvel de acampamento.", "tipo_evidencia": "foto"},
+        {"id": "pesquisador_de_campo_e_bosque.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Planejar um cardápio vegetariano de 3 dias de acampamento para a Unidade e apresentá-lo ao instrutor.", "tipo_evidencia": "texto"},
+        {"id": "pesquisador_de_campo_e_bosque.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Enviar e receber uma mensagem por 1 destas formas: semáforos, código Morse com lanterna, alfabeto de Libras ou alfabeto Braille.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Alfabeto com semáforos", "Código Morse com lanterna", "Alfabeto de Libras", "Alfabeto Braille"]}, "tipo_evidencia": "nenhuma"},
+        {"id": "pesquisador_de_campo_e_bosque.11", "codigo": "11", "ordem": 110, "descricao_resumida": "Completar 1 especialidade que você ainda não tenha feito, de uma destas áreas: Habilidades domésticas, Ciência e saúde, Atividades missionárias ou Atividades agrícolas.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "pesquisador_de_campo_e_bosque.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1, "opcoes": ["Habilidades domésticas", "Ciência e saúde", "Atividades missionárias", "Atividades agrícolas"]}, "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-007-2014", "observacao": "Pendência da OMD 007/2014 RESOLVIDA (revisão 2026.4). Relido o PDF original: na parte de Amigo a OMD usa \"LEIA-SE:\" antes do texto novo; na de Pesquisador de Campo e Bosque diz só \"Item 11: excluído\" e transcreve em seguida o item que sai (Excursionismo pedestre com mochila — que já é o item 11 de Companheiro de Excursionismo, OMD 005/2013), sem \"LEIA-SE\". É exclusão simples, com renumeração: o antigo item 12 passou a ser o 11. A página viva confirma exatamente isso: 11 itens, sem Excursionismo pedestre com mochila, e o item 11 é \"especialidade não realizada anteriormente\" em 4 áreas (por isso sem_repeticao).", "tipo_evidencia": "nenhuma"}
       ]
     }
   }

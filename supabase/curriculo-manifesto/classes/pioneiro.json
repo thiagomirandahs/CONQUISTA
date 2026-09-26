@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada pioneiro_de_novas_fronteiras)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/pioneiro-e-pioneiro-de-novas-fronteiras/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Pioneiro de Novas Fronteiras no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Pioneiro iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -96,33 +101,29 @@
     "id": "pioneiro_de_novas_fronteiras",
     "nome": "Pioneiro de Novas Fronteiras",
     "classe_regular_ref": "pioneiro",
+    "idade_minima": 13,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/pioneiro-e-pioneiro-de-novas-fronteiras/",
-      "publicado_em": "2017-11-04"
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Mesma página viva da classe regular Pioneiro (o carimbo NÃO é a vigência)."
     },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Pioneiro (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
     "cobertura": "completa",
-    "cobertura_nota": "10 itens (renumerados de 1 a 10) — os itens 5 e 12 da numeração ANTERIOR foram removidos pela OMD 001/2013; confirmado contando os itens da página viva (exatamente 10, sem lacuna na sequência).",
+    "cobertura_nota": "10 itens (renumerados de 1 a 10) — os itens 5 e 12 da numeração ANTERIOR foram removidos pela OMD 001/2013; confirmado contando os itens da página viva (exatamente 10, sem lacuna na sequência). Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4).",
     "secao_unica": {
-      "id": "pioneiro_de_novas_fronteiras.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "pioneiro_de_novas_fronteiras.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "pioneiro_de_novas_fronteiras.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Cidadania cristã (se ainda não tiver)."},
-        {"id": "pioneiro_de_novas_fronteiras.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Encenar a história do bom samaritano; ajudar 3+ pessoas."},
-        {"id": "pioneiro_de_novas_fronteiras.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Praticar 1 atividade física à escolha, com relatório.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Caminhar 10 km", "Cavalgar 2 km", "Canoa 2h", "Ciclismo 15 km", "Nadar 200m", "Correr 1500m", "Patins/roller 2 km"]}},
-        {"id": "pioneiro_de_novas_fronteiras.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar a especialidade de Mapa e bússola."},
-        {"id": "pioneiro_de_novas_fronteiras.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Demonstrar habilidade no uso correto de machadinha."},
-        {"id": "pioneiro_de_novas_fronteiras.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Acender fogueira em dia de chuva; conseguir lenha seca."},
-        {"id": "pioneiro_de_novas_fronteiras.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Completar 1 item à escolha (identificação/comunicação).",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["10 plantas silvestres comestíveis", "Semáforo 35 lpm", "Código náutico 35 lpm", "Mateus 24 em Libras", "Salmo 23 em braille"]}},
-        {"id": "pioneiro_de_novas_fronteiras.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Completar 1 especialidade de Atividades recreativas não realizada anteriormente.",
-          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-          "grupo_sem_repeticao": "pioneiro_de_novas_fronteiras.especialidades_ja_concluidas_pela_pessoa"},
-        {"id": "pioneiro_de_novas_fronteiras.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Identificar 25 itens de 1 categoria à escolha (fotografia/exposição/ao vivo).",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["25 folhas de árvores", "25 rochas e minerais", "25 flores silvestres", "25 borboletas e mariposas", "25 conchas"]}},
-        {"id": "pioneiro_de_novas_fronteiras.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Fogueiras e cozinha ao ar livre."}
+        {"id": "pioneiro_de_novas_fronteiras.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Cidadania cristã, se ainda não a tiver feito.", "tipo_evidencia": "nenhuma"},
+        {"id": "pioneiro_de_novas_fronteiras.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Encenar a parábola do bom samaritano e ajudar na prática 3 pessoas ou mais.", "tipo_evidencia": "foto"},
+        {"id": "pioneiro_de_novas_fronteiras.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Fazer 1 destas atividades físicas e entregar um relatório escrito de pelo menos 2 páginas: caminhar 10 km, cavalgar 2 km, 2 horas de canoa, 15 km de bicicleta, nadar 200 m, correr 1.500 m ou 2 km de patins/roller.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Caminhar 10 km", "Cavalgar 2 km", "Canoa por 2 horas", "Ciclismo 15 km", "Nadar 200 m", "Correr 1.500 m", "Patins ou roller 2 km"]}, "tipo_evidencia": "texto"},
+        {"id": "pioneiro_de_novas_fronteiras.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Completar a especialidade de Mapa e bússola.", "tipo_evidencia": "nenhuma"},
+        {"id": "pioneiro_de_novas_fronteiras.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Mostrar que sabe usar uma machadinha corretamente.", "tipo_evidencia": "nenhuma"},
+        {"id": "pioneiro_de_novas_fronteiras.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Acender uma fogueira em dia de chuva, sabendo achar lenha seca e manter o fogo aceso.", "tipo_evidencia": "foto"},
+        {"id": "pioneiro_de_novas_fronteiras.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Cumprir 1 destes: identificar 10 plantas silvestres comestíveis; 35 letras por minuto no código semafórico; 35 letras por minuto no código náutico internacional; Mateus 24 em Libras; ou o Salmo 23 em braille.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["10 plantas silvestres comestíveis", "Código semafórico (35 letras/min)", "Código náutico internacional (35 letras/min)", "Mateus 24 em Libras", "Salmo 23 em braille"]}, "tipo_evidencia": "nenhuma"},
+        {"id": "pioneiro_de_novas_fronteiras.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Completar 1 especialidade de Atividades recreativas que você ainda não tenha feito.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "pioneiro_de_novas_fronteiras.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1}, "tipo_evidencia": "nenhuma"},
+        {"id": "pioneiro_de_novas_fronteiras.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Pesquisar e identificar (por foto, exposição ou ao vivo) 25 itens de 1 destas categorias: folhas de árvores, rochas e minerais, flores silvestres, borboletas e mariposas ou conchas.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["25 folhas de árvores", "25 rochas e minerais", "25 flores silvestres", "25 borboletas e mariposas", "25 conchas"]}, "tipo_evidencia": "foto"},
+        {"id": "pioneiro_de_novas_fronteiras.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Fogueiras e cozinha ao ar livre.", "tipo_evidencia": "nenhuma"}
       ]
     }
   }

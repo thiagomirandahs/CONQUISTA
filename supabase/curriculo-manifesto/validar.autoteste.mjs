@@ -211,6 +211,38 @@ console.log('=== Autoteste do validador (fixtures sintéticas) ===\n')
   esperar('rejeita evidencia_obrigatoria=true sem tipo_evidencia (nenhuma: não haveria o que enviar)', r.erros.some((e) => e.includes('não haveria o que enviar')))
 }
 
+// (2026.4) Classe Avançada publicável: segue a idade da regular pareada, tem vigência própria e seção única importável
+function comAvancada() {
+  const dados = classeValidaBase()
+  dados.classe_avancada = {
+    id: 'teste_avancada', nome: 'Classe Avançada de Teste', classe_regular_ref: 'teste', idade_minima: 10,
+    fonte_base: { url: 'https://exemplo.test/classe-teste/', publicado_em: '2017-01-01' }, vigente_desde: '2020-01-01',
+    secao_unica: { id: 'teste_avancada.geral', codigo: 'A', nome: 'Requisitos', ordem: 10, requisitos: [
+      { id: 'teste_avancada.1', codigo: '1', ordem: 10, descricao_resumida: 'Requisito avançado de teste.', tipo_evidencia: 'foto' },
+    ] },
+  }
+  return dados
+}
+{
+  const r = rodar([], [{ arquivo: 'teste.json', dados: comAvancada() }])
+  esperar('avançada sintética válida passa sem erros', r.erros.length === 0, JSON.stringify(r.erros))
+}
+{
+  const dados = comAvancada(); dados.classe_avancada.idade_minima = 11
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita avançada com idade diferente da regular pareada', r.erros.some((e) => e.includes('diferente da regular pareada')))
+}
+{
+  const dados = comAvancada(); dados.classe_avancada.vigente_desde = '2017-01-01'
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita avançada com vigente_desde copiada do carimbo', r.erros.some((e) => e.includes('cópia do carimbo')))
+}
+{
+  const dados = comAvancada(); delete dados.classe_avancada.secao_unica.codigo
+  const r = rodar([], [{ arquivo: 'teste.json', dados }])
+  esperar('rejeita avançada com seção única sem código', r.erros.some((e) => e.includes('secao_unica precisa de codigo')))
+}
+
 console.log('')
 if (falhas === 0) {
   console.log(`Todos os casos do autoteste passaram (o validador rejeita corretamente cada violação pedida).`)

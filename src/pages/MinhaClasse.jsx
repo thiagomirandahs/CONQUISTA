@@ -1,4 +1,4 @@
-import { corDaClasse } from '../lib/corDaClasse.js'
+import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -40,6 +40,19 @@ export function situacaoDoRequisito(r) {
 // os enums da versão curricular em português (a auditoria de UX achou os dois crus na tela)
 const ORIGEM_ROTULO = { oficial: 'oficial', adaptado: 'adaptado pelo clube', rascunho: 'rascunho' }
 const VERSAO_ROTULO = { publicado: 'em vigor', arquivado: 'arquivada', rascunho: 'rascunho' }
+
+// Selo da Classe Avançada (manifesto 2026.4): mesma cor da regular pareada, identificada por texto (nunca só cor).
+export function SeloAvancada({ cor, sobreCor = false }) {
+  return (
+    <span data-testid="selo-avancada"
+      className="inline-block text-xs font-extrabold uppercase tracking-wide rounded-full px-2 py-0.5 border-2 align-middle"
+      style={sobreCor
+        ? { background: cor?.texto || '#fff', color: cor?.escuro || '#1e293b', borderColor: cor?.texto || '#fff' }
+        : { background: cor?.claro || '#f1f5f9', color: cor?.escuro || '#334155', borderColor: cor?.hex || '#94a3b8' }}>
+      ★ Avançada
+    </span>
+  )
+}
 
 export const fmtData = (iso) => {
   if (!iso) return ''
@@ -153,6 +166,7 @@ function AbasDeClasse({ minhas, idAberta, onTrocar, mostrarOutras, onOutras }) {
             <EmblemaDaClasse nome={c.nome} tamanho={32} />
             <span className="min-w-0">
               <span className={`block font-extrabold text-base leading-tight ${aberta ? '' : 'text-ink'}`}>{c.nome}</span>
+              {ehClasseAvancada(c.nome) && <span className="block text-xs font-extrabold uppercase tracking-wide" style={aberta ? undefined : { color: cor?.escuro }}>★ Avançada</span>}
               <span className={`block text-sm font-semibold ${aberta ? '' : 'text-muted'}`}>
                 {c.status === 'investida' ? '🏅 Investido' : `${c.percentual ?? 0}%`}
               </span>
@@ -184,12 +198,14 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
         const inelegivel = c.elegivel === false
         const idMotivo = `motivo-${c.class_id}`
         const cor = corDaClasse(c.nome)
+        const avancada = c.avancada === true || ehClasseAvancada(c.nome)
         return (
-          <li key={c.class_id} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
+          <li key={c.class_id} data-avancada={avancada ? 'true' : 'false'} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
             style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
             <EmblemaDaClasse nome={c.nome} tamanho={44} />
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-ink truncate text-base">{c.nome}</h3>
+              <h3 className="font-bold text-ink text-base leading-tight">{c.nome}</h3>
+              {avancada && <div className="mt-0.5"><SeloAvancada cor={cor} /></div>}
               {cor && <div className="text-xs font-semibold" style={{ color: cor.escuro }}>Cor da classe: {cor.nome}</div>}
               {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
               {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
@@ -233,6 +249,7 @@ function Progresso({ dados, userId, onMudou }) {
           <EmblemaDaClasse nome={classe?.nome} tamanho={56} />
           <div className="min-w-0 flex-1">
             <h3 className="font-extrabold text-2xl leading-tight">{classe?.nome}</h3>
+            {ehClasseAvancada(classe?.nome) && <div className="mt-0.5"><SeloAvancada cor={cor} sobreCor={!!cor} /></div>}
             {versao?.origem === 'oficial' && (
               <p className="text-xs font-semibold opacity-90">
                 Currículo oficial {versao.versao}{classe?.vigente_desde ? ` · vigente desde ${fmtData(classe.vigente_desde)}` : ''}

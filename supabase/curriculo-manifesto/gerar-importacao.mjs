@@ -3,7 +3,8 @@
 // O manifesto (omds.json + classes/*.json) é a ÚNICA fonte: este script não raspa nada da web
 // e ninguém recopia requisito pra SQL à mão. Ele:
 //   1) valida o manifesto com o mesmo validarDados de `npm run curriculo:validar` (recusa se houver erro);
-//   2) monta o "pacote" canônico (só classe_regular das 6; classe_avancada fica de fora), com o
+//   2) monta o "pacote" canônico (classe_regular das 6 em `classes` + as avançadas sem pendência em
+//      `classes_avancadas`, desde a 2026.4), com o
 //      registro de OMDs e o sha256 de cada arquivo lido;
 //   3) calcula o sha256 do pacote canônico (chaves ordenadas, sem espaços) — é o fonte_hash da
 //      curriculum_version, e o que o teste de integridade (36) reconfere contra o banco;
@@ -59,6 +60,18 @@ export function montarPacote() {
     }
   }
 
+  // (2026.4) Classes Avançadas: entram no pacote em `classes_avancadas` (a chave `classes` continua sendo SÓ as 6
+  // regulares — o teste 36 e o importador tratam os dois grupos separadamente). Uma avançada com qualquer requisito
+  // PENDENTE_DE_VALIDACAO NÃO é publicada: fica fora do pacote e o gerador avisa (nunca se publica pendência).
+  const avancadasPendentes = []
+  const avancadas = []
+  for (const a of arquivosClasses.map((x) => x.dados.classe_avancada).filter(Boolean)) {
+    const pend = (a.secao_unica?.requisitos || []).filter((r) => (r.status || 'CONFIRMADO') === 'PENDENTE_DE_VALIDACAO').map((r) => r.id)
+    if (pend.length) { avancadasPendentes.push({ id: a.id, pendentes: pend }); continue }
+    const { secao_unica: sec, ...resto } = a
+    avancadas.push({ ...resto, secoes: [sec] })
+  }
+
   const arquivos = ['omds.json', ...arquivosClasses.map((a) => 'classes/' + a.arquivo)].map((rel) => ({
     arquivo: 'supabase/curriculo-manifesto/' + rel,
     sha256: sha256(readFileSync(join(dirManifesto, rel), 'utf8')),
@@ -70,15 +83,16 @@ export function montarPacote() {
     arquivos,
     omds: [...omds.values()],
     classes: regulares.sort((a, b) => a.id.localeCompare(b.id)),
+    classes_avancadas: avancadas.sort((a, b) => a.id.localeCompare(b.id)),
   }
   const texto = canonico(pacote)
   if (texto.includes(TAG)) throw new Error('O pacote contém a tag de dollar-quoting — impossível embutir.')
-  return { pacote, texto, hash: sha256(texto) }
+  return { pacote, texto, hash: sha256(texto), avancadasPendentes }
 }
 
 function resumo(pacote) {
   let secoes = 0, reqs = 0, grupos = 0, opcoes = 0, dinamicos = 0
-  for (const c of pacote.classes) for (const s of c.secoes) {
+  for (const c of [...pacote.classes, ...(pacote.classes_avancadas || [])]) for (const s of c.secoes) {
     secoes++
     for (const r of s.requisitos) {
       reqs++
@@ -86,18 +100,19 @@ function resumo(pacote) {
       if (r.tipo === 'escolha_n_de_m' || r.tipo === 'escolha_n_de_m_sem_repeticao') { grupos++; opcoes += (r.escolha?.opcoes || []).length }
     }
   }
-  return { classes: pacote.classes.length, secoes, reqs, grupos, opcoes, dinamicos }
+  return { classes: pacote.classes.length, avancadas: (pacote.classes_avancadas || []).length, secoes, reqs, grupos, opcoes, dinamicos }
 }
 
 export function gerarArquivos() {
-  const { pacote, texto, hash } = montarPacote()
+  const { pacote, texto, hash, avancadasPendentes } = montarPacote()
   const r = resumo(pacote)
   const slug = 'importar-classes-regulares-' + pacote.manifesto_versao.replace(/[^0-9a-z]+/gi, '-')
   const cab = (tipo) => [
     `-- ${tipo} GERADO por supabase/curriculo-manifesto/gerar-importacao.mjs — NÃO EDITAR À MÃO.`,
-    `-- Fonte única: manifesto curricular ${pacote.manifesto_versao} (gerado em ${pacote.gerado_em}), só classe_regular das 6 Classes Regulares.`,
+    `-- Fonte única: manifesto curricular ${pacote.manifesto_versao} (gerado em ${pacote.gerado_em}): classe_regular das 6 Classes Regulares`
+      + (r.avancadas ? ` + ${r.avancadas} Classes Avançadas (classes_avancadas).` : '.'),
     `-- sha256 do pacote canônico: ${hash}`,
-    `-- ${r.classes} classes, ${r.secoes} seções, ${r.reqs} requisitos, ${r.grupos} grupos N-de-M (${r.opcoes} opções), ${r.dinamicos} requisitos anuais/dinâmicos.`,
+    `-- ${r.classes} regulares + ${r.avancadas} avançadas, ${r.secoes} seções, ${r.reqs} requisitos, ${r.grupos} grupos N-de-M (${r.opcoes} opções), ${r.dinamicos} requisitos anuais/dinâmicos.`,
     `-- Para regerar: node supabase/curriculo-manifesto/gerar-importacao.mjs  (--check só confere).`,
   ].join('\n')
 
@@ -132,12 +147,19 @@ export function gerarArquivos() {
   const dirMig = join(raiz, 'supabase', 'migrations')
   const existente = readdirSync(dirMig).find((f) => f.endsWith(`_${slug}.sql`))
   let nomeMigration = existente
+  // Número da migration de uma versão NOVA: o próximo livre, ou o forçado por CURRICULO_MIGRATION_NUMERO (14 dígitos)
+  // quando outra frente de trabalho reservou faixas de numeração. Depois de criada, é achada pelo slug.
+  if (!nomeMigration && process.env.CURRICULO_MIGRATION_NUMERO) {
+    const n = process.env.CURRICULO_MIGRATION_NUMERO
+    if (!/^\d{14}$/.test(n) || readdirSync(dirMig).some((f) => f.startsWith(n + '_'))) throw new Error(`CURRICULO_MIGRATION_NUMERO inválido ou já usado: ${n}`)
+    nomeMigration = `${n}_${slug}.sql`
+  }
   if (!nomeMigration) {
     const maior = readdirSync(dirMig).map((f) => /^(\d{14})_/.exec(f)?.[1]).filter(Boolean).sort().pop()
     nomeMigration = `${String(BigInt(maior) + 1n)}_${slug}.sql`
   }
   return {
-    hash, resumo: r, versao: pacote.manifesto_versao,
+    hash, resumo: r, versao: pacote.manifesto_versao, avancadasPendentes,
     arquivos: [
       { caminho: join(dirMig, nomeMigration), conteudo: migration },
       { caminho: join(raiz, 'supabase', 'tests', '_curriculo_regular_2026.sql'), conteudo: fixture },
@@ -148,7 +170,8 @@ export function gerarArquivos() {
 const ehCli = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
 if (ehCli) {
   const check = process.argv.includes('--check')
-  const { hash, resumo: r, versao, arquivos } = gerarArquivos()
+  const { hash, resumo: r, versao, arquivos, avancadasPendentes } = gerarArquivos()
+  for (const p of avancadasPendentes) console.log(`  AVISO classe avançada ${p.id} NÃO publicada — pendente: ${p.pendentes.join(', ')}`)
   let drift = 0
   for (const { caminho, conteudo } of arquivos) {
     const rel = relative(raiz, caminho)
@@ -162,7 +185,7 @@ if (ehCli) {
     }
   }
   console.log(`\nmanifesto ${versao} — sha256 ${hash}`)
-  console.log(`${r.classes} classes, ${r.secoes} seções, ${r.reqs} requisitos, ${r.grupos} grupos N-de-M (${r.opcoes} opções), ${r.dinamicos} dinâmicos`)
+  console.log(`${r.classes} regulares + ${r.avancadas} avançadas, ${r.secoes} seções, ${r.reqs} requisitos, ${r.grupos} grupos N-de-M (${r.opcoes} opções), ${r.dinamicos} dinâmicos`)
   if (check) console.log(drift === 0 ? 'OK — os arquivos gerados correspondem exatamente ao manifesto.' : `FALHOU — ${drift} arquivo(s) fora de sincronia com o manifesto.`)
   process.exit(drift === 0 ? 0 : 1)
 }

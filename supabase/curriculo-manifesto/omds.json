@@ -32,7 +32,7 @@
       "url": "http://deptos.adventistas.org.s3.amazonaws.com/desbravadores/Normativas/OMDs/OMD_007-2014.pdf",
       "fonte_indice": "https://www.adventistas.org/pt/desbravadores/orientacoes-do-ministerio-de-desbravadores/",
       "status": "CONFIRMADO",
-      "resumo": "Amigo Seção V item 1 ganha 3ª opção de especialidade (Nós e amarras). Pesquisador de Campo e Bosque (avançada) item 11: texto da OMD é ambíguo — ver PENDENTE_DE_VALIDACAO em pesquisador.json."
+      "resumo": "Amigo Seção V item 1 ganha 3ª opção de especialidade (Nós e amarras). Pesquisador de Campo e Bosque (avançada): \"Item 11: excluído\" seguido da transcrição do item que sai (Excursionismo pedestre com mochila), sem \"LEIA-SE\" — exclusão simples, o antigo item 12 vira o 11. Reconferido no PDF original e na página viva em 25/09/2026 (revisão 2026.4; antes estava PENDENTE_DE_VALIDACAO)."
     },
     {
       "id": "OMD-012-2017",

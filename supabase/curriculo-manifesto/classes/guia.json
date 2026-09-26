@@ -1,7 +1,12 @@
 {
-  "manifesto_versao": "2026.3",
+  "manifesto_versao": "2026.4",
   "gerado_em": "2026-09-25",
   "revisoes": [
+    {
+      "versao": "2026.4", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_avancada guia_de_exploracao)"],
+      "fonte": "https://www.adventistas.org/pt/desbravadores/classes/guia-e-guia-de-exploracao/ (texto bruto da seção CLASSE AVANÇADA, reconferido item a item em 25/09/2026); idade e pareamento: https://www.adventistas.org/pt/desbravadores/classes/",
+      "motivo": "Publicação da Classe Avançada Guia de Exploração no motor curricular (antes ficava fora do pacote). Cada requisito ganhou tipo_evidencia (mesmo critério das regulares 2026.3), descrição em paráfrase própria e escolhas N-de-M nominadas; cobertura \"completa\"; idade_minima = a da regular pareada; pré-requisito: a regular Guia iniciada ou concluída (ver README). Nenhum requisito entrou ou saiu. A classe_regular NÃO mudou de conteúdo: a 2026.4 é versão nova do pacote e a 2026.3 é arquivada (quem começou nela continua nela)."
+    },
     {
       "versao": "2026.3", "data": "2026-09-25", "itens": ["(todos os requisitos da classe_regular)"],
       "fonte": "Páginas oficiais das classes em https://www.adventistas.org/pt/desbravadores/classes/ + OMD 021/2024 (livros); cartão \"Classes Agrupadas\" do SGC/DSA 2026 (supabase/fontes/classes-agrupadas-sgc-dsa.md) só como referência de conteúdo, parafraseado.",
@@ -99,34 +104,29 @@
     "id": "guia_de_exploracao",
     "nome": "Guia de Exploração",
     "classe_regular_ref": "guia",
+    "idade_minima": 15,
     "fonte_base": {
       "url": "https://www.adventistas.org/pt/desbravadores/classes/guia-e-guia-de-exploracao/",
-      "publicado_em": "2017-11-04"
+      "publicado_em": "2017-11-04",
+      "nota_publicado_em": "Mesma página viva da classe regular Guia (o carimbo NÃO é a vigência)."
     },
+    "vigente_desde": "2026-01-01",
+    "vigente_desde_nota": "Mesmo cartão oficial da classe regular Guia (regular e avançada saem juntas no cartão e na página): vale a vigência do cartão. Idade: \"seguindo a idade da classe regular correspondente\" (https://www.adventistas.org/pt/desbravadores/classes/).",
     "cobertura": "completa",
+    "cobertura_nota": "Conferida item a item, texto bruto, direto da página oficial em 25/09/2026 (revisão 2026.4).",
     "secao_unica": {
-      "id": "guia_de_exploracao.geral", "nome": "Requisitos (sem seções nomeadas nesta classe avançada)",
+      "id": "guia_de_exploracao.geral", "codigo": "A", "nome": "Requisitos da Classe Avançada", "ordem": 10,
       "requisitos": [
-        {"id": "guia_de_exploracao.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Mordomia."},
-        {"id": "guia_de_exploracao.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler \"O maior discurso de Cristo\"; escrever sobre o efeito da leitura."},
-        {"id": "guia_de_exploracao.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Cumprir 1 item à escolha (trazer amigos ou série de evangelismo jovem).",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 1, "opcoes": ["Trazer 2 amigos a 2 reuniões da igreja", "Ajudar em 4+ domingos de série de evangelismo jovem"]}},
-        {"id": "guia_de_exploracao.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escrever/apresentar sobre como influenciar amigos para Cristo."},
-        {"id": "guia_de_exploracao.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Observar trabalho dos diáconos por 2 meses; relatório detalhado."},
-        {"id": "guia_de_exploracao.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Completar 1 especialidade não realizada anteriormente, para o mestrado em Vida campestre.",
-          "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao",
-          "grupo_sem_repeticao": "guia_de_exploracao.especialidades_ja_concluidas_pela_pessoa"},
-        {"id": "guia_de_exploracao.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Projetar 3 tipos de abrigo; usar 1 em acampamento."},
-        {"id": "guia_de_exploracao.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Seminário/palestra sobre 2 de 5 temas à escolha.",
-          "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m",
-          "escolha": {"n": 2, "opcoes": ["Aborto", "Bullying", "Violência", "Drogas", "Infecções sexualmente transmissíveis"]}},
-        {"id": "guia_de_exploracao.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar a especialidade de Liderança campestre.",
-          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
-          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui."},
-        {"id": "guia_de_exploracao.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Orçamento familiar.",
-          "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013",
-          "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui."}
+        {"id": "guia_de_exploracao.1", "codigo": "1", "ordem": 10, "descricao_resumida": "Completar a especialidade de Mordomia.", "tipo_evidencia": "nenhuma"},
+        {"id": "guia_de_exploracao.2", "codigo": "2", "ordem": 20, "descricao_resumida": "Ler o livro \"O Maior Discurso de Cristo\" e escrever uma página sobre como a leitura mexeu com a sua vida.", "tipo_evidencia": "texto"},
+        {"id": "guia_de_exploracao.3", "codigo": "3", "ordem": 30, "descricao_resumida": "Cumprir 1 destes: levar 2 amigos a 2 reuniões diferentes da igreja, ou ajudar a planejar e participar de pelo menos 4 domingos de uma série de evangelismo jovem.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 1, "opcoes": ["Levar 2 amigos a 2 reuniões da igreja", "Série de evangelismo jovem (4 domingos ou mais)"]}, "tipo_evidencia": "foto"},
+        {"id": "guia_de_exploracao.4", "codigo": "4", "ordem": 40, "descricao_resumida": "Escrever uma página ou dar uma palestra sobre como influenciar amigos para Cristo.", "tipo_evidencia": "texto"},
+        {"id": "guia_de_exploracao.5", "codigo": "5", "ordem": 50, "descricao_resumida": "Acompanhar por 2 meses o trabalho dos diáconos e fazer um relatório detalhado: cuidado do templo, lava-pés, batismo e recolhimento de dízimos e ofertas.", "tipo_evidencia": "texto"},
+        {"id": "guia_de_exploracao.6", "codigo": "6", "ordem": 60, "descricao_resumida": "Completar 1 especialidade que você ainda não tenha feito, que conte para o mestrado em Vida campestre.", "tipo": "escolha_n_de_m_sem_repeticao", "lacuna_schema": "escolha_sem_repeticao", "grupo_sem_repeticao": "guia_de_exploracao.especialidades_ja_concluidas_pela_pessoa", "escolha": {"n": 1}, "tipo_evidencia": "nenhuma"},
+        {"id": "guia_de_exploracao.7", "codigo": "7", "ordem": 70, "descricao_resumida": "Projetar 3 tipos de abrigo, explicar para que serve cada um e usar um deles em um acampamento.", "tipo_evidencia": "foto"},
+        {"id": "guia_de_exploracao.8", "codigo": "8", "ordem": 80, "descricao_resumida": "Assistir a um seminário ou dar uma palestra sobre 2 destes temas: aborto, bullying, violência, drogas ou infecções sexualmente transmissíveis.", "tipo": "escolha_n_de_m", "lacuna_schema": "escolha_n_de_m", "escolha": {"n": 2, "opcoes": ["Aborto", "Bullying", "Violência", "Drogas", "Infecções sexualmente transmissíveis"]}, "tipo_evidencia": "foto"},
+        {"id": "guia_de_exploracao.9", "codigo": "9", "ordem": 90, "descricao_resumida": "Completar a especialidade de Liderança campestre.", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013", "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui.", "tipo_evidencia": "nenhuma"},
+        {"id": "guia_de_exploracao.10", "codigo": "10", "ordem": 100, "descricao_resumida": "Completar a especialidade de Orçamento familiar.", "status": "ALTERADO_POR_OMD", "alterado_por_omd": "OMD-001-2013", "observacao": "Item originalmente da CLASSE REGULAR (Organização e Liderança), transferido para esta classe avançada pela OMD 001/2013. Confirmado ausente na regular, presente aqui.", "tipo_evidencia": "nenhuma"}
       ]
     }
   }

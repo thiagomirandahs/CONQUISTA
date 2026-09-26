@@ -216,7 +216,7 @@ select t.eq('[REST] classes/seções/requisitos: nada da classe PILOTO da migrat
   t.nv(format($q$select count(*) from public.classes where id = %L$q$, t.id('classe_piloto')))
   + t.nv(format($q$select count(*) from public.class_sections where class_id = %L$q$, t.id('classe_piloto')))
   + t.nv($q$select count(*) from public.class_requirements where descricao like '[DADO DE TESTE]%'$q$), 0);
-select t.eq('(controle) as Classes oficiais continuam legíveis', t.nv($q$select count(*) from public.classes$q$), 6);
+select t.eq('(controle) as Classes oficiais continuam legíveis (6 regulares + 6 avançadas, 2026.4)', t.nv($q$select count(*) from public.classes$q$), 12);
 select t.eq('[diff] comparar_versoes_curriculares com a versão de teste não responde a membro',
   t.txt(format($q$select coalesce(public.comparar_versoes_curriculares(%L, %L)::text, 'NULL')$q$, t.id('versao_esp_piloto'), t.id('versao_oficial_esp'))), 'NULL');
 select t.eq('[experiências] nenhuma experiência [TESTE] no clube legado (a 83 tirou as que a 49 semeava)',

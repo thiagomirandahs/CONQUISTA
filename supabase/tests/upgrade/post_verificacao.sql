@@ -194,9 +194,9 @@ select t.eq('leilão de produção: cron == manual', :'up_cron', :'up_manual');
 
 -- fase 3 (migrations 39/40): o upgrade publica o catálogo oficial das 6 Classes Regulares SEM matricular ninguém
 reset role;
-select t.eq('classes regulares 2026: 1 versão oficial PUBLICADA (a 2026.3), 6 classes publicadas, 149 requisitos nela; a 2026.1 fica arquivada', (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'publicado') * 1000
-  + (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado') * 100
-  + (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado') - 149
+select t.eq('classes 2026: 1 versão oficial PUBLICADA (a 2026.4), 12 classes publicadas (6 regulares + 6 avançadas), 212 requisitos nela; a 2026.1 fica arquivada', (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'publicado') * 1000
+  + (select count(*) from public.classes c join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado') * 50
+  + (select count(*) from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial' and v.status = 'publicado') - 212
   + (select count(*) from public.curriculum_versions where origem = 'oficial' and status = 'arquivado' and versao = '2026.1') * 10, 1610);
 select t.eq('classes regulares 2026: a importação não criou progresso/conquista pra NENHUM usuário de produção',
   (select count(*) from public.member_classes mc join public.classes c on c.id = mc.class_id join public.curriculum_versions v on v.id = c.curriculum_version_id where v.origem = 'oficial')
