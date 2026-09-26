@@ -1,3 +1,7 @@
+-- DATAS DETERMINÍSTICAS: o app decide "hoje" no fuso do clube (America/Sao_Paulo; registrar_jogo,
+-- jogo do dia, missão/devocional). Este arquivo usava current_date (fuso da sessão = UTC no container):
+-- das 21h às 24h de Brasília o "ontem" dos dados virava o "hoje" do app -> "já jogou hoje" e a conta de
+-- pontos do clube quebravam conforme a hora em que a suíte rodava. Agora toda data é relativa ao hoje do app.
 -- Estado de PRODUÇÃO simulado: schema legado (ainda sem club_id/vínculos) com dados vivos de um clube.
 -- Roda ANTES das migrations 20260921000001..19. Chaves: md5('up:'||chave)::uuid (ver post_verificacao.sql).
 \set ON_ERROR_STOP on
@@ -47,7 +51,7 @@ insert into public.pontos (unidade_id, origem, pontos, motivo) values
   ((select id from public.unidades where nome = 'Leões'), 'unidade', 10, 'u leoes');
 
 insert into public.fotos (url, legenda, autor_id) values ('https://x.test/1.jpg', 'foto 1', md5('up:d1')::uuid), ('https://x.test/2.jpg', 'foto 2', md5('up:d2')::uuid);
-insert into public.eventos (titulo, tipo, data, criado_por) values ('Reunião', 'Reunião', current_date + 5, md5('up:dir')::uuid), ('Acampamento', 'Acampamento', current_date + 30, md5('up:dir')::uuid);
+insert into public.eventos (titulo, tipo, data, criado_por) values ('Reunião', 'Reunião', (now() at time zone 'America/Sao_Paulo')::date + 5, md5('up:dir')::uuid), ('Acampamento', 'Acampamento', (now() at time zone 'America/Sao_Paulo')::date + 30, md5('up:dir')::uuid);
 insert into public.mensalidades (desbravador_id, mes, ano, valor, status, registrado_por) values
   (md5('up:d1')::uuid, 1, 2026, 50, 'pago', md5('up:tes')::uuid), (md5('up:d2')::uuid, 1, 2026, 50, 'pendente', md5('up:tes')::uuid);
 -- mensalidades ÓRFÃS (dono excluído no passado: FK ON DELETE SET NULL). Duas no mesmo mês NÃO são duplicata
@@ -88,19 +92,19 @@ insert into storage.objects (bucket_id, name, owner) values
   ('imagens', 'missoes/' || md5('up:d2')::uuid || '-1.jpg', md5('up:d2')::uuid);
 
 -- jogos: jogadas de ontem, recorde arcade da semana, liberação de hoje, golpe no chefão e uma partida aberta
-insert into public.trilha_jogos (usuario_id, data, tipo, estrelas) values (md5('up:d1')::uuid, current_date - 1, 'memoria', 3), (md5('up:d2')::uuid, current_date - 1, 'memoria', 2);
-insert into public.recordes (usuario_id, jogo, semana, pontos) values (md5('up:d1')::uuid, 'reflexo', date_trunc('week', current_date)::date, 55);
-insert into public.jogos_liberados (chave, data) values ('memoria', current_date);
+insert into public.trilha_jogos (usuario_id, data, tipo, estrelas) values (md5('up:d1')::uuid, (now() at time zone 'America/Sao_Paulo')::date - 1, 'memoria', 3), (md5('up:d2')::uuid, (now() at time zone 'America/Sao_Paulo')::date - 1, 'memoria', 2);
+insert into public.recordes (usuario_id, jogo, semana, pontos) values (md5('up:d1')::uuid, 'reflexo', date_trunc('week', (now() at time zone 'America/Sao_Paulo')::date)::date, 55);
+insert into public.jogos_liberados (chave, data) values ('memoria', (now() at time zone 'America/Sao_Paulo')::date);
 insert into public.chefao_golpes (usuario_id, dano) values (md5('up:d1')::uuid, 25);
 insert into public.partidas (usuario_id, jogo, validade_em) values (md5('up:d1')::uuid, 'memoria', now() + interval '1 hour');
 
 -- missão de foto pendente (d2) e devocional de ontem (d1), como estavam em produção
-insert into public.missoes_feitas (usuario_id, data, foto_url, acertou_quiz, status, pontos_dados) values (md5('up:d2')::uuid, current_date - 1, 'x/foto-missao.jpg', false, 'pendente', 10);
-insert into public.devocional (usuario_id, data, acertou_quiz) values (md5('up:d1')::uuid, current_date - 1, true);
+insert into public.missoes_feitas (usuario_id, data, foto_url, acertou_quiz, status, pontos_dados) values (md5('up:d2')::uuid, (now() at time zone 'America/Sao_Paulo')::date - 1, 'x/foto-missao.jpg', false, 'pendente', 10);
+insert into public.devocional (usuario_id, data, acertou_quiz) values (md5('up:d1')::uuid, (now() at time zone 'America/Sao_Paulo')::date - 1, true);
 
 -- duelo em andamento entre as duas unidades (catálogo padrão que o SQL legado semeou)
 insert into public.duelos (desafio_id, titulo, pontos, unidade_a, unidade_b, criado_por, prazo)
-select du.id, du.titulo, du.pontos, (select id from public.unidades where nome = 'Águias'), (select id from public.unidades where nome = 'Leões'), md5('up:d1')::uuid, current_date + 7
+select du.id, du.titulo, du.pontos, (select id from public.unidades where nome = 'Águias'), (select id from public.unidades where nome = 'Leões'), md5('up:d1')::uuid, (now() at time zone 'America/Sao_Paulo')::date + 7
 from public.desafios_unidade du where du.titulo = 'Maratona de missões';
 
 -- fotografia do estado ANTES do upgrade (psql guarda nas variáveis pre_*)

@@ -238,12 +238,15 @@ select t.eq('camada 1 (plano): "leilao" não está no plano essencial',
 select t.eq('camada 1 (plano): "jogos" está no plano essencial',
   t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1'))), 'true');
 
--- a diretoria LIGA o leilão no clube: a camada do clube aceita, mas a do plano continua barrando
+-- Migration 201: ligar no clube um recurso que o PLANO não inclui passou a ser RECUSADO com aviso claro
+-- (antes aceitava calado e o recurso "ligado" não funcionava). A camada 2 continua da diretoria, mas só
+-- dentro do que o plano oferece; o upgrade (seção 5) é que abre o caminho.
 select t.como('fundador_x');
 select t.pedir_clube('clube1');
-select t.permitido('a diretoria pode ligar o recurso no clube (camada 2 é dela)', $q$select public.recurso_definir('leilao', true)$q$);
-select t.eq('camada 2 (clube) ligada...', t.txt(format($q$select (public.recurso_situacao(%L, 'leilao') -> 'no_clube')::text$q$, t.id('clube1'))), 'true');
-select t.eq('...mas o EFETIVO continua falso, porque o plano não inclui',
+select t.throws('a diretoria NÃO liga no clube um recurso fora do plano (migration 201: avisa em vez de aceitar calado)',
+  $q$select public.recurso_definir('leilao', true)$q$, 'não faz parte do plano');
+select t.eq('camada 2 (clube) NÃO ficou ligada', t.txt(format($q$select coalesce((public.recurso_situacao(%L, 'leilao') -> 'no_clube')::text, 'false')$q$, t.id('clube1'))), 'false');
+select t.eq('...e o EFETIVO continua falso, porque o plano não inclui',
   t.txt(format($q$select (public.recurso_situacao(%L, 'leilao') -> 'efetivo')::text$q$, t.id('clube1'))), 'false');
 select t.eq('operacao_permitida diz QUAL camada barrou: plano',
   t.txt($q$select public.operacao_permitida('leilao', 'gerir') ->> 'bloqueio'$q$), 'plano');
@@ -284,8 +287,11 @@ select t.como('admin_saas');
 select t.permitido('a plataforma faz UPGRADE', format($q$select public.plano_mudar(%L, 'completo')$q$, t.id('assin1')));
 select t.eq('upgrade liberou o leilão no plano',
   t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'leilao')::text$q$, t.id('clube1'))), 'true');
+select t.como('fundador_x');
+select t.pedir_clube('clube1');
+select t.permitido('depois do upgrade a diretoria consegue ligar o leilão no clube', $q$select public.recurso_definir('leilao', true)$q$);
 reset role;
-select t.eq('...e agora o efetivo segue a escolha do clube (que já tinha ligado)',
+select t.eq('...e agora o efetivo segue a escolha do clube (ligou depois do upgrade)',
   t.txt(format($q$select public.recurso_habilitado_no_clube(%L, 'leilao')::text$q$, t.id('clube1'))), 'true');
 
 -- enche o clube de administradores pra que o plano "gratuito" (2) fique abaixo do uso, e cria uma

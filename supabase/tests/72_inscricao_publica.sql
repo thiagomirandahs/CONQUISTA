@@ -49,10 +49,14 @@ select t.eq('ninguém lê a tabela de tentativas públicas direto',
 -- auditoria 160: inventário do que anon alcança — nenhuma tabela public, e só as 4 RPCs públicas justificadas
 select t.eq('anon não tem privilégio em NENHUMA tabela/view de public',
   t.n($q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$), 0);
-select t.eq('anon executa só as 4 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação)',
+-- vitrine_clubes_publico / vitrine_clube_publico / parceiros_publico (migration 190, revisada na 202): vitrine
+-- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
+-- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
+-- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
+select t.eq('anon executa só as 7 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação, vitrine de clubes x2, parceiros)',
   t.txt($q$select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
           where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,planos_disponiveis');
+  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,parceiros_publico,planos_disponiveis,vitrine_clube_publico,vitrine_clubes_publico');
 select t.eq('nenhuma função SECURITY DEFINER de public sem search_path fixo',
   t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prosecdef
           and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')$q$), 0);

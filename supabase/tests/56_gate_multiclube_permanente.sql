@@ -216,11 +216,15 @@ select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
 -- `convite_hierarquia_abrir` (migration 130): convite de coordenação por link (hash + rate limit por origem).
 -- `entrada_abrir_publico` (migration 104): quem abre o link/QR do clube sem conta vê só a identidade
 -- pública do clube (nome, sigla, lema, logo), com limite por origem e teto global.
+-- vitrine_clubes_publico / vitrine_clube_publico / parceiros_publico (migration 190, revisada na 202): vitrine
+-- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
+-- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
+-- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
 select t.eq('as únicas funções que ANÔNIMO executa são as públicas por desenho',
   t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
              from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
             where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico planos_disponiveis');
+  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'

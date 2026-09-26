@@ -107,8 +107,13 @@ select t.como('membro_a');
 select t.throws('membro NÃO julga', format($q$select public.julgar_duelo(%L, 'a')$q$, t.id('duelo_a')), 'Só a liderança');
 select t.como('lider_b');
 select t.throws('líder B NÃO julga duelo do clube A (não encontrado, sem prêmio)', format($q$select public.julgar_duelo(%L, 'ambos')$q$, t.id('duelo_a')), 'não encontrado');
+-- Decisão de 26/09 (migrations 210-212): instrutor/capelão só avaliam Classes/Especialidades e cuidam de
+-- desafios/missões/experiências; duelos (como jogos, leilão, chefão, pontos...) são da DIRETORIA.
+-- Antes este teste fazia o instrutor julgar; agora ele é RECUSADO e quem julga é o líder (diretoria) do clube A.
 select t.como('instrutor_a');
-select t.permitido('instrutor A (liderança do clube A) julga: unidade A1 vence', format($q$select public.julgar_duelo(%L, 'a')$q$, t.id('duelo_a')));
+select t.throws('instrutor A NÃO julga duelo (duelos são da diretoria desde a 212)', format($q$select public.julgar_duelo(%L, 'a')$q$, t.id('duelo_a')), 'Só a liderança');
+select t.como('lider_a');
+select t.permitido('líder A (diretoria do clube A) julga: unidade A1 vence', format($q$select public.julgar_duelo(%L, 'a')$q$, t.id('duelo_a')));
 select t.throws('julgar de novo: já encerrado (prêmio uma vez só)', format($q$select public.julgar_duelo(%L, 'a')$q$, t.id('duelo_a')), 'já foi encerrado');
 reset role;
 select t.eq('o prêmio (60) entrou UMA vez, na unidade A1 e no clube A',

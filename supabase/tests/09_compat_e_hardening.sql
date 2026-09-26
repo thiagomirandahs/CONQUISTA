@@ -45,10 +45,15 @@ reset role;
 -- convite_hierarquia_abrir (migration 130): link de convite de coordenação, com rate limit por origem.
 -- entrada_abrir_publico (migration 104): o link/QR do clube mostra a identidade PÚBLICA do clube a
 -- quem ainda não tem conta; limite por origem + teto global; pedir entrada continua exigindo conta.
-select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos e a inscrição pelo link)',
+-- vitrine_clubes_publico / vitrine_clube_publico / parceiros_publico (migration 190, revisada na 202): vitrine
+-- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
+-- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
+-- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
+select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos, a inscrição pelo link e a vitrine do site)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
-      and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir')), 0);
+      and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir',
+                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções

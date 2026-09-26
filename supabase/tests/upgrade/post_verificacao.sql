@@ -104,7 +104,7 @@ select t.bloqueado('diretoria NÃO grava avaliado_por de OUTRA pessoa (só quem 
 select t.permitido('diretoria reprova entrega marcando a PRÓPRIA avaliação (o que o app faz)', format($q$update public.entregas set status = 'reprovada', avaliado_por = %L, feedback = 'refazer' where usuario_id = %L$q$, t.id('dir'), t.id('d2')));
 select t.permitido('diretoria cria atividade', $q$insert into public.atividades (titulo, pontos) values ('Atividade nova', 5)$q$);
 select t.permitido('diretoria cria unidade', $q$insert into public.unidades (nome) values ('Nova Unidade')$q$);
-select t.permitido('diretoria cria evento', $q$insert into public.eventos (titulo, tipo, data) values ('Novo', 'Reunião', current_date + 1)$q$);
+select t.permitido('diretoria cria evento', $q$insert into public.eventos (titulo, tipo, data) values ('Novo', 'Reunião', (now() at time zone 'America/Sao_Paulo')::date + 1)$q$);
 select t.permitido('diretoria aprova a entrega pendente do d2', format($q$select public.aprovar_entrega(id) from public.entregas where usuario_id = %L$q$, t.id('d2')));
 select t.como('d1');
 select t.permitido('membro vê o duelo em andamento do clube', $q$select id from public.duelos$q$);
@@ -164,7 +164,7 @@ select t.throws('...e o alvo do front ANTERIOR é recusado (por isso a 74 vem de
    values (%L, 1, 2026, 55, 'pago', %L) on conflict (desbravador_id, mes, ano) do update set valor = excluded.valor$q$, t.id('d2'), t.id('tes')),
   'no unique or exclusion constraint');
 select t.como('con');
-select t.permitido('conselheiro aponta membro da própria unidade', format($q$select public.salvar_reuniao(current_date, 'Reunião prod', %L::jsonb)$q$, jsonb_build_array(jsonb_build_object('usuario_id', t.id('d1'), 'pontos', 3))::text));
+select t.permitido('conselheiro aponta membro da própria unidade', format($q$select public.salvar_reuniao((now() at time zone 'America/Sao_Paulo')::date, 'Reunião prod', %L::jsonb)$q$, jsonb_build_array(jsonb_build_object('usuario_id', t.id('d1'), 'pontos', 3))::text));
 select t.como('d2');
 select t.permitido('membro posta foto', format($q$insert into public.fotos (url, legenda, autor_id) values ('https://x.test/n.jpg', 'nova', %L)$q$, t.id('d2')));
 select t.permitido('membro fala no chat geral', $q$select public.chat_enviar_geral('oi')$q$);

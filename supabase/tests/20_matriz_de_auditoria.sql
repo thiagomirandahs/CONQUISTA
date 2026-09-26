@@ -84,7 +84,9 @@ insert into t.excecoes values
   ('app_erros',                  'TELEMETRIA de erro do cliente (fase 8.1). club_id e user_id sao opcionais e vem do SERVIDOR (JWT + header), nunca do cliente — servem pra responder "esse erro atingiu quantas pessoas, de quantos clubes?". Nenhuma coluna guarda conteudo; leitura so da operacao da plataforma'),
   ('infra_falhas',               'registro INTERNO de falha de INFRAESTRUTURA (fase 8.1: push sem configuração, Edge Function sem segredo). club_id é opcional e só informativo — há falha que não pertence a clube nenhum (ex.: o Vault vazio). Sem policy de leitura pra authenticated: é operação, não app'),
   ('auditoria_operacoes',        'TRILHA das operações críticas (fase 9, migration 77): vínculo criado/alterado/removido, senha redefinida pela liderança, recurso ligado/desligado. club_id é opcional porque a operação pode ser numa unidade institucional ou de rotina; FK com set null como infra_falhas. Escrita só por gatilho/função, leitura só da operação da plataforma, nenhuma coluna de conteúdo'),
-  ('termos_consentimento',       'CATÁLOGO versionado de termos de consentimento (fechamento): igual a billing_plans/document_templates — a mesma definição vale pra qualquer clube, chave+versão, texto pendente de revisão jurídica marcado explicitamente');
+  ('termos_consentimento',       'CATÁLOGO versionado de termos de consentimento (fechamento): igual a billing_plans/document_templates — a mesma definição vale pra qualquer clube, chave+versão, texto pendente de revisão jurídica marcado explicitamente'),
+  ('site_partners',              'PARCEIROS/anunciantes do site (migration 190): da PLATAFORMA, não de um clube; só o admin da plataforma grava; sem grant p/ anon/authenticated (leitura só pela RPC parceiros_publico)'),
+  ('vitrine_acessos_publicos',   'RATE LIMIT da vitrine pública (migration 190): uma linha por acesso, só o hash da origem; sem club_id pelo mesmo motivo de entrada_tentativas_publicas (não diz ao atacante qual clube ele acertou)');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
@@ -136,8 +138,13 @@ select t.eq('os 6 laços de cron dos jogos passam por TODOS os clubes',
 select t.eq('bucket "comprovacoes" (fotos de missão/atividade de MENORES) é PRIVADO', (select count(*) from storage.buckets where id = 'comprovacoes' and not public), 1);
 select t.eq('bucket "imagens" (avatar/mural/emblema de menores) é PRIVADO: a leitura é por URL assinada, só de quem passa na policy do clube (teste 25)',
   (select count(*) from storage.buckets where id = 'imagens' and not public), 1);
-select t.eq('bucket "publico" é o ÚNICO bucket público (asset realmente público; só a liderança do clube grava)',
-  (select count(*) from storage.buckets where public and id <> 'publico'), 0);
+-- 'parceiros' (migration 190): logos de anunciantes/patrocinadores do site — conteúdo da PLATAFORMA feito
+-- para ser público, sem dado de membro/menor; só imagem (sem SVG), 2 MB, só o admin da plataforma grava/lista.
+select t.eq('buckets públicos são só "publico" (asset do clube; só a liderança grava) e "parceiros" (logos do site; só o admin da plataforma grava)',
+  (select count(*) from storage.buckets where public and id not in ('publico', 'parceiros')), 0);
+select t.eq('bucket "parceiros": só imagem raster (sem SVG) e teto de 2 MB',
+  (select count(*) from storage.buckets where id = 'parceiros' and file_size_limit <= 2097152
+      and not ('image/svg+xml' = any(coalesce(allowed_mime_types, array['image/svg+xml'])))), 1);
 select t.como('lider_a');
 select t.eq('líder A vê o comprovante do membro do clube A', t.n(format($q$select count(*) from storage.objects where bucket_id = 'comprovacoes' and name like %L$q$, t.id('membro_a') || '/%')), 1);
 select t.como('lider_b');
