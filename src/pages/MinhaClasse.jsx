@@ -414,7 +414,7 @@ function Requisito({ r, cor = null, userId, onMudou }) {
             )}
             <button onClick={enviar} disabled={ocupado || !podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
               data-testid="botao-enviar" style={cor ? { background: cor.hex, color: cor.texto } : undefined}
-              className={`min-h-[52px] flex-1 rounded-xl px-4 py-2 text-base font-extrabold shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
+              className={`min-h-[44px] rounded-lg px-4 py-1.5 text-sm font-bold shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
               {ocupado ? 'Enviando...' : !podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
             </button>
           </div>
