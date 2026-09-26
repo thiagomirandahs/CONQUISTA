@@ -20,6 +20,9 @@ export default function Cadastro() {
   const retorno = retornoDaUrl(search) || lerRetorno()
   // O token vem no fragmento da URL (não vai pro servidor nem pros logs); guardamos em memória e
   // tiramos da barra de endereço.
+  // veio do convite de COORDENAÇÃO (distrito/região/associação): não é membro de clube — o formulário
+  // não pede função no clube nem fala em aprovação da diretoria.
+  const ehCoordenacao = typeof retorno === 'string' && retorno.startsWith('/coordenacao')
   const [convite] = useState(() => lerTokenConvite(window.location))
   useEffect(() => { if (convite) limparConviteDaUrl(window.location, window.history) }, [convite])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', cargo: 'Desbravador' })
@@ -53,8 +56,8 @@ export default function Cadastro() {
         nome: form.nome,
         tipo: ehPai ? 'pais' : '',
         convite_responsavel: ehPai ? convite : '',
-        nascimento: ehPai ? '' : form.nascimento,
-        cargo: ehPai ? '' : form.cargo,
+        nascimento: ehPai || ehCoordenacao ? '' : form.nascimento,
+        cargo: ehPai ? '' : ehCoordenacao ? 'Coordenação' : form.cargo,
       } },
     })
 
@@ -132,11 +135,11 @@ export default function Cadastro() {
         className="w-full max-w-sm bg-surface rounded-2xl shadow-soft p-7">
         <div className="flex flex-col items-center mb-5">
           <Logo produto className="w-16 h-16 mb-2" />
-          <h1 className="text-brand text-lg font-extrabold">Criar cadastro</h1>
-          <p className="text-faint text-xs text-center">Preencha seus dados para participar do clube</p>
+          <h1 className="text-brand text-lg font-extrabold">{ehCoordenacao ? 'Criar conta de coordenação' : 'Criar cadastro'}</h1>
+          <p className="text-faint text-xs text-center">{ehCoordenacao ? 'Depois de criar a conta você volta direto para aceitar o convite' : 'Preencha seus dados para participar do clube'}</p>
         </div>
 
-        {!convite && <div className="bg-surface2 rounded-xl p-1 flex mb-4">
+        {!convite && !ehCoordenacao && <div className="bg-surface2 rounded-xl p-1 flex mb-4">
           {[[false, '🧒 Sou membro'], [true, '👨‍👩‍👧 Sou responsável']].map(([v, lbl]) => (
             <button type="button" key={String(v)} onClick={() => setEhPai(v)}
               className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${ehPai === v ? 'bg-surface text-brand shadow-soft' : 'text-muted'}`}>
@@ -156,7 +159,7 @@ export default function Cadastro() {
           </div>
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
           <Campo label="Senha (mín. 8, com letras e números)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
-          {!ehPai && (
+          {!ehPai && !ehCoordenacao && (
             <>
               <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
               <div>
@@ -171,7 +174,9 @@ export default function Cadastro() {
           )}
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3">
-            {ehPai
+            {ehCoordenacao
+              ? <>🧭 Convite de <strong>coordenação</strong>: ao criar a conta, você volta para aceitar o convite e escolher a sua unidade.</>
+              : ehPai
               ? <>👨‍👩‍👧 Você entrou pelo convite do clube. Depois de entrar, <strong>peça o vínculo com seu filho(a)</strong>.</>
               : <>⚠️ Seu cadastro passará pela <strong>aprovação da diretoria</strong> antes de liberar o acesso.</>}
           </div>
@@ -180,7 +185,7 @@ export default function Cadastro() {
 
           <motion.button type="submit" disabled={carregando} whileHover={{ scale: carregando ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
             className="w-full rounded-lg bg-gradient-to-r from-brand to-brand2 text-white font-semibold py-2.5 shadow-glow disabled:opacity-60">
-            {carregando ? 'Enviando...' : 'Enviar cadastro'}
+            {carregando ? 'Enviando...' : ehCoordenacao ? 'Criar conta e continuar' : 'Enviar cadastro'}
           </motion.button>
         </form>
 
