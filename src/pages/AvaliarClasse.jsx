@@ -117,7 +117,7 @@ function Item({ it, onFeito }) {
       )}
       {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
       {it.evidencia_path && (
-        <Comprovacao valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-64 object-cover rounded-lg mb-2" />
+        <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
       )}
       {bloqueios.length > 0 && (
         <ul id={idBloq} className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-2 space-y-0.5">

@@ -159,7 +159,7 @@ function Item({ it, onFeito }) {
       <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
       {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
       {it.evidencia_path && (
-        <Comprovacao valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-64 object-cover rounded-lg mb-2" />
+        <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
       )}
       <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="Comentário (opcional)"
         className="w-full text-sm rounded-lg border border-line px-3 py-1.5 mb-2" />
