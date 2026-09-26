@@ -29,7 +29,7 @@ export default function SiteClubes() {
   return (
     <SiteLayout>
       <TopoDaPagina sobre="Clubes" titulo="Clubes que estão com a gente"
-        texto="Procure um clube perto de você e fale direto com a diretoria. Cada clube escolhe se quer aparecer aqui." />
+        texto="Procure um clube perto de você e conheça quem já usa o DesbravaClube." />
       <div className={`${CONTAINER} py-8`}>
         {clubes && clubes.length > 3 && (
           <label className="block mb-5">

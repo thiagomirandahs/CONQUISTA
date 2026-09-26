@@ -41,7 +41,8 @@ export async function subirLogoDoParceiro(file) {
 
 // ---- utilitários puros ----
 // Só http(s): nada de javascript:/data: no href mesmo que algo passe pelo banco.
-export const urlSegura = (u) => (typeof u === 'string' && /^https?:\/\/[^\s]+$/i.test(u.trim()) ? u.trim() : null)
+// http(s) absoluto OU caminho do próprio site ("/clubes/x.png" — brasão do clube fundador); nunca "//host" nem javascript:
+export const urlSegura = (u) => (typeof u === 'string' && /^(https?:\/\/[^\s]+|\/(?!\/)[^\s]*)$/i.test(u.trim()) ? u.trim() : null)
 export const linkWhatsApp = (numero, texto) => {
   const d = String(numero || '').replace(/\D/g, '')
   if (d.length < 12 || d.length > 13) return null
