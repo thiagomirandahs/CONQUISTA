@@ -53,6 +53,7 @@ export default function Eu() {
 
       <Grupo titulo="Conta">
         <ItemLink para="/perfil" icone="🪪" titulo="Meu perfil" desc="Foto, avatar e seus dados" />
+        <ItemLink para="/trocar-senha" icone="🔑" titulo="Trocar senha" desc="Confirme a senha atual e crie uma nova" testid="ir-trocar-senha" />
       </Grupo>
 
       {(temGestao || temEscopo) && (

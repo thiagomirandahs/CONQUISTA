@@ -39,6 +39,7 @@ const AprovarMissoes = lazy(() => import('./pages/AprovarMissoes.jsx'))
 const Atividade = lazy(() => import('./pages/Atividade.jsx'))
 const Trilha = lazy(() => import('./pages/Trilha.jsx'))
 const Perfil = lazy(() => import('./pages/Perfil.jsx'))
+const TrocarSenha = lazy(() => import('./pages/TrocarSenha.jsx'))
 const Avisos = lazy(() => import('./pages/Avisos.jsx'))
 const Conteudo = lazy(() => import('./pages/Conteudo.jsx'))
 const RadarFaltas = lazy(() => import('./pages/RadarFaltas.jsx'))
@@ -345,6 +346,7 @@ export default function App() {
           <Route path="/usuarios" element={<RotaRestrita><Usuarios /></RotaRestrita>} />
           <Route path="/pontos" element={<RotaRestrita><RemoverPontos /></RotaRestrita>} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/trocar-senha" element={<TrocarSenha />} />
           <Route path="/avisos" element={<RotaRestrita><Avisos /></RotaRestrita>} />
           <Route path="/conteudo" element={<RotaRestrita><Conteudo /></RotaRestrita>} />
           <Route path="/radar" element={<RotaRestrita><RadarFaltas /></RotaRestrita>} />
