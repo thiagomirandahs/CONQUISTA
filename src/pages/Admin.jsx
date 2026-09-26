@@ -161,7 +161,7 @@ function MenuDaContaAdmin() {
       <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-label="Minha conta" data-testid="admin-conta"
         className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-lg ring-1 ring-white/20">👤</button>
       {aberto && (
-        <div className="absolute right-0 top-12 z-30 w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
+        <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
           <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>
           <Link to="/institucional" className={item}><span aria-hidden="true">🏛️</span>Portal da coordenação</Link>
           <button type="button" className={`${item} text-red-600`} onClick={sair} data-testid="admin-sair"><span aria-hidden="true">🚪</span>Sair da conta</button>
@@ -173,7 +173,7 @@ function MenuDaContaAdmin() {
 // Barra compacta azul-marinho (a mesma da landing), fixa no topo ao rolar.
 function CabecalhoAdmin() {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-[#07122f] text-white">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07122f] text-white">
       <div className="max-w-5xl mx-auto flex items-center gap-3 px-4 py-3">
         <img src={MARCA_PRODUTO.logoUrl} alt="" width="36" height="36" className="h-9 w-9 shrink-0 rounded-xl ring-1 ring-white/15" />
         <div className="min-w-0 flex-1">
@@ -409,7 +409,10 @@ function Clubes({ aoAbrir }) {
 
 function CartaoClube({ c, aoAbrir }) {
   const temLimiteArmaz = c.armazenamento_limite_mb > 0
-  const local = [c.vinculado_a_nome && `${TIPO_ROTULO?.[c.vinculado_a_tipo] || ''} ${c.vinculado_a_nome}`.trim()].filter(Boolean).join(' · ')
+  // "Distrito Cavaleiro" já traz o tipo no nome: não repetir ("Distrito Distrito Cavaleiro")
+  const tipoRot = TIPO_ROTULO?.[c.vinculado_a_tipo] || ''
+  const nomeVinc = c.vinculado_a_nome || ''
+  const local = nomeVinc ? (tipoRot && !nomeVinc.toLowerCase().startsWith(tipoRot.toLowerCase()) ? `${tipoRot} ${nomeVinc}` : nomeVinc) : ''
   return (
     <div data-testid="clube-item" className="h-full rounded-2xl border border-line bg-surface transition-colors hover:border-brand/40">
       <button type="button" onClick={() => aoAbrir(c.club_id)} className={`flex h-full w-full flex-col gap-3 rounded-2xl p-3.5 text-left min-h-[44px] ${FOCO}`}>
