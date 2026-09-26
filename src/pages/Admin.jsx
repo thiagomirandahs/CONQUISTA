@@ -11,6 +11,7 @@ import { avisar } from '../ui/avisos.jsx'
 import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
+import { LimiteMembrosClube, LixeiraClube } from './AdminMembrosLixeira.jsx'
 
 // /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
 // onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
@@ -353,6 +354,9 @@ function DetalheClube({ clubId, aoVoltar }) {
                   : d.vinculos_por_papel.map((v) => <Linha key={`${v.papel}-${v.status}`} rotulo={`${v.papel} (${v.status})`}>{v.total}</Linha>)}
                 <p className="text-xs text-faint mt-2">A administração da plataforma não vê nomes, fotos, chat, evidências nem mensalidades do clube.</p>
               </Secao>
+
+              <LimiteMembrosClube clubId={clubId} onFeito={recarregar} />
+              <LixeiraClube clubId={clubId} />
 
               <div className="md:col-span-2">
                 <Secao titulo="Histórico administrativo">

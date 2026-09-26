@@ -239,6 +239,9 @@ const TRADUCOES = [
     'Essa pessoa também participa de outro clube, e isso vale para todos os clubes dela — por isso não dá para mudar por aqui.'],
   [/sem permiss|apenas a liderança|Sem vínculo|não tem permissão/i,
     'Isso é coisa da liderança do clube. Se você acha que deveria poder, fale com a diretoria.'],
+  // Teto de membros (migration 220): o número do limite é o que a diretoria precisa saber.
+  [/atingiu o limite de (\d+) membros/i, (m) =>
+    `O clube atingiu o limite de ${m[1]} membros do plano. Encerre vínculos que não são mais usados ou fale com o suporte para ampliar o limite (responsáveis não contam).`],
   [/desabilitado neste clube/i, 'Este recurso está desligado no seu clube. A diretoria pode ligar em Configurações.'],
   [/não está incluído no plano/i, 'Isso não está no plano do clube. Quem responde pela conta pode ampliar o plano.'],
   [/sem clube em uso|não encontrada neste clube|não encontrado neste clube/i,
@@ -255,7 +258,12 @@ const TRADUCOES = [
 // porque diz O QUE falhou. O que nunca vai para a tela é o texto do servidor.
 export function mensagemDeErro(erro, contexto) {
   const bruto = typeof erro === 'string' ? erro : (erro?.message || '')
-  for (const [regra, texto] of TRADUCOES) if (regra.test(bruto)) return contexto ? `${contexto} ${texto}` : texto
+  for (const [regra, traducao] of TRADUCOES) {
+    const m = bruto.match(regra)
+    if (!m) continue
+    const texto = typeof traducao === 'function' ? traducao(m) : traducao
+    return contexto ? `${contexto} ${texto}` : texto
+  }
   const generico = 'Tente de novo em instantes — nada do que você fez foi perdido.'
   return contexto ? `${contexto} ${generico}` : `Não deu certo agora. ${generico}`
 }
