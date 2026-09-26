@@ -7,6 +7,7 @@ import {
   permissoesDoPapel, resolverClubeDaAba, podeTrocarPara, temRecursoNoVinculo, clubePadraoSemCabecalho,
   lerClubePreferido, guardarClubePreferido, esquecerClubePreferido,
 } from '../lib/clube.js'
+import { useInRouterContext, useLocation } from 'react-router-dom'
 import { MARCA_PRODUTO, aplicarMarca, esquecerMarcaSalva } from '../lib/marca.js'
 
 // ClubeContext (o "OrganizationContext" do produto): a SESSÃO resolve, de uma vez, em quais clubes a pessoa está, qual está em uso, o papel dela
@@ -27,6 +28,13 @@ const VALOR_PADRAO = Object.freeze({
 
 const ClubeContext = createContext(VALOR_PADRAO)
 export const useClube = () => useContext(ClubeContext)
+
+// Caminho atual SEM exigir Router (os testes do provider rodam fora dele). useInRouterContext é
+// estável durante a vida do componente, então a ordem dos hooks não muda.
+function useCaminhoAtual() {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useInRouterContext() ? useLocation().pathname : (typeof window !== 'undefined' ? window.location.pathname : '/')
+}
 
 export function ClubeProvider({ children }) {
   const { session } = useAuth()
@@ -93,7 +101,12 @@ export function ClubeProvider({ children }) {
   // A marca some NO MESMO QUADRO em que o clube deixa de valer. Se dependesse da próxima resposta
   // do servidor, a tela de "escolha outro clube" apareceria vestida com as cores e o logo do clube
   // que a pessoa acabou de perder.
-  const marca = (!saiu && !precisaEscolher && vinculo?.marca) || MARCA_PRODUTO
+  // Telas GLOBAIS (entrada, cadastro, recuperar senha, inscrição) vestem SEMPRE o produto — mesmo com
+  // alguém logado: no celular, abrir /login com a sessão ainda viva mostrava a tela de entrada com a
+  // cor do último clube usado (achado no piloto hospedado, 25/09).
+  const pathname = useCaminhoAtual()
+  const telaGlobal = /^\/(login|cadastro|recuperar|entrar)(\/|$)/.test(pathname)
+  const marca = (!telaGlobal && !saiu && !precisaEscolher && vinculo?.marca) || MARCA_PRODUTO
   useEffect(() => { aplicarMarca(marca) }, [marca])
   // SAIR é diferente de FECHAR, e a marca guardada tem de tratar os dois casos de formas opostas.
   //
