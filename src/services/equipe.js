@@ -27,8 +27,12 @@ export async function meusConvites() {
   return data || []
 }
 
-export async function convidarParaEquipe(email, papel) {
-  const { data, error } = await supabase.rpc('convite_equipe_criar', { p_email: email, p_papel: papel })
+// `cargo` (Capelão, Secretária, Diretor Associado…) decide o nível de acesso NO SERVIDOR; `papel` é o
+// jeito antigo (sem cargo) e continua aceito.
+export async function convidarParaEquipe(email, papel, cargo = null) {
+  const args = { p_email: email, p_papel: papel }
+  if (cargo) args.p_cargo = cargo
+  const { data, error } = await supabase.rpc('convite_equipe_criar', args)
   if (error) throw error
   return data
 }

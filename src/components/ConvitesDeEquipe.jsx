@@ -12,12 +12,18 @@ import { Card, Botao, Selecao } from '../ui/index.jsx'
 // Papéis: a lista é a MESMA do CHECK da tabela e da validação da RPC. Desbravador não entra de
 // propósito — este convite cria vínculo ATIVO sem aprovação, o que cabe para quem a liderança
 // avaliza pessoalmente e não para uma criança, cujo cadastro existe para o clube conferir quem é.
-const PAPEIS = [
-  { valor: 'instrutor', texto: 'Instrutor' },
-  { valor: 'conselheiro', texto: 'Conselheiro' },
-  { valor: 'tesoureiro', texto: 'Tesoureiro' },
-  { valor: 'diretoria', texto: 'Diretoria' },
+// Cargos da EQUIPE de um Clube de Desbravadores. O nível de acesso (papel) sai do cargo no SERVIDOR
+// (migration 200) — aqui é só para a diretoria ver o que cada cargo pode fazer.
+const CARGOS_EQUIPE = [
+  { cargo: 'Diretor', papel: 'diretoria' }, { cargo: 'Diretora', papel: 'diretoria' },
+  { cargo: 'Diretor Associado', papel: 'diretoria' }, { cargo: 'Diretora Associada', papel: 'diretoria' },
+  { cargo: 'Secretário', papel: 'diretoria' }, { cargo: 'Secretária', papel: 'diretoria' },
+  { cargo: 'Tesoureiro', papel: 'tesoureiro' }, { cargo: 'Tesoureira', papel: 'tesoureiro' },
+  { cargo: 'Capelão', papel: 'instrutor' }, { cargo: 'Capelã', papel: 'instrutor' },
+  { cargo: 'Instrutor', papel: 'instrutor' }, { cargo: 'Instrutora', papel: 'instrutor' },
+  { cargo: 'Conselheiro', papel: 'conselheiro' }, { cargo: 'Conselheira', papel: 'conselheiro' },
 ]
+const NIVEL = { diretoria: 'acesso da diretoria', tesoureiro: 'acesso da tesouraria', instrutor: 'acesso de instrutor', conselheiro: 'acesso de conselheiro' }
 
 const quando = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR') } catch { return '' } }
 
@@ -25,7 +31,8 @@ export function ConvidarEquipe() {
   const { podeGerir, clubeId } = useClube()
   const [lista, setLista] = useState([])
   const [email, setEmail] = useState('')
-  const [papel, setPapel] = useState('instrutor')
+  const [cargo, setCargo] = useState('Instrutor')
+  const papel = (CARGOS_EQUIPE.find((c) => c.cargo === cargo) || {}).papel || 'instrutor'
   const [msg, setMsg] = useState('')
   const [ocupado, setOcupado] = useState(false)
 
@@ -42,7 +49,7 @@ export function ConvidarEquipe() {
     e.preventDefault()
     setMsg(''); setOcupado(true)
     try {
-      await convidarParaEquipe(email.trim(), papel)
+      await convidarParaEquipe(email.trim(), papel, cargo)
       setEmail(''); setMsg('Convite enviado. Ele vale por 14 dias.')
       carregar()
     } catch (erro) { setMsg(erro.message || 'Não deu para convidar.') }
@@ -71,8 +78,9 @@ export function ConvidarEquipe() {
         {/* `Selecao` recebe PARES [valor, rótulo]. Passar os objetos direto derrubava o componente
             ("object is not iterable") — e, com ele, a tela de Usuários inteira, onde este formulário
             vive. Achado na UAT da fase 9; nenhum teste renderizava o formulário. */}
-        <Selecao id="convite-papel" rotulo="Papel no clube" opcoes={PAPEIS.map((p) => [p.valor, p.texto])}
-          value={papel} onChange={(e) => setPapel(e.target.value)} data-testid="convite-papel" />
+        <Selecao id="convite-papel" rotulo="Cargo no clube" opcoes={CARGOS_EQUIPE.map((c) => [c.cargo, c.cargo])}
+          value={cargo} onChange={(e) => setCargo(e.target.value)} data-testid="convite-papel"
+          ajuda={`Esse cargo entra com ${NIVEL[papel]}.`} />
         <Botao tipo="submit" carregando={ocupado} data-testid="convite-enviar">Convidar</Botao>
       </form>
       {msg && <p className="text-xs text-muted mt-2" data-testid="convite-msg">{msg}</p>}

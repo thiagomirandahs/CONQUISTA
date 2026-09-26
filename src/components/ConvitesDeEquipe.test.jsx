@@ -15,11 +15,13 @@ vi.mock('../services/equipe.js', () => ({
 const { ConvidarEquipe } = await import('./ConvitesDeEquipe.jsx')
 
 describe('ConvidarEquipe', () => {
-  it('renderiza sem quebrar, com os quatro papéis que o convite aceita', () => {
+  it('renderiza sem quebrar, com TODOS os cargos da equipe do clube (inclusive Capelão e Secretária)', () => {
     render(<ConvidarEquipe />)
-    const papeis = [...screen.getByTestId('convite-papel').querySelectorAll('option')].map((o) => [o.value, o.textContent])
-    expect(papeis).toEqual([
-      ['instrutor', 'Instrutor'], ['conselheiro', 'Conselheiro'], ['tesoureiro', 'Tesoureiro'], ['diretoria', 'Diretoria'],
+    const cargos = [...screen.getByTestId('convite-papel').querySelectorAll('option')].map((o) => o.textContent)
+    expect(cargos).toEqual([
+      'Diretor', 'Diretora', 'Diretor Associado', 'Diretora Associada', 'Secretário', 'Secretária',
+      'Tesoureiro', 'Tesoureira', 'Capelão', 'Capelã', 'Instrutor', 'Instrutora', 'Conselheiro', 'Conselheira',
     ])
+    expect(cargos).not.toContain('Desbravador') // criança entra por cadastro + aprovação
   })
 })
