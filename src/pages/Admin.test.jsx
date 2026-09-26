@@ -13,6 +13,11 @@ const f = {
   trialPadrao: vi.fn(), trialPadraoDefinir: vi.fn(), trialEstender: vi.fn(), trialEncerrar: vi.fn(),
 }
 vi.mock('../services/admin.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
+// "Precisa da sua atenção" conta as pendências de hierarquia — nunca ir à rede no teste.
+vi.mock('../services/hierarquia.js', async (original) => ({
+  ...(await original()),
+  hierarquiaAdmin: () => Promise.resolve({ pedidos_clube: [], coordenadores_pendentes: [] }),
+}))
 
 const { default: Admin, formatarBytes, diasRestantes, diasParado } = await import('./Admin.jsx')
 
@@ -57,7 +62,7 @@ beforeEach(() => {
   f.trialEncerrar.mockResolvedValue({ ok: true })
 })
 
-const abrirComoAdmin = async () => { f.souAdminPlataforma.mockResolvedValue(true); render(<Admin />); await screen.findByText('Administração da Plataforma') }
+const abrirComoAdmin = async () => { f.souAdminPlataforma.mockResolvedValue(true); render(<Admin />); await screen.findByRole('heading', { name: 'Administração' }) }
 
 describe('Admin: guard — nunca mostra o painel sem confirmação do servidor', () => {
   it('não-admin: vê "área restrita" e nenhuma RPC administrativa é chamada', async () => {
@@ -94,6 +99,27 @@ describe('Admin: Clubes', () => {
     const itens = screen.getAllByTestId('clube-item')
     expect(itens).toHaveLength(1)
     expect(within(itens[0]).getByText(/Exército da colina/)).toBeInTheDocument()
+  })
+
+  it('cartão do clube mostra a logo (ou a sigla na cor do clube) e membros x limite', async () => {
+    f.clubesListar.mockResolvedValue([
+      { ...FUNDADOR, logo_url: 'https://x.test/logo.png', membros_limite: null },
+      { ...NOVO, sigla: 'EDC', cor_primaria: '#7a1f1f', membros: 5, membros_limite: 20 },
+    ])
+    await abrirComoAdmin()
+    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    const [a, b] = await screen.findAllByTestId('clube-item')
+    expect(within(a).getByAltText('Logo do Filhos da Conquista')).toHaveAttribute('src', 'https://x.test/logo.png')
+    expect(within(b).getByText('EDC')).toBeInTheDocument()
+    expect(within(b).getByText('5 / 20')).toBeInTheDocument()
+  })
+
+  it('Visão geral: "Precisa da sua atenção" lista teste acabando em até 7 dias', async () => {
+    const em3 = new Date(Date.now() + 3 * 86400000 - 3600000).toISOString()
+    f.clubesListar.mockResolvedValue([FUNDADOR, { ...NOVO, trial_ate: em3 }])
+    await abrirComoAdmin()
+    const painel = await screen.findByTestId('visao-atencao')
+    expect(await within(painel).findByText(/Teste acaba em 3 dia/)).toBeInTheDocument()
   })
 
   it('detalhe do clube: status da assinatura só muda com motivo (vai para a auditoria)', async () => {

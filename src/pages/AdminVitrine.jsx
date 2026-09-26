@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Card, Botao, Aviso, Selo, Carregando, Vazio, Campo } from '../ui/index.jsx'
+import { Card, Botao, Aviso, Campo } from '../ui/index.jsx'
 import {
   adminParceirosListar, adminParceiroSalvar, adminParceiroApagar, subirLogoDoParceiro,
   adminCartoesListar, adminCartaoModerar,
 } from '../services/vitrine.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Chip, Esqueleto, EstadoVazio, Nota } from '../components/admin/AdminUI.jsx'
 
 // /admin › Vitrine do site (migration 190): parceiros (anunciantes) e moderação dos cartões dos clubes.
 // Tudo aqui aparece SÓ no site público (/parceiros e /clubes), nunca dentro do app.
@@ -26,11 +27,11 @@ export default function AdminVitrine() {
 
   return (
     <div className="space-y-3" data-testid="admin-vitrine">
-      <Aviso tom="info" titulo="Vitrine do site">
+      <Nota icone="🪧"><strong className="text-ink">Vitrine do site.</strong>{" "}
         Parceiros aparecem em <strong>/parceiros</strong> (e numa faixa discreta da landing) só se ativos e dentro do período.
         Os cartões dos clubes são <strong>opt-in</strong> da diretoria; aqui você só pode ocultá-los (moderação).
-      </Aviso>
-      {erro ? <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso> : parceiros == null ? <Carregando /> : (
+      </Nota>
+      {erro ? <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso> : parceiros == null ? <Esqueleto avatar={false} /> : (
         <>
           <Card>
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -41,7 +42,7 @@ export default function AdminVitrine() {
               <FormParceiro key={editando === 'novo' ? 'novo' : editando.id} inicial={editando === 'novo' ? null : editando}
                 aoFechar={() => setEditando(null)} aoSalvar={() => { setEditando(null); recarregar() }} />
             )}
-            {parceiros.length === 0 ? <Vazio icone="🤝" titulo="Nenhum parceiro cadastrado" /> : (
+            {parceiros.length === 0 ? <EstadoVazio icone="🤝" titulo="Nenhum parceiro cadastrado" /> : (
               <ul className="divide-y divide-line">
                 {parceiros.map((p) => (
                   <li key={p.id} className="py-3 flex items-center gap-3" data-testid="parceiro-item">
@@ -53,7 +54,7 @@ export default function AdminVitrine() {
                         {p.categoria || 'Sem categoria'} · ordem {p.ordem} · {p.inicio ? `de ${data(p.inicio)}` : 'sem início'} {p.fim ? `até ${data(p.fim)}` : ''}
                       </p>
                     </div>
-                    <Selo tom={p.no_ar ? 'ok' : 'neutro'}>{p.no_ar ? 'No ar' : p.ativo ? 'Fora do período' : 'Inativo'}</Selo>
+                    <Chip tom={p.no_ar ? 'ok' : 'neutro'} ponto>{p.no_ar ? 'No ar' : p.ativo ? 'Fora do período' : 'Inativo'}</Chip>
                     <Botao variacao="secundario" aoTocar={() => setEditando(p)}>Editar</Botao>
                   </li>
                 ))}
@@ -163,7 +164,7 @@ function LinhaCartao({ c, onFeito }) {
         <p className="text-xs text-muted">{[c.cidade, c.estado].filter(Boolean).join(' · ') || 'Sem cidade'} · atualizado {data(c.updated_at)}
           {c.oculto_moderacao && c.oculto_motivo ? ` · motivo: ${c.oculto_motivo}` : ''}</p>
       </div>
-      <Selo tom={c.visivel ? 'ok' : c.oculto_moderacao ? 'perigo' : 'neutro'}>{c.visivel ? 'Visível' : c.oculto_moderacao ? 'Ocultado' : 'Desligado'}</Selo>
+      <Chip tom={c.visivel ? 'ok' : c.oculto_moderacao ? 'perigo' : 'neutro'} ponto>{c.visivel ? 'Visível' : c.oculto_moderacao ? 'Ocultado' : 'Desligado'}</Chip>
       {c.oculto_moderacao
         ? <Botao variacao="secundario" carregando={ocupado} aoTocar={() => moderar(false)}>Reexibir</Botao>
         : <Botao variacao="secundario" carregando={ocupado} aoTocar={() => moderar(true)} data-testid="cartao-ocultar">Ocultar</Botao>}

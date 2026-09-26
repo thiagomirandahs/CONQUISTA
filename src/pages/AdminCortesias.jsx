@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Card, Botao, Aviso, Selo, Carregando, Vazio, Campo } from '../ui/index.jsx'
+import { Card, Botao, Aviso, Campo } from '../ui/index.jsx'
 import {
   cortesiasListar, cortesiasConcedidas, cortesiaGerar, cortesiaRevogar, cortesiaApagar, cortesiaAplicar, clubesListar,
 } from '../services/admin.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Chip, Esqueleto, EstadoVazio, Nota } from '../components/admin/AdminUI.jsx'
 
 // /admin › Cortesias — LICENÇA CORTESIA para sorteio/promoção (migration 150).
 // Não é pagamento: nenhuma cobrança é criada. O clube fica "ativa" com provider 'cortesia' até o fim;
@@ -25,18 +26,18 @@ export default function AdminCortesias() {
 
   return (
     <div className="space-y-3" data-testid="admin-cortesias">
-      <Aviso tom="info" titulo="Licença cortesia (sorteio / promoção)">
+      <Nota icone="🎁"><strong className="text-ink">Licença cortesia (sorteio / promoção).</strong>{" "}
         O clube fica com a licença <strong>ativa, sem cobrança</strong>, até a data de fim. Quando acaba, volta
         sozinho para “aguardando pagamento” (rotina diária). Tudo fica na auditoria.
-      </Aviso>
+      </Nota>
       <GerarCodigo onFeito={recarregar} />
       <AplicarEmClube onFeito={recarregar} />
       {erro ? <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-        : codigos == null ? <Carregando /> : (
+        : codigos == null ? <Esqueleto avatar={false} /> : (
           <>
             <Card>
               <p className="font-bold text-ink text-sm mb-2">Códigos</p>
-              {codigos.length === 0 ? <Vazio icone="🎁" titulo="Nenhum código gerado ainda" /> : (
+              {codigos.length === 0 ? <EstadoVazio icone="🎁" titulo="Nenhum código gerado ainda" /> : (
                 <ul className="divide-y divide-line">
                   {codigos.map((c) => <LinhaCodigo key={c.id} c={c} onFeito={recarregar} />)}
                 </ul>
@@ -89,7 +90,7 @@ function GerarCodigo({ onFeito }) {
     <Card>
       <p className="font-bold text-ink text-sm mb-2">Gerar código de cortesia</p>
       {gerado && (
-        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 mb-3" data-testid="cortesia-gerada">
+        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 mb-3 dark:bg-emerald-50" data-testid="cortesia-gerada">
           <p className="text-xs text-emerald-900 mb-1">Copie agora — este código <strong>não aparece de novo</strong>.</p>
           <p className="font-mono text-lg font-bold text-emerald-950 break-all select-all" data-testid="cortesia-codigo">{gerado.codigo}</p>
           <p className="text-xs text-emerald-900 mt-1">
@@ -139,7 +140,7 @@ function LinhaCodigo({ c, onFeito }) {
             <p key={i} className="text-xs text-faint">→ {r.clube || 'clube'}: cortesia até {data(r.fim)}</p>
           ))}
         </div>
-        <Selo tom={TOM[c.status]}>{ROTULO[c.status] || c.status}</Selo>
+        <Chip tom={TOM[c.status]} ponto>{ROTULO[c.status] || c.status}</Chip>
       </div>
       <div className="flex gap-2 mt-2">
         {c.status === 'ativo'
@@ -173,7 +174,7 @@ function AplicarEmClube({ onFeito }) {
   return (
     <Card>
       <p className="font-bold text-ink text-sm mb-2">Aplicar cortesia a um clube que já existe</p>
-      {clubes == null ? <Carregando /> : (
+      {clubes == null ? <Esqueleto avatar={false} /> : (
         <>
           <label htmlFor="cortesia-clube" className="block mb-3">
             <span className="text-xs text-muted">Clube</span>

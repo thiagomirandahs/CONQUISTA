@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card, Botao, Aviso, Selo, Carregando, Vazio, Campo } from '../ui/index.jsx'
+import { Card, Botao, Aviso, Campo } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { Chip, Esqueleto, EstadoVazio } from '../components/admin/AdminUI.jsx'
 import {
   hierarquiaAdmin, unidadeCriar, unidadeEditar, unidadeStatus, clubeVincular, pedidoClubeDecidir,
   coordenadorDecidir, coordenadorRemover, conviteGerar, conviteRevogar, conviteApagar, convitesLimparInativos,
@@ -18,7 +19,7 @@ const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
 function Caixa({ titulo, children, destaque, testid }) {
   return (
     <section data-testid={testid}
-      className={`rounded-2xl border p-4 ${destaque ? 'border-amber-300 bg-amber-50' : 'border-line bg-surface'}`}>
+      className={`rounded-2xl border p-4 ${destaque ? 'border-amber-300 bg-amber-50 dark:border-amber-400/40 dark:bg-amber-500/10' : 'border-line bg-surface'}`}>
       {titulo && <h3 className="font-bold text-ink text-sm mb-3">{titulo}</h3>}
       {children}
     </section>
@@ -54,7 +55,7 @@ export default function AdminHierarquia() {
   }
 
   if (erro) return <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
-  if (!dados) return <Carregando />
+  if (!dados) return <Esqueleto avatar={false} />
 
   const unidades = dados.unidades || []
   const ativas = unidades.filter((u) => u.status === 'ativo')
@@ -123,7 +124,7 @@ function Arvore({ unidades, clubes, ativas, ocupado, rodar }) {
   const raiz = filhos.get('raiz') || []
   const [aberta, setAberta] = useState(null)
 
-  if (raiz.length === 0) return <Vazio icone="🌳" titulo="Nenhuma unidade ainda">Crie a primeira associação, região ou distrito abaixo.</Vazio>
+  if (raiz.length === 0) return <EstadoVazio icone="🌳" titulo="Nenhuma unidade ainda">Crie a primeira associação, região ou distrito abaixo.</EstadoVazio>
 
   const No = ({ n, prof }) => (
     <li>
@@ -133,7 +134,7 @@ function Arvore({ unidades, clubes, ativas, ocupado, rodar }) {
         <span className="text-xs text-faint w-20 shrink-0">{TIPO_ROTULO[n.tipo]}</span>
         <span className={`text-sm font-semibold ${n.status === 'ativo' ? 'text-ink' : 'text-faint line-through'}`}>{n.nome}</span>
         {(n.coordenadores || []).filter((c) => c.status === 'ativo').length > 0 &&
-          <Selo tom="ok">{(n.coordenadores || []).filter((c) => c.status === 'ativo').length} coord.</Selo>}
+          <Chip tom="ok">{(n.coordenadores || []).filter((c) => c.status === 'ativo').length} coord.</Chip>}
       </button>
       {aberta?.id === n.id && (
         <div className="my-2" style={{ marginLeft: `${8 + prof * 16}px` }}>
@@ -331,7 +332,7 @@ function ListaConvites({ convites, arquivados, filtro, setFiltro, ocupado, rodar
             <li key={c.id} className="rounded-xl border border-line p-3" data-testid="hier-convite">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-ink">{c.rotulo}</span>
-                <Selo tom={tom}>{rot}</Selo>
+                <Chip tom={tom} ponto>{rot}</Chip>
               </div>
               <p className="text-xs text-muted mt-1">{c.usos}/{c.max_usos} uso(s) · até {data(c.expira_em)} · {c.modo === 'fixo' ? 'unidade definida' : 'pessoa escolhe'} · {c.prefixo}…</p>
               {c.situacao === 'valido' ? (
