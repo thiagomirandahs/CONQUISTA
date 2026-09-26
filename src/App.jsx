@@ -1,5 +1,5 @@
 import { lazy, Suspense, Component, useEffect } from 'react'
-import { voltouAntesDoInicio } from './lib/barreiraDeVoltar.js'
+import { voltouAntesDoInicio, carimbarEntradaAtual } from './lib/barreiraDeVoltar.js'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
@@ -220,7 +220,8 @@ function BarreiraDeVoltar() {
   const location = useLocation()
   const navigate = useNavigate()
   useEffect(() => {
-    if (session && voltouAntesDoInicio() && location.pathname !== '/') navigate('/', { replace: true })
+    if (session && voltouAntesDoInicio()) { navigate('/', { replace: true }); return }
+    carimbarEntradaAtual()
   }, [session, location, navigate])
   return null
 }
