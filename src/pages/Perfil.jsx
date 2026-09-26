@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -9,6 +9,7 @@ import PersonalizarAvatar from '../components/PersonalizarAvatar.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
 import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
 import { calcularNivel } from '../lib/nivel.js'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const CHAVE_NIVEL_VISTO = 'nivelVisto'
 
@@ -196,7 +197,7 @@ export default function Perfil() {
           )}
         </div>
         {carregandoExtrato ? (
-          <p className="text-faint text-sm">Carregando...</p>
+          <Esqueleto />
         ) : extrato.length === 0 ? (
           <div className="bg-surface rounded-2xl p-6 text-center shadow-soft">
             <div className="text-3xl mb-1">🚀</div>

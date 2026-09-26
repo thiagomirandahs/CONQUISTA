@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
+import { m as motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho, dormirBichinho, acordarBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, montarCenarioSvg, montarMovelSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS, MOVEIS } from '../lib/bichinhoPecas.js'

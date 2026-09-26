@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'

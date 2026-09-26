@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
 import { registrarRecorde } from '../../../lib/dados.js'
 import { mensagemDoErroDeJogo, MSG_GUARDADO } from '../../../services/filaJogos.js'

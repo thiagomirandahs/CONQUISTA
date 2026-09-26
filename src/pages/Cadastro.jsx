@@ -1,7 +1,7 @@
 import { useState, useEffect, useId } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'

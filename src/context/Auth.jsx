@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { esquecerInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import { supabase } from '../lib/supabase.js'
 import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js'
@@ -36,6 +36,8 @@ export function AuthProvider({ children }) {
   // true quando a BUSCA do perfil terminou (mesmo que sem perfil) — permite às
   // telas distinguir "ainda carregando" de "não tem perfil mesmo"
   const [perfilPronto, setPerfilPronto] = useState(false)
+  // de quem é o perfil já carregado (evita buscar de novo na simples renovação do token)
+  const perfilDe = useRef(null)
 
   useEffect(() => {
     let vivo = true
@@ -48,12 +50,17 @@ export function AuthProvider({ children }) {
       setCarregando(false)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (evt, sess) => {
       if (!vivo) return
       definirUsuarioImagens(sess?.user?.id)
       setSession(sess)
+      // Abertura do app: o supabase-js emite INITIAL_SESSION logo ao assinar, e o getSession() acima
+      // já busca o perfil — buscar aqui também dobrava a chamada meu_perfil em toda abertura.
+      // Renovação de token (a cada ~1 h) da MESMA pessoa também não muda o perfil.
+      if (evt === 'INITIAL_SESSION') return
+      if (evt === 'TOKEN_REFRESHED' && sess?.user?.id && sess.user.id === perfilDe.current) return
       if (sess) await carregarPerfil(sess.user.id)
-      else setProfile(null)
+      else { perfilDe.current = null; setProfile(null) }
     })
 
     return () => { vivo = false; sub.subscription.unsubscribe() }
@@ -74,12 +81,14 @@ export function AuthProvider({ children }) {
     for (let tentativa = 0; tentativa < 2; tentativa++) {
       const { data, error } = await lerMeuPerfil(id)
       if (!error) { // achou — ou "0 linhas" (não existe mesmo): data é null
+        perfilDe.current = id
         setProfile(data || null)
         setPerfilPronto(true)
         return
       }
       await new Promise((r) => setTimeout(r, 1500))
     }
+    perfilDe.current = null
     setProfile(null)
     setPerfilPronto(true) // busca TERMINOU sem perfil: as telas decidem (sem spinner eterno)
   }
@@ -100,8 +109,13 @@ export function AuthProvider({ children }) {
     if (session?.user?.id) await carregarPerfil(session.user.id)
   }
 
+  // Valor estável: sem isto, qualquer render do provider entregava um objeto novo e re-renderizava
+  // em cascata tudo que usa useAuth(). `sair`/`recarregarPerfil` só dependem de `session`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const valor = useMemo(() => ({ session, profile, carregando, perfilPronto, sair, recarregarPerfil }), [session, profile, carregando, perfilPronto])
+
   return (
-    <AuthContext.Provider value={{ session, profile, carregando, perfilPronto, sair, recarregarPerfil }}>
+    <AuthContext.Provider value={valor}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarTodasConversasChat, apagarMensagemChat } from '../lib/dados.js'
 import { supabase } from '../lib/supabase.js'

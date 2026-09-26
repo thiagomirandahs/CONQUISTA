@@ -3,7 +3,7 @@
 // um flash vermelho no erro. Fica montado UMA vez na página de Jogos, cobre a
 // tela sem capturar toque (pointer-events:none) e some sozinho.
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 
 export default function FeedbackJogo() {
   const [fx, setFx] = useState(null)

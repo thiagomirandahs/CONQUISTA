@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
+import { AnimatePresence, m as motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
-import DevocionalPopup from './DevocionalPopup.jsx'
-import AvisosPopup from './AvisosPopup.jsx'
-import ProximoEventoPopup from './ProximoEventoPopup.jsx'
+// Popups de abertura em pedaços próprios: só aparecem depois que os dados deles chegam, então não
+// precisam pesar no bundle inicial nem atrasar o primeiro paint.
+const DevocionalPopup = lazy(() => import('./DevocionalPopup.jsx'))
+const AvisosPopup = lazy(() => import('./AvisosPopup.jsx'))
+const ProximoEventoPopup = lazy(() => import('./ProximoEventoPopup.jsx'))
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
@@ -53,9 +55,11 @@ export default function AppLayout() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="min-h-full lg:flex">
-      {!ehPai && <DevocionalPopup />}
-      <AvisosPopup />
-      <ProximoEventoPopup />
+      <Suspense fallback={null}>
+        {!ehPai && <DevocionalPopup />}
+        <AvisosPopup />
+        <ProximoEventoPopup />
+      </Suspense>
 
       {/* ===== Menu lateral (PC) — tudo, agrupado por hub ===== */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 z-30 glass border-r border-line">

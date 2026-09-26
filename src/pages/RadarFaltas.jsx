@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'

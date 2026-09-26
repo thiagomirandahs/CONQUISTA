@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 
 // Conta de 0 até o alvo com desaceleração — dá vida ao número de pontos no resultado.
 function useContagem(alvo, duracao = 650) {

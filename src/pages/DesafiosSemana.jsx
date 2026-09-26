@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Duelos from '../components/Duelos.jsx'
 import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -77,7 +78,7 @@ export default function DesafiosSemana() {
       </div>
 
       {aba === 'duelos' ? <Duelos onMudou={carregar} /> : carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : (
       <>
       {/* Cartela pessoal */}

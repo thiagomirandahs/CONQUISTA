@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 
 // ===================== Quebra-cabeça deslizante (3x3) =====================
 function vizinhosDesl(i, N) {

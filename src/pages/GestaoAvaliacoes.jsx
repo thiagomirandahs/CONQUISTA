@@ -1,3 +1,4 @@
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 import { useState, useEffect, useMemo } from 'react'
 import { Cabecalho, Aviso } from '../ui/index.jsx'
 import {
@@ -64,7 +65,7 @@ export default function GestaoAvaliacoes() {
 
       {erro && <Aviso tom="erro" titulo="Não deu pra ver a fila">{erro}</Aviso>}
       {lista === null ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : filtrada.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎉</div>

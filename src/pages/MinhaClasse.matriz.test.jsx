@@ -11,7 +11,7 @@ import { join } from 'node:path'
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'u1' } }) }))
 vi.mock('../lib/juice.js', () => ({ vitoria: () => {} }))
 vi.mock('../components/Comprovacao.jsx', () => ({ default: () => null }))
-vi.mock('framer-motion', () => ({ motion: { div: (p) => <div {...Object.fromEntries(Object.entries(p).filter(([k]) => !['initial', 'animate', 'transition'].includes(k)))} /> } }))
+vi.mock('framer-motion', () => ({ m: { div: (p) => <div {...Object.fromEntries(Object.entries(p).filter(([k]) => !['initial', 'animate', 'transition'].includes(k)))} /> } }))
 const carregarMinhaClasse = vi.fn()
 vi.mock('../lib/dados.js', () => ({
   carregarMinhaClasse: (...a) => carregarMinhaClasse(...a),

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarMissoesPendentes, avaliarMissao } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'

@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarRanking } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
+
+// Lista longa (ranking individual passa de 100 linhas): só as primeiras entram animadas em cascata —
+// com stagger de 40 ms, a 100ª linha levava ~4 s para aparecer e o celular simples engasgava.
+const ANIMAR_ATE = 15
 
 const medalhas = ['🥇', '🥈', '🥉']
 function tituloDivertido(pos) {
@@ -66,7 +71,7 @@ export default function Ranking() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏁</div>
@@ -109,7 +114,7 @@ export default function Ranking() {
             initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.04, delayChildren: 0.1 } } }}>
             {lista.map((item, i) => (
               <motion.button key={item.id} onClick={() => setCard({ item, pos: i })}
-                variants={{ hide: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }}
+                variants={{ hide: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }} initial={i < ANIMAR_ATE ? undefined : false}
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-surface2 text-left">
                 <span className="w-5 text-center font-extrabold text-faint">{i + 1}</span>
@@ -119,7 +124,7 @@ export default function Ranking() {
                   <div className="font-bold text-ink text-sm truncate">{item.nome}</div>
                   <div className="h-2 rounded-full bg-surface2 overflow-hidden mt-1">
                     <motion.div className="h-full w-full rounded-full origin-left" style={{ backgroundColor: item.cor }}
-                      initial={{ scaleX: 0 }} animate={{ scaleX: Math.min(1, valor(item) / max) }}
+                      initial={i < ANIMAR_ATE ? { scaleX: 0 } : false} animate={{ scaleX: Math.min(1, valor(item) / max) }}
                       transition={{ duration: 0.6, ease: 'easeOut' }} />
                   </div>
                   {item.unidade && <div className="text-xs text-faint mt-0.5">{item.unidade}</div>}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { gravarMarca, definirRecurso, carregarCatalogoRecursos, subirLogoDoClube } from '../services/clubes.js'
 import { formularioDaMarca, diferencasDaMarca, errosDaMarca, COR_TEMA_PADRAO } from '../lib/marca.js'

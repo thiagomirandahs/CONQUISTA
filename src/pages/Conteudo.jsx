@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']
@@ -71,7 +72,7 @@ export default function Conteudo() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">{erro}</div>
       ) : lista.length === 0 ? (

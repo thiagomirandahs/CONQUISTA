@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
 import * as juice from '../../../lib/juice.js'
 

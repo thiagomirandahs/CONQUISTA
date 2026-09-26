@@ -7,6 +7,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { PAPEIS_POR_ROTA, RECURSO_POR_ROTA } from '../lib/permissoes.js'
 import RecursoOpcional from './RecursoOpcional.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 export default function RotaRestrita({ children }) {
   const { papel, carregando } = useClube()
@@ -15,7 +16,7 @@ export default function RotaRestrita({ children }) {
   // Espera o contexto do clube terminar antes de decidir (senão bloquearia liderança legítima
   // no primeiro paint). Sem vínculo ativo o papel é nulo => cai no bloqueio (falha fechada).
   if (carregando) {
-    return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+    return <div className="mt-4"><Esqueleto /></div>
   }
 
   // Normaliza a URL ('/pontos/' e '/Pontos' casam com '/pontos' no Router,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade } from '../lib/dados.js'
 import { comprimirImagem } from '../lib/imagem.js'
@@ -11,6 +11,7 @@ import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -91,7 +92,7 @@ export default function Unidades() {
       <CardAniversariantes />
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : unidades.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏠</div>

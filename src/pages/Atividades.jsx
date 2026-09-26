@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -8,6 +8,7 @@ import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -261,7 +262,7 @@ export default function Atividades() {
       )}
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">📋</div>

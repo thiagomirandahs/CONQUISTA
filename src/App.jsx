@@ -227,6 +227,27 @@ function BarreiraDeVoltar() {
   return null
 }
 
+// Pré-carrega, com o app já parado e só uma vez por abertura, o código das telas mais abertas
+// (Início, Jornada/hubs, Minha Classe) — o toque nelas deixa de esperar a rede. Respeita "economia de
+// dados" e 2G: aí não baixa nada adiantado.
+let jaPrecarregou = false
+function PrecarregarRotas() {
+  const session = useAuth()?.session
+  useEffect(() => {
+    if (!session || jaPrecarregou) return
+    const con = typeof navigator !== 'undefined' ? navigator.connection : null
+    if (con && (con.saveData || /(^|-)2g$/.test(con.effectiveType || ''))) return
+    jaPrecarregou = true
+    const agendar = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500))
+    agendar(() => {
+      import('./pages/Inicio.jsx').catch(() => {})
+      import('./pages/Hub.jsx').catch(() => {})
+      import('./pages/MinhaClasse.jsx').catch(() => {})
+    }, { timeout: 4000 })
+  }, [session])
+  return null
+}
+
 export default function App() {
   if (modoDoHost() === 'site') {
     return (
@@ -239,6 +260,7 @@ export default function App() {
     <ErroApp>
     <Suspense fallback={<Carregando />}>
       <BarreiraDeVoltar />
+      <PrecarregarRotas />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />

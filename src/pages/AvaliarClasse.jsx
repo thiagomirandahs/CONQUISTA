@@ -4,6 +4,7 @@ import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoric
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -39,7 +40,7 @@ export default function AvaliarClasse() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">{erro}</div>
       ) : lista.length === 0 ? (

@@ -3,6 +3,7 @@ import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPix, concederConsentimento, revogarConsentimento } from '../lib/dados.js'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const MESES = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -55,7 +56,7 @@ export default function MeuFilho() {
 
   const pendentes = pedidos.filter((p) => p.status === 'pendente')
 
-  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
+  if (carregando) return <Esqueleto />
 
   return (
     <div>

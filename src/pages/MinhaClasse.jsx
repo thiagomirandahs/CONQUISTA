@@ -1,7 +1,7 @@
 import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
 import { hrefExterno } from '../lib/urlSegura.js'
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {

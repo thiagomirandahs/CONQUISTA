@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { useClube } from '../context/Clube.jsx'
 import { entradasPendentes } from '../services/entrada.js'

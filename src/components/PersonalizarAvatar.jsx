@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import AvatarPersonagem from './AvatarPersonagem.jsx'
 import { PELES, CORES_CABELO, CORES_ROUPA, CABELOS, ROUPAS, ACESSORIOS, AVATAR_PADRAO } from '../lib/avatarPecas.js'
 import { salvarAvatar } from '../lib/dados.js'

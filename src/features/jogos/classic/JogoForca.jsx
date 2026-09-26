@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import * as juice from '../../../lib/juice.js'
 import { PedirAjuda } from '../../../components/Ajuda.jsx'
 

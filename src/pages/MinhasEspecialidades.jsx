@@ -1,5 +1,6 @@
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 import { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaEspecialidade, carregarEspecialidadesDisponiveis, iniciarEspecialidade,
@@ -52,7 +53,7 @@ export default function MinhasEspecialidades() {
     }
   }
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+  if (carregando) return <div className="mt-4"><Esqueleto /></div>
 
   return (
     <div className="space-y-5">

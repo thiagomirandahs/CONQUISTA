@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRanking, carregarTemporadas, iniciarNovaTemporada } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const fmtData = (iso) => {
   if (!iso) return ''
@@ -71,7 +72,7 @@ export default function Temporada() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : (
         <>
           <div className="bg-surface rounded-2xl p-5 shadow-soft">

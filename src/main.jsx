@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client'
 import { ligarObservabilidade } from './lib/observabilidade.js'
 import { recuperarVersao } from './lib/recuperarVersao.js'
 import { BrowserRouter } from 'react-router-dom'
+import { LazyMotion } from 'framer-motion'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
 import { ClubeProvider } from './context/Clube.jsx'
@@ -12,11 +13,13 @@ import { EscopoProvider } from './context/Escopo.jsx'
 import { AvisosProvider } from './ui/avisos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
-import { ligarEnvioDeResultadosPendentes } from './services/jogos.js'
+
+const carregarRecursosDeAnimacao = () => import('./lib/motionRecursos.js').then((r) => r.default)
 
 ligarObservabilidade()
 // jogos: resultado guardado sem internet é reenviado ao voltar a rede / abrir o app / logar
-ligarEnvioDeResultadosPendentes()
+// (import dinâmico: o serviço de jogos não precisa pesar no primeiro paint; ao ligar, ele mesmo tenta o envio)
+import('./services/jogos.js').then((m) => m.ligarEnvioDeResultadosPendentes()).catch(() => {})
 
 // Vite avisa quando um pedaço do app (chunk) não carrega — quase sempre versão velha depois de um
 // deploy. Recupera sozinho (troca de versão) em vez de deixar a tela quebrar.
@@ -28,6 +31,9 @@ window.addEventListener('vite:preloadError', (e) => {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
+      {/* Animações enxutas: o app usa `m` (importado como `motion`) e o motor de animação chega num
+          pedaço separado, logo depois do primeiro paint — tira dezenas de KB do bundle inicial. */}
+      <LazyMotion features={carregarRecursosDeAnimacao}>
       {/* toast + confirmação: o que substituiu os alert()/confirm() nativos (fase 7.1) */}
       <AvisosProvider>
       <AuthProvider>
@@ -39,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ClubeProvider>
       </AuthProvider>
       </AvisosProvider>
+      </LazyMotion>
     </BrowserRouter>
   </React.StrictMode>
 )

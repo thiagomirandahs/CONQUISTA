@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
@@ -100,9 +100,11 @@ export default function Mural() {
             ) : (
               <motion.div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
                 initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.05 } } }}>
-                {fotosDe(categoria.nome).map((f) => (
+                {fotosDe(categoria.nome).map((f, i) => (
                   <motion.button key={f.id} onClick={() => setLightbox(f)}
                     variants={{ hide: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1 } }}
+                    // só as primeiras entram em cascata: com centenas de fotos, a última levava segundos
+                    initial={i < 12 ? undefined : false}
                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                     className="rounded-2xl overflow-hidden shadow-soft aspect-square relative bg-surface2">
                     <ImagemPrivada src={f.thumb || f.url} alt={f.legenda || categoria.nome} loading="lazy" decoding="async" className="w-full h-full object-cover" />
@@ -134,7 +136,7 @@ export default function Mural() {
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     className="rounded-2xl overflow-hidden shadow-soft aspect-square relative text-white grid place-items-center"
                     style={{ backgroundColor: c.cor }}>
-                    {capa && <ImagemPrivada src={capa} alt={c.nome} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+                    {capa && <ImagemPrivada src={capa} alt={c.nome} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />}
                     <div className="absolute inset-0" style={{ background: capa ? 'rgba(0,0,0,0.35)' : 'transparent' }} />
                     {!capa && <span className="text-4xl opacity-80 relative">{c.icon}</span>}
                     <div className="absolute bottom-2 left-2 right-2 text-left">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'

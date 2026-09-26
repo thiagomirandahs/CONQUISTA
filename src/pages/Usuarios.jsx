@@ -1,5 +1,6 @@
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -139,7 +140,7 @@ export default function Usuarios() {
         className="w-full rounded-xl border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : erroCarregar ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar os usuários</p>

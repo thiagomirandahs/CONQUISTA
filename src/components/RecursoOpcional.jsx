@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { verificarOperacao } from '../services/comercial.js'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 // Tela de um recurso opcional. A partir da fase 5 existem TRÊS camadas e elas não se confundem:
 //   1. o PLANO da assinatura inclui o recurso?      (comercial — a diretoria não resolve sozinha)
@@ -22,7 +23,7 @@ export default function RecursoOpcional({ recurso, children }) {
     return () => { vivo = false }
   }, [bloqueado, recurso])
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+  if (carregando) return <div className="mt-4"><Esqueleto /></div>
   if (!bloqueado) return children
 
   const noPlano = motivo?.bloqueio === 'plano'

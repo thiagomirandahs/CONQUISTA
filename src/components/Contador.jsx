@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { animate, useMotionValue, useTransform, motion } from 'framer-motion'
+import { animate, useMotionValue, useTransform, m as motion } from 'framer-motion'
 
 // Número que "sobe contando" de 0 até o valor (efeito divertido para o ranking)
 export default function Contador({ value, duration = 1.2 }) {

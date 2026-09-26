@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { carregarMissao, enviarMissao, classeDoUsuario } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarEventos, salvarEvento, excluirEvento } from '../lib/dados.js'
 import { curto, contagem, CORES_CONT } from '../lib/eventos.js'
 import { avisar } from '../ui/avisos.jsx'
+import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS = ['Reunião', 'Acampamento', 'Passeio', 'Culto', 'Evento']
@@ -61,7 +62,7 @@ export default function Agenda() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <Esqueleto />
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar a agenda</p>
