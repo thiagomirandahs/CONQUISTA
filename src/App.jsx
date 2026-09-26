@@ -1,4 +1,5 @@
 import { lazy, Suspense, Component, useEffect } from 'react'
+import { ehErroDeVersao, recuperarVersao } from './lib/recuperarVersao.js'
 import { voltouAntesDoInicio, carimbarEntradaAtual } from './lib/barreiraDeVoltar.js'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
@@ -137,20 +138,8 @@ function InicioRedirect() {
   return <Navigate to={rotaInicial(papel)} replace />
 }
 
-// Nuke do service worker + caches e recarrega — pega a versão nova de vez.
-async function atualizarDeVez() {
-  try {
-    const regs = await navigator.serviceWorker?.getRegistrations?.()
-    if (regs) await Promise.all(regs.map((r) => r.unregister()))
-    const chaves = await caches?.keys?.()
-    if (chaves) await Promise.all(chaves.map((k) => caches.delete(k)))
-  } catch { /* ignora */ }
-  // reload() podia devolver o index.html velho do cache HTTP do navegador (visto no piloto: o botão
-  // "Atualizar agora" não saía do lugar). Um parâmetro novo na URL obriga a buscar a página de novo.
-  const u = new URL(window.location.href)
-  u.searchParams.set('v', String(Date.now()))
-  window.location.replace(u.toString())
-}
+// "Atualizar agora" (botão): sempre executa, sem a trava de tempo.
+const atualizarDeVez = () => recuperarVersao({ forcar: true })
 
 // Rede de segurança: se uma página falhar ao CARREGAR (chunk velho depois de um
 // deploy, com cache do PWA), em vez de tela branca a gente recarrega sozinho 1x
@@ -162,14 +151,9 @@ class ErroApp extends Component {
     // Tela quebrada e o pior caso para a pessoa e o mais dificil de reproduzir depois:
     // e o unico lugar onde o relato costuma ser so "deu erro e sumiu tudo".
     reportarErro(erro, { origem: 'boundary', contexto: 'A tela quebrou e o app precisou se recuperar.' })
-    const msg = String(erro?.message || erro || '')
-    const ehChunk = /dynamically imported module|module script failed|ChunkLoadError|Failed to fetch|Loading chunk|CSS chunk/i.test(msg)
-    let jaTentou = false
-    try { jaTentou = sessionStorage.getItem('recarregou_chunk') === '1' } catch { /* sem storage */ }
-    if (ehChunk && !jaTentou) {
-      try { sessionStorage.setItem('recarregou_chunk', '1') } catch { /* sem storage */ }
-      atualizarDeVez()
-    }
+    // versão velha (pedaço do app que sumiu no deploy): recupera SOZINHO — o botão só aparece se
+    // já tentou há menos de 1 minuto (aí é outro problema e a pessoa decide).
+    if (ehErroDeVersao(erro)) recuperarVersao()
   }
   render() {
     if (this.state.erro) {

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 // Handlers globais de erro (fase 8.1): precisam estar de pe ANTES de qualquer render, senao um
 // erro no primeiro paint — justamente o pior — passa sem registro.
 import { ligarObservabilidade } from './lib/observabilidade.js'
+import { recuperarVersao } from './lib/recuperarVersao.js'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
@@ -13,6 +14,13 @@ import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
 
 ligarObservabilidade()
+
+// Vite avisa quando um pedaço do app (chunk) não carrega — quase sempre versão velha depois de um
+// deploy. Recupera sozinho (troca de versão) em vez de deixar a tela quebrar.
+window.addEventListener('vite:preloadError', (e) => {
+  e.preventDefault()
+  recuperarVersao()
+})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
