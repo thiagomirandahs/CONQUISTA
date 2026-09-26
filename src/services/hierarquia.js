@@ -18,6 +18,9 @@ export const PAPEIS_COORDENACAO = [
   { papel: 'coordenador_regional', rotulo: 'Coordenador regional', tipo: 'regiao' },
   { papel: 'coordenador_geral', rotulo: 'Coordenador geral', tipo: 'campo' },
   { papel: 'diretor_mda', rotulo: 'Diretor do Ministério (MDA)', tipo: 'campo' },
+  { papel: 'departamental_jovem', rotulo: 'Departamental (Ministério Jovem)', tipo: 'campo' },
+  { papel: 'associado_md', rotulo: 'Associado(a) do MD', tipo: 'campo' },
+  { papel: 'secretario_md', rotulo: 'Secretário(a) do MD', tipo: 'campo' },
   { papel: 'coordenador_uniao', rotulo: 'Coordenador da união', tipo: 'uniao' },
   { papel: 'diretor_uniao', rotulo: 'Diretor da união', tipo: 'uniao' },
   { papel: 'coordenador_divisao', rotulo: 'Coordenador da divisão', tipo: 'divisao' },
@@ -42,6 +45,9 @@ export const coordenadorRemover = (membershipId, motivo = null) => rpc('admin_co
 export const conviteGerar = ({ papel, unidadeId = null, dias = 7, maxUsos = 1, rotulo = null }) =>
   rpc('admin_convite_hierarquia_gerar', { p_papel: papel, p_unidade_id: unidadeId, p_dias: dias, p_max_usos: maxUsos, p_rotulo: rotulo })
 export const conviteRevogar = (id, motivo = null) => rpc('admin_convite_hierarquia_revogar', { p_id: id, p_motivo: motivo })
+// "Apagar" = arquivar (migration 140): some da lista, mas o registro e a trilha de auditoria ficam.
+export const conviteApagar = (id, motivo = null) => rpc('admin_convite_hierarquia_apagar', { p_id: id, p_motivo: motivo })
+export const convitesLimparInativos = () => rpc('admin_convites_hierarquia_limpar_inativos')
 
 // ----- pessoa convidada
 export const conviteAbrir = (token) => rpc('convite_hierarquia_abrir', { p_token: token })

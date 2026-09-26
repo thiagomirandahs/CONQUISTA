@@ -27,6 +27,7 @@ const Atividades = lazy(() => import('./pages/Atividades.jsx'))
 const Unidades = lazy(() => import('./pages/Unidades.jsx'))
 const Mural = lazy(() => import('./pages/Mural.jsx'))
 const Aprovacoes = lazy(() => import('./pages/Aprovacoes.jsx'))
+const VisitasClube = lazy(() => import('./pages/VisitasClube.jsx'))
 const Apontamentos = lazy(() => import('./pages/Apontamentos.jsx'))
 const Gestao = lazy(() => import('./pages/Gestao.jsx'))
 const Mensalidades = lazy(() => import('./pages/Mensalidades.jsx'))
@@ -287,6 +288,7 @@ export default function App() {
           <Route path="/mural" element={<RecursoOpcional recurso="mural"><Mural /></RecursoOpcional>} />
           <Route path="/gestao" element={<Gestao />} />
           <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />
+          <Route path="/visitas" element={<RotaRestrita><VisitasClube /></RotaRestrita>} />
           <Route path="/apontamentos" element={<RotaRestrita><Apontamentos /></RotaRestrita>} />
           <Route path="/mensalidades" element={<RotaRestrita><Mensalidades /></RotaRestrita>} />
           <Route path="/usuarios" element={<RotaRestrita><Usuarios /></RotaRestrita>} />

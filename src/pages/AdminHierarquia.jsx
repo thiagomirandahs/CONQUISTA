@@ -3,7 +3,7 @@ import { Card, Botao, Aviso, Selo, Carregando, Vazio, Campo } from '../ui/index.
 import { avisar } from '../ui/avisos.jsx'
 import {
   hierarquiaAdmin, unidadeCriar, unidadeEditar, unidadeStatus, clubeVincular, pedidoClubeDecidir,
-  coordenadorDecidir, coordenadorRemover, conviteGerar, conviteRevogar,
+  coordenadorDecidir, coordenadorRemover, conviteGerar, conviteRevogar, conviteApagar, convitesLimparInativos,
   TIPO_ROTULO, PAPEIS_COORDENACAO, rotuloPapel, montarLinkCoordenacao,
 } from '../services/hierarquia.js'
 
@@ -84,7 +84,7 @@ export default function AdminHierarquia() {
 
       <Arvore unidades={unidades} clubes={dados.clubes || []} ativas={ativas} ocupado={ocupado} rodar={rodar} />
       <NovaUnidade ativas={ativas} ocupado={ocupado} rodar={rodar} />
-      <Convites convites={dados.convites || []} ativas={ativas} ocupado={ocupado} rodar={rodar} />
+      <Convites convites={dados.convites || []} arquivados={dados.convites_arquivados || 0} ativas={ativas} ocupado={ocupado} rodar={rodar} />
     </div>
   )
 }
@@ -234,7 +234,10 @@ function NovaUnidade({ ativas, ocupado, rodar }) {
   )
 }
 
-function Convites({ convites, ativas, ocupado, rodar }) {
+const FILTROS_CONVITE = [['ativos', 'Válidos'], ['inativos', 'Inativos'], ['todos', 'Todos']]
+
+function Convites({ convites, arquivados, ativas, ocupado, rodar }) {
+  const [filtro, setFiltro] = useState('ativos')
   const [papel, setPapel] = useState('coordenador_regional')
   const [modo, setModo] = useState('fixo')
   const [unidade, setUnidade] = useState('')
@@ -291,26 +294,58 @@ function Convites({ convites, ativas, ocupado, rodar }) {
         </div>
       )}
 
-      {convites.length > 0 && (
-        <ul className="mt-4 space-y-2">
-          {convites.map((c) => {
-            const [tom, rot] = SITUACAO_CONVITE[c.situacao] || ['neutro', c.situacao]
-            return (
-              <li key={c.id} className="rounded-xl border border-line p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-ink">{c.rotulo}</span>
-                  <Selo tom={tom}>{rot}</Selo>
-                </div>
-                <p className="text-xs text-muted mt-1">{c.usos}/{c.max_usos} uso(s) · até {data(c.expira_em)} · {c.modo === 'fixo' ? 'unidade definida' : 'pessoa escolhe'} · {c.prefixo}…</p>
-                {c.situacao === 'valido' && (
-                  <Botao variacao="secundario" className="w-full mt-2" carregando={ocupado === `x${c.id}`} desabilitado={!!ocupado}
-                    aoTocar={() => rodar(`x${c.id}`, () => conviteRevogar(c.id), 'Convite revogado.')}>Revogar</Botao>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      <ListaConvites convites={convites} arquivados={arquivados} filtro={filtro} setFiltro={setFiltro} ocupado={ocupado} rodar={rodar} />
     </Caixa>
+  )
+}
+
+// Lista de convites com filtro. Convite válido: só "Revogar". Revogado/expirado/esgotado: "Apagar" —
+// que ARQUIVA no servidor (some daqui, mas o registro e a trilha no platform_admin_audit ficam).
+function ListaConvites({ convites, arquivados, filtro, setFiltro, ocupado, rodar }) {
+  const inativos = convites.filter((c) => c.situacao !== 'valido')
+  const lista = filtro === 'ativos' ? convites.filter((c) => c.situacao === 'valido') : filtro === 'inativos' ? inativos : convites
+  const limpar = () => {
+    if (!window.confirm(`Apagar ${inativos.length} convite(s) revogado(s), expirado(s) ou esgotado(s) da lista? O histórico fica guardado.`)) return
+    rodar('limpar', () => convitesLimparInativos(), 'Convites inativos apagados.')
+  }
+  return (
+    <div className="mt-4" data-testid="hier-lista-convites">
+      <div className="grid grid-cols-3 gap-2 mb-2" role="group" aria-label="Filtrar convites">
+        {FILTROS_CONVITE.map(([v, l]) => (
+          <button key={v} type="button" aria-pressed={filtro === v} onClick={() => setFiltro(v)}
+            className={`min-h-[44px] rounded-xl border text-sm font-bold ${filtro === v ? 'border-brand text-brand bg-surface' : 'border-line text-muted bg-surface'}`}>
+            {l}{v === 'inativos' && inativos.length > 0 ? ` (${inativos.length})` : ''}
+          </button>
+        ))}
+      </div>
+      {inativos.length > 0 && (
+        <Botao variacao="secundario" className="w-full mb-2" carregando={ocupado === 'limpar'} desabilitado={!!ocupado} aoTocar={limpar}>
+          Limpar inativos ({inativos.length})
+        </Botao>
+      )}
+      {lista.length === 0 && <p className="text-sm text-muted py-2">Nenhum convite {filtro === 'ativos' ? 'válido' : filtro === 'inativos' ? 'inativo' : ''} na lista.</p>}
+      <ul className="space-y-2">
+        {lista.map((c) => {
+          const [tom, rot] = SITUACAO_CONVITE[c.situacao] || ['neutro', c.situacao]
+          return (
+            <li key={c.id} className="rounded-xl border border-line p-3" data-testid="hier-convite">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink">{c.rotulo}</span>
+                <Selo tom={tom}>{rot}</Selo>
+              </div>
+              <p className="text-xs text-muted mt-1">{c.usos}/{c.max_usos} uso(s) · até {data(c.expira_em)} · {c.modo === 'fixo' ? 'unidade definida' : 'pessoa escolhe'} · {c.prefixo}…</p>
+              {c.situacao === 'valido' ? (
+                <Botao variacao="secundario" className="w-full mt-2" carregando={ocupado === `x${c.id}`} desabilitado={!!ocupado}
+                  aoTocar={() => rodar(`x${c.id}`, () => conviteRevogar(c.id), 'Convite revogado.')}>Revogar</Botao>
+              ) : (
+                <Botao variacao="secundario" className="w-full mt-2" carregando={ocupado === `a${c.id}`} desabilitado={!!ocupado}
+                  aoTocar={() => rodar(`a${c.id}`, () => conviteApagar(c.id), 'Convite apagado da lista.')}>Apagar</Botao>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      {arquivados > 0 && <p className="text-xs text-faint mt-2">{arquivados} convite(s) apagado(s) ficam guardados no histórico de auditoria.</p>}
+    </div>
   )
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useEscopo } from '../context/Escopo.jsx'
-import { carregarPainelDoEscopo, carregarInvestidurasDoEscopo } from '../services/institucional.js'
+import { carregarInvestidurasDoEscopo } from '../services/institucional.js'
+import { PainelAnalitico, VisitasDoEscopo } from './PainelDoEscopo.jsx'
 
 // Portal institucional (fase 4.3) — ENXUTO de propósito. Mostra só o que o escopo justifica:
 // os clubes abaixo, a situação geral deles (agregada) e os processos que REALMENTE exigem a atuação
@@ -11,6 +12,7 @@ const TIPO_ROTULO = { distrito: 'Distrito', regiao: 'Região', campo: 'Campo / A
 const PAPEL_ROTULO = {
   coordenador_distrital: 'Coordenação distrital', coordenador_regional: 'Coordenação regional',
   coordenador_geral: 'Coordenação geral', diretor_mda: 'Direção do Ministério',
+  secretario_md: 'Secretaria do MD', associado_md: 'Associado(a) do MD', departamental_jovem: 'Departamental',
   coordenador_uniao: 'Coordenação da união', diretor_uniao: 'Direção da união', coordenador_divisao: 'Coordenação da divisão',
 }
 const fmtData = (iso) => {
@@ -21,17 +23,16 @@ const fmtData = (iso) => {
 
 export default function PortalInstitucional() {
   const { carregando, erro, escopos, escopo, temEscopo, capacidades, trocarEscopo } = useEscopo()
-  const [painel, setPainel] = useState(null)
   const [investiduras, setInvestiduras] = useState(null)
+  const [versao, setVersao] = useState(0)
   const [erroDados, setErroDados] = useState('')
 
   const recarregarDados = useCallback(async () => {
     // sem escopo em uso não há o que buscar — e não se fica "carregando" pra sempre
-    if (!escopo) { setPainel([]); setInvestiduras([]); return }
+    if (!escopo) { setInvestiduras([]); return }
     setErroDados('')
     try {
-      const [p, i] = await Promise.all([carregarPainelDoEscopo(), carregarInvestidurasDoEscopo()])
-      setPainel(p); setInvestiduras(i)
+      setInvestiduras(await carregarInvestidurasDoEscopo())
     } catch (e) { setErroDados(e?.message || String(e)) }
   }, [escopo])
   useEffect(() => { recarregarDados() }, [recarregarDados])
@@ -96,24 +97,14 @@ export default function PortalInstitucional() {
         )}
       </section>
 
-      <section aria-labelledby="t-clubes">
-        <h2 id="t-clubes" className="text-sm font-extrabold text-ink mb-2">
-          Clubes do escopo {painel ? `(${painel.length})` : ''}
-        </h2>
-        {!capacidades.ver_painel ? (
-          <p className="text-sm text-faint">Seu papel neste escopo não inclui o painel dos clubes.</p>
-        ) : painel === null ? (
-          <p className="text-sm text-faint" role="status">Carregando…</p>
-        ) : painel.length === 0 ? (
-          <div className="bg-surface rounded-2xl p-5 shadow-soft text-sm text-faint">
-            Nenhum clube está ligado a este escopo ainda.
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {painel.map((c) => <CardClube key={c.club_id} c={c} />)}
-          </ul>
-        )}
-      </section>
+      {!capacidades.ver_painel ? (
+        <p className="text-sm text-faint mb-5">Seu papel neste escopo não inclui o painel dos clubes.</p>
+      ) : (
+        <>
+          <PainelAnalitico escopoId={escopo?.escopo_id} versao={versao} aoAgendado={() => setVersao((x) => x + 1)} />
+          <VisitasDoEscopo escopoId={escopo?.escopo_id} versao={versao} aoMudar={() => setVersao((x) => x + 1)} />
+        </>
+      )}
 
       <p className="text-xs text-faint mt-6 leading-snug">
         Este portal mostra apenas números gerais dos clubes e o que exige a sua decisão. Conversas, fotos,
@@ -151,33 +142,6 @@ function SeletorDeEscopo({ escopos, escopo, onTrocar }) {
           ))}
         </select>
       </label>
-    </div>
-  )
-}
-
-function CardClube({ c }) {
-  const num = (v) => (typeof v === 'number' ? v : Number(v || 0))
-  return (
-    <li className="bg-surface rounded-2xl p-4 shadow-soft">
-      <div className="flex items-center justify-between gap-2">
-        <div className="font-bold text-ink truncate">{c.nome}</div>
-        <span className="text-xs text-faint shrink-0">{num(c.membros_ativos)} membros</span>
-      </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
-        <Numero rotulo="Classes em andamento" valor={num(c.classes_em_andamento)} />
-        <Numero rotulo="Aguardando revisão" valor={num(c.classes_aguardando_revisao)} />
-        <Numero rotulo="Aptos à investidura" valor={num(c.classes_aptas_investidura)} />
-        <Numero rotulo="Investidos" valor={num(c.investidos_total)} />
-      </dl>
-    </li>
-  )
-}
-
-function Numero({ rotulo, valor }) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <dt className="text-faint">{rotulo}</dt>
-      <dd className="font-bold text-ink">{valor}</dd>
     </div>
   )
 }

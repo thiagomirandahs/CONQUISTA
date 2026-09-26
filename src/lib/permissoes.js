@@ -28,6 +28,7 @@ export const FERRAMENTAS = [
   { to: '/atividade-jogos', icon: '📊', titulo: 'Atividade dos jogos', desc: 'Quem jogou hoje e quem sumiu', papeis: ['diretoria', 'instrutor'], recurso: 'jogos' , grupo: 'conteudo', contextual: true },
   { to: '/vinculos-pais', icon: '👨‍👩‍👧', titulo: 'Vínculos dos pais', desc: 'Confirmar quem é filho de quem + PIX', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas', contextual: true },
   { to: '/clube', icon: '🎨', titulo: 'Identidade e recursos', desc: 'Nome, cores e logo do clube; o que o clube usa', papeis: ['diretoria', 'instrutor'] , grupo: 'clube', contextual: true },
+  { to: '/visitas', icon: '📅', titulo: 'Visitas da coordenação', desc: 'Confirmar ou remarcar visitas do distrito/região', papeis: ['diretoria'] , grupo: 'clube', contextual: true },
   { to: '/planos', icon: '💳', titulo: 'Plano do clube', desc: 'O que está incluído e quanto já está sendo usado', papeis: ['diretoria', 'instrutor'] , grupo: 'clube', contextual: true },
   { to: '/experiencias/novo', icon: '🛠️', titulo: 'Montar experiências', desc: 'Desafios, campanhas e temporadas, sem programar', papeis: ['diretoria', 'instrutor'], recurso: 'experiencias' , grupo: 'conteudo', contextual: true },
   { to: '/avaliar-classe', icon: '🎖️', titulo: 'Avaliar classes', desc: 'Aprovar ou pedir correção dos requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
