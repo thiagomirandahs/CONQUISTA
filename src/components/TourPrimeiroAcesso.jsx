@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PASSOS_DO_TOUR, tourJaVisto, marcarTourVisto } from '../lib/tutorial/tutorial.js'
 
 // Tour de primeiro acesso: 4 passos (Início, Jornada, Clube, Eu), pulável, uma vez por usuário neste aparelho.
@@ -6,6 +6,9 @@ import { PASSOS_DO_TOUR, tourJaVisto, marcarTourVisto } from '../lib/tutorial/tu
 export default function TourPrimeiroAcesso({ uid, forcar = false, aoFechar }) {
   const [aberto, setAberto] = useState(() => forcar || (!!uid && !tourJaVisto(uid)))
   const [passo, setPasso] = useState(0)
+  // Marca como VISTO assim que aparece (não só ao tocar em Pular/Concluir): quem fechava o app com o
+  // tour aberto via o tour de novo toda vez que abria (relato do dono, 26/09). Agora é 1x por pessoa.
+  useEffect(() => { if (aberto && !forcar) marcarTourVisto(uid) }, [aberto, forcar, uid])
   if (!aberto) return null
 
   const fechar = () => { marcarTourVisto(uid); setAberto(false); aoFechar?.() }
