@@ -51,3 +51,9 @@ export const atualizarVisita = (id, acao, { quando = null, texto = null } = {}) 
 export const carregarVisitasDoClube = async (clubId) => (await rpc('clube_visitas', { p_club_id: clubId })) || []
 export const responderVisita = (id, confirmar, { sugestao = null, obs = null } = {}) =>
   rpc('clube_visita_responder', { p_id: id, p_confirmar: confirmar, p_sugestao: sugestao, p_obs: obs })
+// avaliação da visita pela diretoria (migration 320): nota geral 1–5 obrigatória, aspectos opcionais
+export const avaliarVisita = (id, { geral, pontualidade = null, orientacao = null, relacionamento = null, observacao = null }) =>
+  rpc('clube_visita_avaliar', {
+    p_id: id, p_geral: geral, p_pontualidade: pontualidade, p_orientacao: orientacao,
+    p_relacionamento: relacionamento, p_observacao: observacao,
+  })

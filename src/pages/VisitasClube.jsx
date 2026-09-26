@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { Cabecalho, Botao, Campo, Selo, Carregando, Vazio, Aviso, mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
-import { carregarVisitasDoClube, responderVisita } from '../services/institucional.js'
+import { carregarVisitasDoClube, responderVisita, avaliarVisita } from '../services/institucional.js'
+import { FormAvaliacao, ResumoAvaliacao, avaliacaoEditavel } from '../components/AvaliacaoVisita.jsx'
 import { fmtQuando, localParaIso } from './PainelDoEscopo.jsx'
 
 // Visitas da coordenação (migration 141), lado da DIRETORIA do clube: ver o que foi agendado,
-// confirmar ou sugerir outra data, e ler o relatório depois. O servidor confere a diretoria.
+// confirmar ou sugerir outra data, ler o relatório e AVALIAR a visita (migration 320: depois de realizada ou
+// 12h após a data; editável por 7 dias). O servidor confere a diretoria.
 const STATUS = { agendada: ['atencao', 'Aguardando você'], confirmada: ['ok', 'Confirmada'], realizada: ['info', 'Realizada'], cancelada: ['neutro', 'Cancelada'] }
 
 export default function VisitasClube() {
@@ -36,6 +38,7 @@ function Visita({ v, depois }) {
   const [quando, setQuando] = useState('')
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(null)
+  const [avaliando, setAvaliando] = useState(false)
   const [tom, rot] = STATUS[v.status] || ['neutro', v.status]
   const aberta = v.status === 'agendada' || v.status === 'confirmada'
 
@@ -45,6 +48,17 @@ function Visita({ v, depois }) {
       await responderVisita(v.id, confirmar, { sugestao: confirmar ? null : localParaIso(quando), obs: obs || null })
       avisar.sucesso(confirmar ? 'Visita confirmada.' : 'Sugestão enviada à coordenação.')
       setSugerindo(false); setObs(''); setQuando('')
+      depois()
+    } catch (e) { avisar.erro(e) } finally { setSalvando(null) }
+  }
+
+  const podeAvaliar = v.avaliavel && v.status !== 'cancelada' && avaliacaoEditavel(v.avaliacao)
+  const salvarAvaliacao = async (dados) => {
+    setSalvando('aval')
+    try {
+      await avaliarVisita(v.id, dados)
+      avisar.sucesso('Avaliação enviada. A coordenação foi avisada.')
+      setAvaliando(false)
       depois()
     } catch (e) { avisar.erro(e) } finally { setSalvando(null) }
   }
@@ -70,7 +84,18 @@ function Visita({ v, depois }) {
           <p className="text-sm text-ink whitespace-pre-wrap">{v.relatorio}</p>
         </div>
       )}
-      {aberta && !sugerindo && (
+      {!avaliando && <ResumoAvaliacao a={v.avaliacao} />}
+      {podeAvaliar && !avaliando && (
+        <div className="mt-3">
+          <Botao variacao={v.avaliacao ? 'secundario' : 'contorno'} aoTocar={() => setAvaliando(true)}>
+            {v.avaliacao ? 'Editar avaliação' : '⭐ Avaliar visita'}
+          </Botao>
+        </div>
+      )}
+      {avaliando && (
+        <FormAvaliacao inicial={v.avaliacao} salvando={salvando === 'aval'} aoSalvar={salvarAvaliacao} aoVoltar={() => setAvaliando(false)} />
+      )}
+      {aberta && !v.avaliavel && !sugerindo && !avaliando && (
         <div className="grid grid-cols-2 gap-2 mt-3">
           <Botao variacao="contorno" carregando={salvando === 'sim'} desabilitado={!!salvando || v.status === 'confirmada'}
             aoTocar={() => responder(true)}>{v.status === 'confirmada' ? 'Confirmada' : 'Confirmar'}</Botao>

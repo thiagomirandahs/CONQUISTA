@@ -7,6 +7,7 @@ import {
   TIPO_UNIDADE, fmtDia, fmtQuando, lugarDoClube, n, pct, semUso,
 } from './PainelDoEscopo.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import { EstrelasFixas, mediasDeAvaliacao } from '../components/AvaliacaoVisita.jsx'
 import { Abas, Aviso, Card, CardAcao, Carregando, Selo, Vazio, mensagemDeErro } from '../ui/index.jsx'
 
 // =============================================================================
@@ -168,6 +169,7 @@ function VisaoGeral({ painel, verPainel, visitas, investiduras, aoAbrirClube, ao
   const acumuladas = useMemo(() => clubes.filter((c) => n(c.avaliacoes_pendentes) >= 10)
     .sort((a, b) => n(b.avaliacoes_pendentes) - n(a.avaliacoes_pendentes)), [clubes])
   const proximas = (visitas || []).filter((v) => v.status === 'agendada' || v.status === 'confirmada').slice(0, 3)
+  const medias = useMemo(() => mediasDeAvaliacao(visitas), [visitas])
 
   return (
     <>
@@ -215,6 +217,25 @@ function VisaoGeral({ painel, verPainel, visitas, investiduras, aoAbrirClube, ao
                 </ul>
               )}
           </Secao>
+
+          {medias.length > 0 && (
+            <Secao id="avaliacoes-visitas" icone="⭐" titulo="Avaliações das visitas" subtitulo="Média da nota geral dada pelos clubes">
+              <ul className="space-y-2" data-testid="medias-avaliacao">
+                {medias.map((g) => (
+                  <li key={g.chave} className="rounded-xl bg-surface2 p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-ink truncate">{g.nome || g.unidade}</div>
+                      <div className="text-xs text-muted truncate">{g.nome ? `${g.unidade} · ` : ''}{g.total} {g.total === 1 ? 'avaliação' : 'avaliações'}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-extrabold text-ink">{g.media.toFixed(1).replace('.', ',')}</div>
+                      <EstrelasFixas nota={g.media} tamanho="text-xs" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Secao>
+          )}
 
           <Secao id="investiduras-mes" icone="🏅" titulo="Investiduras">
             <dl className="grid grid-cols-2 gap-2">

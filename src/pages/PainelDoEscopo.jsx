@@ -5,6 +5,7 @@ import { ClubeAvatar } from '../components/admin/AdminUI.jsx'
 import {
   carregarClubeDetalhe, carregarVisitasDoEscopo, agendarVisita, atualizarVisita,
 } from '../services/institucional.js'
+import { ResumoAvaliacao } from '../components/AvaliacaoVisita.jsx'
 
 // =============================================================================
 //  Peças do portal da coordenação (migrations 141/142/300). Mesmo visual das telas do clube
@@ -391,6 +392,7 @@ function CartaoVisita({ v, depois, semClube }) {
           <p className="text-sm text-ink whitespace-pre-wrap">{v.relatorio}</p>
         </div>
       )}
+      <ResumoAvaliacao a={v.avaliacao} />
       {v.pode_editar && aberta && !modo && (
         <div className="grid grid-cols-3 gap-2 mt-3">
           <Botao variacao="secundario" aoTocar={() => setModo('reagendar')}>Remarcar</Botao>
