@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { m as motion } from 'framer-motion'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
+import { clubesDaVitrine } from '../services/vitrine.js'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
 import { traduzErro } from '../lib/erros.js'
@@ -31,6 +32,19 @@ export default function Cadastro() {
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [enviado, setEnviado] = useState(false)
+  // Cadastro escolhendo o clube (26/09): a lista vem da vitrine pública (só clubes ativos e visíveis).
+  // A escolha vira um PEDIDO de entrada pendente — a diretoria do clube aprova. Não aparece quando a
+  // pessoa já veio de um link de clube/convite (retorno) nem no cadastro de coordenação.
+  const [clubes, setClubes] = useState([])
+  const [clube, setClube] = useState('')
+  const [clubePedido, setClubePedido] = useState(null)
+  const mostrarClubes = !retorno && !convite && !ehCoordenacao
+  useEffect(() => {
+    if (!mostrarClubes) return undefined
+    let vivo = true
+    clubesDaVitrine().then((l) => { if (vivo) setClubes(Array.isArray(l) ? l : []) }).catch(() => {})
+    return () => { vivo = false }
+  }, [mostrarClubes])
 
   const set = (campo, v) => setForm((f) => ({ ...f, [campo]: v }))
 
@@ -93,6 +107,13 @@ export default function Cadastro() {
       navigate(retorno, { replace: true })
       return
     }
+    // Escolheu o clube na lista: já envia o pedido de entrada (pendente) antes de sair.
+    if (clube && data?.session) {
+      try {
+        const { data: r } = await supabase.rpc('entrada_solicitar_clube', { p_slug: clube })
+        if (r?.encontrado) setClubePedido(r.clube || clubes.find((c) => c.slug === clube)?.nome || 'o clube')
+      } catch { /* pedido não saiu: a pessoa ainda pode entrar com o código do clube */ }
+    }
     // Sem link de clube: a conta existe, mas ainda não pertence a clube nenhum.
     await supabase.auth.signOut()
     setEnviado(true)
@@ -113,6 +134,8 @@ export default function Cadastro() {
               <>Pronto! Agora é só <strong>entrar</strong> e <strong>pedir o vínculo com seu filho(a)</strong>. A diretoria confirma e você já acompanha tudo. 🎉</>
             ) : retorno ? (
               <>Sua conta está pronta! Agora é só <strong>entrar</strong> para concluir o seu <strong>pedido de entrada no clube</strong> — o link do clube já está guardado. 🎉</>
+            ) : clubePedido ? (
+              <>Sua conta está pronta e o seu pedido para entrar no <strong>{clubePedido}</strong> foi enviado! 🎉 Agora é só <strong>entrar</strong> e aguardar a <strong>diretoria aprovar</strong>.</>
             ) : (
               /* MUDOU NA 8.6: esta frase dizia "aguardando a aprovação da diretoria" — e agora não
                  há diretoria nenhuma esperando, porque o cadastro não coloca mais ninguém em clube
@@ -171,6 +194,17 @@ export default function Cadastro() {
               {/* A unidade saiu do cadastro (fase 8.6): ela só existe DENTRO de um clube, e aqui
                   ainda não há clube nenhum. Quem atribui é a liderança, depois que a pessoa entra. */}
             </>
+          )}
+
+          {mostrarClubes && !ehPai && clubes.length > 0 && (
+            <div>
+              <label htmlFor="cadastro-clube" className="block text-sm font-medium text-ink mb-1">Seu clube</label>
+              <select id="cadastro-clube" className={inputClass} value={clube} onChange={(e) => setClube(e.target.value)} data-testid="cadastro-clube">
+                <option value="">Escolha o seu clube…</option>
+                {clubes.map((c) => <option key={c.slug} value={c.slug}>{c.nome}{c.cidade ? ` — ${c.cidade}` : ''}</option>)}
+              </select>
+              <p className="text-xs text-faint mt-1">A diretoria do clube vai aprovar a sua entrada. Não achou? Deixe em branco e entre depois com o código do clube.</p>
+            </div>
           )}
 
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg p-3">
