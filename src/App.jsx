@@ -60,6 +60,7 @@ const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
+const ConviteCoordenacao = lazy(() => import('./pages/ConviteCoordenacao.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
 const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Eu = lazy(() => import('./pages/Eu.jsx'))
@@ -250,6 +251,10 @@ export default function App() {
             autoridade de clube. O guard de verdade é dentro de Admin.jsx (eh_admin_plataforma() no
             servidor); não há link nenhum pra esta rota em nenhum menu — quem não é admin nem a vê. */}
         <Route path="/admin" element={<SessaoObrigatoria><Admin /></SessaoObrigatoria>} />
+
+        {/* Convite de coordenação (link gerado no /admin): exige sessão — sem conta, cria/entra e volta
+            pra cá — e não passa pelo ClubeGuard (coordenador não tem clube). */}
+        <Route path="/coordenacao" element={<SessaoObrigatoria><ConviteCoordenacao /></SessaoObrigatoria>} />
 
         {/* Entrar num clube por código/QR ou por link de convite (fase 8.6). Exige SESSÃO e não
             passa pelo ClubeGuard, pela mesma razão do onboarding: quem chega aqui ainda não tem

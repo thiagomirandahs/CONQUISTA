@@ -4,6 +4,7 @@ import { useClube } from '../context/Clube.jsx'
 import {
   carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco,
 } from '../services/comercial.js'
+import { opcoesParaClube, clubeSolicitar, TIPO_ROTULO } from '../services/hierarquia.js'
 
 // Cadastro de um clube novo (fase 5). O ESTADO MORA NO SERVIDOR: esta tela nunca decide em que etapa
 // você está — ela pergunta. Fechar o app na etapa 4 e voltar amanhã continua exatamente dali, e
@@ -63,9 +64,9 @@ export default function Onboarding() {
     finally { setSalvando(false) }
   }
 
-  const enviar = async (etapa, dados) => {
+  const enviar = async (etapa, dados, antes) => {
     setErro(''); setSalvando(true)
-    try { await salvarEtapaOnboarding(etapa, dados); setForm({}); await buscar() }
+    try { if (antes) await antes(); await salvarEtapaOnboarding(etapa, dados); setForm({}); await buscar() }
     catch (e) { setErro(e?.message || String(e)) }
     finally { setSalvando(false) }
   }
@@ -113,7 +114,7 @@ export default function Onboarding() {
 
           <div className="bg-surface rounded-2xl p-5 shadow-soft" data-testid="etapa-atual">
             <FormularioEtapa etapa={etapaAtual} form={form} setForm={setForm} planos={planos}
-              salvando={salvando} onEnviar={enviar} />
+              salvando={salvando} onEnviar={enviar} clubId={estado?.club_id} />
           </div>
         </>
       )}
@@ -157,9 +158,9 @@ function Botao({ children, salvando }) {
   )
 }
 
-function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
+function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar, clubId }) {
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }))
-  const submeter = (dados) => (ev) => { ev.preventDefault(); onEnviar(etapa, dados) }
+  const submeter = (dados, antes) => (ev) => { ev.preventDefault(); onEnviar(etapa, dados, antes) }
 
   if (etapa === 'conta') {
     return (
@@ -251,9 +252,11 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
   }
   if (etapa === 'configuracao') {
     return (
-      <form onSubmit={submeter({ pix: form.pix || '' })}>
+      <form onSubmit={submeter({ pix: form.pix || '' },
+        form.regiao && clubId ? () => clubeSolicitar(clubId, form.regiao) : null)}>
         <h2 className="font-bold text-ink mb-3">⚙️ Configuração inicial</h2>
         <Campo id="ob-pix" rotulo="Chave PIX do clube (opcional)" value={form.pix || ''} onChange={set('pix')} />
+        <EscolherRegiao valor={form.regiao || ''} onChange={set('regiao')} />
         <Botao salvando={salvando}>Continuar</Botao>
       </form>
     )
@@ -290,5 +293,24 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar }) {
       </p>
       <Botao salvando={salvando}>Concluir</Botao>
     </form>
+  )
+}
+
+// Região/distrito do clube: a diretoria ESCOLHE, mas vira só um pedido — o clube só fica debaixo da
+// unidade quando a administração da plataforma confirmar (migration 130). Opcional.
+function EscolherRegiao({ valor, onChange }) {
+  const [opcoes, setOpcoes] = useState(null)
+  useEffect(() => { opcoesParaClube().then(setOpcoes).catch(() => setOpcoes([])) }, [])
+  if (!opcoes || opcoes.length === 0) return null
+  return (
+    <label htmlFor="ob-regiao" className="block mb-3">
+      <span className="text-xs text-muted">Região ou distrito do clube (opcional)</span>
+      <select id="ob-regiao" value={valor} onChange={onChange}
+        className="mt-1 w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm text-ink">
+        <option value="">Escolher depois</option>
+        {opcoes.map((o) => <option key={o.id} value={o.id}>{TIPO_ROTULO[o.tipo]} — {o.caminho || o.nome}</option>)}
+      </select>
+      <span className="block text-xs text-faint mt-1">Fica aguardando a confirmação da administração.</span>
+    </label>
   )
 }

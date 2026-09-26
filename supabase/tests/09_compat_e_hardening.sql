@@ -42,12 +42,13 @@ reset role;
 -- ---------- hardening: ACL de funções ----------
 -- planos_disponiveis (item 4, migration 95): catálogo de planos pra landing/aquisição PÚBLICAS —
 -- já filtra pra só o que é vitrine (publico e ativo e status='publicado'), nenhum dado de conta.
+-- convite_hierarquia_abrir (migration 130): link de convite de coordenação, com rate limit por origem.
 -- entrada_abrir_publico (migration 104): o link/QR do clube mostra a identidade PÚBLICA do clube a
 -- quem ainda não tem conta; limite por origem + teto global; pedir entrada continua exigindo conta.
 select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos e a inscrição pelo link)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
-      and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico')), 0);
+      and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções

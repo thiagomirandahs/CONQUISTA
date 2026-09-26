@@ -11,6 +11,7 @@ const TIPO_ROTULO = { distrito: 'Distrito', regiao: 'Região', campo: 'Campo / A
 const PAPEL_ROTULO = {
   coordenador_distrital: 'Coordenação distrital', coordenador_regional: 'Coordenação regional',
   coordenador_geral: 'Coordenação geral', diretor_mda: 'Direção do Ministério',
+  coordenador_uniao: 'Coordenação da união', diretor_uniao: 'Direção da união', coordenador_divisao: 'Coordenação da divisão',
 }
 const fmtData = (iso) => {
   if (!iso) return ''
@@ -50,7 +51,7 @@ export default function PortalInstitucional() {
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft max-w-md mx-auto mt-8">
         <div className="text-4xl mb-2" aria-hidden="true">🏛️</div>
         <p className="font-semibold text-ink">Sem vínculo institucional</p>
-        <p className="text-sm text-faint mt-1">Este portal é para coordenação distrital, regional ou de campo.</p>
+        <p className="text-sm text-faint mt-1">Este portal é para coordenação distrital, regional, de campo, união ou divisão.</p>
         <Link to="/" className="inline-block mt-4 text-sm font-semibold text-brand underline">Voltar para o meu clube</Link>
       </div>
     )

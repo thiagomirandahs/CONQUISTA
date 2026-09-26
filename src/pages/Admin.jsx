@@ -8,6 +8,7 @@ import {
   trialPadrao, trialPadraoDefinir, trialEstender, trialEncerrar,
 } from '../services/admin.js'
 import { avisar } from '../ui/avisos.jsx'
+import AdminHierarquia from './AdminHierarquia.jsx'
 
 // /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
 // onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
@@ -17,6 +18,7 @@ import { avisar } from '../ui/avisos.jsx'
 const ABAS = [
   { chave: 'visao', rotulo: 'Visão geral', icone: '📊' },
   { chave: 'clubes', rotulo: 'Clubes', icone: '🏕️' },
+  { chave: 'hierarquia', rotulo: 'Hierarquia', icone: '🌳' },
   { chave: 'planos', rotulo: 'Planos', icone: '💳' },
   { chave: 'assinaturas', rotulo: 'Assinaturas', icone: '🧾' },
   { chave: 'armazenamento', rotulo: 'Armazenamento', icone: '💾' },
@@ -92,6 +94,7 @@ export default function Admin() {
       {aba === 'clubes' && (clubeAberto
         ? <DetalheClube clubId={clubeAberto} aoVoltar={() => setClubeAberto(null)} />
         : <Clubes aoAbrir={abrirClube} />)}
+      {aba === 'hierarquia' && <AdminHierarquia />}
       {aba === 'planos' && <Planos />}
       {aba === 'assinaturas' && <Assinaturas aoAbrirClube={abrirClube} />}
       {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}

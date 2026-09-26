@@ -213,13 +213,14 @@ select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
 -- `documento_verificar` é pública DE PROPÓSITO (conferir um documento emitido, por token).
 -- `planos_disponiveis` também é (item 4, migration 95): catálogo de planos pra landing/aquisição
 -- públicas — já filtra pra só o que é vitrine (publico e ativo e status='publicado').
+-- `convite_hierarquia_abrir` (migration 130): convite de coordenação por link (hash + rate limit por origem).
 -- `entrada_abrir_publico` (migration 104): quem abre o link/QR do clube sem conta vê só a identidade
 -- pública do clube (nome, sigla, lema, logo), com limite por origem e teto global.
 select t.eq('as únicas funções que ANÔNIMO executa são as públicas por desenho',
   t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
              from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
             where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'documento_verificar entrada_abrir_publico planos_disponiveis');
+  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico planos_disponiveis');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'
