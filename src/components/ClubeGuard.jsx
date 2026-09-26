@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
+import { souAdminPlataforma } from '../services/admin.js'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
@@ -21,6 +23,15 @@ export default function ClubeGuard({ children }) {
   const { sair } = useAuth()
   const { carregando, erro, semVinculo, precisaEscolher, vinculos, recarregar, marca, trocarClube } = useClube()
   const { temEscopo, escopos, carregando: carregandoEscopo } = useEscopo()
+  // Conta só de ADMIN da plataforma (sem clube): o lugar dela é o painel, não "entre num clube".
+  const semClube = !carregando && !erro && semVinculo
+  const [ehAdmin, setEhAdmin] = useState(null)
+  useEffect(() => {
+    if (!semClube) return undefined
+    let vivo = true
+    souAdminPlataforma().then((v) => { if (vivo) setEhAdmin(v) }).catch(() => { if (vivo) setEhAdmin(false) })
+    return () => { vivo = false }
+  }, [semClube])
 
   if (carregando) {
     return (
@@ -136,6 +147,8 @@ export default function ClubeGuard({ children }) {
         </Aviso>
       )
     }
+    // a resposta chega depois de a tela já estar de pé: se for admin, segue para o painel
+    if (ehAdmin) return <Navigate to="/admin" replace />
     return (
       <Aviso icone={temEscopo ? '🏛️' : '🏕️'} titulo={temEscopo ? 'Sua jornada é institucional' : 'Você ainda não está em um clube'}>
         <p className="text-sm text-muted mt-1 mb-5">

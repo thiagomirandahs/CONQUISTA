@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
+import { souAdminPlataforma } from '../services/admin.js'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -49,7 +50,9 @@ export default function Login() {
     const retorno = lerRetorno() || retornoDaUrl(search)
     // replace: a tela de login sai do histórico — o VOLTAR não reabre o login com a pessoa já dentro
     if (retorno) { limparRetorno(); navigate(retorno, { replace: true }); marcarInicioDaNavegacao(); return }
-    navigate('/ranking', { replace: true })
+    // Conta de ADMIN da plataforma entra direto no painel (sem digitar /admin); as demais, no app.
+    const ehAdmin = await souAdminPlataforma().catch(() => false)
+    navigate(ehAdmin ? '/admin' : '/ranking', { replace: true })
     marcarInicioDaNavegacao()
   }
 
