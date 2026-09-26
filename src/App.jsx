@@ -71,6 +71,7 @@ const SiteCartaoClube = lazy(() => import('./pages/site/SiteCartaoClube.jsx'))
 const SiteParceiros = lazy(() => import('./pages/site/SiteParceiros.jsx'))
 const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Eu = lazy(() => import('./pages/Eu.jsx'))
+const Suporte = lazy(() => import('./pages/Suporte.jsx'))
 const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
 const GestaoAvaliacoes = lazy(() => import('./pages/GestaoAvaliacoes.jsx'))
 const GestaoInscricoes = lazy(() => import('./pages/GestaoInscricoes.jsx'))
@@ -319,6 +320,7 @@ export default function App() {
           <Route path="/eu" element={<Eu />} />
           {/* Tutorial (Eu → Ajuda / Como usar): conteúdo estático, entra no precache e abre sem internet */}
           <Route path="/ajuda" element={<Ajuda />} />
+          <Route path="/suporte" element={<Suporte />} />
           <Route path="/gestao/avaliar" element={<RotaRestrita><GestaoAvaliar /></RotaRestrita>} />
           <Route path="/gestao/avaliacoes" element={<RotaRestrita><GestaoAvaliacoes /></RotaRestrita>} />
           <Route path="/gestao/inscricoes" element={<RotaRestrita><GestaoInscricoes /></RotaRestrita>} />

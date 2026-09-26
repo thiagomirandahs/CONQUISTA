@@ -81,6 +81,7 @@ export default function Eu() {
 
       <Grupo titulo="Aplicativo">
         <ItemLink para="/ajuda" icone="❓" titulo="Ajuda / Como usar" desc="Passo a passo de cada parte do app" testid="ir-ajuda" />
+        <ItemLink para="/suporte" icone="🛟" titulo="Suporte" desc="Abrir chamado e ver respostas" testid="ir-suporte" />
         <ItemBotao icone="🔄" titulo="Atualizar o app" desc="Buscar a versão mais nova" aoTocar={atualizarApp} />
       </Grupo>
 

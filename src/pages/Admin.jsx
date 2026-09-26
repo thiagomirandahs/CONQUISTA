@@ -18,6 +18,8 @@ import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
 import { LimiteMembrosClube, LixeiraClube } from './AdminMembrosLixeira.jsx'
+import AdminChamados from './AdminChamados.jsx'
+import { adminChamadosContagem } from '../services/suporte.js'
 
 // /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
 // onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
@@ -35,6 +37,7 @@ const ABAS = [
   { chave: 'armazenamento', rotulo: 'Armazenamento', icone: '💾' },
   { chave: 'onboarding', rotulo: 'Onboarding', icone: '🧭' },
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️' },
+  { chave: 'chamados', rotulo: 'Chamados', icone: '📨' },
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜' },
 ]
@@ -73,7 +76,9 @@ function Estado({ erro, dados, vazio, children, esqueleto }) {
 }
 
 export default function Admin() {
-  const [aba, setAba] = useState('visao')
+  // ?aba=chamados&chamado=<id> (link da notificação de chamado novo)
+  const [params] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''))
+  const [aba, setAba] = useState(() => (ABAS.some((a) => a.chave === params.get('aba')) ? params.get('aba') : 'visao'))
   const [clubeAberto, setClubeAberto] = useState(null)
   const [autorizado, setAutorizado] = useState(null)
   const [erroAcesso, setErroAcesso] = useState('')
@@ -82,10 +87,15 @@ export default function Admin() {
   // Badges das abas (pendências): só depois que o servidor confirmou o admin.
   useEffect(() => {
     if (!autorizado) return
-    Promise.resolve().then(visaoGeral).then((v) => v && setContadores({
-      provisionamento: v.provisionamentos_pendentes || 0, onboarding: v.onboarding_em_andamento || 0,
-    })).catch(() => {})
-  }, [autorizado])
+    Promise.resolve().then(visaoGeral).then((v) => v && setContadores((c) => ({
+      ...c, provisionamento: v.provisionamentos_pendentes || 0, onboarding: v.onboarding_em_andamento || 0,
+    }))).catch(() => {})
+    atualizarChamados()
+  }, [autorizado]) // eslint-disable-line react-hooks/exhaustive-deps
+  // contador de chamados que pedem atenção (aberto + em andamento) — badge "Chamados" no menu
+  function atualizarChamados() {
+    adminChamadosContagem().then((n) => setContadores((c) => ({ ...c, chamados: n }))).catch(() => {})
+  }
 
   useEffect(() => {
     souAdminPlataforma().then(setAutorizado).catch((e) => { setAutorizado(false); setErroAcesso(e.message) })
@@ -126,6 +136,7 @@ export default function Admin() {
         {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}
         {aba === 'onboarding' && <Onboarding aoAbrirClube={abrirClube} />}
         {aba === 'provisionamento' && <Provisionamento />}
+        {aba === 'chamados' && <AdminChamados inicial={params.get('chamado')} aoMudarContagem={atualizarChamados} />}
         {aba === 'suporte' && <Suporte />}
         {aba === 'auditoria' && <Auditoria />}
       </div>
