@@ -153,24 +153,57 @@ function CabecalhoAdmin() {
 }
 
 // Pílulas que rolam de lado no celular (a última aparece cortada = dá pra ver que tem mais).
+// Navegação do painel em MENU DE LISTA (como o menu do site): uma barra com a seção atual e o botão
+// "Menu"; tocar abre a lista de todas as áreas, com ícone e contador de pendências. Tocar numa área
+// troca a seção e fecha a lista. Pedido do dono (26/09): as pílulas roláveis escondiam áreas no celular.
 function AbasDoAdmin({ abas, ativa, aoTrocar, contadores = {} }) {
+  const [aberto, setAberto] = useState(false)
+  const atual = abas.find((a) => a.chave === ativa) || abas[0]
+  const totalPendencias = Object.values(contadores).reduce((t, n) => t + (Number(n) || 0), 0)
+  useEffect(() => {
+    if (!aberto) return undefined
+    const esc = (e) => { if (e.key === 'Escape') setAberto(false) }
+    window.addEventListener('keydown', esc)
+    return () => window.removeEventListener('keydown', esc)
+  }, [aberto])
   return (
-    <nav aria-label="Áreas da administração" className="sticky top-[61px] z-10 -mx-4 mb-4 overflow-x-auto border-b border-line bg-bg/95 px-4 py-2.5 backdrop-blur [scrollbar-width:none]">
-      <div role="tablist" className="flex w-max gap-1.5">
-        {abas.map((a) => {
-          const sel = a.chave === ativa
-          const n = contadores[a.chave]
-          return (
-            <button key={a.chave} type="button" role="tab" aria-selected={sel} onClick={() => aoTrocar(a.chave)}
-              className={`inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-semibold transition-colors ${FOCO} ${sel
-                ? 'bg-[#0b1f4d] text-white shadow-sm dark:bg-white dark:text-[#07122f]'
-                : 'text-muted hover:bg-surface hover:text-ink'}`}>
-              <span aria-hidden="true" className="text-[15px] leading-none">{a.icone}</span>{a.rotulo}
-              {n > 0 && <span className="ml-0.5 rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{n}</span>}
-            </button>
-          )
-        })}
-      </div>
+    <nav aria-label="Áreas da administração" className="sticky top-[61px] z-20 -mx-4 mb-4 border-b border-line bg-bg/95 px-4 py-2.5 backdrop-blur">
+      <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-controls="admin-menu-lista"
+        data-testid="admin-menu" className={`flex w-full min-h-[48px] items-center gap-3 rounded-xl border border-line bg-surface px-3.5 text-left ${FOCO}`}>
+        <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-lg bg-surface2 text-lg">{atual.icone}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-faint">Seção</span>
+          <span className="block truncate text-[15px] font-bold text-ink">{atual.rotulo}</span>
+        </span>
+        {totalPendencias > 0 && !aberto && <span className="rounded-full bg-amber-500 px-2 text-xs font-bold leading-6 text-white">{totalPendencias}</span>}
+        <span aria-hidden="true" className="text-xl text-muted">{aberto ? '✕' : '☰'}</span>
+        <span className="sr-only">{aberto ? 'Fechar menu' : 'Abrir menu'}</span>
+      </button>
+      {aberto && (
+        <>
+          <button type="button" aria-label="Fechar menu" onClick={() => setAberto(false)} className="fixed inset-0 z-[-1] cursor-default bg-black/20" tabIndex={-1} />
+          <ul id="admin-menu-lista" role="tablist" aria-orientation="vertical"
+            className="mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 shadow-lg">
+            {abas.map((a) => {
+              const sel = a.chave === ativa
+              const n = contadores[a.chave]
+              return (
+                <li key={a.chave}>
+                  <button type="button" role="tab" aria-selected={sel} onClick={() => { aoTrocar(a.chave); setAberto(false) }}
+                    className={`flex w-full min-h-[48px] items-center gap-3 rounded-xl px-3 text-left text-[15px] transition-colors ${FOCO} ${sel
+                      ? 'bg-[#0b1f4d] font-bold text-white dark:bg-white dark:text-[#07122f]'
+                      : 'font-semibold text-ink hover:bg-surface2 active:bg-surface2'}`}>
+                    <span aria-hidden="true" className="w-6 text-center text-lg">{a.icone}</span>
+                    <span className="flex-1">{a.rotulo}</span>
+                    {n > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{n}</span>}
+                    {sel && <span aria-hidden="true">✓</span>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </nav>
   )
 }

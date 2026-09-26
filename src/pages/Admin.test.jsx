@@ -62,6 +62,8 @@ beforeEach(() => {
   f.trialEncerrar.mockResolvedValue({ ok: true })
 })
 
+// a navegação do painel é um menu em lista: abre o menu e toca na área
+const abrirAba = async (nome) => { await userEvent.click(screen.getByTestId('admin-menu')); await userEvent.click(screen.getByRole('tab', { name: nome })) }
 const abrirComoAdmin = async () => { f.souAdminPlataforma.mockResolvedValue(true); render(<Admin />); await screen.findByRole('heading', { name: 'Administração' }) }
 
 describe('Admin: guard — nunca mostra o painel sem confirmação do servidor', () => {
@@ -88,7 +90,7 @@ describe('Admin: guard — nunca mostra o painel sem confirmação do servidor',
 describe('Admin: Clubes', () => {
   it('lista TODOS os clubes, inclusive o fundador sem assinatura, com busca e filtro', async () => {
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     const todos = await screen.findAllByTestId('clube-item')
     expect(todos).toHaveLength(2)
     expect(within(todos[0]).getByText('Sem assinatura')).toBeInTheDocument()
@@ -107,7 +109,7 @@ describe('Admin: Clubes', () => {
       { ...NOVO, sigla: 'EDC', cor_primaria: '#7a1f1f', membros: 5, membros_limite: 20 },
     ])
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     const [a, b] = await screen.findAllByTestId('clube-item')
     expect(within(a).getByAltText('Logo do Filhos da Conquista')).toHaveAttribute('src', 'https://x.test/logo.png')
     expect(within(b).getByText('EDC')).toBeInTheDocument()
@@ -124,7 +126,7 @@ describe('Admin: Clubes', () => {
 
   it('detalhe do clube: status da assinatura só muda com motivo (vai para a auditoria)', async () => {
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     await userEvent.click(await screen.findByText(/Exército da colina/))
     expect(f.clubeDetalhe).toHaveBeenCalledWith('c2')
     expect(await screen.findByText('Sem gateway — combinado fora do sistema')).toBeInTheDocument()
@@ -140,7 +142,7 @@ describe('Admin: Clubes', () => {
     f.planoMudar.mockResolvedValueOnce({ ok: false, precisa_confirmar: true, mensagem: 'O plano escolhido é menor que o uso atual.', excedentes: [{ clube: 'Exército da colina', limite: 'membros', uso: 30, teto: 20 }] })
       .mockResolvedValueOnce({ ok: true })
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     await userEvent.click(await screen.findByText(/Exército da colina/))
     await userEvent.selectOptions(await screen.findByLabelText('Alterar plano'), 'anual|1')
     await userEvent.click(screen.getByText('Aplicar plano'))
@@ -154,7 +156,7 @@ describe('Admin: Clubes', () => {
 describe('Admin: Planos, Assinaturas, Armazenamento', () => {
   it('Planos mostra TODAS as versões (inclusive fora da vitrine) e não tem edição', async () => {
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Planos/ }))
+    await abrirAba(/Planos/)
     expect(await screen.findAllByTestId('plano-item')).toHaveLength(2)
     expect(screen.getByText('Fora da vitrine')).toBeInTheDocument()
     expect(screen.queryByText('Salvar')).toBeNull()
@@ -164,14 +166,14 @@ describe('Admin: Planos, Assinaturas, Armazenamento', () => {
   it('Assinaturas nunca mostra pagamento confirmado sem gateway', async () => {
     f.assinaturasListar.mockResolvedValue([{ id: 's2', status: 'trial', ciclo: 'mensal', plano_nome: 'Gratuito', plano_versao: 1, criada_em: '2026-09-25', clubes: [{ club_id: 'c2', nome: 'Exército da colina' }], faturas_pagas_gateway: 0, faturas_abertas: 0 }])
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Assinaturas/ }))
+    await abrirAba(/Assinaturas/)
     expect(await screen.findByText('Pagamento não confirmado por gateway')).toBeInTheDocument()
   })
 
   it('Armazenamento põe quem está no limite primeiro', async () => {
     f.clubesListar.mockResolvedValue([NOVO, { ...FUNDADOR, club_id: 'c3', nome: 'Clube Cheio', armazenamento_situacao: 'atingido', armazenamento_limite_mb: 10, armazenamento_pct: 100 }])
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Armazenamento/ }))
+    await abrirAba(/Armazenamento/)
     const itens = await screen.findAllByTestId('armazenamento-item')
     expect(within(itens[0]).getByText('Clube Cheio')).toBeInTheDocument()
     expect(within(itens[0]).getByText('Limite atingido')).toBeInTheDocument()
@@ -182,7 +184,7 @@ describe('Admin: Suporte — admin nunca autoriza o próprio pedido', () => {
   it('não existe botão Autorizar; revogar chama suporte_revogar', async () => {
     f.suporteListar.mockResolvedValue([{ id: 'g1', motivo: 'Investigar erro relatado', status: 'solicitado' }])
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Suporte/ }))
+    await abrirAba(/Suporte/)
     expect(await screen.findByText(/não concede acesso real/)).toBeInTheDocument()
     expect(screen.queryByText('Autorizar')).toBeNull()
     await userEvent.click(screen.getByText('Revogar'))
@@ -214,7 +216,7 @@ describe('Admin: teste gratuito', () => {
     const vaiEncerrar = vi.spyOn(window, 'confirm').mockReturnValue(true)
     f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, trial_ate: '2026-10-10T12:00:00Z' } })
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     await userEvent.click(await screen.findByText(/Exército da colina/))
     expect(await screen.findByTestId('teste-gratuito-situacao')).toHaveTextContent('Em teste até')
     await userEvent.click(screen.getByText('+15 dias'))
@@ -230,7 +232,7 @@ describe('Admin: teste gratuito', () => {
   it('assinatura ativa: sem botões de teste', async () => {
     f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, assinatura_status: 'ativa' } })
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await abrirAba(/Clubes/)
     await userEvent.click(await screen.findByText(/Exército da colina/))
     await screen.findByTestId('teste-gratuito')
     expect(screen.queryByText('+7 dias')).toBeNull()
@@ -254,7 +256,7 @@ describe('Admin: Onboarding parado', () => {
       { id: 'o3', status: 'concluido', etapa: 'concluido', etapas_concluidas: [], clube: 'Clube Pronto', iniciado_em: dias(30), atualizado_em: dias(30) },
     ])
     await abrirComoAdmin()
-    await userEvent.click(screen.getByRole('tab', { name: /Onboarding/ }))
+    await abrirAba(/Onboarding/)
     const itens = await screen.findAllByTestId('onboarding-item')
     expect(within(itens[0]).getByTestId('onboarding-parado')).toHaveTextContent('Parado há 12 dias na etapa “dados_basicos”')
     expect(within(itens[1]).getByTestId('onboarding-parado')).toHaveTextContent('Parado há 2 dias')
