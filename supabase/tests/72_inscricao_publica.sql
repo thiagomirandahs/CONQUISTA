@@ -46,6 +46,18 @@ select t.eq('não existe variante que aceite club_id: a única assinatura recebe
   t.txt($q$select string_agg(pg_get_function_identity_arguments(oid), ' | ') from pg_proc where proname = 'entrada_abrir_publico'$q$), 'p_codigo text');
 select t.eq('ninguém lê a tabela de tentativas públicas direto',
   t.n($q$select count(*) from information_schema.table_privileges where table_name = 'entrada_tentativas_publicas' and grantee in ('anon','authenticated')$q$), 0);
+-- auditoria 160: inventário do que anon alcança — nenhuma tabela public, e só as 4 RPCs públicas justificadas
+select t.eq('anon não tem privilégio em NENHUMA tabela/view de public',
+  t.n($q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$), 0);
+select t.eq('anon executa só as 4 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação)',
+  t.txt($q$select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
+  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,planos_disponiveis');
+select t.eq('nenhuma função SECURITY DEFINER de public sem search_path fixo',
+  t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prosecdef
+          and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')$q$), 0);
+select t.eq('nenhuma tabela de public sem RLS',
+  t.n($q$select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind in ('r','p') and not c.relrowsecurity$q$), 0);
 
 -- ==================== 2) limite: por origem e teto global ====================
 select t.como_anon(); select t.origem('198.51.100.7');
@@ -55,6 +67,20 @@ select t.throws('...inclusive com um código VÁLIDO (o bloqueio não vira orác
 select t.origem('198.51.100.8');
 select t.eq('outra origem continua podendo abrir', t.txt(format($q$select public.entrada_abrir_publico(%L) ->> 'encontrado'$q$, :'cod_a')), 'true');
 reset role;
+-- auditoria 160: com o IP da borda (cf-connecting-ip) presente, forjar x-forwarded-for NÃO troca de origem
+delete from public.entrada_tentativas_publicas;
+select t.como_anon();
+do $$ begin for i in 1..10 loop
+  perform set_config('request.headers', json_build_object('cf-connecting-ip', '198.51.100.50', 'x-forwarded-for', '10.9.' || i || '.1, 10.0.0.1')::text, true);
+  perform public.entrada_abrir_publico('ERRADO' || i);
+end loop; end $$;
+select set_config('request.headers', json_build_object('cf-connecting-ip', '198.51.100.50', 'x-forwarded-for', '10.99.99.99')::text, true) is not null;
+select t.throws('forjar x-forwarded-for a cada chamada não escapa do limite por origem (vale o IP da borda)',
+  $q$select public.entrada_abrir_publico('ERRADO11')$q$, 'Muitas tentativas');
+select set_config('request.headers', json_build_object('cf-connecting-ip', '198.51.100.51', 'x-forwarded-for', '10.99.99.99')::text, true) is not null;
+select t.eq('outro IP de borda continua abrindo', t.txt(format($q$select public.entrada_abrir_publico(%L) ->> 'encontrado'$q$, :'cod_a')), 'true');
+reset role;
+delete from public.entrada_tentativas_publicas;
 insert into public.entrada_tentativas_publicas (origem_hash, acertou) select 'forjado-' || g, false from generate_series(1, 300) g;
 select t.como_anon(); select t.origem('192.0.2.99');
 select t.throws('teto GLOBAL: trocar de IP não libera varredura', format($q$select public.entrada_abrir_publico(%L)$q$, :'cod_a'), 'Muitas tentativas');

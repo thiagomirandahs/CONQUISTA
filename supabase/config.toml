@@ -394,6 +394,18 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Verificação de JWT por função — explícita no repo (auditoria 26/09) para um `functions deploy` não
+# divergir do painel. enviar-push é chamada pelo banco (pg_net) e se autentica por segredo
+# compartilhado (comparação em tempo constante no código); as de PDF exigem a sessão do usuário.
+[functions.enviar-push]
+verify_jwt = false
+
+[functions.gerar-documento-pdf]
+verify_jwt = true
+
+[functions.gerar-documento-pdf-final]
+verify_jwt = true
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

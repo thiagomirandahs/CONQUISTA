@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: reservadas, error: erroReserva } = await sb.rpc('push_reservar', { p_evento_id: eventoId })
-    if (erroReserva) return new Response('erro: ' + erroReserva.message, { status: 500 })
+    if (erroReserva) { console.error('push_reservar', erroReserva.message); return new Response('erro interno', { status: 500 }) }
     const entregas: any[] = reservadas ?? []
     if (entregas.length === 0) {
       // Caminho normal de um retry. Não é erro, e é exatamente o que se queria.
@@ -323,6 +323,7 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (e: any) {
-    return new Response('erro: ' + (e?.message ?? e), { status: 500 })
+    console.error('enviar-push', e?.message ?? e)   // detalhe só no log da função, nunca na resposta
+    return new Response('erro interno', { status: 500 })
   }
 })

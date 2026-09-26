@@ -102,6 +102,28 @@ select t.eq('depois de assinar: documento_assinaturas mostra 1 de 1 exigida, ja_
   (select (a->>'ja_assinei') || '|' || jsonb_array_length(a->'registradas') || '|' || (a->>'exigidas')
    from (select public.documento_assinaturas(t.tok()) a) x), 'true|1|1');
 
+-- ==================== auditoria 160: o desenho é SÓ o arquivo da própria assinatura ====================
+select s.id as sig_id, s.club_id_origem as sig_club, s.documento_id as sig_doc
+  from public.document_signatures s where s.documento_id = t.id('doc') and s.status = 'registrada' \gset
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.ok('upload (policy): caminho <club>/<doc>/<minha assinatura>.png é aceito',
+  public._assinatura_desenho_caminho_ok(:'sig_club' || '/' || :'sig_doc' || '/' || :'sig_id' || '.png'));
+select t.ok('upload (policy): outro nome na MESMA pasta do documento é recusado (antes passava)',
+  not public._assinatura_desenho_caminho_ok(:'sig_club' || '/' || :'sig_doc' || '/' || gen_random_uuid()::text || '.png'));
+select t.ok('upload (policy): travessia/sufixo estranho é recusado',
+  not public._assinatura_desenho_caminho_ok(:'sig_club' || '/' || :'sig_doc' || '/../' || :'sig_id' || '.png'));
+select t.throws('registro: PNG de outro nome na pasta do documento é recusado (não "adota" o desenho de outro signatário)',
+  format($q$select public.documento_assinatura_desenho_registrar(%L, %L)$q$, :'sig_id', :'sig_club' || '/' || :'sig_doc' || '/' || gen_random_uuid()::text || '.png'),
+  'não corresponde');
+reset role;
+select t.como('membro_b'); select t.pedir_clube('clube_b');
+select t.ok('upload (policy): outra pessoa não sobe no caminho da assinatura de lider_a',
+  not public._assinatura_desenho_caminho_ok(:'sig_club' || '/' || :'sig_doc' || '/' || :'sig_id' || '.png'));
+select t.throws('registro: outra pessoa não registra desenho na assinatura alheia',
+  format($q$select public.documento_assinatura_desenho_registrar(%L, %L)$q$, :'sig_id', :'sig_club' || '/' || :'sig_doc' || '/' || :'sig_id' || '.png'),
+  'Sem permissão');
+reset role;
+
 -- ==================== H2: 1ª assinatura já registrada — agora a representação final existe ====================
 select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.eq('documento_pdf_final_dados: 1 assinatura na lista, sem desenho, sem render existente ainda',

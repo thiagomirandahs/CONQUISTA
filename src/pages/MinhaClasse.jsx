@@ -1,4 +1,5 @@
 import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
+import { hrefExterno } from '../lib/urlSegura.js'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -640,7 +641,7 @@ function OrigemRequisito({ origem, onFechar }) {
   const classe = origem.classe || {}
   const versao = origem.versao || {}
   const omd = (o, rotulo) => o && (
-    <li><span className="font-semibold">{rotulo}:</span> {o.id} — {o.titulo} ({fmtData(o.data)}){o.url && <> · <a href={o.url} target="_blank" rel="noreferrer" className="underline">documento</a></>}</li>
+    <li><span className="font-semibold">{rotulo}:</span> {o.id} — {o.titulo} ({fmtData(o.data)}){hrefExterno(o.url) && <> · <a href={hrefExterno(o.url)} target="_blank" rel="noreferrer" className="underline">documento</a></>}</li>
   )
   return (
     <div role="dialog" aria-modal="true" aria-label="Origem do requisito" className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" onClick={onFechar}>
@@ -661,7 +662,7 @@ function OrigemRequisito({ origem, onFechar }) {
         </ul>
         <div className="border-t border-line pt-2 space-y-1">
           <div><span className="font-semibold">Classe:</span> {classe.nome}{classe.idade_minima != null ? ` · a partir de ${classe.idade_minima} anos` : ''}</div>
-          {classe.fonte_url && <div><span className="font-semibold">Página oficial:</span> <a href={classe.fonte_url} target="_blank" rel="noreferrer" className="underline break-all">{classe.fonte_url}</a></div>}
+          {hrefExterno(classe.fonte_url) && <div><span className="font-semibold">Página oficial:</span> <a href={hrefExterno(classe.fonte_url)} target="_blank" rel="noreferrer" className="underline break-all">{classe.fonte_url}</a></div>}
           {classe.fonte_publicado_em && <div><span className="font-semibold">Carimbo da página:</span> {fmtData(classe.fonte_publicado_em)} (não é a vigência)</div>}
           {classe.vigente_desde && <div><span className="font-semibold">Vigente desde:</span> {fmtData(classe.vigente_desde)}</div>}
         </div>

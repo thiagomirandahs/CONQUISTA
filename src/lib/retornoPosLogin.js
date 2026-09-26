@@ -9,7 +9,9 @@ const CHAVE = 'pos-login-retorno'
 // redirecionamento pra outro domínio se algo escrever aqui errado).
 function caminhoSeguro(destino) {
   if (typeof destino !== 'string') return null
-  if (!/^\/(?!\/)/.test(destino)) return null
+  if (!/^\/(?![/\\])/.test(destino)) return null
+  // "\" e caracteres de controle: navegadores tratam "/\evil.test" como "//evil.test" (auditoria 26/09)
+  if (destino.includes('\\') || [...destino].some((c) => c.charCodeAt(0) < 0x20)) return null
   return destino
 }
 

@@ -37,17 +37,41 @@ const TITULO_TIPO: Record<string, string> = {
   acompanhamento: 'Caderno de Acompanhamento',
 }
 
-// O navegador chama esta função de OUTRA origem (app.desbravaclube.com.br → *.supabase.co) com o
-// cabeçalho Authorization: sem responder ao preflight OPTIONS e sem estes cabeçalhos em TODA
-// resposta, ele bloqueia a chamada. Origem liberada porque a autorização é o Bearer, não cookie.
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// CORS restrito às origens do app (antes era '*'). A autorização continua sendo o Bearer — isto só
+// impede que um site qualquer use o navegador da vítima como cliente desta função.
+// ALLOWED_ORIGINS (env, separado por vírgula) acrescenta origens de staging/local.
+const ORIGENS_PADRAO = [
+  'https://app.desbravaclube.com.br', 'https://desbravaclube.com.br', 'https://www.desbravaclube.com.br',
+  'https://localhost', 'capacitor://localhost', // app Android (Capacitor)
+]
+const ORIGENS = new Set([
+  ...ORIGENS_PADRAO,
+  ...(Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+])
+// Base FIXA da URL de verificação impressa no PDF/QR. Nunca o cabeçalho Origin do cliente: um chamador
+// autorizado poderia forjar Origin e registrar um documento OFICIAL cujo QR aponta para phishing.
+const URL_VERIFICACAO = (Deno.env.get('APP_URL_VERIFICACAO') ?? 'https://desbravaclube.com.br').replace(/\/+$/, '')
+// Token do documento: só caracteres de token, tamanho limitado (evita entrada arbitrária nas RPCs).
+const TOKEN_OK = /^[A-Za-z0-9_-]{16,128}$/
+
+function corsPara(origem: string | null): Record<string, string> {
+  const h: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
+  if (origem && ORIGENS.has(origem)) h['Access-Control-Allow-Origin'] = origem
+  return h
 }
 
-function erroJson(mensagem: string, status: number) {
-  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { ...CORS, 'content-type': 'application/json' } })
+function erroJson(mensagem: string, status: number, cors: Record<string, string> = corsPara(null)) {
+  return new Response(JSON.stringify({ erro: mensagem }), { status, headers: { ...cors, 'content-type': 'application/json' } })
+}
+
+// Erros internos (storage, exceções) vão para o log da função, nunca para o cliente.
+function erroInterno(contexto: string, e: unknown, cors: Record<string, string>) {
+  console.error(contexto, e instanceof Error ? e.message : e)
+  return erroJson('Falha interna ao gerar o documento. Tente de novo em instantes.', 500, cors)
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -146,29 +170,32 @@ async function montarPdf(dados: any, origem: string, token: string): Promise<Uin
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
-  if (req.method !== 'POST') return erroJson('Método não permitido.', 405)
+  const cors = corsPara(req.headers.get('origin'))
+  const erro = (m: string, st: number) => erroJson(m, st, cors)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method !== 'POST') return erro('Método não permitido.', 405)
 
   const auth = req.headers.get('Authorization') ?? ''
-  if (!auth) return erroJson('Sem sessão.', 401)
+  if (!auth) return erro('Sem sessão.', 401)
 
   const body = await req.json().catch(() => null)
   const token = typeof body?.token === 'string' ? body.token.trim() : ''
-  if (!token) return erroJson('Informe o token do documento.', 400)
+  if (!token) return erro('Informe o token do documento.', 400)
+  if (!TOKEN_OK.test(token)) return erro('Token de documento inválido.', 400)
 
   // Cliente "como o usuário" — é ele quem decide se este JWT pode isto, via RLS/checagem interna
   // das RPCs. A Edge Function nunca decide autorização por conta própria.
   const comoUsuario = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } } })
   const { data: dados, error: erroDados } = await comoUsuario.rpc('documento_pdf_dados', { p_token: token })
-  if (erroDados) return erroJson(erroDados.message, 400)
-  if (!dados) return erroJson('Documento não encontrado ou sem permissão.', 403)
-  if (dados.ja_assinado) return erroJson('Este documento já tem assinatura registrada — gere um novo documento em vez de substituir o PDF.', 409)
+  if (erroDados) return erro(erroDados.message, 400)
+  if (!dados) return erro('Documento não encontrado ou sem permissão.', 403)
+  if (dados.ja_assinado) return erro('Este documento já tem assinatura registrada — gere um novo documento em vez de substituir o PDF.', 409)
 
   let bytes: Uint8Array
   try {
-    bytes = await montarPdf(dados, req.headers.get('origin') ?? SUPABASE_URL, token)
+    bytes = await montarPdf(dados, URL_VERIFICACAO, token)
   } catch (e) {
-    return erroJson(`Falha ao montar o PDF: ${e instanceof Error ? e.message : String(e)}`, 500)
+    return erroInterno('montar', e, cors)
   }
 
   const hash = await sha256Hex(bytes)
@@ -184,16 +211,16 @@ Deno.serve(async (req) => {
   const { error: erroUpload } = await comoServico.storage.from('documentos-emitidos').upload(path, bytes, {
     contentType: 'application/pdf', upsert: true,
   })
-  if (erroUpload) return erroJson(`Falha ao salvar o PDF: ${erroUpload.message}`, 500)
+  if (erroUpload) return erroInterno('upload', erroUpload, cors)
 
   // Registrar de novo COMO O USUÁRIO: a RPC reconfere permissão e a trava de imutabilidade
   // pós-assinatura de forma independente desta função.
   const { data: registrado, error: erroRegistrar } = await comoUsuario.rpc('documento_pdf_registrar', {
     p_token: token, p_hash: hash, p_storage_path: path,
   })
-  if (erroRegistrar) return erroJson(erroRegistrar.message, 409)
+  if (erroRegistrar) return erro(erroRegistrar.message, 409)
 
   return new Response(JSON.stringify({ ok: true, hash, storage_path: path, pdf_versao: registrado?.pdf_versao }), {
-    status: 200, headers: { ...CORS, 'content-type': 'application/json' },
+    status: 200, headers: { ...cors, 'content-type': 'application/json' },
   })
 })

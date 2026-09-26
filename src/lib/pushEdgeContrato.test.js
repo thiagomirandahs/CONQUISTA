@@ -59,7 +59,11 @@ describe('Edge Function enviar-push: destinatários sempre por clube', () => {
   })
 
   it('erro ao reservar responde 500 e não envia (falha fechada)', () => {
-    expect(fonte).toMatch(/if \(erroReserva\) return new Response\('erro: '/)
+    expect(fonte).toMatch(/if \(erroReserva\) \{[^\n]*return new Response\('erro interno', \{ status: 500 \}\)/)
+  })
+
+  it('resposta de erro não vaza mensagem interna (auditoria 26/09)', () => {
+    expect(fonte).not.toMatch(/new Response\('erro: ' \+/)
   })
 
   it('continua removendo inscrições expiradas (só delete, sem select amplo)', () => {
