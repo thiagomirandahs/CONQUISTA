@@ -6,6 +6,7 @@ import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 import { Icone } from './landing/Icones.jsx'
 import { NotebookPainel, CelularClasse, CardTentativas } from './landing/Mockups.jsx'
 import { MARCA_PRODUTO } from '../lib/marca.js'
+import FaixaParceiros from './site/FaixaParceiros.jsx'
 
 // Site comercial PÚBLICO da plataforma (a raiz "/" sem sessão). Não usa <Logo/> nem as cores
 // --c-brand de propósito: aqueles leem a marca do CLUBE em uso, e esta página é da PLATAFORMA.
@@ -25,6 +26,11 @@ const NAV = [
   { href: '#planos', rotulo: 'Planos' },
   { href: '#faq', rotulo: 'FAQ' },
 ]
+// páginas públicas da vitrine (só no site): clubes que usam o DesbravaClube e parceiros
+const PAGINAS = [
+  { to: '/clubes', rotulo: 'Clubes' },
+  { to: '/parceiros', rotulo: 'Parceiros' },
+]
 
 function Marca({ claro = false }) {
   return (
@@ -35,7 +41,8 @@ function Marca({ claro = false }) {
   )
 }
 
-function Cabecalho() {
+// Também usado pelas páginas /clubes e /parceiros (naLanding=false): lá as âncoras apontam para "/#secao".
+export function Cabecalho({ naLanding = true }) {
   const [aberto, setAberto] = useState(false)
   const botao = useRef(null)
 
@@ -49,6 +56,7 @@ function Cabecalho() {
   // Fecha o menu ANTES de rolar: esconder o painel no meio de uma rolagem suave encolhe a página e o
   // navegador pode abandonar a rolagem até a âncora. O foco vai para a seção (teclado/leitor de tela).
   function irPara(e, href) {
+    if (!naLanding) { setAberto(false); return }
     e.preventDefault()
     flushSync(() => setAberto(false))
     const alvo = document.querySelector(href)
@@ -61,11 +69,16 @@ function Cabecalho() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
       <div className={`${CONTAINER} flex h-16 items-center justify-between gap-4`}>
-        <a href="#inicio" className={`inline-flex min-h-[44px] items-center ${FOCO}`} aria-label="DesbravaClube — início"><Marca /></a>
+        {naLanding
+          ? <a href="#inicio" className={`inline-flex min-h-[44px] items-center ${FOCO}`} aria-label="DesbravaClube — início"><Marca /></a>
+          : <Link to="/" className={`inline-flex min-h-[44px] items-center ${FOCO}`} aria-label="DesbravaClube — início"><Marca /></Link>}
         <nav aria-label="Principal" className="hidden lg:block">
           <ul className="flex items-center gap-7">
             {NAV.map((n) => (
-              <li key={n.href}><a href={n.href} className={`inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 hover:text-[#0b1b46] ${FOCO}`}>{n.rotulo}</a></li>
+              <li key={n.href}><a href={naLanding ? n.href : `/${n.href}`} className={`inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 hover:text-[#0b1b46] ${FOCO}`}>{n.rotulo}</a></li>
+            ))}
+            {PAGINAS.map((n) => (
+              <li key={n.to}><Link to={n.to} className={`inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 hover:text-[#0b1b46] ${FOCO}`}>{n.rotulo}</Link></li>
             ))}
           </ul>
         </nav>
@@ -90,7 +103,12 @@ function Cabecalho() {
           <ul className="flex flex-col">
             {NAV.map((n) => (
               <li key={n.href}>
-                <a href={n.href} onClick={(e) => irPara(e, n.href)} className={`flex min-h-[48px] items-center text-base font-semibold ${NAVY} ${FOCO}`}>{n.rotulo}</a>
+                <a href={naLanding ? n.href : `/${n.href}`} onClick={(e) => irPara(e, n.href)} className={`flex min-h-[48px] items-center text-base font-semibold ${NAVY} ${FOCO}`}>{n.rotulo}</a>
+              </li>
+            ))}
+            {PAGINAS.map((n) => (
+              <li key={n.to}>
+                <Link to={n.to} onClick={() => setAberto(false)} className={`flex min-h-[48px] items-center text-base font-semibold ${NAVY} ${FOCO}`}>{n.rotulo}</Link>
               </li>
             ))}
           </ul>
@@ -432,7 +450,8 @@ function ChamadaFinal() {
   )
 }
 
-function Rodape() {
+export function Rodape({ naLanding = true }) {
+  const ancora = (h) => (naLanding ? h : `/${h}`)
   const WHATSAPP = 'https://wa.me/5581989499469?text=' + encodeURIComponent('Olá! Vim pelo site do DesbravaClube e quero saber mais.')
   const emBreve = 'text-slate-400 cursor-default'
   return (
@@ -445,8 +464,10 @@ function Rodape() {
         <nav aria-label="Produto">
           <h2 className="text-sm font-bold text-white">Produto</h2>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><a href="#recursos" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Recursos</a></li>
-            <li><a href="#planos" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
+            <li><a href={ancora('#recursos')} className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Recursos</a></li>
+            <li><a href={ancora('#planos')} className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
+            <li><Link to="/clubes" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Clubes</Link></li>
+            <li><Link to="/parceiros" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Parceiros</Link></li>
             <li><LinkApp to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</LinkApp></li>
           </ul>
         </nav>
@@ -501,6 +522,7 @@ export default function Landing() {
         <Planos />
         <Faq />
         <ChamadaFinal />
+        <FaixaParceiros />
       </main>
       <Rodape />
     </div>

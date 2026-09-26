@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { modoDoHost, urlDoApp, urlDoSite, rotaDoSite } from './dominios.js'
+import { modoDoHost, urlDoApp, urlDoSite, rotaDoSite, rotaSoDoSite } from './dominios.js'
 
 const loc = (hostname, port = '', protocol = 'https:') => ({ hostname, port, protocol })
 
@@ -33,8 +33,14 @@ describe('urlDoApp / urlDoSite', () => {
 
 describe('rotaDoSite', () => {
   it.each([['/', true], ['/planos', true], ['/adquirir', true], ['/verificar/abc123', true],
-    ['/login', false], ['/criar-clube', false], ['/admin', false], ['/inicio', false], ['/verificar', false]])(
+    ['/clubes', true], ['/clubes/filhos-da-conquista', true], ['/parceiros', true],
+    ['/login', false], ['/criar-clube', false], ['/admin', false], ['/inicio', false], ['/verificar', false], ['/clubes/a/b', false]])(
     '%s → %s', (c, v) => expect(rotaDoSite(c)).toBe(v))
+})
+
+describe('rotaSoDoSite (vitrine nunca dentro do app)', () => {
+  it.each([['/clubes', true], ['/clubes/x-y', true], ['/parceiros', true], ['/', false], ['/planos', false], ['/login', false]])(
+    '%s → %s', (c, v) => expect(rotaSoDoSite(c)).toBe(v))
 })
 
 describe('Gestão → Pessoas: Inscrições vem antes de Aprovações', async () => {

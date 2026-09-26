@@ -7,7 +7,7 @@ import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
 import { reportarErro } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
-import { modoDoHost, rotaDoSite, urlDoApp } from './lib/dominios.js'
+import { modoDoHost, rotaDoSite, rotaSoDoSite, urlDoApp, urlDoSite } from './lib/dominios.js'
 import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
@@ -65,6 +65,9 @@ const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
 const ConviteCoordenacao = lazy(() => import('./pages/ConviteCoordenacao.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
+const SiteClubes = lazy(() => import('./pages/site/SiteClubes.jsx'))
+const SiteCartaoClube = lazy(() => import('./pages/site/SiteCartaoClube.jsx'))
+const SiteParceiros = lazy(() => import('./pages/site/SiteParceiros.jsx'))
 const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Eu = lazy(() => import('./pages/Eu.jsx'))
 const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
@@ -194,8 +197,21 @@ function RotasDoSite() {
       <Route path="/planos" element={<Adquirir />} />
       <Route path="/adquirir" element={<Adquirir />} />
       <Route path="/verificar/:token" element={<VerificarDocumento />} />
+      <Route path="/clubes" element={<SiteClubes />} />
+      <Route path="/clubes/:slug" element={<SiteCartaoClube />} />
+      <Route path="/parceiros" element={<SiteParceiros />} />
     </Routes>
   )
+}
+
+// Vitrine (clubes/parceiros) é SÓ do site: no domínio do app volta para o site; onde moram juntos, renderiza.
+function SoNoSite({ children }) {
+  const { pathname, search } = useLocation()
+  if (modoDoHost() === 'app' && rotaSoDoSite(pathname)) {
+    window.location.replace(urlDoSite(pathname + search))
+    return <Carregando />
+  }
+  return children
 }
 
 // VOLTAR para antes do login/troca de clube (telas da conta anterior, do clube anterior, o próprio
@@ -237,6 +253,9 @@ export default function App() {
         <Route path="/nova-senha" element={<NovaSenha />} />
         {/* Verificação PÚBLICA de documento (sem login): só o resumo mínimo, via RPC anônima */}
         <Route path="/verificar/:token" element={<VerificarDocumento />} />
+        <Route path="/clubes" element={<SoNoSite><SiteClubes /></SoNoSite>} />
+        <Route path="/clubes/:slug" element={<SoNoSite><SiteCartaoClube /></SoNoSite>} />
+        <Route path="/parceiros" element={<SoNoSite><SiteParceiros /></SoNoSite>} />
 
         {/* Jornada INSTITUCIONAL: exige sessão, mas NÃO passa pelo ClubeGuard — quem é só coordenador
             distrital/regional não tem vínculo de clube nenhum e ficaria trancado do lado de fora. */}

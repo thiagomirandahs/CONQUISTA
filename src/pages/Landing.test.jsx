@@ -10,6 +10,11 @@ vi.mock('../services/comercial.js', async () => {
   const real = await vi.importActual('../services/comercial.js')
   return { ...real, carregarPlanos: (...a) => carregarPlanos(...a) }
 })
+const parceirosDoSite = vi.fn()
+vi.mock('../services/vitrine.js', async () => {
+  const real = await vi.importActual('../services/vitrine.js')
+  return { ...real, parceirosDoSite: (...a) => parceirosDoSite(...a) }
+})
 const { default: Landing } = await import('./Landing.jsx')
 
 const LICENCA = {
@@ -20,7 +25,7 @@ const LICENCA = {
 
 const renderT = () => render(<MemoryRouter><Landing /></MemoryRouter>)
 
-beforeEach(() => { carregarPlanos.mockReset().mockResolvedValue([LICENCA]) })
+beforeEach(() => { carregarPlanos.mockReset().mockResolvedValue([LICENCA]); parceirosDoSite.mockReset().mockResolvedValue([]) })
 
 describe('Landing', () => {
   it('CTA principal leva a /adquirir e "Já tenho conta" leva a /login', () => {
@@ -86,5 +91,22 @@ describe('Landing', () => {
     renderT()
     const faq = document.getElementById('faq')
     expect(faq.querySelectorAll('details')).toHaveLength(6)
+  })
+
+  it('menu e rodapé levam às páginas da vitrine (Clubes e Parceiros)', () => {
+    renderT()
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+    expect(within(nav).getByRole('link', { name: 'Clubes' })).toHaveAttribute('href', '/clubes')
+    expect(within(nav).getByRole('link', { name: 'Parceiros' })).toHaveAttribute('href', '/parceiros')
+    const rodape = screen.getByRole('navigation', { name: 'Produto' })
+    expect(within(rodape).getByRole('link', { name: 'Clubes' })).toHaveAttribute('href', '/clubes')
+    expect(within(rodape).getByRole('link', { name: 'Parceiros' })).toHaveAttribute('href', '/parceiros')
+  })
+
+  it('faixa de parceiros só aparece quando há parceiro no ar', async () => {
+    parceirosDoSite.mockResolvedValue([{ id: 'p1', nome: 'Loja Parceira' }])
+    renderT()
+    expect(await screen.findByRole('region', { name: 'Parceiros' })).toBeInTheDocument()
+    expect(screen.getByText('Loja Parceira')).toBeInTheDocument()
   })
 })

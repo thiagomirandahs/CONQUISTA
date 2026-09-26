@@ -16,6 +16,12 @@ vi.mock('../services/clubes.js', () => ({
   subirLogoDoClube: (...a) => subirLogoDoClube(...a),
 }))
 
+// cartão da vitrine (ClubeVitrine): desligado, sem chamar o banco
+vi.mock('../services/vitrine.js', async () => ({
+  ...(await vi.importActual('../services/vitrine.js')),
+  lerCartaoDoClube: async () => ({ ativo: false, aceite_contato: false }),
+  salvarCartaoDoClube: vi.fn(),
+}))
 const { default: ClubeConfig } = await import('./ClubeConfig.jsx')
 
 const CATALOGO = [
@@ -182,7 +188,8 @@ describe('recurso que só a plataforma liga', () => {
     expect(screen.queryByRole('switch', { name: /Especialidades/ })).toBeNull()
     expect(screen.getByTestId('recurso-plataforma-especialidades')).toHaveTextContent('Ainda não liberado pela plataforma')
     expect(screen.getByRole('switch', { name: 'Chat: ligado' })).toBeInTheDocument()
-    expect(screen.getAllByRole('switch')).toHaveLength(2)
+    // (o cartão da vitrine tem os seus próprios switches; aqui contam só os da lista de recursos)
+    expect(within(screen.getByRole('region', { name: 'Recursos do clube' })).getAllByRole('switch')).toHaveLength(2)
   })
 
   it('ligado pela plataforma: mostra "liberado pela plataforma", ainda sem switch', async () => {

@@ -4,6 +4,7 @@ import { useClube } from '../context/Clube.jsx'
 import { gravarMarca, definirRecurso, carregarCatalogoRecursos, subirLogoDoClube } from '../services/clubes.js'
 import { formularioDaMarca, diferencasDaMarca, errosDaMarca, COR_TEMA_PADRAO } from '../lib/marca.js'
 import { somenteDaPlataforma } from '../lib/recursos.js'
+import ClubeVitrine from './ClubeVitrine.jsx'
 
 const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
@@ -31,6 +32,7 @@ export default function ClubeConfig() {
       {/* a chave refaz o formulário quando a marca muda (depois de salvar) — sem efeito para sincronizar */}
       <FormIdentidade key={JSON.stringify(marca)} marca={marca} clubeId={clubeId} aoSalvar={recarregar} />
       <ListaRecursos recursos={recursos} aoMudar={recarregar} />
+      <ClubeVitrine clubeId={clubeId} marca={marca} />
     </div>
   )
 }
