@@ -10,10 +10,11 @@ const f = {
   planosAdminListar: vi.fn(), assinaturasListar: vi.fn(), onboardingListar: vi.fn(), planoMudar: vi.fn(),
   provisionamentoPendencias: vi.fn(), provisionamentoReexecutar: vi.fn(), assinaturaTransicionar: vi.fn(),
   suporteListar: vi.fn(), suporteRevogar: vi.fn(), auditoriaListar: vi.fn(),
+  trialPadrao: vi.fn(), trialPadraoDefinir: vi.fn(), trialEstender: vi.fn(), trialEncerrar: vi.fn(),
 }
 vi.mock('../services/admin.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
 
-const { default: Admin, formatarBytes } = await import('./Admin.jsx')
+const { default: Admin, formatarBytes, diasRestantes } = await import('./Admin.jsx')
 
 const FUNDADOR = {
   club_id: 'c1', nome: 'Filhos da Conquista', slug: 'filhos-da-conquista', status: 'ativo', criado_em: '2026-09-24T21:00:00Z',
@@ -50,6 +51,10 @@ beforeEach(() => {
   f.provisionamentoPendencias.mockResolvedValue([])
   f.suporteListar.mockResolvedValue([])
   f.auditoriaListar.mockResolvedValue([])
+  f.trialPadrao.mockResolvedValue({ trial_dias: 30, politica_versao: 1 })
+  f.trialPadraoDefinir.mockResolvedValue({ ok: true })
+  f.trialEstender.mockResolvedValue({ ok: true })
+  f.trialEncerrar.mockResolvedValue({ ok: true })
 })
 
 const abrirComoAdmin = async () => { f.souAdminPlataforma.mockResolvedValue(true); render(<Admin />); await screen.findByText('Administração da Plataforma') }
@@ -156,6 +161,61 @@ describe('Admin: Suporte — admin nunca autoriza o próprio pedido', () => {
     expect(screen.queryByText('Autorizar')).toBeNull()
     await userEvent.click(screen.getByText('Revogar'))
     expect(f.suporteRevogar).toHaveBeenCalledWith('g1', expect.any(String))
+  })
+})
+
+describe('Admin: teste gratuito', () => {
+  it('Visão geral mostra o padrão de dias e salva um novo valor', async () => {
+    await abrirComoAdmin()
+    expect(await screen.findByTestId('trial-padrao-atual')).toHaveTextContent('30 dia(s)')
+    const campo = screen.getByLabelText('Dias de teste')
+    await userEvent.clear(campo)
+    await userEvent.type(campo, '14')
+    await userEvent.click(screen.getByTestId('trial-padrao-salvar'))
+    expect(f.trialPadraoDefinir).toHaveBeenCalledWith(14)
+  })
+
+  it('padrão inválido não chama o servidor', async () => {
+    await abrirComoAdmin()
+    const campo = await screen.findByLabelText('Dias de teste')
+    await userEvent.clear(campo)
+    await userEvent.type(campo, '400')
+    await userEvent.click(screen.getByTestId('trial-padrao-salvar'))
+    expect(f.trialPadraoDefinir).not.toHaveBeenCalled()
+  })
+
+  it('detalhe do clube em teste: +7/+15/+30, data escolhida e encerrar', async () => {
+    const vaiEncerrar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, trial_ate: '2026-10-10T12:00:00Z' } })
+    await abrirComoAdmin()
+    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await userEvent.click(await screen.findByText(/Exército da colina/))
+    expect(await screen.findByTestId('teste-gratuito-situacao')).toHaveTextContent('Em teste até')
+    await userEvent.click(screen.getByText('+15 dias'))
+    expect(f.trialEstender).toHaveBeenLastCalledWith('c2', expect.objectContaining({ dias: 15 }))
+    await userEvent.type(screen.getByLabelText('Ou escolha a data final'), '2026-11-30')
+    await userEvent.click(screen.getByText('Definir data'))
+    expect(f.trialEstender).toHaveBeenLastCalledWith('c2', expect.objectContaining({ ate: expect.stringMatching(/^2026-1[12]-/) }))
+    await userEvent.click(screen.getByTestId('trial-encerrar'))
+    expect(f.trialEncerrar).toHaveBeenCalledWith('c2', expect.any(String))
+    vaiEncerrar.mockRestore()
+  })
+
+  it('assinatura ativa: sem botões de teste', async () => {
+    f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, assinatura_status: 'ativa' } })
+    await abrirComoAdmin()
+    await userEvent.click(screen.getByRole('tab', { name: /Clubes/ }))
+    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await screen.findByTestId('teste-gratuito')
+    expect(screen.queryByText('+7 dias')).toBeNull()
+    expect(screen.queryByTestId('trial-encerrar')).toBeNull()
+  })
+
+  it('diasRestantes', () => {
+    const agora = Date.parse('2026-09-25T12:00:00Z')
+    expect(diasRestantes(null, agora)).toBeNull()
+    expect(diasRestantes('2026-10-02T12:00:00Z', agora)).toBe(7)
+    expect(diasRestantes('2026-09-24T12:00:00Z', agora)).toBe(-1)
   })
 })
 

@@ -5,6 +5,7 @@ import {
   souAdminPlataforma, visaoGeral, clubesListar, clubeDetalhe, planosAdminListar, assinaturasListar,
   onboardingListar, planoMudar, provisionamentoPendencias, provisionamentoReexecutar,
   assinaturaTransicionar, suporteListar, suporteRevogar, auditoriaListar,
+  trialPadrao, trialPadraoDefinir, trialEstender, trialEncerrar,
 } from '../services/admin.js'
 import { avisar } from '../ui/avisos.jsx'
 
@@ -138,6 +139,7 @@ function VisaoGeral({ irPara }) {
                 </div>
               )}
           </Card>
+          <TrialPadrao />
           <Card>
             <p className="font-bold text-ink mb-1 text-sm">Últimos 7 dias</p>
             <p className="text-sm text-muted">{v.eventos_admin_7d} ação(ões) de administração · {v.eventos_assinatura_7d} evento(s) de assinatura</p>
@@ -189,7 +191,7 @@ function Clubes({ aoAbrir }) {
                 <p className="font-bold text-ink">{c.nome}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {c.assinatura_status
-                    ? <Selo tom={tomAssinatura(c.assinatura_status)}>{ROTULO_STATUS[c.assinatura_status] || c.assinatura_status}</Selo>
+                    ? <Selo tom={tomAssinatura(c.assinatura_status)}>{ROTULO_STATUS[c.assinatura_status] || c.assinatura_status}{c.assinatura_status === 'trial' && c.trial_ate ? ` até ${data(c.trial_ate)}` : ''}</Selo>
                     : <Selo tom="neutro">Sem assinatura</Selo>}
                   {c.onboarding_status === 'em_andamento' && <Selo tom="atencao">Onboarding: {c.onboarding_etapa}</Selo>}
                   {c.status !== 'ativo' && <Selo tom="perigo">Inativo</Selo>}
@@ -267,6 +269,7 @@ function DetalheClube({ clubId, aoVoltar }) {
                     {c.periodo_fim && <Linha rotulo="Período até">{data(c.periodo_fim)}</Linha>}
                     <Linha rotulo="Pagamento">{c.provider === 'mock' || !c.provider ? 'Sem gateway — combinado fora do sistema' : c.provider}</Linha>
                     <div className="mt-3 space-y-4">
+                      <TesteGratuito clubId={clubId} status={c.assinatura_status} trialAte={c.trial_ate} onFeito={recarregar} />
                       <TransicaoAssinatura assinatura={{ id: c.assinatura_id, status: c.assinatura_status }} onFeito={recarregar} />
                       <MudarPlano assinaturaId={c.assinatura_id} atual={`${c.plano_chave}|${c.plano_versao}`} onFeito={recarregar} />
                     </div>
@@ -326,6 +329,125 @@ function DetalheClube({ clubId, aoVoltar }) {
         })()}
       </Estado>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------- Teste gratuito (migration 109)
+export function diasRestantes(iso, agora = Date.now()) {
+  if (!iso) return null
+  return Math.ceil((new Date(iso).getTime() - agora) / 86400000)
+}
+
+function CaixaClara({ titulo, children, testid }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-3" data-testid={testid}>
+      <p className="text-sm font-bold text-ink mb-2">{titulo}</p>
+      {children}
+    </div>
+  )
+}
+
+function TrialPadrao() {
+  const { dados, erro, recarregar } = useFonte(trialPadrao)
+  const [dias, setDias] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+  useEffect(() => { if (dados) setDias(String(dados.trial_dias)) }, [dados])
+
+  async function salvar() {
+    const n = Number(dias)
+    if (!Number.isInteger(n) || n < 0 || n > 365) { avisar.erro(null, 'Use um número inteiro de 0 a 365 dias.'); return }
+    setOcupado(true)
+    try {
+      await trialPadraoDefinir(n)
+      avisar.sucesso(`Clubes novos passam a ter ${n} dia(s) de teste.`)
+      recarregar()
+    } catch (e) { avisar.erro(e) }
+    setOcupado(false)
+  }
+
+  return (
+    <Card>
+      <p className="font-bold text-ink mb-1 text-sm">Teste gratuito para clubes novos</p>
+      {erro ? <p className="text-sm text-red-700">{erro}</p> : dados == null ? <Carregando /> : (
+        <>
+          <p className="text-sm text-muted mb-3">
+            Hoje: <strong className="text-ink" data-testid="trial-padrao-atual">{dados.trial_dias} dia(s)</strong>. Vale só para quem se cadastrar daqui pra frente — clubes que já estão em teste não mudam.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+            <Campo id="trial-padrao-dias" rotulo="Dias de teste" tipo="number" inputMode="numeric" min={0} max={365}
+              value={dias} onChange={(e) => setDias(e.target.value)} />
+            <div className="mb-3">
+              <Botao aoTocar={salvar} carregando={ocupado} desabilitado={String(dados.trial_dias) === dias} className="w-full" data-testid="trial-padrao-salvar">
+                Salvar padrão
+              </Botao>
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
+  )
+}
+
+function TesteGratuito({ clubId, status, trialAte, onFeito }) {
+  const [data_, setData] = useState('')
+  const [ocupado, setOcupado] = useState(null)
+  const podeEstender = ['trial', 'pagamento_pendente'].includes(status)
+  const emTeste = status === 'trial'
+  const restam = diasRestantes(trialAte)
+
+  async function rodar(chave, fn, ok) {
+    setOcupado(chave)
+    try { await fn(); avisar.sucesso(ok); setData(''); onFeito?.() } catch (e) { avisar.erro(e) }
+    setOcupado(null)
+  }
+  const estenderDias = (n) => rodar(`+${n}`, () => trialEstender(clubId, { dias: n, motivo: `teste gratuito +${n} dias` }), `Teste estendido em ${n} dias.`)
+  const estenderData = () => {
+    if (!data_) { avisar.erro(null, 'Escolha a data final do teste.'); return }
+    // fim do dia escolhido, no fuso de quem está usando
+    const ate = new Date(`${data_}T23:59:59`).toISOString()
+    rodar('data', () => trialEstender(clubId, { ate, motivo: `teste gratuito até ${data_.split('-').reverse().join('/')}` }), 'Data do fim do teste atualizada.')
+  }
+  const encerrar = () => {
+    if (!window.confirm('Encerrar o teste gratuito agora? O clube passa a "aguardando pagamento". Nada é apagado e nenhuma cobrança é criada.')) return
+    rodar('encerrar', () => trialEncerrar(clubId, 'teste gratuito encerrado pela administração'), 'Teste gratuito encerrado.')
+  }
+
+  return (
+    <CaixaClara titulo="Teste gratuito" testid="teste-gratuito">
+      <p className="text-sm text-ink mb-3" data-testid="teste-gratuito-situacao">
+        {emTeste
+          ? <>Em teste até <strong>{data(trialAte)}</strong>{restam != null && ` · ${restam > 0 ? `faltam ${restam} dia(s)` : 'vence hoje'}`}</>
+          : status === 'pagamento_pendente'
+            ? <>Teste encerrado{trialAte ? ` em ${data(trialAte)}` : ''} · aguardando pagamento</>
+            : <>Fora do teste ({ROTULO_STATUS[status] || status}).</>}
+      </p>
+      {podeEstender ? (
+        <>
+          <p className="text-xs font-semibold text-muted mb-1">{emTeste ? 'Estender' : 'Reabrir o teste'}</p>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[7, 15, 30].map((n) => (
+              <Botao key={n} variacao="secundario" aoTocar={() => estenderDias(n)} carregando={ocupado === `+${n}`} desabilitado={!!ocupado}>
+                +{n} dias
+              </Botao>
+            ))}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+            <Campo id={`trial-ate-${clubId}`} rotulo="Ou escolha a data final" tipo="date" value={data_} onChange={(e) => setData(e.target.value)} />
+            <div className="mb-3">
+              <Botao variacao="secundario" aoTocar={estenderData} carregando={ocupado === 'data'} desabilitado={!!ocupado || !data_} className="w-full">
+                Definir data
+              </Botao>
+            </div>
+          </div>
+          {emTeste && (
+            <Botao variacao="perigo" aoTocar={encerrar} carregando={ocupado === 'encerrar'} desabilitado={!!ocupado} className="w-full" data-testid="trial-encerrar">
+              Encerrar teste agora
+            </Botao>
+          )}
+        </>
+      ) : <p className="text-xs text-faint">Só dá para mexer no teste de um clube em teste ou aguardando pagamento.</p>}
+      <p className="text-xs text-faint mt-2">Tudo fica na auditoria. Nenhuma cobrança é criada por aqui.</p>
+    </CaixaClara>
   )
 }
 

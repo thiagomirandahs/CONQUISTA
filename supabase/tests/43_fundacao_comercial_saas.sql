@@ -218,16 +218,16 @@ select t.eq('cliente 1 continua mensal, intocado pela escolha do cliente 2',
 -- slug gerado sem colisão e sem acento
 select t.eq('o clube novo ganhou slug próprio', t.txt(format($q$select slug from public.organizational_units where id = %L$q$, t.id('clube1'))), 'clube-alfa');
 
--- ---------- múltiplos clubes na MESMA assinatura (o modelo permite) ----------
+-- ---------- licença = 1 clube (migration 109): o teto de clubes é aplicado no servidor ----------
 \o /dev/null
 insert into public.organizational_units (type, nome, slug) values ('clube', 'Clube Alfa Filial', 'clube-alfa-filial');
 insert into t.ids select 'clube1b', id from public.organizational_units where slug = 'clube-alfa-filial';
-insert into public.subscription_clubs (subscription_id, club_id) values (t.id('assin1'), t.id('clube1b'));
 \o
-select t.eq('uma assinatura pode cobrir VÁRIOS clubes',
-  t.n(format($q$select public.limite_uso(%L, 'clubes')$q$, t.id('clube1'))), 2);
-select t.eq('...e o plano vale igual no clube irmão',
-  t.pg(format($q$select public.recurso_disponivel_no_plano(%L, 'jogos')::text$q$, t.id('clube1b'))), 'true');
+select t.throws('a licença NÃO cobre um 2º clube (teto de clubes do plano = 1)',
+  format($q$insert into public.subscription_clubs (subscription_id, club_id) values (%L, %L)$q$, t.id('assin1'), t.id('clube1b')),
+  'Limite de clubes');
+select t.eq('...e o uso de clubes da licença continua 1',
+  t.n(format($q$select public.limite_uso(%L, 'clubes')$q$, t.id('clube1'))), 1);
 
 -- =============================================================================
 -- 4) AS TRÊS CAMADAS: plano → clube → usuário

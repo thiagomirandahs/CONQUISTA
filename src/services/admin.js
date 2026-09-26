@@ -54,6 +54,16 @@ export const onboardingListar = async () => (await rpcAdmin('admin_onboarding_li
 export const planoMudar = (subscriptionId, chave, versao = null, confirmarExcedente = false) =>
   rpcAdmin('plano_mudar', { p_subscription_id: subscriptionId, p_plano_chave: chave, p_plano_versao: versao, p_confirmar_excedente: confirmarExcedente })
 
+// Teste gratuito (migration 109): exclusivo do admin da plataforma, auditado, sem criar cobrança.
+export const trialPadrao = () => rpcAdmin('admin_trial_padrao')
+export const trialPadraoDefinir = (dias, motivo = null) =>
+  rpcAdmin('admin_trial_padrao_definir', { p_dias: dias, p_motivo: motivo })
+// informe `dias` (soma ao fim atual) OU `ate` (data final escolhida), nunca os dois
+export const trialEstender = (clubId, { dias = null, ate = null, motivo = null } = {}) =>
+  rpcAdmin('admin_trial_estender', { p_club_id: clubId, p_dias: dias, p_ate: ate, p_motivo: motivo })
+export const trialEncerrar = (clubId, motivo = null) =>
+  rpcAdmin('admin_trial_encerrar', { p_club_id: clubId, p_motivo: motivo })
+
 // support_grants tem select direto liberado por RLS pra admin (mesma policy que libera a
 // liderança do clube) — não precisa de RPC de leitura própria.
 export async function suporteListar() {
