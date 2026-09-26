@@ -16,7 +16,7 @@ export function NotebookPainel() {
   const linhas = [
     { nome: 'Ana B.', req: 'Amigo · Req. 4', estado: 'Aguardando', cor: 'bg-amber-100 text-amber-800' },
     { nome: 'Lucas M.', req: 'Companheiro · Req. 2', estado: 'Tentativa 2', cor: 'bg-sky-100 text-sky-800' },
-    { nome: 'Júlia R.', req: 'Nós e amarras', estado: 'Aprovado', cor: 'bg-emerald-100 text-emerald-800' },
+    { nome: 'Júlia R.', req: 'Amigo · Req. 1', estado: 'Aprovado', cor: 'bg-emerald-100 text-emerald-800' },
   ]
   return (
     <div role="img" aria-label="Ilustração do painel da diretoria no computador: membros, presença, avaliações pendentes e documentos." className="w-full">

@@ -25,7 +25,7 @@ beforeEach(() => { carregarPlanos.mockReset().mockResolvedValue([LICENCA]) })
 describe('Landing', () => {
   it('CTA principal leva a /adquirir e "Já tenho conta" leva a /login', () => {
     renderT()
-    expect(screen.getAllByRole('link', { name: /quero criar meu clube/i })[0]).toHaveAttribute('href', '/adquirir')
+    expect(screen.getAllByRole('link', { name: /criar meu clube/i })[0]).toHaveAttribute('href', '/adquirir')
     expect(screen.getByRole('link', { name: /já tenho conta/i })).toHaveAttribute('href', '/login')
   })
 
@@ -33,7 +33,7 @@ describe('Landing', () => {
     renderT()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     const nav = screen.getByRole('navigation', { name: 'Principal' })
-    for (const [nome, href] of [['Funcionalidades', '#funcionalidades'], ['Para Clubes', '#para-clubes'], ['Documentos', '#documentos'], ['Planos', '#planos'], ['FAQ', '#faq']]) {
+    for (const [nome, href] of [['Recursos', '#recursos'], ['Como funciona', '#como-funciona'], ['Segurança', '#seguranca'], ['Planos', '#planos'], ['FAQ', '#faq']]) {
       expect(within(nav).getByRole('link', { name: nome })).toHaveAttribute('href', href)
       expect(document.querySelector(href)).not.toBeNull()
     }
@@ -73,12 +73,15 @@ describe('Landing', () => {
     const { container } = renderT()
     const texto = container.textContent
     expect(texto).not.toMatch(/validade jurídica/i)
+    // especialidades estão fora do piloto; progresso de classe não é prometido ao responsável
+    expect(texto).not.toMatch(/especialidade/i)
+    expect(texto).not.toMatch(/respons[áa]ve(l|is)[^.]*progresso/i)
     expect(texto).not.toMatch(/CNPJ|@[a-z0-9-]+\.[a-z]{2,}|\(\d{2}\)\s?\d{4,5}-?\d{4}/i)
   })
 
-  it('o FAQ tem as 10 perguntas pedidas', () => {
+  it('o FAQ é curto (6 perguntas)', () => {
     renderT()
     const faq = document.getElementById('faq')
-    expect(faq.querySelectorAll('details')).toHaveLength(10)
+    expect(faq.querySelectorAll('details')).toHaveLength(6)
   })
 })

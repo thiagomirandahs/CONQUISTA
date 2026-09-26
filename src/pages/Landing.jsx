@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom'
 import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 import { Icone } from './landing/Icones.jsx'
-import { NotebookPainel, CelularClasse, CardTentativas, ArvoreMulticlube } from './landing/Mockups.jsx'
+import { NotebookPainel, CelularClasse, CardTentativas } from './landing/Mockups.jsx'
+import { MARCA_PRODUTO } from '../lib/marca.js'
 
 // Site comercial PÚBLICO da plataforma (a raiz "/" sem sessão). Não usa <Logo/> nem as cores
 // --c-brand de propósito: aqueles leem a marca do CLUBE em uso, e esta página é da PLATAFORMA.
@@ -18,9 +19,9 @@ const BOTAO_SECUNDARIO = 'inline-flex items-center justify-center gap-2 min-h-[4
 const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d4ed8] focus-visible:ring-offset-2 rounded-md'
 
 const NAV = [
-  { href: '#funcionalidades', rotulo: 'Funcionalidades' },
-  { href: '#para-clubes', rotulo: 'Para Clubes' },
-  { href: '#documentos', rotulo: 'Documentos' },
+  { href: '#recursos', rotulo: 'Recursos' },
+  { href: '#como-funciona', rotulo: 'Como funciona' },
+  { href: '#seguranca', rotulo: 'Segurança' },
   { href: '#planos', rotulo: 'Planos' },
   { href: '#faq', rotulo: 'FAQ' },
 ]
@@ -28,7 +29,7 @@ const NAV = [
 function Marca({ claro = false }) {
   return (
     <span className="flex items-center gap-2.5">
-      <img src="/logo.png" alt="" width="36" height="36" className="w-9 h-9 rounded-full" />
+      <img src={MARCA_PRODUTO.logoUrl} alt="" width="36" height="36" className="w-9 h-9 rounded-xl" />
       <span className={`text-lg font-extrabold tracking-tight ${claro ? 'text-white' : NAVY}`}>DesbravaClube</span>
     </span>
   )
@@ -70,7 +71,7 @@ function Cabecalho() {
         </nav>
         <div className="hidden lg:flex items-center gap-3">
           <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center text-sm font-bold ${NAVY} px-3 hover:underline ${FOCO}`}>Entrar</LinkApp>
-          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} min-h-[42px] px-5 text-sm`}>Começar agora</Link>
+          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} min-h-[42px] px-5 text-sm`}>Criar meu clube</Link>
         </div>
         <button
           ref={botao}
@@ -95,7 +96,7 @@ function Cabecalho() {
           </ul>
           <div className="mt-3 grid grid-cols-2 gap-3 pb-2">
             <LinkApp to="/login" className={BOTAO_SECUNDARIO}>Entrar</LinkApp>
-            <Link to="/adquirir" className={BOTAO_PRIMARIO}>Começar agora</Link>
+            <Link to="/adquirir" className={BOTAO_PRIMARIO}>Criar meu clube</Link>
           </div>
         </nav>
       </div>
@@ -104,38 +105,44 @@ function Cabecalho() {
 }
 
 function Hero() {
-  const indicadores = ['Gestão multiclube', 'Acesso dos responsáveis', 'Documentos verificáveis', '100% responsivo']
+  const selos = ['Feito para o celular', 'Cada clube isolado', 'Pagamento combinado depois']
   return (
-    <section id="inicio" className="relative overflow-hidden bg-gradient-to-b from-[#eef3ff] to-white">
-      <div className={`${CONTAINER} grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24`}>
+    <section id="inicio" className="relative overflow-hidden bg-[#0b1b46] text-white">
+      {/* Fundo decorativo em CSS puro (sem imagem): brilho azul + trilha de estrelas. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-[#1d4ed8]/50 blur-3xl" />
+        <div className="absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-[#f5b012]/20 blur-3xl" />
+        <svg className="absolute inset-x-0 bottom-0 h-24 w-full text-white" viewBox="0 0 1440 96" preserveAspectRatio="none"><path fill="currentColor" d="M0 64c240 32 480 32 720 0s480-32 720 0v32H0Z" /></svg>
+      </div>
+      <div className={`${CONTAINER} relative grid items-center gap-10 pt-10 pb-28 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pb-36`}>
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-[#f5b012]/50 bg-[#fff8e6] px-3 py-1 text-xs sm:text-sm font-semibold text-[#7a5200]">
-            <Icone nome="estrela" className="w-4 h-4" /> Gestão completa para Clubes de Desbravadores
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs sm:text-sm font-semibold text-[#ffd873]">
+            <Icone nome="estrela" className="w-4 h-4" /> Para Clubes de Desbravadores
           </p>
-          <h1 className={`mt-5 text-4xl sm:text-5xl xl:text-6xl font-extrabold leading-[1.08] tracking-tight ${NAVY}`}>
-            Seu clube organizado.<br /><span className="text-[#1d4ed8]">Sua missão em movimento.</span>
+          <h1 className="mt-5 text-[2.35rem] leading-[1.08] sm:text-5xl xl:text-6xl font-extrabold tracking-tight">
+            O clube na <span className="text-[#f5b012]">palma da mão</span>.
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-slate-600 leading-relaxed">
-            Classes, especialidades, presença, atividades, responsáveis, documentos e gestão em uma única plataforma.
+          <p className="mt-5 max-w-xl text-lg text-blue-100 leading-relaxed">
+            Classes, avaliações, documentos, mensalidades e comunicação do clube num só app — pelo celular,
+            sem papelada e sem planilha espalhada.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <Link to="/adquirir" className={BOTAO_PRIMARIO}>Quero criar meu clube <Icone nome="seta" className="w-5 h-5" /></Link>
-            <a href="#funcionalidades" className={BOTAO_SECUNDARIO}>Conhecer funcionalidades</a>
+            <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Criar meu clube <Icone nome="seta" className="w-5 h-5" /></Link>
+            <Link to="/planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</Link>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
-            Já usa o DesbravaClube? <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center font-bold text-[#1d4ed8] underline ${FOCO}`}>Já tenho conta — entrar</LinkApp>
+          <p className="mt-3 text-sm text-blue-100">
+            Já usa o DesbravaClube? <LinkApp to="/login" className="inline-flex min-h-[44px] items-center font-bold text-white underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-md">Já tenho conta — entrar</LinkApp>
           </p>
-          <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 max-w-lg">
-            {indicadores.map((t) => (
-              <li key={t} className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <span className="grid place-items-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 shrink-0"><Icone nome="check" className="w-4 h-4" /></span>{t}
+          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+            {selos.map((t) => (
+              <li key={t} className="flex items-center gap-2 text-sm font-semibold text-blue-50">
+                <span className="grid place-items-center w-5 h-5 rounded-full bg-emerald-400/20 text-emerald-300 shrink-0"><Icone nome="check" className="w-3.5 h-3.5" /></span>{t}
               </li>
             ))}
           </ul>
         </div>
-        <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-          <NotebookPainel />
-          <CelularClasse className="hidden sm:block absolute -bottom-10 -right-2 lg:-right-8" />
+        <div className="relative mx-auto w-full max-w-xs sm:max-w-sm lg:max-w-md">
+          <CelularClasse className="mx-auto" />
         </div>
       </div>
     </section>
@@ -144,7 +151,7 @@ function Hero() {
 
 function Secao({ id, fundo = 'bg-white', children, className = '' }) {
   return (
-    <section id={id} tabIndex={-1} className={`${fundo} scroll-mt-16 py-16 sm:py-20 lg:py-24 focus:outline-none ${className}`}>
+    <section id={id} tabIndex={-1} className={`${fundo} scroll-mt-16 py-14 sm:py-20 lg:py-24 focus:outline-none ${className}`}>
       <div className={CONTAINER}>{children}</div>
     </section>
   )
@@ -152,69 +159,11 @@ function Secao({ id, fundo = 'bg-white', children, className = '' }) {
 
 function Titulo({ sobre, titulo, texto, claro = false, centro = true }) {
   return (
-    <div className={`${centro ? 'mx-auto text-center' : ''} max-w-3xl mb-10 lg:mb-14`}>
+    <div className={`${centro ? 'mx-auto text-center' : ''} max-w-3xl mb-8 lg:mb-12`}>
       {sobre && <p className={`text-sm font-bold uppercase tracking-wider ${claro ? 'text-[#f5b012]' : 'text-[#1d4ed8]'}`}>{sobre}</p>}
-      <h2 className={`mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight ${claro ? 'text-white' : NAVY}`}>{titulo}</h2>
-      {texto && <p className={`mt-4 text-lg leading-relaxed ${claro ? 'text-blue-100' : 'text-slate-600'}`}>{texto}</p>}
+      <h2 className={`mt-2 text-[1.75rem] leading-tight sm:text-4xl font-extrabold tracking-tight ${claro ? 'text-white' : NAVY}`}>{titulo}</h2>
+      {texto && <p className={`mt-4 text-base sm:text-lg leading-relaxed ${claro ? 'text-blue-100' : 'text-slate-600'}`}>{texto}</p>}
     </div>
-  )
-}
-
-function Jornada() {
-  const etapas = [
-    ['Cadastro', 'usuario'], ['Clube', 'unidades'], ['Classe', 'classes'], ['Atividades', 'atividades'],
-    ['Avaliação', 'avaliacoes'], ['Documentos', 'documentos'], ['Investidura', 'estrela'],
-  ]
-  return (
-    <Secao id="jornada" fundo="bg-white">
-      <Titulo sobre="A jornada" titulo="Do cadastro à investidura, tudo conectado." texto="Cada etapa alimenta a próxima: o que o desbravador faz vira avaliação, a avaliação vira progresso e o progresso vira documento." />
-      <ol className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 lg:gap-2">
-        {etapas.map(([nome, icone], i) => (
-          <li key={nome} className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 text-center last:col-span-2 sm:last:col-span-1">
-            <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#0b1b46] text-[#f5b012] shrink-0"><Icone nome={icone} className="w-5 h-5" /></span>
-            <span>
-              <span className="block text-xs font-semibold text-slate-500">Etapa {i + 1}</span>
-              <span className={`block font-bold ${NAVY}`}>{nome}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </Secao>
-  )
-}
-
-const FUNCIONALIDADES = [
-  ['membros', 'Gestão de membros', 'Cadastro, cargos, vínculos e aprovação de entrada.'],
-  ['classes', 'Classes', 'Requisitos organizados por classe, com progresso de cada membro.'],
-  ['especialidades', 'Especialidades', 'Acompanhamento e avaliação de especialidades.'],
-  ['presenca', 'Presença', 'Chamada e apontamentos de cada encontro.'],
-  ['atividades', 'Atividades e evidências', 'Envio de texto ou foto direto do celular.'],
-  ['avaliacoes', 'Avaliações', 'Fila única para aprovar ou pedir correção, com histórico.'],
-  ['responsaveis', 'Responsáveis', 'Pais e responsáveis vinculados aos filhos.'],
-  ['mensalidades', 'Mensalidades', 'Controle do que está pago e do que está pendente.'],
-  ['documentos', 'Documentos', 'PDF gerado pelo sistema a partir dos dados do clube.'],
-  ['assinatura', 'Assinatura eletrônica', 'Assinatura individual ou em lote, com vários signatários.'],
-  ['qrcode', 'Inscrições por QR Code', 'Código do clube para pedir entrada sem papelada.'],
-  ['unidades', 'Unidades', 'Organização por unidades, com pontuação própria.'],
-  ['indicadores', 'Indicadores', 'Ranking, pontos e presença para acompanhar o clube.'],
-]
-
-function Funcionalidades() {
-  return (
-    <Secao id="funcionalidades" fundo="bg-slate-50">
-      <Titulo sobre="Funcionalidades" titulo="Tudo que seu clube precisa em um só lugar" texto="Do dia a dia do desbravador à rotina da diretoria, sem planilhas espalhadas nem grupos de mensagens perdidos." />
-      <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {FUNCIONALIDADES.map(([icone, titulo, texto]) => (
-          <li key={titulo} className="flex gap-4 sm:block rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-xl bg-[#e8efff] text-[#1d4ed8]"><Icone nome={icone} /></span>
-            <div>
-              <h3 className={`sm:mt-4 font-bold ${NAVY}`}>{titulo}</h3>
-              <p className="mt-1 text-sm text-slate-600 leading-relaxed">{texto}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Secao>
   )
 }
 
@@ -231,73 +180,56 @@ function Lista({ itens, claro = false }) {
   )
 }
 
-function Desbravador() {
+const PROBLEMAS = [
+  ['papel', 'Papelada que se perde', 'Fichas, cartões e assinaturas espalhados em pastas e fotos no WhatsApp.', 'Tudo registrado no app, com documento gerado pelo sistema.'],
+  ['classes', 'Classes difíceis de acompanhar', 'Ninguém sabe ao certo quem cumpriu qual requisito.', 'Requisitos por classe, com comprovação e avaliação da liderança.'],
+  ['conversa', 'Comunicação desencontrada', 'Aviso importante some no meio do grupo.', 'Avisos, agenda e chat moderado dentro do clube.'],
+]
+
+function Problemas() {
   return (
-    <Secao id="desbravador" fundo="bg-white">
-      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div>
-          <Titulo centro={false} sobre="Para o desbravador" titulo="Cada desbravador acompanha sua própria jornada" texto="Pelo celular, ele vê a classe atual, o que falta e o que já foi aprovado — e envia as atividades na hora." />
-          <Lista itens={[
-            'Classe atual e progresso sempre à vista',
-            'Requisitos com status: a fazer, enviado, correção, aprovado',
-            'Envio de atividade com texto ou foto',
-            'Correção explicada pelo instrutor e reenvio sem perder o histórico',
-            'Especialidades e conquistas registradas',
-          ]} />
-        </div>
-        <div className="grid gap-6 sm:grid-cols-[auto_1fr] items-center justify-items-center">
-          <CelularClasse />
-          <CardTentativas />
-        </div>
-      </div>
+    <Secao id="problemas" fundo="bg-white">
+      <Titulo sobre="Por que o DesbravaClube" titulo="Menos planilha. Mais tempo com os desbravadores." texto="O que hoje toma o fim de semana da diretoria vira rotina simples no celular." />
+      <ul className="grid gap-4 md:grid-cols-3">
+        {PROBLEMAS.map(([icone, titulo, dor, solucao]) => (
+          <li key={titulo} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <span className="grid place-items-center w-11 h-11 rounded-xl bg-red-50 text-red-700"><Icone nome={icone} /></span>
+            <h3 className={`mt-4 text-lg font-bold ${NAVY}`}>{titulo}</h3>
+            <p className="mt-1 text-slate-600">{dor}</p>
+            <p className="mt-3 flex gap-2 font-semibold text-emerald-800">
+              <Icone nome="check" className="w-5 h-5 shrink-0 mt-0.5" />{solucao}
+            </p>
+          </li>
+        ))}
+      </ul>
     </Secao>
   )
 }
 
-function Diretoria() {
-  const blocos = [
-    ['membros', 'Membros e unidades'], ['presenca', 'Presença e apontamentos'], ['avaliacoes', 'Fila de avaliações'],
-    ['mensalidades', 'Mensalidades'], ['documentos', 'Central de documentos'], ['qrcode', 'Inscrições por código'],
-    ['indicadores', 'Ranking e indicadores'], ['assinatura', 'Assinaturas em lote'],
-  ]
-  return (
-    <Secao id="para-clubes" fundo="bg-slate-50">
-      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div className="order-2 lg:order-1"><NotebookPainel /></div>
-        <div className="order-1 lg:order-2">
-          <Titulo centro={false} sobre="Para a diretoria" titulo="Menos planilha. Mais tempo para liderar." texto="Tudo o que a diretoria precisa acompanhar, num painel só — com cada ação registrada." />
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {blocos.map(([icone, t]) => (
-              <li key={t} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
-                <span className="grid place-items-center w-9 h-9 rounded-lg bg-[#0b1b46] text-[#f5b012] shrink-0"><Icone nome={icone} className="w-5 h-5" /></span>
-                <span className={`text-sm font-semibold ${NAVY}`}>{t}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </Secao>
-  )
-}
+// Só recursos que existem HOJE no produto. Especialidades ficam de fora (fora do piloto).
+const RECURSOS = [
+  ['classes', 'Classes com requisitos oficiais', 'Cada requisito no celular do desbravador, com comprovação por foto ou texto.'],
+  ['estrela', 'Classes avançadas', 'Acompanhamento das classes avançadas junto com as regulares.'],
+  ['avaliacoes', 'Avaliação pela liderança', 'Fila única para aprovar ou pedir correção, com histórico de cada tentativa.'],
+  ['documentos', 'Documentos e certificados', 'PDF gerado pelo sistema, com assinatura e verificação pública por QR Code.'],
+  ['jogos', 'Jogos e ranking', 'Jogos, desafios e ranking por unidade para manter a turma engajada.'],
+  ['mensalidades', 'Mensalidades e controle', 'O que está pago e o que está pendente, com a chave Pix do clube.'],
+  ['qrcode', 'Inscrição por link ou QR', 'Quem quer entrar pede pelo link do clube; a diretoria aprova.'],
+  ['camadas', 'Multiclube', 'Quem participa de mais de um clube alterna entre eles, com dados separados.'],
+  ['mapa', 'Painel da coordenação', 'Coordenação distrital e regional acompanha os clubes da sua área.'],
+]
 
-function Responsaveis() {
-  const itens = [
-    ['responsaveis', 'Filhos vinculados', 'O vínculo é confirmado pela diretoria do clube.'],
-    ['estrela', 'Pontuação', 'Os pontos que o filho conquistou no clube.'],
-    ['presenca', 'Presenças e faltas', 'Acompanhamento da frequência nos encontros.'],
-    ['mensalidades', 'Mensalidade pendente', 'Aviso do que está em aberto, com a chave Pix do clube.'],
-    ['escudo', 'Consentimento', 'O responsável concede ou revoga o consentimento, com registro.'],
-  ]
+function Recursos() {
   return (
-    <Secao id="responsaveis" fundo="bg-white">
-      <Titulo sobre="Para os responsáveis" titulo="Os responsáveis também fazem parte da jornada." texto="Depois que a diretoria confirma o vínculo, pais e responsáveis acompanham o filho pelo próprio celular." />
-      <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {itens.map(([icone, t, d]) => (
-          <li key={t} className="flex gap-4 sm:block rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-            <span className="grid place-items-center w-10 h-10 shrink-0 rounded-xl bg-[#fff3d6] text-[#8a5a00]"><Icone nome={icone} /></span>
+    <Secao id="recursos" fundo="bg-slate-50">
+      <Titulo sobre="Recursos" titulo="Tudo o que o clube precisa, num lugar só" texto="Do requisito cumprido pelo desbravador ao certificado assinado pela diretoria." />
+      <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {RECURSOS.map(([icone, titulo, texto]) => (
+          <li key={titulo} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_1px_2px_rgba(11,27,70,0.04)]">
+            <span className="grid place-items-center w-11 h-11 shrink-0 rounded-xl bg-[#e8efff] text-[#1d4ed8]"><Icone nome={icone} /></span>
             <div>
-              <h3 className={`sm:mt-4 font-bold ${NAVY}`}>{t}</h3>
-              <p className="mt-1 text-sm text-slate-600 leading-relaxed">{d}</p>
+              <h3 className={`font-bold ${NAVY}`}>{titulo}</h3>
+              <p className="mt-1 text-sm text-slate-600 leading-relaxed">{texto}</p>
             </div>
           </li>
         ))}
@@ -306,70 +238,58 @@ function Responsaveis() {
   )
 }
 
-function Documentos() {
-  const fluxo = [['Dossiê', 'classes'], ['PDF', 'documentos'], ['Revisão', 'avaliacoes'], ['Assinatura', 'assinatura'], ['QR Code', 'qrcode'], ['Verificação', 'escudo']]
+function Destaques() {
   return (
-    <Secao id="documentos" fundo="bg-[#0b1b46]">
-      <Titulo claro sobre="Documentos" titulo="Documentos que saem do digital prontos para o fluxo de assinatura." texto="O que foi registrado e aprovado no sistema vira documento — sem redigitar nada." />
-      <ol className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {fluxo.map(([nome, icone], i) => (
-          <li key={nome} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-            <span className="mx-auto grid place-items-center w-11 h-11 rounded-xl bg-[#f5b012] text-[#0b1b46]"><Icone nome={icone} className="w-5 h-5" /></span>
-            <span className="mt-2 block text-xs text-blue-200">Passo {i + 1}</span>
-            <span className="block font-bold text-white">{nome}</span>
+    <Secao id="para-clubes" fundo="bg-white">
+      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <Titulo centro={false} sobre="Para o desbravador" titulo="Cada um acompanha a própria classe" texto="Pelo celular, o desbravador vê o que falta, envia a comprovação na hora e recebe a correção explicada." />
+          <Lista itens={[
+            'Requisitos com status: a fazer, enviado, correção, aprovado',
+            'Comprovação com foto ou texto, direto na tela do requisito',
+            'Reenvio sem perder o histórico',
+          ]} />
+        </div>
+        <div className="grid gap-6 justify-items-center"><CardTentativas /></div>
+      </div>
+      <div className="mt-16 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="order-2 lg:order-1"><NotebookPainel /></div>
+        <div className="order-1 lg:order-2">
+          <Titulo centro={false} sobre="Para a diretoria" titulo="O clube inteiro num painel" texto="Membros, unidades, presença, avaliações, mensalidades e documentos — com cada ação registrada." />
+          <Lista itens={[
+            'Aprovação de entrada e cargos por pessoa',
+            'Fila de avaliação da liderança',
+            'Documentos com assinatura e QR Code de verificação',
+          ]} />
+        </div>
+      </div>
+    </Secao>
+  )
+}
+
+function ComoFunciona() {
+  const passos = [
+    ['bandeira', 'Crie o clube', 'Cadastre-se e crie o espaço do seu clube em poucos minutos.'],
+    ['qrcode', 'Convide a turma', 'Compartilhe o link ou o QR Code; a diretoria aprova cada entrada.'],
+    ['celular', 'Use no dia a dia', 'Classes, avaliações, avisos e documentos pelo celular.'],
+  ]
+  return (
+    <Secao id="como-funciona" fundo="bg-[#0b1b46]">
+      <Titulo claro sobre="Como funciona" titulo="Em 3 passos, o clube no app" />
+      <ol className="grid gap-4 md:grid-cols-3">
+        {passos.map(([icone, t, d], i) => (
+          <li key={t} className="relative rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="flex items-center gap-3">
+              <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#f5b012] text-[#0b1b46] font-extrabold" aria-hidden="true">{i + 1}</span>
+              <Icone nome={icone} className="w-6 h-6 text-[#ffd873]" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-white"><span className="sr-only">Passo {i + 1}: </span>{t}</h3>
+            <p className="mt-1 text-blue-100">{d}</p>
           </li>
         ))}
       </ol>
-      <div className="mt-12 grid gap-8 lg:grid-cols-2">
-        <Lista claro itens={[
-          'PDF gerado pelo próprio sistema, a partir dos dados aprovados',
-          'Revisão antes da assinatura, com pedido de ajuste quando necessário',
-          'Assinatura eletrônica com um ou mais signatários',
-        ]} />
-        <Lista claro itens={[
-          'QR Code para verificação pública do documento',
-          'Versões e histórico preservados — nada é sobrescrito em silêncio',
-          'Assinaturas podem ser revogadas, e isso também fica registrado',
-        ]} />
-      </div>
-    </Secao>
-  )
-}
-
-function Multiclube() {
-  return (
-    <Secao id="multiclube" fundo="bg-white">
-      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div>
-          <Titulo centro={false} sobre="Multiclube" titulo="Uma plataforma. Vários clubes. Dados separados." texto="Cada clube funciona no seu próprio espaço. Quem participa de mais de um clube alterna entre eles, e cada um enxerga só o que é seu." />
-          <Lista itens={['Membros próprios', 'Gestão e diretoria próprias', 'Arquivos e fotos próprios', 'Configurações e identidade próprias', 'Permissões definidas por cargo']} />
-        </div>
-        <ArvoreMulticlube />
-      </div>
-    </Secao>
-  )
-}
-
-function Hierarquia() {
-  const niveis = ['Associação / Missão / Campo', 'Região', 'Distrito', 'Clube']
-  return (
-    <Secao id="institucional" fundo="bg-slate-50">
-      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <ol className="space-y-3" aria-label="Níveis institucionais, do mais amplo ao clube">
-          {niveis.map((n, i) => (
-            <li key={n} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4" style={{ marginLeft: `${i * 6}%` }}>
-              <span className="grid place-items-center w-9 h-9 rounded-lg bg-[#e8efff] text-[#1d4ed8] shrink-0"><Icone nome={i === niveis.length - 1 ? 'bandeira' : 'camadas'} className="w-5 h-5" /></span>
-              <span className={`font-bold ${NAVY}`}>{n}</span>
-            </li>
-          ))}
-        </ol>
-        <div>
-          <Titulo centro={false} sobre="Institucional" titulo="Pensado para a estrutura dos Desbravadores" texto="Distrito, região e associação, missão ou campo têm um portal próprio, com a visão que o papel de cada um permite." />
-          <p className="text-slate-600 leading-relaxed">
-            Liderança institucional acompanha o que é da sua área. Os dados privados de cada clube — fotos,
-            evidências e informações dos membros — continuam sob a gestão do próprio clube.
-          </p>
-        </div>
+      <div className="mt-10 text-center">
+        <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Começar agora <Icone nome="seta" className="w-5 h-5" /></Link>
       </div>
     </Secao>
   )
@@ -444,16 +364,16 @@ function CartaoPlano({ plano }) {
 
 function Seguranca() {
   const itens = [
-    ['camadas', 'Clubes separados', 'Os dados de um clube não aparecem para outro.'],
-    ['usuario', 'Níveis de acesso', 'Cada cargo vê e faz só o que lhe cabe.'],
-    ['responsaveis', 'Responsáveis vinculados', 'Só depois da confirmação da diretoria.'],
-    ['cadeado', 'Documentos privados', 'Arquivos e evidências não ficam públicos.'],
-    ['nuvem', 'Armazenamento controlado', 'Espaço por clube, acompanhado pelo sistema.'],
-    ['historico', 'Histórico de ações', 'Aprovações, assinaturas e revogações registradas.'],
+    ['escudo', 'Dados das crianças protegidos', 'Fotos, evidências e dados dos membros não ficam públicos.'],
+    ['camadas', 'Cada clube isolado', 'Os dados de um clube não aparecem para outro.'],
+    ['usuario', 'Acesso por cargo', 'Cada pessoa vê e faz só o que o seu papel permite.'],
+    ['responsaveis', 'Responsáveis confirmados', 'O vínculo com o filho só vale depois da confirmação da diretoria.'],
+    ['historico', 'Histórico de ações', 'Aprovações, assinaturas e revogações ficam registradas.'],
+    ['cadeado', 'Consentimento registrado', 'O responsável concede ou revoga o consentimento, com registro.'],
   ]
   return (
     <Secao id="seguranca" fundo="bg-slate-50">
-      <Titulo sobre="Segurança" titulo="Cada clube no seu espaço." />
+      <Titulo sobre="Segurança e privacidade" titulo="Cuidado de verdade com os dados do clube" texto="Um produto independente, pensado desde o início para lidar com dados de crianças e adolescentes." />
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {itens.map(([icone, t, d]) => (
           <li key={t} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5">
@@ -470,16 +390,12 @@ function Seguranca() {
 }
 
 const PERGUNTAS = [
-  ['O DesbravaClube funciona no celular?', 'Sim. Ele foi feito primeiro para o celular, e também funciona no computador e no tablet.'],
-  ['Preciso instalar aplicativo?', 'Não é obrigatório. Basta abrir pelo navegador; se quiser, dá para adicionar à tela inicial e usar como um aplicativo.'],
-  ['Posso cadastrar mais de um clube?', 'Sim. Cada clube tem seus dados separados, e a mesma pessoa pode participar de mais de um clube e alternar entre eles. A quantidade de clubes incluída aparece na licença.'],
-  ['Os responsáveis possuem acesso?', 'Sim. Depois que a diretoria confirma o vínculo, o responsável acompanha pontos, presenças e faltas, mensalidade pendente e registra o consentimento do filho.'],
-  ['Como funcionam Classes e Especialidades?', 'O desbravador vê os requisitos e envia as atividades. Instrutores e diretoria avaliam: aprovam ou pedem correção com um comentário. Cada tentativa fica guardada no histórico.'],
-  ['Posso enviar atividades pelo celular?', 'Sim, com texto ou foto, direto na tela do requisito.'],
-  ['Como funcionam os documentos?', 'O sistema gera o PDF a partir dos dados aprovados. O documento passa por revisão, recebe as assinaturas eletrônicas — de um ou mais signatários — e ganha um QR Code para verificação pública.'],
-  ['O clube pode usar QR Code para inscrições?', 'Sim. A liderança gera um código do clube com QR Code; quem escaneia pede a entrada e a diretoria aprova.'],
-  ['Existe acesso institucional?', 'Sim. Distrito, região e associação, missão ou campo têm um portal próprio, com a visão que cada papel permite. Os dados privados de cada clube continuam sob a gestão do clube.'],
-  ['Como funciona a licença?', 'É uma licença anual para o clube, não uma mensalidade. O valor vigente e as condições no cartão e no Pix aparecem na seção Planos. Nesta fase, o pagamento é combinado diretamente com a equipe da plataforma.'],
+  ['Funciona no celular?', 'Sim. O DesbravaClube foi feito primeiro para o celular e também funciona no computador e no tablet. Não é obrigatório instalar: dá para abrir pelo navegador e adicionar à tela inicial.'],
+  ['Como funcionam as Classes?', 'O desbravador vê os requisitos e envia a comprovação com foto ou texto. A liderança avalia: aprova ou pede correção com um comentário. Cada tentativa fica no histórico.'],
+  ['O que os responsáveis veem?', 'Depois que a diretoria confirma o vínculo, o responsável acompanha pontos, presenças e faltas e a mensalidade pendente, e registra o consentimento do filho.'],
+  ['Como os membros entram no clube?', 'A liderança compartilha o link ou o QR Code do clube; quem acessa pede a entrada e a diretoria aprova.'],
+  ['Existe acesso para a coordenação?', 'Sim. Coordenação distrital e regional tem um painel próprio com a visão que o seu papel permite. Os dados privados de cada clube continuam sob a gestão do clube.'],
+  ['Como funciona a licença?', 'É uma licença anual para o clube, não uma mensalidade. Os valores vigentes aparecem em Planos. Nesta fase, o pagamento é combinado diretamente com a equipe da plataforma.'],
 ]
 
 function Faq() {
@@ -505,7 +421,8 @@ function ChamadaFinal() {
   return (
     <section className="bg-[#0b1b46]">
       <div className={`${CONTAINER} py-16 sm:py-20 text-center`}>
-        <h2 className="mx-auto max-w-3xl text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Pronto para levar a gestão do seu clube para outro nível?</h2>
+        <h2 className="mx-auto max-w-3xl text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Leve o seu clube para a palma da mão.</h2>
+        <p className="mx-auto mt-3 max-w-xl text-blue-100">Crie o clube agora e combine o pagamento depois.</p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
           <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Quero criar meu clube</Link>
           <a href="#planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</a>
@@ -522,12 +439,12 @@ function Rodape() {
       <div className={`${CONTAINER} grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4`}>
         <div>
           <Marca claro />
-          <p className="mt-3 text-sm text-slate-400 max-w-xs">Gestão completa para Clubes de Desbravadores.</p>
+          <p className="mt-3 text-sm text-slate-400 max-w-xs">O clube na palma da mão. Produto independente para Clubes de Desbravadores.</p>
         </div>
         <nav aria-label="Produto">
           <h2 className="text-sm font-bold text-white">Produto</h2>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><a href="#funcionalidades" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Funcionalidades</a></li>
+            <li><a href="#recursos" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Recursos</a></li>
             <li><a href="#planos" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
             <li><LinkApp to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</LinkApp></li>
           </ul>
@@ -552,22 +469,23 @@ function Rodape() {
 }
 
 export default function Landing() {
+  useEffect(() => {
+    const antes = document.title
+    document.title = `${MARCA_PRODUTO.nome} — ${MARCA_PRODUTO.lema.toLowerCase()}`
+    return () => { document.title = antes }
+  }, [])
   return (
     <div className="min-h-full bg-white text-slate-800">
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[#0b1b46] focus:shadow">Pular para o conteúdo</a>
       <Cabecalho />
       <main id="conteudo">
         <Hero />
-        <Jornada />
-        <Funcionalidades />
-        <Desbravador />
-        <Diretoria />
-        <Responsaveis />
-        <Documentos />
-        <Multiclube />
-        <Hierarquia />
-        <Planos />
+        <Problemas />
+        <Recursos />
+        <Destaques />
+        <ComoFunciona />
         <Seguranca />
+        <Planos />
         <Faq />
         <ChamadaFinal />
       </main>

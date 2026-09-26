@@ -29,6 +29,16 @@ const TRACOS = {
   estrela: <><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9L12 3.5Z" /></>,
 }
 
+// Extras do redesenho do site (jogos, coordenação, papelada, conversa, foto).
+Object.assign(TRACOS, {
+  jogos: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4" /><circle cx="15.5" cy="11.5" r="1" /><circle cx="18" cy="13.5" r="1" /></>,
+  trofeu: <><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7" /></>,
+  mapa: <><path d="m9 4-5 2v14l5-2 6 2 5-2V4l-5 2-6-2Z" /><path d="M9 4v14M15 6v14" /></>,
+  papel: <><path d="M6 3h9l3 3v15H6V3Z" /><path d="M9 9h6M9 13h6M9 17h3" /></>,
+  conversa: <><path d="M4 5h16v11H9l-5 4V5Z" /><path d="M8 9.5h8M8 12.5h5" /></>,
+  foto: <><rect x="3" y="6" width="18" height="14" rx="2.5" /><circle cx="12" cy="13" r="3.5" /><path d="M8.5 6 10 3.5h4L15.5 6" /></>,
+})
+
 export function Icone({ nome, className = 'w-5 h-5' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true" focusable="false">
