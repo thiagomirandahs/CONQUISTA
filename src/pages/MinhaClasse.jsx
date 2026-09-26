@@ -284,18 +284,26 @@ function Requisito({ r, userId, onMudou }) {
               ↺ A liderança pediu correção — veja o comentário no histórico abaixo e envie de novo.
             </p>
           )}
+          {/* Comprovação em destaque: caixa colorida com o passo dito em palavras simples — tem criança e
+              responsável com dificuldade, então o "onde eu ponho?" precisa ser óbvio e o alvo de toque grande. */}
           {precisaTexto && (
-            <label className="block">
-              <span className="text-xs text-muted">Sua resposta{obrigatoria ? ' (obrigatória)' : ''}</span>
-              <textarea value={texto} required={obrigatoria} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva aqui..."
-                className="mt-1 w-full text-sm rounded-lg border border-line px-3 py-2" />
+            <label className="block rounded-xl border-2 border-blue-300 bg-blue-50 p-3">
+              <span className="block text-sm font-bold text-blue-900"><span aria-hidden="true">✍️ </span><span>Sua resposta{obrigatoria ? ' (obrigatória)' : ''}</span></span>
+              <span className="block text-xs text-blue-800 mt-0.5">Escreva aqui o que você fez ou aprendeu.</span>
+              <textarea aria-label={`Sua resposta${obrigatoria ? ' (obrigatória)' : ''}`} value={texto} required={obrigatoria} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="Escreva aqui..."
+                className="mt-2 w-full text-base rounded-lg border-2 border-blue-200 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none" />
             </label>
           )}
           {precisaFoto && (
-            <div>
-              <label className="block">
-                <span className="text-xs text-muted">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
-                <input type="file" accept="image/*" className="mt-1 block text-sm" onChange={(e) => escolherFoto(e.target.files?.[0])} />
+            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
+              <label className="block cursor-pointer">
+                <span className="block text-sm font-bold text-emerald-900"><span aria-hidden="true">📷 </span><span>Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span></span>
+                <span className="block text-xs text-emerald-800 mt-0.5">Tire uma foto da atividade ou escolha uma da galeria.</span>
+                <input aria-label={`Foto de comprovação${obrigatoria ? ' (obrigatória)' : ''}`} type="file" accept="image/*" className="sr-only" onChange={(e) => escolherFoto(e.target.files?.[0])} />
+                <span aria-hidden="true"
+                  className="mt-2 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-emerald-500 bg-white px-3 text-base font-bold text-emerald-800">
+                  {previa || r.evidencia_path ? '🔄 Trocar foto' : '📸 Tirar ou escolher foto'}
+                </span>
               </label>
               {(previa || r.evidencia_path) && (
                 previa
