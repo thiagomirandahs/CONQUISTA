@@ -1,3 +1,4 @@
+import { corDaClasse } from '../lib/corDaClasse.js'
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -113,10 +114,16 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
       {disponiveis.map((c) => {
         const inelegivel = c.elegivel === false
         const idMotivo = `motivo-${c.class_id}`
+        const cor = corDaClasse(c.nome)
         return (
-          <li key={c.class_id} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3">
+          <li key={c.class_id} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
+            style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
             <div className="min-w-0">
-              <h3 className="font-bold text-ink truncate text-base">{c.nome}</h3>
+              <h3 className="font-bold text-ink truncate text-base flex items-center gap-2">
+                {cor && <span aria-hidden="true" className="inline-block h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow" style={{ background: cor.hex }} />}
+                {c.nome}
+              </h3>
+              {cor && <div className="text-xs font-semibold" style={{ color: cor.hex === '#eab308' ? '#a16207' : cor.hex }}>Cor da classe: {cor.nome}</div>}
               {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
               {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
               {c.curriculum_version?.origem === 'piloto_teste' && (
@@ -150,9 +157,13 @@ function Progresso({ dados, userId, onMudou }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-surface rounded-2xl p-5 shadow-soft">
+      <div className="bg-surface rounded-2xl p-5 shadow-soft overflow-hidden"
+        style={corDaClasse(classe?.nome) ? { borderTop: `10px solid ${corDaClasse(classe?.nome).hex}` } : undefined}>
         <div className="flex items-center justify-between gap-2 mb-1">
-          <h3 className="font-extrabold text-ink text-lg">{classe?.nome}</h3>
+          <h3 className="font-extrabold text-ink text-lg flex items-center gap-2">
+            {corDaClasse(classe?.nome) && <span aria-hidden="true" className="inline-block h-5 w-5 shrink-0 rounded-full shadow" style={{ background: corDaClasse(classe?.nome).hex }} />}
+            {classe?.nome}
+          </h3>
           {ehTeste && (
             <span className="text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
               Dados de teste
