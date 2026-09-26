@@ -43,6 +43,9 @@ insert into public.organizational_units (id, type, nome, slug, metadata) values
 on conflict (id) do nothing;
 insert into t.ids (chave, id) values ('regiao_a', public.curriculo_uuid('t42:regiao_a')), ('distrito_a', public.curriculo_uuid('t42:distrito_a')), ('distrito_b', public.curriculo_uuid('t42:distrito_b'));
 update public.organizational_units set parent_id = t.id('regiao_a') where id = t.id('distrito_a');
+-- este teste é do portal/verificação, não do fluxo: fixa o workflow ANTIGO (v1, 2 etapas no clube) — o fluxo
+-- clube→distrito→região da v2 (migration 330) é coberto pelo teste 93
+update public.investiture_workflows set ativo = (versao = 1) where chave = 'classes-regulares';
 update public.organizational_units set parent_id = t.id('distrito_a') where id = t.id('clube_a');
 update public.organizational_units set parent_id = t.id('distrito_b') where id = t.id('clube_b');
 
@@ -140,14 +143,14 @@ reset role;
 
 -- ==================== 5) "nada exige sua atuação": Classes Regulares NÃO têm etapa distrital ====================
 select t.como('coord_a'); select t.pedir_escopo('distrito_a');
-select t.eq('não há investidura aguardando esta autoridade (o workflow ativo tem as 2 etapas no CLUBE — nada é inventado)', (select json_array_length(public.escopo_investiduras_pendentes())), 0);
+select t.eq('não há investidura aguardando esta autoridade (nenhum cartão chegou na etapa distrital ainda)', (select json_array_length(public.escopo_investiduras_pendentes())), 0);
 select t.como('coord_reg_a'); select t.pedir_escopo('regiao_a');
 select t.eq('idem para a regional', (select json_array_length(public.escopo_investiduras_pendentes())), 0);
 reset role;
 -- e quando o workflow EXIGE a etapa distrital, aí sim aparece (mesmo motor da fase 4.2)
-update public.investiture_workflows set ativo = false where chave = 'classes-regulares' and versao = 1;
+update public.investiture_workflows set ativo = false where chave = 'classes-regulares';
 insert into public.investiture_workflows (id, chave, versao, nome, descricao, ativo) values
-  (public.curriculo_uuid('t42:wf:2'), 'classes-regulares', 2, '[TESTE] com etapa distrital', 'Fictício, só pra provar o portal — não é regra real.', true);
+  (public.curriculo_uuid('t42:wf:2'), 'classes-regulares', 90, '[TESTE] com etapa distrital', 'Fictício, só pra provar o portal — não é regra real.', true);
 insert into public.investiture_workflow_stages (id, workflow_id, ordem, chave, nome, escopo_tipo, papeis_permitidos, obrigatoria, pular_se_nivel_ausente, permite_mesmo_decisor) values
   (public.curriculo_uuid('t42:st:1'), public.curriculo_uuid('t42:wf:2'), 1, 'revisao_clube', 'Revisão do clube', 'clube', array['instrutor','diretoria'], true, false, true),
   (public.curriculo_uuid('t42:st:2'), public.curriculo_uuid('t42:wf:2'), 2, 'aprovacao_intermediaria', 'Aprovação distrital', 'distrito', array['coordenador_distrital'], true, false, false),
@@ -167,7 +170,7 @@ select t.permitido('revisão do clube (etapa 1)', format($q$select public.revisa
 reset role;
 select t.como('coord_a'); select t.pedir_escopo('distrito_a');
 select t.eq('AGORA sim: a investidura parada na etapa distrital aparece pra ESTA autoridade, com o mínimo pra decidir',
-  (select (i ->> 'pessoa_nome') || '|' || (i ->> 'classe_nome') || '|' || (i -> 'etapa' ->> 'escopo_tipo') from json_array_elements(public.escopo_investiduras_pendentes()) i),
+  (select (i ->> 'pessoa_nome') || '|' || (i ->> 'classe_nome') || '|' || (i -> 'etapa' ->> 'escopo_tipo') from json_array_elements(public.escopo_investiduras_pendentes()) i where i ->> 'pessoa_nome' = 'Aguarda Distrital'),
   'Aguarda Distrital|Amigo|distrito');
 select t.eq('...e mesmo aqui NÃO vazam evidências nem comentários internos do clube', ((public.escopo_investiduras_pendentes()::text like '%Resposta privada%') or (public.escopo_investiduras_pendentes()::text like '%comentário interno%'))::text, 'false');
 select t.como('coord_b'); select t.pedir_escopo('distrito_b');

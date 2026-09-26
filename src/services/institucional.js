@@ -18,12 +18,40 @@ export async function carregarPainelDoEscopo() {
   return data || []
 }
 
-// Investiduras paradas numa etapa que EXIGE a atuação desta autoridade. Para as Classes Regulares
-// isto é sempre vazio hoje (o workflow ativo tem as 2 etapas no clube) — e o portal diz isso.
+// Cartões de classe parados numa etapa que EXIGE a atuação desta autoridade (aprovação do distrito ou
+// da região — migration 330). Só o resumo: pessoa, classe, clube, conclusão e quem já aprovou.
 export async function carregarInvestidurasDoEscopo() {
   const { data, error } = await supabase.rpc('escopo_investiduras_pendentes')
   if (error) throw new Error(error.message)
   return data || []
+}
+
+// Cartão completo pra quem aprova (requisitos, respostas, fotos, linha do tempo). O servidor só entrega
+// à autoridade da etapa atual (ou a quem já aprovou acima e segue no cargo) e à liderança do clube.
+export async function carregarCartaoInvestidura(memberClassId) {
+  const { data, error } = await supabase.rpc('investidura_cartao', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Aprovar ('aprovado') ou devolver ao clube ('devolvido', motivo obrigatório). `correcoes`:
+// [{ member_requirement_id, comentario }] — esses requisitos voltam para "correção solicitada".
+export async function decidirCartaoInvestidura(memberClassId, decisao, comentario = null, correcoes = []) {
+  const { data, error } = await supabase.rpc('coordenacao_investidura_decidir', {
+    p_member_class_id: memberClassId, p_decisao: decisao, p_comentario: comentario, p_correcoes: correcoes,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Foto de comprovação na aprovação: URL assinada CURTA (5 min), nada guardado em cache. O Storage só assina
+// para quem passa na policy (liderança do clube ou coordenação da etapa atual — migration 330).
+export async function urlEvidenciaCurta(caminho) {
+  if (!caminho) return null
+  if (/^https?:\/\//i.test(caminho)) return caminho
+  const { data, error } = await supabase.storage.from('comprovacoes').createSignedUrl(caminho, 300)
+  if (error) throw new Error(error.message)
+  return data.signedUrl
 }
 
 async function rpc(nome, args) {

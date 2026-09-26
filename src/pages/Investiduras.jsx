@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura, emitirDocumento } from '../lib/dados.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import LinhaDoTempoInvestidura from '../components/LinhaDoTempoInvestidura.jsx'
+import CartaoAprovacao from '../components/CartaoAprovacao.jsx'
+import { rotuloDaEtapa } from '../lib/fluxoInvestidura.js'
 
 // Revisão final e investidura (fase 4) — só a liderança do clube em uso. Tudo vem do servidor:
 // estados, snapshot (hash), bloqueios atuais e a lista de requisitos. A tela não decide regra: o
@@ -69,7 +72,13 @@ export default function Investiduras() {
 }
 
 function Conclusao({ it, onMudou }) {
-  const estado = ESTADOS[it.status] || ESTADOS.requisitos_concluidos
+  // 330: depois da revisão do clube o cartão pode estar com o distrito/região — a matrícula segue
+  // "aguardando_revisao", mas quem decide agora é a coordenação (o clube só acompanha).
+  const naCoordenacao = it.status === 'aguardando_revisao' && it.etapa_atual && it.etapa_atual.escopo_tipo !== 'clube'
+  const estado = naCoordenacao
+    ? { label: rotuloDaEtapa(it.etapa_atual), icon: '⏳', badge: 'bg-amber-50 text-amber-800 border border-amber-200' }
+    : ESTADOS[it.status] || ESTADOS.requisitos_concluidos
+  const [verCartao, setVerCartao] = useState(false)
   const [observacao, setObservacao] = useState('')
   const [dataInv, setDataInv] = useState(hoje())
   const [corrigindo, setCorrigindo] = useState(false)
@@ -107,7 +116,12 @@ function Conclusao({ it, onMudou }) {
           🔏 Snapshot v{it.snapshot.versao} selado em {fmtData(it.snapshot.selado_em)} · currículo {it.snapshot.manifesto_versao || '—'} · hash <code className="break-all">{String(it.snapshot.hash).slice(0, 12)}…</code>
         </p>
       )}
-      {it.revisao?.status === 'correcao_solicitada' && it.revisao.comentario && (
+      {it.devolucao && (
+        <p data-testid="devolucao" className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 mb-2">
+          ↩️ Devolvido pela coordenação ({it.devolucao.etapa}){it.devolucao.em ? ` em ${fmtData(it.devolucao.em)}` : ''}: "{it.devolucao.motivo}"
+        </p>
+      )}
+      {!it.devolucao && it.revisao?.status === 'correcao_solicitada' && it.revisao.comentario && (
         <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 mb-2">↺ Última revisão pediu correção: "{it.revisao.comentario}"</p>
       )}
       {bloqueios.length > 0 && (
@@ -126,7 +140,23 @@ function Conclusao({ it, onMudou }) {
         </button>
       )}
 
-      {it.status === 'aguardando_revisao' && (
+      {(it.status === 'aguardando_revisao' || it.status === 'apto_investidura') && it.linha_do_tempo && (
+        <LinhaDoTempoInvestidura linha={it.linha_do_tempo} />
+      )}
+      {naCoordenacao && (
+        <p className="text-xs text-amber-800 mt-2 mb-1">O clube já aprovou. Agora a coordenação confere o cartão — você recebe um aviso quando ela aprovar ou devolver.</p>
+      )}
+      {it.status === 'aguardando_revisao' && !naCoordenacao && (
+        <div className="mb-2">
+          {verCartao ? <CartaoAprovacao memberClassId={it.member_class_id} somenteLeitura /> : (
+            <button type="button" onClick={() => setVerCartao(true)} className="w-full min-h-[44px] rounded-lg border border-line text-sm font-semibold text-muted">
+              📋 Ver cartão completo (respostas e fotos)
+            </button>
+          )}
+        </div>
+      )}
+
+      {it.status === 'aguardando_revisao' && !naCoordenacao && (
         <div className="space-y-2">
           <label className="block">
             <span className="text-xs text-muted">Observação da revisão (obrigatória ao pedir correção)</span>

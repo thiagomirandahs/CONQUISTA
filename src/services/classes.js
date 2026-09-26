@@ -125,6 +125,14 @@ export async function carregarRevisoesPendentes() {
   return data || []
 }
 
+// Caminho do cartão (migration 330): corridas do workflow com a etapa atual e as decisões (quem/quando/
+// comentário). Mesma visibilidade da conquista: a própria pessoa e a liderança do clube.
+export async function carregarHistoricoDoCartao(memberClassId) {
+  const { data, error } = await supabase.rpc('workflow_historico', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data?.runs || []
+}
+
 // Tenta selar de novo uma conclusão parada em "requisitos concluídos" (ex.: bloqueio resolvido).
 export async function solicitarRevisaoFinal(memberClassId) {
   const { data, error } = await supabase.rpc('classe_revisao_solicitar', { p_member_class_id: memberClassId })

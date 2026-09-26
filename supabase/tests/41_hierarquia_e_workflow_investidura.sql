@@ -73,12 +73,12 @@ select t.eq('unidade_ancestral: clube B tem distrito mas NÃO tem região (níve
 select t.eq('unidade_ancestral do próprio clube (escopo_tipo=clube) é ele mesmo — self-inclusivo', public.unidade_ancestral(t.id('clube_a'), 'clube'), t.id('clube_a'));
 
 -- ==================== workflow de TESTE: 4 etapas (clube → distrito → região(opcional) → investidura) ====================
--- Publicado como 'classes-regulares' v2 (versão maior = a ativa) só nesta transação; v1 (a real, 2
--- etapas, ambas no clube) fica intacta no banco, só desativada enquanto durar o teste — o rollback
+-- Publicado como 'classes-regulares' v90 (versão maior = a ativa) só nesta transação; as versões reais
+-- (v1 arquivada e v2 da migration 330) ficam intactas no banco, só desativadas enquanto durar o teste — o rollback
 -- restaura tudo (nenhuma regra institucional real é alterada).
-update public.investiture_workflows set ativo = false where chave = 'classes-regulares' and versao = 1;
+update public.investiture_workflows set ativo = false where chave = 'classes-regulares';
 insert into public.investiture_workflows (id, chave, versao, nome, descricao, ativo) values
-  (public.curriculo_uuid('t41:workflow:2'), 'classes-regulares', 2, '[TESTE] com etapas distrital e regional',
+  (public.curriculo_uuid('t41:workflow:2'), 'classes-regulares', 90, '[TESTE] com etapas distrital e regional',
    'Workflow FICTÍCIO só pra provar que o motor generaliza — NÃO é a regra real (ver pesquisa na migration 46).', true);
 insert into t.ids (chave, id) values ('workflow_teste', public.curriculo_uuid('t41:workflow:2'));
 insert into public.investiture_workflow_stages (id, workflow_id, ordem, chave, nome, escopo_tipo, papeis_permitidos, obrigatoria, pular_se_nivel_ausente, permite_mesmo_decisor) values
@@ -101,7 +101,7 @@ select t.permitido('lider_a aprova os 25 requisitos (selar cria a corrida do wor
 reset role;
 insert into t.ids (chave, id) select 'run', id from public.investiture_workflow_runs where member_class_id = t.id('mc');
 
-select t.eq('a corrida usa o workflow de TESTE v2, com 4 etapas, aguardando a etapa 1', (select workflow_versao from public.investiture_workflow_runs where id = t.id('run')) || '|' || (select current_stage_ordem from public.investiture_workflow_runs where id = t.id('run')) || '|' || (select status from public.member_classes where id = t.id('mc')), '2|1|aguardando_revisao');
+select t.eq('a corrida usa o workflow de TESTE v90, com 4 etapas, aguardando a etapa 1', (select workflow_versao from public.investiture_workflow_runs where id = t.id('run')) || '|' || (select current_stage_ordem from public.investiture_workflow_runs where id = t.id('run')) || '|' || (select status from public.member_classes where id = t.id('mc')), '90|1|aguardando_revisao');
 
 -- ==================== 1) tentativa de PULAR ETAPA ====================
 select t.como('lider_a'); select t.pedir_clube('clube_a');
@@ -189,7 +189,7 @@ select t.throws('nem quem roda SQL como dono do banco edita', format($q$update p
 select t.throws('...nem apaga', format($q$delete from public.workflow_stage_decisions where id = (select id from public.workflow_stage_decisions where run_id = %L and stage_chave = 'revisao_clube')$q$, t.id('run')), 'não pode ser apagado');
 select t.eq('cada decisão registra escopo/papel/decisor/decisão/data/observação/versão do workflow (checagem completa da etapa 1 de mc)',
   (select (stage_chave = 'revisao_clube') and (escopo_tipo = 'clube') and (escopo_organizational_unit_id = t.id('clube_a')) and (papel_utilizado = 'diretoria')
-       and (decisor_id = t.id('lider_a')) and (decisao = 'aprovado') and (workflow_versao = 2) and (observacao is not null) and (decidido_em is not null) and (metodo = 'aprovacao_sistema')
+       and (decisor_id = t.id('lider_a')) and (decisao = 'aprovado') and (workflow_versao = 90) and (observacao is not null) and (decidido_em is not null) and (metodo = 'aprovacao_sistema')
    from public.workflow_stage_decisions where run_id = t.id('run') and stage_chave = 'revisao_clube'), true);
 
 -- ==================== 10) remoção posterior do cargo — autoria histórica preservada, autoridade FUTURA some ====================

@@ -41,6 +41,34 @@ beforeEach(() => {
 })
 
 describe('Investiduras — acesso e estados', () => {
+  it('330: cartão com o DISTRITO — mostra a etapa e a linha do tempo, sem botões de decisão do clube', async () => {
+    carregarRevisoesPendentes.mockResolvedValue([base({
+      revisao: { id: 'ir1', status: 'aprovado' },
+      etapa_atual: { ordem: 2, chave: 'aprovacao_intermediaria', nome: 'Aprovação do distrito', escopo_tipo: 'distrito' },
+      linha_do_tempo: { etapa_atual_ordem: 2, etapas: [
+        { ordem: 1, chave: 'revisao_clube', nome: 'Revisão do clube', escopo_tipo: 'clube', decisao: { decisao: 'aprovado', decisor_nome: 'Líder A', decidido_em: '2026-09-21T10:00:00Z' } },
+        { ordem: 2, chave: 'aprovacao_intermediaria', nome: 'Aprovação do distrito', escopo_tipo: 'distrito', decisao: null },
+        { ordem: 3, chave: 'aprovacao_intermediaria', nome: 'Aprovação da região', escopo_tipo: 'regiao', decisao: null },
+        { ordem: 4, chave: 'investidura', nome: 'Investidura', escopo_tipo: 'clube', decisao: null },
+      ] },
+    })])
+    render(<Investiduras />)
+    const card = await screen.findByRole('article', { name: 'Pessoa Teste: Classe Teste' })
+    expect(within(card).getByTestId('estado')).toHaveTextContent('Aguardando distrito')
+    expect(within(card).getAllByTestId('etapa-linha').map((e) => e.dataset.situacao)).toEqual(['aprovada', 'atual', 'futura', 'futura'])
+    expect(within(card).queryByRole('button', { name: /Aprovar revisão final/ })).not.toBeInTheDocument()
+  })
+
+  it('330: devolvido pela coordenação — o clube vê o motivo', async () => {
+    carregarRevisoesPendentes.mockResolvedValue([base({
+      etapa_atual: { ordem: 1, chave: 'revisao_clube', nome: 'Revisão do clube', escopo_tipo: 'clube' },
+      devolucao: { etapa: 'Aprovação do distrito', motivo: 'Falta assinatura', em: '2026-09-22T10:00:00Z' },
+    })])
+    render(<Investiduras />)
+    expect(await screen.findByTestId('devolucao')).toHaveTextContent('Falta assinatura')
+    expect(screen.getByRole('button', { name: /Aprovar revisão final/ })).toBeInTheDocument()
+  })
+
   it('quem não gere o clube vê a área trancada', async () => {
     clube = { papel: 'desbravador' }
     render(<Investiduras />)

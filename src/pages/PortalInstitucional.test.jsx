@@ -13,6 +13,9 @@ const carregarVisitasDoEscopo = vi.fn()
 const carregarClubeDetalhe = vi.fn()
 const agendarVisita = vi.fn()
 const atualizarVisita = vi.fn()
+const carregarCartaoInvestidura = vi.fn()
+const decidirCartaoInvestidura = vi.fn()
+vi.mock('../components/Notificacoes.jsx', () => ({ default: () => null }))
 vi.mock('../services/institucional.js', () => ({
   carregarPainelAnalitico: (...a) => carregarPainel(...a),
   carregarInvestidurasDoEscopo: (...a) => carregarInvestidurasDoEscopo(...a),
@@ -20,6 +23,9 @@ vi.mock('../services/institucional.js', () => ({
   carregarClubeDetalhe: (...a) => carregarClubeDetalhe(...a),
   agendarVisita: (...a) => agendarVisita(...a),
   atualizarVisita: (...a) => atualizarVisita(...a),
+  carregarCartaoInvestidura: (...a) => carregarCartaoInvestidura(...a),
+  decidirCartaoInvestidura: (...a) => decidirCartaoInvestidura(...a),
+  urlEvidenciaCurta: async () => 'https://assinada.test/foto.jpg',
 }))
 const { default: PortalInstitucional } = await import('./PortalInstitucional.jsx')
 
@@ -86,10 +92,10 @@ describe('PortalInstitucional', () => {
     expect(screen.getByRole('heading', { name: 'Distrito Teste' })).toBeInTheDocument()
   })
 
-  it('nada exige a decisão da autoridade: diz isso claramente e NÃO inventa aprovação distrital', async () => {
+  it('nada exige a decisão da autoridade: diz isso claramente e explica o fluxo clube → distrito → região', async () => {
     renderT()
     expect(await screen.findByText(/Nada aguarda a sua decisão/)).toBeInTheDocument()
-    expect(screen.getByText(/são revisadas e investidas pelo próprio clube/)).toBeInTheDocument()
+    expect(screen.getByText(/aprovação do distrito e, depois, da região/)).toBeInTheDocument()
   })
 
   it('visão geral: totais e destaques (sem atividade há 14+ dias, avaliações acumuladas)', async () => {
@@ -193,6 +199,58 @@ describe('PortalInstitucional', () => {
     expect(await screen.findByText('Fulana de Tal')).toBeInTheDocument()
     expect(screen.getByText(/Aguardando: Aprovação distrital/)).toBeInTheDocument()
     expect(screen.queryByText(/Nada aguarda a sua decisão/)).not.toBeInTheDocument()
+  })
+
+  it('conferir o cartão: mostra requisitos (texto e foto) e devolve ao clube com os requisitos marcados e motivo', async () => {
+    carregarInvestidurasDoEscopo.mockResolvedValue([{
+      member_class_id: 'mc1', pessoa_nome: 'Fulana de Tal', classe_nome: 'Amigo', clube_nome: 'Clube Teste', concluida_em: '2026-09-18T10:00:00Z',
+      etapa: { ordem: 2, chave: 'aprovacao_intermediaria', nome: 'Aprovação do distrito', escopo_tipo: 'distrito' },
+      aprovacoes: [{ etapa: 'Revisão do clube', escopo_tipo: 'clube', em: '2026-09-19T10:00:00Z', por_nome: 'Diretor X' }],
+      workflow: { versao: 2 }, aguardando_desde: '2026-09-20T10:00:00Z',
+    }])
+    carregarCartaoInvestidura.mockResolvedValue({
+      member_class_id: 'mc1', pessoa_nome: 'Fulana de Tal', classe_nome: 'Amigo',
+      linha_do_tempo: { etapa_atual_ordem: 2, etapas: [
+        { ordem: 1, chave: 'revisao_clube', nome: 'Revisão do clube', escopo_tipo: 'clube', decisao: { decisao: 'aprovado', decisor_nome: 'Diretor X', decidido_em: '2026-09-19T10:00:00Z' } },
+        { ordem: 2, chave: 'aprovacao_intermediaria', nome: 'Aprovação do distrito', escopo_tipo: 'distrito', decisao: null },
+      ] },
+      requisitos: [
+        { member_requirement_id: 'r1', secao_codigo: 'I', secao_nome: 'Gerais', codigo: '1', descricao: 'Ter 10 anos', status: 'aprovado', evidencia_texto: 'Tenho 10', evidencia_path: 'u/requisitos/f.jpg', aprovacao: { em: '2026-09-10T10:00:00Z', por_nome: 'Instrutor Y' } },
+        { member_requirement_id: 'r2', secao_codigo: 'I', secao_nome: 'Gerais', codigo: '2', descricao: 'Voto', status: 'aprovado', evidencia_texto: null, evidencia_path: null, aprovacao: null },
+      ],
+    })
+    decidirCartaoInvestidura.mockResolvedValue({ ok: true })
+    const user = userEvent.setup()
+    renderT()
+    expect(await screen.findByText(/Clube aprovou em/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Conferir e decidir' }))
+    expect(await screen.findByText(/Tenho 10/)).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'comprovação' })).toBeInTheDocument()
+    expect(screen.getByText(/por Instrutor Y/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Devolver ao clube/ }))
+    const devolver = screen.getAllByRole('button', { name: /Devolver ao clube/ }).at(-1)
+    expect(devolver).toBeDisabled()                                   // motivo obrigatório
+    await user.click(screen.getByRole('checkbox', { name: 'Pedir correção de 1' }))
+    await user.type(screen.getByRole('textbox', { name: 'Comentário da correção de 1' }), 'Foto sem o nó')
+    await user.type(screen.getByRole('textbox', { name: /Motivo da devolução/ }), 'Refazer o requisito 1')
+    await user.click(screen.getAllByRole('button', { name: /Devolver ao clube \(1\)/ }).at(-1))
+    expect(decidirCartaoInvestidura).toHaveBeenCalledWith('mc1', 'devolvido', 'Refazer o requisito 1', [{ member_requirement_id: 'r1', comentario: 'Foto sem o nó' }])
+    expect(await screen.findByText(/devolvido ao clube/)).toBeInTheDocument()
+  })
+
+  it('aprovar o cartão chama o servidor com a decisão', async () => {
+    carregarInvestidurasDoEscopo.mockResolvedValue([{
+      member_class_id: 'mc9', pessoa_nome: 'Beltrano', classe_nome: 'Companheiro', clube_nome: 'Clube Teste',
+      etapa: { ordem: 3, chave: 'aprovacao_intermediaria', nome: 'Aprovação da região', escopo_tipo: 'regiao' }, aprovacoes: [], aguardando_desde: '2026-09-20T10:00:00Z',
+    }])
+    carregarCartaoInvestidura.mockResolvedValue({ member_class_id: 'mc9', linha_do_tempo: null, requisitos: [] })
+    decidirCartaoInvestidura.mockResolvedValue({ ok: true })
+    const user = userEvent.setup()
+    renderT()
+    await user.click(await screen.findByRole('button', { name: 'Conferir e decidir' }))
+    await user.click(await screen.findByRole('button', { name: /Aprovar/ }))
+    expect(decidirCartaoInvestidura).toHaveBeenCalledWith('mc9', 'aprovado', null, [])
+    expect(await screen.findByText(/Beltrano aprovado/)).toBeInTheDocument()
   })
 
   it('com mais de um escopo, permite trocar o escopo em uso', async () => {

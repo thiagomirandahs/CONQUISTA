@@ -7,8 +7,10 @@ import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
   carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
-  carregarHistoricoRequisito, cancelarClasse,
+  carregarHistoricoRequisito, cancelarClasse, carregarHistoricoDoCartao,
 } from '../lib/dados.js'
+import LinhaDoTempoInvestidura from '../components/LinhaDoTempoInvestidura.jsx'
+import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvestidura.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
@@ -285,6 +287,29 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
   )
 }
 
+// Caminho do cartão (migration 330): revisão do clube → distrito → região → apto. Mostra a etapa atual
+// ("Aguardando distrito", "Aguardando região", "Apto à investidura") e a linha do tempo da corrida atual.
+function CaminhoDoCartao({ memberClassId, status }) {
+  const [linha, setLinha] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    Promise.resolve().then(() => carregarHistoricoDoCartao(memberClassId))
+      .then((runs) => { if (vivo) setLinha(linhaDoHistorico((runs || [])[runs.length - 1])) })
+      .catch(() => { if (vivo) setLinha(null) })
+    return () => { vivo = false }
+  }, [memberClassId, status])
+  if (!linha) return null
+  const atual = etapaAtual(linha)
+  return (
+    <div data-testid="caminho-do-cartao" className="mt-2">
+      {atual && atual.escopo_tipo !== 'clube' && (
+        <p className="text-sm font-semibold text-amber-800">⏳ {rotuloDaEtapa(atual)} — o clube já aprovou o seu cartão.</p>
+      )}
+      <LinhaDoTempoInvestidura linha={linha} titulo="Caminho do seu cartão" />
+    </div>
+  )
+}
+
 function Progresso({ dados, userId, onMudou }) {
   const { member_class: mc, classe, curriculum_version: versao, conclusao, secoes } = dados
   const ehTeste = versao?.origem === 'piloto_teste'
@@ -346,6 +371,7 @@ function Progresso({ dados, userId, onMudou }) {
             🏅 Investido(a) nesta classe{conclusao?.investidura?.data ? ` em ${fmtData(conclusao.investidura.data)}` : ''}!
           </div>
         )}
+        {['aguardando_revisao', 'apto_investidura', 'investida'].includes(mc.status) && <CaminhoDoCartao memberClassId={mc.id} status={mc.status} />}
         {conclusao?.snapshot && <BotaoDocumento memberClassId={mc.id} ehFinal={mc.status === 'investida'} />}
         </div>
       </div>

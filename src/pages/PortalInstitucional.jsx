@@ -8,6 +8,8 @@ import {
 } from './PainelDoEscopo.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import { EstrelasFixas, mediasDeAvaliacao } from '../components/AvaliacaoVisita.jsx'
+import CartaoAprovacao from '../components/CartaoAprovacao.jsx'
+import Notificacoes from '../components/Notificacoes.jsx'
 import { Abas, Aviso, Card, CardAcao, Carregando, Selo, Vazio, mensagemDeErro } from '../ui/index.jsx'
 
 // =============================================================================
@@ -115,7 +117,7 @@ export default function PortalInstitucional() {
       {erroPainel && <Aviso tom="erro" titulo="Não deu pra carregar os clubes">{mensagemDeErro(erroPainel)}</Aviso>}
 
       {aba === 'geral' && (
-        <VisaoGeral painel={painel} verPainel={verPainel} visitas={visitas} investiduras={investiduras}
+        <VisaoGeral painel={painel} verPainel={verPainel} visitas={visitas} investiduras={investiduras} aoMudar={mudou}
           aoAbrirClube={abrirClube} aoVerVisitas={() => setAba('visitas')} />
       )}
 
@@ -131,12 +133,12 @@ export default function PortalInstitucional() {
 
       {aba === 'visitas' && verPainel && <VisitasDoEscopo escopoId={escopoId} versao={versao} aoMudar={mudou} />}
 
-      {aba === 'classes' && verPainel && <AbaClasses painel={painel} investiduras={investiduras} aoAbrirClube={abrirClube} />}
+      {aba === 'classes' && verPainel && <AbaClasses painel={painel} investiduras={investiduras} aoAbrirClube={abrirClube} aoMudar={mudou} />}
 
       <p className="text-xs text-faint mt-6 leading-snug">
         Este portal mostra apenas números gerais dos clubes e o que exige a sua decisão. Conversas, fotos,
         mensagens, mensalidades, evidências dos requisitos e dados de responsáveis pertencem a cada clube e
-        não são acessíveis aqui.
+        não são acessíveis aqui — a única exceção é o cartão de classe enquanto ele aguarda a SUA aprovação.
       </p>
     </div>
   )
@@ -146,7 +148,11 @@ export default function PortalInstitucional() {
 function Topo({ escopos, escopo, onTrocar }) {
   return (
     <header className="mb-4 rounded-3xl bg-gradient-to-br from-brand to-brand2 p-5 shadow-glow" style={{ color: 'var(--marca-1-texto, #fff)' }}>
-      <p className="text-xs font-bold uppercase tracking-wide opacity-90">Portal da coordenação</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-bold uppercase tracking-wide opacity-90">Portal da coordenação</p>
+        {/* sino: aviso de cartão de classe chegando na etapa do distrito/região (migration 330) */}
+        <div className="shrink-0 -mt-1 -mr-1"><Notificacoes /></div>
+      </div>
       <h1 className="text-2xl font-extrabold leading-tight mt-0.5">{escopo?.nome || 'Escolha um escopo'}</h1>
       {escopo && <p className="text-sm opacity-90">{TIPO_ROTULO[escopo.tipo] || escopo.tipo} · {PAPEL_ROTULO[escopo.papel] || escopo.papel}</p>}
       {escopos.length > 1 && (
@@ -164,7 +170,7 @@ function Topo({ escopos, escopo, onTrocar }) {
 }
 
 // ---------------------------------------------------------------- visão geral
-function VisaoGeral({ painel, verPainel, visitas, investiduras, aoAbrirClube, aoVerVisitas }) {
+function VisaoGeral({ painel, verPainel, visitas, investiduras, aoAbrirClube, aoVerVisitas, aoMudar }) {
   const clubes = useMemo(() => painel?.clubes || [], [painel])
   const t = painel?.totais || {}
   const semAtividade = useMemo(() => clubes.filter(semUso), [clubes])
@@ -175,7 +181,7 @@ function VisaoGeral({ painel, verPainel, visitas, investiduras, aoAbrirClube, ao
 
   return (
     <>
-      <Pendencias investiduras={investiduras} />
+      <Pendencias investiduras={investiduras} aoMudar={aoMudar} />
       {!verPainel ? (
         <p className="text-sm text-faint mb-5">Seu papel neste escopo não inclui o painel dos clubes.</p>
       ) : !painel ? <Carregando linhas={3} texto="Somando os números dos clubes" /> : (
@@ -268,27 +274,45 @@ function Destaque({ c, texto, tom, aoAbrir }) {
   )
 }
 
-function Pendencias({ investiduras }) {
+function Pendencias({ investiduras, aoMudar }) {
+  const [aberto, setAberto] = useState(null)
+  const [feito, setFeito] = useState('')
   return (
     <Secao id="pendencias" icone="📌" titulo="O que depende de você">
+      {feito && <p role="status" className="text-xs text-green-700 mb-2">{feito}</p>}
       {investiduras === null ? <Carregando linhas={1} texto="Conferindo pendências" /> : investiduras.length === 0 ? (
         <>
           <p className="font-semibold text-ink text-sm">✅ Nada aguarda a sua decisão</p>
           <p className="text-xs text-faint mt-1 leading-snug">
-            As Classes Regulares (Amigo a Guia) são revisadas e investidas pelo próprio clube — não há
-            etapa distrital ou regional nesse processo. Se um processo passar a exigir a sua aprovação,
-            ele aparece aqui.
+            Quando um clube abaixo de você concluir e aprovar um cartão de classe, ele chega aqui para a
+            aprovação do distrito e, depois, da região. Clube sem distrito ou região na árvore pula essa etapa.
           </p>
         </>
       ) : (
         <ul className="space-y-2">
-          {investiduras.map((i) => (
-            <li key={i.member_class_id} className="rounded-xl bg-surface2 p-3">
-              <div className="font-bold text-ink text-sm">{i.pessoa_nome}</div>
-              <div className="text-xs text-muted">{i.classe_nome} · {i.clube_nome}</div>
-              <div className="text-xs text-amber-800 mt-1">⏳ Aguardando: {i.etapa?.nome} · desde {fmtDia(i.aguardando_desde)}</div>
-            </li>
-          ))}
+          {investiduras.map((i) => {
+            const clube = (i.aprovacoes || []).find((a) => a.escopo_tipo === 'clube')
+            const outras = (i.aprovacoes || []).filter((a) => a.escopo_tipo !== 'clube')
+            return (
+              <li key={i.member_class_id} className="rounded-xl bg-surface2 p-3">
+                <div className="font-bold text-ink text-sm">{i.pessoa_nome}</div>
+                <div className="text-xs text-muted">{i.classe_nome} · {i.clube_nome}</div>
+                {i.concluida_em && <div className="text-xs text-faint">Concluída em {fmtDia(i.concluida_em)}</div>}
+                {clube && <div className="text-xs text-green-700">✅ Clube aprovou em {fmtDia(clube.em)}{clube.por_nome ? ` · ${clube.por_nome}` : ''}</div>}
+                {outras.map((a) => <div key={a.etapa} className="text-xs text-green-700">✅ {a.etapa} em {fmtDia(a.em)}{a.por_nome ? ` · ${a.por_nome}` : ''}</div>)}
+                <div className="text-xs text-amber-800 mt-1">⏳ Aguardando: {i.etapa?.nome} · desde {fmtDia(i.aguardando_desde)}</div>
+                {aberto === i.member_class_id ? (
+                  <CartaoAprovacao memberClassId={i.member_class_id}
+                    aoDecidir={(d) => { setAberto(null); setFeito(d === 'aprovado' ? `Cartão de ${i.pessoa_nome} aprovado.` : `Cartão de ${i.pessoa_nome} devolvido ao clube.`); aoMudar?.() }} />
+                ) : (
+                  <button type="button" onClick={() => { setAberto(i.member_class_id); setFeito('') }}
+                    className="mt-2 w-full min-h-[48px] rounded-xl bg-gradient-to-r from-brand to-brand2 text-white text-sm font-bold">
+                    Conferir e decidir
+                  </button>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
     </Secao>
@@ -296,7 +320,7 @@ function Pendencias({ investiduras }) {
 }
 
 // ---------------------------------------------------------------- classes / investiduras
-function AbaClasses({ painel, investiduras, aoAbrirClube }) {
+function AbaClasses({ painel, investiduras, aoAbrirClube, aoMudar }) {
   const clubes = useMemo(() => painel?.clubes || [], [painel])
   const somadas = useMemo(() => {
     const mapa = new Map()
@@ -336,7 +360,7 @@ function AbaClasses({ painel, investiduras, aoAbrirClube }) {
           </ul>
         )}
       </Secao>
-      {investiduras?.length > 0 && <Pendencias investiduras={investiduras} />}
+      {investiduras?.length > 0 && <Pendencias investiduras={investiduras} aoMudar={aoMudar} />}
       <Card className="text-xs text-faint">Presença, classes e investiduras são contadas pelos registros do próprio clube; o portal não mostra nomes.</Card>
     </>
   )
