@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Botao, Aviso, Campo } from '../ui/index.jsx'
 import { useAuth } from '../context/Auth.jsx'
 import { Link } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { ROTULO_STATUS, formatarPreco } from '../services/comercial.js'
 import {
   souAdminPlataforma, visaoGeral, clubesListar, clubeDetalhe, planosAdminListar, assinaturasListar,
@@ -160,12 +161,18 @@ function MenuDaContaAdmin() {
     <div className="relative">
       <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-label="Minha conta" data-testid="admin-conta"
         className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-lg ring-1 ring-white/20">👤</button>
-      {aberto && (
-        <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
+      {aberto && createPortal(
+        <>
+        {/* renderizado direto no <body> (portal): a transição de página aplica transform no conteúdo, o que
+            prendia o menu numa camada abaixo da barra de seção. Fixo, acima de tudo; tocar fora fecha. */}
+        <button type="button" aria-label="Fechar menu" tabIndex={-1} onClick={() => setAberto(false)} className="fixed inset-0 z-[90] cursor-default bg-black/20" />
+        <div className="fixed right-4 top-16 z-[100] w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
           <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>
           <Link to="/institucional" className={item}><span aria-hidden="true">🏛️</span>Portal da coordenação</Link>
           <button type="button" className={`${item} text-red-600`} onClick={sair} data-testid="admin-sair"><span aria-hidden="true">🚪</span>Sair da conta</button>
         </div>
+        </>,
+        document.body,
       )}
     </div>
   )
