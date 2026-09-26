@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
-import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade } from '../lib/dados.js'
+import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade, carregarCargosDeUnidade } from '../lib/dados.js'
+import { CARGOS_DE_UNIDADE, cargoDeUnidade } from '../lib/cargos.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { useAuth } from '../context/Auth.jsx'
@@ -26,11 +27,14 @@ export default function Unidades() {
   const [pontosPara, setPontosPara] = useState(null) // unidade que vai receber pontos de time
   const [editando, setEditando] = useState(false) // formulário de identidade da unidade
   const [erroImagem, setErroImagem] = useState('') // validação do arquivo (tipo/tamanho): mensagem no próprio campo
+  const [cargos, setCargos] = useState({}) // { [user_id]: { unidade_id, cargo } } — cargos DA UNIDADE
 
   async function carregar() {
     try {
       const { unidades } = await carregarRanking()
       setUnidades(unidades)
+      // cargos da unidade são um extra: se falhar, a tela segue sem eles
+      carregarCargosDeUnidade().then(setCargos).catch(() => {})
     } finally {
       setCarregando(false) // nunca deixa preso em "Carregando..."
     }
@@ -157,7 +161,8 @@ export default function Unidades() {
                   )}
                   <h3 className="text-2xl font-extrabold">{sel.nome}</h3>
                   {(() => {
-                    const c = sel.membros.find((m) => m.papel === 'conselheiro')
+                    const c = sel.membros.find((m) => cargos[m.id]?.unidade_id === sel.id && cargos[m.id]?.cargo === 'conselheiro')
+                      || sel.membros.find((m) => m.papel === 'conselheiro')
                     return c ? <div className="text-xs text-white/90 mt-0.5">🎗️ Conselheiro(a): {c.nome}</div> : null
                   })()}
                   <div className="flex gap-4 mt-2 text-sm">
@@ -175,6 +180,7 @@ export default function Unidades() {
               )}
               {/* Só a LISTA rola; cabeçalho e botões ficam fixos (sem cortar nada) */}
               <div className="p-3 overflow-y-auto flex-1 min-h-0">
+                <DiretoriaDaUnidade unidade={sel} cargos={cargos} />
                 <p className="text-xs font-semibold text-faint px-2 mb-1">MEMBROS</p>
                 {sel.membros.length === 0 ? (
                   <p className="text-sm text-faint px-2 py-4 text-center">Nenhum membro aprovado nesta unidade ainda.</p>
@@ -185,6 +191,9 @@ export default function Unidades() {
                     <span className="flex-1 min-w-0 font-medium text-ink truncate">
                       {m.nome}
                       {m.papel !== 'desbravador' && <span className="ml-2 text-xs bg-brand/10 text-brand rounded-full px-2 py-0.5 align-middle capitalize">{m.papel}</span>}
+                      {cargos[m.id]?.unidade_id === sel.id && cargoDeUnidade(cargos[m.id].cargo) && (
+                        <span className="ml-2 text-xs bg-gold/20 text-amber-700 rounded-full px-2 py-0.5 align-middle">{cargoDeUnidade(cargos[m.id].cargo).rotulo}</span>
+                      )}
                     </span>
                     <span className="text-lg">{medalhas[i] || ''}</span>
                     <span className="font-extrabold text-brand">{m.pts}</span>
@@ -253,6 +262,31 @@ export default function Unidades() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+// "Diretoria da unidade": quem ocupa cada cargo oficial (Manual Administrativo, 3.2.2), em destaque.
+export function DiretoriaDaUnidade({ unidade, cargos }) {
+  const ocupantes = CARGOS_DE_UNIDADE
+    .map((c) => ({ ...c, membro: unidade.membros.find((m) => cargos[m.id]?.unidade_id === unidade.id && cargos[m.id]?.cargo === c.valor) }))
+    .filter((c) => c.membro)
+  if (ocupantes.length === 0) return null
+  return (
+    <section aria-label="Diretoria da unidade" className="mb-3 rounded-2xl bg-surface2 p-3">
+      <p className="text-xs font-semibold text-faint mb-2">DIRETORIA DA UNIDADE</p>
+      <ul className="grid grid-cols-1 gap-2">
+        {ocupantes.map((c) => (
+          <li key={c.valor} className="flex items-center gap-3 min-h-[44px]">
+            <Avatar foto={c.membro.foto} nome={c.membro.nome} cor={unidade.cor} size="w-9 h-9" textSize="text-sm"
+              avatarPersonagem={c.membro.avatarTipo === 'personagem' ? c.membro.avatar : undefined} />
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-brand">{c.icone} {c.rotulo}</div>
+              <div className="text-sm font-medium text-ink truncate">{c.membro.nome}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

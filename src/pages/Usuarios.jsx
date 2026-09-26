@@ -7,7 +7,9 @@ import Avatar from '../components/Avatar.jsx'
 import {
   carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
   lancarPontosIndividual, definirAtivoUsuario, excluirUsuario, definirTesteUsuario,
+  carregarCargosDeUnidade, definirCargoDeUnidade,
 } from '../lib/dados.js'
+import { CARGOS_DE_UNIDADE } from '../lib/cargos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
 import EditarNascimento from '../components/EditarNascimento.jsx'
@@ -50,6 +52,7 @@ export default function Usuarios() {
   const [nascimentoDe, setNascimentoDe] = useState(null) // corrigir a data de nascimento (migration 170)
   const [classesDe, setClassesDe] = useState(null) // classes do membro, para cancelar (migration 171)
   const [erroCarregar, setErroCarregar] = useState('')
+  const [cargosUni, setCargosUni] = useState({}) // { [user_id]: { unidade_id, cargo } }
   const ehDiretoria = meuPapel === 'diretoria'
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
   const CARGOS_DA_DIRETORIA = ['diretoria', 'instrutor', 'tesoureiro']
@@ -100,8 +103,25 @@ export default function Usuarios() {
     try {
       await mudarUnidade(u.id, alvoId)
       setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, unidade_id: alvoId } : x)))
+      // o servidor derruba o cargo da unidade antiga ao trocar de unidade
+      setCargosUni((m) => { const n = { ...m }; delete n[u.id]; return n })
     } catch (e) {
       avisar.erro(e, 'Não consegui trocar a unidade.')
+    }
+  }
+
+  // Cargo NA UNIDADE (capitão, secretário...): informativo, só a diretoria define.
+  async function trocarCargoUnidade(u, cargo) {
+    try {
+      await definirCargoDeUnidade(u.id, cargo)
+      setCargosUni((m) => {
+        const n = { ...m }
+        if (cargo) n[u.id] = { unidade_id: u.unidade_id, cargo }
+        else delete n[u.id]
+        return n
+      })
+    } catch (e) {
+      avisar.erro(e, 'Não consegui definir o cargo na unidade.')
     }
   }
 
@@ -113,6 +133,7 @@ export default function Usuarios() {
         setCarregando(false)
         // Unidades são secundárias: se falhar, a lista de usuários continua funcionando
         listarUnidades().then(setUnidades).catch(() => {})
+        carregarCargosDeUnidade().then(setCargosUni).catch(() => {})
       })
       .catch((e) => { setErroCarregar(e?.message || 'Erro ao carregar'); setCarregando(false) })
   }, [ehAdmin])
@@ -190,6 +211,16 @@ export default function Usuarios() {
                   <option value="">🏳️ Sem unidade</option>
                   {unidades.map((un) => <option key={un.id} value={un.id}>🏠 {un.nome}</option>)}
                 </select>
+                {ehDiretoria && u.unidade_id && u.status === 'ativo' && u.papel !== 'pais' && (
+                  <select value={cargosUni[u.id]?.cargo || ''} onChange={(e) => trocarCargoUnidade(u, e.target.value)}
+                    aria-label={`Cargo de ${u.nome || 'membro'} na unidade`}
+                    className="text-xs rounded-lg border border-line px-2 py-2 bg-surface text-ink outline-none max-w-[11rem]">
+                    <option value="">🧭 Desbravador (sem cargo)</option>
+                    {CARGOS_DE_UNIDADE
+                      .filter((c) => !c.lideranca || u.papel !== 'desbravador' || cargosUni[u.id]?.cargo === c.valor)
+                      .map((c) => <option key={c.valor} value={c.valor}>{c.icone} {c.rotulo}</option>)}
+                  </select>
+                )}
                 <button onClick={() => setPontosPara(u)}
                   className="text-xs bg-gold/20 text-amber-700 rounded-lg px-3 py-2 font-semibold">🎖️ Pontos</button>
                 {/* Senha e modo teste só para quem está ATIVO neste clube: o servidor recusa os

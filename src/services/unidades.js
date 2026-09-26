@@ -184,6 +184,21 @@ export async function listarUnidades() {
 }
 
 
+// ------- Cargos DA UNIDADE (capitão, secretário, conselheiro associado...) — migration 230 -------
+// Mapa { [user_id]: { unidade_id, cargo } } das pessoas com cargo nas unidades do clube da aba.
+export async function carregarCargosDeUnidade() {
+  const { data, error } = await supabase.rpc('cargos_unidade_do_clube')
+  if (error) throw new Error(error.message)
+  return Object.fromEntries((data || []).map((r) => [r.user_id, { unidade_id: r.unidade_id, cargo: r.cargo_unidade }]))
+}
+
+// Só a diretoria (o servidor confere). cargo null/'' = volta a Desbravador (membro comum).
+export async function definirCargoDeUnidade(userId, cargo) {
+  const { error } = await supabase.rpc('unidade_definir_cargo', { p_user_id: userId, p_cargo: cargo || null })
+  if (error) throw new Error(error.message)
+}
+
+
 // ------- Modo Acampamento (colocação 1º/2º/3º/4º das unidades numa prova) -------
 // Só entram as unidades que TÊM desbravador/conselheiro (a "Liderança" fica de fora).
 // "Ter competidor" é pelo VÍNCULO no clube da aba (membros_do_clube): com o espelho profiles, a

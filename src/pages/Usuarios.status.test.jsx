@@ -23,6 +23,7 @@ vi.mock('../lib/dados.js', () => ({
   definirAtivoUsuario: (...a) => definirAtivoUsuario(...a),
   resetarSenha: vi.fn(), mudarCargo: vi.fn(), mudarUnidade: vi.fn(), lancarPontosIndividual: vi.fn(),
   excluirUsuario: vi.fn(), definirTesteUsuario: vi.fn(),
+  carregarCargosDeUnidade: async () => ({}), definirCargoDeUnidade: vi.fn(),
 }))
 const { default: Usuarios } = await import('./Usuarios.jsx')
 
