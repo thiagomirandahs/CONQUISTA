@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import {
-  carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco,
+  carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco, resgatarCortesia,
 } from '../services/comercial.js'
 import { opcoesParaClube, clubeSolicitar, TIPO_ROTULO } from '../services/hierarquia.js'
 
@@ -64,12 +64,21 @@ export default function Onboarding() {
     finally { setSalvando(false) }
   }
 
-  const enviar = async (etapa, dados, antes) => {
+  const [cortesiaAte, setCortesiaAte] = useState(null)
+  // `depois` roda com a etapa JÁ salva (ex.: resgatar a cortesia depois que a assinatura existe).
+  // Se ele falhar, a etapa continua salva e o erro aparece; dá pra tentar de novo no quadro de cortesia.
+  const enviar = async (etapa, dados, antes, depois) => {
     setErro(''); setSalvando(true)
-    try { if (antes) await antes(); await salvarEtapaOnboarding(etapa, dados); setForm({}); await buscar() }
+    try {
+      if (antes) await antes()
+      await salvarEtapaOnboarding(etapa, dados)
+      if (depois) { try { await depois() } catch (e) { setErro(e?.message || String(e)) } }
+      setForm({}); await buscar()
+    }
     catch (e) { setErro(e?.message || String(e)) }
     finally { setSalvando(false) }
   }
+  const resgatar = async (codigo) => { const r = await resgatarCortesia(codigo); setCortesiaAte(r.ate); return r }
 
   if (estado === null && !erro) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
 
@@ -114,8 +123,15 @@ export default function Onboarding() {
 
           <div className="bg-surface rounded-2xl p-5 shadow-soft" data-testid="etapa-atual">
             <FormularioEtapa etapa={etapaAtual} form={form} setForm={setForm} planos={planos}
-              salvando={salvando} onEnviar={enviar} clubId={estado?.club_id} />
+              salvando={salvando} onEnviar={enviar} clubId={estado?.club_id} onCortesia={resgatar} />
           </div>
+          {cortesiaAte ? (
+            <p className="mt-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-sm text-emerald-900 font-semibold" data-testid="cortesia-ok">
+              🎁 Licença cortesia até {new Date(cortesiaAte).toLocaleDateString('pt-BR')} — sem cobrança.
+            </p>
+          ) : concluidas.includes('clube') && etapaAtual !== 'clube' && (
+            <CortesiaAvulsa onResgatar={resgatar} />
+          )}
         </>
       )}
 
@@ -158,7 +174,7 @@ function Botao({ children, salvando }) {
   )
 }
 
-function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar, clubId }) {
+function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar, clubId, onCortesia }) {
   const set = (k) => (ev) => setForm((f) => ({ ...f, [k]: ev.target.value }))
   const submeter = (dados, antes) => (ev) => { ev.preventDefault(); onEnviar(etapa, dados, antes) }
 
@@ -191,7 +207,8 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar, clu
     const cicloAtual = form.ciclo && ciclosDisponiveis.includes(form.ciclo) ? form.ciclo : (ciclosDisponiveis[0] || 'anual')
     const precoAtual = (planoAtual?.precos || []).find((x) => x.ciclo === cicloAtual)
     return (
-      <form onSubmit={submeter({ nome: form.nome || '', plano: planoPadrao, ciclo: cicloAtual })}>
+      <form onSubmit={submeter({ nome: form.nome || '', plano: planoPadrao, ciclo: cicloAtual }, null,
+        form.cortesia?.trim() ? () => onCortesia(form.cortesia.trim()) : null)}>
         <h2 className="font-bold text-ink mb-3">🏕️ O clube</h2>
         <Campo id="ob-clube" rotulo="Nome do clube" value={form.nome || ''} onChange={set('nome')} required />
         <label htmlFor="ob-plano" className="block mb-3">
@@ -223,6 +240,12 @@ function FormularioEtapa({ etapa, form, setForm, planos, salvando, onEnviar, clu
             <p className="text-xs text-faint">{formatarPreco(precoAtual.valor_centavos, precoAtual.moeda)} por {cicloAtual === 'anual' ? 'ano' : 'mês'}</p>
           )}
         </div>
+        <details className="mb-3" open={!!form.cortesia}>
+          <summary className="text-sm font-semibold text-brand cursor-pointer min-h-[44px] flex items-center">🎁 Tenho um código de cortesia</summary>
+          <Campo id="ob-cortesia" rotulo="Código de cortesia (ex.: DC-XXXX-XXXX-XXXX-XXXX)" value={form.cortesia || ''}
+            onChange={set('cortesia')} autoComplete="off" autoCapitalize="characters" />
+          <p className="text-xs text-faint -mt-2">Com código válido, a licença fica ativa sem cobrança pelo período da cortesia.</p>
+        </details>
         <p className="text-xs text-amber-700 mb-3">Valores provisórios: nada será cobrado nesta fase.</p>
         <Botao salvando={salvando}>Criar o clube</Botao>
       </form>
@@ -312,5 +335,32 @@ function EscolherRegiao({ valor, onChange }) {
       </select>
       <span className="block text-xs text-faint mt-1">Fica aguardando a confirmação da administração.</span>
     </label>
+  )
+}
+
+// Para quem criou o clube sem o código (ou errou): dá pra resgatar até concluir o cadastro.
+function CortesiaAvulsa({ onResgatar }) {
+  const [codigo, setCodigo] = useState('')
+  const [erro, setErro] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+  const enviar = async (ev) => {
+    ev.preventDefault()
+    if (!codigo.trim()) return
+    setErro(''); setOcupado(true)
+    try { await onResgatar(codigo.trim()) } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+  }
+  return (
+    <details className="mt-3 bg-surface rounded-2xl p-4 shadow-soft" data-testid="cortesia-avulsa">
+      <summary className="text-sm font-semibold text-brand cursor-pointer min-h-[44px] flex items-center">🎁 Tenho um código de cortesia</summary>
+      <form onSubmit={enviar} className="mt-2">
+        <Campo id="ob-cortesia-avulsa" rotulo="Código de cortesia" value={codigo} onChange={(e) => setCodigo(e.target.value)}
+          autoComplete="off" autoCapitalize="characters" />
+        {erro && <p role="alert" className="text-xs text-red-700 mb-2">{erro}</p>}
+        <button type="submit" disabled={ocupado || !codigo.trim()}
+          className="w-full min-h-[48px] rounded-xl bg-brand text-white font-bold disabled:opacity-60">
+          {ocupado ? 'Conferindo…' : 'Usar código'}
+        </button>
+      </form>
+    </details>
   )
 }

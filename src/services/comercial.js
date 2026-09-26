@@ -51,6 +51,15 @@ export async function salvarEtapaOnboarding(etapa, dados = {}) {
   return data
 }
 
+// Licença cortesia (sorteio/promoção, migration 150). Só depois da etapa "clube" (a assinatura já
+// existe). Código errado NÃO lança: devolve { ok: false, erro } (o servidor conta a tentativa errada).
+export async function resgatarCortesia(codigo) {
+  const { data, error } = await supabase.rpc('onboarding_cortesia_resgatar', { p_codigo: codigo })
+  if (error) throw new Error(error.message)
+  if (!data?.ok) throw new Error(data?.erro || 'Código de cortesia inválido.')
+  return data
+}
+
 // ---------- formatação ----------
 export function formatarPreco(centavos, moeda = 'BRL') {
   const v = Number(centavos || 0) / 100

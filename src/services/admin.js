@@ -64,6 +64,17 @@ export const trialEstender = (clubId, { dias = null, ate = null, motivo = null }
 export const trialEncerrar = (clubId, motivo = null) =>
   rpcAdmin('admin_trial_encerrar', { p_club_id: clubId, p_motivo: motivo })
 
+// Licença cortesia (migration 150): códigos de sorteio/promoção. O código em claro só volta de
+// cortesiaGerar (uma vez); o banco guarda só o hash. Nenhuma cobrança é criada.
+export const cortesiasListar = async () => (await rpcAdmin('admin_cortesias_listar')) || []
+export const cortesiasConcedidas = async () => (await rpcAdmin('admin_cortesias_concedidas')) || []
+export const cortesiaGerar = ({ rotulo, meses = 12, usos = 1, diasParaResgate = 90 }) =>
+  rpcAdmin('admin_cortesia_gerar', { p_rotulo: rotulo, p_meses: meses, p_max_usos: usos, p_dias_para_resgate: diasParaResgate })
+export const cortesiaRevogar = (id, motivo = null) => rpcAdmin('admin_cortesia_revogar', { p_id: id, p_motivo: motivo })
+export const cortesiaApagar = (id) => rpcAdmin('admin_cortesia_apagar', { p_id: id })
+export const cortesiaAplicar = (clubId, meses = 12, motivo = null) =>
+  rpcAdmin('admin_cortesia_aplicar', { p_club_id: clubId, p_meses: meses, p_motivo: motivo })
+
 // support_grants tem select direto liberado por RLS pra admin (mesma policy que libera a
 // liderança do clube) — não precisa de RPC de leitura própria.
 export async function suporteListar() {

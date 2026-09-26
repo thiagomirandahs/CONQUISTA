@@ -9,6 +9,7 @@ import {
 } from '../services/admin.js'
 import { avisar } from '../ui/avisos.jsx'
 import AdminHierarquia from './AdminHierarquia.jsx'
+import AdminCortesias from './AdminCortesias.jsx'
 
 // /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
 // onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
@@ -21,6 +22,7 @@ const ABAS = [
   { chave: 'hierarquia', rotulo: 'Hierarquia', icone: '🌳' },
   { chave: 'planos', rotulo: 'Planos', icone: '💳' },
   { chave: 'assinaturas', rotulo: 'Assinaturas', icone: '🧾' },
+  { chave: 'cortesias', rotulo: 'Cortesias', icone: '🎁' },
   { chave: 'armazenamento', rotulo: 'Armazenamento', icone: '💾' },
   { chave: 'onboarding', rotulo: 'Onboarding', icone: '🧭' },
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️' },
@@ -101,7 +103,8 @@ export default function Admin() {
       {aba === 'hierarquia' && <AdminHierarquia />}
       {aba === 'planos' && <Planos />}
       {aba === 'assinaturas' && <Assinaturas aoAbrirClube={abrirClube} />}
-      {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}
+      {aba === 'cortesias' && <AdminCortesias />}
+      {aba === 'armazenamento' &&<Armazenamento aoAbrirClube={abrirClube} />}
       {aba === 'onboarding' && <Onboarding aoAbrirClube={abrirClube} />}
       {aba === 'provisionamento' && <Provisionamento />}
       {aba === 'suporte' && <Suporte />}

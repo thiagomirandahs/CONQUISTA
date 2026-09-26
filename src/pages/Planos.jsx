@@ -101,6 +101,11 @@ function SituacaoAtual({ a }) {
           </div>
           <span className="text-xs font-bold shrink-0">{ROTULO_STATUS[a.status] || a.status}</span>
         </div>
+        {a.cortesia?.ate && (
+          <p className="text-xs mt-2 font-semibold" data-testid="cortesia">
+            🎁 Licença cortesia até {new Date(a.cortesia.ate).toLocaleDateString('pt-BR')}
+          </p>
+        )}
         {a.status === 'suspensa' && (
           <p className="text-xs mt-2 leading-snug">
             A criação de coisas novas está pausada. <strong>Nada foi apagado</strong>: as pessoas, as fotos
