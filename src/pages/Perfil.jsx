@@ -6,6 +6,7 @@ import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
 import AvatarPersonagem from '../components/AvatarPersonagem.jsx'
 import PersonalizarAvatar from '../components/PersonalizarAvatar.jsx'
+import EditarNascimento from '../components/EditarNascimento.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
 import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
 import { calcularNivel } from '../lib/nivel.js'
@@ -35,6 +36,7 @@ export default function Perfil() {
   const [totalPts, setTotalPts] = useState(0)
   const [personalizando, setPersonalizando] = useState(false)
   const [subiuNivel, setSubiuNivel] = useState(0)
+  const [editandoNascimento, setEditandoNascimento] = useState(false)
   useEffect(() => { setSomOn(somLigado()) }, [])
 
   useEffect(() => {
@@ -148,6 +150,16 @@ export default function Perfil() {
 
       <p className="text-center text-xs text-faint mt-4">A foto ideal é quadrada e mostra bem o rosto 🙂</p>
 
+      {/* Data de nascimento: define a idade que libera as classes. Só a própria pessoa vê aqui. */}
+      <div className="mt-6 bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3" data-testid="meu-nascimento">
+        <div className="min-w-0">
+          <div className="font-bold text-ink text-sm">🎂 Data de nascimento</div>
+          <div className="text-sm text-muted mt-0.5">{profile?.nascimento ? fmtData(profile.nascimento) : 'Não informada'}</div>
+        </div>
+        <button type="button" onClick={() => setEditandoNascimento(true)}
+          className="shrink-0 min-h-[44px] rounded-xl bg-brand/10 text-brand font-semibold px-4">Corrigir</button>
+      </div>
+
       {/* Ofensiva (sequência de dias fazendo a missão) */}
       <div className="mt-6 rounded-2xl p-4 text-white flex items-center gap-3 shadow-soft"
         style={{ background: 'linear-gradient(90deg,#f97316,#f59e0b)' }}>
@@ -234,6 +246,16 @@ export default function Perfil() {
             style={{ left: somOn ? 24 : 4 }} />
         </button>
       </div>
+
+      {editandoNascimento && profile?.id && (
+        <EditarNascimento usuarioId={profile.id} proprio valorAtual={profile?.nascimento || null}
+          onFechar={() => setEditandoNascimento(false)}
+          onSalvo={async () => {
+            setEditandoNascimento(false)
+            await recarregarPerfil?.()
+            setMsg('✅ Data de nascimento atualizada.')
+          }} />
+      )}
 
       {personalizando && (
         <PersonalizarAvatar avatarAtual={profile?.avatar} nivel={nivel.nivel}

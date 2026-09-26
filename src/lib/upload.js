@@ -110,3 +110,27 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   if (up2.error) throw new Error('Não foi possível enviar: ' + error.message)
   return supabase.storage.from('imagens').getPublicUrl(legacyPath).data.publicUrl
 }
+
+// Foto órfã (migration 173): se a etapa DEPOIS do upload falhar (ex.: a rede caiu antes de gravar o
+// caminho no requisito), apaga a foto que acabou de subir. Só vale para o caminho PRIVADO
+// (<uid>/requisitos/...) — o servidor só deixa o dono apagar o que ninguém referencia. Nunca lança:
+// a limpeza é melhor-esforço e o erro que importa para a pessoa é o da etapa que falhou.
+export async function descartarComprovacao(path) {
+  if (!path || /^https?:/i.test(path)) return false
+  try {
+    const { error } = await supabase.storage.from('comprovacoes').remove([path])
+    return !error
+  } catch {
+    return false
+  }
+}
+
+// Sobe a foto, roda a etapa seguinte e, se ela falhar, descarta a foto antes de repassar o erro.
+export async function comComprovacao(path, etapa) {
+  try {
+    return await etapa()
+  } catch (e) {
+    await descartarComprovacao(path)
+    throw e
+  }
+}

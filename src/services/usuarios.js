@@ -219,3 +219,30 @@ export async function carregarAniversariantes() {
     .map((p) => ({ id: p.id, nome: p.nome, foto: p.foto, aniversario: p.aniversario }))
 }
 
+
+// ---- data de nascimento (migration 170) ----
+// Validação local igual à do servidor (o servidor é quem decide): data real, não futura, até 100 anos.
+export function validarNascimento(iso, hoje = new Date()) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return 'Informe a data de nascimento.'
+  const [a, m, d] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(a, m - 1, d))
+  if (dt.getUTCFullYear() !== a || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return 'Data inválida.'
+  const h = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+  if (dt.getTime() > h) return 'A data de nascimento não pode ser no futuro.'
+  if (a < hoje.getFullYear() - 100) return 'Data de nascimento inválida: confira o ano.'
+  return null
+}
+
+// A própria pessoa (usuarioId = o próprio id) ou a liderança do clube em uso, para membro ativo dele.
+export async function definirNascimento(usuarioId, nascimento) {
+  const { data, error } = await supabase.rpc('nascimento_definir', { p_usuario_id: usuarioId, p_nascimento: nascimento })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Liderança: o nascimento atual do membro, para corrigir (colegas não enxergam — padrão da 86).
+export async function nascimentoDoMembro(usuarioId) {
+  const { data, error } = await supabase.rpc('membro_nascimento', { p_usuario_id: usuarioId })
+  if (error) throw new Error(error.message)
+  return data || null
+}

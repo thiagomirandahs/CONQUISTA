@@ -2,7 +2,7 @@
 // Requisitos vêm sempre do currículo versionado (especialidades_disponiveis/minha_especialidade) —
 // nada hardcoded aqui nem na tela. Percentual vem pronto do servidor.
 import { supabase } from '../lib/supabase.js'
-import { subirComprovacao } from '../lib/upload.js'
+import { subirComprovacao, comComprovacao } from '../lib/upload.js'
 
 export async function carregarEspecialidadesDisponiveis() {
   const { data, error } = await supabase.rpc('especialidades_disponiveis')
@@ -51,10 +51,12 @@ export async function salvarRequisitoEspecialidade({ requirementId, texto = null
   if (foto) {
     evidenciaPath = await subirComprovacao({ file: foto, tipo: 'requisitos', userId })
   }
-  const { error } = await supabase.rpc('especialidade_requisito_salvar', {
-    p_specialty_requirement_id: requirementId, p_texto: texto, p_evidencia_path: evidenciaPath,
+  await comComprovacao(evidenciaPath, async () => {
+    const { error } = await supabase.rpc('especialidade_requisito_salvar', {
+      p_specialty_requirement_id: requirementId, p_texto: texto, p_evidencia_path: evidenciaPath,
+    })
+    if (error) throw new Error(error.message)
   })
-  if (error) throw new Error(error.message)
 }
 
 export async function enviarRequisitoEspecialidade(requirementId) {

@@ -672,17 +672,41 @@ function Armazenamento({ aoAbrirClube }) {
 }
 
 // ---------------------------------------------------------------- Onboarding
+// Cadastro de clube parado: há quantos dias a sessão EM ANDAMENTO não anda (desde a última etapa).
+// Só visibilidade — nada é apagado. Mais de 7 dias ganha destaque e sobe para o topo da lista.
+export const DIAS_ONBOARDING_PARADO = 7
+export function diasParado(iso, agora = Date.now()) {
+  const t = iso ? new Date(iso).getTime() : NaN
+  if (!Number.isFinite(t)) return null
+  return Math.max(0, Math.floor((agora - t) / 86400000))
+}
+
 function Onboarding({ aoAbrirClube }) {
   const { dados, erro } = useFonte(onboardingListar)
+  const agora = Date.now()
+  const lista = (dados || []).map((o) => ({ ...o, parado: o.status === 'em_andamento' ? diasParado(o.atualizado_em, agora) : null }))
+  // parados há mais tempo primeiro; o resto mantém a ordem do servidor (atualizado mais recente)
+  lista.sort((a, b) => (b.parado ?? -1) - (a.parado ?? -1))
+  const nParados = lista.filter((o) => o.parado != null && o.parado > DIAS_ONBOARDING_PARADO).length
   return (
     <Estado erro={erro} dados={dados} vazio={<Vazio icone="🧭" titulo="Nenhum onboarding iniciado" />}>
+      {nParados > 0 && (
+        <p className="mb-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800" data-testid="onboarding-parados">
+          {nParados} cadastro(s) de clube parado(s) há mais de {DIAS_ONBOARDING_PARADO} dias.
+        </p>
+      )}
       <div className="space-y-2">
-        {(dados || []).map((o) => (
-          <Card key={o.id} className="p-3" data-testid="onboarding-item">
+        {lista.map((o) => (
+          <Card key={o.id} className={`p-3 ${o.parado > DIAS_ONBOARDING_PARADO ? 'border-2 border-amber-300' : ''}`} data-testid="onboarding-item">
             <div className="flex items-center justify-between gap-2">
               <p className="font-semibold text-ink">{o.clube || 'Clube ainda não criado'}</p>
               <Selo tom={o.status === 'concluido' ? 'ok' : o.status === 'abandonado' ? 'perigo' : 'atencao'}>{ROTULO_ONBOARDING[o.status] || o.status}</Selo>
             </div>
+            {o.parado != null && (
+              <p className={`text-sm mt-1 font-semibold ${o.parado > DIAS_ONBOARDING_PARADO ? 'text-amber-800' : 'text-muted'}`} data-testid="onboarding-parado">
+                {o.parado === 0 ? 'Mexido hoje' : `Parado há ${o.parado} dia${o.parado === 1 ? '' : 's'}`} na etapa “{o.etapa}”
+              </p>
+            )}
             <p className="text-xs text-muted mt-1">
               Etapa atual: {o.etapa} · {(o.etapas_concluidas || []).length} etapa(s) concluída(s) · iniciado {data(o.iniciado_em)} · atualizado {dataHora(o.atualizado_em)}
               {o.provisionamento ? ` · provisionamento ${o.provisionamento}` : ''}

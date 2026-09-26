@@ -14,7 +14,7 @@ const f = {
 }
 vi.mock('../services/admin.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
 
-const { default: Admin, formatarBytes, diasRestantes } = await import('./Admin.jsx')
+const { default: Admin, formatarBytes, diasRestantes, diasParado } = await import('./Admin.jsx')
 
 const FUNDADOR = {
   club_id: 'c1', nome: 'Filhos da Conquista', slug: 'filhos-da-conquista', status: 'ativo', criado_em: '2026-09-24T21:00:00Z',
@@ -216,6 +216,31 @@ describe('Admin: teste gratuito', () => {
     expect(diasRestantes(null, agora)).toBeNull()
     expect(diasRestantes('2026-10-02T12:00:00Z', agora)).toBe(7)
     expect(diasRestantes('2026-09-24T12:00:00Z', agora)).toBe(-1)
+  })
+})
+
+describe('Admin: Onboarding parado', () => {
+  it('mostra há quantos dias está parado e em qual etapa, com destaque para mais de 7 dias', async () => {
+    const dias = (n) => new Date(Date.now() - n * 86400000 - 3600000).toISOString()
+    f.onboardingListar.mockResolvedValue([
+      { id: 'o1', status: 'em_andamento', etapa: 'clube', etapas_concluidas: ['conta'], clube: 'Clube Recente', iniciado_em: dias(2), atualizado_em: dias(2) },
+      { id: 'o2', status: 'em_andamento', etapa: 'dados_basicos', etapas_concluidas: ['conta'], clube: null, iniciado_em: dias(20), atualizado_em: dias(12) },
+      { id: 'o3', status: 'concluido', etapa: 'concluido', etapas_concluidas: [], clube: 'Clube Pronto', iniciado_em: dias(30), atualizado_em: dias(30) },
+    ])
+    await abrirComoAdmin()
+    await userEvent.click(screen.getByRole('tab', { name: /Onboarding/ }))
+    const itens = await screen.findAllByTestId('onboarding-item')
+    expect(within(itens[0]).getByTestId('onboarding-parado')).toHaveTextContent('Parado há 12 dias na etapa “dados_basicos”')
+    expect(within(itens[1]).getByTestId('onboarding-parado')).toHaveTextContent('Parado há 2 dias')
+    expect(within(itens[2]).queryByTestId('onboarding-parado')).toBeNull()
+    expect(screen.getByTestId('onboarding-parados')).toHaveTextContent('1 cadastro(s)')
+  })
+
+  it('diasParado', () => {
+    const agora = Date.parse('2026-09-25T12:00:00Z')
+    expect(diasParado(null, agora)).toBeNull()
+    expect(diasParado('2026-09-17T11:00:00Z', agora)).toBe(8)
+    expect(diasParado('2026-09-26T12:00:00Z', agora)).toBe(0)
   })
 })
 

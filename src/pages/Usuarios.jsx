@@ -10,6 +10,9 @@ import {
 } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
 import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
+import EditarNascimento from '../components/EditarNascimento.jsx'
+import { carregarClassesDoMembro, cancelarClasse } from '../services/classes.js'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const rotuloPapel = {
@@ -44,6 +47,8 @@ export default function Usuarios() {
   const [alvo, setAlvo] = useState(null)
   const [pontosPara, setPontosPara] = useState(null)
   const [excluindo, setExcluindo] = useState(null) // usuário no modal de exclusão
+  const [nascimentoDe, setNascimentoDe] = useState(null) // corrigir a data de nascimento (migration 170)
+  const [classesDe, setClassesDe] = useState(null) // classes do membro, para cancelar (migration 171)
   const [erroCarregar, setErroCarregar] = useState('')
   const ehDiretoria = meuPapel === 'diretoria'
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
@@ -197,6 +202,14 @@ export default function Usuarios() {
                   <button onClick={() => setAlvo(u)} data-testid={`senha-${u.id}`}
                     className="text-xs bg-brand/10 text-brand rounded-lg px-3 py-2 font-semibold">🔑 Senha</button>
                 )}
+                {u.status === 'ativo' && (
+                  <button onClick={() => setNascimentoDe(u)} data-testid={`nascimento-${u.id}`}
+                    className="text-xs bg-surface2 text-ink rounded-lg px-3 py-2 font-semibold">🎂 Nascimento</button>
+                )}
+                {u.status === 'ativo' && u.papel !== 'pais' && (
+                  <button onClick={() => setClassesDe(u)} data-testid={`classes-${u.id}`}
+                    className="text-xs bg-surface2 text-ink rounded-lg px-3 py-2 font-semibold">🎖️ Classes</button>
+                )}
                 {(ehDiretoria || !CARGOS_DA_DIRETORIA.includes(u.papel)) && (
                   <button onClick={() => alternarAtivo(u)}
                     className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
@@ -230,6 +243,12 @@ export default function Usuarios() {
             onExcluido={(id) => { setUsuarios((us) => us.filter((x) => x.id !== id)); setExcluindo(null) }} />
         )}
       </AnimatePresence>
+      {nascimentoDe && (
+        <EditarNascimento usuarioId={nascimentoDe.id} nome={nascimentoDe.nome} proprio={nascimentoDe.id === profile?.id}
+          onFechar={() => setNascimentoDe(null)}
+          onSalvo={() => { avisar.sucesso('Data de nascimento atualizada.'); setNascimentoDe(null) }} />
+      )}
+      {classesDe && <ModalClassesDoMembro usuario={classesDe} onFechar={() => setClassesDe(null)} />}
       <AnimatePresence>
         {alvo && <ModalReset usuario={alvo} onFechar={() => setAlvo(null)} />}
       </AnimatePresence>
@@ -432,5 +451,79 @@ function ModalExcluir({ usuario, onFechar, onExcluido }) {
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+// Classes de um membro (liderança): cancelar a matrícula em andamento. Concluída, em revisão ou
+// investida não têm botão (o servidor também recusa). Nada é apagado: o progresso fica no histórico.
+export function ModalClassesDoMembro({ usuario, onFechar }) {
+  const [classes, setClasses] = useState(null)
+  const [erro, setErro] = useState('')
+  const [confirmando, setConfirmando] = useState(null) // member_class_id
+  const [ocupado, setOcupado] = useState(false)
+  const primeiro = (usuario.nome || 'esta pessoa').split(' ')[0]
+
+  useEffect(() => {
+    let vivo = true
+    carregarClassesDoMembro(usuario.id)
+      .then((c) => { if (vivo) setClasses(c) })
+      .catch((e) => { if (vivo) { setErro(mensagemDeErro(e)); setClasses([]) } })
+    return () => { vivo = false }
+  }, [usuario.id])
+
+  async function cancelar(mcId) {
+    setOcupado(true); setErro('')
+    try {
+      await cancelarClasse(mcId)
+      setClasses((cs) => cs.filter((c) => c.member_class_id !== mcId))
+      setConfirmando(null)
+      avisar.sucesso('Classe cancelada. O progresso ficou guardado no histórico.')
+    } catch (e) {
+      setErro(mensagemDeErro(e))
+    }
+    setOcupado(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={ocupado ? undefined : onFechar}>
+      <div role="dialog" aria-modal="true" aria-labelledby="titulo-classes-membro" onClick={(e) => e.stopPropagation()}
+        className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto" data-testid="classes-do-membro">
+        <h3 id="titulo-classes-membro" className="text-lg font-extrabold text-ink mb-1">🎖️ Classes de {primeiro}</h3>
+        <p className="text-sm text-muted mb-3">Cancelar uma classe em andamento não apaga nada: o progresso fica no histórico e dá para reiniciar depois.</p>
+        {erro && <p role="alert" className="text-sm text-red-700 mb-3">{erro}</p>}
+        {classes === null ? (
+          <p className="text-sm text-faint" role="status">Carregando…</p>
+        ) : classes.length === 0 ? (
+          <p className="text-sm text-faint">Nenhuma classe iniciada.</p>
+        ) : (
+          <ul className="space-y-2">
+            {classes.map((c) => (
+              <li key={c.member_class_id} className="rounded-xl border border-line p-3" data-testid="classe-do-membro">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-ink">{c.nome}</span>
+                  <span className="text-sm text-muted">{c.status === 'em_andamento' ? `${c.percentual ?? 0}%` : c.status === 'investida' ? 'Investido' : 'Concluída'}</span>
+                </div>
+                {c.status === 'em_andamento' && (confirmando === c.member_class_id ? (
+                  <div className="mt-2">
+                    <p className="text-sm text-ink">Cancelar {c.nome} de {primeiro}? O progresso fica guardado no histórico.</p>
+                    <div className="flex gap-2 mt-2">
+                      <button type="button" onClick={() => setConfirmando(null)} disabled={ocupado}
+                        className="flex-1 min-h-[44px] rounded-xl bg-surface2 text-ink font-semibold">Voltar</button>
+                      <button type="button" onClick={() => cancelar(c.member_class_id)} disabled={ocupado} data-testid="confirmar-cancelar-membro"
+                        className="flex-1 min-h-[44px] rounded-xl bg-red-600 text-white font-bold disabled:opacity-60">{ocupado ? 'Cancelando…' : 'Sim, cancelar'}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setConfirmando(c.member_class_id)} data-testid="cancelar-classe-membro"
+                    className="mt-2 min-h-[44px] w-full rounded-xl bg-surface2 text-red-700 font-semibold">Cancelar matrícula</button>
+                ))}
+              </li>
+            ))}
+          </ul>
+        )}
+        <button type="button" onClick={onFechar} disabled={ocupado}
+          className="mt-4 w-full min-h-[48px] rounded-xl bg-surface2 text-ink font-semibold">Fechar</button>
+      </div>
+    </div>
   )
 }

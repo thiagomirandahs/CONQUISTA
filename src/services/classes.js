@@ -3,7 +3,7 @@
 // hardcoded aqui nem na tela. O percentual também vem pronto do servidor (classe_percentual, dentro
 // de minha_classe()) — o cliente nunca calcula nem envia "concluído".
 import { supabase } from '../lib/supabase.js'
-import { subirComprovacao } from '../lib/upload.js'
+import { subirComprovacao, comComprovacao } from '../lib/upload.js'
 
 // Classes publicadas que a pessoa ainda não iniciou no clube em uso.
 export async function carregarClassesDisponiveis() {
@@ -58,10 +58,13 @@ export async function salvarRequisito({ requirementId, texto = null, foto = null
   if (foto) {
     evidenciaPath = await subirComprovacao({ file: foto, tipo: 'requisitos', userId })
   }
-  const { error } = await supabase.rpc('requisito_salvar', {
-    p_requirement_id: requirementId, p_texto: texto, p_evidencia_path: evidenciaPath,
+  // se gravar falhar depois do upload, a foto não fica sobrando no bucket (migration 173)
+  await comComprovacao(evidenciaPath, async () => {
+    const { error } = await supabase.rpc('requisito_salvar', {
+      p_requirement_id: requirementId, p_texto: texto, p_evidencia_path: evidenciaPath,
+    })
+    if (error) throw new Error(error.message)
   })
-  if (error) throw new Error(error.message)
 }
 
 // Escolha N-de-M: registra QUAIS opções a pessoa cumpriu (ids das opções do cartão; texto livre só quando
@@ -149,4 +152,19 @@ export async function verificarSnapshot(snapshotId) {
   const { data, error } = await supabase.rpc('snapshot_verificar', { p_snapshot_id: snapshotId })
   if (error) throw new Error(error.message)
   return data
+}
+
+// Cancelar a matrícula numa classe em andamento (a própria pessoa ou a liderança do clube). Nada é
+// apagado: o progresso fica no histórico e iniciar a classe de novo reativa a mesma matrícula.
+export async function cancelarClasse(memberClassId) {
+  const { data, error } = await supabase.rpc('classe_cancelar', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Liderança: as classes (não canceladas) de um membro do clube em uso — gestão de membros.
+export async function carregarClassesDoMembro(usuarioId) {
+  const { data, error } = await supabase.rpc('classes_do_membro', { p_usuario_id: usuarioId })
+  if (error) throw new Error(error.message)
+  return data || []
 }

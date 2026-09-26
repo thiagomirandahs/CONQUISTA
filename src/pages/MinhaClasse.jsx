@@ -7,7 +7,7 @@ import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
   carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
-  carregarHistoricoRequisito,
+  carregarHistoricoRequisito, cancelarClasse,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
@@ -143,8 +143,59 @@ export default function MinhaClasse() {
       {!minha ? (
         <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
       ) : (
-        <Progresso key={idAberta} dados={minha} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
+        <>
+          <Progresso key={idAberta} dados={minha} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
+          {minha.member_class?.status === 'em_andamento' && (
+            <CancelarClasse key={`cancelar-${idAberta}`} memberClassId={idAberta} nome={minha.classe?.nome}
+              onCancelada={async () => { setSelecionada(null); setMostrarOutras(false); await recarregar(null) }} />
+          )}
+        </>
       )}
+    </div>
+  )
+}
+
+// Cancelar a própria matrícula (só em andamento — o servidor recusa concluída/investida). Confirmação
+// em dois toques, dizendo o que acontece: nada é apagado e dá para recomeçar de onde parou.
+export function CancelarClasse({ memberClassId, nome, onCancelada }) {
+  const [confirmando, setConfirmando] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
+  const [erro, setErro] = useState('')
+  async function cancelar() {
+    setOcupado(true); setErro('')
+    try {
+      await cancelarClasse(memberClassId)
+      await onCancelada?.()
+    } catch (e) {
+      setErro(mensagemDeErro(e))
+      setOcupado(false)
+    }
+  }
+  if (!confirmando) {
+    return (
+      <div className="mt-6 text-center">
+        <button type="button" onClick={() => setConfirmando(true)} data-testid="cancelar-classe"
+          className="min-h-[44px] rounded-xl px-4 text-sm font-semibold text-muted underline">
+          Cancelar esta classe
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className="mt-6 bg-surface rounded-2xl shadow-soft p-4 border border-line" data-testid="confirmar-cancelar-classe">
+      <p className="font-bold text-ink">Cancelar a classe {nome}?</p>
+      <p className="text-sm text-muted mt-1">
+        O progresso fica guardado no histórico. Se quiser, você pode iniciar esta classe de novo depois e continuar de onde parou.
+      </p>
+      {erro && <p role="alert" className="text-sm text-red-700 mt-2">{erro}</p>}
+      <div className="flex gap-2 mt-3">
+        <button type="button" onClick={() => { setConfirmando(false); setErro('') }} disabled={ocupado}
+          className="flex-1 min-h-[48px] rounded-xl bg-surface2 text-ink font-semibold">Voltar</button>
+        <button type="button" onClick={cancelar} disabled={ocupado} data-testid="confirmar-cancelar"
+          className="flex-1 min-h-[48px] rounded-xl bg-red-600 text-white font-bold disabled:opacity-60">
+          {ocupado ? 'Cancelando…' : 'Sim, cancelar'}
+        </button>
+      </div>
     </div>
   )
 }
