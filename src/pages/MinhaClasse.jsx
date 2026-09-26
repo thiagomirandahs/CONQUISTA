@@ -13,6 +13,7 @@ import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -118,7 +119,7 @@ export default function MinhaClasse() {
     }
   }
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   const idAberta = minha?.member_class?.id
 

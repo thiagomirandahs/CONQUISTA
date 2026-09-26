@@ -5,6 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { carregarRadarFaltas, enviarAvisoPessoal } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
@@ -55,7 +56,7 @@ export default function RadarFaltas() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎉</div>

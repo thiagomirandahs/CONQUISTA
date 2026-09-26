@@ -7,6 +7,7 @@ import {
 import Comprovacao from '../components/Comprovacao.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -118,7 +119,7 @@ function FilaDeAvaliacao() {
     <div>
       <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2">Requisitos aguardando avaliação</h3>
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">{erro}</div>
       ) : lista.length === 0 ? (

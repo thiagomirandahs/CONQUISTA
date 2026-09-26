@@ -8,6 +8,7 @@ import {
 } from '../lib/dados.js'
 import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['diretoria']   // migration 210: vínculos de responsáveis são só da diretoria
 const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
@@ -56,7 +57,7 @@ export default function VinculosPais() {
 
       <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2 mt-5">Pedidos aguardando</h3>
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : pend.length === 0 ? (
         <div className="bg-surface rounded-2xl p-6 text-center shadow-soft">
           <div className="text-3xl mb-1">✅</div>

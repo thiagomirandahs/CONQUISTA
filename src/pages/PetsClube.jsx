@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
 import { petsDoClube } from '../lib/dados.js'
 import { montarBichinhoSvg, montarCenarioSvg, montarMovelSvg } from '../lib/bichinhoPecas.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 function PetImg({ especie, item, estagio, vivo, cor = 'natural', olhos = 'padrao', dormindo = false }) {
   const humor = !vivo ? 'morto' : dormindo ? 'dormindo' : 'feliz'
@@ -38,7 +39,7 @@ export default function PetsClube() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm text-center mt-8">Carregando…</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : pets.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🐾</div>

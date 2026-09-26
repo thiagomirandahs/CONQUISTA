@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura, emitirDocumento } from '../lib/dados.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Revisão final e investidura (fase 4) — só a liderança do clube em uso. Tudo vem do servidor:
 // estados, snapshot (hash), bloqueios atuais e a lista de requisitos. A tela não decide regra: o
@@ -49,7 +50,7 @@ export default function Investiduras() {
         <p className="text-sm text-muted">Conclusões de classe deste clube: revisar, pedir correção ou registrar a investidura</p>
       </div>
       {carregando ? (
-        <p className="text-faint text-sm" role="status">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro ? (
         <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">{erro}</div>
       ) : lista.length === 0 ? (

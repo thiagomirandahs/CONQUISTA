@@ -8,6 +8,7 @@ import {
   salvarDesafioUnidade, excluirDesafioUnidade,
 } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS_ACOMP = [
@@ -518,7 +519,7 @@ function ModalProgresso({ duelo, onFechar }) {
         )}
 
         {carregando ? (
-          <p className="text-sm text-slate-400">Carregando...</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : erro ? (
           <p className="text-sm text-red-600">{erro}</p>
         ) : !prog || prog.tipo === 'manual' ? (

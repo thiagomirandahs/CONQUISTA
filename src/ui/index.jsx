@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EsqueletoTela } from './carregamento.jsx'
+export { TelaDeAbertura, EsqueletoTela } from './carregamento.jsx'
 
 // =============================================================================
 //  Design system do DesbravaClube (fase 7).
@@ -41,7 +43,7 @@ export function Card({ children, className, as: Tag = 'div', ...resto }) {
 // Card que é um link/botão — o alvo inteiro é clicável e tem 44px garantidos.
 export function CardAcao({ para, aoTocar, children, className, ...resto }) {
   const classe = juntar('block w-full text-left bg-surface rounded-2xl shadow-soft p-4 min-h-[44px]',
-    'transition-colors hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand', className)
+    'transition-[background-color,transform] duration-150 active:scale-[0.98] hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand', className)
   if (para) return <Link to={para} className={classe} {...resto}>{children}</Link>
   return <button type="button" onClick={aoTocar} className={classe} {...resto}>{children}</button>
 }
@@ -61,7 +63,7 @@ export function Botao({ variacao = 'primario', para, aoTocar, tipo = 'button', c
   const estilo = variacao === 'primario' ? { color: 'var(--marca-1-texto, #fff)' }
     : variacao === 'contorno' ? { color: 'var(--marca-1-legivel, var(--c-brand))' } : undefined
   const classe = juntar('inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl',
-    'text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed',
+    'text-sm transition-[color,background-color,transform,opacity] duration-150 active:scale-[0.97] disabled:active:scale-100 disabled:opacity-60 disabled:cursor-not-allowed',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
     VARIACOES[variacao] || VARIACOES.primario, className)
   if (para && !desabilitado) return <Link to={para} className={classe} style={estilo} {...resto}>{children}</Link>
@@ -109,17 +111,7 @@ export function Selecao({ id, rotulo, ajuda, opcoes = [], className, ...resto })
 // Um único componente de carregamento, anunciado para leitor de tela e com esqueleto em vez de
 // "Carregando..." solto (eram 8 variantes textuais diferentes no app).
 export function Carregando({ linhas = 3, texto = 'Carregando' }) {
-  return (
-    <div role="status" aria-live="polite" className="space-y-3">
-      <span className="sr-only">{texto}…</span>
-      {Array.from({ length: linhas }).map((_, i) => (
-        <div key={i} className="bg-surface rounded-2xl shadow-soft p-4" aria-hidden="true">
-          <div className="h-4 w-2/5 rounded-full bg-surface2 motion-safe:animate-pulse" />
-          <div className="h-3 w-4/5 rounded-full bg-surface2 mt-2.5 motion-safe:animate-pulse" />
-        </div>
-      ))}
-    </div>
-  )
+  return <EsqueletoTela cabecalho={false} cartoes={linhas} texto={texto} />
 }
 
 export function Vazio({ icone = '🗂️', titulo, children, acao }) {
@@ -198,8 +190,20 @@ export function Abas({ abas = [], ativa, aoTrocar, rotulo = 'Seções' }) {
 
 // ---------------------------------------------------------------- Folha (bottom sheet)
 // No celular sobe de baixo (o polegar alcança); no PC vira um diálogo central.
+// Entra subindo e sai descendo (CSS, 200ms/160ms — sem o motor do framer-motion); com movimento
+// reduzido, a regra global do index.css zera as durações e ela aparece/some na hora.
 export function Folha({ aberta, aoFechar, titulo, children }) {
   const caixa = useRef(null)
+  const [montada, setMontada] = useState(aberta)
+  const [saindo, setSaindo] = useState(false)
+  if (aberta && !montada) setMontada(true)
+  if (aberta && saindo) setSaindo(false)
+  if (!aberta && montada && !saindo) setSaindo(true)
+  useEffect(() => {
+    if (!saindo) return undefined
+    const t = setTimeout(() => { setMontada(false); setSaindo(false) }, 170)
+    return () => clearTimeout(t)
+  }, [saindo])
   useEffect(() => {
     if (!aberta) return undefined
     const antes = document.activeElement
@@ -208,13 +212,13 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
     document.addEventListener('keydown', tecla)
     return () => { document.removeEventListener('keydown', tecla); antes?.focus?.() }
   }, [aberta, aoFechar])
-  if (!aberta) return null
+  if (!montada) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
-      <button type="button" aria-label="Fechar" onClick={aoFechar}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <div className={`fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
+      <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={saindo ? -1 : undefined}
+        className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={caixa} tabIndex={-1} role="dialog" aria-modal="true" aria-label={titulo}
-        className="relative w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+        className="folha-caixa relative w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="sticky top-0 bg-surface flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <h2 className="font-extrabold text-ink">{titulo}</h2>

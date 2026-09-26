@@ -4,6 +4,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarTodasConversasChat, apagarMensagemChat } from '../lib/dados.js'
 import { supabase } from '../lib/supabase.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -37,7 +38,7 @@ export default function ChatModeracao() {
     )
   }
 
-  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   if (erro) {
     const faltaSQL = /does not exist|schema cache|could not find the (table|relation)/i.test(erro)
@@ -127,7 +128,7 @@ function ConversaAberta({ conversaId, titulo, onVoltar }) {
       <div className="bg-surface rounded-2xl shadow-soft p-4">
         <h3 className="font-extrabold text-ink mb-3">{titulo}</h3>
         {carregando ? (
-          <p className="text-faint text-sm">Carregando...</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : mensagens.length === 0 ? (
           <p className="text-faint text-sm">Sem mensagens.</p>
         ) : (

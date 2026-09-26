@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence, m as motion, MotionConfig } from 'framer-motion'
+import { m as motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
 // Popups de abertura em pedaços próprios: só aparecem depois que os dados deles chegam, então não
@@ -136,17 +136,16 @@ export default function AppLayout() {
         )}
 
         <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-28 lg:pb-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${clubeId}:${location.pathname}`}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          {/* Troca de tela: só ENTRADA (fade + leve deslize/escala, 180ms). Sem animação de saída de
+              propósito — com mode="wait" a tela nova esperava a velha sair (~0,5s a mais por toque). */}
+          <motion.div
+            key={`${clubeId}:${location.pathname}`}
+            initial={{ opacity: 0, y: 8, scale: 0.995 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
 
@@ -158,7 +157,7 @@ export default function AppLayout() {
           {destinos.map((d) => (
             <NavLink key={d.to} to={d.to}
               className={({ isActive }) =>
-                `relative flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-2xl transition-colors ${isActive ? 'text-brand' : 'text-faint'}`
+                `relative flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-2xl transition-[color,transform] duration-150 active:scale-95 ${isActive ? 'text-brand' : 'text-faint'}`
               }>
               {({ isActive }) => (
                 <>

@@ -7,6 +7,7 @@ import {
   lerRodizioJogos, salvarRodizioJogos,
 } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 
@@ -54,7 +55,7 @@ export default function JogosTrilha() {
       <SoDesbravador />
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro || lista.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
           <p className="font-semibold mb-1">Nada pra mostrar</p>

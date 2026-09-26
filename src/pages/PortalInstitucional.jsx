@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useEscopo } from '../context/Escopo.jsx'
 import { carregarInvestidurasDoEscopo } from '../services/institucional.js'
 import { PainelAnalitico, VisitasDoEscopo } from './PainelDoEscopo.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Portal institucional (fase 4.3) — ENXUTO de propósito. Mostra só o que o escopo justifica:
 // os clubes abaixo, a situação geral deles (agregada) e os processos que REALMENTE exigem a atuação
@@ -37,7 +38,7 @@ export default function PortalInstitucional() {
   }, [escopo])
   useEffect(() => { recarregarDados() }, [recarregarDados])
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   if (erro) {
     return (
@@ -72,7 +73,7 @@ export default function PortalInstitucional() {
       <section className="mb-5" aria-labelledby="t-pendencias">
         <h2 id="t-pendencias" className="text-sm font-extrabold text-ink mb-2">O que depende de você</h2>
         {investiduras === null ? (
-          <p className="text-sm text-faint" role="status">Carregando…</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : investiduras.length === 0 ? (
           <div className="bg-surface rounded-2xl p-5 shadow-soft">
             <p className="font-semibold text-ink text-sm">✅ Nada aguarda a sua decisão</p>

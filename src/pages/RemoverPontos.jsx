@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarLancamentos, removerLancamento } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const iconeOrigem = { apontamento: '✍️', atividade: '📋', unidade: '🛡️', devocional: '📖', missao: '🎯', trilha: '🗺️', manual: '🎖️', acampamento: '🏕️', leilao: '🏛️' }
@@ -67,7 +68,7 @@ export default function RemoverPontos() {
         className="w-full rounded-xl bg-surface2 border border-line px-3 py-2.5 text-sm mb-3 text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : filtrada.length === 0 ? (
         <p className="text-faint text-sm">Nenhum lançamento encontrado.</p>
       ) : (

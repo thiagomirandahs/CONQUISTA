@@ -10,6 +10,7 @@ import {
   carregarMensagensDesde, ultimoCarimbo,
 } from '../lib/dados.js'
 import { acerto } from '../lib/juice.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Quem manda mensagem no chat da unidade / conversas diretas.
 const MEMBRO = ['desbravador', 'conselheiro']
@@ -106,7 +107,7 @@ function ListaConversas({ meuId, onAbrir, onNova }) {
         + Nova conversa
       </motion.button>
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">💬</div>
@@ -307,7 +308,7 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
       )}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {carregando ? (
-          <p className="text-faint text-sm text-center mt-4">Carregando...</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : mensagens.length === 0 ? (
           <p className="text-faint text-sm text-center mt-4">Nenhuma mensagem ainda — dá o primeiro "oi"! 👋</p>
         ) : (

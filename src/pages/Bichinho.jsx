@@ -3,6 +3,7 @@ import { m as motion, AnimatePresence, useAnimationControls } from 'framer-motio
 import { Link } from 'react-router-dom'
 import { meuBichinho, adotarBichinho, cuidarBichinho, equiparBichinho, vestirBichinho, dormirBichinho, acordarBichinho } from '../lib/dados.js'
 import { montarBichinhoSvg, montarCenarioSvg, montarMovelSvg, ESPECIES, ITENS, CORES, OLHOS, CENARIOS, MOVEIS } from '../lib/bichinhoPecas.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 function humorDe(b) {
   if (!b?.vivo) return 'morto'
@@ -199,7 +200,7 @@ export default function Bichinho() {
     catch (e) { setBicho((b) => b ? { ...b, [campo]: anterior } : b); setErro(e?.message || String(e)) }
   }
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   // ---------- Sem bichinho, ou morreu → tela de adotar ----------
   if (!bicho?.tem || !bicho?.vivo) {

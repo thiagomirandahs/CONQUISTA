@@ -5,6 +5,7 @@ import {
   carregarLivrosBiblia, carregarCapituloBiblia,
   iniciarLeituraBiblia, confirmarLeituraBiblia, minhaLeituraBiblia,
 } from '../lib/dados.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Quantos capítulos a criança já leu neste livro (pra pintar na lista).
 function progressoDoLivro(progresso, abrev) {
@@ -216,7 +217,7 @@ export default function Biblia() {
           )}
 
           {fase === 'carregando' ? (
-            <p className="text-faint text-sm py-8 text-center">Carregando…</p>
+            <EsqueletoTela cabecalho={false} cartoes={2} />
           ) : fase === 'vazio' ? (
             <p className="text-faint text-sm py-8 text-center">Este capítulo ainda não foi carregado. 🙂</p>
           ) : (

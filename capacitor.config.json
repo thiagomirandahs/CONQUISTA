@@ -2,15 +2,15 @@
   "appId": "app.filhosdaconquista",
   "appName": "DesbravaClube",
   "webDir": "dist",
-  "backgroundColor": "#1e3a8aff",
+  "backgroundColor": "#07122fff",
   "android": {
-    "backgroundColor": "#1e3a8aff",
+    "backgroundColor": "#07122fff",
     "allowMixedContent": false
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,
-      "backgroundColor": "#1e3a8a",
+      "backgroundColor": "#07122f",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false
     },

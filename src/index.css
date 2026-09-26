@@ -101,6 +101,18 @@ button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ===== Folha (bottom sheet): entrada/saída suaves, só CSS (sem o motor do framer-motion) =====
+   Sobe de baixo; o fundo escurece em fade. A regra de reduced-motion logo abaixo zera as durações. */
+@keyframes folha-sobe { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes folha-desce { from { transform: none; opacity: 1; } to { transform: translateY(24px); opacity: 0; } }
+@keyframes fundo-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fundo-sai { from { opacity: 1; } to { opacity: 0; } }
+.folha .folha-caixa { animation: folha-sobe .2s cubic-bezier(.22, 1, .36, 1) both; }
+.folha .folha-fundo { animation: fundo-entra .2s ease-out both; }
+.folha-saindo { pointer-events: none; }
+.folha-saindo .folha-caixa { animation: folha-desce .16s ease-in both; }
+.folha-saindo .folha-fundo { animation: fundo-sai .16s ease-in both; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   html { scroll-behavior: auto; }

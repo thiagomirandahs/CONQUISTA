@@ -5,7 +5,8 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="theme-color" content="#07122f" />
+    <link rel="stylesheet" href="/abertura.css" />
     <meta name="description" content="DesbravaClube: o app do clube de Desbravadores — jornada, gestão e documentos oficiais pelo celular." />
     <title>DesbravaClube</title>
     <meta property="og:type" content="website" />
@@ -29,6 +30,13 @@
     </script>
   </head>
   <body>
+    <!-- Abertura (sem JS): o mesmo visual de <TelaDeAbertura/>; sai com fade quando o app pinta. -->
+    <div id="abertura" role="status" aria-label="Abrindo o DesbravaClube">
+      <div class="ab-emblema"><img src="/icon-192.png" alt="" width="96" height="96" /></div>
+      <p class="ab-nome">DesbravaClube</p>
+      <p class="ab-lema">O clube na palma da mão</p>
+      <div class="ab-barra" aria-hidden="true"><i></i></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cor da abertura do DesbravaClube: a MESMA do splash web (public/abertura.css) e do
+         manifest (background_color). Sem ela, o Android abria num quadro branco antes do app. -->
+    <color name="abertura_fundo">#07122F</color>
+</resources>

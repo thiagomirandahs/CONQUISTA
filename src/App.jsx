@@ -11,7 +11,7 @@ import { modoDoHost, rotaDoSite, rotaSoDoSite, urlDoApp, urlDoSite } from './lib
 import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
-import Logo from './components/Logo.jsx'
+import { TelaDeAbertura, FimDaAbertura } from './ui/carregamento.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
 
@@ -84,15 +84,9 @@ const DocumentoClasse = lazy(() => import('./pages/DocumentoClasse.jsx'))
 const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx'))
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
 
+// Sessão/clube ainda resolvendo: a mesma abertura do index.html (produto, nunca o clube).
 function Carregando() {
-  return (
-    <div className="min-h-full grid place-items-center bg-azul text-white">
-      <div className="text-center">
-        <Logo produto className="w-16 h-16 mx-auto mb-3" />
-        <p className="text-blue-100 text-sm">Carregando...</p>
-      </div>
-    </div>
-  )
+  return <TelaDeAbertura />
 }
 
 function Protegido({ children }) {
@@ -161,6 +155,10 @@ class ErroApp extends Component {
     if (ehErroDeVersao(erro)) recuperarVersao()
   }
   render() {
+    // a abertura do HTML sai assim que o React pinta — seja a primeira tela, seja o aviso de erro
+    return <><FimDaAbertura />{this.conteudo()}</>
+  }
+  conteudo() {
     if (this.state.erro) {
       return (
         <div className="min-h-screen grid place-items-center p-6 text-center">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Catálogo público de planos + entrada do fluxo de aquisição (item 4). PÚBLICA de propósito — quem
 // está decidindo se assina ainda não tem conta. Preço, nome e composição vêm do banco
@@ -38,7 +39,7 @@ export default function Adquirir() {
       </div>
 
       {erro && <div role="alert" className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 mb-4">{erro}</div>}
-      {planos === null && !erro && <p className="text-faint text-sm text-center" role="status">Carregando…</p>}
+      {planos === null && !erro && <EsqueletoTela cabecalho={false} cartoes={2} />}
 
       <ul className="space-y-3">
         {(planos || []).map((p) => {

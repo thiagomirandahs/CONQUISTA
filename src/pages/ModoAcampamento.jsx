@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarUnidadesCompetidoras, lancarColocacaoAcampamento, carregarHistoricoAcampamento, carregarUsuarios, lancarPontosIndividual } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const inputClass =
@@ -70,7 +71,7 @@ export default function ModoAcampamento() {
     )
   }
 
-  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   if (erro) {
     const faltaSQL = /does not exist|schema cache|could not find the (table|relation)/i.test(erro)

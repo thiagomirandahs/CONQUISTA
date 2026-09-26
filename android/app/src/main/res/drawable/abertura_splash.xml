@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Abertura no Android < 12: fundo azul-marinho + emblema redondo centralizado (sem gerar imagens novas). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/abertura_fundo" />
+    <item android:width="112dp" android:height="112dp" android:gravity="center"
+        android:drawable="@mipmap/ic_launcher_round" />
+</layer-list>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from './Avatar.jsx'
 import { listarColegas, pedirAjuda, ajudaStatus, cancelarAjuda, resolverAjuda } from '../lib/dados.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // ============ Botão "🆘 Pedir ajuda" (dentro dos jogos de palavra) ============
 // Abre o seletor de amigo, cria o pedido e fica checando até o amigo resolver —
@@ -87,7 +88,7 @@ export function PedirAjuda({ jogo, enunciado, resposta, onAjudado }) {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2 shrink-0 outline-none focus:border-azul" />
             {erro && <p className="text-xs text-red-600 mb-2">{erro}</p>}
             {colegas === null ? (
-              <p className="text-sm text-slate-400 p-4 text-center">Carregando…</p>
+              <EsqueletoTela cabecalho={false} cartoes={2} />
             ) : (
               <div className="overflow-y-auto flex-1 min-h-0 space-y-1">
                 {lista.map((c) => (

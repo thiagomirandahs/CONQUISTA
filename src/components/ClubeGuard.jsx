@@ -4,7 +4,7 @@ import { souAdminPlataforma } from '../services/admin.js'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
-import Logo from './Logo.jsx'
+import { TelaDeAbertura, EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Porteiro do app: só deixa passar quem tem VÍNCULO ATIVO com um clube em uso.
 //  * carregando            -> espera o contexto do clube;
@@ -35,12 +35,7 @@ export default function ClubeGuard({ children }) {
 
   if (carregando) {
     return (
-      <div className="min-h-full grid place-items-center bg-azul text-white p-6">
-        <div className="text-center" role="status">
-          <Logo produto className="w-16 h-16 mx-auto mb-3" />
-          <p className="text-blue-100 text-sm">Carregando…</p>
-        </div>
-      </div>
+      <TelaDeAbertura />
     )
   }
 
@@ -107,9 +102,7 @@ export default function ClubeGuard({ children }) {
     // Sem clube — mas talvez com outra jornada. Enquanto o escopo carrega, não se decide nada.
     if (carregandoEscopo) {
       return (
-        <div className="min-h-full grid place-items-center p-6">
-          <p className="text-faint text-sm" role="status">Carregando…</p>
-        </div>
+        <div className="max-w-lg mx-auto p-6"><EsqueletoTela /></div>
       )
     }
     // Desativada pela liderança: o vínculo continua existindo, SUSPENSO (meu_contexto o devolve com

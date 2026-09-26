@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { chefaoEstado, chefaoGolpe, chefaoConfig } from '../lib/dados.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmtData = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '')
@@ -58,7 +59,7 @@ export default function Chefao() {
     setGolpeando(false)
   }
 
-  if (carregando) return <p className="text-faint text-sm text-center mt-10">Carregando…</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   // ---------- Sem chefão ativo ----------
   if (!est?.ativo) {

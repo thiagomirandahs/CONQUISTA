@@ -6,6 +6,7 @@ import { hojeLocalISO } from '../lib/data.js'
 import { chamadaDaUnidade } from '../services/membros.js'
 import Avatar from '../components/Avatar.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Valores dos pontos (fácil de ajustar aqui)
 const PT = { naHora: 10, atrasado: 5, faltou: 0, biblia: 20, uniforme: 10, igreja: 10, atividade: 10 }
@@ -146,7 +147,7 @@ export default function Apontamentos() {
       {!unidadeId ? (
         <p className="text-faint text-sm">{ehConselheiro ? 'Você ainda não tem uma unidade definida.' : 'Escolha uma unidade acima.'}</p>
       ) : carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : desbravadores.length === 0 ? (
         <p className="text-faint text-sm">Nenhum desbravador aprovado nesta unidade ainda.</p>
       ) : modo === 'rapida' ? (

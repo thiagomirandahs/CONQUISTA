@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { definirNascimento, nascimentoDoMembro, validarNascimento } from '../services/usuarios.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const fmt = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
 
@@ -55,7 +56,7 @@ export default function EditarNascimento({ usuarioId, nome, proprio = false, val
           Corrigir a data {quem}. A idade define quais classes ficam liberadas.
         </p>
         {carregando ? (
-          <p className="text-sm text-faint" role="status">Carregando…</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : confirmando ? (
           <>
             <p className="text-sm text-ink bg-surface2 rounded-xl p-3 mb-3" data-testid="confirmacao-nascimento">

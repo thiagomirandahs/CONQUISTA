@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { conviteAbrir, conviteAceitar, rotuloPapel, TIPO_ROTULO } from '../services/hierarquia.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // /coordenacao?token=... — convite de coordenação gerado no /admin (migration 130).
 // Exige sessão (a rota passa por SessaoObrigatoria: sem conta, a pessoa cria/entra e volta pra cá).
@@ -35,7 +36,7 @@ export default function ConviteCoordenacao() {
     <div className="max-w-md mx-auto px-4 py-8">
       <h1 className="text-xl font-extrabold text-ink mb-4">Convite de coordenação</h1>
       {erro && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 mb-4">{erro}</div>}
-      {convite === null && !erro && <p className="text-sm text-faint" role="status">Carregando…</p>}
+      {convite === null && !erro && <EsqueletoTela cabecalho={false} cartoes={2} />}
 
       {convite && !convite.encontrado && (
         <div className={caixa}>

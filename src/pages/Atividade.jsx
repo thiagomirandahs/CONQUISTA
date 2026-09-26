@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { atividadeJogos } from '../lib/dados.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const fmt = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : 'nunca jogou')
@@ -37,7 +38,7 @@ export default function Atividade() {
       </div>
 
       {carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
           <p className="font-semibold mb-1">Não consegui carregar</p>

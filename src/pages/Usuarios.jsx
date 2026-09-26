@@ -15,6 +15,7 @@ import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
 import EditarNascimento from '../components/EditarNascimento.jsx'
 import { carregarClassesDoMembro, cancelarClasse } from '../services/classes.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['diretoria']   // migration 210: papel, unidade, status e senha são só da diretoria
 const rotuloPapel = {
@@ -523,7 +524,7 @@ export function ModalClassesDoMembro({ usuario, onFechar }) {
         <p className="text-sm text-muted mb-3">Cancelar uma classe em andamento não apaga nada: o progresso fica no histórico e dá para reiniciar depois.</p>
         {erro && <p role="alert" className="text-sm text-red-700 mb-3">{erro}</p>}
         {classes === null ? (
-          <p className="text-sm text-faint" role="status">Carregando…</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : classes.length === 0 ? (
           <p className="text-sm text-faint">Nenhuma classe iniciada.</p>
         ) : (

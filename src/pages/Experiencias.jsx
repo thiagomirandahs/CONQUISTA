@@ -7,6 +7,7 @@ import {
   carregarExperiencias, carregarExperiencia, participar, enviarEtapa,
   TIPO_ROTULO, EVIDENCIA_ROTULO, STATUS_ROTULO, recompensaTexto,
 } from '../services/experiencias.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Experiências do clube (fase 6) — a jornada de QUEM PARTICIPA.
 // Tudo o que aparece aqui foi montado pela liderança do próprio clube, dentro de um vocabulário
@@ -55,7 +56,7 @@ export default function Experiencias() {
       {erro && <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 mb-4">{erro}</div>}
 
       {lista === null ? (
-        <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2" aria-hidden="true">✨</div>
@@ -117,7 +118,7 @@ function Detalhe({ id, onVoltar }) {
     finally { setOcupado(false) }
   }
 
-  if (!d && !erro) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+  if (!d && !erro) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">

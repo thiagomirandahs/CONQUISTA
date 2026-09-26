@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Avatar from '../../components/Avatar.jsx'
 import { carregarRecordesSemana, excluirRecorde } from '../../lib/dados.js'
 import { JOGOS, ARCADE } from './registry.jsx'
+import { EsqueletoTela } from '../../ui/carregamento.jsx'
 
 // Placar por jogo: chips no topo trocam entre "Geral" e cada jogo.
 export default function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
@@ -45,7 +46,7 @@ export default function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
 
       {ehArcade ? (
         recordes === null ? (
-          <p className="text-faint text-sm">Carregando...</p>
+          <EsqueletoTela cabecalho={false} cartoes={2} />
         ) : recordes.length === 0 ? (
           <div className="bg-surface rounded-2xl p-8 text-center shadow-sm">
             <div className="text-4xl mb-2">⚡</div>
@@ -77,7 +78,7 @@ export default function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
           </>
         )
       ) : carregando ? (
-        <p className="text-faint text-sm">Carregando...</p>
+        <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-sm">
           <div className="text-4xl mb-2">🎮</div>

@@ -5,6 +5,7 @@ import { gravarMarca, definirRecurso, carregarCatalogoRecursos, subirLogoDoClube
 import { formularioDaMarca, diferencasDaMarca, errosDaMarca, COR_TEMA_PADRAO } from '../lib/marca.js'
 import { somenteDaPlataforma } from '../lib/recursos.js'
 import ClubeVitrine from './ClubeVitrine.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30'
@@ -186,7 +187,7 @@ function ListaRecursos({ recursos, aoMudar }) {
       <h3 className="font-extrabold text-ink">Recursos</h3>
       <p className="text-sm text-muted mb-3">Desligar um recurso esconde a tela para o clube inteiro. Os dados ficam guardados e voltam quando você religar.</p>
       {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3" role="alert">{erro}</div>}
-      {catalogo === null ? <p className="text-faint text-sm">Carregando…</p> : (
+      {catalogo === null ? <EsqueletoTela cabecalho={false} cartoes={2} /> : (
         <ul className="divide-y divide-line">
           {catalogo.map((r) => {
             const ligado = recursos[r.chave] === true

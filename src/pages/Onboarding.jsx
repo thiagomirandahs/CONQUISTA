@@ -5,6 +5,7 @@ import {
   carregarOnboarding, iniciarOnboarding, salvarEtapaOnboarding, formatarPreco, resgatarCortesia,
 } from '../services/comercial.js'
 import { opcoesParaClube, clubeSolicitar, TIPO_ROTULO } from '../services/hierarquia.js'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Cadastro de um clube novo (fase 5). O ESTADO MORA NO SERVIDOR: esta tela nunca decide em que etapa
 // você está — ela pergunta. Fechar o app na etapa 4 e voltar amanhã continua exatamente dali, e
@@ -80,7 +81,7 @@ export default function Onboarding() {
   }
   const resgatar = async (codigo) => { const r = await resgatarCortesia(codigo); setCortesiaAte(r.ate); return r }
 
-  if (estado === null && !erro) return <p className="text-faint text-sm text-center mt-10" role="status">Carregando…</p>
+  if (estado === null && !erro) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   const etapaAtual = estado?.etapa || 'conta'
   const concluidas = estado?.etapas_concluidas || []

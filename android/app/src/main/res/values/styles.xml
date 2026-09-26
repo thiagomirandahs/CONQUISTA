@@ -17,6 +17,10 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+: fundo da abertura do sistema (antes era o branco padrão do tema) -->
+        <item name="windowSplashScreenBackground">@color/abertura_fundo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <!-- Android < 12: azul-marinho + emblema, no lugar do splash.png de fundo branco -->
+        <item name="android:background">@drawable/abertura_splash</item>
     </style>
 </resources>

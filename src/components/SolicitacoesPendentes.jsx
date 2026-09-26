@@ -5,6 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import { entradasPendentes } from '../services/entrada.js'
 import { CARGOS_LIDERANCA } from '../lib/cargos.js'
 import { avisar } from '../ui/avisos.jsx'
+import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 // Extraído de Aprovacoes.jsx pra ser reaproveitado também em Gestão → Inscrições, sem duplicar a
 // lógica de aprovar/recusar (mesma RPC `vinculo_gerir`, mesmo comportamento).
@@ -38,7 +39,7 @@ export default function SolicitacoesPendentes({ onContagem }) {
     }
   }
 
-  if (carregando) return <p className="text-faint text-sm">Carregando...</p>
+  if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
   if (pendentes.length === 0) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
