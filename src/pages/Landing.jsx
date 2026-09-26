@@ -493,7 +493,7 @@ export function Rodape({ naLanding = true }) {
       </div>
       <div className="border-t border-white/10">
         <p className={`${CONTAINER} py-5 text-xs text-slate-400`}>
-          © {new Date().getFullYear()} DesbravaClube — Thiago Henrique da Silva Miranda. Todos os direitos reservados.
+          © {new Date().getFullYear()} DesbravaClube — Thiago Miranda. Todos os direitos reservados.
           É proibida a reprodução, cópia ou distribuição, total ou parcial, do conteúdo, da marca, do código e do
           design deste site e do aplicativo sem autorização expressa do titular (Lei 9.610/98 e Lei 9.609/98).
         </p>
