@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/Auth.jsx'
+import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import { motion } from 'framer-motion'
 import Logo from '../components/Logo.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -18,6 +20,10 @@ export default function Login() {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const session = useAuth()?.session
+  // Já logado e caiu no /login (ex.: apertou VOLTAR): não mostra o login de novo, vai pro destino.
+  const destinoLogado = session ? (lerRetorno() || retornoDaUrl(search) || '/ranking') : null
+  useEffect(() => { if (destinoLogado) { limparRetorno(); marcarInicioDaNavegacao() } }, [destinoLogado])
 
   async function entrar(e) {
     e.preventDefault()
@@ -41,9 +47,13 @@ export default function Login() {
     // Se a pessoa veio de um fluxo que exigiu login no meio (ex.: abriu um link de clube sem estar
     // logada), volta exatamente pra lá em vez de cair no ranking e perder o código/convite.
     const retorno = lerRetorno() || retornoDaUrl(search)
-    if (retorno) { limparRetorno(); navigate(retorno); return }
-    navigate('/ranking')
+    // replace: a tela de login sai do histórico — o VOLTAR não reabre o login com a pessoa já dentro
+    if (retorno) { limparRetorno(); navigate(retorno, { replace: true }); marcarInicioDaNavegacao(); return }
+    navigate('/ranking', { replace: true })
+    marcarInicioDaNavegacao()
   }
+
+  if (destinoLogado && !carregando) return <Navigate to={destinoLogado} replace />
 
   return (
     <div className="min-h-full relative flex flex-col items-center justify-center p-6 overflow-hidden bg-gradient-to-br from-brand via-brand2 to-brand">

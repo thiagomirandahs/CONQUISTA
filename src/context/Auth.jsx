@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { esquecerInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import { supabase } from '../lib/supabase.js'
 import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js'
 import { sincronizarPush, desassociarPush } from '../lib/push.js'
@@ -88,6 +89,10 @@ export function AuthProvider({ children }) {
     await Promise.allSettled([desassociarPush(), desassociarPushNativo()])
     await supabase.auth.signOut()
     setProfile(null)
+    // Sair recomeça a navegação do zero: o login substitui a tela atual e o VOLTAR não reabre
+    // nada da conta que saiu (nem o clube dela).
+    esquecerInicioDaNavegacao()
+    try { window.location.replace('/login') } catch { /* fora do navegador */ }
   }
 
   // Recarrega o perfil do banco (ex.: depois de trocar a foto) pra refletir na hora

@@ -1,5 +1,6 @@
-import { lazy, Suspense, Component } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, Component, useEffect } from 'react'
+import { voltouAntesDoInicio } from './lib/barreiraDeVoltar.js'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
@@ -212,6 +213,18 @@ function RotasDoSite() {
   )
 }
 
+// VOLTAR para antes do login/troca de clube (telas da conta anterior, do clube anterior, o próprio
+// login): manda para o início desta sessão em vez de reabrir o que ficou para trás.
+function BarreiraDeVoltar() {
+  const session = useAuth()?.session
+  const location = useLocation()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (session && voltouAntesDoInicio() && location.pathname !== '/') navigate('/', { replace: true })
+  }, [session, location, navigate])
+  return null
+}
+
 export default function App() {
   if (modoDoHost() === 'site') {
     return (
@@ -223,6 +236,7 @@ export default function App() {
   return (
     <ErroApp>
     <Suspense fallback={<Carregando />}>
+      <BarreiraDeVoltar />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />

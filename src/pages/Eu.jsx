@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -30,7 +31,7 @@ export default function Eu() {
 
   async function trocar(e) {
     const r = await trocarClube(e.target.value)
-    if (r?.ok) navigate('/inicio', { replace: true })
+    if (r?.ok) { navigate('/inicio', { replace: true }); marcarInicioDaNavegacao() }
   }
 
   async function atualizarApp() {
