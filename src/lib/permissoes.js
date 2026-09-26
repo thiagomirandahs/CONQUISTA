@@ -81,6 +81,7 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/bichinho': 'bichinho',
   '/pets-clube': 'bichinho',
   '/agenda': 'agenda',
+  '/cantinho': 'cantinho_unidade',
   '/atividades': 'atividades',
   '/mural': 'mural',
   '/experiencias': 'experiencias',

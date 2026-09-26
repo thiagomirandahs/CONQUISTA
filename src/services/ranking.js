@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase.js'
 import { carregarTrilha } from './jogos.js'
 import { membrosDoClube } from './membros.js'
+import { justificativasDoClube } from './cantinho.js'
 
 
 // Carrega unidades, membros e pontos reais do banco e monta o ranking
@@ -149,14 +150,22 @@ export async function carregarMinhaCartela(inicio, meuId) {
 // do espelho profiles: quem foi desativado AQUI mas segue ativo em outro clube continuava no radar,
 // e a liderança mandava "sentimos sua falta" chamando para as reuniões de um clube que a pessoa deixou.
 export async function carregarRadarFaltas() {
-  const [{ data }, membros] = await Promise.all([
+  const [{ data }, membros, justificadas] = await Promise.all([
     supabase.from('pontos')
       .select('usuario_id, data, marca')
       .eq('origem', 'apontamento')
       .order('data', { ascending: false })
       .limit(500),
     membrosDoClube(),
+    justificativasDoClube(), // falta JUSTIFICADA no Cantinho da unidade não conta como "sumindo"
   ])
+  const justificada = new Set((justificadas || []).map((j) => `${j.usuario_id}|${String(j.data).slice(0, 10)}`))
+  const diaSP = (v) => {
+    const s = String(v || '')
+    if (s.length <= 10) return s
+    const d = new Date(s)
+    return Number.isNaN(d.getTime()) ? s.slice(0, 10) : d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  }
   const pessoaPorId = Object.fromEntries(membros.map((m) => [m.id, m]))
   const porPessoa = {}
   ;(data || []).forEach((p) => {
@@ -168,8 +177,10 @@ export async function carregarRadarFaltas() {
     if (!info.pessoa) return // sem vínculo ativo neste clube
     let faltas = 0
     for (const l of info.linhas) { // linhas em ordem decrescente de data
-      if (l.marca && l.marca.presenca === 'faltou') faltas++
-      else break
+      if (l.marca && l.marca.presenca === 'faltou') {
+        if (justificada.has(`${id}|${diaSP(l.data)}`)) continue
+        faltas++
+      } else break
     }
     if (faltas >= 2) radar.push({ id, nome: info.pessoa.nome, foto: info.pessoa.foto, faltas, ultima: info.linhas[0]?.data })
   })

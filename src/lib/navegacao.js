@@ -38,6 +38,7 @@ export const HUB_JORNADA = [
 
 export const HUB_CLUBE = [
   { to: '/ranking', label: 'Ranking', icon: '🏆', desc: 'Quem está mandando bem' },
+  { to: '/cantinho', label: 'Minha unidade', icon: '🏡', desc: 'O cantinho da sua unidade', recurso: 'cantinho_unidade' },
   { to: '/unidades', label: 'Unidades', icon: '🏠', desc: 'As unidades do clube' },
   { to: '/mural', label: 'Mural', icon: '📸', desc: 'As fotos do clube', recurso: 'mural' },
   { to: '/agenda', label: 'Agenda', icon: '📅', desc: 'Reuniões e eventos', recurso: 'agenda' },

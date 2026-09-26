@@ -15,7 +15,7 @@ export const PAPEIS = ['desbravador', 'conselheiro', 'instrutor', 'diretoria', '
 export const RECURSOS_PADRAO = Object.freeze({
   desafios: true, chefao: true, missoes: true, jogos: true, leilao: false, chat: true,
   biblia: true, bichinho: true, agenda: true, atividades: true, mural: true, mensalidades: true,
-  classes: false, experiencias: false, especialidades: false,
+  classes: false, experiencias: false, especialidades: false, cantinho_unidade: true,
 })
 
 const inclui = (lista, papel) => !!papel && lista.includes(papel)

@@ -25,6 +25,7 @@ const NovaSenha = lazy(() => import('./pages/Recuperar.jsx').then((m) => ({ defa
 const Ranking = lazy(() => import('./pages/Ranking.jsx'))
 const Atividades = lazy(() => import('./pages/Atividades.jsx'))
 const Unidades = lazy(() => import('./pages/Unidades.jsx'))
+const Cantinho = lazy(() => import('./pages/Cantinho.jsx'))
 const Mural = lazy(() => import('./pages/Mural.jsx'))
 const Aprovacoes = lazy(() => import('./pages/Aprovacoes.jsx'))
 const VisitasClube = lazy(() => import('./pages/VisitasClube.jsx'))
@@ -326,6 +327,8 @@ export default function App() {
           <Route path="/atividade-jogos" element={<RotaRestrita><Atividade /></RotaRestrita>} />
           <Route path="/atividades" element={<RecursoOpcional recurso="atividades"><Atividades /></RecursoOpcional>} />
           <Route path="/unidades" element={<Unidades />} />
+          <Route path="/cantinho" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
+          <Route path="/cantinho/:unidadeId" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
           <Route path="/mural" element={<RecursoOpcional recurso="mural"><Mural /></RecursoOpcional>} />
           <Route path="/gestao" element={<Gestao />} />
           <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />

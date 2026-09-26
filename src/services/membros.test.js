@@ -222,6 +222,18 @@ describe('radar de faltas: só quem tem vínculo ATIVO neste clube', () => {
     expect(radar).toEqual([{ id: 'lia', nome: 'Lia', foto: null, faltas: 2, ultima: '2026-09-20' }])
     expect(tabelasLidas).not.toContain('profiles')
   })
+
+  it('falta JUSTIFICADA no Cantinho da unidade não conta como "sumindo"', async () => {
+    tabelas.pontos = {
+      data: [
+        { usuario_id: 'lia', data: '2026-09-20', marca: { presenca: 'faltou' } },
+        { usuario_id: 'lia', data: '2026-09-13', marca: { presenca: 'faltou' } },
+      ],
+      error: null,
+    }
+    respostasRpc.cantinho_justificativas_do_clube = { data: [{ usuario_id: 'lia', data: '2026-09-13' }], error: null }
+    expect(await carregarRadarFaltas()).toEqual([])
+  })
 })
 
 describe('liderança mexendo no perfil de OUTRA pessoa: por RPC, não por UPDATE em profiles', () => {

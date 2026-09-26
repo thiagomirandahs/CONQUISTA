@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
 import { carregarRanking, lancarPontosUnidade, salvarIdentidadeUnidade, carregarCargosDeUnidade } from '../lib/dados.js'
@@ -19,7 +20,9 @@ const PODE_GERIR = ['instrutor', 'diretoria']
 
 export default function Unidades() {
   const { profile } = useAuth()
-  const { papel: meuPapel } = useClube()
+  const { papel: meuPapel, unidadeId: minhaUnidade, temRecurso } = useClube()
+  // Cantinho da unidade: a diretoria abre o de qualquer unidade; os outros, o da própria (o servidor confere)
+  const abreCantinho = (u) => temRecurso?.('cantinho_unidade') === true && (meuPapel === 'diretoria' || u?.id === minhaUnidade)
   const ehAdmin = PODE_GERIR.includes(meuPapel)
   const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -180,6 +183,12 @@ export default function Unidades() {
               )}
               {/* Só a LISTA rola; cabeçalho e botões ficam fixos (sem cortar nada) */}
               <div className="p-3 overflow-y-auto flex-1 min-h-0">
+                {abreCantinho(sel) && (
+                  <Link to={`/cantinho/${sel.id}`} data-testid="abrir-cantinho"
+                    className="flex items-center justify-center gap-2 min-h-[44px] mb-3 rounded-xl border-2 border-brand text-brand font-bold text-sm">
+                    🏡 Abrir o cantinho da unidade
+                  </Link>
+                )}
                 <DiretoriaDaUnidade unidade={sel} cargos={cargos} />
                 <p className="text-xs font-semibold text-faint px-2 mb-1">MEMBROS</p>
                 {sel.membros.length === 0 ? (
