@@ -13,26 +13,26 @@
 // Migration 210 (decisão do dono, 26/09): o que é ADMINISTRAR o clube — aprovar cadastros e inscrições, equipe,
 // papéis/senhas, vínculos dos pais, identidade/recursos e plano — é SÓ da diretoria (pode_administrar_clube no
 // banco). O instrutor (e o capelão, que tem o mesmo papel) fica com avaliar Classes/Especialidades, desafios e
-// missões, e o que já era da liderança (moderação, jogos, avisos, apontamentos...).
+// missões. Migration 212 (confirmado): pontos, apontamentos, acampamento, moderação, avisos, jogos e radar = diretoria.
 export const SO_DIRETORIA = Object.freeze(['diretoria'])
 
 export const FERRAMENTAS = [
   { to: '/gestao/inscricoes', icon: '🔗', titulo: 'Inscrições', desc: 'Link e QR Code para novos membros', papeis: SO_DIRETORIA, grupo: 'pessoas' },
   { to: '/aprovacoes', icon: '✅', titulo: 'Aprovações', desc: 'Liberar novos cadastros', papeis: SO_DIRETORIA, grupo: 'pessoas' },
   { to: '/gestao/documentos', icon: '📄', titulo: 'Documentos', desc: 'PDF dos documentos de classe emitidos', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar' },
-  { to: '/apontamentos', icon: '✍️', titulo: 'Apontamentos', desc: 'Pontos da reunião por desbravador', papeis: ['conselheiro', 'instrutor', 'diretoria'] , grupo: 'pessoas' },
+  { to: '/apontamentos', icon: '✍️', titulo: 'Apontamentos', desc: 'Pontos da reunião por desbravador', papeis: ['conselheiro', 'diretoria'] , grupo: 'pessoas' },
   { to: '/mensalidades', icon: '💰', titulo: 'Mensalidades', desc: 'Controle de pagamentos', papeis: ['tesoureiro', 'diretoria'], recurso: 'mensalidades' , grupo: 'clube' },
   { to: '/usuarios', icon: '👥', titulo: 'Usuários', desc: 'Resetar senha de quem não entra', papeis: SO_DIRETORIA, grupo: 'pessoas' },
-  { to: '/pontos', icon: '➖', titulo: 'Remover pontos', desc: 'Apagar lançamentos errados', papeis: ['diretoria', 'instrutor'] , grupo: 'clube', contextual: true },
-  { to: '/modo-acampamento', icon: '🏕️', titulo: 'Modo Acampamento', desc: 'Lançar colocação das unidades nas provas', papeis: ['diretoria', 'instrutor'] , grupo: 'clube' },
-  { to: '/chat-moderacao', icon: '💬', titulo: 'Moderação do chat', desc: 'Ver e apagar mensagens de qualquer conversa', papeis: ['diretoria', 'instrutor'], recurso: 'chat' , grupo: 'conteudo', contextual: true },
+  { to: '/pontos', icon: '➖', titulo: 'Remover pontos', desc: 'Apagar lançamentos errados', papeis: ['diretoria'] , grupo: 'clube', contextual: true },
+  { to: '/modo-acampamento', icon: '🏕️', titulo: 'Modo Acampamento', desc: 'Lançar colocação das unidades nas provas', papeis: ['diretoria'] , grupo: 'clube' },
+  { to: '/chat-moderacao', icon: '💬', titulo: 'Moderação do chat', desc: 'Ver e apagar mensagens de qualquer conversa', papeis: ['diretoria'], recurso: 'chat' , grupo: 'conteudo', contextual: true },
   { to: '/aprovar-missoes', icon: '🎯', titulo: 'Aprovar missões', desc: 'Aprovar as fotos das missões', papeis: ['diretoria', 'instrutor'], recurso: 'missoes' , grupo: 'avaliar', contextual: true },
-  { to: '/radar', icon: '📡', titulo: 'Radar de faltas', desc: 'Quem está sumindo do clube', papeis: ['diretoria', 'instrutor'] , grupo: 'pessoas' },
+  { to: '/radar', icon: '📡', titulo: 'Radar de faltas', desc: 'Quem está sumindo do clube', papeis: ['diretoria'] , grupo: 'pessoas' },
   { to: '/temporada', icon: '🏁', titulo: 'Temporadas', desc: 'Zerar o ranking pra recomeçar', papeis: ['diretoria'] , grupo: 'clube', contextual: true },
-  { to: '/avisos', icon: '📣', titulo: 'Enviar aviso', desc: 'Recado pro clube (aparece no sino)', papeis: ['diretoria', 'instrutor'] , grupo: 'clube' },
+  { to: '/avisos', icon: '📣', titulo: 'Enviar aviso', desc: 'Recado pro clube (aparece no sino)', papeis: ['diretoria'] , grupo: 'clube' },
   { to: '/conteudo', icon: '📖', titulo: 'Conteúdo', desc: 'Versículos e desafios das missões', papeis: ['diretoria', 'instrutor'] , grupo: 'conteudo', contextual: true },
-  { to: '/jogos-trilha', icon: '🎮', titulo: 'Jogos da Trilha', desc: 'Ativar os jogos pra criançada', papeis: ['diretoria', 'instrutor'], recurso: 'jogos' , grupo: 'conteudo', contextual: true },
-  { to: '/atividade-jogos', icon: '📊', titulo: 'Atividade dos jogos', desc: 'Quem jogou hoje e quem sumiu', papeis: ['diretoria', 'instrutor'], recurso: 'jogos' , grupo: 'conteudo', contextual: true },
+  { to: '/jogos-trilha', icon: '🎮', titulo: 'Jogos da Trilha', desc: 'Ativar os jogos pra criançada', papeis: ['diretoria'], recurso: 'jogos' , grupo: 'conteudo', contextual: true },
+  { to: '/atividade-jogos', icon: '📊', titulo: 'Atividade dos jogos', desc: 'Quem jogou hoje e quem sumiu', papeis: ['diretoria'], recurso: 'jogos' , grupo: 'conteudo', contextual: true },
   { to: '/vinculos-pais', icon: '👨‍👩‍👧', titulo: 'Vínculos dos pais', desc: 'Confirmar quem é filho de quem + PIX', papeis: SO_DIRETORIA, grupo: 'pessoas', contextual: true },
   { to: '/clube', icon: '🎨', titulo: 'Identidade e recursos', desc: 'Nome, cores e logo do clube; o que o clube usa', papeis: SO_DIRETORIA, grupo: 'clube', contextual: true },
   { to: '/visitas', icon: '📅', titulo: 'Visitas da coordenação', desc: 'Confirmar ou remarcar visitas do distrito/região', papeis: ['diretoria'] , grupo: 'clube', contextual: true },
