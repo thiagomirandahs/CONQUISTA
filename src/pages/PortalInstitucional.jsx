@@ -23,7 +23,9 @@ const fmtData = (iso) => {
 }
 
 export default function PortalInstitucional() {
-  const { carregando, erro, escopos, escopo, temEscopo, capacidades, trocarEscopo } = useEscopo()
+  const { carregando, erro, escopos, escopo, temEscopo, capacidades, trocarEscopo, recarregar } = useEscopo()
+  // ao abrir o portal, relê os escopos (vínculo criado agora por convite aparece sem sair e entrar)
+  useEffect(() => { recarregar?.() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [investiduras, setInvestiduras] = useState(null)
   const [versao, setVersao] = useState(0)
   const [erroDados, setErroDados] = useState('')

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { conviteAbrir, conviteAceitar, rotuloPapel, TIPO_ROTULO } from '../services/hierarquia.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import { useEscopo } from '../context/Escopo.jsx'
 
 // /coordenacao?token=... — convite de coordenação gerado no /admin (migration 130).
 // Exige sessão (a rota passa por SessaoObrigatoria: sem conta, a pessoa cria/entra e volta pra cá).
@@ -15,6 +16,9 @@ export default function ConviteCoordenacao() {
   const [escolha, setEscolha] = useState('')
   const [resultado, setResultado] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  // aceitar cria o vínculo no SERVIDOR; o contexto de escopo do app precisa ser relido na hora, senão o
+  // portal só mostra os clubes depois de sair e entrar de novo (achado em produção, 26/09).
+  const escopoCtx = useEscopo()
 
   useEffect(() => {
     if (!token) { setConvite({ encontrado: false }); return }
@@ -26,7 +30,7 @@ export default function ConviteCoordenacao() {
     try {
       const r = await conviteAceitar(token, convite.modo === 'escolha' ? escolha || null : null)
       if (!r?.encontrado) setConvite({ encontrado: false })
-      else setResultado(r)
+      else { setResultado(r); await escopoCtx?.recarregar?.() }
     } catch (e) { setErro(e?.message || String(e)) }
     setEnviando(false)
   }
