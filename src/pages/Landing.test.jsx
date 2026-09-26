@@ -76,7 +76,10 @@ describe('Landing', () => {
     // especialidades estão fora do piloto; progresso de classe não é prometido ao responsável
     expect(texto).not.toMatch(/especialidade/i)
     expect(texto).not.toMatch(/respons[áa]ve(l|is)[^.]*progresso/i)
-    expect(texto).not.toMatch(/CNPJ|@[a-z0-9-]+\.[a-z]{2,}|\(\d{2}\)\s?\d{4,5}-?\d{4}/i)
+    // o ÚNICO contato é o WhatsApp oficial informado pelo dono (26/09); nenhum outro telefone/e-mail/CNPJ
+    const semOficial = texto.replace('(81) 98949-9469', '')
+    expect(semOficial).not.toMatch(/CNPJ|@[a-z0-9-]+\.[a-z]{2,}|\(\d{2}\)\s?\d{4,5}-?\d{4}/i)
+    expect(container.querySelector('[data-testid="contato-whatsapp"]').getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5581989499469/)
   })
 
   it('o FAQ é curto (6 perguntas)', () => {

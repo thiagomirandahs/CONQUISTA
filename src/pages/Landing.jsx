@@ -433,6 +433,7 @@ function ChamadaFinal() {
 }
 
 function Rodape() {
+  const WHATSAPP = 'https://wa.me/5581989499469?text=' + encodeURIComponent('Olá! Vim pelo site do DesbravaClube e quero saber mais.')
   const emBreve = 'text-slate-400 cursor-default'
   return (
     <footer className="bg-[#07122f] text-slate-300">
@@ -451,7 +452,15 @@ function Rodape() {
         </nav>
         <div>
           <h2 className="text-sm font-bold text-white">Suporte</h2>
-          <ul className="mt-3 space-y-2 text-sm"><li className={emBreve}>Contato (em breve)</li></ul>
+          <ul className="mt-3 space-y-2 text-sm">
+            <li>
+              <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" data-testid="contato-whatsapp"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#25D366] px-4 font-bold text-[#07122f] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                <span aria-hidden="true">💬</span> Falar no WhatsApp
+              </a>
+            </li>
+            <li className="text-slate-400">(81) 98949-9469</li>
+          </ul>
         </div>
         <div>
           <h2 className="text-sm font-bold text-white">Legal</h2>
@@ -462,7 +471,11 @@ function Rodape() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <p className={`${CONTAINER} py-5 text-xs text-slate-400`}>© {new Date().getFullYear()} DesbravaClube</p>
+        <p className={`${CONTAINER} py-5 text-xs text-slate-400`}>
+          © {new Date().getFullYear()} DesbravaClube — Thiago Henrique da Silva Miranda. Todos os direitos reservados.
+          É proibida a reprodução, cópia ou distribuição, total ou parcial, do conteúdo, da marca, do código e do
+          design deste site e do aplicativo sem autorização expressa do titular (Lei 9.610/98 e Lei 9.609/98).
+        </p>
       </div>
     </footer>
   )
