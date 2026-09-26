@@ -279,7 +279,7 @@ function Progresso({ dados, userId, onMudou }) {
       {(secoes || []).map((s) => (
         <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden"
           style={cor ? { border: `2px solid ${cor.hex}` } : undefined}>
-          <div className={`flex items-center justify-between gap-2 px-4 py-3 ${cor ? '' : 'bg-surface2 text-ink'}`}
+          <div className={`flex items-center justify-between gap-2 px-4 py-2 ${cor ? '' : 'bg-surface2 text-ink'}`}
             style={cor ? { background: cor.hex, color: cor.texto } : undefined}>
             <h4 id={`secao-${s.id}`} className="font-extrabold text-base">{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
             <ProgressoDaSecao requisitos={s.requisitos || []} />
@@ -414,7 +414,7 @@ function Requisito({ r, cor = null, userId, onMudou }) {
             )}
             <button onClick={enviar} disabled={ocupado || !podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
               data-testid="botao-enviar" style={cor ? { background: cor.hex, color: cor.texto } : undefined}
-              className={`min-h-[44px] rounded-lg px-4 py-1.5 text-sm font-bold shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
+              className={`min-h-[36px] rounded-md px-3 py-1 text-sm font-bold leading-tight shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
               {ocupado ? 'Enviando...' : !podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
             </button>
           </div>
