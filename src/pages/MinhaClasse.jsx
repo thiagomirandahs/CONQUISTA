@@ -279,8 +279,11 @@ function Progresso({ dados, userId, onMudou }) {
       {(secoes || []).map((s) => (
         <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden"
           style={cor ? { border: `2px solid ${cor.hex}` } : undefined}>
-          <h4 id={`secao-${s.id}`} className={`px-4 py-3 font-extrabold text-base ${cor ? '' : 'bg-surface2 text-ink'}`}
-            style={cor ? { background: cor.hex, color: cor.texto } : undefined}>{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
+          <div className={`flex items-center justify-between gap-2 px-4 py-3 ${cor ? '' : 'bg-surface2 text-ink'}`}
+            style={cor ? { background: cor.hex, color: cor.texto } : undefined}>
+            <h4 id={`secao-${s.id}`} className="font-extrabold text-base">{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
+            <ProgressoDaSecao requisitos={s.requisitos || []} />
+          </div>
           <div className="divide-y divide-line">
             {(s.requisitos || []).map((r) => (
               <Requisito key={r.id} r={r} cor={cor} userId={userId} onMudou={onMudou} />
@@ -346,14 +349,13 @@ function Requisito({ r, cor = null, userId, onMudou }) {
 
   return (
     <article data-testid="requisito" aria-labelledby={idTitulo} className="p-4">
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug">
-          <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
-        </h5>
-        <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`} data-testid="situacao" data-situacao={situacao}>
-          <span aria-hidden="true">{info.icon}</span> {info.label}
-        </span>
-      </div>
+      {/* Situação EM CIMA do texto (antes ficava ao lado e espremia a leitura no celular). */}
+      <span className={`inline-block mb-1.5 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`} data-testid="situacao" data-situacao={situacao}>
+        <span aria-hidden="true">{info.icon}</span> {info.label}
+      </span>
+      <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug mb-1.5">
+        <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
+      </h5>
 
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
@@ -654,5 +656,19 @@ function OrigemRequisito({ origem, onFechar }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// Andamento da seção no cabeçalho: cinza (nada aprovado), âmbar (parcial), verde (tudo aprovado).
+function ProgressoDaSecao({ requisitos }) {
+  const total = requisitos.length
+  const feitos = requisitos.filter((r) => r.status === 'aprovado').length
+  if (!total) return null
+  const tudo = feitos === total
+  const estilo = tudo ? 'bg-green-600 text-white' : feitos > 0 ? 'bg-amber-400 text-amber-950' : 'bg-white/90 text-gray-700'
+  return (
+    <span data-testid="progresso-secao" className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-extrabold shadow-sm ${estilo}`}>
+      {tudo ? '✅ ' : ''}{feitos}/{total}
+    </span>
   )
 }
