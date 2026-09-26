@@ -192,7 +192,7 @@ export default function Perfil() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-extrabold text-ink">⭐ Meu histórico de pontos</h3>
           {!carregandoExtrato && extrato.length > 0 && (
-            <span className="text-brand font-extrabold">{totalPts} pts</span>
+            <span className="text-right leading-tight"><span className="block text-brand font-extrabold">{totalPts} pts</span><span className="block text-[11px] text-faint">nesta temporada</span></span>
           )}
         </div>
         {carregandoExtrato ? (
@@ -203,7 +203,7 @@ export default function Perfil() {
             <p className="text-sm text-muted">Você ainda não tem pontos. Bora participar das atividades, missões e da trilha!</p>
           </div>
         ) : (
-          <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
+          <div data-testid="extrato-pontos" className="bg-surface rounded-2xl shadow-soft divide-y divide-line max-h-[55vh] overflow-y-auto overscroll-contain">
             {extrato.map((p) => (
               <div key={p.id} className="flex items-center gap-3 px-3 py-2.5">
                 <span className="text-lg shrink-0">{iconeOrigem[p.origem] || '⭐'}</span>
