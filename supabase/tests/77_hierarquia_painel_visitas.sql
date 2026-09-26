@@ -146,9 +146,8 @@ select t.eq('privacidade: nenhum nome de pessoa do clube A aparece no painel',
       and position(p.nome in current_setting('t77.painel')) > 0), 0::bigint);
 select t.ok('privacidade: sem chaves de foto/chat/mensagem/evidência/valor/responsável',
   current_setting('t77.painel') !~* '"(foto|fotos|chat|mensagem|mensagens|evidencia\w*|valor|preco|fatura\w*|responsave\w*|email|telefone|nascimento)"\s*:');
-select t.ok('privacidade: assinatura só como rótulo simples',
-  (current_setting('t77.painel')::json -> 'clubes' -> 0 -> 'cadastro' ->> 'assinatura')
-    in ('teste', 'ativa', 'pendente', 'suspensa', 'cancelada', 'sem_assinatura'));
+select t.ok('portal não recebe nada comercial (assinatura/plano/trial — migration 300)',
+  current_setting('t77.painel') !~* '"(cadastro|assinatura\w*|plano\w*|trial\w*|cortesia|valida_ate|cobranca|limite\w*|armazenamento\w*)"\s*:');
 select t.no_escopo('c_dist', 'd1');
 select t.eq('isolamento: coordenador continua sem ler perfis dos membros pela RLS',
   t.nv(format($q$select count(*) from public.profiles where id = %L$q$, t.id('membro_a'))), 0);

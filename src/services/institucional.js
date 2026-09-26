@@ -36,6 +36,10 @@ async function rpc(nome, args) {
 // por uma região/distrito dentro do escopo (o servidor recusa unidade de fora).
 export const carregarPainelAnalitico = (unidadeId = null) => rpc('escopo_painel_analitico', { p_unidade: unidadeId })
 
+// Página do clube na visão da coordenação (migration 300): só agregado. Clube fora do escopo e clube
+// inexistente dão o mesmo erro ("Clube não encontrado.").
+export const carregarClubeDetalhe = (clubId) => rpc('escopo_clube_detalhe', { p_club_id: clubId })
+
 // Visitas da coordenação (migration 141)
 export const carregarVisitasDoEscopo = async (clubId = null) => (await rpc('escopo_visitas', { p_club_id: clubId })) || []
 export const agendarVisita = ({ clubId, quando, objetivo, observacao = null }) =>
