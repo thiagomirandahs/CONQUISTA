@@ -1,10 +1,9 @@
-import { useState } from 'react'
 import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
-import { Card, CardAcao, Cabecalho, Selecao, Botao } from '../ui/index.jsx'
+import { Card, Selecao } from '../ui/index.jsx'
 import { MeusConvites } from '../components/ConvitesDeEquipe.jsx'
 
 // "Eu" (fase 7): identidade, TROCA DE JORNADA e ajustes.
@@ -17,17 +16,10 @@ export default function Eu() {
   const { vinculos, clubeId, trocarClube, marca, papel, temGestao } = useClube()
   const { temEscopo, escopos } = useEscopo()
   const navigate = useNavigate()
-  const [tema, setTema] = useState(() =>
-    (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') ? 'escuro' : 'claro')
 
   const clubes = (vinculos || []).filter((v) => v.status === 'ativo' && v.selecionavel)
-
-  function alternarTema() {
-    const novo = tema === 'escuro' ? 'claro' : 'escuro'
-    document.documentElement.setAttribute('data-theme', novo === 'escuro' ? 'dark' : 'light')
-    try { localStorage.setItem('tema', novo) } catch { /* sem storage */ }
-    setTema(novo)
-  }
+  const nome = profile?.nome || 'Você'
+  const iniciais = nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || '?'
 
   async function trocar(e) {
     const r = await trocarClube(e.target.value)
@@ -42,64 +34,103 @@ export default function Eu() {
     window.location.reload()
   }
 
+  // Modo claro/escuro saiu daqui: ele já mora no botão da barra de cima (lua/sol), em toda tela.
   return (
-    <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="👤" titulo={profile?.nome || 'Você'} descricao={`${rotuloPapel(papel)} em ${marca?.nome || 'seu clube'}`} />
+    <div className="max-w-2xl mx-auto space-y-5">
+      {/* ---- identidade ---- */}
+      <section className="flex items-center gap-3 pt-1">
+        {profile?.foto
+          ? <img src={profile.foto} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-line" />
+          : <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-surface2 text-lg font-extrabold text-muted ring-2 ring-line">{iniciais}</span>}
+        <div className="min-w-0">
+          <h1 className="text-lg font-extrabold leading-tight text-ink">{nome}</h1>
+          <p className="text-sm text-muted truncate">
+            <span className="mr-1.5 inline-block rounded-full bg-surface2 px-2 py-0.5 text-xs font-semibold text-ink">{rotuloPapel(papel)}</span>
+            {marca?.nome || 'seu clube'}
+          </p>
+        </div>
+      </section>
 
-      <ul className="space-y-2.5 mb-5">
-        <li><CardAcao para="/perfil"><Linha icone="🪪" titulo="Meu perfil" desc="Foto, avatar e seus dados" /></CardAcao></li>
-        {temGestao && (
-          <li><CardAcao para="/clube"><Linha icone="🎨" titulo="Configurações do clube" desc="Identidade, recursos e plano" /></CardAcao></li>
-        )}
-      </ul>
+      <Grupo titulo="Conta">
+        <ItemLink para="/perfil" icone="🪪" titulo="Meu perfil" desc="Foto, avatar e seus dados" />
+      </Grupo>
+
+      {(temGestao || temEscopo) && (
+        <Grupo titulo="Clube">
+          {temGestao && <ItemLink para="/clube" icone="🎨" titulo="Configurações do clube" desc="Identidade, recursos e plano" />}
+          {temEscopo && (
+            <ItemLink para="/institucional" icone="🏛️" titulo="Portal institucional" testid="ir-portal"
+              desc={escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} />
+          )}
+        </Grupo>
+      )}
 
       {/* ---- convites recebidos: é por aqui que uma pessoa entra num SEGUNDO clube ---- */}
-      <section className="mb-5"><MeusConvites /></section>
+      <MeusConvites />
 
-      {/* ---- outras jornadas da MESMA conta ---- */}
-      {(temEscopo || clubes.length > 1) && (
-        <section aria-labelledby="t-jornadas" className="mb-5">
-          <h2 id="t-jornadas" className="text-sm font-extrabold text-ink mb-2">Trocar de jornada</h2>
-          {clubes.length > 1 && (
-            <Card className="mb-2.5">
-              <Selecao id="eu-clube" rotulo="Clube em uso" value={clubeId || ''} onChange={trocar}
-                ajuda="Você participa de mais de um clube. Cada aba pode estar em um clube diferente."
-                opcoes={clubes.map((v) => [v.clubeId, v.marca.nome])} />
-            </Card>
-          )}
-          {temEscopo && (
-            <CardAcao para="/institucional" data-testid="ir-portal">
-              <Linha icone="🏛️" titulo="Portal institucional"
-                desc={escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} />
-            </CardAcao>
-          )}
+      {clubes.length > 1 && (
+        <section aria-labelledby="t-jornadas">
+          <h2 id="t-jornadas" className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-faint">Trocar de clube</h2>
+          <Card>
+            <Selecao id="eu-clube" rotulo="Clube em uso" value={clubeId || ''} onChange={trocar}
+              ajuda="Você participa de mais de um clube. Cada aba pode estar em um clube diferente."
+              opcoes={clubes.map((v) => [v.clubeId, v.marca.nome])} />
+          </Card>
         </section>
       )}
 
-      <section aria-labelledby="t-ajustes">
-        <h2 id="t-ajustes" className="text-sm font-extrabold text-ink mb-2">Ajustes</h2>
-        <div className="space-y-2">
-          <Botao variacao="secundario" className="w-full justify-start" aoTocar={alternarTema}>
-            {tema === 'escuro' ? '☀️ Modo claro' : '🌙 Modo escuro'}
-          </Botao>
-          <Botao variacao="secundario" className="w-full justify-start" aoTocar={atualizarApp}>🔄 Atualizar o app</Botao>
-          <Botao variacao="secundario" className="w-full justify-start" aoTocar={sair}>🚪 Sair</Botao>
-        </div>
-      </section>
+      <Grupo titulo="Aplicativo">
+        <ItemBotao icone="🔄" titulo="Atualizar o app" desc="Buscar a versão mais nova" aoTocar={atualizarApp} />
+      </Grupo>
+
+      <button type="button" onClick={sair}
+        className="w-full min-h-[48px] rounded-2xl border border-line bg-surface text-sm font-bold text-red-600 active:bg-surface2">
+        Sair da conta
+      </button>
     </div>
   )
 }
 
-function Linha({ icone, titulo, desc }) {
+// Lista agrupada (estilo ajustes do celular): um cartão por grupo, linhas separadas por divisória.
+function Grupo({ titulo, children }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-2xl leading-none shrink-0" aria-hidden="true">{icone}</span>
-      <span className="min-w-0">
-        <span className="block font-bold text-ink">{titulo}</span>
-        <span className="block text-sm text-faint leading-snug truncate">{desc}</span>
+    <section>
+      <h2 className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-faint">{titulo}</h2>
+      <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">{children}</ul>
+    </section>
+  )
+}
+
+function Conteudo({ icone, titulo, desc }) {
+  return (
+    <>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface2 text-lg" aria-hidden="true">{icone}</span>
+      <span className="min-w-0 flex-1 text-left">
+        <span className="block text-[15px] font-semibold text-ink">{titulo}</span>
+        {desc && <span className="block truncate text-xs text-faint">{desc}</span>}
       </span>
-      <span className="ml-auto text-faint shrink-0" aria-hidden="true">›</span>
-    </div>
+      <span className="shrink-0 text-faint" aria-hidden="true">›</span>
+    </>
+  )
+}
+
+function ItemLink({ para, testid, ...c }) {
+  return (
+    <li>
+      <Link to={para} data-testid={testid} className="flex min-h-[56px] items-center gap-3 px-3.5 py-2.5 active:bg-surface2">
+        <Conteudo {...c} />
+      </Link>
+    </li>
+  )
+}
+
+function ItemBotao({ aoTocar, ...c }) {
+  return (
+    <li>
+      <button type="button" onClick={aoTocar} className="flex w-full min-h-[56px] items-center gap-3 px-3.5 py-2.5 active:bg-surface2">
+        <Conteudo {...c} />
+      </button>
+    </li>
   )
 }
 
