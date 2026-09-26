@@ -6,9 +6,11 @@ import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarUsuarios, resetarSenha, mudarCargo, mudarUnidade, listarUnidades,
-  lancarPontosIndividual, definirAtivoUsuario, excluirUsuario, definirTesteUsuario,
+  lancarPontosIndividual, excluirUsuario, definirTesteUsuario, listarInativos,
   carregarCargosDeUnidade, definirCargoDeUnidade,
 } from '../lib/dados.js'
+import { ModalInativar, ModalReativar, ModalHistorico } from '../components/InativacaoMembro.jsx'
+import { ROTULO_MOTIVO } from '../lib/motivosInativacao.js'
 import { CARGOS_DE_UNIDADE } from '../lib/cargos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
@@ -59,20 +61,38 @@ export default function Usuarios() {
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
   const CARGOS_DA_DIRETORIA = ['diretoria', 'instrutor', 'tesoureiro']
 
-  // Desativar/reativar: bloqueia (ou libera) o acesso A ESTE CLUBE sem apagar o histórico.
-  // O texto do diálogo diz o que de fato acontece. Ele prometia "não vai mais conseguir entrar", e
-  // isso deixou de ser verdade quando o login parou de barrar pelo espelho profiles.status: a conta
-  // continua entrando (e segue normal em outro clube, se estiver em outro); o que ela perde é ESTE
-  // clube — ao entrar, vê "Seu acesso está suspenso" e o recado para falar com a liderança.
-  async function alternarAtivo(u) {
-    const desativando = u.status === 'ativo'
-    if (desativando && !(await avisar.confirmar({ titulo: `Desativar ${u.nome || 'esta pessoa'}?`, descricao: 'Ela perde o acesso a este clube e some do ranking. Ao entrar, verá que o acesso está suspenso. O histórico fica guardado e dá pra reativar depois.', rotulo: 'Desativar' }))) return
-    try {
-      await definirAtivoUsuario(u.id, !desativando)
-      setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: desativando ? 'inativo' : 'ativo' } : x)))
-    } catch (e) {
-      avisar.erro(e, 'Não consegui aplicar a mudança.')
-    }
+  // Desativar/reativar (migration 310): bloqueia (ou libera) o acesso A ESTE CLUBE sem apagar nada.
+  // Desativar abre o modal de MOTIVO (obrigatório); reativar, o de motivo opcional. Os dois vão para
+  // o histórico do vínculo, que só a diretoria vê. A conta continua entrando (e segue normal em outro
+  // clube); o que ela perde é ESTE clube — ao entrar, vê "Seu acesso está suspenso".
+  const [inativando, setInativando] = useState(null)
+  const [reativando, setReativando] = useState(null)
+  const [historicoDe, setHistoricoDe] = useState(null)
+  const [filtro, setFiltro] = useState('todos') // 'todos' | 'inativos'
+  const [inativos, setInativos] = useState(null) // { [user_id]: { inativo_desde, motivo_categoria, motivo_texto } }
+
+  function recarregarInativos() {
+    listarInativos()
+      .then((lista) => setInativos(Object.fromEntries((lista || []).map((x) => [x.user_id, x]))))
+      .catch((e) => { setInativos({}); avisar.erro(e, 'Não consegui carregar os inativos.') })
+  }
+  function escolherFiltro(f) {
+    setFiltro(f)
+    if (f === 'inativos') recarregarInativos()
+  }
+  function alternarAtivo(u) {
+    if (u.status === 'ativo') setInativando(u)
+    else setReativando(u)
+  }
+  function aoInativar(u) {
+    setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: 'inativo' } : x)))
+    setInativando(null)
+    if (filtro === 'inativos') recarregarInativos()
+  }
+  function aoReativar(u) {
+    setUsuarios((us) => us.map((x) => (x.id === u.id ? { ...x, status: 'ativo' } : x)))
+    setReativando(null)
+    if (filtro === 'inativos') recarregarInativos()
   }
 
   // Conta de teste: usa o app à vontade sem pontuar e sem entrar no ranking.
@@ -150,7 +170,10 @@ export default function Usuarios() {
     )
   }
 
-  const lista = usuarios.filter((u) => (u.nome || '').toLowerCase().includes(busca.toLowerCase()))
+  const ehInativo = (u) => u.status === 'inativo' || !!inativos?.[u.id]
+  const lista = usuarios
+    .filter((u) => (u.nome || '').toLowerCase().includes(busca.toLowerCase()))
+    .filter((u) => filtro !== 'inativos' || ehInativo(u))
 
   return (
     <div>
@@ -170,6 +193,13 @@ export default function Usuarios() {
       <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔎 Buscar por nome..."
         className="w-full rounded-xl border border-line bg-surface2 text-ink placeholder:text-faint px-3 py-2.5 text-sm mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
 
+      <div className="flex gap-2 mb-3" role="group" aria-label="Filtrar usuários">
+        {[['todos', 'Todos'], ['inativos', '🚫 Inativos']].map(([v, r]) => (
+          <button key={v} onClick={() => escolherFiltro(v)} aria-pressed={filtro === v} data-testid={`filtro-${v}`}
+            className={`min-h-[44px] px-4 rounded-xl text-sm font-semibold ${filtro === v ? 'bg-brand text-white' : 'bg-surface2 text-ink'}`}>{r}</button>
+        ))}
+      </div>
+
       {carregando ? (
         <Esqueleto />
       ) : erroCarregar ? (
@@ -180,7 +210,7 @@ export default function Usuarios() {
             <code className="bg-amber-100 rounded px-1 ml-1">supabase/2026-06-29-usuarios-reset-sql.sql</code></p>
         </div>
       ) : lista.length === 0 ? (
-        <p className="text-faint text-sm">Nenhum usuário encontrado.</p>
+        <p className="text-faint text-sm">{filtro === 'inativos' ? 'Ninguém inativo no clube.' : 'Nenhum usuário encontrado.'}</p>
       ) : (
         <div className="bg-surface rounded-2xl shadow-soft divide-y divide-line">
           {lista.map((u) => (
@@ -201,6 +231,13 @@ export default function Usuarios() {
                     )}
                   </div>
                   {u.email && <div className="text-xs text-brand/80 truncate">✉️ {u.email}</div>}
+                  {filtro === 'inativos' && inativos?.[u.id] && (
+                    <div className="text-xs text-muted" data-testid={`inativo-info-${u.id}`}>
+                      Inativo desde {inativos[u.id].inativo_desde ? new Date(inativos[u.id].inativo_desde).toLocaleDateString('pt-BR') : '—'}
+                      {' · '}{inativos[u.id].motivo_categoria ? (ROTULO_MOTIVO[inativos[u.id].motivo_categoria] || inativos[u.id].motivo_categoria) : 'sem motivo registrado'}
+                      {inativos[u.id].motivo_texto ? `: ${inativos[u.id].motivo_texto}` : ''}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -246,11 +283,15 @@ export default function Usuarios() {
                   <button onClick={() => setClassesDe(u)} data-testid={`classes-${u.id}`}
                     className="text-xs bg-surface2 text-ink rounded-lg px-3 py-2 font-semibold">🎖️ Classes</button>
                 )}
-                {(ehDiretoria || !CARGOS_DA_DIRETORIA.includes(u.papel)) && (
+                {ehDiretoria && u.status !== 'pendente' && (
                   <button onClick={() => alternarAtivo(u)}
                     className={`text-xs rounded-lg px-3 py-2 font-semibold ${u.status === 'ativo' ? 'bg-surface2 text-muted' : 'bg-green-50 text-green-700'}`}>
                     {u.status === 'ativo' ? '🚫 Desativar' : '✅ Reativar'}
                   </button>
+                )}
+                {ehDiretoria && u.status !== 'pendente' && (
+                  <button onClick={() => setHistoricoDe(u)} data-testid={`historico-${u.id}`}
+                    className="text-xs bg-surface2 text-ink rounded-lg px-3 py-2 font-semibold">📜 Histórico</button>
                 )}
                 {ehDiretoria && u.status === 'ativo' && (
                   <button onClick={() => alternarTeste(u)}
@@ -258,7 +299,8 @@ export default function Usuarios() {
                     {u.teste ? '🧪 Sair do teste' : '🧪 Teste'}
                   </button>
                 )}
-                {ehDiretoria && u.id !== profile?.id && (
+                {/* inativo não se apaga (migration 310): fica no clube com o histórico */}
+                {ehDiretoria && u.id !== profile?.id && u.status !== 'inativo' && (
                   <button onClick={() => setExcluindo(u)}
                     className="text-xs bg-red-50 text-red-600 rounded-lg px-3 py-2 font-semibold">🗑️ Excluir</button>
                 )}
@@ -285,6 +327,9 @@ export default function Usuarios() {
           onSalvo={() => { avisar.sucesso('Data de nascimento atualizada.'); setNascimentoDe(null) }} />
       )}
       {classesDe && <ModalClassesDoMembro usuario={classesDe} onFechar={() => setClassesDe(null)} />}
+      {inativando && <ModalInativar usuario={inativando} onFechar={() => setInativando(null)} onFeito={aoInativar} />}
+      {reativando && <ModalReativar usuario={reativando} onFechar={() => setReativando(null)} onFeito={aoReativar} />}
+      {historicoDe && <ModalHistorico usuario={historicoDe} onFechar={() => setHistoricoDe(null)} />}
       <AnimatePresence>
         {alvo && <ModalReset usuario={alvo} onFechar={() => setAlvo(null)} />}
       </AnimatePresence>

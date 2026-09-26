@@ -1,5 +1,5 @@
--- Migrations 220/221: limite de membros ajustável por clube (admin da plataforma) e lixeira de
--- membros inativos/que saíram (dry-run, mover, recuperar, expurgo com retenção).
+-- Migrations 220/221/310: limite de membros ajustável por clube (admin da plataforma). A lixeira de
+-- membros inativos (221) foi DESLIGADA de vez na 310: nada é movido nem apagado; só "recuperar".
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -41,8 +41,7 @@ select t.throws('diretoria não lê limite do admin', format($q$select public.ad
 reset role;
 select t.eq('anon sem EXECUTE nas RPCs novas',
   t.n($q$select count(*) from unnest(array['admin_clube_limite_membros(uuid)','admin_clube_limite_membros_definir(uuid, int, text)',
-         'admin_lixeira_config()','admin_lixeira_config_definir(text, int, int, int)','admin_lixeira_clube_modo(uuid, text)',
-         'admin_lixeira_listar(uuid)','admin_lixeira_simular(uuid)','admin_lixeira_recuperar(uuid, text)','lixeira_rotina()']) f
+         'admin_lixeira_config()','admin_lixeira_listar(uuid)','admin_lixeira_recuperar(uuid, text)','lixeira_rotina()']) f
         where has_function_privilege('anon', 'public.' || f, 'execute')$q$), 0);
 select t.ok('authenticated não roda a rotina', not has_function_privilege('authenticated', 'public.lixeira_rotina()', 'execute'));
 select t.ok('lixeira sem acesso direto', not has_table_privilege('authenticated', 'public.lixeira_linhas', 'select'));
@@ -88,128 +87,54 @@ select t.permitido('sem ajuste (clube sem plano): reativar volta a funcionar', f
 reset role;
 select t.ok('auditoria da remoção', exists (select 1 from public.platform_admin_audit where acao = 'limite_membros_remover' and alvo_id = t.id('clube_b')));
 
--- ============================ 2) LIXEIRA ============================
+-- ============================ 2) LIXEIRA DESLIGADA (migration 310) ============================
+-- Decisão do dono (26/09): inativo não se apaga. A rotina não move nada, ninguém liga o modo
+-- 'ativo' (nem 'dry_run'), e só sobrou o "recuperar" para algum pacote que já exista.
 \o /dev/null
-update public.organization_memberships set status = 'encerrado' where user_id in (t.id('saiu_b'), t.id('so_b'), t.id('recente_b')) and organizational_unit_id = t.id('clube_b');
-update public.organization_memberships set status = 'encerrado' where user_id = t.id('velho_a') and organizational_unit_id = t.id('clube_a');
+update public.organization_memberships set status = 'encerrado' where user_id in (t.id('saiu_b'), t.id('so_b')) and organizational_unit_id = t.id('clube_b');
+update public.organization_memberships set inativo_desde = now() - interval '400 days' where user_id in (t.id('saiu_b'), t.id('so_b')) and organizational_unit_id = t.id('clube_b');
 \o
 select t.ok('gatilho grava inativo_desde ao encerrar',
   (select inativo_desde is not null from public.organization_memberships where user_id = t.id('saiu_b') and organizational_unit_id = t.id('clube_b')));
-\o /dev/null
-update public.organization_memberships set inativo_desde = now() - interval '61 days' where user_id in (t.id('saiu_b'), t.id('so_b')) and organizational_unit_id = t.id('clube_b');
-update public.organization_memberships set inativo_desde = now() - interval '30 days' where user_id = t.id('recente_b') and organizational_unit_id = t.id('clube_b');
-update public.organization_memberships set inativo_desde = now() - interval '400 days' where user_id = t.id('velho_a') and organizational_unit_id = t.id('clube_a');
-\o
-select t.eq('padrão global = dry_run', (select modo from public.lixeira_config), 'dry_run');
-select t.eq('Tenant 001 nasce com modo próprio dry_run', (select modo from public.lixeira_config_clube where club_id = t.id('clube_a')), 'dry_run');
+select t.eq('modo global = desligado', (select modo from public.lixeira_config), 'desligado');
+select t.eq('nenhum clube com modo diferente de desligado', t.n($q$select count(*) from public.lixeira_config_clube where modo <> 'desligado'$q$), 0);
+select t.throws('modo ativo recusado (global)', $q$update public.lixeira_config set modo = 'ativo'$q$, 'lixeira_config_sempre_desligada');
+select t.throws('modo dry_run recusado (global)', $q$update public.lixeira_config set modo = 'dry_run'$q$, 'lixeira_config_sempre_desligada');
+select t.throws('modo ativo recusado (clube)', format($q$insert into public.lixeira_config_clube (club_id, modo) values (%L, 'ativo')$q$, t.id('clube_b')), 'lixeira_config_clube_sempre_desligada');
+select t.eq('RPCs de ligar/simular removidas',
+  t.n($q$select count(*) from pg_proc where proname in ('admin_lixeira_config_definir', 'admin_lixeira_clube_modo', 'admin_lixeira_simular') and pronamespace = 'public'::regnamespace$q$), 0);
+select t.eq('cron da lixeira não está agendado', t.n($q$select count(*) from cron.job where jobname = 'lixeira-membros-inativos'$q$), 0);
 
--- ---- 2a) DRY-RUN: só marca ----
-insert into t80 select 'linhas_antes', (select count(*) from public.pontos)::text || '/' || (select count(*) from public.organization_memberships)::text || '/' || (select count(*) from public.entregas)::text;
+insert into t80 select 'linhas_antes', (select count(*) from public.pontos)::text || '/' || (select count(*) from public.organization_memberships)::text || '/' || (select count(*) from public.entregas)::text || '/' || (select count(*) from auth.users)::text;
 select t.como_cron();
-select public.lixeira_rotina() > 0;
-select t.eq('dry-run NÃO altera nada (pontos/vínculos/entregas)',
-  (select count(*) from public.pontos)::text || '/' || (select count(*) from public.organization_memberships)::text || '/' || (select count(*) from public.entregas)::text,
+select t.eq('rotina é no-op', t.n('select public.lixeira_rotina()'), 0);
+reset role;
+select t.eq('nenhum dado apagado (pontos/vínculos/entregas/contas)',
+  (select count(*) from public.pontos)::text || '/' || (select count(*) from public.organization_memberships)::text || '/' || (select count(*) from public.entregas)::text || '/' || (select count(*) from auth.users)::text,
   (select valor from t80 where chave = 'linhas_antes'));
-select t.eq('dry-run não cria pacote', t.n('select count(*) from public.lixeira_pacotes'), 0);
-select t.eq('dry-run marca quem saiu há 60+ dias no B (saiu_b, so_b)',
-  t.n(format($q$select count(*) from public.lixeira_marcacoes where club_id = %L$q$, t.id('clube_b'))), 2);
-select t.eq('quem saiu há 30 dias não é marcado',
-  t.n(format($q$select count(*) from public.lixeira_marcacoes where user_id = %L$q$, t.id('recente_b'))), 0);
-select t.eq('nome aparece mascarado', (select nome_exibicao from public.lixeira_marcacoes where user_id = t.id('saiu_b')), 'Joana P.');
-select t.eq('Tenant 001 marcado (velho_a) mas intacto',
-  t.n(format($q$select count(*) from public.lixeira_marcacoes where user_id = %L$q$, t.id('velho_a'))), 1);
+select t.eq('nenhum pacote criado', t.n('select count(*) from public.lixeira_pacotes'), 0);
+select t.throws('arquivar recusa', format($q$select public._lixeira_arquivar(%L, %L, 'vinculo_encerrado', now())$q$, t.id('clube_b'), t.id('so_b')), 'desligada');
+select t.throws('expurgar recusa', $q$select public._lixeira_expurgar(gen_random_uuid())$q$, 'desligada');
 
--- ---- 2b) só admin configura / vê ----
 select t.como('lider_b');
 select t.throws('diretoria não vê a lixeira', format($q$select public.admin_lixeira_listar(%L)$q$, t.id('clube_b')), 'Sem permissão');
-select t.throws('diretoria não liga a rotina', format($q$select public.admin_lixeira_clube_modo(%L, 'ativo')$q$, t.id('clube_b')), 'Sem permissão');
-select t.throws('diretoria não muda a config', $q$select public.admin_lixeira_config_definir('ativo')$q$, 'Sem permissão');
-select t.como('admin80');
-select t.eq('admin vê as marcações do B',
-  t.n(format($q$select json_array_length(public.admin_lixeira_listar(%L) -> 'marcacoes')$q$, t.id('clube_b'))), 2);
-select t.throws('Tenant 001 não pode ficar sem modo próprio', format($q$select public.admin_lixeira_clube_modo(%L, null)$q$, t.id('clube_a')), 'fundador');
--- global vai para ATIVO: o Tenant 001 continua em dry-run (só muda quando ligado explicitamente)
-select t.permitido('admin liga o modo global ativo', $q$select public.admin_lixeira_config_definir('ativo')$q$);
 reset role;
-select t.ok('auditoria da config', exists (select 1 from public.platform_admin_audit where acao = 'lixeira_config'));
 
--- ---- 2c) ATIVO: move para a lixeira ----
-select t.como_cron();
-select public.lixeira_rotina() > 0;
-select t.eq('pontos do saiu_b no B foram para a lixeira',
-  t.n(format($q$select count(*) from public.pontos where usuario_id = %L and club_id = %L$q$, t.id('saiu_b'), t.id('clube_b'))), 0);
-select t.eq('...os do clube A ficaram', t.n(format($q$select count(*) from public.pontos where usuario_id = %L and club_id = %L$q$, t.id('saiu_b'), t.id('clube_a'))), 1);
-select t.eq('vínculo do B saiu da tabela', t.n(format($q$select count(*) from public.organization_memberships where user_id = %L and organizational_unit_id = %L$q$, t.id('saiu_b'), t.id('clube_b'))), 0);
-select t.eq('vínculo do A intacto (ativo)', t.txt(format($q$select status from public.organization_memberships where user_id = %L and organizational_unit_id = %L$q$, t.id('saiu_b'), t.id('clube_a'))), 'ativo');
-select t.eq('registro imutável foi junto', t.n(format($q$select count(*) from public.class_completion_events where usuario_id = %L$q$, t.id('saiu_b'))), 0);
-select t.eq('entrega do B foi, a do A ficou', t.n(format($q$select count(*) from public.entregas where usuario_id = %L$q$, t.id('saiu_b'))), 1);
-select t.eq('2 pacotes na lixeira do B', t.n(format($q$select count(*) from public.lixeira_pacotes where club_id = %L and status = 'na_lixeira'$q$, t.id('clube_b'))), 2);
-select t.eq('foto de comprovação do B marcada (1), a do A não',
-  t.txt(format($q$select storage::text from public.lixeira_pacotes where user_id = %L$q$, t.id('saiu_b'))),
-  jsonb_build_array(jsonb_build_object('bucket', 'imagens', 'name', t.id('clube_b')::text || '/comprovacoes/saiu-b.jpg'))::text);
-select t.eq('...e o arquivo ainda existe (só marcado)', t.n(format($q$select count(*) from storage.objects where name = %L$q$, t.id('clube_b')::text || '/comprovacoes/saiu-b.jpg')), 1);
-select t.eq('Tenant 001 (dry-run próprio) NÃO moveu ninguém',
-  t.n(format($q$select count(*) from public.organization_memberships where user_id = %L$q$, t.id('velho_a'))), 1);
-select t.eq('...e nenhum pacote no Tenant 001', t.n(format($q$select count(*) from public.lixeira_pacotes where club_id = %L$q$, t.id('clube_a'))), 0);
-select t.eq('recente_b continua', t.n(format($q$select count(*) from public.organization_memberships where user_id = %L$q$, t.id('recente_b'))), 1);
-select t.ok('arquivamento auditado (rotina)', exists (select 1 from public.platform_admin_audit where acao = 'lixeira_arquivar' and admin_user_id is null));
-
--- ---- 2d) RECUPERAR ----
-insert into t80 select 'pac_saiu', id::text from public.lixeira_pacotes where user_id = t.id('saiu_b');
+-- ---- RECUPERAR um pacote que já existia (de antes do desligamento) ----
+\o /dev/null
+insert into public.lixeira_pacotes (id, club_id, user_id, nome_exibicao, motivo, inativo_desde)
+values ('00000000-0000-0000-0000-00000000c080', t.id('clube_b'), t.id('so_b'), 'Pedro B.', 'vinculo_encerrado', now() - interval '400 days');
+insert into public.lixeira_linhas (pacote_id, ordem, tabela, dados)
+select '00000000-0000-0000-0000-00000000c080', 160, 'pontos', to_jsonb(p) from public.pontos p where p.usuario_id = t.id('so_b') and p.club_id = t.id('clube_b');
+delete from public.pontos where usuario_id = t.id('so_b') and club_id = t.id('clube_b');
+\o
 select t.como('lider_b');
-select t.throws('diretoria não recupera', format($q$select public.admin_lixeira_recuperar(%L)$q$, (select valor from t80 where chave = 'pac_saiu')), 'Sem permissão');
+select t.throws('diretoria não recupera', $q$select public.admin_lixeira_recuperar('00000000-0000-0000-0000-00000000c080')$q$, 'Sem permissão');
 select t.como('admin80');
-select t.eq('admin lista o pacote com data prevista de expurgo',
-  t.n(format($q$select count(*) from json_array_elements(public.admin_lixeira_listar(%L) -> 'pacotes') p where p ->> 'expurgo_previsto_em' is not null$q$, t.id('clube_b'))), 2);
-select t.eq('admin recupera', t.txt(format($q$select public.admin_lixeira_recuperar(%L, 'pedido da diretoria') ->> 'ok'$q$, (select valor from t80 where chave = 'pac_saiu'))), 'true');
+select t.eq('admin recupera', t.txt($q$select public.admin_lixeira_recuperar('00000000-0000-0000-0000-00000000c080', 'teste') ->> 'ok'$q$), 'true');
 reset role;
-select t.eq('pontos voltaram', t.n(format($q$select count(*) from public.pontos where usuario_id = %L and club_id = %L$q$, t.id('saiu_b'), t.id('clube_b'))), 1);
-select t.eq('entrega voltou (com a foto)', t.n(format($q$select count(*) from public.entregas where usuario_id = %L and foto_url like '%%saiu-b.jpg%%'$q$, t.id('saiu_b'))), 1);
-select t.eq('imutável voltou', t.n(format($q$select count(*) from public.class_completion_events where usuario_id = %L and observacao = 'evento saiu_b'$q$, t.id('saiu_b'))), 1);
-select t.eq('vínculo voltou INATIVO (encerrado)', t.txt(format($q$select status from public.organization_memberships where user_id = %L and organizational_unit_id = %L$q$, t.id('saiu_b'), t.id('clube_b'))), 'encerrado');
-select t.eq('pacote recuperado e linhas liberadas', t.txt(format($q$select status || '/' || (select count(*) from public.lixeira_linhas where pacote_id = %L) from public.lixeira_pacotes where id = %L$q$,
-  (select valor from t80 where chave = 'pac_saiu'), (select valor from t80 where chave = 'pac_saiu'))), 'recuperado/0');
-select t.ok('recuperação auditada', exists (select 1 from public.platform_admin_audit where acao = 'lixeira_recuperar' and admin_user_id = t.id('admin80')));
-select t.como_cron();
-select public.lixeira_rotina() > 0;
-select t.eq('recuperado não volta para a lixeira na rodada seguinte (carência)',
-  t.n(format($q$select count(*) from public.organization_memberships where user_id = %L and organizational_unit_id = %L$q$, t.id('saiu_b'), t.id('clube_b'))), 1);
-
--- ---- 2e) EXPURGO respeita a retenção ----
-\o /dev/null
-delete from public.lixeira_poupados;
-update public.organization_memberships set inativo_desde = now() - interval '61 days' where user_id = t.id('saiu_b') and organizational_unit_id = t.id('clube_b');
-select public.lixeira_rotina();
-update public.lixeira_pacotes set arquivado_em = now() - interval '89 days' where club_id = t.id('clube_b') and status = 'na_lixeira';
-select public.lixeira_rotina();
-\o
-select t.eq('com 89 dias na lixeira (retenção 90): nada expurgado',
-  t.n(format($q$select count(*) from public.lixeira_pacotes where club_id = %L and status = 'na_lixeira'$q$, t.id('clube_b'))), 2);
-select t.como('admin80');
-select t.permitido('admin reduz a retenção para 30 dias', $q$select public.admin_lixeira_config_definir(null, null, 30)$q$);
-select t.como_cron();
-select public.lixeira_rotina() > 0;
-select t.eq('com a retenção vencida: os 2 pacotes expurgados',
-  t.n(format($q$select count(*) from public.lixeira_pacotes where club_id = %L and status = 'expurgado'$q$, t.id('clube_b'))), 2);
-select t.eq('linhas guardadas apagadas', t.n('select count(*) from public.lixeira_linhas'), 0);
-select t.eq('foto de comprovação do B apagada do Storage', t.n(format($q$select count(*) from storage.objects where name = %L$q$, t.id('clube_b')::text || '/comprovacoes/saiu-b.jpg')), 0);
-select t.eq('foto do clube A intacta', t.n(format($q$select count(*) from storage.objects where name = %L$q$, t.id('clube_a')::text || '/comprovacoes/saiu-a.jpg')), 1);
-select t.eq('conta de saiu_b (vínculo no A) mantida', t.n(format($q$select count(*) from auth.users where id = %L$q$, t.id('saiu_b'))), 1);
-select t.eq('...e os dados dela no A intactos', t.n(format($q$select count(*) from public.pontos where usuario_id = %L and club_id = %L$q$, t.id('saiu_b'), t.id('clube_a'))), 1);
-select t.eq('conta de so_b (sem outro vínculo) removida', t.n(format($q$select count(*) from auth.users where id = %L$q$, t.id('so_b'))), 0);
-select t.eq('pacote expurgado sem nome', t.n('select count(*) from public.lixeira_pacotes where status = ''expurgado'' and nome_exibicao is not null'), 0);
-select t.ok('expurgo auditado', exists (select 1 from public.platform_admin_audit where acao = 'lixeira_expurgar'));
-select t.ok('execuções registradas', (select count(*) from public.lixeira_execucoes where club_id = t.id('clube_b')) >= 4);
-
--- ---- 2f) regra de "sem login" começa desligada; ligada, não pega diretoria ----
-select t.eq('sem_login desligado por padrão', t.txt('select coalesce(sem_login_dias::text, ''desligado'') from public.lixeira_config'), 'desligado');
-\o /dev/null
-update public.lixeira_config set sem_login_dias = 90;
-update auth.users set last_sign_in_at = now() - interval '200 days', created_at = now() - interval '300 days' where id in (t.id('membro_b'), t.id('lider_b'));
-\o
-select t.ok('com a regra ligada: membro sem login é candidato',
-  exists (select 1 from public._lixeira_candidatos(t.id('clube_b')) where user_id = t.id('membro_b') and motivo = 'sem_login'));
-select t.ok('...diretoria nunca', not exists (select 1 from public._lixeira_candidatos(t.id('clube_b')) where user_id = t.id('lider_b')));
+select t.eq('ponto guardado voltou', t.n(format($q$select count(*) from public.pontos where usuario_id = %L and motivo = 'ponto so_b'$q$, t.id('so_b'))), 1);
+select t.eq('pacote recuperado', t.txt($q$select status from public.lixeira_pacotes where id = '00000000-0000-0000-0000-00000000c080'$q$), 'recuperado');
 
 select t.fim();
 rollback;

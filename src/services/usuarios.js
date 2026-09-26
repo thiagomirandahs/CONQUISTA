@@ -124,13 +124,40 @@ export async function mudarCargo(userId, papel) {
 }
 
 
-// Desativa/reativa uma pessoa NO CLUBE EM USO. Desativada (vínculo suspenso) perde o acesso a ESTE
-// clube — a conta continua entrando e vê "Seu acesso está suspenso" (ClubeGuard); em outro clube
-// dela nada muda — e some do ranking e das listas, mas o histórico (pontos, fotos) fica preservado.
-export async function definirAtivoUsuario(userId, ativo) {
-  const { error } = await supabase.rpc('vinculo_gerir', { p_user_id: userId, p_status: ativo ? 'ativo' : 'inativo' })
+// Desativa uma pessoa NO CLUBE EM USO, com MOTIVO (obrigatório) — fica no histórico do vínculo.
+// Desativada (vínculo suspenso) perde o acesso a ESTE clube — a conta continua entrando e vê "Seu
+// acesso está suspenso" (ClubeGuard); em outro clube dela nada muda. Nada é apagado: pontos,
+// classes e fotos ficam, e dá pra reativar. Só a diretoria (o servidor confere).
+export async function inativarMembro(userId, { categoria, texto = '', acao = 'inativado' } = {}) {
+  const { error } = await supabase.rpc('vinculo_inativar', {
+    p_user_id: userId, p_motivo_categoria: categoria, p_motivo_texto: texto?.trim() || null, p_acao: acao,
+  })
   if (error) throw new Error(error.message)
-  return { id: userId, status: ativo ? 'ativo' : 'inativo' }
+  return { id: userId, status: 'inativo' }
+}
+
+// Reativa (motivo opcional, também vai para o histórico).
+export async function reativarMembro(userId, { texto = '' } = {}) {
+  const t = texto?.trim() || null
+  const { error } = await supabase.rpc('vinculo_reativar', {
+    p_user_id: userId, p_motivo_categoria: t ? 'voltou_ao_clube' : null, p_motivo_texto: t,
+  })
+  if (error) throw new Error(error.message)
+  return { id: userId, status: 'ativo' }
+}
+
+// Linha do tempo de inativações/reativações de um membro (só diretoria; o membro não vê).
+export async function historicoDoMembro(userId) {
+  const { data, error } = await supabase.rpc('vinculo_historico_listar', { p_user_id: userId })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+// Quem está inativo no clube em uso, desde quando e o último motivo.
+export async function listarInativos() {
+  const { data, error } = await supabase.rpc('membros_inativos')
+  if (error) throw new Error(error.message)
+  return data || []
 }
 
 

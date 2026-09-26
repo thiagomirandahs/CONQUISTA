@@ -35,7 +35,7 @@ select t.eq('[vínculo] a APROVAÇÃO ficou registrada: quem aprovou, em que clu
      from t.linha('vinculo_alterado', t.id('novato'))), 't|t|pendente|ativo');
 
 select t.como('lider_b'); select t.pedir_clube('clube_b');
-select public.vinculo_gerir(p_user_id => t.id('membro_b'), p_status => 'inativo');
+select public.vinculo_inativar(t.id('membro_b'), 'saiu_do_clube');
 reset role;
 select t.eq('[vínculo] a SUSPENSÃO ficou registrada: quem, onde, sobre quem, e de ativo para fora',
   (select concat_ws('|', ator = t.id('lider_b'), club_id = t.id('clube_b'), alvo = t.id('membro_b'),

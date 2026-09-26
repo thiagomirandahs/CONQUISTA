@@ -132,7 +132,7 @@ select t.eq('aprovado: não vê o aviso do clube B', t.nv($q$select count(*) fro
 -- ---------- rejeição / desativação / reativação acompanham o vínculo ----------
 select t.como('lider_a');
 select t.permitido('líder A rejeita novo_sem_unid', format($q$select public.vinculo_gerir(%L, p_status := 'rejeitado')$q$, t.id('novo_sem_unid')));
-select t.permitido('líder A desativa membro_a2', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('membro_a2')));
+select t.permitido('líder A desativa membro_a2', format($q$select public.vinculo_inativar(%L, 'saiu_do_clube')$q$, t.id('membro_a2')));
 reset role;
 select t.ok('rejeitado: vínculo deixa de ser ativo/pendente', (select status from public.organization_memberships where user_id = t.id('novo_sem_unid')) not in ('ativo','pendente'));
 select t.ok('inativo: vínculo deixa de ser ativo', (select status from public.organization_memberships where user_id = t.id('membro_a2')) <> 'ativo');

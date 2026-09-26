@@ -21,7 +21,7 @@ vi.mock('../lib/dados.js', () => ({
   carregarCargosDeUnidade: async () => ({ caio: { unidade_id: 'u1', cargo: 'conselheiro' } }),
   definirCargoDeUnidade: (...a) => definirCargoDeUnidade(...a),
   resetarSenha: vi.fn(), mudarCargo: vi.fn(), mudarUnidade: vi.fn(), lancarPontosIndividual: vi.fn(),
-  excluirUsuario: vi.fn(), definirTesteUsuario: vi.fn(), definirAtivoUsuario: vi.fn(),
+  excluirUsuario: vi.fn(), definirTesteUsuario: vi.fn(), listarInativos: vi.fn(),
 }))
 const { default: Usuarios } = await import('./Usuarios.jsx')
 

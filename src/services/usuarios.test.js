@@ -10,7 +10,8 @@ vi.mock('../lib/supabase.js', () => ({
   },
 }))
 
-const { mudarCargo, mudarUnidade, definirAtivoUsuario } = await import('./usuarios.js')
+const { mudarCargo, mudarUnidade, inativarMembro, reativarMembro, historicoDoMembro, listarInativos } = await import('./usuarios.js')
+const { MOTIVOS_INATIVACAO, ROTULO_MOTIVO } = await import('../lib/motivosInativacao.js')
 
 beforeEach(() => {
   chamadas.length = 0
@@ -51,21 +52,37 @@ describe('mudarUnidade', () => {
   })
 })
 
-describe('definirAtivoUsuario', () => {
-  it('ativa: chama vinculo_gerir com status ativo', async () => {
-    const r = await definirAtivoUsuario('u1', true)
-    expect(chamadas).toEqual([['vinculo_gerir', { p_user_id: 'u1', p_status: 'ativo' }]])
-    expect(r).toEqual({ id: 'u1', status: 'ativo' })
-  })
-
-  it('desativa: chama vinculo_gerir com status inativo (vocabulário que a tela já usa)', async () => {
-    const r = await definirAtivoUsuario('u1', false)
-    expect(chamadas).toEqual([['vinculo_gerir', { p_user_id: 'u1', p_status: 'inativo' }]])
+describe('inativar / reativar com motivo (migration 310)', () => {
+  it('desativa: chama vinculo_inativar com a categoria e o texto', async () => {
+    const r = await inativarMembro('u1', { categoria: 'outro', texto: '  mudou de escola  ' })
+    expect(chamadas).toEqual([['vinculo_inativar', { p_user_id: 'u1', p_motivo_categoria: 'outro', p_motivo_texto: 'mudou de escola', p_acao: 'inativado' }]])
     expect(r).toEqual({ id: 'u1', status: 'inativo' })
   })
 
+  it('reativa sem motivo: categoria e texto nulos', async () => {
+    await reativarMembro('u1')
+    expect(chamadas).toEqual([['vinculo_reativar', { p_user_id: 'u1', p_motivo_categoria: null, p_motivo_texto: null }]])
+  })
+
+  it('reativa com texto: vira "voltou ao clube"', async () => {
+    await reativarMembro('u1', { texto: 'voltou' })
+    expect(chamadas).toEqual([['vinculo_reativar', { p_user_id: 'u1', p_motivo_categoria: 'voltou_ao_clube', p_motivo_texto: 'voltou' }]])
+  })
+
+  it('histórico e inativos chamam as RPCs da diretoria', async () => {
+    respostaRpc = { data: [{ acao: 'inativado' }], error: null }
+    expect(await historicoDoMembro('u1')).toEqual([{ acao: 'inativado' }])
+    expect(await listarInativos()).toEqual([{ acao: 'inativado' }])
+    expect(chamadas).toEqual([['vinculo_historico_listar', { p_user_id: 'u1' }], ['membros_inativos', undefined]])
+  })
+
   it('sem permissão: sobe como Error (a RPC recusa, não fica em silêncio)', async () => {
-    respostaRpc = { data: null, error: { message: 'Sem permissão (apenas diretoria/instrutor do clube desta pessoa).' } }
-    await expect(definirAtivoUsuario('u1', false)).rejects.toThrow('Sem permissão')
+    respostaRpc = { data: null, error: { message: 'Sem permissão (apenas a diretoria deste clube).' } }
+    await expect(inativarMembro('u1', { categoria: 'faltas' })).rejects.toThrow('Sem permissão')
+  })
+
+  it('a lista de motivos tem "outro" e rótulo para o que vem da rotina', () => {
+    expect(MOTIVOS_INATIVACAO.map((m) => m.valor)).toContain('outro')
+    expect(ROTULO_MOTIVO.nao_informado).toBe('Motivo não informado')
   })
 })

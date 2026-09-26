@@ -47,9 +47,10 @@ select t.permitido('líder A redefine a senha de membro do clube', format($q$sel
 -- defeito: a senha é da PESSOA (auth.users é global), e aceitar qualquer vínculo no clube — suspenso,
 -- encerrado, pendente — deixava a liderança trocar a senha de ex-membro e de quem só digitou o código
 -- do clube. Desde a migration 80 só quem está ATIVO aqui (e só aqui) tem a senha redefinida pela
--- liderança; o afastado usa "Esqueci a senha". Excluir o desativado (linha de baixo) continua valendo.
+-- liderança; o afastado usa "Esqueci a senha". Excluir o desativado (linha de baixo) também deixou de
+-- valer na migration 310 (decisão do dono, 26/09): inativo não se apaga, fica com o histórico.
 select t.throws('líder A NÃO redefine a senha de usuário DESATIVADO do clube (só de quem está ativo)', format($q$select public.resetar_senha_membro(%L, 'senha-nova-123')$q$, t.id('temp_a2')), 'ativo neste clube');
-select t.permitido('líder A exclui usuário DESATIVADO do clube', format('select public.excluir_usuario(%L)', t.id('temp_a2')));
+select t.throws('líder A NÃO exclui usuário DESATIVADO do clube (fica como inativo)', format('select public.excluir_usuario(%L)', t.id('temp_a2')), 'inativo não é apagado');
 select t.permitido('líder A (diretoria) exclui usuário do clube', format('select public.excluir_usuario(%L)', t.id('temp_a')));
 reset role;
 select t.eq('senha do membro_a foi trocada', (select encrypted_password = extensions.crypt('senha-nova-123', encrypted_password) from auth.users where id = t.id('membro_a')), true);

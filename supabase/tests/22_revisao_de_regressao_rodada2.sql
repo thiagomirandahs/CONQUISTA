@@ -26,7 +26,7 @@ select t.eq('nada mudou nas tentativas recusadas: o membro A segue desbravador, 
 select t.eq('o tesoureiro segue ativo e a diretoria segue diretoria', (select count(*) from public.profiles where (id = t.id('tesoureiro_a') and papel = 'tesoureiro' and status = 'ativo') or (id = t.id('lider_a') and papel = 'diretoria')), 2);
 select t.como('lider_a');
 select t.permitido('a DIRETORIA promove a tesoureiro normalmente', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro')$q$, t.id('membro_a')));
-select t.permitido('a DIRETORIA desativa um instrutor normalmente', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('instrutor_a')));
+select t.permitido('a DIRETORIA desativa um instrutor normalmente', format($q$select public.vinculo_inativar(%L, 'saiu_do_clube')$q$, t.id('instrutor_a')));
 select t.como('membro_a');
 select t.permitido('o membro edita o próprio perfil (nome) sem erro', format($q$update public.profiles set nome = 'Nome novo' where id = %L$q$, t.id('membro_a')));
 select t.bloqueado('...e não consegue misturar um auto-cargo na mesma escrita (a coluna trava a escrita inteira)',

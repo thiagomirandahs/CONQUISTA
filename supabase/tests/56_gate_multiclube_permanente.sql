@@ -374,7 +374,7 @@ insert into t.mutacao values
   -- aprovar e atribuir unidade: os dois atos da liderança depois que alguém pede entrada
   ('aprovar_entrada', format($m$select public.vinculo_gerir(%L, p_status := 'ativo')$m$, t.id('membro_a')), 12),
   ('atribuir_unidade', format($m$select public.vinculo_gerir(%L, p_unidade_id := %L)$m$, t.id('membro_a'), t.id('A1')), 13),
-  ('remover_vinculo', format($m$select public.vinculo_gerir(%L, p_status := 'encerrado')$m$, t.id('membro_a')), 14);
+  ('remover_vinculo', format($m$select public.vinculo_inativar(%L, 'saiu_do_clube', null, 'encerrado')$m$, t.id('membro_a')), 14);
 grant select on t.mutacao to public;
 
 -- O laço: identidade × contexto × mutação. Devolve as violações da invariante.

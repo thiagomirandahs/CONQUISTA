@@ -17,7 +17,7 @@ import {
 import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
-import { LimiteMembrosClube, LixeiraClube } from './AdminMembrosLixeira.jsx'
+import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
 import { ZonaDePerigoClube, LixeiraDeClubes } from './AdminExcluirClube.jsx'
@@ -545,7 +545,7 @@ function DetalheClube({ clubId, aoVoltar }) {
 
                 <div className="md:col-span-2 space-y-4">
                   <LimiteMembrosClube clubId={clubId} onFeito={recarregar} />
-                  <LixeiraClube clubId={clubId} />
+                  <PacotesGuardados clubId={clubId} />
                 </div>
 
                 <Painel titulo="Auditoria recente" icone="📜" className="md:col-span-2">

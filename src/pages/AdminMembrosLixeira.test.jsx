@@ -1,30 +1,23 @@
-// /admin › detalhe do clube: limite de membros ajustável e lixeira de inativos. O servidor é quem
-// barra (só admin da plataforma); aqui garantimos que a tela mostra uso x limite, a regra, a lista
-// "iria para a lixeira" (dry-run), a data prevista do expurgo e que as ações chamam as RPCs certas.
+// /admin › detalhe do clube: LIMITE DE MEMBROS ajustável. A lixeira de inativos foi desligada
+// (migration 310): não há mais modo, simulação nem expurgo na tela — só "recuperar" algum pacote
+// antigo, e o cartão nem aparece quando não há nenhum.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-const f = {
-  limiteMembros: vi.fn(), limiteMembrosDefinir: vi.fn(), lixeiraListar: vi.fn(), lixeiraSimular: vi.fn(),
-  lixeiraRecuperar: vi.fn(), lixeiraModoClube: vi.fn(), lixeiraConfig: vi.fn(), lixeiraConfigDefinir: vi.fn(),
-}
+const f = { limiteMembros: vi.fn(), limiteMembrosDefinir: vi.fn(), lixeiraListar: vi.fn(), lixeiraRecuperar: vi.fn() }
 vi.mock('../services/adminMembros.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
 const confirmar = vi.fn()
 vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: (...a) => confirmar(...a) } }))
 
-const { LimiteMembrosClube, LixeiraClube } = await import('./AdminMembrosLixeira.jsx')
+const { LimiteMembrosClube, PacotesGuardados } = await import('./AdminMembrosLixeira.jsx')
 
 const LIXEIRA = {
-  modo: 'dry_run', modo_proprio: 'dry_run', dias_inatividade: 60, dias_retencao: 90, sem_login_dias: null,
-  regra: 'Vai para a lixeira quem, neste clube, não tem vínculo ativo/pendente há 60 dias ou mais.',
-  marcacoes: [{ nome: 'Joana P.', papeis: ['desbravador'], motivo: 'vinculo_encerrado', inativo_desde: '2026-07-01T12:00:00Z' }],
   pacotes: [
     { id: 'p1', nome: 'Pedro S.', papeis: ['desbravador'], motivo: 'vinculo_suspenso', inativo_desde: '2026-06-01T12:00:00Z', status: 'na_lixeira',
       arquivado_em: '2026-08-01T12:00:00Z', expurgo_previsto_em: '2026-10-30T12:00:00Z', contagens: { pontos: 3 }, arquivos: 2 },
     { id: 'p2', nome: null, papeis: ['pais'], motivo: 'vinculo_encerrado', status: 'expurgado', expurgado_em: '2026-09-01T12:00:00Z', conta_removida: true },
   ],
-  execucoes: [{ quando: '2026-09-26T04:45:00Z', modo: 'dry_run', candidatos: 1, arquivados: 0, expurgados: 0, erros: 0 }],
 }
 
 beforeEach(() => {
@@ -33,11 +26,30 @@ beforeEach(() => {
   f.limiteMembros.mockResolvedValue({ uso: 20, limite_plano: 20, limite_efetivo: 20, ajuste: null, regra: 'Conta vínculo ATIVO, exceto responsável (pais).' })
   f.limiteMembrosDefinir.mockResolvedValue({ ok: true, limite_efetivo: 50, uso: 20 })
   f.lixeiraListar.mockResolvedValue(LIXEIRA)
-  f.lixeiraSimular.mockResolvedValue({ candidatos: 1 })
   f.lixeiraRecuperar.mockResolvedValue({ ok: true, restauradas: 5 })
-  f.lixeiraModoClube.mockResolvedValue({ ok: true })
-  f.lixeiraConfig.mockResolvedValue({ modo: 'dry_run', dias_inatividade: 60, dias_retencao: 90, sem_login_dias: null, clubes: [] })
-  f.lixeiraConfigDefinir.mockResolvedValue({})
+})
+
+describe('Lixeira de membros desligada', () => {
+  it('sem pacote guardado: não mostra nada de lixeira', async () => {
+    f.lixeiraListar.mockResolvedValue({ pacotes: [] })
+    const { container } = render(<PacotesGuardados clubId="c1" />)
+    await vi.waitFor(() => expect(f.lixeiraListar).toHaveBeenCalledWith('c1'))
+    expect(container).toBeEmptyDOMElement()
+    expect(screen.queryByText(/expurgo|Modo neste clube|Iria para a lixeira/i)).toBeNull()
+  })
+
+  it('com pacote antigo: só oferece recuperar (com confirmação)', async () => {
+    const u = userEvent.setup()
+    render(<PacotesGuardados clubId="c1" />)
+    expect(await screen.findByText('Pedro S.')).toBeInTheDocument()
+    expect(screen.queryByText(/apagado de vez/i)).toBeNull()
+    confirmar.mockResolvedValueOnce(false)
+    await u.click(screen.getByTestId('recuperar-p1'))
+    expect(f.lixeiraRecuperar).not.toHaveBeenCalled()
+    confirmar.mockResolvedValueOnce(true)
+    await u.click(screen.getByTestId('recuperar-p1'))
+    expect(f.lixeiraRecuperar).toHaveBeenCalledWith('p1', 'recuperado pelo admin')
+  })
 })
 
 describe('Limite de membros', () => {
@@ -66,43 +78,6 @@ describe('Limite de membros', () => {
     expect(await screen.findByText('Ajustado pelo admin')).toBeInTheDocument()
     await u.click(screen.getByTestId('limite-remover'))
     expect(f.limiteMembrosDefinir).toHaveBeenCalledWith('c1', null, null)
-  })
-})
-
-describe('Lixeira de membros', () => {
-  it('mostra o modo, a regra, quem iria (dry-run) e a data prevista do expurgo', async () => {
-    render(<LixeiraClube clubId="c1" />)
-    expect(await screen.findByTestId('lixeira-regra')).toHaveTextContent('60 dias')
-    expect(screen.getAllByText(/Somente listar/).length).toBeGreaterThan(0)
-    expect(within(screen.getByTestId('lixeira-marcacoes')).getByText('Joana P.')).toBeInTheDocument()
-    const pacotes = screen.getByTestId('lixeira-pacotes')
-    expect(within(pacotes).getByText(/Pedro S\./)).toBeInTheDocument()
-    expect(within(pacotes).getByText(new Date('2026-10-30T12:00:00Z').toLocaleDateString('pt-BR'))).toBeInTheDocument()
-  })
-
-  it('recuperar pede confirmação e chama a RPC', async () => {
-    const u = userEvent.setup()
-    render(<LixeiraClube clubId="c1" />)
-    await screen.findByTestId('lixeira-pacotes')
-    confirmar.mockResolvedValueOnce(false)
-    await u.click(screen.getByTestId('lixeira-recuperar-p1'))
-    expect(f.lixeiraRecuperar).not.toHaveBeenCalled()
-    confirmar.mockResolvedValueOnce(true)
-    await u.click(screen.getByTestId('lixeira-recuperar-p1'))
-    expect(f.lixeiraRecuperar).toHaveBeenCalledWith('p1', 'recuperado pelo admin')
-  })
-
-  it('ligar o modo ativo no clube exige confirmação; "atualizar lista" só simula', async () => {
-    const u = userEvent.setup()
-    render(<LixeiraClube clubId="c1" />)
-    await screen.findByTestId('lixeira-regra')
-    confirmar.mockResolvedValueOnce(false)
-    await u.selectOptions(screen.getByLabelText('Modo neste clube'), 'ativo')
-    expect(f.lixeiraModoClube).not.toHaveBeenCalled()
-    await u.selectOptions(screen.getByLabelText('Modo neste clube'), 'desligado')
-    expect(f.lixeiraModoClube).toHaveBeenCalledWith('c1', 'desligado')
-    await u.click(screen.getByTestId('lixeira-simular'))
-    expect(f.lixeiraSimular).toHaveBeenCalledWith('c1')
   })
 })
 

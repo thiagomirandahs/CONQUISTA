@@ -152,7 +152,7 @@ select t.eq('[membros] quem está só PENDENTE em B não lê a lista de B', t.n(
 
 -- suspensa em B: some da lista ativa de B, e A não é afetado
 select t.como('lider_b'); select t.pedir_clube('clube_b');
-select public.vinculo_gerir(t.id('crianca'), p_status => 'inativo');
+select public.vinculo_inativar(t.id('crianca'), 'saiu_do_clube');
 select t.como('so_b'); select t.pedir_clube('clube_b');
 select t.eq('[suspensa em B] sai da lista ativa de B', t.membro('crianca'), 'ausente');
 select t.como('so_a'); select t.pedir_clube('clube_a');

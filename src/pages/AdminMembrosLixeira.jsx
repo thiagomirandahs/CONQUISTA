@@ -1,21 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, Botao, Aviso, Selo, Carregando, Campo } from '../ui/index.jsx'
-import {
-  limiteMembros, limiteMembrosDefinir, lixeiraListar, lixeiraSimular, lixeiraRecuperar, lixeiraModoClube,
-  lixeiraConfig, lixeiraConfigDefinir,
-} from '../services/adminMembros.js'
+import { limiteMembros, limiteMembrosDefinir, lixeiraListar, lixeiraRecuperar } from '../services/adminMembros.js'
 import { avisar } from '../ui/avisos.jsx'
 
-// /admin › detalhe do clube: limite de membros (migration 220) e lixeira de inativos (migration 221).
+// /admin › detalhe do clube: LIMITE DE MEMBROS (migration 220). A lixeira de membros inativos
+// (migration 221) foi desligada de vez na migration 310 (decisão do dono, 26/09: inativo não se
+// apaga, fica no clube com o histórico). Sobrou só "recuperar" algum pacote antigo, que aparece
+// apenas se existir.
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
-export const ROTULO_MODO = { desligado: 'Desligada', dry_run: 'Somente listar (não mexe em nada)', ativo: 'Ativa (move e expurga)' }
-const TOM_MODO = { desligado: 'neutro', dry_run: 'atencao', ativo: 'perigo' }
 const ROTULO_MOTIVO = {
   vinculo_suspenso: 'vínculo suspenso', vinculo_encerrado: 'saiu do clube', vinculo_vencido: 'vínculo vencido', sem_login: 'sem entrar no app',
 }
-const ROTULO_PACOTE = { na_lixeira: 'Na lixeira', recuperado: 'Recuperado', expurgado: 'Apagado de vez' }
-const TOM_PACOTE = { na_lixeira: 'atencao', recuperado: 'ok', expurgado: 'neutro' }
-const SELECT = 'mt-1 w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm text-ink'
 
 function useCarga(fn) {
   const [dados, setDados] = useState(null)
@@ -80,148 +75,43 @@ export function LimiteMembrosClube({ clubId, onFeito }) {
   )
 }
 
-// ------------------------------------------------------------------ lixeira
-export function LixeiraClube({ clubId }) {
+// ------------------------------------------------------------------ pacotes antigos (só recuperar)
+// Não há mais lixeira: nada novo entra aqui. Se ainda existir algum pacote guardado de antes do
+// desligamento, o admin pode devolvê-lo ao clube. Sem pacote, não aparece nada.
+export function PacotesGuardados({ clubId }) {
   const buscar = useCallback(() => lixeiraListar(clubId), [clubId])
-  const { dados: d, erro, recarregar } = useCarga(buscar)
+  const { dados: d, recarregar } = useCarga(buscar)
   const [ocupado, setOcupado] = useState('')
 
-  async function acao(chave, fn, sucesso) {
-    setOcupado(chave)
-    try { const r = await fn(); if (sucesso) avisar.sucesso(typeof sucesso === 'function' ? sucesso(r) : sucesso); recarregar() } catch (e) { avisar.erro(e) }
-    setOcupado('')
-  }
-  async function mudarModo(valor) {
-    const modo = valor === 'global' ? null : valor
-    if (modo === 'ativo' && !(await avisar.confirmar({ titulo: 'Ligar a lixeira neste clube?', descricao: 'Quem está na lista "iria para a lixeira" será movido na próxima rodada diária: os dados somem das telas e podem ser recuperados até o expurgo.', rotulo: 'Ligar a lixeira' }))) return
-    acao('modo', () => lixeiraModoClube(clubId, modo), 'Modo da lixeira atualizado.')
-  }
   async function recuperar(p) {
     if (!(await avisar.confirmar({ titulo: `Recuperar ${p.nome || 'esta pessoa'}?`, descricao: 'Os dados voltam e o vínculo volta INATIVO (a diretoria reativa se quiser).', rotulo: 'Recuperar' }))) return
-    acao(`rec-${p.id}`, () => lixeiraRecuperar(p.id, 'recuperado pelo admin'), (r) => `Recuperado: ${r.restauradas} registro(s).`)
+    setOcupado(p.id)
+    try {
+      const r = await lixeiraRecuperar(p.id, 'recuperado pelo admin')
+      avisar.sucesso(`Recuperado: ${r.restauradas} registro(s).`)
+      recarregar()
+    } catch (e) { avisar.erro(e) }
+    setOcupado('')
   }
 
-  if (erro) return <Aviso tom="erro" titulo="Lixeira de membros">{erro}</Aviso>
-  if (!d) return <Carregando />
-  const naLixeira = d.pacotes.filter((p) => p.status === 'na_lixeira')
-  const historico = d.pacotes.filter((p) => p.status !== 'na_lixeira')
+  const guardados = (d?.pacotes || []).filter((p) => p.status === 'na_lixeira')
+  if (guardados.length === 0) return null
   return (
-    <Card data-testid="admin-lixeira">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-bold text-ink text-sm">Lixeira de membros inativos</p>
-        <Selo tom={TOM_MODO[d.modo]}>{ROTULO_MODO[d.modo] || d.modo}</Selo>
-      </div>
-      <p className="text-xs text-muted mt-1" data-testid="lixeira-regra">{d.regra}</p>
-
-      <label htmlFor="lixeira-modo" className="block text-sm font-semibold text-ink mt-3">Modo neste clube</label>
-      <select id="lixeira-modo" className={SELECT} value={d.modo_proprio || 'global'} disabled={ocupado === 'modo'}
-        onChange={(e) => mudarModo(e.target.value)}>
-        <option value="global">Seguir a configuração geral</option>
-        <option value="desligado">{ROTULO_MODO.desligado}</option>
-        <option value="dry_run">{ROTULO_MODO.dry_run}</option>
-        <option value="ativo">{ROTULO_MODO.ativo}</option>
-      </select>
-
-      <div className="flex items-center justify-between gap-2 mt-4">
-        <p className="font-semibold text-ink text-sm">Iria para a lixeira ({d.marcacoes.length})</p>
-        <Botao variacao="secundario" aoTocar={() => acao('sim', () => lixeiraSimular(clubId), (r) => `Lista atualizada: ${r.candidatos} pessoa(s).`)}
-          carregando={ocupado === 'sim'} data-testid="lixeira-simular">Atualizar lista</Botao>
-      </div>
-      {d.marcacoes.length === 0 ? <p className="text-sm text-muted">Ninguém se encaixa na regra agora.</p> : (
-        <ul className="divide-y divide-line text-sm" data-testid="lixeira-marcacoes">
-          {d.marcacoes.map((m, i) => (
-            <li key={i} className="py-2">
-              <span className="font-semibold text-ink">{m.nome || 'Sem nome'}</span>
-              <span className="text-muted"> · {(m.papeis || []).join(', ')} · {ROTULO_MOTIVO[m.motivo] || m.motivo} desde {data(m.inativo_desde)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="font-semibold text-ink text-sm mt-4">Na lixeira ({naLixeira.length})</p>
-      {naLixeira.length === 0 ? <p className="text-sm text-muted">Vazia.</p> : (
-        <ul className="divide-y divide-line text-sm" data-testid="lixeira-pacotes">
-          {naLixeira.map((p) => (
-            <li key={p.id} className="py-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-semibold text-ink">{p.nome || 'Sem nome'} <span className="text-muted font-normal">· {(p.papeis || []).join(', ')}</span></p>
-                <p className="text-xs text-muted">
-                  {ROTULO_MOTIVO[p.motivo] || p.motivo} desde {data(p.inativo_desde)} · na lixeira desde {data(p.arquivado_em)} ·
-                  apagado de vez em <strong>{data(p.expurgo_previsto_em)}</strong>{p.arquivos ? ` · ${p.arquivos} foto(s)` : ''}
-                </p>
-              </div>
-              <Botao aoTocar={() => recuperar(p)} carregando={ocupado === `rec-${p.id}`} desabilitado={!!ocupado} data-testid={`lixeira-recuperar-${p.id}`}>Recuperar</Botao>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {historico.length > 0 && (
-        <details className="mt-3">
-          <summary className="text-sm text-muted cursor-pointer min-h-[44px] flex items-center">Histórico ({historico.length})</summary>
-          <ul className="divide-y divide-line text-sm">
-            {historico.map((p) => (
-              <li key={p.id} className="py-2 flex flex-wrap gap-2 items-center">
-                <Selo tom={TOM_PACOTE[p.status]}>{ROTULO_PACOTE[p.status]}</Selo>
-                <span className="text-muted">{p.nome || 'Pessoa apagada'} · {data(p.recuperado_em || p.expurgado_em)}{p.conta_removida ? ' · conta de login removida' : ''}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      {d.execucoes.length > 0 && (
-        <p className="text-xs text-faint mt-3">
-          Última rodada: {data(d.execucoes[0].quando)} ({ROTULO_MODO[d.execucoes[0].modo] || d.execucoes[0].modo}) · {d.execucoes[0].candidatos} na regra,
-          {' '}{d.execucoes[0].arquivados} movido(s), {d.execucoes[0].expurgados} apagado(s) de vez{d.execucoes[0].erros ? ` · ${d.execucoes[0].erros} erro(s)` : ''}.
-        </p>
-      )}
-      <LixeiraConfigGeral onFeito={recarregar} />
+    <Card data-testid="admin-pacotes-guardados">
+      <p className="font-bold text-ink text-sm">Membros guardados de antes ({guardados.length})</p>
+      <p className="text-xs text-muted mt-1">A lixeira de membros foi desligada: ninguém mais sai do clube por inatividade. Devolva estes ao clube.</p>
+      <ul className="divide-y divide-line text-sm mt-2">
+        {guardados.map((p) => (
+          <li key={p.id} className="py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-semibold text-ink">{p.nome || 'Sem nome'}</p>
+              <p className="text-xs text-muted">{ROTULO_MOTIVO[p.motivo] || p.motivo} desde {data(p.inativo_desde)}</p>
+            </div>
+            <Botao aoTocar={() => recuperar(p)} carregando={ocupado === p.id} desabilitado={!!ocupado} data-testid={`recuperar-${p.id}`}>Recuperar</Botao>
+          </li>
+        ))}
+      </ul>
     </Card>
   )
 }
 
-// configuração geral (vale para todos os clubes sem modo próprio)
-export function LixeiraConfigGeral({ onFeito }) {
-  const { dados: c, erro, recarregar } = useCarga(lixeiraConfig)
-  const [form, setForm] = useState(null)
-  const [ocupado, setOcupado] = useState(false)
-  useEffect(() => {
-    if (c) setForm({ modo: c.modo, inat: String(c.dias_inatividade), ret: String(c.dias_retencao), semLogin: c.sem_login_dias ? String(c.sem_login_dias) : '' })
-  }, [c])
-
-  async function salvar() {
-    if (form.modo === 'ativo' && c.modo !== 'ativo' && !(await avisar.confirmar({ titulo: 'Ligar a lixeira para todos os clubes sem modo próprio?', descricao: 'O clube fundador tem modo próprio e não muda.', rotulo: 'Ligar' }))) return
-    setOcupado(true)
-    try {
-      await lixeiraConfigDefinir({
-        modo: form.modo, diasInatividade: Number(form.inat), diasRetencao: Number(form.ret),
-        semLoginDias: form.semLogin ? Number(form.semLogin) : 0,
-      })
-      avisar.sucesso('Configuração da lixeira salva.')
-      recarregar(); onFeito?.()
-    } catch (e) { avisar.erro(e) }
-    setOcupado(false)
-  }
-
-  if (erro) return <p className="text-xs text-muted mt-3">{erro}</p>
-  if (!c || !form) return null
-  return (
-    <details className="mt-3 rounded-xl border border-line p-3" data-testid="lixeira-config">
-      <summary className="text-sm font-semibold text-ink cursor-pointer min-h-[44px] flex items-center">Configuração geral (todos os clubes)</summary>
-      <label htmlFor="lixeira-modo-geral" className="block text-sm font-semibold text-ink mt-2">Modo geral</label>
-      <select id="lixeira-modo-geral" className={SELECT} value={form.modo} onChange={(e) => setForm({ ...form, modo: e.target.value })}>
-        {Object.entries(ROTULO_MODO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-      </select>
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        <Campo id="lixeira-inat" rotulo="Dias inativo" tipo="number" inputMode="numeric" min={30} max={3650} value={form.inat} onChange={(e) => setForm({ ...form, inat: e.target.value })} />
-        <Campo id="lixeira-ret" rotulo="Dias na lixeira" tipo="number" inputMode="numeric" min={7} max={3650} value={form.ret} onChange={(e) => setForm({ ...form, ret: e.target.value })} />
-        <Campo id="lixeira-login" rotulo="Sem login (dias)" tipo="number" inputMode="numeric" min={60} max={3650} placeholder="desligado" value={form.semLogin} onChange={(e) => setForm({ ...form, semLogin: e.target.value })} />
-      </div>
-      <p className="text-xs text-faint mt-1">“Sem login” vazio = regra desligada (padrão). Diretoria nunca entra por essa regra.</p>
-      {(c.clubes || []).length > 0 && (
-        <p className="text-xs text-muted mt-2">Clubes com modo próprio: {c.clubes.map((x) => `${x.clube} (${ROTULO_MODO[x.modo] || x.modo})`).join('; ')}</p>
-      )}
-      <Botao aoTocar={salvar} carregando={ocupado} className="w-full mt-2" data-testid="lixeira-config-salvar">Salvar configuração geral</Botao>
-    </details>
-  )
-}

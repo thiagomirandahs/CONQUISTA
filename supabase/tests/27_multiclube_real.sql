@@ -161,7 +161,7 @@ reset role;
 -- a diretoria do B encerra o vínculo (evento que pode acontecer a qualquer momento, mesmo com a
 -- pessoa "logada" — não há sessão/cache no servidor, a PRÓXIMA requisição já reflete a mudança)
 select t.como('lider_b');
-select t.permitido('liderança do B encerra o vínculo de multi_dois_papeis', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('multi_dois_papeis')));
+select t.permitido('liderança do B encerra o vínculo de multi_dois_papeis', format($q$select public.vinculo_inativar(%L, 'saiu_do_clube')$q$, t.id('multi_dois_papeis')));
 reset role;
 select t.como('multi_dois_papeis');
 select t.pedir_clube('clube_b');
