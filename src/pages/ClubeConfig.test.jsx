@@ -31,7 +31,7 @@ const CATALOGO = [
 const marcaB = { nome: 'Clube B', sigla: 'CB', lema: 'Lema B', descricao: null, desde: 2010, corPrimaria: '#112233', corSecundaria: null, logoUrl: null }
 
 function comoLideranca(extra = {}) {
-  clube = { podeGerir: true, marca: marcaB, recursos: { chat: true, leilao: false }, clubeId: 'clube-b', recarregar, ...extra }
+  clube = { podeAdministrar: true, marca: marcaB, recursos: { chat: true, leilao: false }, clubeId: 'clube-b', recarregar, ...extra }
 }
 
 beforeEach(() => {
@@ -47,7 +47,7 @@ const salvar = () => screen.getByRole('button', { name: /Salvar identidade/ })
 
 describe('acesso', () => {
   it('quem não é liderança vê só o aviso — sem formulário nem recursos', () => {
-    comoLideranca({ podeGerir: false })
+    comoLideranca({ podeAdministrar: false, podeGerir: true })   // instrutor: lidera, não administra (migration 210)
     render(<ClubeConfig />)
     expect(screen.getByText('Só a liderança')).toBeInTheDocument()
     expect(screen.queryByLabelText('Identidade do clube')).toBeNull()

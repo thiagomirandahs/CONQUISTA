@@ -96,7 +96,7 @@ select t.permitido('(controle) ...e religa', $q$select public.recurso_definir('m
 select t.throws('[plataforma] a RPC da plataforma recusa quem não é administrador dela',
   format($q$select public.admin_recurso_do_clube_definir(%L, 'especialidades', true)$q$, t.id('clube_a')), 'administração da plataforma');
 select t.como('instrutor_a'); select t.pedir_clube('clube_a');
-select t.throws('[tela] instrutor do A também não liga', $q$select public.recurso_definir('especialidades', true)$q$, 'liberado pela plataforma');
+select t.throws('[tela] instrutor do A também não liga (migration 210: nem chega na regra da plataforma)', $q$select public.recurso_definir('especialidades', true)$q$, 'Sem permissão');
 select t.como('lider_b'); select t.pedir_clube('clube_b');
 select t.throws('[tela] diretoria do B também não liga no B', $q$select public.recurso_definir('especialidades', true)$q$, 'liberado pela plataforma');
 select t.bloqueado('[REST] ...nem por INSERT direto no B', format($q$insert into public.club_features (club_id, feature, enabled) values (%L, 'especialidades', true)$q$, t.id('clube_b')));

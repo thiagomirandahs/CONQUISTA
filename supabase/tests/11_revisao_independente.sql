@@ -93,7 +93,8 @@ select t.throws('instrutor NÃO promove a outro instrutor (vinculo_gerir)', form
 select t.throws('instrutor NÃO promove a tesoureiro (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro')$q$, t.id('conselheiro_a')), 'diretoria');
 select t.throws('instrutor NÃO desativa o tesoureiro (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')), 'diretoria');
 select t.throws('instrutor NÃO desativa a diretoria (vinculo_gerir)', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('lider_a')), 'diretoria');
-select t.permitido('instrutor promove membro comum a conselheiro (continua podendo)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')));
+-- desde a migration 210 (decisão do dono, 26/09) o instrutor não muda papel de NINGUÉM: só a diretoria
+select t.throws('instrutor NÃO promove nem membro comum a conselheiro (migration 210)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')), 'diretoria');
 select t.throws('instrutor NÃO redefine a senha do tesoureiro', format($q$select public.resetar_senha_membro(%L, 'assumindo-conta')$q$, t.id('tesoureiro_a')), 'permiss');
 reset role;
 select t.eq('instrutor não criou diretoria', (select papel from public.profiles where id = t.id('membro_a')), 'desbravador');
@@ -101,7 +102,7 @@ select t.eq('...nem o vínculo dela', (select role from public.organization_memb
 select t.eq('instrutor não criou outro instrutor', (select papel from public.profiles where id = t.id('conselheiro_a')), 'conselheiro');
 select t.eq('instrutor não desativou o tesoureiro', (select status from public.profiles where id = t.id('tesoureiro_a')), 'ativo');
 select t.eq('instrutor não desativou a diretoria', (select status from public.profiles where id = t.id('lider_a')), 'ativo');
-select t.eq('instrutor conseguiu o que é permitido (conselheiro)', (select papel from public.profiles where id = t.id('membro_a2')), 'conselheiro');
+select t.eq('...e o membro comum segue desbravador', (select papel from public.profiles where id = t.id('membro_a2')), 'desbravador');
 select t.como('lider_a');
 select t.permitido('diretoria promove a instrutor', format($q$select public.vinculo_gerir(%L, p_papel := 'instrutor')$q$, t.id('membro_a')));
 -- A senha vem ANTES da desativação. Até a fase 9 a ordem era a inversa, e o teste aprovava a

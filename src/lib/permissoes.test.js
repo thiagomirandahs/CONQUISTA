@@ -35,6 +35,40 @@ describe('matriz de permissões', () => {
   })
 })
 
+// Migration 210 (decisão do dono, 26/09): administrar o clube é só da diretoria; o instrutor (e o capelão) avalia
+// Classes/Especialidades e cuida de desafios e missões.
+describe('instrutor x diretoria (migration 210)', () => {
+  const tudo = () => true
+  const cards = (papel) => FERRAMENTAS.filter((f) => f.papeis.includes(papel) && (!f.recurso || tudo(f.recurso))).map((f) => f.to)
+  const ADMINISTRAR = ['/gestao/inscricoes', '/aprovacoes', '/usuarios', '/vinculos-pais', '/clube', '/planos']
+
+  it('as rotas de administrar o clube são SÓ da diretoria (card e trava de rota)', () => {
+    for (const rota of ADMINISTRAR) expect(PAPEIS_POR_ROTA[rota], rota).toEqual(['diretoria'])
+    for (const rota of ADMINISTRAR) expect(cards('instrutor'), rota).not.toContain(rota)
+    for (const rota of ADMINISTRAR) expect(cards('conselheiro'), rota).not.toContain(rota)
+    for (const rota of ADMINISTRAR) expect(cards('diretoria'), rota).toContain(rota)
+  })
+
+  it('a Gestão do instrutor mantém avaliações (classes/especialidades), missões e conteúdo/desafios', () => {
+    const doInstrutor = cards('instrutor')
+    for (const rota of ['/avaliar-classe', '/investiduras', '/avaliar-especialidades', '/aprovar-missoes', '/conteudo', '/experiencias/novo']) {
+      expect(doInstrutor, rota).toContain(rota)
+    }
+    expect(PAPEIS_POR_ROTA['/gestao/avaliar']).toContain('instrutor')
+    expect(PAPEIS_POR_ROTA['/gestao/avaliacoes']).toContain('instrutor')
+  })
+
+  it('diretoria continua com TODAS as ferramentas que não são do financeiro exclusivo', () => {
+    const daDiretoria = cards('diretoria')
+    for (const f of FERRAMENTAS) expect(daDiretoria, f.to).toContain(f.to)
+  })
+
+  it('conselheiro não aprova ninguém', () => {
+    expect(PAPEIS_POR_ROTA['/aprovacoes']).not.toContain('conselheiro')
+    expect(PAPEIS_POR_ROTA['/gestao/inscricoes']).not.toContain('conselheiro')
+  })
+})
+
 // Fase 9, item 9: as especialidades ficam FORA do piloto enquanto o catálogo oficial não existe (o atual é só de teste).
 // Antes, elas usavam o recurso 'classes', e um clube que ligava as Classes oficiais levava junto as especialidades de teste.
 describe('especialidades têm recurso próprio (não pegam carona em "classes")', () => {

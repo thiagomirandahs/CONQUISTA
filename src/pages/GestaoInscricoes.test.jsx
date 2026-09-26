@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-let clube = { podeGerir: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
+let clube = { podeAdministrar: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => clube }))
 
 const codigoAtual = vi.fn()
@@ -27,7 +27,7 @@ Object.assign(navigator, { clipboard: { writeText: (...a) => escrever(...a) } })
 const { default: GestaoInscricoes } = await import('./GestaoInscricoes.jsx')
 
 beforeEach(() => {
-  clube = { podeGerir: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
+  clube = { podeAdministrar: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
   codigoAtual.mockReset().mockResolvedValue({ existe: false })
   gerarCodigo.mockReset()
   revogarCodigo.mockReset()
@@ -36,7 +36,13 @@ beforeEach(() => {
 
 describe('GestaoInscricoes: acesso', () => {
   it('sem podeGerir, mostra "área restrita" e nunca chama o backend de código', async () => {
-    clube = { podeGerir: false, clubeId: 'clube-a' }
+    clube = { podeAdministrar: false, clubeId: 'clube-a' }
+    render(<GestaoInscricoes />)
+    expect(screen.getByText('Área restrita')).toBeInTheDocument()
+    expect(codigoAtual).not.toHaveBeenCalled()
+  })
+  it('instrutor (lidera, mas não administra — migration 210) também não abre as inscrições', async () => {
+    clube = { podeGerir: true, podeAvaliar: true, podeAdministrar: false, clubeId: 'clube-a' }
     render(<GestaoInscricoes />)
     expect(screen.getByText('Área restrita')).toBeInTheDocument()
     expect(codigoAtual).not.toHaveBeenCalled()

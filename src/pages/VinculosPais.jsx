@@ -9,7 +9,7 @@ import {
 import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
 import { avisar } from '../ui/avisos.jsx'
 
-const PODE_GERIR = ['instrutor', 'diretoria']
+const PODE_GERIR = ['diretoria']   // migration 210: vínculos de responsáveis são só da diretoria
 const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
 
 // Diretoria confirma os pedidos de vínculo dos pais (escolhendo o desbravador

@@ -49,9 +49,9 @@ describe('Gestão → Pessoas: Inscrições vem antes de Aprovações', async ()
     const pessoas = FERRAMENTAS.filter((f) => f.grupo === 'pessoas').map((f) => f.titulo)
     expect(pessoas).toEqual(['Inscrições', 'Aprovações', 'Apontamentos', 'Usuários', 'Radar de faltas', 'Vínculos dos pais'])
   })
-  it('Inscrições é só da liderança (desbravador e responsável não veem)', () => {
+  it('Inscrições é só da diretoria (migration 210: nem instrutor, nem desbravador, nem responsável)', () => {
     const ins = FERRAMENTAS.find((f) => f.to === '/gestao/inscricoes')
-    expect(ins.papeis).toEqual(['diretoria', 'instrutor'])
+    expect(ins.papeis).toEqual(['diretoria'])
     expect(ins.desc).toBe('Link e QR Code para novos membros')
   })
 })

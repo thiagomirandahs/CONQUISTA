@@ -52,7 +52,7 @@ select t.eq('anon não lê config', t.nv('select count(*) from public.config_clu
 select t.como('lider_a');
 select t.permitido('líder A atualiza o PIX (update por chave, como o front publicado faz)', $q$update public.config_clube set valor = 'PIX-NOVO-A' where chave = 'pix'$q$);
 select t.como('instrutor_a');
-select t.permitido('instrutor A também gere a config do clube (igual ao legado: pode_gerir)', $q$update public.config_clube set valor = 'PIX-NOVO-A' where chave = 'pix'$q$);
+select t.bloqueado('instrutor A NÃO gere mais a config do clube (migration 210: só a diretoria)', $q$update public.config_clube set valor = 'hack' where chave = 'pix'$q$);
 select t.como('tesoureiro_a');
 select t.bloqueado('tesoureiro NÃO edita a config (igual ao legado)', $q$update public.config_clube set valor = 'hack' where chave = 'pix'$q$);
 select t.como('membro_a');

@@ -14,7 +14,7 @@ import EditarNascimento from '../components/EditarNascimento.jsx'
 import { carregarClassesDoMembro, cancelarClasse } from '../services/classes.js'
 import { mensagemDeErro } from '../ui/index.jsx'
 
-const PODE_GERIR = ['instrutor', 'diretoria']
+const PODE_GERIR = ['diretoria']   // migration 210: papel, unidade, status e senha são só da diretoria
 const rotuloPapel = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
   tesoureiro: 'Tesoureiro', diretoria: 'Diretoria', pais: 'Pais',
@@ -122,7 +122,7 @@ export default function Usuarios() {
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
         <p className="font-semibold text-ink">Área da diretoria</p>
-        <p className="text-sm text-faint">Apenas diretoria/instrutor podem gerenciar usuários.</p>
+        <p className="text-sm text-faint">Apenas a diretoria pode gerenciar usuários.</p>
       </div>
     )
   }

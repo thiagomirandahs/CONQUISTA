@@ -541,7 +541,7 @@ select t.eq('[admin] a recusa é a MESMA de "participa de outro clube" (ninguém
   t.erro(format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('crianca'))));
 select t.como('instrutor_a'); select t.pedir_clube('clube_a');
 select t.throws('[admin] o INSTRUTOR de A não redefine a senha do admin que é conselheiro em A (o passo da diretoria não o protegia)',
-  format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('sup_plat')), 'outro clube');
+  format($q$select public.resetar_senha_membro(%L, 'Tomada2026x')$q$, t.id('sup_plat')), 'Sem permissão');  -- migration 210: instrutor não redefine senha de ninguém
 select t.throws('[admin] ...nem troca a foto dele', format($q$select public.membro_definir_foto(%L, 'https://atacante.example/x.png')$q$, t.id('sup_plat')), 'outro clube');
 reset role;
 select t.ok('[admin] as senhas dos dois admins continuam as originais', t.senha_intacta('adm_plat') and t.senha_intacta('sup_plat'));

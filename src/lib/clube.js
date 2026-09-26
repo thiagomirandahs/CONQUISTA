@@ -29,7 +29,15 @@ export function permissoesDoPapel(papel) {
     ehDiretoria: papel === 'diretoria',
     ehConselheiro: papel === 'conselheiro',
     ehDesbravador: papel === 'desbravador',
-    podeGerir: inclui(['instrutor', 'diretoria'], papel),                       // aprovar, moderar, configurar o clube
+    // Capacidades (espelho das funções do banco, migration 210 — decisão do dono de 26/09):
+    //   podeAdministrar     = pode_administrar_clube: aprovar cadastros/inscrições, equipe, papéis, senha, config, responsáveis
+    //   podeAvaliar         = pode_avaliar_curriculo: Classes e Especialidades
+    //   podeGerirAtividades = pode_gerir_atividades: desafios, missões, experiências
+    //   podeGerir           = liderança (diretoria|instrutor): moderação, jogos, avisos, conteúdo
+    podeGerir: inclui(['instrutor', 'diretoria'], papel),
+    podeAdministrar: papel === 'diretoria',
+    podeAvaliar: inclui(['instrutor', 'diretoria'], papel),
+    podeGerirAtividades: inclui(['instrutor', 'diretoria'], papel),
     podeFinanceiro: inclui(['tesoureiro', 'diretoria'], papel),
     temGestao: inclui(['conselheiro', 'instrutor', 'diretoria', 'tesoureiro'], papel),   // vê a aba Gestão
     ehMembroAtivo: inclui(['desbravador', 'conselheiro'], papel),               // quem joga/conversa como membro da unidade

@@ -264,8 +264,8 @@ describe('recursos (feature flags) e rotas', () => {
       expect(rotaDe(f.to), f.to).toContain('<RotaRestrita>')
     }
   })
-  it('a ferramenta de identidade e recursos existe e é da liderança', () => {
-    expect(PAPEIS_POR_ROTA['/clube']).toEqual(['diretoria', 'instrutor'])
+  it('a ferramenta de identidade e recursos existe e é da diretoria (migration 210)', () => {
+    expect(PAPEIS_POR_ROTA['/clube']).toEqual(['diretoria'])
   })
 })
 

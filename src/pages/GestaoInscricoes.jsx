@@ -22,7 +22,7 @@ const dia = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR') } 
 // hash) — por isso "copiar link"/"QR" só aparecem logo depois de gerar, nunca depois: não tem
 // como reexibir um código já existente, por desenho (mesmo princípio de uma senha).
 export default function GestaoInscricoes() {
-  const { podeGerir, clubeId, marca } = useClube()
+  const { podeAdministrar: podeGerir, clubeId, marca } = useClube()   // migration 210: inscrições são só da diretoria
   const [estado, setEstado] = useState(null)
   const [novo, setNovo] = useState(null) // { codigo } — só nesta sessão de tela
   const [prazo, setPrazo] = useState('')
@@ -45,7 +45,7 @@ export default function GestaoInscricoes() {
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
         <p className="font-semibold text-ink">Área restrita</p>
-        <p className="text-sm text-faint">Apenas a diretoria e instrutores gerenciam inscrições.</p>
+        <p className="text-sm text-faint">Apenas a diretoria gerencia inscrições.</p>
       </div>
     )
   }

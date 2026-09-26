@@ -2,7 +2,7 @@ import { useClube } from '../context/Clube.jsx'
 import { Link } from 'react-router-dom'
 import SolicitacoesPendentes from '../components/SolicitacoesPendentes.jsx'
 
-const ADMIN = ['diretoria', 'instrutor']
+const ADMIN = ['diretoria']   // migration 210: aprovar cadastro é só da diretoria
 
 export default function Aprovacoes() {
   const { papel: meuPapel } = useClube()
@@ -13,7 +13,7 @@ export default function Aprovacoes() {
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>
         <p className="font-semibold text-ink">Área restrita</p>
-        <p className="text-sm text-faint">Apenas a diretoria e instrutores podem aprovar cadastros.</p>
+        <p className="text-sm text-faint">Apenas a diretoria pode aprovar cadastros.</p>
       </div>
     )
   }

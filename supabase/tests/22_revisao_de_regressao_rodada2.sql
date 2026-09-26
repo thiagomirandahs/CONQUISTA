@@ -17,11 +17,12 @@ select t.throws('instrutor NÃO promove desbravador a tesoureiro (erro claro, n�
 select t.throws('instrutor NÃO promove a diretoria', format($q$select public.vinculo_gerir(%L, p_papel := 'diretoria')$q$, t.id('membro_a')), 'diretoria');
 select t.throws('instrutor NÃO desativa o tesoureiro', format($q$select public.vinculo_gerir(%L, p_status := 'inativo')$q$, t.id('tesoureiro_a')), 'diretoria');
 select t.throws('instrutor NÃO rebaixa a diretoria', format($q$select public.vinculo_gerir(%L, p_papel := 'desbravador')$q$, t.id('lider_a')), 'diretoria');
-select t.permitido('instrutor AINDA muda a unidade de um desbravador (operação de sempre)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('membro_a'), t.id('A2')));
-select t.permitido('instrutor AINDA promove desbravador a conselheiro (só os cargos de liderança são da diretoria)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')));
-select t.permitido('instrutor AINDA muda a unidade do tesoureiro (não mexe em cargo/status)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('tesoureiro_a'), t.id('A1')));
+-- migration 210 (decisão do dono, 26/09): unidade/papel/status de QUALQUER membro é só da diretoria
+select t.throws('instrutor NÃO muda mais a unidade de um desbravador (migration 210)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('membro_a'), t.id('A2')), 'diretoria');
+select t.throws('instrutor NÃO promove desbravador a conselheiro (migration 210)', format($q$select public.vinculo_gerir(%L, p_papel := 'conselheiro')$q$, t.id('membro_a2')), 'diretoria');
+select t.throws('instrutor NÃO muda a unidade do tesoureiro (migration 210)', format($q$select public.vinculo_gerir(%L, p_unidade_id := %L)$q$, t.id('tesoureiro_a'), t.id('A1')), 'diretoria');
 reset role;
-select t.eq('nada mudou nas tentativas recusadas: o membro A segue desbravador (só a unidade mudou, como permitido)', (select papel || '/' || (unidade_id = t.id('A2'))::text from public.profiles where id = t.id('membro_a')), 'desbravador/true');
+select t.eq('nada mudou nas tentativas recusadas: o membro A segue desbravador, na unidade de antes', (select papel || '/' || (unidade_id = t.id('A2'))::text from public.profiles where id = t.id('membro_a')), 'desbravador/false');
 select t.eq('o tesoureiro segue ativo e a diretoria segue diretoria', (select count(*) from public.profiles where (id = t.id('tesoureiro_a') and papel = 'tesoureiro' and status = 'ativo') or (id = t.id('lider_a') and papel = 'diretoria')), 2);
 select t.como('lider_a');
 select t.permitido('a DIRETORIA promove a tesoureiro normalmente', format($q$select public.vinculo_gerir(%L, p_papel := 'tesoureiro')$q$, t.id('membro_a')));

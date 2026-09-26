@@ -12,9 +12,9 @@ const inputClass =
 // Identidade e recursos do clube — só a liderança (a rota e o banco conferem). A identidade e os recursos são DESTE clube:
 // nada aqui muda outro clube.
 export default function ClubeConfig() {
-  const { marca, recursos, clubeId, recarregar, podeGerir } = useClube()
+  const { marca, recursos, clubeId, recarregar, podeAdministrar } = useClube()
 
-  if (!podeGerir) {
+  if (!podeAdministrar) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2">🔒</div>

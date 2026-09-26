@@ -72,7 +72,7 @@ select t.permitido('líder A religa o recurso', format($q$update public.club_fea
 select t.como('instrutor_a');
 select t.eq('instrutor aprova entrega pendente do clube', t.txt(format('select (public.aprovar_entrega(%L))->>''ok''', t.id('ent_a2'))), 'true');
 select t.throws('instrutor NÃO redefine a senha da diretoria (senão assumiria a conta)', format($q$select public.resetar_senha_membro(%L, 'assumindo-conta')$q$, t.id('lider_a')), 'permiss');
-select t.permitido('instrutor redefine senha de membro comum', format($q$select public.resetar_senha_membro(%L, 'senha-ok-123')$q$, t.id('membro_a2')));
+select t.throws('instrutor NÃO redefine nem a senha de membro comum (migration 210: só a diretoria)', format($q$select public.resetar_senha_membro(%L, 'senha-ok-123')$q$, t.id('membro_a2')), 'Sem permissão');
 select t.permitido('instrutor cria atividade', $q$insert into public.atividades (titulo, pontos) values ('Atividade do instrutor', 5)$q$);
 select t.throws('instrutor NÃO exclui usuário (só diretoria)', format('select public.excluir_usuario(%L)', t.id('membro_a2')), 'diretoria');
 select t.bloqueado('instrutor NÃO gere mensalidades (financeiro = tesoureiro/diretoria)', format($q$update public.mensalidades set status = 'pago' where desbravador_id = %L$q$, t.id('membro_a')));

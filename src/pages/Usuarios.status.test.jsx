@@ -72,12 +72,11 @@ describe('Usuários: senha e modo teste só para quem está ativo', () => {
     expect(within(l).getByText('recusado')).toBeInTheDocument()
   })
 
-  it('instrutor (sem modo teste): o aviso fala só da senha', async () => {
+  it('instrutor (migration 210): Usuários é só da diretoria — tela restrita, sem lista', async () => {
     papel = 'instrutor'
     render(<Usuarios />)
-    await screen.findByText('Beto Pendente')
-    expect(screen.getByTestId('so-ativo-pendente')).toHaveTextContent('Senha só para quem está ativo')
-    expect(screen.getByTestId('so-ativo-pendente')).not.toHaveTextContent('modo teste')
+    expect(await screen.findByText('Apenas a diretoria pode gerenciar usuários.')).toBeInTheDocument()
+    expect(screen.queryByText('Beto Pendente')).toBeNull()
   })
 })
 

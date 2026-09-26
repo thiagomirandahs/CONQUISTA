@@ -208,10 +208,10 @@ export default function Unidades() {
                     </label>
                   </div>
                   {erroImagem && <p role="alert" className="text-xs text-rose-600 mb-2">{erroImagem}</p>}
-                  <button onClick={() => excluirUnidade(sel)}
+                  {meuPapel === 'diretoria' && <button onClick={() => excluirUnidade(sel)}
                     className="w-full min-h-[44px] text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-xl py-2.5 font-semibold">
                     🗑️ Excluir unidade
-                  </button>
+                  </button>}
                 </div>
               )}
             </motion.div>

@@ -214,11 +214,12 @@ insert into public.unidades (nome, cor, club_id) values ('Descartável C', '#123
 insert into t.ids (chave, id) select 'C2', id from public.unidades where nome = 'Descartável C';
 \o
 select t.como('tri'); select t.pedir_clube('clube_c');
-select t.permitido('[aba certa] a MESMA pessoa, na aba de C, apaga a unidade de C normalmente',
-  $q$select public.unidade_excluir(t.id('C2'))$q$, 0);
+-- migration 210: apagar unidade passou a ser só da diretoria — nem na aba certa a instrutora apaga
+select t.throws('[aba certa] a MESMA pessoa (instrutora de C), na aba de C, também não apaga (só diretoria, migration 210)',
+  $q$select public.unidade_excluir(t.id('C2'))$q$, 'Sem permissão');
 reset role;
-select t.eq('...e a unidade sumiu de verdade',
-  t.n($q$select count(*) from public.unidades where id = t.id('C2')$q$), 0);
+select t.eq('...e a unidade continua lá',
+  t.n($q$select count(*) from public.unidades where id = t.id('C2')$q$), 1);
 
 -- Unidade HOMÔNIMA: o nome é igual nos três, o alvo tem de ser o id, nunca o nome.
 select t.como('lider_a'); select t.pedir_clube('clube_a');

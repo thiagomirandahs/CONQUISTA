@@ -107,7 +107,7 @@ select t.como('lider_a');
 select t.permitido('diretoria A grava a marca do PRÓPRIO clube', $q$select public.clube_marca_gravar('{"nome":"Conquista Oficial","cor_primaria":"#112233","cor_secundaria":"#AABBCC","lema":"Sempre prontos"}'::jsonb)$q$);
 select t.eq('...e o contexto passa a mostrar a marca nova (cores em minúsculas), mantendo o que não mudou', t.ctx('->''vinculos''->0->''marca''->>''nome''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''cor_primaria''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''cor_secundaria''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''lema''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''sigla'''), 'Conquista Oficial|#112233|#aabbcc|Sempre prontos|FC');
 select t.como('instrutor_a');
-select t.permitido('instrutor A também grava a marca (mesma liderança que já configura o clube)', $q$select public.clube_marca_gravar('{"sigla":"CO"}'::jsonb)$q$);
+select t.bloqueado('instrutor A NÃO grava a marca (migration 210: identidade é da diretoria)', $q$select public.clube_marca_gravar('{"sigla":"CO"}'::jsonb)$q$);
 select t.como('tesoureiro_a');
 select t.bloqueado('tesoureiro NÃO grava a marca', $q$select public.clube_marca_gravar('{"nome":"Hackeado"}'::jsonb)$q$);
 select t.como('conselheiro_a');
@@ -126,7 +126,7 @@ select t.como('lider_b');
 select t.permitido('diretoria B grava a marca do PRÓPRIO clube', $q$select public.clube_marca_gravar('{"nome":"Clube B Oficial","lema":"Lema do B","desde":2010}'::jsonb)$q$);
 select t.eq('...e o contexto do B mostra a marca do B', t.ctx('->''vinculos''->0->''marca''->>''nome''') || '|' || t.ctx('->''vinculos''->0->''marca''->>''desde'''), 'Clube B Oficial|2010');
 reset role;
-select t.eq('a marca do clube A NÃO mudou com a gravação do clube B', (select metadata #>> '{marca,nome}' from public.organizational_units where id = t.id('clube_a')) || '|' || (select metadata #>> '{marca,sigla}' from public.organizational_units where id = t.id('clube_a')), 'Conquista Oficial|CO');
+select t.eq('a marca do clube A NÃO mudou com a gravação do clube B (e a sigla do instrutor não entrou: migration 210)', (select metadata #>> '{marca,nome}' from public.organizational_units where id = t.id('clube_a')) || '|' || coalesce((select metadata #>> '{marca,sigla}' from public.organizational_units where id = t.id('clube_a')), '-'), 'Conquista Oficial|-');
 
 -- validações (uma marca ruim NUNCA entra; erro claro para a liderança)
 select t.como('lider_a');
@@ -176,7 +176,7 @@ select t.bloqueado('responsável NÃO liga/desliga recurso', $q$select public.re
 select t.como('tesoureiro_a');
 select t.bloqueado('tesoureiro NÃO liga/desliga recurso', $q$select public.recurso_definir('mural', false)$q$);
 select t.como('instrutor_a');
-select t.permitido('instrutor A pode (mesma liderança que já configura o clube)', $q$select public.recurso_definir('mural', true)$q$);
+select t.bloqueado('instrutor A NÃO liga/desliga recurso (migration 210: só a diretoria)', $q$select public.recurso_definir('mural', true)$q$);
 select t.como('lider_a');
 select t.throws('recurso fora do catálogo é recusado', $q$select public.recurso_definir('inventado', true)$q$, 'desconhecido');
 select t.throws('valor nulo é recusado', $q$select public.recurso_definir('chat', null)$q$, 'ligado ou desligado');

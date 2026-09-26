@@ -28,7 +28,7 @@ const NIVEL = { diretoria: 'acesso da diretoria', tesoureiro: 'acesso da tesoura
 const quando = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR') } catch { return '' } }
 
 export function ConvidarEquipe() {
-  const { podeGerir, clubeId } = useClube()
+  const { podeAdministrar: podeGerir, clubeId } = useClube()   // migration 210: convidar equipe é só da diretoria
   const [lista, setLista] = useState([])
   const [email, setEmail] = useState('')
   const [cargo, setCargo] = useState('Instrutor')

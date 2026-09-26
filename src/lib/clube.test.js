@@ -28,6 +28,12 @@ describe('permissoesDoPapel: a fonte única dos grupos que as telas repetiam', (
     expect(permissoesDoPapel('instrutor')).toMatchObject({ podeGerir: true, ehDiretoria: false, temGestao: true, ehLiderancaChat: true })
     expect(permissoesDoPapel('diretoria')).toMatchObject({ podeGerir: true, ehDiretoria: true, podeFinanceiro: true })
   })
+  it('capacidades (migration 210): só a diretoria administra; instrutor avalia e gere atividades', () => {
+    const cap = (papel) => ['podeAdministrar', 'podeAvaliar', 'podeGerirAtividades'].filter((k) => permissoesDoPapel(papel)[k])
+    expect(cap('diretoria')).toEqual(['podeAdministrar', 'podeAvaliar', 'podeGerirAtividades'])
+    expect(cap('instrutor')).toEqual(['podeAvaliar', 'podeGerirAtividades'])
+    for (const papel of ['conselheiro', 'tesoureiro', 'desbravador', 'pais']) expect(cap(papel), papel).toEqual([])
+  })
   it('tesoureiro: financeiro e gestão, mas NÃO gere o clube', () => {
     expect(permissoesDoPapel('tesoureiro')).toMatchObject({ podeFinanceiro: true, podeGerir: false, temGestao: true })
   })
