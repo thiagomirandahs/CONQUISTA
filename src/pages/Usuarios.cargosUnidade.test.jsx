@@ -48,8 +48,9 @@ describe('Usuários: cargo na unidade', () => {
 
   it('instrutor não vê o seletor (só a diretoria define)', async () => {
     papel = 'instrutor'
+    // desde a migration 210 a tela de Usuários inteira é só da diretoria: o instrutor nem recebe a lista
     render(<Usuarios />)
-    await screen.findByText('Ana')
+    await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('combobox', { name: /na unidade/ })).toBeNull()
   })
 })
