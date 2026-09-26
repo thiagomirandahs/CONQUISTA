@@ -24,6 +24,8 @@ insert into t.excecoes values
   ('courtesy_attempts', 'LIMITE DE ABUSO do resgate de cortesia (migration 150): por pessoa, sem club_id pelo mesmo motivo de entrada_tentativas'),
   ('lixeira_config', 'CONFIGURAÇÃO GLOBAL da lixeira de membros (migration 221): linha única da plataforma; o ajuste por clube fica em lixeira_config_clube (com club_id); só o admin da plataforma via RPC'),
   ('lixeira_linhas', 'LINHAS GUARDADAS na lixeira (migration 221): pertencem a um lixeira_pacotes (que tem club_id NOT NULL, FK on delete cascade); sem acesso direto (RLS sem policy)'),
+  ('clube_exclusao_config', 'CONFIGURAÇÃO GLOBAL da exclusão de clubes (migration 280): linha única (retenção e liberação do fundador); só o admin da plataforma via RPC'),
+  ('clube_exclusoes', 'REGISTRO das exclusões de clube (migration 280): sobrevive ao expurgo do próprio clube, por isso clube_uuid sem FK; sem acesso de usuário (RLS sem policy), só pelas RPCs do admin'),
   ('lixeira_execucoes', 'REGISTRO INTERNO das rodadas da rotina da lixeira (migration 221): club_id informativo e anulável; sem acesso de usuário'),
   ('cron_falhas',             'registro INTERNO das falhas de cron (club_id só informativo, opcional; sem acesso de usuário)'),
   ('biblia_livros',           'conteúdo da Bíblia (plataforma)'),

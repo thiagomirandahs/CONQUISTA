@@ -20,6 +20,7 @@ import AdminVitrine from './AdminVitrine.jsx'
 import { LimiteMembrosClube, LixeiraClube } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
+import { ZonaDePerigoClube, LixeiraDeClubes } from './AdminExcluirClube.jsx'
 
 // /admin — Administração da PLATAFORMA (SaaS): conta, clube, plano, assinatura, armazenamento,
 // onboarding, provisionamento, suporte e auditoria. Autoridade COMERCIAL, nunca eclesiástica: nenhuma
@@ -40,6 +41,7 @@ const ABAS = [
   { chave: 'chamados', rotulo: 'Chamados', icone: '📨' },
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜' },
+  { chave: 'lixeira-clubes', rotulo: 'Lixeira de clubes', icone: '🗑️' },
 ]
 
 const ROTULO_ARMAZENAMENTO = { sem_limite: 'Sem limite', normal: 'Normal', proximo: 'Próximo do limite', atingido: 'Limite atingido' }
@@ -139,6 +141,7 @@ export default function Admin() {
         {aba === 'chamados' && <AdminChamados inicial={params.get('chamado')} aoMudarContagem={atualizarChamados} />}
         {aba === 'suporte' && <Suporte />}
         {aba === 'auditoria' && <Auditoria />}
+        {aba === 'lixeira-clubes' && <LixeiraDeClubes />}
       </div>
     </div>
   )
@@ -559,6 +562,8 @@ function DetalheClube({ clubId, aoVoltar }) {
                   )}
                 </Painel>
               </div>
+
+              <ZonaDePerigoClube clube={{ ...c, club_id: c.club_id || clubId }} aoExcluir={aoVoltar} />
             </>
           )
         })()}
