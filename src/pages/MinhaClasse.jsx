@@ -301,8 +301,8 @@ function Requisito({ r, userId, onMudou }) {
                 <span className="block text-xs text-emerald-800 mt-0.5">Tire uma foto da atividade ou escolha uma da galeria.</span>
                 <input aria-label={`Foto de comprovação${obrigatoria ? ' (obrigatória)' : ''}`} type="file" accept="image/*" className="sr-only" onChange={(e) => escolherFoto(e.target.files?.[0])} />
                 <span aria-hidden="true"
-                  className="mt-2 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-emerald-500 bg-white px-3 text-base font-bold text-emerald-800">
-                  {previa || r.evidencia_path ? '🔄 Trocar foto' : '📸 Tirar ou escolher foto'}
+                  className={`mt-2 flex min-h-[64px] w-full items-center justify-center gap-2 rounded-xl px-3 text-lg font-extrabold text-emerald-950 bg-[#39ff14] shadow-[0_0_18px_#39ff14] ring-2 ring-emerald-600 active:scale-[0.98] ${previa || r.evidencia_path ? '' : 'animate-pulse'}`}>
+                  {previa || r.evidencia_path ? '🔄 Trocar foto' : '📤 CLIQUE AQUI para enviar a foto'}
                 </span>
               </label>
               {(previa || r.evidencia_path) && (
