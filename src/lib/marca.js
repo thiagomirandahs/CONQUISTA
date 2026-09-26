@@ -19,7 +19,7 @@ import { variaveisDeContraste } from '../ui/contraste.js'
 export const MARCA_PRODUTO = Object.freeze({
   nome: 'DesbravaClube',
   sigla: 'DC',
-  lema: 'O clube na palma da mão',
+  lema: 'Seu clube na palma da mão',
   // Sem "especialidades" (fase 9, item 9): elas estão fora do piloto até existir catálogo oficial, e esta é a primeira frase
   // que um convidado lê, na tela de entrada. O produto não promete o que está desligado.
   descricao: 'Classes, jogos e o dia a dia do clube.',

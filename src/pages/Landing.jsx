@@ -124,7 +124,7 @@ export function Cabecalho({ naLanding = true }) {
 }
 
 function Hero() {
-  const selos = ['Feito para o celular', 'Cada clube isolado', 'Pagamento combinado depois']
+  const selos = ['Feito para o seu celular', 'Seu clube isolado dos outros', 'Você combina o pagamento depois']
   return (
     <section id="inicio" className="relative overflow-hidden bg-[#0b1b46] text-white">
       {/* Fundo decorativo em CSS puro (sem imagem): brilho azul + trilha de estrelas. */}
@@ -139,18 +139,18 @@ function Hero() {
             <Icone nome="estrela" className="w-4 h-4" /> Para Clubes de Desbravadores
           </p>
           <h1 className="mt-5 text-[2.35rem] leading-[1.08] sm:text-5xl xl:text-6xl font-extrabold tracking-tight">
-            O clube na <span className="text-[#f5b012]">palma da mão</span>.
+            Seu clube na <span className="text-[#f5b012]">palma da mão</span>.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-blue-100 leading-relaxed">
-            Classes, avaliações, documentos, mensalidades e comunicação do clube num só app — pelo celular,
-            sem papelada e sem planilha espalhada.
+            As classes, avaliações, documentos, mensalidades e avisos do seu clube num só app — no seu
+            celular, sem papelada e sem planilha espalhada.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Criar meu clube <Icone nome="seta" className="w-5 h-5" /></Link>
             <Link to="/planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</Link>
           </div>
           <p className="mt-3 text-sm text-blue-100">
-            Já usa o DesbravaClube? <LinkApp to="/login" className="inline-flex min-h-[44px] items-center font-bold text-white underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-md">Já tenho conta — entrar</LinkApp>
+            Você já usa o DesbravaClube? <LinkApp to="/login" className="inline-flex min-h-[44px] items-center font-bold text-white underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-md">Já tenho conta — entrar</LinkApp>
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
             {selos.map((t) => (
@@ -200,15 +200,15 @@ function Lista({ itens, claro = false }) {
 }
 
 const PROBLEMAS = [
-  ['papel', 'Papelada que se perde', 'Fichas, cartões e assinaturas espalhados em pastas e fotos no WhatsApp.', 'Tudo registrado no app, com documento gerado pelo sistema.'],
-  ['classes', 'Classes difíceis de acompanhar', 'Ninguém sabe ao certo quem cumpriu qual requisito.', 'Requisitos por classe, com comprovação e avaliação da liderança.'],
-  ['conversa', 'Comunicação desencontrada', 'Aviso importante some no meio do grupo.', 'Avisos, agenda e chat moderado dentro do clube.'],
+  ['papel', 'Papelada que se perde', 'Suas fichas, cartões e assinaturas espalhados em pastas e fotos no WhatsApp.', 'Você registra tudo no app, e o documento sai pronto.'],
+  ['classes', 'Classes difíceis de acompanhar', 'Você não sabe ao certo quem cumpriu qual requisito.', 'Você vê cada requisito, com comprovação e avaliação da sua liderança.'],
+  ['conversa', 'Comunicação desencontrada', 'Seu aviso importante some no meio do grupo.', 'Seus avisos, agenda e chat moderado dentro do seu clube.'],
 ]
 
 function Problemas() {
   return (
     <Secao id="problemas" fundo="bg-white">
-      <Titulo sobre="Por que o DesbravaClube" titulo="Menos planilha. Mais tempo com os desbravadores." texto="O que hoje toma o fim de semana da diretoria vira rotina simples no celular." />
+      <Titulo sobre="Por que o DesbravaClube" titulo="Menos planilha. Mais tempo com seus desbravadores." texto="O que hoje toma o seu fim de semana vira rotina simples no seu celular." />
       <ul className="grid gap-4 md:grid-cols-3">
         {PROBLEMAS.map(([icone, titulo, dor, solucao]) => (
           <li key={titulo} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -227,21 +227,21 @@ function Problemas() {
 
 // Só recursos que existem HOJE no produto. Especialidades ficam de fora (fora do piloto).
 const RECURSOS = [
-  ['classes', 'Classes com requisitos oficiais', 'Cada requisito no celular do desbravador, com comprovação por foto ou texto.'],
-  ['estrela', 'Classes avançadas', 'Acompanhamento das classes avançadas junto com as regulares.'],
-  ['avaliacoes', 'Avaliação pela liderança', 'Fila única para aprovar ou pedir correção, com histórico de cada tentativa.'],
-  ['documentos', 'Documentos e certificados', 'PDF gerado pelo sistema, com assinatura e verificação pública por QR Code.'],
-  ['jogos', 'Jogos e ranking', 'Jogos, desafios e ranking por unidade para manter a turma engajada.'],
-  ['mensalidades', 'Mensalidades e controle', 'O que está pago e o que está pendente, com a chave Pix do clube.'],
-  ['qrcode', 'Inscrição por link ou QR', 'Quem quer entrar pede pelo link do clube; a diretoria aprova.'],
-  ['camadas', 'Multiclube', 'Quem participa de mais de um clube alterna entre eles, com dados separados.'],
-  ['mapa', 'Painel da coordenação', 'Coordenação distrital e regional acompanha os clubes da sua área.'],
+  ['classes', 'Classes com requisitos oficiais', 'Seu desbravador vê cada requisito no celular e comprova com foto ou texto.'],
+  ['estrela', 'Classes avançadas', 'Você acompanha as classes avançadas junto com as regulares.'],
+  ['avaliacoes', 'Avaliação pela liderança', 'Você aprova ou pede correção numa fila só, com o histórico de cada tentativa.'],
+  ['documentos', 'Documentos e certificados', 'Você gera o PDF, assina, e qualquer pessoa confere pelo QR Code.'],
+  ['jogos', 'Jogos e ranking', 'Jogos, desafios e ranking por unidade para manter a sua turma engajada.'],
+  ['mensalidades', 'Mensalidades e controle', 'Você vê o que está pago e o que está pendente, com a chave Pix do seu clube.'],
+  ['qrcode', 'Inscrição por link ou QR', 'Quem quer entrar pede pelo link do seu clube, e você aprova.'],
+  ['camadas', 'Multiclube', 'Se você participa de mais de um clube, alterna entre eles com os dados separados.'],
+  ['mapa', 'Painel da coordenação', 'Se você é da coordenação, acompanha os clubes do seu distrito ou região.'],
 ]
 
 function Recursos() {
   return (
     <Secao id="recursos" fundo="bg-slate-50">
-      <Titulo sobre="Recursos" titulo="Tudo o que o clube precisa, num lugar só" texto="Do requisito cumprido pelo desbravador ao certificado assinado pela diretoria." />
+      <Titulo sobre="Recursos" titulo="Tudo o que o seu clube precisa, num lugar só" texto="Do requisito cumprido pelo seu desbravador ao certificado que você assina." />
       <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RECURSOS.map(([icone, titulo, texto]) => (
           <li key={titulo} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_1px_2px_rgba(11,27,70,0.04)]">
@@ -262,7 +262,7 @@ function Destaques() {
     <Secao id="para-clubes" fundo="bg-white">
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
-          <Titulo centro={false} sobre="Para o desbravador" titulo="Cada um acompanha a própria classe" texto="Pelo celular, o desbravador vê o que falta, envia a comprovação na hora e recebe a correção explicada." />
+          <Titulo centro={false} sobre="Para o desbravador" titulo="Seu desbravador acompanha a própria classe" texto="Pelo celular, ele vê o que falta, envia a comprovação na hora e recebe a correção explicada." />
           <Lista itens={[
             'Requisitos com status: a fazer, enviado, correção, aprovado',
             'Comprovação com foto ou texto, direto na tela do requisito',
@@ -274,11 +274,11 @@ function Destaques() {
       <div className="mt-16 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="order-2 lg:order-1"><NotebookPainel /></div>
         <div className="order-1 lg:order-2">
-          <Titulo centro={false} sobre="Para a diretoria" titulo="O clube inteiro num painel" texto="Membros, unidades, presença, avaliações, mensalidades e documentos — com cada ação registrada." />
+          <Titulo centro={false} sobre="Para a diretoria" titulo="Seu clube inteiro num painel" texto="Seus membros, unidades, presença, avaliações, mensalidades e documentos — com cada ação registrada." />
           <Lista itens={[
-            'Aprovação de entrada e cargos por pessoa',
-            'Fila de avaliação da liderança',
-            'Documentos com assinatura e QR Code de verificação',
+            'Você aprova a entrada e define o cargo de cada pessoa',
+            'Sua fila de avaliação num lugar só',
+            'Seus documentos com assinatura e QR Code de verificação',
           ]} />
         </div>
       </div>
@@ -288,13 +288,13 @@ function Destaques() {
 
 function ComoFunciona() {
   const passos = [
-    ['bandeira', 'Crie o clube', 'Cadastre-se e crie o espaço do seu clube em poucos minutos.'],
-    ['qrcode', 'Convide a turma', 'Compartilhe o link ou o QR Code; a diretoria aprova cada entrada.'],
-    ['celular', 'Use no dia a dia', 'Classes, avaliações, avisos e documentos pelo celular.'],
+    ['bandeira', 'Crie o clube', 'Você se cadastra e cria o espaço do seu clube em poucos minutos.'],
+    ['qrcode', 'Convide a turma', 'Você compartilha o link ou o QR Code e aprova cada entrada.'],
+    ['celular', 'Use no dia a dia', 'Suas classes, avaliações, avisos e documentos no seu celular.'],
   ]
   return (
     <Secao id="como-funciona" fundo="bg-[#0b1b46]">
-      <Titulo claro sobre="Como funciona" titulo="Em 3 passos, o clube no app" />
+      <Titulo claro sobre="Como funciona" titulo="Em 3 passos, seu clube no app" />
       <ol className="grid gap-4 md:grid-cols-3">
         {passos.map(([icone, t, d], i) => (
           <li key={t} className="relative rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -326,7 +326,7 @@ function Planos() {
 
   return (
     <Secao id="planos" fundo="bg-white">
-      <Titulo sobre="Planos" titulo="Uma licença, tudo incluso" texto="Licença anual para o clube — não é mensalidade." />
+      <Titulo sobre="Planos" titulo="Uma licença, tudo incluso" texto="Uma licença anual para o seu clube — não é mensalidade." />
       {planos === null && !erro && <p role="status" className="text-center text-slate-500">Carregando a oferta vigente…</p>}
       {(erro || (planos && planos.length === 0)) && (
         <div className="text-center">
@@ -340,7 +340,7 @@ function Planos() {
         </ul>
       )}
       <p className="mx-auto mt-6 max-w-xl text-center text-sm text-slate-500">
-        Pagamento online ainda não integrado: você cria a conta e o clube normalmente, e a cobrança é combinada com a equipe da plataforma.
+        Você cria a sua conta e o seu clube normalmente, e combina o pagamento direto com a gente.
       </p>
     </Secao>
   )
@@ -383,16 +383,16 @@ function CartaoPlano({ plano }) {
 
 function Seguranca() {
   const itens = [
-    ['escudo', 'Dados das crianças protegidos', 'Fotos, evidências e dados dos membros não ficam públicos.'],
-    ['camadas', 'Cada clube isolado', 'Os dados de um clube não aparecem para outro.'],
-    ['usuario', 'Acesso por cargo', 'Cada pessoa vê e faz só o que o seu papel permite.'],
-    ['responsaveis', 'Responsáveis confirmados', 'O vínculo com o filho só vale depois da confirmação da diretoria.'],
-    ['historico', 'Histórico de ações', 'Aprovações, assinaturas e revogações ficam registradas.'],
+    ['escudo', 'Dados das crianças protegidos', 'As fotos, evidências e dados dos seus membros não ficam públicos.'],
+    ['camadas', 'Cada clube isolado', 'Os dados do seu clube não aparecem para nenhum outro.'],
+    ['usuario', 'Acesso por cargo', 'Cada pessoa do seu clube vê e faz só o que o cargo dela permite.'],
+    ['responsaveis', 'Responsáveis confirmados', 'O vínculo com o filho só vale depois que você confirma.'],
+    ['historico', 'Histórico de ações', 'Suas aprovações, assinaturas e revogações ficam registradas.'],
     ['cadeado', 'Consentimento registrado', 'O responsável concede ou revoga o consentimento, com registro.'],
   ]
   return (
     <Secao id="seguranca" fundo="bg-slate-50">
-      <Titulo sobre="Segurança e privacidade" titulo="Cuidado de verdade com os dados do clube" texto="Um produto independente, pensado desde o início para lidar com dados de crianças e adolescentes." />
+      <Titulo sobre="Segurança e privacidade" titulo="Cuidado de verdade com os dados do seu clube" texto="Pensado desde o início para proteger os dados das suas crianças e adolescentes." />
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {itens.map(([icone, t, d]) => (
           <li key={t} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5">
@@ -409,12 +409,12 @@ function Seguranca() {
 }
 
 const PERGUNTAS = [
-  ['Funciona no celular?', 'Sim. O DesbravaClube foi feito primeiro para o celular e também funciona no computador e no tablet. Não é obrigatório instalar: dá para abrir pelo navegador e adicionar à tela inicial.'],
-  ['Como funcionam as Classes?', 'O desbravador vê os requisitos e envia a comprovação com foto ou texto. A liderança avalia: aprova ou pede correção com um comentário. Cada tentativa fica no histórico.'],
+  ['Funciona no celular?', 'Sim. O DesbravaClube foi feito primeiro para o seu celular e também funciona no computador e no tablet. Você não precisa instalar: abre pelo navegador e pode adicionar à tela inicial.'],
+  ['Como funcionam as Classes?', 'Seu desbravador vê os requisitos e envia a comprovação com foto ou texto. Você avalia: aprova ou pede correção com um comentário. Cada tentativa fica no histórico.'],
   ['O que os responsáveis veem?', 'Depois que a diretoria confirma o vínculo, o responsável acompanha pontos, presenças e faltas e a mensalidade pendente, e registra o consentimento do filho.'],
-  ['Como os membros entram no clube?', 'A liderança compartilha o link ou o QR Code do clube; quem acessa pede a entrada e a diretoria aprova.'],
+  ['Como os membros entram no meu clube?', 'Você compartilha o link ou o QR Code do seu clube; quem acessa pede a entrada e você aprova.'],
   ['Existe acesso para a coordenação?', 'Sim. Coordenação distrital e regional tem um painel próprio com a visão que o seu papel permite. Os dados privados de cada clube continuam sob a gestão do clube.'],
-  ['Como funciona a licença?', 'É uma licença anual para o clube, não uma mensalidade. Os valores vigentes aparecem em Planos. Nesta fase, o pagamento é combinado diretamente com a equipe da plataforma.'],
+  ['Como funciona a licença?', 'É uma licença anual para o seu clube, não uma mensalidade. Você vê os valores em Planos e, por enquanto, combina o pagamento direto com a gente.'],
 ]
 
 function Faq() {
@@ -441,7 +441,7 @@ function ChamadaFinal() {
     <section className="bg-[#0b1b46]">
       <div className={`${CONTAINER} py-16 sm:py-20 text-center`}>
         <h2 className="mx-auto max-w-3xl text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Leve o seu clube para a palma da mão.</h2>
-        <p className="mx-auto mt-3 max-w-xl text-blue-100">Crie o clube agora e combine o pagamento depois.</p>
+        <p className="mx-auto mt-3 max-w-xl text-blue-100">Crie o seu clube agora e combine o pagamento depois.</p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
           <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Quero criar meu clube</Link>
           <a href="#planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</a>
@@ -460,7 +460,7 @@ export function Rodape({ naLanding = true }) {
       <div className={`${CONTAINER} grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4`}>
         <div>
           <Marca claro />
-          <p className="mt-3 text-sm text-slate-400 max-w-xs">O clube na palma da mão. Produto independente para Clubes de Desbravadores.</p>
+          <p className="mt-3 text-sm text-slate-400 max-w-xs">Seu clube na palma da mão. Produto independente para Clubes de Desbravadores.</p>
         </div>
         <nav aria-label="Produto">
           <h2 className="text-sm font-bold text-white">Produto</h2>
