@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
 import { registrarRecorde } from '../../../lib/dados.js'
+import { mensagemDoErroDeJogo, MSG_GUARDADO } from '../../../services/filaJogos.js'
 
 const W = 340, H = 520
 const EMOJIS = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
@@ -138,7 +139,7 @@ export default function ReflexoPhaser({ onCancelar }) {
       'reflexo:nivel': (n) => setNivel(n),
       'reflexo:fim': async (n) => {
         setNivel(n); setFase('fim'); setResultado(null)
-        try { setResultado(await registrarRecorde('reflexo', n)) } catch { setResultado('erro') }
+        try { setResultado(await registrarRecorde('reflexo', n)) } catch (e) { setResultado({ erro: mensagemDoErroDeJogo(e) }) }
       },
     },
   )
@@ -166,8 +167,10 @@ export default function ReflexoPhaser({ onCancelar }) {
             <div>
               <div className="text-5xl mb-2">🏁</div>
               <p className="font-extrabold text-white text-lg">Você chegou ao nível {nivel}!</p>
-              {resultado === 'erro' ? (
-                <p className="text-xs text-slate-300 mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+              {resultado?.erro ? (
+                <p className="text-xs text-slate-300 mt-1">{resultado.erro}</p>
+              ) : resultado?.guardado ? (
+                <p className="text-xs text-slate-300 mt-1">{MSG_GUARDADO}</p>
               ) : resultado?.fora ? (
                 <p className="text-sm font-bold text-slate-200 mt-1">Boa! 🙂 (a liderança joga, mas fica fora do ranking)</p>
               ) : resultado ? (

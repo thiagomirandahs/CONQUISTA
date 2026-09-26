@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { usePhaserGame } from '../hooks/usePhaserGame.js'
 import Phaser from 'phaser'
 import { registrarRecorde } from '../../../lib/dados.js'
+import { mensagemDoErroDeJogo, MSG_GUARDADO } from '../../../services/filaJogos.js'
 
 const W = 800, H = 300, GROUND_Y = 250, RUNNER_X = 150
 const OBST = ['🔥', '🪵', '⛺', '🪨', '🌵', '🎒']
@@ -209,7 +210,7 @@ export default function CorridaPhaser({ onCancelar }) {
     {
       'corrida:fim': async (score) => {
         setPontos(score); setFase('fim'); setResultado(null)
-        try { setResultado(await registrarRecorde('corrida', score)) } catch { setResultado('erro') }
+        try { setResultado(await registrarRecorde('corrida', score)) } catch (e) { setResultado({ erro: mensagemDoErroDeJogo(e) }) }
       },
     },
   )
@@ -260,8 +261,10 @@ export default function CorridaPhaser({ onCancelar }) {
             <div>
               <div className="text-4xl mb-1">🏁</div>
               <p className="font-extrabold text-ink text-lg">Você passou {pontos} obstáculo{pontos === 1 ? '' : 's'}!</p>
-              {resultado === 'erro' ? (
-                <p className="text-xs text-faint mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+              {resultado?.erro ? (
+                <p className="text-xs text-faint mt-1">{resultado.erro}</p>
+              ) : resultado?.guardado ? (
+                <p className="text-xs text-faint mt-1">{MSG_GUARDADO}</p>
               ) : resultado?.fora ? (
                 <p className="text-sm font-bold text-muted mt-1">Boa! 🙂 (a liderança joga, mas fica fora do ranking)</p>
               ) : resultado ? (

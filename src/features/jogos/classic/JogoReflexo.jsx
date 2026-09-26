@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
 import { registrarRecorde } from '../../../lib/dados.js'
+import { mensagemDoErroDeJogo, MSG_GUARDADO } from '../../../services/filaJogos.js'
 
 const EMOJIS_REFLEXO = ['🔥', '⛺', '🧭', '📖', '⭐', '🍎', '🐍', '🦅', '🥾', '🪢', '💧', '🌙']
 
@@ -16,7 +17,7 @@ export default function JogoReflexo({ onTerminar, onCancelar }) {
   const [grade, setGrade] = useState([]) // emojis da rodada (o alvo está entre eles)
   const [rodadaId, setRodadaId] = useState(0) // muda a cada rodada (reinicia o timer)
   const [fim, setFim] = useState(false)
-  const [resultado, setResultado] = useState(null) // { recorde, melhorou } | 'erro'
+  const [resultado, setResultado] = useState(null) // { recorde, melhorou } | { guardado } | { erro }
   const timerRef = useRef(null)
 
   // Calibragem (dono): tem que dar pra passar de 100 jogando de verdade.
@@ -56,8 +57,8 @@ export default function JogoReflexo({ onTerminar, onCancelar }) {
     setFim(true)
     try {
       setResultado(await registrarRecorde('reflexo', pontos))
-    } catch {
-      setResultado('erro') // offline/SQL não rodado: a corrida não vira recorde
+    } catch (e) {
+      setResultado({ erro: mensagemDoErroDeJogo(e) }) // rede ou regra do servidor: mostra a mensagem real
     }
   }
 
@@ -84,8 +85,10 @@ export default function JogoReflexo({ onTerminar, onCancelar }) {
         <div className="py-4">
           <div className="text-5xl mb-2">🏁</div>
           <p className="font-extrabold text-ink text-lg">Você chegou ao nível {nivel}!</p>
-          {resultado === 'erro' ? (
-            <p className="text-xs text-faint mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+          {resultado?.erro ? (
+            <p className="text-xs text-faint mt-1">{resultado.erro}</p>
+          ) : resultado?.guardado ? (
+            <p className="text-xs text-faint mt-1">{MSG_GUARDADO}</p>
           ) : resultado?.fora ? (
             <p className="text-sm font-bold text-muted mt-1">Boa! 🙂 (a liderança joga, mas fica fora do ranking)</p>
           ) : resultado ? (

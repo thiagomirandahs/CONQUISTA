@@ -12,8 +12,11 @@ import { EscopoProvider } from './context/Escopo.jsx'
 import { AvisosProvider } from './ui/avisos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
 import './index.css'
+import { ligarEnvioDeResultadosPendentes } from './services/jogos.js'
 
 ligarObservabilidade()
+// jogos: resultado guardado sem internet é reenviado ao voltar a rede / abrir o app / logar
+ligarEnvioDeResultadosPendentes()
 
 // Vite avisa quando um pedaço do app (chunk) não carrega — quase sempre versão velha depois de um
 // deploy. Recupera sozinho (troca de versão) em vez de deixar a tela quebrar.

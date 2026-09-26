@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { registrarRecorde } from '../../../lib/dados.js'
+import { mensagemDoErroDeJogo, MSG_GUARDADO } from '../../../services/filaJogos.js'
 
 // ===================== 🏕️ Corrida do Acampamento (SEM FIM) =====================
 // Corre e PULA os obstáculos do acampamento (fogueira, tronco, barraca...). Cada
@@ -85,7 +86,7 @@ export default function JogoCorrida({ onCancelar }) {
     cancelAnimationFrame(rafRef.current)
     faseRef.current = 'fim'; setFase('fim'); setPontos(score)
     try { setResultado(await registrarRecorde('corrida', score)) }
-    catch { setResultado('erro') }
+    catch (e) { setResultado({ erro: mensagemDoErroDeJogo(e) }) }
   }
   function aoTocar() {
     if (faseRef.current === 'pronto') comecar()
@@ -128,8 +129,10 @@ export default function JogoCorrida({ onCancelar }) {
             <div>
               <div className="text-4xl mb-1">🏁</div>
               <p className="font-extrabold text-ink text-lg">Você passou {pontos} obstáculo{pontos === 1 ? '' : 's'}!</p>
-              {resultado === 'erro' ? (
-                <p className="text-xs text-faint mt-1">Não deu pra salvar o recorde (sem internet?).</p>
+              {resultado?.erro ? (
+                <p className="text-xs text-faint mt-1">{resultado.erro}</p>
+              ) : resultado?.guardado ? (
+                <p className="text-xs text-faint mt-1">{MSG_GUARDADO}</p>
               ) : resultado?.fora ? (
                 <p className="text-sm font-bold text-muted mt-1">Boa! 🙂 (a liderança joga, mas fica fora do ranking)</p>
               ) : resultado ? (

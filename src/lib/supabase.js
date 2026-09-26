@@ -16,6 +16,8 @@ let clubeAtivoDaAba = null
 export function definirClubeAtivoNoTransporte(clubeId) {
   clubeAtivoDaAba = clubeId && clubeId !== 'legado' ? clubeId : null
 }
+// Leitura do clube da aba (a fila offline dos jogos só reenvia para o MESMO clube em que foi jogado).
+export function clubeAtivoNoTransporte() { return clubeAtivoDaAba }
 
 // ESCOPO institucional em uso NESTA ABA (distrito/região/campo/união/divisão) — header próprio, mesma
 // mecânica e mesmas garantias do clube: cada aba tem a sua cópia, e o servidor (escopo_atual_id()) só

@@ -93,6 +93,12 @@ export default function Trilha() {
   async function aoTerminar(estrelas) {
     try {
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
+      if (r?.guardado) {
+        // sem internet: o resultado ficou no celular e vai quando a conexão voltar
+        avisar.info('Sem internet agora — seu resultado ficou guardado e será enviado quando a conexão voltar.')
+        setJogando(false)
+        return
+      }
       juice.vitoria(r.estrelas)
       setResultado({ estrelas: r.estrelas, pontos: r.pontos, extra: !!r.extra })
       setJogando(false)

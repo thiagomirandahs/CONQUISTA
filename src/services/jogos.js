@@ -1,5 +1,6 @@
 // Serviço: jogos — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
-import { supabase } from '../lib/supabase.js'
+import { supabase, clubeAtivoNoTransporte } from '../lib/supabase.js'
+import { enfileirar, enviarFila, ehErroDeRede, limparExpirados } from './filaJogos.js'
 import { gravarConfig } from './config.js'
 import { membrosDoClube } from './membros.js'
 
@@ -66,9 +67,10 @@ export async function iniciarPartida(jogo) {
 }
 
 
-export async function registrarJogo(tipo, estrelas) {
+// Chamada crua ao servidor (usada pelo jogo E pelo reenvio da fila offline).
+async function _rpcJogo(tipo, estrelas, partida) {
   const { data, error } = await supabase.rpc('registrar_jogo', {
-    p_tipo: tipo, p_estrelas: estrelas, p_partida: _partidas[tipo] ?? null,
+    p_tipo: tipo, p_estrelas: estrelas, p_partida: partida ?? null,
   })
   if (error) {
     // servidor antigo (sem o parâmetro novo): tenta do jeito antigo — a janela
@@ -80,7 +82,24 @@ export async function registrarJogo(tipo, estrelas) {
     }
     throw new Error(error.message)
   }
+  return data
+}
+
+export async function registrarJogo(tipo, estrelas) {
+  const partida = _partidas[tipo] ?? null
+  let data
+  try {
+    data = await _rpcJogo(tipo, estrelas, partida)
+  } catch (e) {
+    // rede caiu: guarda no celular e manda depois (a trava "1x por dia" do servidor evita duplicar)
+    if (ehErroDeRede(e) && await _guardar({ tipo: 'jogo', jogo: tipo, valor: estrelas, partida })) {
+      delete _partidas[tipo]
+      return { guardado: true, estrelas, pontos: 0 }
+    }
+    throw e
+  }
   delete _partidas[tipo] // partida consumida
+  enviarResultadosPendentes() // a rede está boa: aproveita pra mandar o que ficou guardado
   return data
 }
 
@@ -100,9 +119,9 @@ export async function carregarJogosTrilha() {
 
 // ⚡ Modo sem fim: registra a corrida e o banco guarda só o MELHOR da semana.
 // Devolve { recorde, melhorou }. Repetição é livre — não dá +10/+5 (sem farm).
-export async function registrarRecorde(jogo, pontos) {
+async function _rpcRecorde(jogo, pontos, partida) {
   const { data, error } = await supabase.rpc('registrar_recorde', {
-    p_jogo: jogo, p_pontos: pontos, p_partida: _partidas[jogo] ?? null,
+    p_jogo: jogo, p_pontos: pontos, p_partida: partida ?? null,
   })
   if (error) {
     // servidor antigo (sem o parâmetro novo): cai pro jeito antigo
@@ -113,8 +132,73 @@ export async function registrarRecorde(jogo, pontos) {
     }
     throw new Error(error.message)
   }
-  // arcade NÃO consome a partida (vale a sessão inteira de replays)
   return data || { recorde: pontos, melhorou: false }
+}
+
+// Devolve { recorde, melhorou } — ou { guardado: true } quando a rede caiu e o resultado ficou na
+// fila do celular. Erro de REGRA do servidor sobe com a mensagem dele (a tela mostra).
+export async function registrarRecorde(jogo, pontos) {
+  const partida = _partidas[jogo] ?? null
+  try {
+    const r = await _rpcRecorde(jogo, pontos, partida)
+    enviarResultadosPendentes()
+    // arcade NÃO consome a partida (vale a sessão inteira de replays)
+    return r
+  } catch (e) {
+    if (ehErroDeRede(e) && await _guardar({ tipo: 'recorde', jogo, valor: pontos, partida })) {
+      return { guardado: true, recorde: pontos, melhorou: false }
+    }
+    throw e
+  }
+}
+
+// ---- Fila offline (services/filaJogos.js): quem sou eu e em que clube estou ----
+async function _quemEOnde() {
+  let uid = null, clube = null
+  try { const { data } = await supabase.auth.getSession(); uid = data?.session?.user?.id || null } catch { /* sem sessão */ }
+  try { clube = clubeAtivoNoTransporte() } catch { /* sem clube */ }
+  return { uid, clube }
+}
+
+async function _guardar(item) {
+  const { uid, clube } = await _quemEOnde()
+  return enfileirar({ uid, clube, ...item })
+}
+
+let _enviando = null
+// Reenvia o que ficou guardado (só do usuário logado, só do clube desta aba). Nunca lança.
+export function enviarResultadosPendentes() {
+  if (_enviando) return _enviando
+  _enviando = (async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return null
+      const { uid, clube } = await _quemEOnde()
+      if (!uid || !clube) return null
+      return await enviarFila({
+        uid, clube,
+        enviar: (item, partida) => item.tipo === 'recorde'
+          ? _rpcRecorde(item.jogo, item.valor, partida)
+          : _rpcJogo(item.jogo, item.valor, partida),
+      })
+    } catch { return null } finally { _enviando = null }
+  })()
+  return _enviando
+}
+
+// Liga os gatilhos do reenvio: voltou a internet, app aberto/voltou ao foco, login.
+let _ligado = false
+export function ligarEnvioDeResultadosPendentes() {
+  if (_ligado || typeof window === 'undefined') return
+  _ligado = true
+  try { limparExpirados() } catch { /* ok */ }
+  const tentar = () => { setTimeout(() => { enviarResultadosPendentes() }, 1500) }
+  window.addEventListener('online', tentar)
+  window.addEventListener('focus', tentar)
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tentar() })
+  try {
+    supabase.auth.onAuthStateChange((evento) => { if (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION') tentar() })
+  } catch { /* ok */ }
+  tentar()
 }
 
 
