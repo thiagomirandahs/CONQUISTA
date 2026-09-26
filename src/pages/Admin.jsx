@@ -87,9 +87,13 @@ export default function Admin() {
   const trocarAba = (a) => { setClubeAberto(null); setAba(a) }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <Cabecalho icone="🛠️" titulo="Administração da Plataforma" descricao="Clubes, planos, assinaturas, armazenamento, onboarding e auditoria do DesbravaClube" />
-      <Abas abas={ABAS} ativa={aba} aoTrocar={trocarAba} rotulo="Áreas da administração" />
+    // Mobile-first: o /admin fica fora do AppLayout, então o respiro lateral (16px) é daqui.
+    <div className="max-w-5xl mx-auto px-4 pt-4 pb-10">
+      <header className="mb-3">
+        <h1 className="text-xl font-extrabold text-ink"><span aria-hidden="true">🛠️ </span><span>Administração da Plataforma</span></h1>
+        <p className="text-xs text-muted">Clubes, planos, assinaturas, hierarquia e auditoria do DesbravaClube</p>
+      </header>
+      <AbasDoAdmin abas={ABAS} ativa={aba} aoTrocar={trocarAba} />
       {aba === 'visao' && <VisaoGeral irPara={trocarAba} />}
       {aba === 'clubes' && (clubeAberto
         ? <DetalheClube clubId={clubeAberto} aoVoltar={() => setClubeAberto(null)} />
@@ -107,11 +111,37 @@ export default function Admin() {
 }
 
 // ---------------------------------------------------------------- Visão geral
+// Abas clean que rolam de lado no celular (a última aparece cortada = dá pra ver que tem mais).
+function AbasDoAdmin({ abas, ativa, aoTrocar }) {
+  return (
+    <nav aria-label="Áreas da administração" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none]">
+      <div role="tablist" className="flex w-max gap-2">
+        {abas.map((a) => {
+          const sel = a.chave === ativa
+          return (
+            <button key={a.chave} type="button" role="tab" aria-selected={sel} onClick={() => aoTrocar(a.chave)}
+              className={`min-h-[40px] whitespace-nowrap rounded-full border px-3.5 text-sm font-semibold transition ${sel ? 'border-ink bg-ink text-surface' : 'border-line bg-surface text-muted'}`}>
+              <span aria-hidden="true">{a.icone} </span>{a.rotulo}
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+// Número compacto: legenda à esquerda, valor à direita — cabe o painel inteiro em meia tela.
 function Metrica({ valor, rotulo, testid, aoTocar }) {
-  const conteudo = (<><p className="text-3xl font-extrabold text-ink" data-testid={testid}>{valor}</p><p className="text-xs text-muted">{rotulo}</p></>)
+  const conteudo = (
+    <>
+      <span className="text-xs text-muted text-left leading-tight">{rotulo}</span>
+      <span className="text-xl font-extrabold text-ink" data-testid={testid}>{valor}</span>
+    </>
+  )
+  const base = 'flex items-center justify-between gap-2 rounded-xl border border-line bg-surface px-3 py-2.5 min-h-[52px]'
   return aoTocar
-    ? <button type="button" onClick={aoTocar} className="bg-surface rounded-2xl shadow-soft p-4 text-center min-h-[44px] hover:ring-2 hover:ring-brand/30">{conteudo}</button>
-    : <Card className="text-center">{conteudo}</Card>
+    ? <button type="button" onClick={aoTocar} className={`${base} active:bg-surface2`}>{conteudo}<span className="sr-only"> — abrir</span></button>
+    : <div className={base}>{conteudo}</div>
 }
 
 function VisaoGeral({ irPara }) {
@@ -120,7 +150,7 @@ function VisaoGeral({ irPara }) {
     <Estado erro={erro} dados={v}>
       {v && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Metrica valor={v.clubes_total} rotulo="Clubes" testid="visao-clubes" aoTocar={() => irPara('clubes')} />
             <Metrica valor={v.clubes_ativos} rotulo="Clubes ativos" />
             <Metrica valor={v.onboarding_em_andamento} rotulo="Em onboarding" aoTocar={() => irPara('onboarding')} />
