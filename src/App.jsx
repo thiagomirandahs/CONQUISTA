@@ -143,7 +143,6 @@ async function atualizarDeVez() {
     const chaves = await caches?.keys?.()
     if (chaves) await Promise.all(chaves.map((k) => caches.delete(k)))
   } catch { /* ignora */ }
-  try { sessionStorage.removeItem('recarregou_chunk') } catch { /* sem storage */ }
   // reload() podia devolver o index.html velho do cache HTTP do navegador (visto no piloto: o botão
   // "Atualizar agora" não saía do lugar). Um parâmetro novo na URL obriga a buscar a página de novo.
   const u = new URL(window.location.href)
