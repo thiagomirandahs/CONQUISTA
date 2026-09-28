@@ -64,6 +64,7 @@ const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
 const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
+const PainelCoordenador = lazy(() => import('./pages/PainelCoordenador.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
 const ConviteCoordenacao = lazy(() => import('./pages/ConviteCoordenacao.jsx'))
@@ -288,7 +289,8 @@ export default function App() {
 
         {/* Jornada INSTITUCIONAL: exige sessão, mas NÃO passa pelo ClubeGuard — quem é só coordenador
             distrital/regional não tem vínculo de clube nenhum e ficaria trancado do lado de fora. */}
-        <Route path="/institucional" element={<SessaoObrigatoria><LayoutConta><PortalInstitucional /></LayoutConta></SessaoObrigatoria>} />
+        <Route path="/institucional" element={<SessaoObrigatoria><LayoutConta><PainelCoordenador /></LayoutConta></SessaoObrigatoria>} />
+        <Route path="/institucional/detalhes" element={<SessaoObrigatoria><LayoutConta><PortalInstitucional /></LayoutConta></SessaoObrigatoria>} />
         {/* Telas da CONTA para quem não tem clube (coordenação): mesma tela, moldura sem clube */}
         <Route path="/conta/senha" element={<SessaoObrigatoria><LayoutConta><TrocarSenha /></LayoutConta></SessaoObrigatoria>} />
         <Route path="/conta/suporte" element={<SessaoObrigatoria><LayoutConta><Suporte /></LayoutConta></SessaoObrigatoria>} />

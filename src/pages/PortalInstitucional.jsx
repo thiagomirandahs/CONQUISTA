@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useEscopo } from '../context/Escopo.jsx'
 import { carregarInvestidurasDoEscopo, carregarPainelAnalitico, carregarVisitasDoEscopo } from '../services/institucional.js'
 import {
@@ -31,7 +31,8 @@ export default function PortalInstitucional() {
   const { carregando, erro, escopos, escopo, temEscopo, capacidades, trocarEscopo, recarregar } = useEscopo()
   // ao abrir o portal, relê os escopos (vínculo criado agora por convite aparece sem sair e entrar)
   useEffect(() => { recarregar?.() }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  const [aba, setAba] = useState('geral')
+  const [params] = useSearchParams()
+  const [aba, setAba] = useState(() => (['geral', 'clubes', 'visitas', 'classes'].includes(params.get('aba')) ? params.get('aba') : 'geral'))
   const [clubeAberto, setClubeAberto] = useState(null)
   const [filtro, setFiltro] = useState('')
   const [painel, setPainel] = useState(null)
@@ -100,6 +101,7 @@ export default function PortalInstitucional() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-5 pb-24">
+      <Link to="/institucional" className="inline-flex items-center min-h-[56px] mb-2 text-base font-bold text-brand">← Voltar ao início</Link>
       <Topo escopos={escopos} escopo={escopo} onTrocar={trocarEscopo} />
       <Abas abas={abas} ativa={aba} aoTrocar={(k) => { setAba(k); setClubeAberto(null) }} rotulo="Seções do portal" />
 
