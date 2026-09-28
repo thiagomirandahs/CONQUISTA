@@ -12,6 +12,7 @@ import {
 import LinhaDoTempoInvestidura from '../components/LinhaDoTempoInvestidura.jsx'
 import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvestidura.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -688,27 +689,7 @@ function HistoricoPorTentativa({ memberRequirementId }) {
   if (erro) return <p className="text-xs text-red-700 mt-1.5">{erro}</p>
   if (!dados) return <p className="text-xs text-faint mt-1.5">Carregando histórico...</p>
 
-  const tentativas = dados.tentativas || []
-  return (
-    <ol className="mt-1.5 space-y-2">
-      {tentativas.map((tt) => (
-        <li key={tt.submission_id} className="text-xs bg-surface2 rounded-lg px-3 py-2 border-l-2 border-line">
-          <div className="font-semibold text-ink mb-1">Tentativa {tt.tentativa_numero} · enviado em {fmtData(tt.enviado_em)}</div>
-          {tt.evidencia_texto && <p className="text-muted italic mb-1">"{tt.evidencia_texto}"</p>}
-          {tt.evidencia_path && <Comprovacao valor={tt.evidencia_path} alt={`evidência da tentativa ${tt.tentativa_numero}`} classImg="w-24 h-24 object-cover rounded-lg mb-1" />}
-          {tt.decisao ? (
-            <div className={tt.decisao === 'aprovado' ? 'text-green-700' : 'text-red-700'}>
-              <span className="font-semibold">{tt.decisao === 'aprovado' ? '✅ Aprovado' : '↺ Correção solicitada'}</span>
-              {' '}por {tt.avaliado_por_nome} ({tt.avaliado_papel}) em {fmtData(tt.avaliado_em)}
-              {tt.comentario && <div className="italic mt-0.5 text-ink">"{tt.comentario}"</div>}
-            </div>
-          ) : (
-            <div className="text-amber-800">⏳ Ainda aguardando avaliação.</div>
-          )}
-        </li>
-      ))}
-    </ol>
-  )
+  return <HistoricoDeTentativas tentativas={dados.tentativas || []} mostrarAvaliador className="mt-1.5" />
 }
 
 // "Origem do requisito": proveniência sob demanda (auditoria/liderança) — não polui o card.

@@ -42,8 +42,10 @@
   --c-brand:   var(--marca-1, #3b5bfd);
   --c-brand2:  var(--marca-2, #12c6ff);
   --c-ink:     #111a3d;
-  --c-muted:   #5c6690;
-  --c-faint:   #8a93bb;
+  /* muted/faint: ≥ 4.5:1 sobre bg, surface, surface2 e o fim do degradê (#e9eefb) — contrato em
+     src/lib/tokensDeCor.test.js. O faint antigo (#8a93bb) dava 2.7:1 e sumia no sol. */
+  --c-muted:   #4f5982;
+  --c-faint:   #5f688f;
   --c-bg:      #eef2fb;
   --c-surface: #ffffff;
   --c-surface2:#f4f6ff;
@@ -63,7 +65,7 @@
   --c-brand2:  var(--marca-2-dark, #38e1ff);
   --c-ink:     #eaf0ff;
   --c-muted:   #9aa6d4;
-  --c-faint:   #6b76a6;
+  --c-faint:   #8a95c4;   /* era #6b76a6 (3.5:1 sobre surface2) */
   --c-bg:      #070b1c;
   --c-surface: #0e1738;
   --c-surface2:#111c44;
@@ -76,6 +78,30 @@
     radial-gradient(52rem 26rem at -18% 108%, rgba(255, 111, 160, 0.08), transparent 60%),
     linear-gradient(180deg, #0a1130 0%, #05081a 100%);
 }
+
+/* ---- ALTO CONTRASTE (liga no menu da conta; src/lib/acessibilidade.js) ----
+   Por cima do tema: o claro fica claro, o escuro fica escuro — só texto secundário, bordas e
+   superfícies de vidro ficam fortes/opacos. Sem neon: as mesmas cores, mais firmes. */
+:root[data-contraste="alto"] {
+  --c-ink:     #050a24;
+  --c-muted:   #232b52;
+  --c-faint:   #2f3862;
+  --c-line:    rgba(10, 18, 55, 0.55);
+  --c-glass:   #ffffff;
+  --c-surface2:#eef1fb;
+  --stage:     none;
+}
+:root[data-theme="dark"][data-contraste="alto"] {
+  --c-ink:     #ffffff;
+  --c-muted:   #dfe5fb;
+  --c-faint:   #c9d1f0;
+  --c-line:    rgba(210, 222, 255, 0.60);
+  --c-glass:   #0b1330;
+  --c-surface2:#0e1738;
+  --stage:     none;
+}
+:root[data-contraste="alto"] :where(a[href]):not([class*="rounded"]) { text-decoration: underline; }
+:root[data-contraste="alto"] :focus-visible { outline: 3px solid var(--c-ink); outline-offset: 2px; }
 
 html, body, #root { height: 100%; }
 html { scroll-behavior: smooth; }
@@ -114,7 +140,10 @@ button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .folha-saindo .folha-fundo { animation: fundo-sai .16s ease-in both; }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+  }
   html { scroll-behavior: auto; }
 }
 

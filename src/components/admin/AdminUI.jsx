@@ -25,11 +25,16 @@ const PONTOS = {
   info: 'bg-sky-500', marca: 'bg-indigo-500', dourado: 'bg-yellow-500',
 }
 
+const SIMBOLOS = { ok: '✓', atencao: '!', perigo: '✕' }
+
 export function Chip({ tom = 'neutro', ponto = false, children, className, ...resto }) {
   return (
     <span className={juntar('inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset',
       TONS[tom] || TONS.neutro, className)} {...resto}>
-      {ponto && <span aria-hidden="true" className={juntar('h-1.5 w-1.5 shrink-0 rounded-full', PONTOS[tom] || PONTOS.neutro)} />}
+      {/* status nunca só por cor: nos tons de estado o ponto vira um símbolo (✓ ! ✕) */}
+      {ponto && (SIMBOLOS[tom]
+        ? <span aria-hidden="true" className="shrink-0 text-[0.7rem] font-black leading-none">{SIMBOLOS[tom]}</span>
+        : <span aria-hidden="true" className={juntar('h-1.5 w-1.5 shrink-0 rounded-full', PONTOS[tom] || PONTOS.neutro)} />)}
       <span className="truncate">{children}</span>
     </span>
   )

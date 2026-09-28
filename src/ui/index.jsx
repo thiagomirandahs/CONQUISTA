@@ -135,8 +135,13 @@ export function Aviso({ tom = 'info', titulo, children, acao }) {
   return (
     <div role={tom === 'erro' ? 'alert' : 'status'}
       className={juntar('border rounded-2xl p-4 text-sm mb-4', TOM[tom] || TOM.info)}>
-      {titulo && <p className="font-bold mb-0.5">{titulo}</p>}
-      {children}
+      <div className="flex gap-2.5">
+        <span className="mt-0.5"><IconeDoTom tom={tom} /></span>
+        <div className="min-w-0 flex-1">
+          {titulo && <p className="font-bold mb-0.5">{titulo}</p>}
+          {children}
+        </div>
+      </div>
       {acao && <div className="mt-3">{acao}</div>}
     </div>
   )
@@ -147,9 +152,18 @@ const SELOS = {
   neutro: 'bg-surface2 text-muted', ok: 'bg-emerald-50 text-emerald-800',
   atencao: 'bg-amber-50 text-amber-800', info: 'bg-sky-50 text-sky-800', perigo: 'bg-rose-50 text-rose-800',
 }
+// Status nunca só por cor (daltonismo, sol na tela): cada tom tem também um símbolo. A palavra
+// continua sendo o conteúdo — o símbolo é decorativo (aria-hidden) para o leitor de tela não repetir.
+export const ICONE_DO_TOM = { ok: '✓', atencao: '!', perigo: '✕', erro: '!', info: 'i' }
+function IconeDoTom({ tom }) {
+  const icone = ICONE_DO_TOM[tom]
+  if (!icone) return null
+  return <span aria-hidden="true" data-icone-tom={tom}
+    className="inline-grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full border border-current text-[0.6rem] font-black leading-none">{icone}</span>
+}
 export function Selo({ tom = 'neutro', children, className }) {
   return <span className={juntar('inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full',
-    SELOS[tom] || SELOS.neutro, className)}>{children}</span>
+    SELOS[tom] || SELOS.neutro, className)}><IconeDoTom tom={tom} /><span>{children}</span></span>
 }
 
 export function Progresso({ valor = 0, total = 100, rotulo }) {

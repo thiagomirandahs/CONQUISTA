@@ -388,9 +388,9 @@ function ModalDesenho({ onFechar, onEnviar }) {
 
         {/* controles de zoom flutuantes */}
         <div className="absolute right-3 bottom-3 flex flex-col gap-2 select-none">
-          <button onClick={() => zoomBotao(1.3)} className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">+</button>
-          <button onClick={() => zoomBotao(1 / 1.3)} className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">−</button>
-          <button onClick={centralizar} title="Centralizar" className="w-11 h-11 rounded-full bg-surface shadow-lg text-lg grid place-items-center">⤢</button>
+          <button onClick={() => zoomBotao(1.3)} aria-label="Aproximar" className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">+</button>
+          <button onClick={() => zoomBotao(1 / 1.3)} aria-label="Afastar" className="w-11 h-11 rounded-full bg-surface shadow-lg text-2xl font-bold text-ink grid place-items-center leading-none">−</button>
+          <button onClick={centralizar} title="Centralizar" aria-label="Centralizar" className="w-11 h-11 rounded-full bg-surface shadow-lg text-lg grid place-items-center">⤢</button>
         </div>
       </div>
 

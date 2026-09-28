@@ -234,6 +234,15 @@ export async function salvarAvatar(avatar, tipo = 'personagem') {
   return data
 }
 
+// Acessibilidade (migration 420): grava na PRÓPRIA conta — a RPC não recebe id, usa auth.uid().
+export async function salvarPreferenciasAcessibilidade({ fonte, alto_contraste }) {
+  const { data, error } = await supabase.rpc('salvar_preferencias_acessibilidade', {
+    p_fonte: fonte, p_alto_contraste: alto_contraste === true,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 
 // Aniversariantes: membros do clube da aba (vínculo ativo, menos 'pais') que têm aniversário.
 // O servidor devolve só dia e mês ('MM-DD'), nunca a data de nascimento completa — o card não
