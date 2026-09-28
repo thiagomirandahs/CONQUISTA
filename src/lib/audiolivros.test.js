@@ -9,6 +9,11 @@ describe('audiolivros: livro do requisito', () => {
     expect(livroDoRequisito('Ler o livro da classe: "Além da magia".', LIVROS)?.id).toBe('b')
     expect(livroDoRequisito('Ler o livro da classe: “O Fim do Comeco”.', LIVROS)?.id).toBe('c')
   })
+  it('acha os livros das avançadas pelo texto real do manifesto', () => {
+    const ls = [{ id: 'd', titulo: 'O Desejado de Todas as Nações' }, { id: 'm', titulo: 'O Maior Discurso de Cristo' }]
+    expect(livroDoRequisito('Ler o capítulo 7 de "O Desejado de Todas as Nações" e apresentar as lições.', ls)?.id).toBe('d')
+    expect(livroDoRequisito('Ler o livro "O Maior Discurso de Cristo" e escrever uma página.', ls)?.id).toBe('m')
+  })
   it('não acha quando o livro não está no catálogo (OMD trocou) nem sem aspas', () => {
     expect(livroDoRequisito('Ler o livro da classe: "Livro Novo".', LIVROS)).toBeNull()
     expect(livroDoRequisito('Ler o livro do Curso de Leitura do ano.', LIVROS)).toBeNull()

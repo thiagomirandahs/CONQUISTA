@@ -11,8 +11,8 @@ insert into public.platform_admins (user_id, papel, motivo) values (t.id('admin9
 \o
 
 -- ---------- catálogo inicial ----------
-select t.eq('6 livros no catálogo', (select count(*) from public.audiolivros), 6);
-select t.eq('120 capítulos (Vaso de Barro sem o capítulo 16 repetido)', (select count(*) from public.audiolivro_capitulos), 120);
+select t.eq('8 livros no catálogo (6 de classe + 2 das avançadas)', (select count(*) from public.audiolivros), 8);
+select t.eq('128 capítulos (Vaso de Barro sem o capítulo 16 repetido)', (select count(*) from public.audiolivro_capitulos), 128);
 select t.eq('O Livro Amargo começa no capítulo 1 (no YouTube começava no Apêndice)',
   (select c.titulo from public.audiolivro_capitulos c join public.audiolivros a on a.id = c.audiolivro_id where a.titulo = 'O Livro Amargo' and c.ordem = 1), 'Capítulo 1');
 select t.eq('...e termina no Apêndice',
@@ -24,7 +24,7 @@ select t.eq('Um Simples Lanche termina no Epílogo',
 
 -- ---------- leitura ----------
 select t.como('membro_a');
-select t.eq('desbravador lê os 6 livros', json_array_length(public.audiolivros_listar())::bigint, 6);
+select t.eq('desbravador lê os 8 livros', json_array_length(public.audiolivros_listar())::bigint, 8);
 select t.eq('desbravador não lê a tabela direto', t.nv('select count(*) from public.audiolivros'), 0);
 select t.throws('desbravador não usa a lista do admin', 'select public.admin_audiolivros_listar()');
 select t.como_anon();
@@ -42,13 +42,13 @@ select t.como('admin97');
 select t.throws('admin: ID de vídeo inválido é recusado', format('select public.admin_audiolivro_capitulo_trocar(%L, %L)', :'cap', 'https://x'), 'Link do YouTube');
 select public.admin_audiolivro_capitulo_trocar(:'cap', 'AAAAAAAAAAA');
 select public.admin_audiolivro_ativar(:'livro', false);
-select t.eq('admin vê os 6 (inclusive o inativo)', json_array_length(public.admin_audiolivros_listar())::bigint, 6);
+select t.eq('admin vê os 8 (inclusive o inativo)', json_array_length(public.admin_audiolivros_listar())::bigint, 8);
 reset role;
 select t.eq('vídeo trocado', (select video_id from public.audiolivro_capitulos where id = :'cap'), 'AAAAAAAAAAA');
 select t.eq('troca ficou na auditoria', (select count(*) from public.platform_admin_audit where acao = 'audiolivro_capitulo_trocar'), 1);
 
 select t.como('membro_a');
-select t.eq('livro desativado some para o desbravador', json_array_length(public.audiolivros_listar())::bigint, 5);
+select t.eq('livro desativado some para o desbravador', json_array_length(public.audiolivros_listar())::bigint, 7);
 reset role;
 
 select t.fim();

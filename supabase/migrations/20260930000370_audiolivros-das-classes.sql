@@ -40,14 +40,17 @@ alter table public.audiolivro_capitulos enable row level security;
 revoke all on public.audiolivros from public, anon, authenticated;
 revoke all on public.audiolivro_capitulos from public, anon, authenticated;
 
--- Catálogo inicial (28/09/2026): as 6 playlists enviadas pelo dono, conferidas uma a uma.
+-- Catálogo inicial (28/09/2026): os 6 livros de classe + os 2 das avançadas (Guia VII.1 = só o capítulo 7
+-- do Desejado; Guia de Exploração = O Maior Discurso de Cristo), links do dono conferidos um a um.
 insert into public.audiolivros (titulo, autor, canal, playlist_id) values
   ('Vaso de Barro', null, 'Canal Desbravando', 'PLI9KNpa2zLv4Mqtj3mpgREEM-McAOfcQf'),
   ('Um Simples Lanche', 'Denis Cruz', 'Flecha do Oriente', 'PLJpmJ_3QuTz_CHoYi_DFez-Mi2Av-DK6j'),
   ('Além da Magia', null, 'Bruno dos Santos', 'PLYDfhJMN8OWu751v75T96tBeXQ5YDeq8H'),
   ('Expedição Galápagos', 'Michelson Borges', 'Hora do Clube', 'PLZzUHCA4d0QxHUB46W_0rzAm46XijMVda'),
   ('O Fim do Começo', 'Carolina Costa Cavalcanti', 'Hora do Clube', 'PLZzUHCA4d0QyjX0cXBPeeWMVi1vkC7uhi'),
-  ('O Livro Amargo', 'Denis Cruz', 'Hora do Clube', 'PLZzUHCA4d0QyFhugtYE0G5OosiXxIONu7')
+  ('O Livro Amargo', 'Denis Cruz', 'Hora do Clube', 'PLZzUHCA4d0QyFhugtYE0G5OosiXxIONu7'),
+  ('O Desejado de Todas as Nações', 'Ellen G. White', 'A Voz do Terceiro Anjo', null),
+  ('O Maior Discurso de Cristo', 'Ellen G. White', null, 'PL1OkezmX68aCKXLIckMXhWZuHZ4vghImZ')
 on conflict (titulo) do nothing;
 
 insert into public.audiolivro_capitulos (audiolivro_id, ordem, titulo, video_id)
@@ -172,7 +175,15 @@ select a.id, v.ordem, v.titulo, v.video_id
   ('O Livro Amargo', 22, 'Capítulo 22', 'yDIxFFHvLj4'),
   ('O Livro Amargo', 23, 'Capítulo 23', 'F5NoZAyTsqU'),
   ('O Livro Amargo', 24, 'Capítulo 24', 'U3RD1cntb9U'),
-  ('O Livro Amargo', 25, 'Apêndice', '-j8DeD7twF0')
+  ('O Livro Amargo', 25, 'Apêndice', '-j8DeD7twF0'),
+  ('O Desejado de Todas as Nações', 1, 'Capítulo 7', '3YS_kDPvHwM'),
+  ('O Maior Discurso de Cristo', 1, 'Prefácio', 'Sl2Xt8NFLcs'),
+  ('O Maior Discurso de Cristo', 2, 'Capítulo 1', '5mxVChghVwA'),
+  ('O Maior Discurso de Cristo', 3, 'Capítulo 2', 'mHWWI5cSy0Q'),
+  ('O Maior Discurso de Cristo', 4, 'Capítulo 3', 'v1Dkm8tCyOk'),
+  ('O Maior Discurso de Cristo', 5, 'Capítulo 4', 'l7Zac5FztHU'),
+  ('O Maior Discurso de Cristo', 6, 'Capítulo 5', 'WRaQwkXU01o'),
+  ('O Maior Discurso de Cristo', 7, 'Capítulo 6', 'SKDIXTo8s3M')
   ) as v(livro, ordem, titulo, video_id)
   join public.audiolivros a on a.titulo = v.livro
 on conflict (audiolivro_id, ordem) do nothing;
