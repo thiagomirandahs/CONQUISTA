@@ -1,3 +1,4 @@
+// Rótulos desde a 491 (29/09/2026): a autorização dos pais é a do papel; no app o responsável só DESLIGA/RELIGA.
 // Autorização do responsável para a Comunidade: some quando o recurso está desligado; autoriza e revoga
 // chamando a RPC com o filho certo.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -30,7 +31,7 @@ describe('Autorização da Comunidade (responsável)', () => {
     const u = userEvent.setup()
     autorizacoesDosFilhos.mockResolvedValue({ recurso_ligado: true, filhos: [{ desbravador_id: 'f1', nome: 'Lia', autorizado: false }] })
     render(<AutorizacaoComunidade />)
-    await u.click(await screen.findByRole('button', { name: 'Autorizar' }))
+    await u.click(await screen.findByRole('button', { name: 'Religar' }))
     expect(autorizar).toHaveBeenCalledWith('f1', true)
   })
 
@@ -38,7 +39,7 @@ describe('Autorização da Comunidade (responsável)', () => {
     const u = userEvent.setup()
     autorizacoesDosFilhos.mockResolvedValue({ recurso_ligado: true, filhos: [{ desbravador_id: 'f1', nome: 'Lia', autorizado: true }] })
     render(<AutorizacaoComunidade />)
-    await u.click(await screen.findByRole('button', { name: 'Revogar' }))
+    await u.click(await screen.findByRole('button', { name: 'Desligar' }))
     expect(autorizar).toHaveBeenCalledWith('f1', false)
   })
 

@@ -88,15 +88,28 @@ select t.eq('bucket "comunidade" é PRIVADO, só JPEG/WebP, até 300 KB',
 -- =============================================================================
 --  3. Autorização dos pais
 -- =============================================================================
+-- desde a 491 (29/09/2026) a criança entra LIBERADA (a autorização dos pais é a do papel, na admissão);
+-- o bloqueio agora é o responsável DESLIGAR — é isso que as verificações abaixo passam a provar.
+reset role;
+do $$ begin
+  set local session_replication_role = replica;  -- vínculo direto, como os fixtures fazem
+  insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status, club_id)
+  values (t.id('pais_a'), t.id('membro_a2'), 'Membro A2', 'aprovado', t.id('clube_a'));
+  set local session_replication_role = origin;
+end $$;
+select t.como('pais_a');
+select public.comunidade_autorizar(t.id('membro_a'), false);
+select public.comunidade_autorizar(t.id('membro_a2'), false);  -- a "criança sem autorização" das seções seguintes
 select t.como('membro_a');
-select t.eq('sem autorização: não vê', t.txt($q$select public.comunidade_meu_status()->>'motivo'$q$), 'sem_autorizacao');
-select t.throws('sem autorização: não publica', $q$select public.comunidade_publicar('oi')$q$, 'responsável');
+select t.eq('responsável desligou: não vê', t.txt($q$select public.comunidade_meu_status()->>'motivo'$q$), 'sem_autorizacao');
+select t.throws('responsável desligou: não publica', $q$select public.comunidade_publicar('oi')$q$, 'responsável');
 select t.como('pais_b');
 select t.throws('responsável de OUTRA criança não autoriza', format($q$select public.comunidade_autorizar(%L, true)$q$, t.id('membro_a')), 'responsável vinculado');
 select t.como('membro_a2');
 select t.throws('a própria criança não se autoriza', format($q$select public.comunidade_autorizar(%L, true)$q$, t.id('membro_a2')), 'responsável vinculado');
 select t.como('pais_a');
-select t.eq('o responsável vê o filho na lista', t.n($q$select jsonb_array_length(public.comunidade_autorizacoes_dos_filhos()->'filhos')$q$), 1::bigint);
+-- 2 = membro_a + membro_a2 (vinculado no início desta seção para provar o "responsável desligou", regra da 491)
+select t.eq('o responsável vê os filhos na lista', t.n($q$select jsonb_array_length(public.comunidade_autorizacoes_dos_filhos()->'filhos')$q$), 2::bigint);
 select t.eq('responsável autoriza', t.txt(format($q$select public.comunidade_autorizar(%L, true)->>'autorizado'$q$, t.id('membro_a'))), 'true');
 select t.como('pais_b');
 select public.comunidade_autorizar(t.id('membro_b'), true);
@@ -334,7 +347,8 @@ select t.como('pais_a');
 select t.eq('responsável REVOGA', t.txt(format($q$select public.comunidade_autorizar(%L, false)->>'autorizado'$q$, t.id('membro_a'))), 'false');
 reset role;
 select t.eq('o que o filho publicou saiu da Comunidade', t.status_post('post_a'), 'retirado');
-select t.eq('revogação auditada', (select count(*) from public.comunidade_moderacao_log where alvo_id = t.id('membro_a') and acao = 'autorizacao_revogada'), 1::bigint);
+-- 2 = a revogação do início da seção 3 (regra da 491: o bloqueio é desligar) + esta
+select t.eq('revogação auditada', (select count(*) from public.comunidade_moderacao_log where alvo_id = t.id('membro_a') and acao = 'autorizacao_revogada'), 2::bigint);
 select t.como('membro_a');
 select t.throws('revogado: não abre mais o feed', $q$select public.comunidade_feed()$q$, 'responsável');
 select t.como('membro_b');

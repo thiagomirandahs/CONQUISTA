@@ -19,7 +19,7 @@ import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from
 // =============================================================================
 
 const SEM_ACESSO = {
-  sem_autorizacao: ['🔒', 'Falta a autorização do responsável', 'Peça para o seu pai, mãe ou responsável autorizar a Rede DBV pelo app (tela Meus filhos).'],
+  sem_autorizacao: ['🔒', 'O seu responsável desligou a Rede DBV', 'Converse com o seu pai, mãe ou responsável: ele pode religar pelo app (tela Meus filhos).'],
   recurso_desligado: ['🧩', 'A Rede DBV não está liberada', 'Este clube ainda não participa da Rede DBV.'],
   // coordenação (490): a rede abre quando algum clube da área tiver o recurso ligado
   area_sem_rede: ['🌎', 'A Rede DBV ainda não está liberada na sua área', 'Quando um clube da sua coordenação entrar na Rede DBV, ela abre aqui para você.'],

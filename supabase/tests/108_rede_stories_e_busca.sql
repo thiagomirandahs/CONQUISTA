@@ -78,6 +78,17 @@ select public.comunidade_autorizar(t.id('membro_a'), true);
 select t.como('pais_b');
 select public.comunidade_autorizar(t.id('membro_b'), true);
 reset role;
+-- desde a 491 (29/09/2026) a criança entra LIBERADA (a autorização dos pais é a do papel, na admissão);
+-- a "criança sem autorização" destes testes (membro_a2) passa a ser a criança cujo RESPONSÁVEL DESLIGOU.
+do $$ begin
+  set local session_replication_role = replica;  -- vínculo direto, como os fixtures fazem
+  insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status, club_id)
+  values (t.id('pais_a'), t.id('membro_a2'), 'Membro A2', 'aprovado', t.id('clube_a'));
+  set local session_replication_role = origin;
+end $$;
+select t.como('pais_a');
+select public.comunidade_autorizar(t.id('membro_a2'), false);
+reset role;
 
 -- =============================================================================
 --  3. Publicar story (direto) — validações e triagem

@@ -53,10 +53,10 @@ export default function AutorizacaoComunidade() {
           <li key={f.desbravador_id} className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="font-bold text-ink truncate">{f.nome}</p>
-              <p className="text-xs text-muted">{f.autorizado ? 'Autorizado' : 'Não autorizado'}</p>
+              <p className="text-xs text-muted">{f.autorizado ? 'Liberado (termo assinado na admissão)' : 'Desligado por você'}</p>
             </div>
             <Botao variacao={f.autorizado ? 'secundario' : 'primario'} carregando={ocupado === f.desbravador_id}
-              aoTocar={() => alternar(f)}>{f.autorizado ? 'Revogar' : 'Autorizar'}</Botao>
+              aoTocar={() => alternar(f)}>{f.autorizado ? 'Desligar' : 'Religar'}</Botao>
           </li>
         ))}
       </ul>

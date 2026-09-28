@@ -1,12 +1,8 @@
--- Aplica em PRODUÇÃO a 490 — REDE DBV para a COORDENAÇÃO (distrito, região, campo, união, divisão).
--- Cole INTEIRO no SQL Editor do Supabase. O SQL Editor NÃO segura begin/commit (grava comando a comando),
--- então este script é IDEMPOTENTE: só "create or replace function", revoke/grant e um insert no ledger com
--- "on conflict do nothing" — pode rodar de novo sem estragar nada. Sem tabela temporária, sem dado de usuário.
--- Para sozinho (antes de mudar qualquer coisa) se a produção não estiver entre a 481 e a 499.
--- Depois: conferir o Tenant 001 (última linha mostra os ativos do filhos-da-conquista) e só então fazer o
--- push do app (as telas novas mandam o header x-rede-como e leem 'coordenacao' do servidor).
+-- Aplica 490 (Rede DBV para a COORDENAÇÃO) e 491 (autorização dos pais é a do PAPEL: criança entra
+-- liberada; o responsável só desliga pelo app) em PRODUÇÃO. Pode rodar mais de uma vez.
+-- Para sozinho se a produção não estiver entre a 481 e a 491.
 do $g$ begin
-  if (select max(version) from supabase_migrations.schema_migrations) not between '20260930000481' and '20260930000499' then
+  if (select max(version) from supabase_migrations.schema_migrations) not between '20260930000481' and '20260930000491' then
     raise exception 'ABORTADO: produção fora do esperado (está em %)', (select max(version) from supabase_migrations.schema_migrations);
   end if;
 end $g$;
@@ -831,13 +827,37 @@ end;
 $function$;
 
 
-insert into supabase_migrations.schema_migrations (version, name) values ('20260930000490', 'rede-dbv-coordenacao')
-on conflict (version) do nothing;
-notify pgrst, 'reload schema';
+;
+insert into supabase_migrations.schema_migrations(version, name) values ('20260930000490', 'rede-dbv-coordenacao') on conflict do nothing;
+
+-- ======================= 20260930000491_rede-dbv-autorizacao-dos-pais-no-papel =======================
+-- =============================================================================
+-- 491 — Rede DBV: a autorização dos pais é a do PAPEL (assinada na admissão)
+-- =============================================================================
+-- Decisão do dono (29/09/2026): o termo de autorização dos pais é assinado PRESENCIALMENTE, no
+-- papel, na admissão do clube — o app não precisa pedir de novo. Então o desbravador entra na Rede
+-- DBV LIBERADO por padrão; o responsável vinculado continua podendo DESLIGAR pelo app (Meus filhos),
+-- e o "não" dele vale na hora (a 432 já retira o que o filho publicou quando ele revoga).
+-- Antes: só entrava com autorizado = true registrado no app. Agora: bloqueia só com autorizado = false
+-- de um responsável ainda vinculado (aprovado, no mesmo clube).
+-- A autorização de USO DE IMAGEM (foto de rosto, 470) não muda: continua arquivada pela diretoria.
+-- =============================================================================
+create or replace function public._comunidade_autorizado(p_uid uuid, p_club uuid)
+returns boolean
+language sql stable security definer set search_path = '' as $$
+  select not exists (
+    select 1 from public.comunidade_autorizacoes a
+     where a.club_id = p_club and a.desbravador_id = p_uid and not a.autorizado
+       and exists (select 1 from public.responsaveis r
+                    where r.responsavel_id = a.responsavel_id and r.desbravador_id = p_uid
+                      and r.club_id = p_club and r.status = 'aprovado'));
+$$;
+revoke all on function public._comunidade_autorizado(uuid, uuid) from public, anon, authenticated;
+
+;
+insert into supabase_migrations.schema_migrations(version, name) values ('20260930000491', 'rede-dbv-autorizacao-dos-pais-no-papel') on conflict do nothing;
 
 select 'OK' as resultado,
   (select max(version) from supabase_migrations.schema_migrations) as ledger,
-  (select count(*) from pg_proc where pronamespace = 'public'::regnamespace
-     and proname in ('_rede_unidade_ligada', '_rede_unidades_da_area', '_rede_contexto', '_rede_coordenacao_na_rede')) as helpers_novos,
   (select count(*) from public.organization_memberships m join public.organizational_units u on u.id = m.organizational_unit_id
     where u.slug = 'filhos-da-conquista' and m.status = 'ativo') as ativos_filhos_da_conquista;
