@@ -90,8 +90,8 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Banco LOCAL de trabalho (Docker `postgres`) está na 360.
 
 ## Pendências conhecidas (28/09)
-- **Branch `saas-produto-multiclube` (29/09) tem prontas e testadas, SEM push e SEM produção:** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Falta script de produção 390→450 (idempotente, sem temp table).
-- **Aplicar 370 (audiolivros) + 380 (foto do documento da idade) em produção**: `scripts/aplicar-370-380-producao.sql`
+- **Branch `saas-produto-multiclube` (29/09) tem prontas e testadas, SEM push e SEM produção:** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Script único: `scripts/aplicar-370-a-450-producao.sql` (idempotente, testado 2x numa cópia na 360).
+- **Aplicar 370 (audiolivros) + 380 (foto do documento da idade) em produção**: `scripts/aplicar-370-a-450-producao.sql` (substitui o 370+380)
   (idempotente; o dono cola no SQL Editor). Só depois fazer push do app (a aba Audiolivros do /admin depende da 370).
 - 340→350→360 APLICADAS em produção (28/09). Atenção: o SQL Editor do Supabase NÃO segura `begin/commit`
   (grava comando a comando; tabela temporária some) — script de produção tem de ser idempotente e sem temp table.
