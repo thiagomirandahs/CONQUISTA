@@ -5,6 +5,7 @@
 // um requisito sumir, duplicar, trocar de ordem ou de texto, este teste falha.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -65,7 +66,7 @@ describe('matriz manifesto → UI: as 6 Classes Regulares 2026', () => {
   for (const classe of REGULARES) {
     it(`${classe.nome}: cada requisito uma vez, na ordem, com o texto exato; seções na ordem; dinâmico e N-de-M como estrutura`, async () => {
       carregarMinhaClasse.mockResolvedValue(payload(classe))
-      const { unmount } = render(<MinhaClasse />)
+      const { unmount } = render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
       await screen.findByRole('heading', { level: 3, name: classe.nome })
 
       // seções: mesma quantidade e ordem (h4 "CÓDIGO. Nome")

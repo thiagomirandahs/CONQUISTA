@@ -20,6 +20,8 @@ import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import OuvirLivro from '../components/OuvirLivro.jsx'
+import { termoDoRequisito } from '../lib/catalogoEspecialidades.js'
+import { Link } from 'react-router-dom'
 import { DocumentoDaIdade } from '../components/DocumentoDaIdade.jsx'
 import { documentosDaMinhaClasse } from '../services/documentoIdade.js'
 
@@ -138,7 +140,11 @@ export default function MinhaClasse() {
           <h2 className="text-2xl font-extrabold text-ink">🎖️ Minha Classe</h2>
           <p className="text-sm text-muted">Seu progresso na classe, requisito por requisito</p>
         </div>
-        <BotaoAjuda topico="minha-classe" />
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to="/catalogo-especialidades" aria-label="Especialidades e mestrados" data-testid="abrir-catalogo"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-surface2 px-3 text-sm font-bold text-ink"><span aria-hidden="true">📚</span> Especialidades</Link>
+          <BotaoAjuda topico="minha-classe" />
+        </div>
       </div>
 
       {erro && <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800 mb-4">{erro}</div>}
@@ -472,6 +478,10 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
       </h5>
 
       <OuvirLivro descricao={r.descricao} userId={userId} />
+      {termoDoRequisito(r.descricao) !== null && (
+        <Link to={`/catalogo-especialidades${termoDoRequisito(r.descricao) ? `?q=${encodeURIComponent(termoDoRequisito(r.descricao))}` : ''}`}
+          className="mt-1 inline-flex min-h-[40px] items-center text-xs font-bold text-brand" data-testid="requisito-catalogo">🔎 Ver no catálogo de especialidades</Link>
+      )}
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
 

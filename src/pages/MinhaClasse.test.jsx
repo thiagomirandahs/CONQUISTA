@@ -4,6 +4,7 @@
 // N-de-M, cumprido pelo histórico, aguardando avaliação, aprovado, correção solicitada.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'u1' } }) }))
@@ -103,7 +104,7 @@ describe('situacaoDoRequisito (lógica pura)', () => {
 describe('MinhaClasse — seleção de classe', () => {
   it('lista o que o servidor manda, com idade mínima; a inelegível vem desabilitada COM o motivo ligado ao botão', async () => {
     carregarMinhaClasse.mockResolvedValue(null)
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     expect(await screen.findByRole('heading', { name: 'Classe Teste 1' })).toBeInTheDocument()
     expect(screen.getByText('A partir de 10 anos')).toBeInTheDocument()
     const botoes = screen.getAllByRole('button', { name: 'Iniciar' })
@@ -119,7 +120,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   beforeEach(() => { carregarMinhaClasse.mockResolvedValue(MINHA) })
 
   it('hierarquia: h2 página → h3 classe → h4 seção → h5 requisito; barra de progresso acessível', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4, name: 'I. Seção de Teste' })
     expect(screen.getByRole('heading', { level: 2, name: /Minha Classe/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Classe Teste 1' })).toBeInTheDocument()
@@ -129,7 +130,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('cada situação tem ícone E texto (não só cor) e o data-situacao certo', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     expect(situacao('1')).toBe('nao_iniciado')
     expect(situacao('2')).toBe('em_andamento')
@@ -146,7 +147,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('simples: envia direto; com evidência: tem label e rascunho', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c1 = card('1')
     expect(within(c1).queryByText('Salvar rascunho')).not.toBeInTheDocument()
@@ -158,7 +159,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('dinâmico: mostra o conteúdo resolvido; sem o livro do ano fica ABERTO com aviso neutro (sem cadeado) e envia o resumo', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     expect(within(card('3')).getByText('Conteúdo do ano [TESTE]')).toBeInTheDocument()
     expect(within(card('3')).getByText(/Conteúdo de 2026/)).toBeInTheDocument() // o ano do conteúdo vem do servidor (migration 84)
@@ -176,7 +177,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('escolha N-de-M: opções na ordem como checkboxes, aviso de não repetir, salva a escolha pelo servidor', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c5 = card('5')
     const grupo = within(c5).getByRole('group', { name: /Escolha 1 de 3/ })
@@ -191,7 +192,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('escolha aberta (cartão sem lista): aceita texto livre com label', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c10 = card('10')
     await userEvent.type(within(c10).getByLabelText('Qual especialidade você fez?'), 'Cestaria')
@@ -201,7 +202,7 @@ describe('MinhaClasse — os estados de requisito', () => {
   })
 
   it('cumprido pelo histórico: a opção vem marcada/desabilitada com o aviso, e o envio está liberado', async () => {
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c6 = card('6')
     const caixaB = within(c6).getAllByRole('checkbox')[1]
@@ -216,7 +217,7 @@ describe('MinhaClasse — os estados de requisito', () => {
       status_atual: 'correcao_solicitada',
       tentativas: [{ submission_id: 's1', tentativa_numero: 1, evidencia_texto: null, evidencia_path: null, enviado_em: '2026-09-01', decisao: 'correcao_solicitada', avaliado_por_nome: 'Líder', avaliado_papel: 'diretoria', comentario: 'Refaça', avaliado_em: '2026-09-02' }],
     })
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     expect(within(card('7')).getByText(/Aguardando a liderança avaliar/)).toBeInTheDocument()
     expect(within(card('7')).queryByRole('button', { name: /Enviar/ })).not.toBeInTheDocument()
@@ -234,7 +235,7 @@ describe('MinhaClasse — os estados de requisito', () => {
       classe: { nome: 'Classe Teste 1', idade_minima: 10, fonte_url: 'https://exemplo.test/classe/', fonte_publicado_em: '2017-01-01', vigente_desde: '2026-01-01' },
       versao: { identificador: 'teste', versao: '9.9', origem: 'oficial', status: 'publicado', fonte_hash: 'abc123', manifesto_versao: '9.9', gerado_em: '2026-09-22', importado_em: '2026-09-22' },
     })
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     expect(screen.queryByText(/OMD-999/)).not.toBeInTheDocument()
     expect(screen.queryByText('abc123')).not.toBeInTheDocument()
@@ -261,7 +262,7 @@ describe('MinhaClasse — comprovação obrigatória', () => {
 
   it('texto obrigatório vazio: não envia e diz o que falta; com texto, salva e envia', async () => {
     carregarMinhaClasse.mockResolvedValue(comObrigatorios())
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c = card('1')
     const caixa = within(c).getByLabelText('Sua resposta (obrigatória)')
@@ -276,7 +277,7 @@ describe('MinhaClasse — comprovação obrigatória', () => {
 
   it('foto obrigatória sem foto: não envia e pede a foto; com foto já salva, envia', async () => {
     carregarMinhaClasse.mockResolvedValue(comObrigatorios())
-    const { unmount } = render(<MinhaClasse />)
+    const { unmount } = render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     const c = card('2')
     expect(within(c).getByText('Foto de comprovação (obrigatória)')).toBeInTheDocument()
@@ -286,7 +287,7 @@ describe('MinhaClasse — comprovação obrigatória', () => {
     unmount()
 
     carregarMinhaClasse.mockResolvedValue(comObrigatorios({ rf: { evidencia_path: 'caminho/foto.jpg', status: 'em_andamento' } }))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
     await userEvent.click(within(card('2')).getByRole('button', { name: 'Enviar para avaliação' }))
     await waitFor(() => expect(enviarRequisito).toHaveBeenCalledWith('rf'))
@@ -304,7 +305,7 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
   it('abas grandes com cada classe (nome + %), alterna pela id e mostra a classe escolhida', async () => {
     carregarMinhasClasses.mockResolvedValue(LISTA)
     carregarMinhaClasse.mockImplementation(async (id) => (id === 'mc2' ? COMP : AMIGO))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 3, name: 'Amigo' })
     const abas = screen.getAllByRole('tab')
     expect(abas).toHaveLength(2)
@@ -321,7 +322,7 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
     carregarMinhasClasses.mockResolvedValue(LISTA.slice(0, 1))
     carregarMinhaClasse.mockResolvedValue(AMIGO)
     iniciarClasse.mockResolvedValue({ ok: true, member_class_id: 'mcN' })
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 3, name: 'Amigo' })
     await userEvent.click(screen.getByRole('button', { name: '+ Iniciar outra classe' }))
     const outras = await screen.findByTestId('outras-classes')
@@ -332,7 +333,7 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
 
   it('a página fica na cor da classe: cabeçalho, seção e botão de enviar; no amarelo (Guia) o texto é escuro', async () => {
     carregarMinhaClasse.mockResolvedValue({ ...MINHA, classe: { ...MINHA.classe, nome: 'Guia' } })
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 3, name: 'Guia' })
     expect(screen.getByTestId('classe-tema')).toHaveAttribute('data-cor', '#eab308')
     const cab = screen.getByTestId('cabecalho-classe')
@@ -349,7 +350,7 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
       { class_id: 'a1', nome: 'Amigo da Natureza', idade_minima: 10, avancada: true, classe_regular_codigo: 'amigo', elegivel: false,
         motivo_inelegivel: 'Comece a classe Amigo primeiro: a Classe Avançada é feita junto com ela ou depois dela.', curriculum_version: { origem: 'oficial', versao: '2026.4' } },
     ])
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { name: 'Amigo da Natureza' })
     const itens = screen.getAllByRole('listitem')
     expect(itens[0]).toHaveAttribute('data-avancada', 'false')
@@ -368,7 +369,7 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
     const PCB = { ...MINHA, member_class: { ...MINHA.member_class, id: 'mc3' }, classe: { ...MINHA.classe, id: 'k3', nome: 'Pesquisador de Campo e Bosque' } }
     carregarMinhasClasses.mockResolvedValue([{ member_class_id: 'mc3', class_id: 'k3', nome: 'Pesquisador de Campo e Bosque', status: 'em_andamento', percentual: 5 }])
     carregarMinhaClasse.mockResolvedValue(PCB)
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 3, name: 'Pesquisador de Campo e Bosque' })
     expect(screen.getByTestId('classe-tema')).toHaveAttribute('data-cor', '#16a34a')
     expect(within(screen.getByTestId('cabecalho-classe')).getByTestId('selo-avancada')).toBeInTheDocument()

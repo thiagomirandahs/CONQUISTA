@@ -3,6 +3,7 @@
 // pedida na revisão) vem do servidor e é apresentada com ícone + texto.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'u1' } }) }))
 vi.mock('../lib/juice.js', () => ({ vitoria: () => {} }))
@@ -33,7 +34,7 @@ beforeEach(() => carregarMinhaClasse.mockReset())
 describe('MinhaClasse — etapas da conclusão', () => {
   it('requisitos_concluidos: "sendo validada", sem dizer investido', async () => {
     carregarMinhaClasse.mockResolvedValue(payload('requisitos_concluidos'))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     const etapa = await screen.findByTestId('etapa')
     expect(etapa).toHaveAttribute('data-etapa', 'requisitos_concluidos')
     expect(etapa).toHaveTextContent(/sendo validada/)
@@ -41,12 +42,12 @@ describe('MinhaClasse — etapas da conclusão', () => {
   })
   it('aguardando_revisao: aguardando a revisão final', async () => {
     carregarMinhaClasse.mockResolvedValue(payload('aguardando_revisao', { snapshot: { id: 's', versao: 1, hash: 'a'.repeat(64), status: 'selado' }, revisao: { status: 'pendente' } }))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     expect(await screen.findByTestId('etapa')).toHaveTextContent(/Aguardando a revisão final/)
   })
   it('apto_investidura: apto ≠ investido; mostra quem aprovou a revisão', async () => {
     carregarMinhaClasse.mockResolvedValue(payload('apto_investidura', { revisao: { status: 'aprovado', revisado_em: '2026-09-20T10:00:00Z', revisado_por_nome: 'Líder A' } }))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     const etapa = await screen.findByTestId('etapa')
     expect(etapa).toHaveTextContent(/apto\(a\) para a investidura/)
     expect(etapa).toHaveTextContent(/por Líder A/)
@@ -54,12 +55,12 @@ describe('MinhaClasse — etapas da conclusão', () => {
   })
   it('investida: com a data do evento de investidura', async () => {
     carregarMinhaClasse.mockResolvedValue(payload('investida', { investidura: { data: '2026-09-21', status: 'registrada', registrado_por_nome: 'Líder A' } }))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     expect(await screen.findByTestId('etapa')).toHaveTextContent('Investido(a) nesta classe em 21/09/2026!')
   })
   it('correção pedida na revisão final: aviso com o comentário e volta a em_andamento', async () => {
     carregarMinhaClasse.mockResolvedValue(payload('em_andamento', { revisao: { status: 'correcao_solicitada', comentario: 'Refaça o I.2' } }))
-    render(<MinhaClasse />)
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     expect(await screen.findByText(/A revisão final pediu correção: "Refaça o I.2"/)).toBeInTheDocument()
     expect(screen.queryByTestId('etapa')).not.toBeInTheDocument()
   })

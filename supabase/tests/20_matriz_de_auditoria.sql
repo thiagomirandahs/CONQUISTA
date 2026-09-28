@@ -95,7 +95,10 @@ insert into t.excecoes values
   ('audiolivro_capitulos',        'capítulos (ID de vídeo do YouTube) de um audiolivro do catálogo global (migration 370); mesmo escopo de audiolivros'),
   ('requisitos_com_documento',    'CATÁLOGO GLOBAL (migration 380): quais requisitos do currículo pedem foto de documento, por manifesto_id; sem dado de pessoa, sem acesso direto'),
   ('plataforma_manutencao',       'ESTADO GLOBAL da plataforma (migration 400): 1 linha fixa (manutenção ligada/aviso prévio); vale para todos os clubes, sem dado de pessoa; leitura só por RPC, escrita só admin da plataforma'),
-  ('comunidade_termos',           'LISTA DE TERMOS da triagem da Comunidade (migration 430): da PLATAFORMA, a mesma para todos os clubes (o feed é entre clubes); sem dado de pessoa; sem acesso direto, só o admin da plataforma edita por RPC');
+  ('comunidade_termos',           'LISTA DE TERMOS da triagem da Comunidade (migration 430): da PLATAFORMA, a mesma para todos os clubes (o feed é entre clubes); sem dado de pessoa; sem acesso direto, só o admin da plataforma edita por RPC'),
+  ('especialidades_catalogo',     'CATÁLOGO GLOBAL de especialidades (migration 460, gerado do MDA Wiki): mesmo para todos os clubes, sem dado de pessoa; leitura só por RPC'),
+  ('mestrados_catalogo',          'CATÁLOGO GLOBAL de mestrados (migration 460); mesmo escopo de especialidades_catalogo'),
+  ('mestrado_especialidades',     'quais especialidades contam para cada mestrado (migration 460); mesmo escopo de especialidades_catalogo');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
