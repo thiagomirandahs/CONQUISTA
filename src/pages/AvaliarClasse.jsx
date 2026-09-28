@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoricoRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -138,14 +139,7 @@ function Item({ it, onFeito }) {
         </button>
       )}
       {historico && (
-        <ol className="text-xs bg-surface2 rounded-lg p-2 mb-2 space-y-1.5">
-          {(historico.tentativas || []).map((h) => (
-            <li key={h.submission_id} className="border-l-2 border-line pl-2">
-              <div className="font-semibold text-ink">Tentativa {h.tentativa_numero} — {h.decisao === 'aprovado' ? '✅ aprovada' : h.decisao === 'correcao_solicitada' ? '✏️ correção solicitada' : '⏳ aguardando'}</div>
-              {h.comentario && <div className="text-muted italic">"{h.comentario}"</div>}
-            </li>
-          ))}
-        </ol>
+        <HistoricoDeTentativas tentativas={historico.tentativas || []} mostrarAvaliador className="mb-2" />
       )}
       <label className="block mb-2">
         <span className="sr-only">Orientação (obrigatória para pedir correção)</span>
