@@ -13,7 +13,7 @@ import { Carregando } from '../../ui/index.jsx'
 //  do dono). Layout PRÓPRIO (não usa o AppLayout do clube): fundo branco; topo com a logo à
 //  esquerda e, à direita, ➕ publicar e 🔔 notificações em quadradinhos arredondados leves; barra
 //  inferior SÓ de ícones (Início · Buscar · ➕ · Desafios · Perfil), ativo em azul com fundo suave.
-//  "Sair da rede", acessibilidade e moderação ficam em /rede/mais (menu do meu perfil).
+//  "Sair" fica no topo, sempre visível; acessibilidade e moderação ficam em /rede/mais (menu do meu perfil).
 //  Mobile-first: sem rolagem lateral, alvos ≥ 44px, área segura do iPhone respeitada.
 // =============================================================================
 
@@ -33,6 +33,11 @@ function Topo() {
           <span className={`font-extrabold text-[19px] tracking-tight ${TXT}`}>Rede DBV</span>
         </Link>
         <div className="flex items-center gap-2">
+          {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
+          <Link to="/inicio" aria-label="Sair da Rede DBV e voltar ao app do clube" data-testid="rede-sair"
+            className="min-h-[44px] px-3 rounded-xl bg-[#f1f5f9] text-[#0f172a] inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+            <Icone nome="sair" className="w-5 h-5" /> Sair
+          </Link>
           <Link to="/rede/publicar" aria-label="Publicar" className={QUADRADINHO}><Icone nome="maisQuadrado" className="w-6 h-6" /></Link>
           <div className="relative"><Notificacoes classeBotao={QUADRADINHO} icone={<Icone nome="sino" className="w-6 h-6" />} /></div>
         </div>
