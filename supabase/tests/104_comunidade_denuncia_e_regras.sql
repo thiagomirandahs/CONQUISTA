@@ -267,6 +267,13 @@ select t.bloqueado('não envia foto na pasta de OUTRA pessoa',
          t.id('clube_b')::text || '/' || t.id('lider_b')::text || '/' || t.id('dummy_path')::text || '.jpg'));
 select t.permitido('criança autorizada envia a própria foto', format($q$insert into storage.objects (bucket_id, name, owner) values ('comunidade', %L, auth.uid())$q$, (select p from caminho)));
 select t.throws('caminho inventado é recusado', $q$select public.comunidade_publicar('foto', 'x/y/z.jpg')$q$, 'inválida');
+-- MUDANÇA DE REGRA (migration 480, decisão do dono de 29/09/2026): foto PUBLICA DIRETO por padrão
+-- (rede_foto_exige_aprovacao() = false; a publicação direta e a denúncia estão provadas no teste 108).
+-- O caminho "passa pela diretoria" continua existindo e sendo testado AQUI, com a regra ligada só
+-- dentro deste teste (rollback no fim) — nenhuma checagem abaixo foi afrouxada.
+reset role;
+create or replace function public.rede_foto_exige_aprovacao() returns boolean language sql stable set search_path = '' as $f$ select true $f$;
+select t.como('membro_b');
 select t.eq('foto entra EM ANÁLISE', t.txt(format($q$select public.comunidade_publicar('Nossa unidade!', %L)->>'status'$q$, (select p from caminho))), 'em_analise');
 select t.eq('o autor vê a própria foto em análise no feed', t.txt($q$select public.comunidade_feed()->'itens'->0->>'status'$q$), 'em_analise');
 reset role;

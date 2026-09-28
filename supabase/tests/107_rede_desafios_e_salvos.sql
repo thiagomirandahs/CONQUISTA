@@ -178,6 +178,10 @@ select t.eq('ocultar NÃO dá aviso (strike) ao autor', (select count(*) from pu
 select t.eq('bucket comunidade: privado, JPEG/WebP, até 300 KB',
   (select count(*) from storage.buckets where id = 'comunidade' and not public
       and allowed_mime_types @> array['image/webp'] and file_size_limit = 307200), 1::bigint);
+-- MUDANÇA DE REGRA (migration 480, 29/09/2026): foto publica direto por padrão (teste 108). Esta
+-- seção prova a vida útil com o caminho de aprovação (aprovada/recusada), então liga a regra
+-- só dentro deste teste (rollback no fim).
+create or replace function public.rede_foto_exige_aprovacao() returns boolean language sql stable set search_path = '' as $f$ select true $f$;
 select t.recuar(5);
 insert into t.ids values ('foto1', gen_random_uuid()), ('foto2', gen_random_uuid()), ('orfa', gen_random_uuid());
 create temp table caminhos as select
