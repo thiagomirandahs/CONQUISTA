@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, Botao, Aviso, Campo } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { Chip, Esqueleto, EstadoVazio } from '../components/admin/AdminUI.jsx'
@@ -7,12 +7,12 @@ import {
   coordenadorDecidir, coordenadorRemover, conviteGerar, conviteRevogar, conviteApagar, convitesLimparInativos,
   TIPO_ROTULO, PAPEIS_COORDENACAO, rotuloPapel, montarLinkCoordenacao,
 } from '../services/hierarquia.js'
+import { NIVEL, RAIZ, podeSoltar, frasesDoMovimento } from '../lib/arrastarHierarquia.js'
 
 // Aba "Hierarquia" do /admin (migration 130). Mobile-first e clean: caixas claras, botões ≥44px,
 // sem brilho. Pendências (clube pedindo região, coordenador que escolheu a unidade) vêm no topo.
 // Só o admin da plataforma chega aqui — o servidor confere em cada RPC.
 const TIPOS = ['divisao', 'uniao', 'campo', 'regiao', 'distrito']
-const NIVEL = { divisao: 1, uniao: 2, campo: 3, regiao: 4, distrito: 5, clube: 7 }
 const SITUACAO_CONVITE = { valido: ['ok', 'Válido'], revogado: ['perigo', 'Revogado'], expirado: ['neutro', 'Expirado'], esgotado: ['neutro', 'Esgotado'] }
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
 
@@ -112,48 +112,140 @@ function PedidoClube({ pedido: p, ativas, ocupado, rodar }) {
 }
 
 function Arvore({ unidades, clubes, ativas, ocupado, rodar }) {
+  const itens = useMemo(() => [...unidades, ...clubes.map((c) => ({ ...c, tipo: 'clube' }))], [unidades, clubes])
   const filhos = useMemo(() => {
     const m = new Map()
-    for (const x of [...unidades, ...clubes.map((c) => ({ ...c, tipo: 'clube' }))]) {
-      const k = x.parent_id || 'raiz'
+    for (const x of itens) {
+      const k = x.parent_id || RAIZ
       if (!m.has(k)) m.set(k, [])
       m.get(k).push(x)
     }
+    for (const lista of m.values()) lista.sort((a, b) => NIVEL[a.tipo] - NIVEL[b.tipo] || a.nome.localeCompare(b.nome))
     return m
-  }, [unidades, clubes])
-  const raiz = filhos.get('raiz') || []
+  }, [itens])
   const [aberta, setAberta] = useState(null)
+  // Arrastar e soltar com pointer events (mouse E dedo). Só a alça ⠿ captura o toque — o resto da
+  // linha continua rolando a página no celular. Soltar pede confirmação e salva pelo servidor.
+  const [arrasto, setArrasto] = useState(null) // { item, x, y, alvoId }
+  const arrastoRef = useRef(null)
+  const arrastando = !!arrasto
 
+  // as escutas entram no MESMO instante do toque na alça (não num efeito depois do render): um gesto
+  // rápido terminava antes de o efeito ligar as escutas e o arrasto se perdia.
+  const itensRef = useRef(itens)
+  const rodarRef = useRef(rodar)
+  const encerrarRef = useRef(null)
+  useEffect(() => { itensRef.current = itens; rodarRef.current = rodar })
+  useEffect(() => () => encerrarRef.current?.(), [])
+
+  function alvoEm(x, y) {
+    const el = document.elementFromPoint(x, y)?.closest('[data-soltar]')
+    const id = el?.getAttribute('data-soltar') || null
+    const alvo = id === RAIZ ? RAIZ : itensRef.current.find((i) => i.id === id)
+    return id && podeSoltar(arrastoRef.current?.item, alvo, itensRef.current) ? id : null
+  }
+
+  function comecar(e, item) {
+    if (ocupado || arrastoRef.current) return
+    e.preventDefault()
+    setAberta(null)
+    arrastoRef.current = { item, x: e.clientX, y: e.clientY, alvoId: null }
+    setArrasto(arrastoRef.current)
+    let rolar = null
+    const parar = () => { if (rolar) clearInterval(rolar); rolar = null }
+    const mover = (ev) => {
+      arrastoRef.current = { ...arrastoRef.current, x: ev.clientX, y: ev.clientY, alvoId: alvoEm(ev.clientX, ev.clientY) }
+      setArrasto(arrastoRef.current)
+      // perto da borda da tela a página rola sozinha (a árvore é maior que a tela do celular)
+      const v = ev.clientY < 90 ? -14 : ev.clientY > window.innerHeight - 90 ? 14 : 0
+      parar()
+      if (v) rolar = setInterval(() => window.scrollBy(0, v), 16)
+    }
+    const encerrar = () => {
+      parar()
+      document.body.classList.remove('select-none')
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+      window.removeEventListener('pointercancel', cancelar)
+      encerrarRef.current = null
+    }
+    const cancelar = () => { encerrar(); arrastoRef.current = null; setArrasto(null) }
+    function soltar(ev) {
+      const alvoId = alvoEm(ev.clientX, ev.clientY) || arrastoRef.current?.alvoId
+      const st = arrastoRef.current
+      cancelar()
+      if (!st || !alvoId) return
+      const alvo = alvoId === RAIZ ? RAIZ : itensRef.current.find((x) => x.id === alvoId)
+      if (!window.confirm(frasesDoMovimento(st.item, alvo, TIPO_ROTULO))) return
+      const novoPai = alvo === RAIZ ? null : alvo.id
+      if (st.item.tipo === 'clube') rodarRef.current(`v${st.item.id}`, () => clubeVincular(st.item.id, novoPai, 'arrastado no /admin'), 'Clube movido.')
+      else rodarRef.current(`e${st.item.id}`, () => unidadeEditar(st.item.id, st.item.nome, novoPai), 'Unidade movida.')
+    }
+    document.body.classList.add('select-none')
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    window.addEventListener('pointercancel', cancelar)
+    encerrarRef.current = encerrar
+  }
+
+  const raiz = filhos.get(RAIZ) || []
   if (raiz.length === 0) return <EstadoVazio icone="🌳" titulo="Nenhuma unidade ainda">Crie a primeira associação, região ou distrito abaixo.</EstadoVazio>
 
-  const No = ({ n, prof }) => (
-    <li>
-      <button type="button" onClick={() => setAberta(aberta?.id === n.id ? null : n)}
-        className="w-full text-left min-h-[44px] flex items-center gap-2 rounded-xl px-2 hover:bg-surface2"
-        style={{ paddingLeft: `${8 + prof * 16}px` }}>
-        <span className="text-xs text-faint w-20 shrink-0">{TIPO_ROTULO[n.tipo]}</span>
-        <span className={`text-sm font-semibold ${n.status === 'ativo' ? 'text-ink' : 'text-faint line-through'}`}>{n.nome}</span>
-        {(n.coordenadores || []).filter((c) => c.status === 'ativo').length > 0 &&
-          <Chip tom="ok">{(n.coordenadores || []).filter((c) => c.status === 'ativo').length} coord.</Chip>}
-      </button>
-      {aberta?.id === n.id && (
-        <div className="my-2" style={{ marginLeft: `${8 + prof * 16}px` }}>
-          {n.tipo === 'clube'
-            ? <EditarClube clube={n} ativas={ativas} ocupado={ocupado} rodar={rodar} />
-            : <EditarUnidade unidade={n} ativas={ativas} ocupado={ocupado} rodar={rodar} />}
+  const estiloAlvo = (n) => {
+    if (!arrastando) return ''
+    if (arrasto.alvoId === n.id) return 'bg-brand/15 ring-2 ring-brand'
+    return podeSoltar(arrasto.item, n, itens) ? 'ring-2 ring-brand/30' : ''
+  }
+
+  // função de render (não componente): um componente recriado a cada render remontaria a árvore no meio do arrasto
+  const no = (n, prof) => {
+    const coord = (n.coordenadores || []).filter((c) => c.status === 'ativo').length
+    return (
+      <li key={n.id}>
+        <div data-soltar={n.id} data-testid="hier-no"
+          className={`flex items-center rounded-xl ${estiloAlvo(n)} ${arrasto?.item.id === n.id ? 'opacity-40' : ''}`}
+          style={{ paddingLeft: `${prof * 16}px` }}>
+          <span role="button" tabIndex={-1} aria-label={`Arrastar ${n.nome}`} data-testid="hier-alca"
+            onPointerDown={(e) => comecar(e, n)}
+            className="grid h-11 w-9 shrink-0 cursor-grab place-items-center text-lg text-faint active:cursor-grabbing"
+            style={{ touchAction: 'none' }}>⠿</span>
+          <button type="button" onClick={() => { if (!arrastando) setAberta(aberta?.id === n.id ? null : n) }}
+            className="flex min-h-[44px] flex-1 items-center gap-2 rounded-xl px-1 text-left hover:bg-surface2">
+            <span className="w-20 shrink-0 text-xs text-faint">{TIPO_ROTULO[n.tipo]}</span>
+            <span className={`text-sm font-semibold ${n.tipo === 'clube' || n.status === 'ativo' ? 'text-ink' : 'text-faint line-through'}`}>{n.nome}</span>
+            {coord > 0 && <Chip tom="ok">{coord} coord.</Chip>}
+          </button>
         </div>
-      )}
-      {(filhos.get(n.id) || []).length > 0 && (
-        <ul>{(filhos.get(n.id) || []).sort((a, b) => NIVEL[a.tipo] - NIVEL[b.tipo] || a.nome.localeCompare(b.nome))
-          .map((f) => <No key={f.id} n={f} prof={prof + 1} />)}</ul>
-      )}
-    </li>
-  )
+        {aberta?.id === n.id && (
+          <div className="my-2" style={{ marginLeft: `${8 + prof * 16}px` }}>
+            {n.tipo === 'clube'
+              ? <EditarClube clube={n} ativas={ativas} ocupado={ocupado} rodar={rodar} />
+              : <EditarUnidade unidade={n} ativas={ativas} ocupado={ocupado} rodar={rodar} />}
+          </div>
+        )}
+        {(filhos.get(n.id) || []).length > 0 && <ul>{filhos.get(n.id).map((f) => no(f, prof + 1))}</ul>}
+      </li>
+    )
+  }
 
   return (
     <Caixa titulo="Árvore" testid="hier-arvore">
-      <p className="text-xs text-muted mb-2">Toque numa linha para editar. Clubes sem unidade aparecem na raiz.</p>
-      <ul>{raiz.sort((a, b) => NIVEL[a.tipo] - NIVEL[b.tipo] || a.nome.localeCompare(b.nome)).map((n) => <No key={n.id} n={n} prof={0} />)}</ul>
+      <p className="text-xs text-muted mb-2">
+        Para mover, <strong>segure a alça ⠿ e arraste</strong> até o destino (os lugares possíveis ficam marcados). Toque no nome para editar.
+      </p>
+      {arrastando && (
+        <div data-soltar={RAIZ} data-testid="hier-soltar-raiz"
+          className={`mb-2 rounded-xl border-2 border-dashed px-3 py-3 text-center text-sm font-semibold ${arrasto.alvoId === RAIZ ? 'border-brand bg-brand/15 text-ink' : 'border-line text-muted'}`}>
+          {arrasto.item.tipo === 'clube' ? 'Soltar aqui: clube sem unidade' : 'Soltar aqui: topo da árvore'}
+        </div>
+      )}
+      <ul>{raiz.map((n) => no(n, 0))}</ul>
+      {arrastando && (
+        <div aria-hidden="true" className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-xl bg-ink px-3 py-2 text-sm font-bold text-surface shadow-lg"
+          style={{ left: arrasto.x, top: arrasto.y - 12 }}>
+          {TIPO_ROTULO[arrasto.item.tipo]} {arrasto.item.nome}
+        </div>
+      )}
     </Caixa>
   )
 }
