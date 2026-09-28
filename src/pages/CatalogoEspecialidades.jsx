@@ -58,14 +58,24 @@ export default function CatalogoEspecialidades() {
             <input type="search" value={busca} onChange={(e) => buscar(e.target.value)} placeholder="🔎 Buscar pelo nome ou código (ex.: nós, AR-050)"
               className="w-full min-h-[52px] rounded-2xl border-2 border-line bg-surface px-4 text-base text-ink focus:border-brand focus:outline-none" />
           </label>
-          <div className="flex flex-wrap gap-2" aria-label="Filtrar por área">
-            <button type="button" onClick={() => setArea('')} aria-pressed={!area} className={`${aberta(!area)} text-xs`}>Todas</button>
-            {areas.map((a) => (
-              <button key={a.area} type="button" onClick={() => setArea(area === a.area ? '' : a.area)} aria-pressed={area === a.area}
-                className={`${aberta(area === a.area)} text-xs`}>{a.nome} ({a.n})</button>
-            ))}
+          {/* área num seletor só (antes: 11 botões que ocupavam meia tela no celular) */}
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-muted">Área</span>
+            <div className="relative">
+              <select value={area} onChange={(e) => setArea(e.target.value)} data-testid="filtro-area"
+                className="w-full min-h-[52px] appearance-none rounded-2xl border-2 border-line bg-surface pl-4 pr-10 text-base font-semibold text-ink focus:border-brand focus:outline-none">
+                <option value="">Todas as áreas ({areas.reduce((t, a) => t + a.n, 0)})</option>
+                {areas.map((a) => <option key={a.area} value={a.area}>{a.nome} ({a.n})</option>)}
+              </select>
+              <span aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted">▾</span>
+            </div>
+          </label>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted" aria-live="polite">{lista.length} encontrada(s)</p>
+            {(area || busca) && (
+              <button type="button" onClick={() => { setArea(''); buscar('') }} className="min-h-[40px] px-2 text-xs font-bold text-brand">Limpar filtros</button>
+            )}
           </div>
-          <p className="text-xs text-muted" aria-live="polite">{lista.length} encontrada(s)</p>
           <ul className="space-y-2">
             {lista.slice(0, limite).map((e) => (
               <li key={e.codigo} data-testid="especialidade-item" className="rounded-2xl border border-line bg-surface p-3">

@@ -36,3 +36,15 @@ describe('Catálogo de especialidades', () => {
     expect(screen.getByRole('link', { name: /Acampamento I/ })).toBeInTheDocument()
   })
 })
+
+describe('Catálogo: filtro de área', () => {
+  it('é um seletor único e filtra pela área escolhida', async () => {
+    abrir()
+    const sel = await screen.findByTestId('filtro-area')
+    expect(sel.tagName).toBe('SELECT')
+    await userEvent.selectOptions(sel, 'EN')
+    expect(screen.getAllByTestId('especialidade-item')).toHaveLength(1)
+    await userEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }))
+    expect(screen.getAllByTestId('especialidade-item')).toHaveLength(2)
+  })
+})
