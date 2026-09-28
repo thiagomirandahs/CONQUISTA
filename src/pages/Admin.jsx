@@ -24,6 +24,7 @@ import AdminAudiolivros from './AdminAudiolivros.jsx'
 import AdminPaineisPlano from './AdminPaineisPlano.jsx'
 import AdminManutencao from './AdminManutencao.jsx'
 import AdminComunidade from './AdminComunidade.jsx'
+import AdminRecursosPlataforma from './AdminRecursosPlataforma.jsx'
 import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
@@ -590,6 +591,7 @@ function DetalheClube({ clubId, aoVoltar }) {
                 </Painel>
 
                 <div className="md:col-span-2 space-y-4">
+                  <AdminRecursosPlataforma clubId={clubId} recursos={d.recursos || []} onFeito={recarregar} />
                   <LimiteMembrosClube clubId={clubId} onFeito={recarregar} />
                   <PacotesGuardados clubId={clubId} />
                 </div>
