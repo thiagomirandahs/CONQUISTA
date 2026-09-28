@@ -87,6 +87,15 @@ alter default privileges for role supabase_admin in schema public grant all on s
 alter default privileges for role supabase_admin in schema public grant all on tables to postgres, anon, authenticated, service_role;
 truncate auth.users cascade;
 truncate storage.objects, storage.buckets cascade;
+-- policies de Storage também: o "drop schema public cascade" só leva as que dependem de função
+-- public.*; uma policy que só usa auth.uid()/regex (ex.: "suporte anexo: dono envia", 290)
+-- sobrevivia no clone quando o banco local de trabalho já estava migrado, e o pré-voo do upgrade
+-- (estado pré-SaaS) acusava "policy fora do repo". As migrations recriam todas.
+do $$ declare r record; begin
+  for r in select policyname, tablename from pg_policies where schemaname = 'storage' loop
+    execute format('drop policy %I on storage.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
 truncate supabase_migrations.schema_migrations;
 delete from cron.job;
 SQL
