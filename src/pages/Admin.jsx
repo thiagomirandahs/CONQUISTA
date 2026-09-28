@@ -622,9 +622,12 @@ function CaixaClara({ titulo, children, testid }) {
 
 function TrialPadrao() {
   const { dados, erro, recarregar } = useFonte(trialPadrao)
-  const [dias, setDias] = useState('')
+  // o campo mostra o que o admin digitou; enquanto ele não digitou nada, o valor salvo. Sem copiar o
+  // valor salvo para o estado num efeito: o efeito roda depois da renderização e uma resposta da
+  // fonte chegando no meio da digitação apagava o que o admin tinha escrito.
+  const [editado, setDias] = useState(null)
   const [ocupado, setOcupado] = useState(false)
-  useEffect(() => { if (dados) setDias(String(dados.trial_dias)) }, [dados])
+  const dias = editado ?? (dados?.trial_dias != null ? String(dados.trial_dias) : '')
 
   async function salvar() {
     const n = Number(dias)
@@ -633,6 +636,7 @@ function TrialPadrao() {
     try {
       await trialPadraoDefinir(n)
       avisar.sucesso(`Clubes novos passam a ter ${n} dia(s) de teste.`)
+      setDias(null)
       recarregar()
     } catch (e) { avisar.erro(e) }
     setOcupado(false)
