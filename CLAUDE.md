@@ -1,7 +1,7 @@
 # CLAUDE.md — DesbravaClube
 
 Guia rápido para quem (humano ou IA) vai mexer no código. Atualizado em 28/09/2026, fim do dia
-(`main` = `46dccdb`, publicada na Vercel; **banco de produção na migration `20260930000360`** — 340/350/360 aplicadas em 28/09 pelo SQL Editor).
+(`main` = `6393807`, publicada na Vercel em 29/09; **banco de produção na migration `20260930000460`** — 370→460 aplicadas em 29/09 pelo SQL Editor).
 Leia isto antes de abrir o código inteiro.
 
 ## O que é
@@ -90,9 +90,7 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Banco LOCAL de trabalho (Docker `postgres`) está na 360.
 
 ## Pendências conhecidas (28/09)
-- **Branch `saas-produto-multiclube` (29/09) tem prontas e testadas, SEM push e SEM produção:** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, 460 catálogo de especialidades/mestrados (MDA Wiki, só dados de catálogo; tela /catalogo-especialidades), e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Script único: `scripts/aplicar-370-a-460-producao.sql` (idempotente, testado 2x numa cópia na 360).
-- **Aplicar 370 (audiolivros) + 380 (foto do documento da idade) em produção**: `scripts/aplicar-370-a-460-producao.sql` (substitui o 370+380)
-  (idempotente; o dono cola no SQL Editor). Só depois fazer push do app (a aba Audiolivros do /admin depende da 370).
+- **NO AR desde 29/09 (main 6393807 + banco 460):** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, 460 catálogo de especialidades/mestrados (MDA Wiki, só dados de catálogo; tela /catalogo-especialidades), e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Script único: `scripts/aplicar-370-a-460-producao.sql` (idempotente, testado 2x numa cópia na 360).
 - 340→350→360 APLICADAS em produção (28/09). Atenção: o SQL Editor do Supabase NÃO segura `begin/commit`
   (grava comando a comando; tabela temporária some) — script de produção tem de ser idempotente e sem temp table.
 - E2E em produção com cartão de teste controlado (documento/PDF, assinatura, investidura) — nunca feito.
