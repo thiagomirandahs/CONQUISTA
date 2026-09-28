@@ -3,6 +3,7 @@ import { adminPainel, adminModerar, adminTermos, adminSalvarTermo, adminRemoverT
 import { avisar } from '../ui/avisos.jsx'
 import { Aviso, Botao, Campo, Card, Carregando, Selecao, Selo, mensagemDeErro } from '../ui/index.jsx'
 import AdminDesafiosRede from './AdminDesafiosRede.jsx'
+import AdminRedeTodosClubes from './AdminRedeTodosClubes.jsx'
 
 // Admin da PLATAFORMA → Comunidade: números, fila de todos os clubes (primeiro nome + clube), o que a
 // triagem bloqueou (dígitos mascarados) e a LISTA DE TERMOS editável. Tudo auditado no servidor.
@@ -45,9 +46,7 @@ export default function AdminComunidade() {
   const fila = [...(painel.fila?.denuncias || []), ...(painel.fila?.fotos || [])]
   return (
     <div className="space-y-4">
-      <Aviso tom="info" titulo="Recurso da plataforma, desligado por padrão">
-        Ligar por clube só depois dos termos de uso, da autorização dos pais e da análise automática de imagens.
-      </Aviso>
+      <AdminRedeTodosClubes onFeito={carregar} />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[['Clubes com a Comunidade', painel.clubes_com_recurso], ['Denúncias pendentes', painel.denuncias_pendentes],
           ['Bloqueios (7 dias)', painel.bloqueios_7d], ['Pausados', painel.suspensos]].map(([r, v]) => (
