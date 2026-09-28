@@ -1,6 +1,6 @@
 // Serviço: jogos — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase, clubeAtivoNoTransporte } from '../lib/supabase.js'
-import { enfileirar, enviarFila, ehErroDeRede, limparExpirados } from './filaJogos.js'
+import { enfileirar, enviarFila, deveGuardar, limparExpirados } from './filaJogos.js'
 import { gravarConfig } from './config.js'
 import { membrosDoClube } from './membros.js'
 
@@ -91,8 +91,9 @@ export async function registrarJogo(tipo, estrelas) {
   try {
     data = await _rpcJogo(tipo, estrelas, partida)
   } catch (e) {
-    // rede caiu: guarda no celular e manda depois (a trava "1x por dia" do servidor evita duplicar)
-    if (ehErroDeRede(e) && await _guardar({ tipo: 'jogo', jogo: tipo, valor: estrelas, partida })) {
+    // rede caiu OU manutenção (servidor recusou inteiro): guarda no celular e manda depois
+    // (a trava "1x por dia" do servidor evita duplicar)
+    if (deveGuardar(e) && await _guardar({ tipo: 'jogo', jogo: tipo, valor: estrelas, partida })) {
       delete _partidas[tipo]
       return { guardado: true, estrelas, pontos: 0 }
     }
@@ -145,7 +146,7 @@ export async function registrarRecorde(jogo, pontos) {
     // arcade NÃO consome a partida (vale a sessão inteira de replays)
     return r
   } catch (e) {
-    if (ehErroDeRede(e) && await _guardar({ tipo: 'recorde', jogo, valor: pontos, partida })) {
+    if (deveGuardar(e) && await _guardar({ tipo: 'recorde', jogo, valor: pontos, partida })) {
       return { guardado: true, recorde: pontos, melhorou: false }
     }
     throw e

@@ -47,7 +47,15 @@ export function ehErroDeRede(e) {
     || /failed to fetch|networkerror|network request failed|load failed|fetch failed|err_internet|err_network|timeout|timed out/i.test(msg)
 }
 
-export const MSG_GUARDADO = 'Sem internet agora — seu resultado ficou guardado e será enviado quando a conexão voltar.'
+// Modo manutenção (migration 400): o servidor recusou a escrita INTEIRA (nada entrou), então o
+// resultado vale ser guardado e reenviado depois, exatamente como na queda de rede.
+export function ehErroDeManutencao(e) {
+  const msg = typeof e === 'string' ? e : `${e?.message || ''} ${e?.hint || ''}`
+  return /MANUTENCAO|em manutenção/i.test(msg)
+}
+export const deveGuardar = (e) => ehErroDeRede(e) || ehErroDeManutencao(e)
+
+export const MSG_GUARDADO = 'Não deu pra enviar agora (sem internet ou app em manutenção) — seu resultado ficou guardado e será enviado sozinho depois.'
 
 // O que mostrar na tela quando o envio do recorde falha: a mensagem REAL do servidor
 // ("Rápido demais…", "Partida inválida…"); "sem internet" só se for rede de verdade.
@@ -137,7 +145,7 @@ export async function enviarFila({ uid, clube, enviar, agora = new Date() }) {
       }
       res.enviados++
     } catch (e) {
-      if (ehErroDeRede(e)) { redeCaiu = true; manter.push(item) }
+      if (deveGuardar(e)) { redeCaiu = true; manter.push(item) } // rede OU manutenção: para e guarda o resto
       else res.descartados++ // regra do servidor: não adianta repetir
     }
   }

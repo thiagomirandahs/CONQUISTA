@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
+import { useAuth } from '../context/Auth.jsx'
+import { useRascunho } from '../lib/rascunhos.js'
 import { Botao, Campo, Selecao, Aviso, Card, Carregando, Vazio } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import {
@@ -92,8 +94,10 @@ function CampoAnexo({ arquivo, aoMudar, id = 'anexo' }) {
 function NovoChamado({ aoCancelar, aoCriar }) {
   const { marca, papel } = useClube()
   const [categoria, setCategoria] = useState('')
-  const [assunto, setAssunto] = useState('')
-  const [descricao, setDescricao] = useState('')
+  // rascunho local (modo manutenção/rede): o texto do chamado não se perde se o envio falhar
+  const uid = useAuth()?.session?.user?.id || null
+  const [assunto, setAssunto, descartarAssunto] = useRascunho(uid, 'chamado:assunto')
+  const [descricao, setDescricao, descartarDescricao] = useRascunho(uid, 'chamado:descricao')
   const [prioridade, setPrioridade] = useState('')
   const [arquivo, setArquivo] = useState(null)
   const [enviando, setEnviando] = useState(false)
@@ -114,6 +118,7 @@ function NovoChamado({ aoCancelar, aoCriar }) {
         prioridadeSugerida: ehDiretoria && prioridade ? prioridade : null,
         contexto: contextoTecnico({ clube: marca?.nome, papel }),
       })
+      descartarAssunto(); descartarDescricao()
       avisar.sucesso('Chamado aberto! Avisaremos quando o suporte responder.')
       aoCriar(id)
     } catch (err) {
@@ -166,7 +171,8 @@ export function Anexo({ caminho }) {
 function Conversa({ id, aoVoltar }) {
   const [c, setC] = useState(null)
   const [erro, setErro] = useState('')
-  const [texto, setTexto] = useState('')
+  const uid = useAuth()?.session?.user?.id || null
+  const [texto, setTexto, descartarTexto] = useRascunho(uid, `chamado:${id}:resposta`)
   const [arquivo, setArquivo] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
@@ -182,7 +188,7 @@ function Conversa({ id, aoVoltar }) {
     try {
       const anexo = arquivo ? await enviarAnexo(arquivo) : null
       await chamadoResponder(id, texto.trim(), anexo)
-      setTexto(''); setArquivo(null)
+      setTexto(''); setArquivo(null); descartarTexto()
       carregar()
     } catch (err) {
       avisar.erro(err.message)

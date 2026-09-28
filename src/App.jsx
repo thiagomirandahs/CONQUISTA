@@ -14,6 +14,7 @@ import AppLayout from './components/AppLayout.jsx'
 import { TelaDeAbertura, FimDaAbertura } from './ui/carregamento.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
+import GuardaDeManutencao from './components/Manutencao.jsx'
 
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
 const Landing = lazy(() => import('./pages/Landing.jsx'))
@@ -263,8 +264,10 @@ export default function App() {
       </ErroApp>
     )
   }
+  // modo manutenção (migration 400): faixa do aviso prévio / tela de manutenção (o admin da plataforma segue entrando)
   return (
     <ErroApp>
+    <GuardaDeManutencao>
     <Suspense fallback={<Carregando />}>
       <BarreiraDeVoltar />
       <PrecarregarRotas />
@@ -382,6 +385,7 @@ export default function App() {
         </Route>
       </Routes>
     </Suspense>
+    </GuardaDeManutencao>
     </ErroApp>
   )
 }
