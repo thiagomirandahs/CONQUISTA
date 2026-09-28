@@ -101,6 +101,14 @@ select t.eq('o golpe no A ficou registrado no clube A', (select club_id from pub
 select t.eq('o golpe no B ficou registrado no clube B (não duplicou no A)', (select count(*) from public.chefao_golpes where usuario_id = t.id('membro_e_instrutor')), 2);
 
 -- ==================== 5) prêmio semanal (cron): o papel decide por clube, o prêmio cai no clube certo ====================
+-- O prêmio premia a semana de "agora_SP - 12h" (o cron roda domingo 23:50 SP e fecha a semana que
+-- está acabando). O recorde acima foi gravado na semana CORRENTE. Chamando o prêmio "agora", de
+-- segunda 00:00 a 11:59 (SP) ele mira a semana ANTERIOR e não acha nada — este teste falhava toda
+-- segunda de manhã (foi assim que apareceu vermelho em 28/09, uma segunda, 08h). Mesma classe do
+-- problema do chefão acima: o teste precisa se colocar no instante em que o cron roda, não no
+-- relógio de quem roda a suíte. Então: o recorde vai para a semana que o prêmio vai fechar.
+update public.recordes set semana = (date_trunc('week', ((now() at time zone 'America/Sao_Paulo') - interval '12 hours')))::date
+ where usuario_id = t.id('membro_e_instrutor');
 select public._premiar_campeao_semana_clube(t.id('clube_a'));
 select public._premiar_campeao_semana_clube(t.id('clube_b'));
 select t.eq('recorde da semana: premiado no clube A (lá é desbravador)', t.n(format($q$select count(*) from public.pontos where usuario_id = %L and origem = 'campeao' and club_id = %L$q$, t.id('membro_e_instrutor'), t.id('clube_a'))), 1);
