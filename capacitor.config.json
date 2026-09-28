@@ -19,5 +19,10 @@
       "backgroundColor": "#1e3a8a",
       "overlaysWebView": false
     }
+  },
+  "server": {
+    "url": "https://app.desbravaclube.com.br",
+    "androidScheme": "https",
+    "cleartext": false
   }
 }
