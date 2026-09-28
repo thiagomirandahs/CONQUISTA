@@ -43,7 +43,7 @@ export const FERRAMENTAS = [
   // Especialidades têm recurso PRÓPRIO, separado de `classes` (fase 9, item 9): o catálogo de especialidades ainda é de teste
   // e fica fora do piloto. Com `classes` ligado e `especialidades` desligado, este card some e a rota não abre.
   // Comunidade entre clubes (migrations 430–432): fila de fotos e denúncias do PRÓPRIO clube. Só diretoria (pode_administrar_clube).
-  { to: '/gestao/comunidade', icon: '🌎', titulo: 'Moderação da Comunidade', desc: 'Fotos para aprovar e conteúdo denunciado', papeis: SO_DIRETORIA, recurso: 'comunidade', grupo: 'conteudo', contextual: true },
+  { to: '/rede/moderacao', icon: '🌎', titulo: 'Moderação da Rede DBV', desc: 'Fotos, denúncias e autorizações de imagem', papeis: SO_DIRETORIA, recurso: 'comunidade', grupo: 'conteudo', contextual: true },
   { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'especialidades' , grupo: 'avaliar', contextual: true },
 ]
 
@@ -86,7 +86,11 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/cantinho': 'cantinho_unidade',
   '/atividades': 'atividades',
   '/mural': 'mural',
-  '/comunidade': 'comunidade',
+  '/rede': 'comunidade',            // a antiga /comunidade virou redirecionamento para /rede
+  '/rede/publicar': 'comunidade',
+  '/rede/desafios': 'comunidade',
+  '/rede/perfil': 'comunidade',
+  '/rede/mais': 'comunidade',
   '/experiencias': 'experiencias',
   '/minha-classe': 'classes',
   '/minhas-especialidades': 'especialidades',   // não 'classes': ligar as Classes oficiais não pode abrir as especialidades de teste

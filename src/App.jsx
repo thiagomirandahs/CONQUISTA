@@ -81,8 +81,14 @@ const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
 const GestaoAvaliacoes = lazy(() => import('./pages/GestaoAvaliacoes.jsx'))
 const GestaoInscricoes = lazy(() => import('./pages/GestaoInscricoes.jsx'))
 const GestaoDocumentos = lazy(() => import('./pages/GestaoDocumentos.jsx'))
-const Comunidade = lazy(() => import('./pages/Comunidade.jsx'))
-const ModeracaoComunidade = lazy(() => import('./pages/ModeracaoComunidade.jsx'))
+// REDE DBV (migrations 470–472): layout PRÓPRIO, fora do AppLayout do clube
+const LayoutRede = lazy(() => import('./pages/rede/LayoutRede.jsx'))
+const RedeFeed = lazy(() => import('./pages/rede/RedeFeed.jsx'))
+const RedePublicar = lazy(() => import('./pages/rede/RedePublicar.jsx'))
+const RedeDesafios = lazy(() => import('./pages/rede/RedeDesafios.jsx'))
+const RedePerfil = lazy(() => import('./pages/rede/RedePerfil.jsx'))
+const RedeMais = lazy(() => import('./pages/rede/RedeMais.jsx'))
+const RedeModeracao = lazy(() => import('./pages/rede/RedeModeracao.jsx'))
 const Jornada = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jornada })))
 const MeuClubeHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.MeuClube })))
 const JogosHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jogos })))
@@ -323,6 +329,19 @@ export default function App() {
             cada tentativa tem dono e entra no limite de abuso do servidor. */}
         <Route path="/entrar" element={<PortaDeEntrada />} />
 
+        {/* REDE DBV (migrations 470–472): "outro mundo" dentro do app — layout, visual e navegação PRÓPRIOS
+            (não usa o AppLayout do clube). Mesmo ClubeGuard (sessão + clube em uso); recurso 'comunidade'
+            é SOMENTE da plataforma e nasce desligado. A trava de verdade são as RPCs. */}
+        <Route element={<Protegido><LayoutRede /></Protegido>}>
+          <Route path="/rede" element={<RecursoOpcional recurso="comunidade"><RedeFeed /></RecursoOpcional>} />
+          <Route path="/rede/publicar" element={<RecursoOpcional recurso="comunidade"><RedePublicar /></RecursoOpcional>} />
+          <Route path="/rede/desafios" element={<RecursoOpcional recurso="comunidade"><RedeDesafios /></RecursoOpcional>} />
+          <Route path="/rede/perfil" element={<RecursoOpcional recurso="comunidade"><RedePerfil /></RecursoOpcional>} />
+          <Route path="/rede/perfil/:id" element={<RecursoOpcional recurso="comunidade"><RedePerfil /></RecursoOpcional>} />
+          <Route path="/rede/mais" element={<RecursoOpcional recurso="comunidade"><RedeMais /></RecursoOpcional>} />
+          <Route path="/rede/moderacao" element={<RotaRestrita><RedeModeracao /></RotaRestrita>} />
+        </Route>
+
         <Route element={<Protegido><AppLayout /></Protegido>}>
           <Route path="/" element={<InicioRedirect />} />
           {/* Destinos da fase 7 (hubs de jornada) */}
@@ -350,9 +369,9 @@ export default function App() {
           <Route path="/cantinho" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
           <Route path="/cantinho/:unidadeId" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
           <Route path="/mural" element={<RecursoOpcional recurso="mural"><Mural /></RecursoOpcional>} />
-          {/* Comunidade entre clubes (migrations 430–432): recurso SOMENTE da plataforma, nasce desligado. A trava de verdade são as RPCs. */}
-          <Route path="/comunidade" element={<RecursoOpcional recurso="comunidade"><Comunidade /></RecursoOpcional>} />
-          <Route path="/gestao/comunidade" element={<RotaRestrita><ModeracaoComunidade /></RotaRestrita>} />
+          {/* A Comunidade virou a REDE DBV (/rede, layout próprio abaixo). Links antigos (avisos, favoritos) redirecionam. */}
+          <Route path="/comunidade" element={<Navigate to="/rede" replace />} />
+          <Route path="/gestao/comunidade" element={<Navigate to="/rede/moderacao" replace />} />
           <Route path="/gestao" element={<Gestao />} />
           <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />
           <Route path="/visitas" element={<RotaRestrita><VisitasClube /></RotaRestrita>} />

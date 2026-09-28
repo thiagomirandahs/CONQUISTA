@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* REDE DBV: coração discreto do duplo toque na foto. Com movimento reduzido: aparece parado e some
+   (sem animação) — o componente remove o elemento sozinho depois de ~700ms. */
+@keyframes rede-coracao {
+  0% { opacity: 0; transform: scale(0.6); }
+  20% { opacity: 0.92; transform: scale(1); }
+  75% { opacity: 0.92; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+.rede-coracao { animation: rede-coracao 700ms ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .rede-coracao { animation: none !important; opacity: 0.92; }
+}
+
 /* Modo escuro por atributo (ligaremos o seletor quando as telas estiverem
    migradas). Deixa pronto pra usar `dark:` no futuro. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

@@ -71,7 +71,11 @@ vi.mock('../lib/supabase.js', () => ({
   },
 }))
 vi.mock('../lib/upload.js', () => ({ validarImagem: () => Promise.resolve() }))
-vi.mock('../lib/imagem.js', () => ({ comprimirImagem: (f) => Promise.resolve(f) }))
+vi.mock('../lib/imagem.js', () => ({
+  comprimirImagem: (f) => Promise.resolve(f),
+  otimizarFoto: () => Promise.reject(new Error('sem canvas no teste')),   // cai na compressão de sempre
+  FOTO_AVATAR: {},
+}))
 
 const { membrosDoClube, chamadaDaUnidade, PAPEIS_DE_UNIDADE } = await import('./membros.js')
 const { carregarRanking, carregarDesafiosSemana, carregarRadarFaltas } = await import('./ranking.js')

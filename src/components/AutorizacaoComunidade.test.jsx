@@ -6,9 +6,11 @@ import userEvent from '@testing-library/user-event'
 
 const autorizacoesDosFilhos = vi.fn()
 const autorizar = vi.fn()
+const responsavelImagem = vi.fn()
 vi.mock('../services/comunidade.js', () => ({
   autorizacoesDosFilhos: (...a) => autorizacoesDosFilhos(...a),
   autorizar: (...a) => autorizar(...a),
+  responsavelImagem: (...a) => responsavelImagem(...a),
 }))
 vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: vi.fn(async () => true) } }))
 
@@ -38,5 +40,15 @@ describe('Autorização da Comunidade (responsável)', () => {
     render(<AutorizacaoComunidade />)
     await u.click(await screen.findByRole('button', { name: 'Revogar' }))
     expect(autorizar).toHaveBeenCalledWith('f1', false)
+  })
+
+  it('responsável DESLIGA a foto de rosto na rede (autorização de imagem)', async () => {
+    const u = userEvent.setup()
+    responsavelImagem.mockResolvedValue({ ok: true })
+    autorizacoesDosFilhos.mockResolvedValue({ recurso_ligado: true, filhos: [{ desbravador_id: 'f1', nome: 'Lia', autorizado: true, imagem_arquivada: true, imagem_autorizada: true, imagem_desligada: false }] })
+    render(<AutorizacaoComunidade />)
+    expect(await screen.findByText('Foto aparece na rede')).toBeInTheDocument()
+    await u.click(screen.getByRole('button', { name: 'Desligar foto' }))
+    expect(responsavelImagem).toHaveBeenCalledWith('f1', true)
   })
 })

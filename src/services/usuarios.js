@@ -1,6 +1,6 @@
 // Serviço: usuarios — extraído de lib/dados.js.
 import { supabase } from '../lib/supabase.js'
-import { comprimirImagem } from '../lib/imagem.js'
+import { comprimirImagem, otimizarFoto, FOTO_AVATAR } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
 
@@ -201,8 +201,9 @@ export async function mudarUnidade(userId, unidadeId) {
 // clube; o erro dele sobe como está.
 export async function atualizarFotoPerfil({ userId, file }) {
   await validarImagem(file) // tipo REAL + tamanho (hardening etapa 2)
-  file = await comprimirImagem(file, { maxLado: 640 })
-  const ext = file.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() || 'jpg').toLowerCase()
+  // avatar mínimo (rede DBV, 28/09): 256 px, ≤ 30 KB, WebP/JPEG; se o navegador não conseguir, a compressão de sempre
+  file = await otimizarFoto(file, FOTO_AVATAR).then((r) => r.arquivo).catch(() => comprimirImagem(file, { maxLado: 256 }))
+  const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/webp' ? 'webp' : (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `perfis/${userId}-${Date.now()}.${ext}`
   const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
   if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)

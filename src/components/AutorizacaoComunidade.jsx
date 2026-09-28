@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { autorizacoesDosFilhos, autorizar } from '../services/comunidade.js'
+import { autorizacoesDosFilhos, autorizar, responsavelImagem } from '../services/comunidade.js'
 import { avisar } from '../ui/avisos.jsx'
 import { Botao, Card } from '../ui/index.jsx'
 
@@ -28,9 +28,22 @@ export default function AutorizacaoComunidade() {
     setOcupado(null)
   }
 
+  async function alternarImagem(f) {
+    const desligar = !f.imagem_desligada
+    if (desligar && !(await avisar.confirmar({ titulo: `Desligar a foto de ${f.nome} na Rede DBV?`,
+      descricao: 'O perfil passa a mostrar só as iniciais, em todos os clubes.', rotulo: 'Desligar' }))) return
+    setOcupado(`img-${f.desbravador_id}`)
+    try {
+      await responsavelImagem(f.desbravador_id, desligar)
+      avisar.sucesso(desligar ? 'Foto desligada na rede.' : 'Pronto: vale de novo o que a diretoria arquivou.')
+      await carregar()
+    } catch (e) { avisar.erro(e, 'Não consegui salvar.') }
+    setOcupado(null)
+  }
+
   return (
     <Card className="mb-3" aria-labelledby="titulo-autorizacao-comunidade">
-      <h3 id="titulo-autorizacao-comunidade" className="font-extrabold text-ink">🌎 Comunidade entre clubes</h3>
+      <h3 id="titulo-autorizacao-comunidade" className="font-extrabold text-ink">🌎 Rede DBV (entre clubes)</h3>
       <p className="text-xs text-muted mt-1 mb-3">
         Um feed com publicações de desbravadores de outros clubes. Tudo passa por triagem automática, não existe mensagem
         privada e a diretoria do clube modera. Seu filho só participa com a sua autorização.
@@ -44,6 +57,24 @@ export default function AutorizacaoComunidade() {
             </div>
             <Botao variacao={f.autorizado ? 'secundario' : 'primario'} carregando={ocupado === f.desbravador_id}
               aoTocar={() => alternar(f)}>{f.autorizado ? 'Revogar' : 'Autorizar'}</Botao>
+          </li>
+        ))}
+      </ul>
+      <h4 className="font-bold text-ink text-sm mt-4">📷 Foto de rosto no perfil da rede</h4>
+      <p className="text-xs text-muted mt-1 mb-2">
+        A foto só aparece quando a diretoria arquivou o termo de uso de imagem que você assinou. Você pode desligar quando quiser.
+      </p>
+      <ul className="space-y-2">
+        {dados.filhos.map((f) => (
+          <li key={`img-${f.desbravador_id}`} className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-bold text-ink truncate">{f.nome}</p>
+              <p className="text-xs text-muted">
+                {f.imagem_desligada ? 'Desligada por você' : f.imagem_autorizada ? 'Foto aparece na rede' : f.imagem_arquivada ? 'Arquivada' : 'Diretoria ainda não arquivou (só iniciais)'}
+              </p>
+            </div>
+            <Botao variacao="secundario" carregando={ocupado === `img-${f.desbravador_id}`}
+              aoTocar={() => alternarImagem(f)}>{f.imagem_desligada ? 'Religar foto' : 'Desligar foto'}</Botao>
           </li>
         ))}
       </ul>

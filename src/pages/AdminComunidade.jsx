@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminPainel, adminModerar, adminTermos, adminSalvarTermo, adminRemoverTermo, tempoRelativo } from '../services/comunidade.js'
 import { avisar } from '../ui/avisos.jsx'
 import { Aviso, Botao, Campo, Card, Carregando, Selecao, Selo, mensagemDeErro } from '../ui/index.jsx'
+import AdminDesafiosRede from './AdminDesafiosRede.jsx'
 
 // Admin da PLATAFORMA → Comunidade: números, fila de todos os clubes (primeiro nome + clube), o que a
 // triagem bloqueou (dígitos mascarados) e a LISTA DE TERMOS editável. Tudo auditado no servidor.
@@ -53,6 +54,8 @@ export default function AdminComunidade() {
           <Card key={r} className="text-center"><p className="text-2xl font-extrabold text-ink">{v ?? 0}</p><p className="text-xs text-muted">{r}</p></Card>
         ))}
       </div>
+
+      <AdminDesafiosRede />
 
       <Card>
         <h3 className="font-extrabold text-ink mb-2">Fila de todos os clubes</h3>

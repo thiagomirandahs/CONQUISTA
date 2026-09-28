@@ -68,8 +68,8 @@ export async function publicar({ legenda, file, clubeId, userId }) {
   if (file) {
     await validarImagem(file)
     const limpa = await limparFotoParaComunidade(file)
-    path = `${clubeId}/${userId}/${novoId()}.jpg`
-    const { error } = await supabase.storage.from(BUCKET).upload(path, limpa, { upsert: false, contentType: 'image/jpeg' })
+    path = `${clubeId}/${userId}/${novoId()}.${limpa.type === 'image/webp' ? 'webp' : 'jpg'}`
+    const { error } = await supabase.storage.from(BUCKET).upload(path, limpa, { upsert: false, contentType: limpa.type })
     if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)
   }
   let r
@@ -99,6 +99,9 @@ export const encerrarSuspensao = (usuarioId) => rpc('comunidade_encerrar_suspens
 // ---- responsável ----
 export const autorizacoesDosFilhos = () => rpc('comunidade_autorizacoes_dos_filhos')
 export const autorizar = (desbravadorId, autorizado) => rpc('comunidade_autorizar', { p_desbravador: desbravadorId, p_autorizar: autorizado })
+// autorização de USO DE IMAGEM (migration 470): o responsável DESLIGA (ou religa o que ele desligou)
+export const responsavelImagem = (desbravadorId, desligar) =>
+  rpc('rede_responsavel_imagem', { p_desbravador: desbravadorId, p_desligar: desligar })
 
 // ---- plataforma ----
 export const adminPainel = () => rpc('admin_comunidade_painel')
