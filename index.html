@@ -27,6 +27,13 @@
         if (t === 'escuro') document.documentElement.setAttribute('data-theme', 'dark');
         else if (t === 'claro') document.documentElement.setAttribute('data-theme', 'light');
       } catch (e) {}
+      // Acessibilidade (src/lib/acessibilidade.js): letra e alto contraste ANTES do app subir.
+      try {
+        var a = JSON.parse(localStorage.getItem('acessibilidade') || '{}');
+        var esc = { pequena: '90%', grande: '115%', enorme: '130%' }[a.fonte];
+        if (esc) document.documentElement.style.fontSize = esc;
+        if (a.alto_contraste === true) document.documentElement.setAttribute('data-contraste', 'alto');
+      } catch (e) {}
     </script>
   </head>
   <body>

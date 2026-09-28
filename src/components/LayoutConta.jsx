@@ -6,6 +6,7 @@ import { atualizarFotoPerfil } from '../services/usuarios.js'
 import { avisar } from '../ui/avisos.jsx'
 import Logo from './Logo.jsx'
 import Avatar from './Avatar.jsx'
+import { PainelAcessibilidade } from './PreferenciasAcessibilidade.jsx'
 
 // Moldura das telas que ficam FORA do clube (portal da coordenação e as telas da conta usadas por quem
 // não tem clube). Sem ela, um coordenador só de distrito não tinha como atualizar, trocar a foto, trocar
@@ -68,6 +69,10 @@ export default function LayoutConta({ children }) {
               <button type="button" className={item} onClick={() => arquivo.current?.click()}><span aria-hidden="true">📷</span>Trocar foto</button>
               <input ref={arquivo} type="file" accept="image/*" className="sr-only" onChange={(e) => trocarFoto(e.target.files?.[0])} />
               <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>
+              <div className="mx-1 my-1.5 rounded-xl border border-line p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-faint">Acessibilidade</p>
+                <PainelAcessibilidade />
+              </div>
               <Link to="/conta/suporte" className={item}><span aria-hidden="true">🛟</span>Suporte</Link>
               <a href="https://desbravaclube.com.br/ajuda" target="_blank" rel="noopener noreferrer" className={item}><span aria-hidden="true">❓</span>Como usar</a>
               <button type="button" className={`${item} text-red-600`} onClick={sair} data-testid="conta-sair"><span aria-hidden="true">🚪</span>Sair da conta</button>

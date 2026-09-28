@@ -5,6 +5,7 @@ import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js
 import { sincronizarPush, desassociarPush } from '../lib/push.js'
 import { definirUsuarioImagens } from '../lib/imagens.js'
 import { rpcAusente } from '../services/clubes.js'
+import { sincronizarComPerfil } from '../lib/acessibilidade.js'
 
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -73,6 +74,13 @@ export function AuthProvider({ children }) {
       registrarPushNativo(profile.id)
       sincronizarPush(profile.id).catch(() => {})   // aparelho web já com push: passa a ser de quem entrou
     }
+  }, [profile?.id])
+
+  // Acessibilidade salva na conta (migration 420): vale em qualquer aparelho. Só na troca de PESSOA
+  // (id) — recarregar o perfil (ex.: trocar a foto) não desfaz o que a pessoa acabou de escolher.
+  useEffect(() => {
+    if (profile?.id) sincronizarComPerfil(profile.preferencias)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id])
 
   async function carregarPerfil(id) {

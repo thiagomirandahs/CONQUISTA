@@ -3,6 +3,7 @@ import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { m as motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
+import BotaoAcessibilidade from './PreferenciasAcessibilidade.jsx'
 // Popups de abertura em pedaços próprios: só aparecem depois que os dados deles chegam, então não
 // precisam pesar no bundle inicial nem atrasar o primeiro paint.
 const DevocionalPopup = lazy(() => import('./DevocionalPopup.jsx'))
@@ -103,6 +104,8 @@ export default function AppLayout() {
           <NavLink to="/eu" className="block w-full min-h-[44px] text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
             👤 Eu
           </NavLink>
+          <BotaoAcessibilidade rotuloVisivel
+            className="w-full min-h-[44px] text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors" />
           <button onClick={alternarTema} className="w-full min-h-[44px] text-sm bg-surface2 hover:bg-surface text-ink rounded-2xl px-4 py-2.5 text-left font-semibold transition-colors">
             {tema === 'escuro' ? '☀️ Modo claro' : '🌙 Modo escuro'}
           </button>
@@ -122,7 +125,8 @@ export default function AppLayout() {
               <h1 className="font-extrabold text-[15px] text-ink truncate">{marca.nome}</h1>
               {marca.lema && <p className="text-xs text-faint truncate">{marca.lema}</p>}
             </div>
-            <button onClick={alternarTema} aria-label="Alternar tema claro e escuro"
+            <BotaoAcessibilidade className="w-11 h-11 rounded-xl grid place-items-center text-ink bg-surface2 text-base leading-none" />
+            <button onClick={alternarTema} aria-label={tema === 'escuro' ? 'Mudar para o modo claro' : 'Mudar para o modo escuro'}
               className="w-11 h-11 rounded-xl grid place-items-center text-ink bg-surface2 text-lg leading-none">{tema === 'escuro' ? '☀️' : '🌙'}</button>
             <div className="text-ink"><Notificacoes /></div>
           </div>

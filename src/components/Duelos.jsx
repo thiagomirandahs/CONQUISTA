@@ -479,8 +479,8 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
         <button type="button" onClick={onFechar}
           className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Voltar</button>
         {inicial.id && (
-          <button type="button" onClick={apagar}
-            className="rounded-xl bg-red-50 text-red-600 font-semibold py-2.5 px-3 text-sm">🗑️</button>
+          <button type="button" onClick={apagar} aria-label="Apagar"
+            className="rounded-xl bg-red-50 text-red-600 font-semibold py-2.5 px-3 text-sm"><span aria-hidden="true">🗑️</span></button>
         )}
         <button type="submit" disabled={salvando}
           className="flex-1 rounded-xl bg-azul text-white font-semibold py-2.5 disabled:opacity-60">

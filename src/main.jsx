@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client'
 import { ligarObservabilidade } from './lib/observabilidade.js'
 import { recuperarVersao } from './lib/recuperarVersao.js'
 import { BrowserRouter } from 'react-router-dom'
-import { LazyMotion } from 'framer-motion'
+import { LazyMotion, MotionConfig } from 'framer-motion'
 import App from './App.jsx'
 import { AuthProvider } from './context/Auth.jsx'
 import { ClubeProvider } from './context/Clube.jsx'
@@ -34,6 +34,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       {/* Animações enxutas: o app usa `m` (importado como `motion`) e o motor de animação chega num
           pedaço separado, logo depois do primeiro paint — tira dezenas de KB do bundle inicial. */}
       <LazyMotion features={carregarRecursosDeAnimacao}>
+      {/* Movimento reduzido do celular vale no app TODO (site, conta, portal), não só dentro do clube. */}
+      <MotionConfig reducedMotion="user">
       {/* toast + confirmação: o que substituiu os alert()/confirm() nativos (fase 7.1) */}
       <AvisosProvider>
       <AuthProvider>
@@ -45,6 +47,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ClubeProvider>
       </AuthProvider>
       </AvisosProvider>
+      </MotionConfig>
       </LazyMotion>
     </BrowserRouter>
   </React.StrictMode>

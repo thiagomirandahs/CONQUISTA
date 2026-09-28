@@ -111,7 +111,7 @@ export default function Notificacoes() {
               className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[75vh] flex flex-col">
               <div className="px-4 py-3 bg-azul text-white flex items-center justify-between">
                 <span className="font-extrabold">🔔 Notificações</span>
-                <button onClick={() => setAberto(false)} className="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-sm">✕</button>
+                <button onClick={() => setAberto(false)} aria-label="Fechar notificações" className="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-sm">✕</button>
               </div>
               <div className="overflow-y-auto">
                 {mostradas.length === 0 ? (
