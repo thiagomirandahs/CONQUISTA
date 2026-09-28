@@ -1,4 +1,8 @@
--- Migration 190: vitrine do site — cartão de visita do clube (opt-in) e parceiros (período de exibição).
+-- Migration 190: vitrine do site — cartão de visita do clube e parceiros (período de exibição).
+-- Contrato ATUAL (migration 203, decisão do dono em 26/09): TODO clube ativo aparece na vitrine
+-- automaticamente, só com dados INSTITUCIONAIS; CONTATOS/nome do diretor/apresentação continuam
+-- OPT-IN (LGPD); a diretoria pode OCULTAR o próprio clube; o admin modera. (Até 28/09 este teste
+-- ainda esperava o opt-in do CLUBE da 190 — regra substituída pela 203, não reintroduzir.)
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -7,13 +11,22 @@ begin;
 select t.signup('admin78', '{"tipo":"fundador","nome":"Admin 78"}'::jsonb);
 insert into public.platform_admins (user_id, papel, motivo) values (t.id('admin78'), 'operacao', 'teste 78');
 \o
+-- o clube está na lista pública?
+create function t.na_vitrine(p_slug text) returns boolean language sql as $$
+  select exists (select 1 from jsonb_array_elements(public.vitrine_clubes_publico()) e where e ->> 'slug' = p_slug);
+$$;
+select count(*) as n_listaveis from public.organizational_units
+ where type = 'clube' and status = 'ativo' and slug is not null \gset
 
--- ==================== 0) nasce tudo desligado ====================
-select t.eq('nenhum cartão criado pela migration (Tenant 001 e demais desligados)', t.n('select count(*) from public.club_showcase'), 0);
+-- ==================== 0) todo clube ativo aparece, sem cartão e sem contato ====================
+select t.eq('nenhum cartão criado pela migration (os contatos nascem desligados)', t.n('select count(*) from public.club_showcase'), 0);
 select t.como_anon();
-select t.eq('anon: vitrine vazia', t.txt('select public.vitrine_clubes_publico()::text'), '[]');
-select t.eq('anon: Tenant 001 não aparece pelo slug',
-  t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'encontrado'$q$), 'false');
+select t.eq('anon: TODO clube ativo aparece automaticamente', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), :n_listaveis);
+select t.eq('anon: Tenant 001 aparece pelo slug',
+  t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'encontrado'$q$), 'true');
+select t.eq('anon: sem cartão, nenhum contato nem apresentação sai',
+  t.n($q$select count(*) from jsonb_array_elements(public.vitrine_clubes_publico()) e
+        where e ?| array['whatsapp', 'email', 'diretor_nome', 'apresentacao', 'reuniao_local', 'link_inscricao']$q$), 0);
 select t.throws('anon: SELECT direto no cartão negado', 'select * from public.club_showcase');
 select t.throws('anon: SELECT direto nos parceiros negado', 'select * from public.site_partners');
 select t.throws('anon: não salva cartão', format($q$select public.vitrine_clube_salvar(%L, '{}'::jsonb)$q$, t.id('clube_a')));
@@ -49,7 +62,9 @@ select t.permitido('rascunho desligado salvo', format($q$select public.vitrine_c
   "ativo":false,"aceite_contato":false,"cidade":"Recife","estado":"pe","apresentacao":"Clube de teste",
   "diretor_nome":"Diretor Secreto","diretor_whatsapp":"(81) 99999-8888","diretor_email":"dir@exemplo.com"}'::jsonb)$q$, t.id('clube_a')));
 select t.como_anon();
-select t.eq('rascunho desligado não aparece', t.txt('select public.vitrine_clubes_publico()::text'), '[]');
+select t.ok('rascunho desligado: o clube continua na lista (institucional)', t.na_vitrine('filhos-da-conquista'));
+select t.ok('rascunho desligado: nenhum contato, nome do diretor ou apresentação sai',
+  not (public.vitrine_clube_publico('filhos-da-conquista') ?| array['whatsapp', 'email', 'diretor_nome', 'apresentacao']));
 -- liga: publica WhatsApp, NÃO publica nome nem e-mail
 select t.como('lider_a');
 select t.permitido('cartão ligado', format($q$select public.vitrine_clube_salvar(%L, '{
@@ -62,7 +77,7 @@ select t.eq('WhatsApp normalizado com DDI', t.txt($q$select diretor_whatsapp fro
 select t.ok('aceite registrado com data e autor', (select aceite_em is not null and aceite_por = t.id('lider_a') from public.club_showcase where club_id = t.id('clube_a')));
 
 select t.como_anon();
-select t.eq('anon vê 1 clube', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), 1);
+select t.eq('ligar o cartão não muda quantos clubes aparecem', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), :n_listaveis);
 select t.eq('lista não traz contato', t.n($q$select count(*) from jsonb_array_elements(public.vitrine_clubes_publico()) e where e ? 'whatsapp' or e ? 'email' or e ? 'diretor_nome'$q$), 0);
 select t.eq('detalhe: WhatsApp publicado', t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'whatsapp'$q$), '5581999998888');
 select t.ok('detalhe: nome e e-mail NÃO publicados não saem',
@@ -70,7 +85,9 @@ select t.ok('detalhe: nome e e-mail NÃO publicados não saem',
 select t.ok('nenhum dado interno (membros, contagem, ids) no cartão',
   not (public.vitrine_clube_publico('filhos-da-conquista') ?| array['club_id', 'membros', 'total_membros', 'unidades', 'aceite_por', 'oculto_motivo', 'diretor_email']));
 select t.eq('reunião publicada', t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'reuniao_local'$q$), 'Igreja Central');
-select t.eq('clube B (sem opt-in) invisível pelo slug', t.txt($q$select public.vitrine_clube_publico('clube-b-teste') ->> 'encontrado'$q$), 'false');
+select t.eq('clube B (sem cartão) aparece pelo slug', t.txt($q$select public.vitrine_clube_publico('clube-b-teste') ->> 'encontrado'$q$), 'true');
+select t.ok('...mas sem nenhum contato (opt-in é do contato, não do clube)',
+  not (public.vitrine_clube_publico('clube-b-teste') ?| array['whatsapp', 'email', 'diretor_nome', 'apresentacao']));
 reset role;
 
 -- ==================== 2) admin modera ====================
@@ -79,26 +96,48 @@ select t.throws('diretoria não modera', format($q$select public.admin_vitrine_c
 select t.como('admin78');
 select t.throws('ocultar sem motivo recusado', format($q$select public.admin_vitrine_clube_moderar(%L, true, '')$q$, t.id('clube_a')), 'motivo');
 select public.admin_vitrine_clube_moderar(t.id('clube_a'), true, 'Conteúdo impróprio');
-select t.eq('admin lista o cartão como não visível', t.txt($q$select public.admin_vitrine_clubes_listar() -> 0 ->> 'visivel'$q$), 'false');
+select t.eq('admin lista o clube A como não visível',
+  t.txt($q$select e ->> 'visivel' from jsonb_array_elements(public.admin_vitrine_clubes_listar()) e where e ->> 'club_id' = t.id('clube_a')::text$q$), 'false');
 select t.como_anon();
-select t.eq('ocultado some da vitrine', t.txt('select public.vitrine_clubes_publico()::text'), '[]');
+select t.ok('ocultado some da vitrine', not t.na_vitrine('filhos-da-conquista'));
+select t.ok('...e só ele (os outros clubes continuam)', t.na_vitrine('clube-b-teste'));
 select t.eq('ocultado some pelo slug', t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'encontrado'$q$), 'false');
 -- diretoria salvando de novo não desfaz a moderação
 select t.como('lider_a');
 select public.vitrine_clube_salvar(t.id('clube_a'), '{"ativo":true,"aceite_contato":true,"publicar_whatsapp":true,"diretor_whatsapp":"81999998888"}'::jsonb) is not null;
 select t.como_anon();
-select t.eq('diretoria não desfaz a moderação', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), 0);
+select t.ok('diretoria não desfaz a moderação', not t.na_vitrine('filhos-da-conquista'));
+select t.como('lider_a');
+select public.vitrine_clube_ocultar(t.id('clube_a'), false) is not null;
+select t.como_anon();
+select t.ok('...nem pelo "voltar a mostrar" dela', not t.na_vitrine('filhos-da-conquista'));
 select t.como('admin78');
 select public.admin_vitrine_clube_moderar(t.id('clube_a'), false);
 select t.como_anon();
-select t.eq('reexibido pelo admin', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), 1);
+select t.ok('reexibido pelo admin', t.na_vitrine('filhos-da-conquista'));
 reset role;
 select t.ok('moderação auditada', exists (select 1 from public.platform_admin_audit where acao = 'vitrine_ocultar'));
--- desligar = sair na hora
+-- desligar o cartão = os CONTATOS saem na hora (o clube continua, institucional)
 select t.como('lider_a');
 select public.vitrine_clube_salvar(t.id('clube_a'), '{"ativo":false}'::jsonb) is not null;
 select t.como_anon();
-select t.eq('desligado pela diretoria some', t.n('select jsonb_array_length(public.vitrine_clubes_publico())'), 0);
+select t.ok('cartão desligado: WhatsApp sai na hora', not (public.vitrine_clube_publico('filhos-da-conquista') ? 'whatsapp'));
+select t.ok('cartão desligado: o clube continua na lista', t.na_vitrine('filhos-da-conquista'));
+-- ocultar o clube é outra ação, só da diretoria DELE
+select t.como('membro_a');
+select t.throws('desbravador não oculta o clube', format($q$select public.vitrine_clube_ocultar(%L, true)$q$, t.id('clube_a')), 'sem permissão');
+select t.como('lider_b');
+select t.throws('diretoria de OUTRO clube não oculta', format($q$select public.vitrine_clube_ocultar(%L, true)$q$, t.id('clube_a')), 'sem permissão');
+select t.como('lider_a');
+select t.permitido('diretoria oculta o próprio clube', format($q$select public.vitrine_clube_ocultar(%L, true)$q$, t.id('clube_a')));
+select t.como_anon();
+select t.ok('ocultado pela diretoria some da lista', not t.na_vitrine('filhos-da-conquista'));
+select t.eq('...e pelo slug (mesma resposta de inexistente)', t.txt($q$select public.vitrine_clube_publico('filhos-da-conquista') ->> 'encontrado'$q$), 'false');
+select t.ok('...sem levar os outros clubes junto', t.na_vitrine('clube-b-teste'));
+select t.como('lider_a');
+select public.vitrine_clube_ocultar(t.id('clube_a'), false) is not null;
+select t.como_anon();
+select t.ok('a diretoria volta a mostrar', t.na_vitrine('filhos-da-conquista'));
 reset role;
 select t.throws('trava estrutural: ativo sem aceite', $q$update public.club_showcase set ativo = true, aceite_contato = false$q$, 'club_showcase_opt_in');
 
