@@ -21,6 +21,7 @@ import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
 import AdminAudiolivros from './AdminAudiolivros.jsx'
+import AdminComunidade from './AdminComunidade.jsx'
 import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
@@ -40,6 +41,8 @@ const ABAS = [
   { chave: 'cortesias', rotulo: 'Cortesias', icone: '🎁' },
   { chave: 'vitrine', rotulo: 'Vitrine do site', icone: '🪧' },
   { chave: 'audiolivros', rotulo: 'Audiolivros', icone: '🎧' },
+  // exceção declarada: a Comunidade é conteúdo PÚBLICO entre clubes; a plataforma modera (primeiro nome + clube, nunca dado pessoal)
+  { chave: 'comunidade', rotulo: 'Comunidade', icone: '🌎' },
   { chave: 'armazenamento', rotulo: 'Armazenamento', icone: '💾' },
   { chave: 'onboarding', rotulo: 'Onboarding', icone: '🧭' },
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️' },
@@ -141,6 +144,7 @@ export default function Admin() {
         {aba === 'cortesias' && <AdminCortesias />}
         {aba === 'vitrine' && <AdminVitrine />}
         {aba === 'audiolivros' && <AdminAudiolivros />}
+        {aba === 'comunidade' && <AdminComunidade />}
         {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}
         {aba === 'onboarding' && <Onboarding aoAbrirClube={abrirClube} />}
         {aba === 'provisionamento' && <Provisionamento />}

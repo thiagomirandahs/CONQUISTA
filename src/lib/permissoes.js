@@ -42,6 +42,8 @@ export const FERRAMENTAS = [
   { to: '/investiduras', icon: '🏅', titulo: 'Revisão final e investidura', desc: 'Revisar conclusões de classe e registrar investiduras', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
   // Especialidades têm recurso PRÓPRIO, separado de `classes` (fase 9, item 9): o catálogo de especialidades ainda é de teste
   // e fica fora do piloto. Com `classes` ligado e `especialidades` desligado, este card some e a rota não abre.
+  // Comunidade entre clubes (migrations 430–432): fila de fotos e denúncias do PRÓPRIO clube. Só diretoria (pode_administrar_clube).
+  { to: '/gestao/comunidade', icon: '🌎', titulo: 'Moderação da Comunidade', desc: 'Fotos para aprovar e conteúdo denunciado', papeis: SO_DIRETORIA, recurso: 'comunidade', grupo: 'conteudo', contextual: true },
   { to: '/avaliar-especialidades', icon: '🏅', titulo: 'Especialidades', desc: 'Criar turmas e avaliar requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'especialidades' , grupo: 'avaliar', contextual: true },
 ]
 
@@ -84,6 +86,7 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/cantinho': 'cantinho_unidade',
   '/atividades': 'atividades',
   '/mural': 'mural',
+  '/comunidade': 'comunidade',
   '/experiencias': 'experiencias',
   '/minha-classe': 'classes',
   '/minhas-especialidades': 'especialidades',   // não 'classes': ligar as Classes oficiais não pode abrir as especialidades de teste

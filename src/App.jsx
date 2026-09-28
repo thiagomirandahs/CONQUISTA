@@ -78,6 +78,8 @@ const GestaoAvaliar = lazy(() => import('./pages/GestaoAvaliar.jsx'))
 const GestaoAvaliacoes = lazy(() => import('./pages/GestaoAvaliacoes.jsx'))
 const GestaoInscricoes = lazy(() => import('./pages/GestaoInscricoes.jsx'))
 const GestaoDocumentos = lazy(() => import('./pages/GestaoDocumentos.jsx'))
+const Comunidade = lazy(() => import('./pages/Comunidade.jsx'))
+const ModeracaoComunidade = lazy(() => import('./pages/ModeracaoComunidade.jsx'))
 const Jornada = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jornada })))
 const MeuClubeHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.MeuClube })))
 const JogosHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jogos })))
@@ -342,6 +344,9 @@ export default function App() {
           <Route path="/cantinho" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
           <Route path="/cantinho/:unidadeId" element={<RecursoOpcional recurso="cantinho_unidade"><Cantinho /></RecursoOpcional>} />
           <Route path="/mural" element={<RecursoOpcional recurso="mural"><Mural /></RecursoOpcional>} />
+          {/* Comunidade entre clubes (migrations 430–432): recurso SOMENTE da plataforma, nasce desligado. A trava de verdade são as RPCs. */}
+          <Route path="/comunidade" element={<RecursoOpcional recurso="comunidade"><Comunidade /></RecursoOpcional>} />
+          <Route path="/gestao/comunidade" element={<RotaRestrita><ModeracaoComunidade /></RotaRestrita>} />
           <Route path="/gestao" element={<Gestao />} />
           <Route path="/aprovacoes" element={<RotaRestrita><Aprovacoes /></RotaRestrita>} />
           <Route path="/visitas" element={<RotaRestrita><VisitasClube /></RotaRestrita>} />
