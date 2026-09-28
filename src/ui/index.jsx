@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { EsqueletoTela } from './carregamento.jsx'
 export { TelaDeAbertura, EsqueletoTela } from './carregamento.jsx'
@@ -227,7 +228,9 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
     return () => { document.removeEventListener('keydown', tecla); antes?.focus?.() }
   }, [aberta, aoFechar])
   if (!montada) return null
-  return (
+  // Portal no <body>: aberta de dentro do cabeçalho "glass" (backdrop-filter), a folha ficava presa
+  // ao cabeçalho — `fixed` passa a medir pela caixa do ancestral com filtro — e aparecia cortada no topo.
+  return createPortal(
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
       <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={saindo ? -1 : undefined}
         className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -241,7 +244,8 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
         </div>
         <div className="p-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
