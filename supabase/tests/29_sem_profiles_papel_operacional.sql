@@ -39,8 +39,10 @@ $$;
 -- ---------- 1) nenhuma FUNÇÃO do public lê profiles.papel/.status/.unidade_id (fora as exceções do espelho) ----------
 create table t.excecoes_espelho (funcao text primary key, motivo text not null);
 insert into t.excecoes_espelho values
-  ('reconciliar_perfis_dos_vinculos', 'É O PRÓPRIO mecanismo do espelho: compara profiles.papel/status/unidade_id (o espelho) com o vínculo pra decidir SE precisa atualizar — não é decisão de negócio nova, é a rede de segurança do espelho em si.'),
-  ('entrada_solicitar', 'migration 104: lê profiles.papel = ''pais'' só para dar ao PEDIDO pendente o papel de responsável (em vez do papel do código). Não autoriza nada — a liderança ainda aprova, e o vínculo com o filho é outro processo. profiles.papel e não o metadata do Auth porque o metadata o próprio usuário altera; o perfil ele não altera.');
+  ('reconciliar_perfis_dos_vinculos', 'É O PRÓPRIO mecanismo do espelho: compara profiles.papel/status/unidade_id (o espelho) com o vínculo pra decidir SE precisa atualizar — não é decisão de negócio nova, é a rede de segurança do espelho em si.');
+-- (entrada_solicitar foi exceção até a migration 340: lia profiles.papel = 'pais' e, com isso,
+--  herdava o papel do clube primário. Agora ela e entrada_solicitar_clube leem profiles.tipo_cadastro
+--  — ver 94_entrada_papel_sem_heranca.sql. Não reabrir exceção aqui.)
 select t.eq('nenhuma função pública NOVA decide autorização, pontuação, premiação, jogos ou contexto olhando profiles.papel/.status/.unidade_id (fora o mecanismo do espelho, declarado acima)',
   (select count(*) from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
