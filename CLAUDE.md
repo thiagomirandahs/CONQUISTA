@@ -1,7 +1,8 @@
 # CLAUDE.md — DesbravaClube
 
-Guia rápido para quem (humano ou IA) vai mexer no código. Atualizado em 28/09/2026 (HEAD `1ed0d6e`,
-produção na migration `20260930000330`). Leia isto antes de abrir o código inteiro.
+Guia rápido para quem (humano ou IA) vai mexer no código. Atualizado em 28/09/2026, fim do dia
+(`main` = `46dccdb`, publicada na Vercel; **banco de produção na migration `20260930000360`** — 340/350/360 aplicadas em 28/09 pelo SQL Editor).
+Leia isto antes de abrir o código inteiro.
 
 ## O que é
 SaaS multi-clube para **Clubes de Desbravadores** (crianças/adolescentes 10–15 anos + liderança).
@@ -58,6 +59,10 @@ npm run test:db        # testes SQL: replay de todas as migrations num banco loc
 npm run test:db:upgrade
 npm run curriculo:validar && npm run curriculo:importacao:check
 npm run test:edge:bundle && npm run test:edge:bundle:pdf
+# E2E contra o Supabase LOCAL (127.0.0.1:54321; antes: node supabase/tests/e2e/_seed_homologacao.mjs)
+npm run test:fluxo:e2e   # fluxo pedagógico completo: correção, reenvio, clube→distrito→região→apto, PDF, assinatura
+npm run test:pdf:e2e && npm run test:lote:e2e && npm run test:storage:e2e && npm run test:contexto:e2e
+node supabase/tests/e2e/chamados-admin-sem-clube.mjs
 ```
 No Windows, `npm ci` pode falhar com arquivo em uso: use `npm install` e reverta o `package-lock.json`.
 Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
@@ -71,9 +76,24 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Service worker nunca cacheia resposta autenticada.
 - Cada mudança de regra de negócio vem com teste SQL e/ou vitest; os testes de contrato (identidade do produto, multiclube, especialidades fora do piloto) não podem ser afrouxados.
 
+## Estado em 28/09 (fim do dia)
+- Gates verdes: SQL **93/93** + upgrade simulado 120; Vitest 888; ESLint 0 erros; build; ambiente/CSP;
+  currículo; Edge. E2E locais: fluxo 87, chamados 36, PDF 40, lote 11, storage 48, contexto 42, personas 59.
+- Correções da rodada: 340 (pedido de entrada não herda papel de outro clube — lê `profiles.tipo_cadastro`),
+  350 (trava por clube no prêmio semanal, evita prêmio duplicado), 360 (liderança abre foto de tentativa
+  anterior). Teste 30 ficou determinístico (falhava toda segunda de manhã). Teste 78 no contrato da vitrine
+  automática (203). Runner zera policies de Storage no clone.
+- Banco LOCAL de trabalho (Docker `postgres`) está na 360.
+
 ## Pendências conhecidas (28/09)
-- Documento/PDF, assinatura e investidura nunca exercitados de ponta a ponta em produção.
-- Catálogo de Especialidades (só 1 de teste). Classes de Liderança não importadas.
-- Termos de Uso/Privacidade prontos na branch local `termos` (aguardando dados do titular + revisão jurídica).
-- Painel: SMTP próprio + confirmação de e-mail, MFA do admin, trocar senhas/revogar tokens.
-- Testes SQL vermelhos: 29 (função nova olhando `profiles.papel`, provável `entrada_solicitar_clube`), 30 (prêmio de recorde semanal — investigar), 78 (teste desatualizado da vitrine automática).
+- 340→350→360 APLICADAS em produção (28/09). Atenção: o SQL Editor do Supabase NÃO segura `begin/commit`
+  (grava comando a comando; tabela temporária some) — script de produção tem de ser idempotente e sem temp table.
+- E2E em produção com cartão de teste controlado (documento/PDF, assinatura, investidura) — nunca feito.
+- GC de Storage só desenhado (`STORAGE-GC-DESENHO.md`): expurgo de clube (280) apaga só a LINHA de
+  `storage.objects` e deixa o arquivo físico órfão. 3 decisões do dono pendentes; nada destrutivo habilitado.
+- Telas da liderança ainda não mostram foto de tentativas antigas (o banco já permite, 360).
+- Catálogo de Especialidades (só 1 de teste, sem pipeline de importação). Classes de Liderança: motor não
+  aceita (`tipo_classe` só regular/avancada, sem workflow próprio) e não há conteúdo oficial.
+- Marca oficial a confirmar; Termos na branch `termos` (dados do titular + revisão jurídica).
+- Segurança (painel): SMTP + confirmação de e-mail, 2FA, trocar senha do banco (há senha em texto no
+  arquivo local não versionado `PLANO-JANELA-MIGRACAO-REAL.md`), revogar tokens, Redirect URLs, revisar admins.

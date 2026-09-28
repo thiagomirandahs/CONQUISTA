@@ -39,6 +39,11 @@ describe('CSP: a política', () => {
     expect(scriptSrc).not.toContain('*')
   })
 
+  it('iframe só do player sem cookie do YouTube (audiolivros, migration 370)', () => {
+    const frame = p.split('; ').find((d) => d.startsWith('frame-src'))
+    expect(frame).toBe('frame-src https://www.youtube-nocookie.com')
+  })
+
   it('a meta é o PRIMEIRO elemento do head (só governa o que vem depois dela)', () => {
     expect(saida).toMatch(/<head>\s*\n\s*<meta http-equiv="Content-Security-Policy"/)
     expect(saida.indexOf('Content-Security-Policy')).toBeLessThan(saida.indexOf('<title>'))

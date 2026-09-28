@@ -17,6 +17,7 @@ import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
+import OuvirLivro from '../components/OuvirLivro.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -457,6 +458,7 @@ function Requisito({ r, cor = null, userId, onMudou }) {
         <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
       </h5>
 
+      <OuvirLivro descricao={r.descricao} userId={userId} />
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
 

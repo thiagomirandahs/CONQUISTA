@@ -116,6 +116,9 @@ export function cspComHashes({ conectaEm = [] } = {}) {
           `img-src 'self' data: blob: ${supabase}`.trim(),
           `media-src 'self' blob: ${supabase}`.trim(),
           `font-src 'self' data:`,
+          // Audiolivros das Classes (migration 370): SÓ o player sem cookie do YouTube. Nada de
+          // youtube.com (cookie de rastreio) e nenhum outro iframe de fora.
+          `frame-src https://www.youtube-nocookie.com`,
           // O realtime usa websocket, então cada origem entra duas vezes: o esquema HTTP e o
           // esquema WS correspondente. `https→wss` e `http→ws`, um por um — o replace global de
           // antes só sabia converter https, e uma origem http (o stack local) entrava sem o par
