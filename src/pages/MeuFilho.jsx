@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
+import AutorizacaoComunidade from '../components/AutorizacaoComunidade.jsx'
 import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPix, concederConsentimento, revogarConsentimento } from '../lib/dados.js'
 import { Carregando as Esqueleto } from '../ui/index.jsx'
 
@@ -117,6 +118,8 @@ export default function MeuFilho() {
           </div>
         </div>
       ))}
+
+      <AutorizacaoComunidade />
 
       {/* Pedir vínculo */}
       <div className="bg-surface rounded-2xl shadow-soft p-4">

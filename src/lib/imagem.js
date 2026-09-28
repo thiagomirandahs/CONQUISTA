@@ -25,3 +25,33 @@ export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72 }
     return file
   }
 }
+
+// Foto da COMUNIDADE (migration 432): aqui o "melhor esforço" de comprimirImagem NÃO serve.
+// comprimirImagem devolve o ARQUIVO ORIGINAL quando a versão recomprimida não fica menor, quando é GIF
+// ou quando dá qualquer erro — e o original do celular carrega EXIF (GPS, modelo do aparelho, data).
+// Para a Comunidade a foto é SEMPRE redesenhada num canvas e exportada como JPEG novo: o canvas só
+// tem pixels, então o arquivo exportado nasce sem EXIF/GPS. createImageBitmap já aplica a orientação
+// do EXIF (imageOrientation 'from-image'), então a foto não fica deitada. Se não der para redesenhar,
+// FALHA — nunca manda o original.
+export async function limparFotoParaComunidade(file, { maxLado = 1080, qualidade = 0.72 } = {}) {
+  if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Escolha uma foto. 🙂')
+  let bitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  } catch {
+    throw new Error('Não consegui preparar essa foto. Tente outra (JPG ou PNG). 🙂')
+  }
+  const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height))
+  const w = Math.max(1, Math.round(bitmap.width * escala))
+  const h = Math.max(1, Math.round(bitmap.height * escala))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Não consegui preparar essa foto. 🙂')
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  bitmap.close?.()
+  const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', qualidade))
+  if (!blob) throw new Error('Não consegui preparar essa foto. 🙂')
+  return new File([blob], 'foto.jpg', { type: 'image/jpeg' })
+}

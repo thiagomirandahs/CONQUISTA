@@ -24,6 +24,8 @@ vi.mock('../lib/dados.js', async (importOriginal) => {
   }
 })
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'pai-1' } }) }))
+// a autorização da Comunidade tem teste próprio (components/AutorizacaoComunidade.test.jsx)
+vi.mock('../components/AutorizacaoComunidade.jsx', () => ({ default: () => null }))
 
 const { default: MeuFilho } = await import('./MeuFilho.jsx')
 

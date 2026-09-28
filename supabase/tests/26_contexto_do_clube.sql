@@ -157,8 +157,8 @@ reset role;
 -- (fase 6: entra `experiencias`, que também nasce DESLIGADO — módulo novo nunca liga sozinho num clube)
 -- (fase 9.1, migration 83: entra `especialidades`, desligado E somente da plataforma — a liderança não liga)
 -- (migration 260: entra `cantinho_unidade` (Cantinho da unidade), LIGADO por padrão)
-select t.eq('o catálogo tem os recursos do app e SÓ leilão, classes, experiências e especialidades nascem desligados', (select count(*) from public.recursos_catalogo) * 100 + (select count(*) from public.recursos_catalogo where not padrao), 1604);
-select t.eq('...e só `especialidades` é recurso que SÓ a plataforma liga', (select string_agg(chave, ',' order by chave) from public.recursos_catalogo where somente_plataforma), 'especialidades');
+select t.eq('o catálogo tem os recursos do app e SÓ leilão, classes, experiências, especialidades e comunidade nascem desligados', (select count(*) from public.recursos_catalogo) * 100 + (select count(*) from public.recursos_catalogo where not padrao), 1705);
+select t.eq('...e só `comunidade` e `especialidades` são recursos que SÓ a plataforma liga', (select string_agg(chave, ',' order by chave) from public.recursos_catalogo where somente_plataforma), 'comunidade,especialidades');
 select t.eq('padrão do catálogo quando o clube nunca escolheu; leilão desligado; recurso que não existe = desligado', (public.recurso_habilitado_no_clube(t.id('clube_b'), 'chat'))::text || '|' || (public.recurso_habilitado_no_clube(t.id('clube_b'), 'leilao'))::text || '|' || (public.recurso_habilitado_no_clube(t.id('clube_b'), 'nao_existe'))::text, 'true|false|false');
 select t.como('lider_a');
 select t.permitido('diretoria A desliga o chat do PRÓPRIO clube', $q$select public.recurso_definir('chat', false)$q$);
@@ -197,7 +197,7 @@ reset role;
 
 -- catálogo: leitura para quem está logado; ninguém grava
 select t.como('membro_a');
-select t.eq('membro lê o catálogo (para mostrar rótulos/ícones)', t.n('select count(*) from public.recursos_catalogo'), 16);
+select t.eq('membro lê o catálogo (para mostrar rótulos/ícones)', t.n('select count(*) from public.recursos_catalogo'), 17);
 select t.bloqueado('membro NÃO grava no catálogo', $q$insert into public.recursos_catalogo (chave, nome, padrao) values ('x', 'x', true)$q$);
 select t.bloqueado('membro NÃO altera o catálogo', $q$update public.recursos_catalogo set padrao = false$q$);
 select t.bloqueado('membro NÃO apaga do catálogo', $q$delete from public.recursos_catalogo$q$);
