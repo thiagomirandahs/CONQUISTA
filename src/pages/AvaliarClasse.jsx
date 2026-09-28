@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoricoRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
@@ -120,6 +121,7 @@ function Item({ it, onFeito }) {
           {escolha.satisfeitas_automaticamente > 0 && <div className="text-green-700">✨ {escolha.satisfeitas_automaticamente} cumprida(s) pelo histórico</div>}
         </div>
       )}
+      <DocumentoParaConferir memberRequirementId={it.member_requirement_id} />
       {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
       {it.evidencia_path && (
         <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />

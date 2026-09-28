@@ -3,6 +3,7 @@
 // hardcoded aqui nem na tela. O percentual também vem pronto do servidor (classe_percentual, dentro
 // de minha_classe()) — o cliente nunca calcula nem envia "concluído".
 import { supabase } from '../lib/supabase.js'
+import { apagarDocumentoConferido } from './documentoIdade.js'
 import { subirComprovacao, comComprovacao } from '../lib/upload.js'
 
 // Classes publicadas que a pessoa ainda não iniciou no clube em uso.
@@ -99,6 +100,9 @@ export async function avaliarRequisito(memberRequirementId, decisao, comentario 
     p_member_requirement_id: memberRequirementId, p_decisao: decisao, p_comentario: comentario, p_submission_id: submissionId,
   })
   if (error) throw new Error(error.message)
+  // requisito de idade (migration 380): aprovado = documento conferido → a foto sai do armazenamento.
+  // Falhar aqui não desfaz a aprovação; o app do dono apaga de reserva.
+  if (decisao === 'aprovado') await apagarDocumentoConferido(memberRequirementId).catch(() => {})
 }
 
 // Histórico completo de tentativas de um requisito (dono ou liderança do clube em uso) — "Ver

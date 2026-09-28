@@ -18,6 +18,8 @@ import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import OuvirLivro from '../components/OuvirLivro.jsx'
+import { DocumentoDaIdade } from '../components/DocumentoDaIdade.jsx'
+import { documentosDaMinhaClasse } from '../services/documentoIdade.js'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
@@ -323,6 +325,11 @@ function Progresso({ dados, userId, onMudou }) {
   const etapa = ETAPAS[mc.status]
   // tema da página inteira = a cor da classe (classe sem cor conhecida cai nas cores do app)
   const cor = corDaClasse(classe?.nome)
+  // requisitos de idade que pedem foto do documento (migration 380): uma leitura por classe
+  const [docs, setDocs] = useState({})
+  const lerDocs = useCallback(() => documentosDaMinhaClasse(mc.id).then(setDocs).catch(() => setDocs({})), [mc.id])
+  useEffect(() => { lerDocs() }, [lerDocs])
+  const mudouComDocs = useCallback(async () => { await onMudou(); await lerDocs() }, [onMudou, lerDocs])
 
   return (
     <div className="space-y-4" data-testid="classe-tema" data-cor={cor?.hex || ''}>
@@ -387,7 +394,7 @@ function Progresso({ dados, userId, onMudou }) {
           </div>
           <div className="divide-y divide-line">
             {(s.requisitos || []).map((r) => (
-              <Requisito key={r.id} r={r} cor={cor} userId={userId} onMudou={onMudou} />
+              <Requisito key={r.id} r={r} cor={cor} userId={userId} onMudou={mudouComDocs} documento={docs[r.id]} />
             ))}
           </div>
         </section>
@@ -396,7 +403,7 @@ function Progresso({ dados, userId, onMudou }) {
   )
 }
 
-function Requisito({ r, cor = null, userId, onMudou }) {
+function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   const situacao = situacaoDoRequisito(r)
   const info = SITUACOES[situacao]
   const bloqueios = r.bloqueios || []
@@ -435,6 +442,7 @@ function Requisito({ r, cor = null, userId, onMudou }) {
     // Comprovação obrigatória: avisa na hora, com o que falta, em vez de esperar o servidor recusar.
     if (obrigatoria && precisaTexto && !texto.trim()) { setErro('Escreva sua resposta antes de enviar para avaliação.'); return }
     if (obrigatoria && precisaFoto && !foto && !r.evidencia_path) { setErro('Escolha uma foto de comprovação antes de enviar para avaliação.'); return }
+    if (documento && !documento.documento?.evidencia_path) { setErro('Envie a foto do documento antes de enviar para avaliação.'); return }
     setOcupado(true)
     try {
       if ((precisaTexto && texto.trim()) || (precisaFoto && foto)) {
@@ -462,6 +470,7 @@ function Requisito({ r, cor = null, userId, onMudou }) {
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
 
+      {documento && <DocumentoDaIdade info={documento} requirementId={r.id} memberRequirementId={r.member_requirement_id} podeEditar={podeEditar} userId={userId} onMudou={onMudou} />}
       {r.status === 'aprovado' ? (
         <>
           {r.evidencia_texto && <p className="text-sm text-muted italic mt-1">"{r.evidencia_texto}"</p>}

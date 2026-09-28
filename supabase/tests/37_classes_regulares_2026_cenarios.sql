@@ -165,6 +165,8 @@ select t.permitido('(10) multi inicia Amigo no clube A', format($q$select public
 select t.pedir_clube('clube_b');
 select t.permitido('(10) multi inicia a MESMA Amigo no clube B', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo')));
 select t.permitido('(7) no B: salva e envia Amigo I.1', format($q$select public.requisito_salvar(%L, 'Feito no clube B', null)$q$, t.req('amigo.I.1')));
+-- desde a migration 380 o requisito de idade exige a foto do documento antes de enviar (ver 98_foto_de_documento.sql)
+select t.permitido('...com a foto do documento', format($q$select public.documento_enviar(%L, %L)$q$, t.req('amigo.I.1'), t.id('multi_dois_papeis')::text || '/documentos/doc.jpg'));
 select t.permitido('...envia', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.I.1')));
 reset role;
 insert into t.ids (chave, id) select 'mc_multi_a', id from public.member_classes where usuario_id = t.id('multi_dois_papeis') and club_id = t.id('clube_a') and class_id = t.classe('amigo');

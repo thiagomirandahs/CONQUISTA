@@ -6,6 +6,7 @@ import {
   avaliarRequisitoEspecialidade,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { fmtData } from './MinhaClasse.jsx'
 
@@ -128,6 +129,7 @@ function ItemFila({ it, onFeito }) {
       <div className="font-bold text-ink">{it.usuario_nome}</div>
       <p className="text-sm text-ink mb-1">{it.titulo} — {it.subtitulo}</p>
       <p className="text-xs text-faint mb-2">{it.unidade_nome || 'sem unidade'} · enviado em {fmtData(it.enviado_em)}</p>
+      {ehClasse && <DocumentoParaConferir memberRequirementId={it.item_id} />}
 
       {ehClasse && it.tentativa_numero > 1 && (
         <button type="button" onClick={verHistorico} className="text-xs font-semibold text-brand mb-2 underline">

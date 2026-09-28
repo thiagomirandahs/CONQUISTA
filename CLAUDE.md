@@ -47,6 +47,8 @@ supabase/functions/    Edge Functions
 - **Entrada em clube**: link/QR/código, convite ou escolher o clube no cadastro → vínculo **PENDENTE** → diretoria aprova. Papel sempre decidido pelo servidor. Nome de clube é único (migration 205).
 - **Currículo**: versão publicada é imutável; mudou o manifesto → versão nova (hoje **2026.4**, 6 regulares + 6 avançadas). Comprovação por texto/foto (`tipo_evidencia`). Avançada exige a regular iniciada.
 - **Investidura** (migration 330): clube → distrito → região → apto (pula nível inexistente; devolver marca requisitos para correção).
+- **Foto de documento** (migration 380): requisitos de idade pedem foto do documento; fica fora do histórico imutável, só dono e avaliador do clube veem, e é APAGADA (API do Storage) depois da aprovação — fica só "conferido por".
+- **Audiolivros** (migration 370): catálogo global, toca pelo youtube-nocookie (CSP `frame-src` só dele); nada é baixado.
 - **Membros inativos NUNCA são apagados**: inativar exige motivo e gera histórico (migration 310). A lixeira de membros está desligada de vez.
 - **Comercial**: 1 licença = 1 clube; plano à venda = **Licença Anual**; teste grátis (30 dias, expira por cron), cortesia por código, sem gateway de pagamento real.
 - **Vitrine do site**: todo clube ativo aparece em /clubes só com dados institucionais; contatos do diretor são opt-in (LGPD).
@@ -86,6 +88,8 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Banco LOCAL de trabalho (Docker `postgres`) está na 360.
 
 ## Pendências conhecidas (28/09)
+- **Aplicar 370 (audiolivros) + 380 (foto do documento da idade) em produção**: `scripts/aplicar-370-380-producao.sql`
+  (idempotente; o dono cola no SQL Editor). Só depois fazer push do app (a aba Audiolivros do /admin depende da 370).
 - 340→350→360 APLICADAS em produção (28/09). Atenção: o SQL Editor do Supabase NÃO segura `begin/commit`
   (grava comando a comando; tabela temporária some) — script de produção tem de ser idempotente e sem temp table.
 - E2E em produção com cartão de teste controlado (documento/PDF, assinatura, investidura) — nunca feito.
