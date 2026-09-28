@@ -193,8 +193,10 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
   const [enviando, setEnviando] = useState(false)
   const [recusa, setRecusa] = useState('')
   const [denunciarId, setDenunciarId] = useState(null)
-  // adulto de OUTRO clube não comenta em publicação de criança (o servidor recusa de qualquer jeito)
-  const bloqueadoPorRegra = post.crianca && status?.papel !== 'desbravador' && post.clube_id !== clubeId
+  // adulto de OUTRO clube não comenta em publicação de criança (o servidor recusa de qualquer jeito).
+  // Coordenação (490) pode, se o clube da criança está na área dela — só o servidor sabe a árvore,
+  // então aqui não se esconde a caixa; fora da área, o servidor recusa com a explicação.
+  const bloqueadoPorRegra = post.crianca && status?.papel !== 'desbravador' && post.clube_id !== clubeId && !status?.coordenacao
   const podeComentar = !!status?.pode_publicar && !bloqueadoPorRegra
 
   useEffect(() => {
@@ -229,7 +231,7 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
               <li key={c.id} className="flex gap-3">
                 <AvatarRede nome={c.autor?.nome} foto={c.autor?.foto} tamanho="w-8 h-8" texto="text-[10px]" />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-[13px] ${TXT} break-words`}><span className="font-semibold mr-1.5">{c.autor?.nome}</span>{c.texto}</p>
+                  <p className={`text-[13px] ${TXT} break-words`}><span className="font-semibold mr-1.5">{c.autor?.nome}{c.autor?.coordenacao && <SeloCoordenacao />}</span>{c.texto}</p>
                   <p className={`text-xs ${TXT_SUAVE}`}>{c.autor?.clube}
                     {!c.meu && <button type="button" onClick={() => setDenunciarId(c.id)} className="min-h-[44px] ml-2 font-semibold">Denunciar</button>}
                   </p>
@@ -267,13 +269,24 @@ function Selo({ post }) {
   return null
 }
 
+// Selo discreto de COORDENAÇÃO (490): quem fala pela coordenação (distrito, região…) e não por um clube.
+// O subtítulo já diz "Coordenação · Distrito X"; o selo ajuda a reconhecer de relance, sem gritar.
+export function SeloCoordenacao() {
+  return (
+    <span data-testid="selo-coordenacao" title="Coordenação" aria-label="Coordenação"
+      className="ml-1 inline-grid place-items-center align-[-2px] w-4 h-4 rounded-full bg-[#3b5bff] text-white text-[9px] leading-none">
+      <span aria-hidden="true">✓</span>
+    </span>
+  )
+}
+
 // Avatar + nome + "Clube · há 8 h" num link só (alvo grande, sem sublinhado) que abre o perfil.
 function Cabeca({ autor, criadoEm, pequeno = false }) {
   const miolo = (
     <>
       <AvatarRede nome={autor?.nome} foto={autor?.foto} tamanho={pequeno ? 'w-7 h-7' : 'w-9 h-9'} />
       <span className="min-w-0 block">
-        <span className={`font-semibold ${TXT} truncate block text-[14px] leading-tight`}>{autor?.nome}</span>
+        <span className={`font-semibold ${TXT} truncate block text-[14px] leading-tight`}>{autor?.nome}{autor?.coordenacao && <SeloCoordenacao />}</span>
         <span className={`text-xs ${TXT_SUAVE} truncate block`}>{autor?.clube}{criadoEm ? ` · ${tempoRelativo(criadoEm)}` : ''}</span>
       </span>
     </>

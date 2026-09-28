@@ -5,7 +5,7 @@ import {
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { AnelStory, AvatarRede, Denuncia, Icone, PILL, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
+import { AnelStory, AvatarRede, Denuncia, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
 
 // =============================================================================
 //  STORIES da Rede DBV (migration 480): fileira de bolinhas (rolagem horizontal SÓ dentro dela),
@@ -177,7 +177,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
           <div className="flex items-center gap-2 mt-2">
             <AvatarRede nome={grupo.autor?.nome} foto={grupo.autor?.foto} tamanho="w-8 h-8" texto="text-[10px]" />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold truncate">{grupo.autor?.nome} <span className="font-normal text-white/75">· {tempoRelativo(story.criado_em)}</span></p>
+              <p className="text-[13px] font-semibold truncate">{grupo.autor?.nome}{grupo.autor?.coordenacao && <SeloCoordenacao />} <span className="font-normal text-white/75">· {tempoRelativo(story.criado_em)}</span></p>
               <p className="text-[11px] text-white/75 truncate">{grupo.autor?.clube}</p>
             </div>
             {story.status === 'em_analise' && <span className="text-[11px] font-semibold bg-amber-400 text-black rounded-full px-2 py-0.5">Em análise</span>}

@@ -7,6 +7,7 @@ import Notificacoes from '../../components/Notificacoes.jsx'
 import { RedeContexto } from './contexto.js'
 import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
 import { Carregando } from '../../ui/index.jsx'
+import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from '../../lib/redeModo.js'
 
 // =============================================================================
 //  REDE DBV — o "outro mundo" dentro do app, no ESTILO INSTAGRAM (refeito em 29/09/2026 a pedido
@@ -20,6 +21,8 @@ import { Carregando } from '../../ui/index.jsx'
 const SEM_ACESSO = {
   sem_autorizacao: ['🔒', 'Falta a autorização do responsável', 'Peça para o seu pai, mãe ou responsável autorizar a Rede DBV pelo app (tela Meus filhos).'],
   recurso_desligado: ['🧩', 'A Rede DBV não está liberada', 'Este clube ainda não participa da Rede DBV.'],
+  // coordenação (490): a rede abre quando algum clube da área tiver o recurso ligado
+  area_sem_rede: ['🌎', 'A Rede DBV ainda não está liberada na sua área', 'Quando um clube da sua coordenação entrar na Rede DBV, ela abre aqui para você.'],
 }
 
 const QUADRADINHO = 'w-11 h-11 rounded-xl bg-[#f1f5f9] grid place-items-center text-[#0f172a]'
@@ -41,7 +44,18 @@ function BotaoTema() {
   )
 }
 
+// Sair da rede: quem entrou pelo portal da coordenação volta para /institucional; o resto, ao app do clube.
+// Sair também apaga o modo "coordenação" desta aba (a próxima entrada pelo clube é como membro).
+function useSairDaRede() {
+  const navigate = useNavigate()
+  const coordenacao = redeComoCoordenacao()
+  const destino = destinoDeSaidaDaRede(coordenacao)
+  const sair = () => { sairDoModoCoordenacao(); navigate(destino) }
+  return { coordenacao, sair }
+}
+
 function Topo() {
+  const { coordenacao, sair } = useSairDaRede()
   return (
     <header className="bg-white/95 backdrop-blur sticky top-0 z-30 border-b border-[#eef1f5]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="max-w-xl mx-auto flex items-center justify-between gap-2 px-3 h-14">
@@ -51,10 +65,11 @@ function Topo() {
         </Link>
         <div className="flex items-center gap-2">
           {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
-          <Link to="/inicio" aria-label="Sair da Rede DBV e voltar ao app do clube" data-testid="rede-sair"
-            className="min-h-[44px] px-3 rounded-xl bg-[#f1f5f9] text-[#0f172a] inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
+          <button type="button" onClick={sair} data-testid="rede-sair"
+            aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
+            className="min-h-[44px] px-3 rounded-xl bg-[#f1f5f9] text-[#0f172a] inline-flex items-center gap-1.5 text-sm font-semibold">
             <Icone nome="sair" className="w-5 h-5" /> Sair
-          </Link>
+          </button>
           {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
           <BotaoTema />
           <div className="relative"><Notificacoes classeBotao={QUADRADINHO} icone={<Icone nome="sino" className="w-6 h-6" />} /></div>
@@ -90,9 +105,9 @@ function BarraInferior({ eu }) {
 }
 
 export default function LayoutRede() {
-  const navigate = useNavigate()
   const { pathname } = useLocation()
   const { profile } = useAuth()
+  const { coordenacao, sair } = useSairDaRede()
   const [status, setStatus] = useState(null)
   const [erro, setErro] = useState(null)
 
@@ -103,7 +118,6 @@ export default function LayoutRede() {
   useEffect(() => { recarregar() }, [recarregar])
   useEffect(() => { window.scrollTo?.(0, 0) }, [pathname])
 
-  const sair = () => navigate('/inicio')
   let conteudo
   if (erro) {
     conteudo = (
@@ -121,7 +135,7 @@ export default function LayoutRede() {
         <div className="text-4xl mb-2" aria-hidden="true">{icone}</div>
         <p className={`font-bold ${TXT}`}>{titulo}</p>
         <p className={`text-sm ${TXT_SUAVE} mt-1 mb-4`}>{texto}</p>
-        <button type="button" onClick={sair} className={PILL_CLARA}>Voltar ao app do clube</button>
+        <button type="button" onClick={sair} className={PILL_CLARA}>{coordenacao ? 'Voltar ao portal da coordenação' : 'Voltar ao app do clube'}</button>
       </div>
     )
   } else {

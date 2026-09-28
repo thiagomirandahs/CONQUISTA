@@ -2,11 +2,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useClube } from '../../context/Clube.jsx'
 import { PainelAcessibilidade } from '../../components/PreferenciasAcessibilidade.jsx'
 import { useRede } from './contexto.js'
+import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from '../../lib/redeModo.js'
 import { CARD, Icone, PILL_CLARA, TXT, TXT_SUAVE } from './componentes.jsx'
 
 // "Mais" da Rede DBV: minha conta na rede, acessibilidade, regras, moderação (só diretoria) e a volta
 // para o app do clube.
-const PAPEL = { desbravador: 'Desbravador(a)', conselheiro: 'Conselheiro(a)', instrutor: 'Instrutor(a)', tesoureiro: 'Tesoureiro(a)', diretoria: 'Diretoria', pais: 'Responsável' }
+const PAPEL = { desbravador: 'Desbravador(a)', conselheiro: 'Conselheiro(a)', instrutor: 'Instrutor(a)', tesoureiro: 'Tesoureiro(a)', diretoria: 'Diretoria', pais: 'Responsável',
+  // coordenação (490)
+  coordenador_distrital: 'Coordenação distrital', coordenador_regional: 'Coordenação regional', coordenador_geral: 'Coordenação geral',
+  diretor_mda: 'Diretoria do MDA', coordenador_uniao: 'Coordenação da união', diretor_uniao: 'Diretoria da união',
+  coordenador_divisao: 'Coordenação da divisão' }
 
 function Bloco({ titulo, children }) {
   return (
@@ -29,7 +34,9 @@ export default function RedeMais() {
   const { status } = useRede()
   const { papel } = useClube()
   const navigate = useNavigate()
-  const diretoria = papel === 'diretoria'
+  // na rede como coordenação (490) a moderação de clube não se aplica (conteúdo de coordenação vai ao admin)
+  const diretoria = papel === 'diretoria' && !status?.coordenacao
+  const coordenacao = redeComoCoordenacao()
 
   return (
     <div className="space-y-4 p-3">
@@ -62,8 +69,8 @@ export default function RedeMais() {
         </ul>
       </Bloco>
 
-      <button type="button" onClick={() => navigate('/inicio')} className={`${PILL_CLARA} w-full`}>
-        <Icone nome="sair" className="w-5 h-5" /> Voltar ao app do clube
+      <button type="button" onClick={() => { const d = destinoDeSaidaDaRede(coordenacao); sairDoModoCoordenacao(); navigate(d) }} className={`${PILL_CLARA} w-full`}>
+        <Icone nome="sair" className="w-5 h-5" /> {coordenacao ? 'Voltar ao portal da coordenação' : 'Voltar ao app do clube'}
       </button>
     </div>
   )

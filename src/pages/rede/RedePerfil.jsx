@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useClube } from '../../context/Clube.jsx'
 import { carregarPerfil, carregarPostsDoPerfil, urlDaFoto } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando, Folha } from '../../ui/index.jsx'
-import { useRede } from './contexto.js'
-import { AvatarRede, CartaoPost, Icone, ListaDePosts, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { useRede, useUnidadeDaRede } from './contexto.js'
+import { AvatarRede, CartaoPost, Icone, ListaDePosts, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 
 // Perfil da Rede DBV no estilo Instagram (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa):
 // avatar grande à esquerda, contadores à direita, nome, clube; abas por ícone — Fotos (grade 3 colunas),
@@ -49,7 +48,7 @@ function Miniatura({ post, aoAbrir }) {
 }
 
 function Perfil({ id }) {
-  const { clubeId } = useClube()
+  const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
   const { status } = useRede()
   const [perfil, setPerfil] = useState(null)
   const [erro, setErro] = useState(null)
@@ -111,7 +110,7 @@ function Perfil({ id }) {
         </div>
         <div className="flex items-start justify-between gap-2 mt-3">
           <div className="min-w-0">
-            <h1 className={`text-[15px] font-bold ${TXT}`}>{perfil.nome}</h1>
+            <h1 className={`text-[15px] font-bold ${TXT}`}>{perfil.nome}{perfil.coordenacao && <SeloCoordenacao />}</h1>
             <p className={`text-[14px] ${TXT}`}>{perfil.clube}</p>
             {desde && <p className={`text-[13px] ${TXT_SUAVE}`}>{desde}</p>}
           </div>

@@ -14,6 +14,7 @@ import AppLayout from './components/AppLayout.jsx'
 import { TelaDeAbertura, FimDaAbertura } from './ui/carregamento.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
+import { redeComoCoordenacao } from './lib/redeModo.js'
 import GuardaDeManutencao from './components/Manutencao.jsx'
 
 // Cada tela é carregada só quando necessária (deixa o app mais leve/rápido)
@@ -136,6 +137,13 @@ function SessaoObrigatoria({ children }) {
     return <Navigate to="/login" replace />
   }
   return children
+}
+
+// REDE DBV como COORDENAÇÃO (migration 490): entrou pelo portal = só sessão (sem ClubeGuard) — coordenador
+// normalmente não tem clube. A checagem de recurso do CLUBE (RecursoOpcional 'comunidade') também dá
+// passagem nesse modo: a rede vale se algum clube da ÁREA tem o recurso, e quem responde é o servidor.
+function ProtegidoRede({ children }) {
+  return redeComoCoordenacao() ? <SessaoObrigatoria>{children}</SessaoObrigatoria> : <Protegido>{children}</Protegido>
 }
 
 // /entrar: com sessão é a tela de pedir entrada; SEM sessão e com o código do link, a página
@@ -332,8 +340,10 @@ export default function App() {
 
         {/* REDE DBV (migrations 470–472): "outro mundo" dentro do app — layout, visual e navegação PRÓPRIOS
             (não usa o AppLayout do clube). Mesmo ClubeGuard (sessão + clube em uso); recurso 'comunidade'
-            é SOMENTE da plataforma e nasce desligado. A trava de verdade são as RPCs. */}
-        <Route element={<Protegido><LayoutRede /></Protegido>}>
+            é SOMENTE da plataforma e nasce desligado. A trava de verdade são as RPCs.
+            490: quem entra pelo portal da coordenação (modo da aba) passa só pela sessão — coordenador
+            normalmente não tem clube; o servidor decide a área (_rede_contexto). */}
+        <Route element={<ProtegidoRede><LayoutRede /></ProtegidoRede>}>
           <Route path="/rede" element={<RecursoOpcional recurso="comunidade"><RedeFeed /></RecursoOpcional>} />
           <Route path="/rede/publicar" element={<RecursoOpcional recurso="comunidade"><RedePublicar /></RecursoOpcional>} />
           <Route path="/rede/desafios" element={<RecursoOpcional recurso="comunidade"><RedeDesafios /></RecursoOpcional>} />

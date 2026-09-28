@@ -54,6 +54,19 @@ describe('PainelCoordenador', () => {
     expect(links[0]).toHaveAttribute('href', '/institucional/detalhes?aba=clubes')
   })
 
+  // 490: a coordenação entra na Rede DBV pelo portal — cartão próprio, FORA dos 3 botões principais
+  it('cartão "🌎 Rede DBV" leva à rede no modo coordenação', async () => {
+    const u = userEvent.setup()
+    try { sessionStorage.clear() } catch { /* sem storage */ }
+    renderT()
+    const cartao = await screen.findByTestId('cartao-rede')
+    expect(cartao).toHaveAttribute('href', '/rede')
+    expect(cartao).toHaveTextContent('Rede DBV')
+    expect(within(screen.getByTestId('botoes-principais')).queryByText(/Rede DBV/)).toBeNull()
+    await u.click(cartao)
+    expect(sessionStorage.getItem('rede_como')).toBe('coordenacao')
+  })
+
   it('cartão por clube com frases simples: fazendo classe, % aprovados, último avanço e visitas', async () => {
     renderT()
     const [c1] = await screen.findAllByTestId('cartao-clube')

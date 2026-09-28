@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/Auth.jsx'
-import { useClube } from '../../context/Clube.jsx'
 import { carregarDesafios, prepararFoto, publicarNaRede, CATEGORIAS_CONQUISTA, CONFIRMAR_POST } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { useRede } from './contexto.js'
+import { useRede, useUnidadeDaRede } from './contexto.js'
 import { Icone, PILL, PILL_PRIMARIA, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
 
 // Nova publicação da Rede DBV: Foto · Desafio · Conquista. Texto até 300 com contador, descrição da
@@ -19,7 +18,7 @@ const MAX = 300
 
 export default function RedePublicar() {
   const { profile } = useAuth()
-  const { clubeId } = useClube()
+  const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
   const { status } = useRede()
   const navigate = useNavigate()
   const [params] = useSearchParams()
