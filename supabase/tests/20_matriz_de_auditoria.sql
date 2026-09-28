@@ -98,7 +98,9 @@ insert into t.excecoes values
   ('comunidade_termos',           'LISTA DE TERMOS da triagem da Comunidade (migration 430): da PLATAFORMA, a mesma para todos os clubes (o feed é entre clubes); sem dado de pessoa; sem acesso direto, só o admin da plataforma edita por RPC'),
   ('especialidades_catalogo',     'CATÁLOGO GLOBAL de especialidades (migration 460, gerado do MDA Wiki): mesmo para todos os clubes, sem dado de pessoa; leitura só por RPC'),
   ('mestrados_catalogo',          'CATÁLOGO GLOBAL de mestrados (migration 460); mesmo escopo de especialidades_catalogo'),
-  ('mestrado_especialidades',     'quais especialidades contam para cada mestrado (migration 460); mesmo escopo de especialidades_catalogo');
+  ('mestrado_especialidades',     'quais especialidades contam para cada mestrado (migration 460); mesmo escopo de especialidades_catalogo'),
+  ('rede_desafios',               'DESAFIOS DA REDE DBV (migration 471): da PLATAFORMA, os mesmos para todos os clubes da rede (a rede é entre clubes); sem dado de pessoa; só o admin da plataforma cria/edita por RPC. A PARTICIPAÇÃO (rede_desafio_participacoes) tem club_id'),
+  ('rede_limpeza_log',            'LOG DAS RODADAS de limpeza de fotos da rede (migration 472): da plataforma (uma rodada cobre todos os clubes), só contagens de arquivos/bytes, sem dado de pessoa; sem acesso de usuário');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

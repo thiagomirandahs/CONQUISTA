@@ -1,7 +1,7 @@
 -- COMUNIDADE (migrations 430–432) — recurso, denúncia, moderação e regras de segurança.
 -- Prova: recurso desligado (e somente da plataforma) bloqueia tudo; anon sem acesso; sem acesso
--- direto às tabelas; autorização dos pais (e revogação); perfil público só com primeiro nome +
--- clube; adulto de outro clube não comenta em post de criança; pais não publicam; denúncia esconde
+-- direto às tabelas; autorização dos pais (e revogação); perfil público só com nome + sobrenome
+-- (migration 470; antes: primeiro nome) + clube; adulto de outro clube não comenta em post de criança; pais não publicam; denúncia esconde
 -- na hora e avisa a diretoria do clube de quem publicou; restaurar/remover com auditoria; denúncia
 -- abusiva perde o poder de esconder; três avisos = suspensão; limites por minuto/dia e conta nova;
 -- foto só aparece depois da diretoria aprovar (Storage inclusive); repost interno; isolamento
@@ -79,8 +79,11 @@ select t.como('lider_a');
 select t.bloqueado('liderança não lê posts direto por REST', $q$select * from public.comunidade_posts$q$);
 select t.bloqueado('liderança não lê denúncias direto por REST', $q$select * from public.comunidade_denuncias$q$);
 reset role;
-select t.eq('bucket "comunidade" é PRIVADO, só JPEG, até 3 MB',
-  (select count(*) from storage.buckets where id = 'comunidade' and not public and allowed_mime_types = array['image/jpeg'] and file_size_limit <= 3145728), 1::bigint);
+-- migration 472 (rede DBV, armazenamento mínimo): o bucket passou a aceitar WebP e o limite CAIU de 3 MB para
+-- 300 KB. A trava ficou MAIS forte: continua privado, só imagem comprimida (JPEG/WebP), e bem menor.
+select t.eq('bucket "comunidade" é PRIVADO, só JPEG/WebP, até 300 KB',
+  (select count(*) from storage.buckets where id = 'comunidade' and not public
+      and allowed_mime_types <@ array['image/jpeg', 'image/webp'] and file_size_limit <= 307200), 1::bigint);
 
 -- =============================================================================
 --  3. Autorização dos pais
@@ -111,9 +114,12 @@ reset role;
 insert into t.ids (chave, id) select 'post_a', id from public.comunidade_posts where autor_id = t.id('membro_a');
 select t.como('membro_b');
 select t.eq('membro de OUTRO clube vê no feed', t.n($q$select jsonb_array_length(public.comunidade_feed()->'itens')$q$), 1::bigint);
-select t.eq('perfil público = PRIMEIRO nome', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'nome'$q$), 'Ana');
+-- MUDANÇA DE REGRA (migration 470, decisão do dono para a rede DBV): o perfil público passou de "só o primeiro
+-- nome" para NOME + SOBRENOME (as duas primeiras palavras do nome). O que continua proibido: o nome completo
+-- (a 3ª palavra em diante), nascimento e e-mail.
+select t.eq('perfil público = nome + sobrenome (duas primeiras palavras)', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'nome'$q$), 'Ana Clara');
 select t.eq('...+ nome do clube', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'clube'$q$), t.nome_clube('clube_a'));
-select t.ok('...e NUNCA sobrenome, nascimento ou e-mail', t.txt($q$select public.comunidade_feed()::text$q$) !~ '(Souza|Clara|2014|teste\.local|nascimento|email)');
+select t.ok('...e NUNCA o nome completo, nascimento ou e-mail', t.txt($q$select public.comunidade_feed()::text$q$) !~ '(Souza|2014|teste\.local|nascimento|email)');
 select t.eq('curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
 select t.eq('curtir de novo não duplica', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
 select t.eq('criança de outro clube comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'Que legal!')->>'ok'$q$, t.id('post_a'))), 'true');

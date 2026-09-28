@@ -1,5 +1,8 @@
 # Comunidade entre clubes — fase 1 (migrations 430–432)
 
+> Continuação: a Comunidade virou a **Rede DBV** (migrations 470–472) — ver [REDE-DBV.md](REDE-DBV.md).
+> Mudou: nome público = nome + sobrenome; foto de perfil com autorização de imagem; bucket com WebP e 300 KB; fotos expiram em 90 dias.
+
 Feed estilo Instagram/TikTok entre clubes. Público de 10–15 anos: segurança antes de tudo.
 **O recurso `comunidade` nasce DESLIGADO e é somente da plataforma** (`recursos_catalogo.somente_plataforma`,
 como `especialidades`). Liga-se por clube com `admin_recurso_do_clube_definir(clube, 'comunidade', true)`,
