@@ -11,7 +11,7 @@ import { Carregando } from '../../ui/index.jsx'
 // =============================================================================
 //  REDE DBV — o "outro mundo" dentro do app, no ESTILO INSTAGRAM (refeito em 29/09/2026 a pedido
 //  do dono). Layout PRÓPRIO (não usa o AppLayout do clube): fundo branco; topo com a logo à
-//  esquerda e, à direita, ➕ publicar e 🔔 notificações em quadradinhos arredondados leves; barra
+//  esquerda e, à direita, Sair, tema (claro/escuro) e 🔔 em quadradinhos arredondados leves; barra
 //  inferior SÓ de ícones (Início · Buscar · ➕ · Desafios · Perfil), ativo em azul com fundo suave.
 //  "Sair" fica no topo, sempre visível; acessibilidade e moderação ficam em /rede/mais (menu do meu perfil).
 //  Mobile-first: sem rolagem lateral, alvos ≥ 44px, área segura do iPhone respeitada.
@@ -23,6 +23,23 @@ const SEM_ACESSO = {
 }
 
 const QUADRADINHO = 'w-11 h-11 rounded-xl bg-[#f1f5f9] grid place-items-center text-[#0f172a]'
+
+// Mesmo tema do app do clube (data-theme no <html> + localStorage "tema"): trocar aqui vale lá também.
+function BotaoTema() {
+  const [escuro, setEscuro] = useState(() => typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark')
+  function alternar() {
+    const novo = !escuro
+    document.documentElement.setAttribute('data-theme', novo ? 'dark' : 'light')
+    try { localStorage.setItem('tema', novo ? 'escuro' : 'claro') } catch { /* sem storage */ }
+    setEscuro(novo)
+  }
+  return (
+    <button type="button" onClick={alternar} aria-label={escuro ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
+      data-testid="rede-tema" className={QUADRADINHO}>
+      <Icone nome={escuro ? 'sol' : 'lua'} className="w-6 h-6" />
+    </button>
+  )
+}
 
 function Topo() {
   return (
@@ -38,7 +55,8 @@ function Topo() {
             className="min-h-[44px] px-3 rounded-xl bg-[#f1f5f9] text-[#0f172a] inline-flex items-center gap-1.5 text-sm font-semibold no-underline">
             <Icone nome="sair" className="w-5 h-5" /> Sair
           </Link>
-          <Link to="/rede/publicar" aria-label="Publicar" className={QUADRADINHO}><Icone nome="maisQuadrado" className="w-6 h-6" /></Link>
+          {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
+          <BotaoTema />
           <div className="relative"><Notificacoes classeBotao={QUADRADINHO} icone={<Icone nome="sino" className="w-6 h-6" />} /></div>
         </div>
       </div>

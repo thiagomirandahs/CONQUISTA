@@ -197,3 +197,43 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
     min-width: 44px;
   }
 }
+
+/* =============================================================================
+   REDE DBV — tema ESCURO (29/09). As telas da rede usam cores fixas (estilo Instagram); aqui elas
+   ganham a versão escura só dentro de [data-rede] e só com data-theme="dark". O viewer de story
+   (fundo preto) não muda. Se uma tela nova da rede usar outra cor fixa, acrescente o par aqui.
+   ============================================================================= */
+:root[data-theme="dark"] [data-rede] { color-scheme: dark; }
+:root[data-theme="dark"] [data-rede].bg-white,
+:root[data-theme="dark"] [data-rede] .bg-white,
+:root[data-theme="dark"] [data-rede] .bg-white\/95 { background-color: #0b1020; }
+:root[data-theme="dark"] [data-rede] .bg-white\/90 { background-color: rgb(17 24 39 / .9); }
+:root[data-theme="dark"] [data-rede] .bg-\[\#f1f5f9\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#f8fafc\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#f5f6fb\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#f1f3fb\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#eceef6\] { background-color: #1b2233; }
+:root[data-theme="dark"] [data-rede] .bg-\[\#eef2ff\] { background-color: #1e2a5a; }
+:root[data-theme="dark"] [data-rede] .bg-\[\#f3e8ff\] { background-color: #2e1f4a; }
+:root[data-theme="dark"] [data-rede] .bg-\[\#d1fae5\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#ecfdf5\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#e7f6ea\] { background-color: #0f2e24; }
+:root[data-theme="dark"] [data-rede] .bg-\[\#cbd5e1\],
+:root[data-theme="dark"] [data-rede] .bg-\[\#cfd3e6\] { background-color: #334155; }
+:root[data-theme="dark"] [data-rede] .text-\[\#0f172a\] { color: #e5e7eb; }
+:root[data-theme="dark"] [data-rede] .text-\[\#64748b\] { color: #94a3b8; }
+:root[data-theme="dark"] [data-rede] .text-\[\#94a3b8\] { color: #7c8aa0; }
+:root[data-theme="dark"] [data-rede] .text-\[\#047857\],
+:root[data-theme="dark"] [data-rede] .text-\[\#1f5a2e\] { color: #6ee7b7; }
+:root[data-theme="dark"] [data-rede] .text-\[\#6d28d9\] { color: #c4b5fd; }
+:root[data-theme="dark"] [data-rede] .text-\[\#3b5bff\] { color: #8ea2ff; }
+:root[data-theme="dark"] [data-rede] .text-\[\#4b3cff\] { color: #a397ff; }
+:root[data-theme="dark"] [data-rede] .border-\[\#eef1f5\],
+:root[data-theme="dark"] [data-rede] .border-\[\#e2e8f0\],
+:root[data-theme="dark"] [data-rede] .border-\[\#e8eaf3\],
+:root[data-theme="dark"] [data-rede] .border-\[\#cbd5e1\] { border-color: #232b3d; }
+:root[data-theme="dark"] [data-rede] .border-\[\#0f172a\] { border-color: #e5e7eb; }
+:root[data-theme="dark"] [data-rede] input,
+:root[data-theme="dark"] [data-rede] textarea,
+:root[data-theme="dark"] [data-rede] select { color: #e5e7eb; }
+:root[data-theme="dark"] [data-rede] ::placeholder { color: #7c8aa0; }
