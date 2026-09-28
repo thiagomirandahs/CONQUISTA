@@ -88,6 +88,9 @@ export default function Inicio() {
       <Card className="mt-6">
         <p className="text-sm font-bold text-ink mb-2">Ir para</p>
         <div className="grid grid-cols-2 gap-2">
+          {/* atalhos pedidos pelo dono (29/09): Rede DBV e Minha Classe direto do Início, quando o clube tem o recurso */}
+          {temRecurso?.('comunidade') && <Atalho para="/rede" icone="🌎" texto="Rede DBV" />}
+          {temRecurso?.('classes') && <Atalho para="/minha-classe" icone="📘" texto="Minha classe" />}
           <Atalho para="/jornada" icone="🎖️" texto="Minha jornada" />
           <Atalho para="/meu-clube" icone="🏕️" texto="Meu clube" />
         </div>
