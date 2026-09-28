@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
-import { useClube } from '../../context/Clube.jsx'
 import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando } from '../../ui/index.jsx'
-import { useRede } from './contexto.js'
+import { useRede, useUnidadeDaRede } from './contexto.js'
 import { Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 
 // Feed da Rede DBV no estilo Instagram: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube"
 // e os posts de ponta a ponta. O ➕ do topo e da barra de baixo levam à tela de publicar.
-const ABAS = [['todos', 'Todos'], ['meu_clube', 'Meu clube']]
+// Coordenação (490): "Meu clube" vira "Minha área" — posts dos clubes da coordenação (o servidor filtra).
+const abasDoFeed = (coordenacao) => [['todos', 'Todos'], ['meu_clube', coordenacao ? 'Minha área' : 'Meu clube']]
 
 export default function RedeFeed() {
   const { profile } = useAuth()
-  const { clubeId } = useClube()
+  const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
   const { status } = useRede()
   const [filtro, setFiltro] = useState('todos')
   const [itens, setItens] = useState([])
@@ -78,7 +78,7 @@ export default function RedeFeed() {
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
 
       <div role="tablist" aria-label="Filtro do feed" className="flex items-center gap-1 px-3 py-1.5 border-y border-[#eef1f5]">
-        {ABAS.map(([chave, rotulo], i) => (
+        {abasDoFeed(!!status?.coordenacao).map(([chave, rotulo], i) => (
           <span key={chave} className="flex items-center">
             {i > 0 && <span aria-hidden="true" className={`${TXT_SUAVE} px-1`}>·</span>}
             <button type="button" role="tab" aria-selected={filtro === chave} onClick={() => setFiltro(chave)}
@@ -98,7 +98,9 @@ export default function RedeFeed() {
         ) : (
           <ListaDePosts itens={itens} setItens={setItens} proximo={proximo} carregarMais={carregarMais} maisCarregando={mais}
             status={status} clubeId={clubeId}
-            vazio={<VazioRede titulo="Ainda não há publicações">Seja o primeiro a compartilhar algo bom do seu clube!</VazioRede>} />
+            vazio={<VazioRede titulo="Ainda não há publicações">
+              {status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
+            </VazioRede>} />
         )}
 
       {aberto !== null && grupos[aberto] && (

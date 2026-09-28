@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
 import { atualizarFotoPerfil } from '../services/usuarios.js'
+import { entrarNaRedeComoCoordenacao } from '../lib/redeModo.js'
 import { avisar } from '../ui/avisos.jsx'
 import Logo from './Logo.jsx'
 import Avatar from './Avatar.jsx'
@@ -66,6 +67,11 @@ export default function LayoutConta({ children }) {
             <div className="rounded-2xl border border-line bg-surface p-1.5 shadow-lg">
               <p className="px-3 pt-2 pb-1 text-xs font-bold uppercase tracking-wide text-faint">{nome}</p>
               <Link to="/institucional" className={item}><span aria-hidden="true">🏛️</span>Portal da coordenação</Link>
+              {escopoCtx.temEscopo && (
+                <Link to="/rede" onClick={entrarNaRedeComoCoordenacao} className={item} data-testid="conta-rede">
+                  <span aria-hidden="true">🌎</span>Rede DBV
+                </Link>
+              )}
               <button type="button" className={item} onClick={() => arquivo.current?.click()}><span aria-hidden="true">📷</span>Trocar foto</button>
               <input ref={arquivo} type="file" accept="image/*" className="sr-only" onChange={(e) => trocarFoto(e.target.files?.[0])} />
               <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>

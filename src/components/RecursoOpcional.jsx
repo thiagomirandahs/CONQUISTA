@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { verificarOperacao } from '../services/comercial.js'
+import { redeComoCoordenacao } from '../lib/redeModo.js'
 import { Carregando as Esqueleto } from '../ui/index.jsx'
 
 // Tela de um recurso opcional. A partir da fase 5 existem TRÊS camadas e elas não se confundem:
@@ -12,8 +13,12 @@ import { Carregando as Esqueleto } from '../ui/index.jsx'
 // dizer "o clube não usa" quando na verdade é o plano manda a pessoa mexer no lugar errado.
 // (Dados e RPCs seguem protegidos no banco por clube, papel e plano: isto aqui é só a explicação.)
 export default function RecursoOpcional({ recurso, children }) {
-  const { carregando, temRecurso } = useClube()
-  const bloqueado = !carregando && !temRecurso(recurso)
+  const { carregando: carregandoClube, temRecurso } = useClube()
+  // Rede DBV como COORDENAÇÃO (migration 490): não há clube em uso; vale o recurso ligado em algum clube
+  // da ÁREA, e isso só o servidor sabe (comunidade_meu_status explica "área sem rede"). Aqui só dá passagem.
+  const daCoordenacao = recurso === 'comunidade' && redeComoCoordenacao()
+  const carregando = carregandoClube && !daCoordenacao
+  const bloqueado = !carregando && !daCoordenacao && !temRecurso(recurso)
   const [motivo, setMotivo] = useState(null)
 
   useEffect(() => {

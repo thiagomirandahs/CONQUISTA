@@ -28,11 +28,20 @@ export function definirEscopoAtivoNoTransporte(escopoId) {
   escopoAtivoDaAba = escopoId || null
 }
 
+// Como a pessoa está na REDE DBV nesta aba (migration 490): 'coordenacao' quando entrou pelo portal da
+// coordenação. É só PREFERÊNCIA — o servidor (_rede_contexto) só honra se houver vínculo ativo de
+// coordenação; sem ele, continua no clube. Estado em lib/redeModo.js (sessionStorage da aba).
+let redeComoDaAba = null
+export function definirRedeComoNoTransporte(modo) {
+  redeComoDaAba = modo === 'coordenacao' ? 'coordenacao' : null
+}
+
 function fetchComClubeAtivo(input, init) {
   const opcoes = { ...(init || {}) }
   const cabecalhos = new Headers(opcoes.headers || (input && typeof input !== 'string' ? input.headers : undefined))
   if (clubeAtivoDaAba) cabecalhos.set('x-clube-atual', clubeAtivoDaAba)
   if (escopoAtivoDaAba) cabecalhos.set('x-escopo-atual', escopoAtivoDaAba)
+  if (redeComoDaAba) cabecalhos.set('x-rede-como', redeComoDaAba)
   opcoes.headers = cabecalhos
   return fetch(input, opcoes)
 }

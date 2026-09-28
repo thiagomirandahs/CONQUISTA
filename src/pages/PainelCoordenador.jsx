@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useEscopo } from '../context/Escopo.jsx'
 import { carregarResumoCoordenador, carregarInvestidurasDoEscopo } from '../services/institucional.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import { entrarNaRedeComoCoordenacao } from '../lib/redeModo.js'
 import { Aviso, Carregando, Vazio, mensagemDeErro } from '../ui/index.jsx'
 import {
   PERIODOS, dataBR, estaParado, fraseAvanco, fraseVisita, gerarCSV, gerarHTMLImpressao, gerarTextoWhatsApp,
@@ -120,6 +121,18 @@ export default function PainelCoordenador() {
         </Link>
         <Link to="/institucional/detalhes?aba=visitas" className={`${BOTAO_GRANDE} bg-surface shadow-soft text-ink`}>🚗 Visitas</Link>
       </nav>
+
+      {/* Rede DBV (migration 490): a coordenação entra como "Coordenação · <unidade>". Fica fora dos 3 botões
+          principais de propósito; se nenhum clube da área liberou a rede, a própria rede explica. */}
+      <Link to="/rede" onClick={entrarNaRedeComoCoordenacao} data-testid="cartao-rede"
+        className="flex items-center gap-3 min-h-[64px] mb-5 rounded-2xl bg-surface shadow-soft p-4 text-ink no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+        <span aria-hidden="true" className="text-3xl">🌎</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-lg font-extrabold leading-tight">Rede DBV</span>
+          <span className="block text-base text-muted leading-snug">Veja e publique na rede dos clubes da sua área</span>
+        </span>
+        <span aria-hidden="true" className="text-2xl text-faint">›</span>
+      </Link>
 
       {!verPainel ? (
         <p className="text-base text-muted">Seu cargo nesta coordenação não inclui os números dos clubes.</p>

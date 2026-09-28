@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buscarNaRede } from '../../services/rede.js'
 import { Carregando } from '../../ui/index.jsx'
-import { AvatarRede, Icone, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
+import { AvatarRede, Icone, SeloCoordenacao, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
 
 // Buscar na Rede DBV (migration 481): clubes e pessoas (nome + sobrenome, clube). O servidor só devolve
 // quem participa da rede em clube com o recurso ligado; a foto de rosto só vem com a autorização de imagem.
@@ -14,7 +14,7 @@ function Pessoa({ p }) {
       <Link to={`/rede/perfil/${p.id}`} className="flex items-center gap-3 min-h-[60px] px-3 no-underline">
         <AvatarRede nome={p.nome} foto={p.foto} tamanho="w-11 h-11" texto="text-sm" />
         <span className="min-w-0">
-          <span className={`block font-semibold text-[14px] ${TXT} truncate`}>{p.nome}</span>
+          <span className={`block font-semibold text-[14px] ${TXT} truncate`}>{p.nome}{p.coordenacao && <SeloCoordenacao />}</span>
           <span className={`block text-[13px] ${TXT_SUAVE} truncate`}>{p.clube}</span>
         </span>
       </Link>
