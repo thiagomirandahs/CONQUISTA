@@ -88,6 +88,7 @@ const RedePublicar = lazy(() => import('./pages/rede/RedePublicar.jsx'))
 const RedeDesafios = lazy(() => import('./pages/rede/RedeDesafios.jsx'))
 const RedePerfil = lazy(() => import('./pages/rede/RedePerfil.jsx'))
 const RedeMais = lazy(() => import('./pages/rede/RedeMais.jsx'))
+const RedeBuscar = lazy(() => import('./pages/rede/RedeBuscar.jsx'))
 const RedeModeracao = lazy(() => import('./pages/rede/RedeModeracao.jsx'))
 const Jornada = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.Jornada })))
 const MeuClubeHub = lazy(() => import('./pages/Hub.jsx').then((m) => ({ default: m.MeuClube })))
@@ -338,6 +339,7 @@ export default function App() {
           <Route path="/rede/desafios" element={<RecursoOpcional recurso="comunidade"><RedeDesafios /></RecursoOpcional>} />
           <Route path="/rede/perfil" element={<RecursoOpcional recurso="comunidade"><RedePerfil /></RecursoOpcional>} />
           <Route path="/rede/perfil/:id" element={<RecursoOpcional recurso="comunidade"><RedePerfil /></RecursoOpcional>} />
+          <Route path="/rede/buscar" element={<RecursoOpcional recurso="comunidade"><RedeBuscar /></RecursoOpcional>} />
           <Route path="/rede/mais" element={<RecursoOpcional recurso="comunidade"><RedeMais /></RecursoOpcional>} />
           <Route path="/rede/moderacao" element={<RotaRestrita><RedeModeracao /></RotaRestrita>} />
         </Route>

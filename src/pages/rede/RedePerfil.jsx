@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useClube } from '../../context/Clube.jsx'
-import { carregarPerfil, carregarPostsDoPerfil } from '../../services/rede.js'
+import { carregarPerfil, carregarPostsDoPerfil, urlDaFoto } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { Carregando } from '../../ui/index.jsx'
+import { Carregando, Folha } from '../../ui/index.jsx'
 import { useRede } from './contexto.js'
-import { AvatarRede, CARD, GRADIENTE, ListaDePosts, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { AvatarRede, CartaoPost, Icone, ListaDePosts, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 
-// Perfil da Rede DBV (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa). A foto de rosto só vem
-// do servidor com a autorização de uso de imagem; sem ela, iniciais. Nada de classes aqui (decisão do dono).
-const ABAS = [['publicacoes', 'Publicações'], ['conquistas', 'Conquistas'], ['desafios', 'Desafios']]
+// Perfil da Rede DBV no estilo Instagram (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa):
+// avatar grande à esquerda, contadores à direita, nome, clube; abas por ícone — Fotos (grade 3 colunas),
+// Textos (lista), Conquistas, Desafios e Salvos (só no meu). A foto de rosto só vem do servidor com a
+// autorização de uso de imagem; sem ela, iniciais. Nada de classes aqui (decisão do dono).
+const ABAS = [
+  ['fotos', 'Publicações', 'grade'],
+  ['textos', 'Textos', 'texto'],
+  ['conquistas', 'Conquistas', 'escudo'],
+  ['desafios', 'Desafios', 'trofeu'],
+]
+const ABA_DO_SERVIDOR = { fotos: 'publicacoes', textos: 'publicacoes' }
 const VAZIO = {
-  publicacoes: ['📝', 'Nenhuma publicação ainda'],
+  fotos: ['📷', 'Nenhuma foto ainda'],
+  textos: ['📝', 'Nenhum texto ainda'],
   conquistas: ['🎖️', 'Nenhuma conquista publicada'],
   desafios: ['🏅', 'Ainda não participou de desafios'],
   salvos: ['🔖', 'Nada salvo', 'Toque no marcador de um post para guardar aqui. Só você vê.'],
@@ -23,15 +32,32 @@ export default function RedePerfil() {
   return <Perfil key={id || 'eu'} id={id} />
 }
 
+function Miniatura({ post, aoAbrir }) {
+  const [url, setUrl] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    urlDaFoto(post.foto).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
+    return () => { vivo = false }
+  }, [post.foto])
+  return (
+    <button type="button" onClick={() => aoAbrir(post)} aria-label={post.foto_alt || `Foto de ${post.autor?.nome}`}
+      className="relative block aspect-square bg-[#f1f5f9] overflow-hidden">
+      {url && <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="w-full h-full object-cover" />}
+      {post.status === 'em_analise' && <span className="absolute left-1 top-1 text-[10px] font-semibold bg-amber-100 text-amber-900 rounded-full px-1.5">Em análise</span>}
+    </button>
+  )
+}
+
 function Perfil({ id }) {
   const { clubeId } = useClube()
   const { status } = useRede()
   const [perfil, setPerfil] = useState(null)
   const [erro, setErro] = useState(null)
-  const [aba, setAba] = useState('publicacoes')
+  const [aba, setAba] = useState('fotos')
   const [itens, setItens] = useState(null)
   const [proximo, setProximo] = useState(null)
   const [mais, setMais] = useState(false)
+  const [aberto, setAberto] = useState(null)
 
   useEffect(() => {
     let vivo = true
@@ -42,7 +68,7 @@ function Perfil({ id }) {
   const carregarAba = useCallback(async (a) => {
     setItens(null)
     try {
-      const r = await carregarPostsDoPerfil(id || null, a)
+      const r = await carregarPostsDoPerfil(id || null, ABA_DO_SERVIDOR[a] || a)
       setItens(r?.itens || []); setProximo(r?.proximo || null)
     } catch (e) { setItens([]); avisar.info(textoDoErro(e, 'Não consegui carregar.')) }
   }, [id])
@@ -52,50 +78,82 @@ function Perfil({ id }) {
     if (!proximo || mais) return
     setMais(true)
     try {
-      const r = await carregarPostsDoPerfil(id || null, aba, proximo)
+      const r = await carregarPostsDoPerfil(id || null, ABA_DO_SERVIDOR[aba] || aba, proximo)
       setItens((x) => [...x, ...(r?.itens || [])]); setProximo(r?.proximo || null)
     } catch (e) { avisar.info(textoDoErro(e, 'Não consegui carregar mais.')) }
     setMais(false)
   }
 
-  if (erro) return <div className={`${CARD} p-6 text-center`}><p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o perfil.')}</p></div>
-  if (!perfil) return <Carregando />
-  const abas = perfil.eu ? [...ABAS, ['salvos', 'Salvos']] : ABAS
+  if (erro) return <div className="p-6 text-center"><p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o perfil.')}</p></div>
+  if (!perfil) return <div className="p-4"><Carregando /></div>
+  const abas = perfil.eu ? [...ABAS, ['salvos', 'Salvos', 'marcador']] : ABAS
   const [icone, titulo, texto] = VAZIO[aba]
   const desde = perfil.desde ? `${perfil.papel === 'desbravador' ? 'Desbravador(a)' : 'No clube'} desde ${perfil.desde}` : null
+  const lista = itens === null ? null
+    : aba === 'fotos' ? itens.filter((p) => p.foto)
+      : aba === 'textos' ? itens.filter((p) => !p.foto) : itens
+  const atualizar = (p) => { setItens((a) => a.map((x) => (x.id === p.id ? p : x))); setAberto(p) }
+  const remover = (pid) => { setItens((a) => a.filter((x) => x.id !== pid)); setAberto(null) }
 
   return (
     <div>
-      <section className={`${CARD} overflow-hidden mb-4`} aria-label={`Perfil de ${perfil.nome}`}>
-        <div className={`${GRADIENTE} h-24`} aria-hidden="true" />
-        <div className="px-4 pb-4 -mt-12 text-center">
-          <div className="inline-block"><AvatarRede nome={perfil.nome} foto={perfil.foto} tamanho="w-24 h-24" texto="text-2xl" /></div>
-          <h1 className={`text-xl font-black ${TXT} mt-2`}>{perfil.nome}</h1>
-          <p className="mt-1"><span className="inline-block text-xs font-bold text-[#3b2bd9] bg-[#eef1ff] rounded-full px-3 py-1">🛡️ {perfil.clube}</span></p>
-          {desde && <p className={`text-sm ${TXT_SUAVE} mt-2`}>{desde}</p>}
-          <dl className="grid grid-cols-3 gap-2 mt-4">
+      <section className="px-4 pt-4 pb-3" aria-label={`Perfil de ${perfil.nome}`}>
+        <div className="flex items-center gap-5">
+          <AvatarRede nome={perfil.nome} foto={perfil.foto} tamanho="w-[84px] h-[84px]" texto="text-2xl" />
+          <dl className="flex-1 grid grid-cols-3 text-center">
             {[['Publicações', perfil.publicacoes], ['Conquistas', perfil.conquistas], ['Pontos da rede', perfil.pontos]].map(([r, v]) => (
-              <div key={r} className="rounded-2xl bg-[#f5f6fb] py-2">
-                <dt className={`text-[11px] font-bold ${TXT_SUAVE}`}>{r}</dt>
-                <dd className={`text-lg font-black ${TXT}`}>{v ?? 0}</dd>
+              <div key={r} className="flex flex-col-reverse">
+                <dt className={`text-[12px] ${TXT_SUAVE} leading-tight`}>{r}</dt>
+                <dd className={`text-[18px] font-bold ${TXT}`}>{v ?? 0}</dd>
               </div>
             ))}
           </dl>
-          {perfil.eu && !perfil.imagem_autorizada && (
-            <p className={`text-xs ${TXT_SUAVE} mt-3`}>Sua foto de rosto aparece na rede quando a diretoria arquivar a autorização de uso de imagem.</p>
+        </div>
+        <div className="flex items-start justify-between gap-2 mt-3">
+          <div className="min-w-0">
+            <h1 className={`text-[15px] font-bold ${TXT}`}>{perfil.nome}</h1>
+            <p className={`text-[14px] ${TXT}`}>{perfil.clube}</p>
+            {desde && <p className={`text-[13px] ${TXT_SUAVE}`}>{desde}</p>}
+          </div>
+          {perfil.eu && (
+            <Link to="/rede/mais" aria-label="Mais opções da rede" className="shrink-0 w-11 h-11 rounded-xl bg-[#f1f5f9] grid place-items-center text-[#0f172a]">
+              <Icone nome="menu" />
+            </Link>
           )}
         </div>
+        {perfil.eu && !perfil.imagem_autorizada && (
+          <p className={`text-xs ${TXT_SUAVE} mt-2`}>Sua foto de rosto aparece na rede quando a diretoria arquivar a autorização de uso de imagem.</p>
+        )}
       </section>
-      <div role="tablist" aria-label="Abas do perfil" className="flex gap-1 p-1 rounded-full bg-white border border-[#e8eaf3] mb-4">
-        {abas.map(([chave, rotulo]) => (
-          <button key={chave} type="button" role="tab" aria-selected={aba === chave} onClick={() => setAba(chave)}
-            className={`flex-1 min-w-0 min-h-[44px] rounded-full text-xs sm:text-sm font-bold truncate ${aba === chave ? 'bg-[#141a3a] text-white' : TXT_SUAVE}`}>{rotulo}</button>
+
+      <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[#eef1f5]">
+        {abas.map(([chave, rotulo, ic]) => (
+          <button key={chave} type="button" role="tab" aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
+            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[#0f172a] text-[#0f172a]' : `border-transparent ${TXT_SUAVE}`}`}>
+            <Icone nome={ic} className="w-[22px] h-[22px]" />
+          </button>
         ))}
       </div>
-      {itens === null ? <Carregando linhas={2} /> : (
-        <ListaDePosts itens={itens} setItens={setItens} proximo={proximo} carregarMais={carregarMais} maisCarregando={mais}
-          status={status} clubeId={clubeId} vazio={<VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede>} />
-      )}
+
+      {lista === null ? <div className="p-4"><Carregando linhas={2} /></div>
+        : aba === 'fotos' ? (
+          lista.length === 0 ? <VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede> : (
+            <>
+              <div className="grid grid-cols-3 gap-[2px]" data-testid="grade-fotos">
+                {lista.map((p) => <Miniatura key={p.id} post={p} aoAbrir={setAberto} />)}
+              </div>
+              {proximo && <div className="py-4 text-center"><button type="button" onClick={carregarMais} className="min-h-[44px] px-4 text-sm font-semibold text-[#3b5bff]">{mais ? 'Carregando…' : 'Ver mais'}</button></div>}
+            </>
+          )
+        ) : (
+          <ListaDePosts itens={lista} setItens={(f) => setItens((a) => (typeof f === 'function' ? f(a) : f))} proximo={proximo}
+            carregarMais={carregarMais} maisCarregando={mais} status={status} clubeId={clubeId}
+            vazio={<VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede>} />
+        )}
+
+      <Folha aberta={!!aberto} aoFechar={() => setAberto(null)} titulo="Publicação">
+        {aberto && <div className="-mx-5"><CartaoPost post={aberto} status={status} clubeId={clubeId} aoAtualizar={atualizar} aoRemover={remover} /></div>}
+      </Folha>
     </div>
   )
 }

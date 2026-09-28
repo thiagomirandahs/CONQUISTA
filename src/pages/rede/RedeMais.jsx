@@ -32,7 +32,7 @@ export default function RedeMais() {
   const diretoria = papel === 'diretoria'
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-3">
       <Bloco titulo="Minha conta na rede">
         {status?.pode_ver && <Linha para="/rede/perfil" icone="pessoa">Meu perfil e salvos</Linha>}
         <p className={`text-sm ${TXT_SUAVE} px-2 mt-1`}>
@@ -56,8 +56,8 @@ export default function RedeMais() {
         <ul className={`text-sm ${TXT} space-y-1.5 list-disc pl-5`}>
           <li>Respeito sempre. Palavrão, ofensa e deboche não passam.</li>
           <li>Nada de telefone, @, links, e-mail, endereço ou escola. Não existe mensagem privada.</li>
-          <li>Toda foto passa pela diretoria do seu clube antes de aparecer e sai daqui em 90 dias.</li>
-          <li>Viu algo errado? Toque na bandeira: o conteúdo some na hora e a diretoria revisa.</li>
+          <li>Antes de publicar, o app pergunta se você tem certeza: tudo fica visível para todos os clubes da Rede DBV. Fotos saem daqui em 90 dias; stories, em 24 horas.</li>
+          <li>Viu algo errado? Toque em ⋮ → Denunciar (no story, na bandeira): o conteúdo some na hora e a diretoria revisa.</li>
           <li>Três avisos em 30 dias pausam a sua rede por alguns dias.</li>
         </ul>
       </Bloco>

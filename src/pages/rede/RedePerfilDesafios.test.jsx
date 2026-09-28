@@ -49,6 +49,19 @@ describe('Rede DBV — perfil', () => {
     expect(f.carregarPostsDoPerfil).toHaveBeenLastCalledWith(null, 'conquistas')
   })
 
+  it('estilo Instagram: fotos em grade de 3 colunas; aba Textos lista os posts sem foto', async () => {
+    const u = userEvent.setup()
+    f.urlDaFoto.mockResolvedValue('blob:x')
+    f.carregarPostsDoPerfil.mockResolvedValue({ itens: [post({ id: 'f1', foto: 'c/u/1.webp' }), post({ id: 't1', legenda: 'Só texto' })], proximo: null })
+    renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })
+    const grade = await screen.findByTestId('grade-fotos')
+    expect(grade.className).toContain('grid-cols-3')
+    expect(grade.querySelectorAll('button')).toHaveLength(1)
+    await u.click(screen.getByRole('tab', { name: 'Textos' }))
+    expect(await screen.findByText('Só texto')).toBeInTheDocument()
+    expect(f.carregarPostsDoPerfil).toHaveBeenLastCalledWith('u-ana', 'publicacoes')
+  })
+
   it('com autorização de imagem a foto aparece', async () => {
     f.carregarPerfil.mockResolvedValue({ ...PERFIL, foto: 'http://x/storage/v1/object/public/imagens/perfis/a-1.webp', imagem_autorizada: true })
     const { container } = renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })

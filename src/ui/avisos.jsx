@@ -98,7 +98,7 @@ export function ConfirmacaoProvider({ children }) {
 
   const confirmar = useCallback((opcoes) => {
     const o = typeof opcoes === 'string' ? { titulo: opcoes } : (opcoes || {})
-    setPedido({ titulo: o.titulo || 'Tem certeza?', descricao: o.descricao, rotulo: o.rotulo || 'Confirmar', perigo: o.perigo !== false })
+    setPedido({ titulo: o.titulo || 'Tem certeza?', descricao: o.descricao, rotulo: o.rotulo || 'Confirmar', cancelar: o.cancelar || 'Cancelar', perigo: o.perigo !== false })
     return new Promise((res) => { resolver.current = res })
   }, [])
 
@@ -117,7 +117,7 @@ export function ConfirmacaoProvider({ children }) {
           <Botao variacao={pedido?.perigo ? 'perigo' : 'primario'} className="w-full" aoTocar={() => responder(true)}>
             {pedido?.rotulo}
           </Botao>
-          <Botao variacao="secundario" className="w-full" aoTocar={() => responder(false)}>Cancelar</Botao>
+          <Botao variacao="secundario" className="w-full" aoTocar={() => responder(false)}>{pedido?.cancelar || 'Cancelar'}</Botao>
         </div>
       </Folha>
     </ConfirmacaoContext.Provider>

@@ -44,7 +44,7 @@ function CartaoFila({ item, acoes, aoDecidir }) {
         <p className={`font-extrabold ${TXT} truncate`}>{item.autor}</p>
         <span className={`text-xs ${TXT_SUAVE} shrink-0`}>{tempoRelativo(item.criado_em)}</span>
       </div>
-      <p className={`text-xs ${TXT_SUAVE}`}>{item.tipo === 'post' ? (item.repost ? 'Compartilhamento' : 'Publicação') : 'Comentário'}
+      <p className={`text-xs ${TXT_SUAVE}`}>{item.tipo === 'post' ? (item.repost ? 'Compartilhamento' : 'Publicação') : item.tipo === 'story' ? 'Story (24 h)' : 'Comentário'}
         {item.status === 'oculto_denuncia' ? ' · escondido' : item.status === 'publicado' && item.denuncias ? ' · ainda no ar' : ''}</p>
       {item.denuncias > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
@@ -148,8 +148,8 @@ export default function RedeModeracao() {
 
   const contador = { denuncias: fila?.denuncias?.length, fotos: fila?.fotos?.length, pausados: fila?.suspensos?.length }
   return (
-    <div>
-      <h1 className={`text-xl font-black ${TXT} mb-3`}>Moderação do clube</h1>
+    <div className="p-3">
+      <h1 className={`text-xl font-extrabold ${TXT} mb-3`}>Moderação do clube</h1>
       <div role="tablist" aria-label="Filas da moderação" className="grid grid-cols-4 gap-1 p-1 rounded-full bg-white border border-[#e8eaf3] mb-4">
         {ABAS.map(([chave, rotulo]) => (
           <button key={chave} type="button" role="tab" aria-selected={aba === chave} onClick={() => setAba(chave)}
@@ -173,7 +173,9 @@ export default function RedeModeracao() {
                         <CartaoFila key={i.id} item={i} aoDecidir={carregar}
                           acoes={[['aprovar_foto', 'Aprovar', PILL_PRIMARIA], ['recusar_foto', 'Recusar', PILL_CLARA]]} />))}
                     </div>
-                  : <VazioRede icone="📷" titulo="Nenhuma foto esperando" />)
+                  : <VazioRede icone="📷" titulo="Nenhuma foto esperando">
+                      {fila.foto_exige_aprovacao === false ? 'Hoje as fotos e stories publicam direto (com confirmação de quem publica). A moderação é pela aba Denúncias.' : null}
+                    </VazioRede>)
                 : (fila.suspensos?.length
                     ? <ul className="space-y-2">{fila.suspensos.map((s) => (
                         <li key={s.usuario_id} className={`${CARD} p-4 flex items-center justify-between gap-2`}>

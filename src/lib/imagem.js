@@ -39,12 +39,14 @@ export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72 }
 // o tamanho em passos até 720 px. Foto de celular de 3–5 MB vira ~100–150 KB. O bucket recusa > 300 KB.
 export const FOTO_REDE = { maxLado: 1080, minLado: 720, alvoBytes: 150 * 1024, qualidade: 0.7, qualidadeMin: 0.5 }
 export const FOTO_AVATAR = { maxLado: 256, minLado: 160, alvoBytes: 30 * 1024, qualidade: 0.7, qualidadeMin: 0.4 }
+// Story (migration 480): retrato 9:16 até 1080×1920 (a caixa limita largura E altura), mesmo alvo de 150 KB.
+export const FOTO_STORY = { ...FOTO_REDE, maxLado: 1920, minLado: 1280, caixa: { largura: 1080, altura: 1920 } }
 export const LIMITE_BUCKET_REDE = 300 * 1024
 
 const exportar = (canvas, tipo, q) => new Promise((res) => canvas.toBlob(res, tipo, q))
 
 export async function otimizarFoto(file, opcoes = FOTO_REDE) {
-  const { maxLado, minLado, alvoBytes, qualidade, qualidadeMin } = { ...FOTO_REDE, ...opcoes }
+  const { maxLado, minLado, alvoBytes, qualidade, qualidadeMin, caixa } = { ...FOTO_REDE, ...opcoes }
   if (!file || !file.type || !file.type.startsWith('image/')) throw new Error('Escolha uma foto. 🙂')
   let bitmap
   try {
@@ -57,7 +59,8 @@ export async function otimizarFoto(file, opcoes = FOTO_REDE) {
   if (!ctx) { bitmap.close?.(); throw new Error('Não consegui preparar essa foto. 🙂') }
   const maior = Math.max(bitmap.width, bitmap.height)
   const desenhar = (lado) => {
-    const escala = Math.min(1, lado / maior)
+    let escala = Math.min(1, lado / maior)
+    if (caixa) escala = Math.min(escala, caixa.largura / bitmap.width, caixa.altura / bitmap.height)
     canvas.width = Math.max(1, Math.round(bitmap.width * escala))
     canvas.height = Math.max(1, Math.round(bitmap.height * escala))
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)

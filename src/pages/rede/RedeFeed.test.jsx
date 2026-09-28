@@ -1,12 +1,13 @@
-// Feed da Rede DBV: abas Todos · Meu clube, nome + sobrenome + clube, foto grande com alt, duplo toque curte,
-// salvar, denunciar some com o post, foto expirada, compositor leva à tela de publicar.
+// Feed da Rede DBV (estilo Instagram, 29/09/2026): abas Todos · Meu clube, nome + sobrenome + clube, foto grande
+// com alt, duplo toque curte, salvar, denunciar (no menu ⋮) some com o post, foto expirada, post só de texto em
+// bloco, #hashtags em azul, legenda com "mais", fileira de stories no topo.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const f = {
   carregarFeed: vi.fn(), curtir: vi.fn(), salvar: vi.fn(), denunciar: vi.fn(), compartilhar: vi.fn(), apagar: vi.fn(),
-  carregarComentarios: vi.fn(), comentar: vi.fn(), urlDaFoto: vi.fn(),
+  carregarComentarios: vi.fn(), comentar: vi.fn(), urlDaFoto: vi.fn(), carregarStories: vi.fn(), marcarStoryVisto: vi.fn(),
 }
 vi.mock('../../services/rede.js', async () => {
   const real = await vi.importActual('../../services/rede.js')
@@ -27,6 +28,7 @@ beforeEach(() => {
   f.carregarFeed.mockResolvedValue({ itens: [post()], proximo: null })
   f.urlDaFoto.mockResolvedValue('blob:foto')
   f.carregarComentarios.mockResolvedValue({ itens: [] })
+  f.carregarStories.mockResolvedValue([])
 })
 
 describe('Rede DBV — feed', () => {
@@ -46,15 +48,20 @@ describe('Rede DBV — feed', () => {
     expect(f.carregarFeed).toHaveBeenLastCalledWith('meu_clube')
   })
 
-  it('compositor "No que você está pensando?" leva à tela de publicar', async () => {
+  // MUDANÇA DE UI (29/09/2026): o compositor "No que você está pensando?" saiu do feed (estilo Instagram);
+  // publicar fica no ➕ do topo/barra (LayoutRede) e o story na bolinha "Seu story". A regra testada
+  // continua: quem publica tem por onde criar; responsável (não publica) não tem.
+  it('quem publica vê "Seu story" com o + para criar', async () => {
     renderRede(<RedeFeed />)
-    expect(await screen.findByRole('link', { name: /No que você está pensando/ })).toHaveAttribute('href', '/rede/publicar')
+    expect(await screen.findByRole('button', { name: 'Adicionar story' })).toBeInTheDocument()
+    expect(screen.getByText('Seu story')).toBeInTheDocument()
   })
 
-  it('responsável (não publica): sem compositor', async () => {
+  it('responsável (não publica): sem "Seu story"', async () => {
     renderRede(<RedeFeed />, { status: { ...STATUS, papel: 'pais', pode_publicar: false } })
     await screen.findByTestId('post')
-    expect(screen.queryByText('No que você está pensando?')).toBeNull()
+    expect(screen.queryByText('Seu story')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Adicionar story' })).toBeNull()
   })
 
   it('foto grande com a descrição (alt) e DUPLO TOQUE curte com o coração', async () => {
@@ -91,6 +98,8 @@ describe('Rede DBV — feed', () => {
     const u = userEvent.setup()
     f.denunciar.mockResolvedValue({ ok: true, ocultou: true, mensagem: 'Obrigado!' })
     renderRede(<RedeFeed />)
+    // MUDANÇA DE UI: denunciar agora fica no menu ⋮ ("Mais opções") do post
+    await u.click(await screen.findByRole('button', { name: 'Mais opções' }))
     await u.click(await screen.findByRole('button', { name: 'Denunciar' }))
     await u.click(await screen.findByRole('button', { name: 'Ofensivo ou desrespeitoso' }))
     expect(f.denunciar).toHaveBeenCalledWith('post', 'p1', 'ofensivo')
@@ -111,5 +120,58 @@ describe('Rede DBV — feed', () => {
     renderRede(<RedeFeed />)
     expect(await screen.findByText(/Desafio: Nó de escota/)).toBeInTheDocument()
     expect(screen.getByText(/Conquista · 🎖️ Classe/)).toBeInTheDocument()
+  })
+
+  it('post sem foto: texto maior em bloco, sem espaço de imagem vazio; #hashtag em azul', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [post({ legenda: 'Reunião top #acampamento' })], proximo: null })
+    renderRede(<RedeFeed />)
+    const bloco = await screen.findByTestId('post-texto')
+    expect(bloco).toHaveTextContent('Reunião top #acampamento')
+    expect(screen.getByText('#acampamento').className).toContain('text-[#3b5bff]')
+    expect(screen.queryByTestId('foto-post')).toBeNull()
+  })
+
+  it('legenda longa com foto abre com "mais"', async () => {
+    const u = userEvent.setup()
+    const longa = 'A'.repeat(90) + ' fim da história que ninguém via ' + 'B'.repeat(40)
+    f.carregarFeed.mockResolvedValue({ itens: [post({ foto: 'c/u/x.webp', legenda: longa })], proximo: null })
+    renderRede(<RedeFeed />)
+    await u.click(await screen.findByRole('button', { name: 'mais' }))
+    expect(screen.getByText(/fim da história que ninguém via/)).toBeInTheDocument()
+  })
+
+  it('nome sem sublinhado (visual do dono)', async () => {
+    renderRede(<RedeFeed />)
+    const card = await screen.findByTestId('post')
+    expect(within(card).getByRole('link', { name: 'Ana Souza' }).className).toContain('no-underline')
+  })
+})
+
+describe('Rede DBV — fileira de stories', () => {
+  const grupos = [
+    { meu: true, todos_vistos: true, autor: { id: 'eu', nome: 'Eu Mesmo', clube: 'Clube A' }, stories: [{ id: 's0', foto: 'a/eu/0.webp', criado_em: new Date().toISOString(), visto: false }] },
+    { meu: false, todos_vistos: false, autor: { id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias' }, stories: [{ id: 's1', foto: 'b/ana/1.webp', criado_em: new Date().toISOString(), visto: false }] },
+    { meu: false, todos_vistos: true, autor: { id: 'u-bia', nome: 'Bia Lima', clube: 'Clube Leões' }, stories: [{ id: 's2', foto: 'b/bia/2.webp', criado_em: new Date().toISOString(), visto: true }] },
+  ]
+
+  it('meus primeiro ("Seu story"), anel colorido = não visto e cinza = visto', async () => {
+    f.carregarStories.mockResolvedValue(grupos)
+    renderRede(<RedeFeed />)
+    const fileira = await screen.findByTestId('fileira-stories')
+    const itens = within(fileira).getAllByRole('listitem')
+    expect(itens[0]).toHaveTextContent('Seu story')
+    expect(within(fileira).getByRole('button', { name: 'Story de Ana Souza' })).toHaveAttribute('data-visto', 'nao')
+    expect(within(fileira).getByRole('button', { name: 'Story de Bia Lima (visto)' })).toHaveAttribute('data-visto', 'sim')
+    expect(within(fileira).getByText('Ana')).toBeInTheDocument()
+  })
+
+  it('tocar numa bolinha abre o viewer e marca visto', async () => {
+    const u = userEvent.setup()
+    f.carregarStories.mockResolvedValue(grupos)
+    f.marcarStoryVisto.mockResolvedValue({ ok: true })
+    renderRede(<RedeFeed />)
+    await u.click(await screen.findByRole('button', { name: 'Story de Ana Souza' }))
+    expect(await screen.findByTestId('viewer-story')).toBeInTheDocument()
+    expect(f.marcarStoryVisto).toHaveBeenCalledWith('s1')
   })
 })

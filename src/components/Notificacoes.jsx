@@ -16,7 +16,8 @@ function tempoRel(iso) {
   return Math.floor(s / 86400) + ' d'
 }
 
-export default function Notificacoes() {
+// `icone`/`classeBotao`: a Rede DBV usa o mesmo sino com ícone de linha num quadradinho claro.
+export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   const { profile } = useAuth()
   // O sino fica FORA da área que remonta ao trocar de clube (key={clubeId} no AppLayout): sem o
   // clube nas dependências, depois de trocar de A para B ele seguia mostrando os avisos de A.
@@ -92,8 +93,8 @@ export default function Notificacoes() {
 
   return (
     <>
-      <button onClick={abrir} aria-label="Notificações" className="relative grid place-items-center">
-        <span className="text-xl">🔔</span>
+      <button onClick={abrir} aria-label="Notificações" className={`relative grid place-items-center ${classeBotao}`}>
+        {icone || <span className="text-xl">🔔</span>}
         {naoLidas > 0 && (
           <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-xs font-bold grid place-items-center ring-2 ring-azul">
             {naoLidas > 9 ? '9+' : naoLidas}

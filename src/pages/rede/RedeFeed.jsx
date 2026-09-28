@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
 import { useClube } from '../../context/Clube.jsx'
-import { carregarFeed } from '../../services/rede.js'
+import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando } from '../../ui/index.jsx'
 import { useRede } from './contexto.js'
-import { AvatarRede, CARD, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 
-// Feed da Rede DBV: abas Todos · Meu clube, composer que abre a tela de publicar, cartões de post.
+// Feed da Rede DBV no estilo Instagram: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube"
+// e os posts de ponta a ponta. O ➕ do topo e da barra de baixo levam à tela de publicar.
 const ABAS = [['todos', 'Todos'], ['meu_clube', 'Meu clube']]
 
 export default function RedeFeed() {
@@ -21,6 +22,10 @@ export default function RedeFeed() {
   const [carregando, setCarregando] = useState(true)
   const [mais, setMais] = useState(false)
   const [erro, setErro] = useState(null)
+  const [grupos, setGrupos] = useState([])
+  const [aberto, setAberto] = useState(null)       // índice do grupo no viewer
+  const [arquivoStory, setArquivoStory] = useState(null)
+  const inputStory = useRef(null)
 
   const carregar = useCallback(async (f) => {
     setCarregando(true); setErro(null)
@@ -32,6 +37,11 @@ export default function RedeFeed() {
   }, [])
   useEffect(() => { carregar(filtro) }, [carregar, filtro, clubeId])
 
+  const recarregarStories = useCallback(async () => {
+    try { setGrupos((await carregarStories()) || []) } catch { setGrupos([]) }
+  }, [])
+  useEffect(() => { recarregarStories() }, [recarregarStories, clubeId])
+
   async function carregarMais() {
     if (!proximo || mais) return
     setMais(true)
@@ -42,28 +52,46 @@ export default function RedeFeed() {
     setMais(false)
   }
 
+  // o viewer avisa: visto (anel fica cinza) / removido (recarrega ao fechar)
+  const mudouStory = useCallback(({ tipo, id }) => {
+    if (tipo !== 'visto') return
+    setGrupos((gs) => gs.map((g) => {
+      if (!g.stories.some((s) => s.id === id)) return g
+      const stories = g.stories.map((s) => (s.id === id ? { ...s, visto: true } : s))
+      return { ...g, stories, todos_vistos: g.meu || stories.every((s) => s.visto) }
+    }))
+  }, [])
+  const fecharViewer = useCallback(() => { setAberto(null); recarregarStories() }, [recarregarStories])
+
   return (
     <div>
       {status?.suspenso_ate && (
-        <div role="status" className="mb-4 rounded-3xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
+        <div role="status" className="m-3 rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
           Sua rede está pausada até {new Date(status.suspenso_ate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}. Dá para olhar, mas não publicar nem comentar.
         </div>
       )}
-      {status?.pode_publicar && (
-        <Link to="/rede/publicar" className={`${CARD} flex items-center gap-3 p-3 mb-4 min-h-[64px]`}>
-          <AvatarRede nome={profile?.nome} />
-          <span className={`flex-1 rounded-full bg-[#f4f6fb] px-4 py-3 text-sm ${TXT_SUAVE}`}>No que você está pensando?</span>
-        </Link>
-      )}
-      <div role="tablist" aria-label="Filtro do feed" className="grid grid-cols-2 gap-1 p-1 rounded-full bg-white border border-[#e8eaf3] mb-4">
-        {ABAS.map(([chave, rotulo]) => (
-          <button key={chave} type="button" role="tab" aria-selected={filtro === chave} onClick={() => setFiltro(chave)}
-            className={`min-h-[44px] rounded-full text-sm font-bold ${filtro === chave ? 'bg-[#141a3a] text-white' : TXT_SUAVE}`}>{rotulo}</button>
+
+      <FileiraStories grupos={grupos} eu={profile} podePublicar={!!status?.pode_publicar}
+        aoAbrir={(i) => setAberto(i)} aoNovo={() => inputStory.current?.click()} />
+      <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
+      <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
+
+      <div role="tablist" aria-label="Filtro do feed" className="flex items-center gap-1 px-3 py-1.5 border-y border-[#eef1f5]">
+        {ABAS.map(([chave, rotulo], i) => (
+          <span key={chave} className="flex items-center">
+            {i > 0 && <span aria-hidden="true" className={`${TXT_SUAVE} px-1`}>·</span>}
+            <button type="button" role="tab" aria-selected={filtro === chave} onClick={() => setFiltro(chave)}
+              className={`min-h-[44px] px-2 inline-flex items-center gap-0.5 text-[15px] ${filtro === chave ? `font-bold ${TXT}` : `font-medium ${TXT_SUAVE}`}`}>
+              {rotulo}{chave === 'todos' && <Icone nome="seta" className="w-4 h-4" />}
+            </button>
+          </span>
         ))}
       </div>
-      {carregando ? <Carregando />
+
+      {carregando ? <div className="p-4"><Carregando /></div>
         : erro ? (
-          <div className={`${CARD} p-6 text-center`}>
+          <div className="p-6 text-center">
             <p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o feed.')}</p>
             <button type="button" onClick={() => carregar(filtro)} className={`${PILL_CLARA} mt-3`}>Tentar de novo</button>
           </div>
@@ -72,6 +100,14 @@ export default function RedeFeed() {
             status={status} clubeId={clubeId}
             vazio={<VazioRede titulo="Ainda não há publicações">Seja o primeiro a compartilhar algo bom do seu clube!</VazioRede>} />
         )}
+
+      {aberto !== null && grupos[aberto] && (
+        <ViewerStories grupos={grupos} inicio={aberto} aoFechar={fecharViewer} aoMudar={mudouStory} />
+      )}
+      {arquivoStory && (
+        <NovoStory arquivo={arquivoStory} clubeId={clubeId} userId={profile?.id}
+          aoFechar={() => setArquivoStory(null)} aoPublicado={() => { setArquivoStory(null); recarregarStories() }} />
+      )}
     </div>
   )
 }

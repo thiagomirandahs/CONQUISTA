@@ -93,6 +93,19 @@ describe('Rede DBV — publicar', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Por segurança')
   })
 
+  // Decisão do dono (29/09/2026): publica direto, mas SEMPRE com a confirmação antes.
+  it('confirmação antes de publicar: "Voltar" não publica; texto da confirmação', async () => {
+    const u = userEvent.setup()
+    avisos.confirmar.mockImplementationOnce(async () => false)
+    renderRede(<RedePublicar />)
+    await u.type(screen.getByLabelText('No que você está pensando?'), 'Oi rede')
+    await u.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({
+      titulo: 'Tem certeza que quer publicar?', descricao: 'Fica visível para todos os clubes da Rede DBV.', rotulo: 'Publicar', cancelar: 'Voltar',
+    }))
+    expect(f.publicarNaRede).not.toHaveBeenCalled()
+  })
+
   it('responsável não publica', () => {
     renderRede(<RedePublicar />, { status: { ...STATUS, papel: 'pais', pode_publicar: false } })
     expect(screen.getByText(/Responsáveis acompanham/)).toBeInTheDocument()
