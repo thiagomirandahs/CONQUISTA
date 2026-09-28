@@ -46,6 +46,42 @@ foto só depois da diretoria aprovar, três avisos, limites e recurso `comunidad
   com o recurso ligado. Só quem participa da rede; responsáveis não aparecem; nunca busca pelo nome completo.
   Tocar num clube lista as pessoas dele na rede; tocar numa pessoa abre o perfil.
 
+## Coordenação na rede (migration 490 — pedido do dono, 28/09/2026)
+"Libere a rede social também pra coordenação." Coordenador = vínculo ATIVO numa unidade NÃO-clube
+(distrito, região, campo, união, divisão — papéis `coordenador_*`/`diretor_*` da 130). Normalmente não tem clube.
+- **Como a rede decide o contexto** (`_rede_contexto()`, uma função só, usada pelo portão `_exigir_comunidade`,
+  por `comunidade_meu_status` e pelas policies do Storage):
+  1. tem clube em uso (x-clube-atual) com o recurso ligado e o app NÃO pediu coordenação → entra como **membro
+     do clube** (exatamente como antes);
+  2. não tem clube, ou o clube não tem a rede, ou o app mandou `x-rede-como: coordenacao` (entrou pelo portal)
+     **e** tem vínculo de coordenação → entra como **coordenação**, na unidade do escopo em uso (x-escopo-atual,
+     validado por `escopo_atual_id`) ou, sem escopo pedido, no primeiro vínculo de coordenação (a área com a rede
+     ligada primeiro). Header é só preferência: sem vínculo de coordenação, continua no clube.
+- **Liberação**: a rede abre para o coordenador só se pelo menos UM clube da área (árvore `parent_id`) tem o recurso
+  `comunidade` ligado (`_rede_unidade_ligada`). Senão `motivo = 'area_sem_rede'` e a tela diz "A Rede DBV ainda
+  não está liberada na sua área".
+- **Onde o conteúdo mora**: `club_id` das tabelas da comunidade aponta para `organizational_units`, então o post do
+  coordenador fica com `club_id = <distrito>` (sem coluna nova). A foto vai para `comunidade/<distrito>/<uid>/…`.
+- **Identidade**: "Nome Sobrenome" + subtítulo **"Coordenação · <unidade>"** (ex.: "Coordenação · Distrito Norte")
+  + selo discreto (✓ azul, `autor.coordenacao = true`). Vale no feed, comentários, stories, busca e perfil.
+- **Foto de rosto**: coordenador é ADULTO → aparece a foto do perfil sem a autorização de imagem (a autorização
+  de imagem é regra de CRIANÇA, 470). Membro de clube continua pela autorização de imagem.
+- **Pode**: ver o feed Todos, publicar post e story (publicação direta com a mesma confirmação), comentar, curtir,
+  salvar, participar de desafios, buscar, perfil.
+- **Continua valendo**: triagem de texto, limites, três avisos/suspensão, denúncia, sem mensagem privada.
+- **Criança**: adulto de outro clube não comenta em post de criança. O coordenador **pode**, mas só se o clube da
+  criança está dentro da área dele (subárvore); coordenador de outro distrito não.
+- **Denúncia/remoção**: não existe diretoria de distrito → conteúdo de coordenação vai para a fila do **admin da
+  plataforma** (`admin_comunidade_painel` já lista todas as denúncias; a fila da diretoria de um clube filtra pelo
+  `club_id` do conteúdo e nunca mostra conteúdo de coordenação). A mensagem ao denunciante diz "a equipe da
+  plataforma vai revisar".
+- **"Meu clube" → "Minha área"**: o filtro `meu_clube` passa a ser a subárvore da unidade (para um clube, a
+  subárvore é ele mesmo — nada muda para clube).
+- **Front**: cartão "🌎 Rede DBV" no painel "Como estão meus clubes" e item no menu do `LayoutConta` → guardam o
+  modo da aba (`src/lib/redeModo.js`, sessionStorage) e mandam o header `x-rede-como`. Nesse modo a rota passa só
+  pela sessão (sem ClubeGuard) e o `RecursoOpcional('comunidade')` dá passagem (quem decide é o servidor). O
+  "Sair" volta para `/institucional` e apaga o modo. Teste SQL 109; vitest `RedeCoordenacao.test.jsx`.
+
 ## Telas (`/rede/*`, layout próprio — não usa o AppLayout do clube)
 - (até 28/09: cabeçalho com gradiente e barra com rótulos — substituído pelo estilo Instagram acima.)
 - `/comunidade` e `/gestao/comunidade` redirecionam para `/rede` e `/rede/moderacao`.
@@ -100,6 +136,8 @@ foto só depois da diretoria aprovar, três avisos, limites e recurso `comunidad
 2. Publicar a Edge Function `limpar-fotos-rede` (Verify JWT desligado) com o secret `REDE_LIMPEZA_SECRET`.
 3. No Vault: `rede_limpeza_url` (URL da função) e `rede_limpeza_secret` (o mesmo valor).
 4. Push do app (a rede depende da 471: `rede_feed`).
+5. Coordenação (490): `scripts/aplicar-490-producao.sql` no SQL Editor (idempotente, para sozinho fora de 481–499;
+   ensaiado 2× num clone parado na 481), conferir o Tenant 001, e só então o push do app.
 
 ## Pendente / decisões do dono
 - Pontos da rede no ranking do clube? (hoje: não)
