@@ -64,6 +64,10 @@ async function rpc(nome, args) {
 // por uma região/distrito dentro do escopo (o servidor recusa unidade de fora).
 export const carregarPainelAnalitico = (unidadeId = null) => rpc('escopo_painel_analitico', { p_unidade: unidadeId })
 
+// Painel do coordenador "Como estão meus clubes" (migration 390): SÓ agregado por clube.
+// periodo: 'mes' | 'trimestre' | 'ano'.
+export const carregarResumoCoordenador = (periodo = 'mes') => rpc('escopo_resumo_coordenador', { p_periodo: periodo })
+
 // Página do clube na visão da coordenação (migration 300): só agregado. Clube fora do escopo e clube
 // inexistente dão o mesmo erro ("Clube não encontrado.").
 export const carregarClubeDetalhe = (clubId) => rpc('escopo_clube_detalhe', { p_club_id: clubId })
