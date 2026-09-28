@@ -21,6 +21,7 @@ import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
 import AdminAudiolivros from './AdminAudiolivros.jsx'
+import AdminPaineisPlano from './AdminPaineisPlano.jsx'
 import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
@@ -36,6 +37,7 @@ const ABAS = [
   { chave: 'clubes', rotulo: 'Clubes', icone: '🏕️' },
   { chave: 'hierarquia', rotulo: 'Hierarquia', icone: '🌳' },
   { chave: 'planos', rotulo: 'Planos', icone: '💳' },
+  { chave: 'paineis', rotulo: 'Painéis do plano', icone: '🧩' },
   { chave: 'assinaturas', rotulo: 'Assinaturas', icone: '🧾' },
   { chave: 'cortesias', rotulo: 'Cortesias', icone: '🎁' },
   { chave: 'vitrine', rotulo: 'Vitrine do site', icone: '🪧' },
@@ -137,6 +139,7 @@ export default function Admin() {
           : <Clubes aoAbrir={abrirClube} />)}
         {aba === 'hierarquia' && <AdminHierarquia />}
         {aba === 'planos' && <Planos />}
+        {aba === 'paineis' && <AdminPaineisPlano />}
         {aba === 'assinaturas' && <Assinaturas aoAbrirClube={abrirClube} />}
         {aba === 'cortesias' && <AdminCortesias />}
         {aba === 'vitrine' && <AdminVitrine />}
@@ -812,7 +815,7 @@ function Planos() {
   return (
     <Estado erro={erro} dados={dados} vazio={<EstadoVazio icone="💳" titulo="Nenhum plano no catálogo" />}>
       <div className="space-y-3">
-        <Nota icone="🔒">Somente leitura. Cada versão de plano é histórica: mudar o catálogo cria versão nova e não altera assinatura antiga em silêncio.</Nota>
+        <Nota icone="🔒">Preço e limites: somente leitura (cada versão é histórica). Os painéis que cada plano libera se escolhem na aba “Painéis do plano”.</Nota>
         <ul className="grid gap-2 md:grid-cols-2">
           {(dados || []).map((p) => (
             <li key={p.id} data-testid="plano-item" className="rounded-2xl border border-line bg-surface p-4">
