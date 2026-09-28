@@ -104,9 +104,12 @@ export default function RedePublicar() {
 
       <div role="tablist" aria-label="Tipo de publicação" className="grid grid-cols-3 gap-2 m-3">
         {TIPOS.map(([chave, rotulo, icone]) => (
+          // ícone EM CIMA e nome embaixo, centralizados (lado a lado não cabia em 375 px: "Conquista"
+          // encostava na borda e os ícones saíam do centro)
           <button key={chave} type="button" role="tab" aria-selected={tipo === chave} onClick={() => setTipo(chave)}
-            className={`${PILL} ${tipo === chave ? 'bg-[#0f172a] text-white' : `bg-[#f1f5f9] ${TXT}`}`}>
-            <Icone nome={icone} className="w-5 h-5" /> {rotulo}
+            className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-semibold ${tipo === chave ? 'bg-[#eef2ff] text-[#3b5bff] ring-2 ring-[#3b5bff]' : `bg-[#f1f5f9] ${TXT}`}`}>
+            <Icone nome={icone} className="block h-6 w-6 shrink-0" />
+            <span className="leading-none">{rotulo}</span>
           </button>
         ))}
       </div>

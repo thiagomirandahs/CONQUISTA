@@ -61,7 +61,7 @@ const TRACOS = {
 }
 export function Icone({ nome, cheio = false, className = 'w-6 h-6', titulo, traco = 1.8 }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill={cheio ? 'currentColor' : 'none'} stroke="currentColor"
+    <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill={cheio ? 'currentColor' : 'none'} stroke="currentColor"
       strokeWidth={nome === 'pontos' ? 3 : traco} strokeLinecap="round" strokeLinejoin="round"
       aria-hidden={titulo ? undefined : 'true'} role={titulo ? 'img' : undefined}>
       {titulo && <title>{titulo}</title>}
