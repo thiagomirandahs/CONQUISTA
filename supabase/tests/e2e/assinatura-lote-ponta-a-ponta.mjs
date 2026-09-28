@@ -15,6 +15,7 @@ import { createClient } from '@supabase/supabase-js'
 const CONT = process.env.SUPABASE_DB_CONTAINER || 'supabase_db_CONQUISTA'
 const SENHA = 'senha-e2e-lote-123'
 const API_URL = 'http://127.0.0.1:54321'
+const PNG_MINUSCULO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
 const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
 function sql(texto) {
@@ -94,8 +95,23 @@ async function principal() {
     for (const secao of minha.secoes) {
       for (const r of secao.requisitos) {
         if (r.escolha) await quemInicia.rpc('requisito_escolher', { p_requirement_id: r.id, p_option_ids: r.escolha.opcoes?.[0]?.id ? [r.escolha.opcoes[0].id] : [], p_rotulos_livres: r.escolha.opcoes?.[0]?.id ? [] : [`[TESTE E2E-LOTE ${sufixo}]`] })
-        else await quemInicia.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: `[TESTE E2E-LOTE ${sufixo}]`, p_evidencia_path: null })
-        await quemInicia.rpc('requisito_enviar', { p_requirement_id: r.id })
+        // requisito comum, ou de escolha que TAMBÉM exige evidência: salva texto (+ foto quando o
+        // requisito é de foto), pelo mesmo caminho do app (src/lib/upload.js: <uid>/requisitos/<ts>.<ext>).
+        // Só texto num requisito de foto o servidor recusa ("Este requisito exige uma evidência antes
+        // de enviar.") — e com razão; o script antigo mandava só texto e quebrava no Companheiro.
+        if (!r.escolha || r.evidencia_obrigatoria) {
+          let evidencia = null
+          if (r.evidencia_obrigatoria && r.tipo_evidencia === 'foto') {
+            const { data: eu } = await quemInicia.auth.getUser()
+            evidencia = `${eu.user.id}/requisitos/e2e-lote-${sufixo}-${Date.now()}.png`
+            const { error: errUp } = await quemInicia.storage.from('comprovacoes').upload(evidencia, PNG_MINUSCULO, { contentType: 'image/png', upsert: false })
+            if (errUp) throw new Error(`upload da evidência falhou pra ${sufixo}: ${errUp.message}`)
+          }
+          const { error: errSalvar } = await quemInicia.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: `[TESTE E2E-LOTE ${sufixo}]`, p_evidencia_path: evidencia })
+          if (errSalvar) throw new Error(`requisito_salvar falhou pra ${sufixo}: ${errSalvar.message}`)
+        }
+        const { error: errEnv } = await quemInicia.rpc('requisito_enviar', { p_requirement_id: r.id })
+        if (errEnv) throw new Error(`requisito_enviar falhou pra ${sufixo}: ${errEnv.message}`)
       }
     }
     const { data: pendentes } = await c.rpc('classe_avaliacoes_pendentes')
@@ -147,27 +163,12 @@ async function principal() {
   // documento F: mesma classe 'pesquisador' de C, mas pra OUTRA pessoa (cMembro) — classe_iniciar é
   // único por (pessoa, classe), então isto não colide com a matrícula de C.
   const classeExtra = porManifesto.pesquisador
+  // mesmo preparo dos outros documentos (documentoPronto já sobe a foto quando o requisito exige —
+  // o preparo manual antigo mandava só texto, o servidor recusava o requisito de foto do Pesquisador
+  // e a corrida saía "pulada" sem ninguém perceber)
   let tokCorrida = null
-  try {
-    const { data: mc } = await cMembro.rpc('classe_iniciar', { p_class_id: classeExtra })
-    // já usada por 'C' (líder) — cMembro é outra pessoa, então isto cria uma matrícula NOVA e válida.
-    const memberClassId = mc.member_class_id
-    const { data: minha } = await cMembro.rpc('minha_classe', { p_member_class_id: memberClassId })
-    for (const secao of minha.secoes) {
-      for (const r of secao.requisitos) {
-        if (r.escolha) await cMembro.rpc('requisito_escolher', { p_requirement_id: r.id, p_option_ids: r.escolha.opcoes?.[0]?.id ? [r.escolha.opcoes[0].id] : [], p_rotulos_livres: r.escolha.opcoes?.[0]?.id ? [] : ['[TESTE E2E-LOTE F]'] })
-        else await cMembro.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: '[TESTE E2E-LOTE F]', p_evidencia_path: null })
-        await cMembro.rpc('requisito_enviar', { p_requirement_id: r.id })
-      }
-    }
-    const { data: pendentes } = await c.rpc('classe_avaliacoes_pendentes')
-    for (const p of pendentes || []) await c.rpc('requisito_avaliar', { p_member_requirement_id: p.member_requirement_id, p_decisao: 'aprovado', p_comentario: '[TESTE E2E-LOTE F]', p_submission_id: p.submission_id ?? null })
-    await c.rpc('revisao_final_decidir', { p_member_class_id: memberClassId, p_decisao: 'aprovado', p_observacao: '[TESTE E2E-LOTE F]', p_requisitos_para_corrigir: [] })
-    await c.rpc('investidura_registrar', { p_member_class_id: memberClassId, p_data: new Date().toISOString().slice(0, 10), p_observacao: '[TESTE E2E-LOTE F]' })
-    const { data: doc } = await c.rpc('documento_emitir', { p_member_class_id: memberClassId, p_tipo: 'final' })
-    const { data: pdfResp } = await c.functions.invoke('gerar-documento-pdf', { body: { token: doc.token } })
-    if (pdfResp?.ok) { await c.rpc('documento_revisar', { p_token: doc.token, p_decisao: 'aprovado' }); tokCorrida = doc.token }
-  } catch { /* segue sem — o teste de corrida vira skip explícito abaixo */ }
+  try { tokCorrida = await documentoPronto('F', classeExtra, false, cMembro) }
+  catch (e) { console.log('   (preparo do documento da corrida falhou: ' + e.message + ')') }
 
   if (tokCorrida) {
     const cRace1 = createClient(API_URL, ANON, { auth: { persistSession: false } })

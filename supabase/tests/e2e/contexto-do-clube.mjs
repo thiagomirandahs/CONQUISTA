@@ -181,7 +181,8 @@ async function principal() {
   const cat = await c.a1.from('recursos_catalogo').select('chave,nome,icone,padrao').order('ordem')
   // 15 recursos desde a Fase 9 (migration 83): especialidades ganhou recurso PRÓPRIO, separado de
   // classes (o catálogo de especialidades ainda é de teste, então fica fora do piloto por padrão).
-  ok('membro lê o catálogo (15 recursos; leilão, classes, especialidades e experiências desligados por padrão)', !cat.error && cat.data.length === 15 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).sort().join() === 'classes,especialidades,experiencias,leilao', cat.error?.message)
+  // 16 desde a migration 260 (cantinho_unidade, ligado por padrão). O conjunto DESLIGADO não muda.
+  ok('membro lê o catálogo (16 recursos; leilão, classes, especialidades e experiências desligados por padrão)', !cat.error && cat.data.length === 16 && cat.data.filter((x) => !x.padrao).map((x) => x.chave).sort().join() === 'classes,especialidades,experiencias,leilao', cat.error?.message)
   const catAnon = await anon.from('recursos_catalogo').select('chave')
   ok('anon não lê o catálogo', !!catAnon.error || (catAnon.data || []).length === 0)
   const catW = await c.lider_a.from('recursos_catalogo').update({ padrao: false }).eq('chave', 'chat')
