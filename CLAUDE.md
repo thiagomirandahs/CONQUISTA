@@ -49,6 +49,8 @@ supabase/functions/    Edge Functions
 - **Investidura** (migration 330): clube → distrito → região → apto (pula nível inexistente; devolver marca requisitos para correção).
 - **Foto de documento** (migration 380): requisitos de idade pedem foto do documento; fica fora do histórico imutável, só dono e avaliador do clube veem, e é APAGADA (API do Storage) depois da aprovação — fica só "conferido por".
 - **Audiolivros** (migration 370): catálogo global, toca pelo youtube-nocookie (CSP `frame-src` só dele); nada é baixado.
+- **Modo manutenção** (migration 400): toda tabela do public tem o gatilho `zz_manutencao_guarda`. **Toda migration que cria tabela termina com `select public._manutencao_instalar_guarda();`** (o teste 100 falha se esquecer).
+- **Comunidade** (430–432, fase 1): recurso só da plataforma, nasce DESLIGADO; triagem de texto no servidor, denúncia oculta na hora e avisa a diretoria, foto só após aprovação da diretoria (sem IA de imagem ainda). Ver `supabase/COMUNIDADE-FASE1.md`.
 - **Membros inativos NUNCA são apagados**: inativar exige motivo e gera histórico (migration 310). A lixeira de membros está desligada de vez.
 - **Comercial**: 1 licença = 1 clube; plano à venda = **Licença Anual**; teste grátis (30 dias, expira por cron), cortesia por código, sem gateway de pagamento real.
 - **Vitrine do site**: todo clube ativo aparece em /clubes só com dados institucionais; contatos do diretor são opt-in (LGPD).
@@ -88,6 +90,7 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Banco LOCAL de trabalho (Docker `postgres`) está na 360.
 
 ## Pendências conhecidas (28/09)
+- **Branch `saas-produto-multiclube` (29/09) tem prontas e testadas, SEM push e SEM produção:** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Falta script de produção 390→450 (idempotente, sem temp table).
 - **Aplicar 370 (audiolivros) + 380 (foto do documento da idade) em produção**: `scripts/aplicar-370-380-producao.sql`
   (idempotente; o dono cola no SQL Editor). Só depois fazer push do app (a aba Audiolivros do /admin depende da 370).
 - 340→350→360 APLICADAS em produção (28/09). Atenção: o SQL Editor do Supabase NÃO segura `begin/commit`
