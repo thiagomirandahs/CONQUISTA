@@ -51,14 +51,19 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Pasta de trabalho DENTRO do container: por banco, para que duas sessões rodando em paralelo
+# (REPLAY_DB diferentes) não apaguem as migrations uma da outra. Padrão (replay_test) = /tmp, como antes.
+if [ "$DB" = "replay_test" ]; then CQ_DIR="${CQ_DIR:-/tmp}"; else CQ_DIR="${CQ_DIR:-/tmp/cq_$DB}"; fi
+export CQ_DIR
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WROOT="$(cygpath -w "$ROOT" 2>/dev/null || echo "$ROOT")"   # docker cp (nativo do Windows) precisa do caminho C:...
-PSQL=(docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -X -q -v ON_ERROR_STOP=1)
+PSQL=(docker exec -i -e CQ_DIR="$CQ_DIR" -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -X -q -v ON_ERROR_STOP=1)
 ADMIN=(docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U supabase_admin -X -q -v ON_ERROR_STOP=1)  # superusuário local (derrubar sessões, clonar plataforma)
 
 docker inspect "$CONT" >/dev/null 2>&1 || { echo "ERRO: container '$CONT' não existe/roda. Suba o Supabase local (Docker) antes."; exit 2; }
 [ "$(docker inspect -f '{{.State.Running}}' "$CONT")" = "true" ] || { echo "ERRO: container '$CONT' parado."; exit 2; }
 
+docker exec "$CONT" mkdir -p "$CQ_DIR" >/dev/null 2>&1 || true
 reabrir_postgres() { "${ADMIN[@]}" -d template1 -c "alter database postgres allow_connections true" >/dev/null 2>&1 || true; }
 
 if [ "$REPLAY" = 1 ]; then
@@ -102,20 +107,20 @@ SQL
 
   if [ "$UPGRADE" = 1 ]; then
     echo "==> [3/4] UPGRADE: migrations legadas -> dados de producao simulados -> 20260921000001..(todas) -> verificacao"
-    docker exec "$CONT" rm -rf /tmp/cq_migrations /tmp/cq_tests >/dev/null 2>&1
-    docker cp "$WROOT/supabase/migrations" "$CONT:/tmp/cq_migrations" >/dev/null || exit 2
-    docker cp "$WROOT/supabase/tests" "$CONT:/tmp/cq_tests" >/dev/null || exit 2
-    docker cp "$WROOT/supabase/PREFLIGHT-PRODUCAO.sql" "$CONT:/tmp/cq_preflight.sql" >/dev/null || exit 2
+    docker exec "$CONT" rm -rf $CQ_DIR/cq_migrations $CQ_DIR/cq_tests >/dev/null 2>&1
+    docker cp "$WROOT/supabase/migrations" "$CONT:$CQ_DIR/cq_migrations" >/dev/null || exit 2
+    docker cp "$WROOT/supabase/tests" "$CONT:$CQ_DIR/cq_tests" >/dev/null || exit 2
+    docker cp "$WROOT/supabase/PREFLIGHT-PRODUCAO.sql" "$CONT:$CQ_DIR/cq_preflight.sql" >/dev/null || exit 2
     DRIVER="$(mktemp)"; carregou=0
     {
       echo '\set ON_ERROR_STOP on'
       for f in "$ROOT"/supabase/migrations/*.sql; do
         base="$(basename "$f")"; ver="${base%%_*}"
         # 1ª migration do SaaS (20260921...): antes dela o banco é o "de produção"; carrega os dados vivos
-        if [ "$carregou" = 0 ] && [[ "$ver" > "20260909000001" ]]; then echo "\echo '   [dados de producao simulados]'"; echo "\i /tmp/cq_tests/upgrade/pre_dados.sql"; echo "\echo '   [pre-voo da producao]'"; echo "\i /tmp/cq_preflight.sql"; carregou=1; fi
-        echo "\echo '   migration $base'"; echo "begin;"; echo "\i /tmp/cq_migrations/$base"; echo "commit;"
+        if [ "$carregou" = 0 ] && [[ "$ver" > "20260909000001" ]]; then echo "\echo '   [dados de producao simulados]'"; echo "\i $CQ_DIR/cq_tests/upgrade/pre_dados.sql"; echo "\echo '   [pre-voo da producao]'"; echo "\i $CQ_DIR/cq_preflight.sql"; carregou=1; fi
+        echo "\echo '   migration $base'"; echo "begin;"; echo "\i $CQ_DIR/cq_migrations/$base"; echo "commit;"
       done
-      echo "\echo '   [verificacao pos-upgrade]'"; echo "\i /tmp/cq_tests/upgrade/post_verificacao.sql"
+      echo "\echo '   [verificacao pos-upgrade]'"; echo "\i $CQ_DIR/cq_tests/upgrade/post_verificacao.sql"
     } > "$DRIVER"
     docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 < "$DRIVER" > "$DRIVER.log" 2>&1; rc=$?
     # o pré-voo (PREFLIGHT-PRODUCAO.sql) roda no estado "de produção" e tem que dar RESUMO ok (0 problemas)
@@ -130,9 +135,9 @@ SQL
   fi
 
   echo "==> [3/4] Reaplicando TODAS as migrations em ordem + seed"
-  docker exec "$CONT" rm -rf /tmp/cq_migrations /tmp/cq_seed.sql >/dev/null 2>&1
-  docker cp "$WROOT/supabase/migrations" "$CONT:/tmp/cq_migrations" >/dev/null || exit 2
-  docker cp "$WROOT/supabase/seed.sql" "$CONT:/tmp/cq_seed.sql" >/dev/null || exit 2
+  docker exec "$CONT" rm -rf $CQ_DIR/cq_migrations $CQ_DIR/cq_seed.sql >/dev/null 2>&1
+  docker cp "$WROOT/supabase/migrations" "$CONT:$CQ_DIR/cq_migrations" >/dev/null || exit 2
+  docker cp "$WROOT/supabase/seed.sql" "$CONT:$CQ_DIR/cq_seed.sql" >/dev/null || exit 2
   DRIVER="$(mktemp)"
   {
     echo '\set ON_ERROR_STOP on'
@@ -142,12 +147,12 @@ SQL
       if [ -n "${MAX_MIGRATION:-}" ] && [[ "$ver" > "$MAX_MIGRATION" ]]; then break; fi
       echo "\\echo '   migration $base'"
       echo "begin;"
-      echo "\\i /tmp/cq_migrations/$base"
+      echo "\\i $CQ_DIR/cq_migrations/$base"
       echo "insert into supabase_migrations.schema_migrations (version, name) values ('$ver', '$nome') on conflict do nothing;"
       echo "commit;"
     done
     echo "\\echo '   seed.sql'"
-    echo "\\i /tmp/cq_seed.sql"
+    echo "\\i $CQ_DIR/cq_seed.sql"
   } > "$DRIVER"
   if ! docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 < "$DRIVER" > "$DRIVER.log" 2>&1; then
     echo "FALHOU ao reaplicar as migrations. Últimas linhas:"; tail -25 "$DRIVER.log"; rm -f "$DRIVER" "$DRIVER.log"; exit 3
@@ -157,9 +162,9 @@ SQL
 fi
 
 echo "==> [4/4] Rodando testes no banco '$DB'"
-docker exec "$CONT" rm -rf /tmp/cq_tests /tmp/cq_migrations >/dev/null 2>&1
-docker cp "$WROOT/supabase/migrations" "$CONT:/tmp/cq_migrations" >/dev/null || exit 2   # o teste de idempotência reaplica as migrations novas
-docker cp "$WROOT/supabase/tests" "$CONT:/tmp/cq_tests" >/dev/null || exit 2
+docker exec "$CONT" rm -rf $CQ_DIR/cq_tests $CQ_DIR/cq_migrations >/dev/null 2>&1
+docker cp "$WROOT/supabase/migrations" "$CONT:$CQ_DIR/cq_migrations" >/dev/null || exit 2   # o teste de idempotência reaplica as migrations novas
+docker cp "$WROOT/supabase/tests" "$CONT:$CQ_DIR/cq_tests" >/dev/null || exit 2
 if [ ${#ONLY[@]} -gt 0 ]; then
   FILES=(); for t in "${ONLY[@]}"; do t="${t%.sql}"; FILES+=("$ROOT/supabase/tests/$t.sql"); done
 else
@@ -168,7 +173,7 @@ fi
 PASS=0; FAIL=0; FALHAS=()
 for f in "${FILES[@]}"; do
   base="$(basename "$f")"; case "$base" in _*) continue ;; esac
-  out="$(docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 -f "/tmp/cq_tests/$base" 2>&1)"; rc=$?
+  out="$(docker exec -i -e CQ_DIR="$CQ_DIR" -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 -f "$CQ_DIR/cq_tests/$base" 2>&1)"; rc=$?
   if [ $rc -eq 0 ] && ! echo "$out" | grep -q "FALHOU"; then
     PASS=$((PASS+1)); printf '   OK     %s  (%s)\n' "$base" "$(echo "$out" | grep -oE 'ok  - [0-9]+ asserts' | head -1 | grep -oE '[0-9]+ asserts')"
   else

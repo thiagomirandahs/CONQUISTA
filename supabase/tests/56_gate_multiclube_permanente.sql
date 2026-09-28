@@ -220,11 +220,14 @@ select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
 -- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
 -- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
 -- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
+-- manutencao_estado (migration 400): a tela de login/abertura precisa saber se a plataforma está em
+-- manutenção ANTES de haver sessão. Só lê 1 linha fixa (ligada, mensagens, horário do aviso); não expõe quem
+-- ligou, não escreve nada, sem parâmetro (não é oráculo de nada). Decisão de produto (modo manutenção, 28/09).
 select t.eq('as únicas funções que ANÔNIMO executa são as públicas por desenho',
   t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
              from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
             where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
+  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico manutencao_estado parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'
