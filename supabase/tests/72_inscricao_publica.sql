@@ -53,10 +53,13 @@ select t.eq('anon não tem privilégio em NENHUMA tabela/view de public',
 -- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
 -- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
 -- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
-select t.eq('anon executa só as 7 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação, vitrine de clubes x2, parceiros)',
+-- manutencao_estado (migration 400): a tela de login/abertura precisa saber se a plataforma está em
+-- manutenção ANTES de haver sessão. Só lê 1 linha fixa (ligada, mensagens, horário do aviso); não expõe quem
+-- ligou, não escreve nada, sem parâmetro (não é oráculo de nada). Decisão de produto (modo manutenção, 28/09).
+select t.eq('anon executa só as 8 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação, vitrine de clubes x2, parceiros, estado da manutenção)',
   t.txt($q$select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
           where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,parceiros_publico,planos_disponiveis,vitrine_clube_publico,vitrine_clubes_publico');
+  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,manutencao_estado,parceiros_publico,planos_disponiveis,vitrine_clube_publico,vitrine_clubes_publico');
 select t.eq('nenhuma função SECURITY DEFINER de public sem search_path fixo',
   t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prosecdef
           and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')$q$), 0);

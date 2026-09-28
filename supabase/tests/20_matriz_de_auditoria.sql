@@ -93,7 +93,8 @@ insert into t.excecoes values
   ('suporte_mensagens',          'mensagens de um chamado de suporte (migration 290): o escopo está no chamado (autor + plataforma); sem acesso direto, só RPC'),
   ('audiolivros',                'CATÁLOGO GLOBAL de audiolivros das Classes (migration 370): vale para todos os clubes, sem dado de pessoa; leitura só por RPC autenticada, escrita só admin da plataforma'),
   ('audiolivro_capitulos',        'capítulos (ID de vídeo do YouTube) de um audiolivro do catálogo global (migration 370); mesmo escopo de audiolivros'),
-  ('requisitos_com_documento',    'CATÁLOGO GLOBAL (migration 380): quais requisitos do currículo pedem foto de documento, por manifesto_id; sem dado de pessoa, sem acesso direto');
+  ('requisitos_com_documento',    'CATÁLOGO GLOBAL (migration 380): quais requisitos do currículo pedem foto de documento, por manifesto_id; sem dado de pessoa, sem acesso direto'),
+  ('plataforma_manutencao',       'ESTADO GLOBAL da plataforma (migration 400): 1 linha fixa (manutenção ligada/aviso prévio); vale para todos os clubes, sem dado de pessoa; leitura só por RPC, escrita só admin da plataforma');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)

@@ -49,11 +49,14 @@ reset role;
 -- institucional do site — só devolvem campos PUBLICADOS (clube com aceite, não ocultado; parceiro ativo no
 -- período), sem ids internos de pessoas, com rate limit leve por origem (hash do IP) e mesma resposta p/ slug
 -- inexistente/oculto (sem oráculo de clube). Decisão de produto; a lista continua fechada, uma por uma.
-select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos, a inscrição pelo link e a vitrine do site)',
+-- manutencao_estado (migration 400): a tela de login/abertura precisa saber se a plataforma está em
+-- manutenção ANTES de haver sessão. Só lê 1 linha fixa (ligada, mensagens, horário do aviso); não expõe quem
+-- ligou, não escreve nada, sem parâmetro (não é oráculo de nada). Decisão de produto (modo manutenção, 28/09).
+select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos, a inscrição pelo link, a vitrine do site e o estado da manutenção)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
       and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir',
-                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico')), 0);
+                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico', 'manutencao_estado')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções
@@ -114,9 +117,15 @@ delete from public.organization_memberships m
 select count(*) as vinculos_antes, (select count(*) from public.club_features) as feats_antes from public.organization_memberships \gset
 -- a lista sai da PASTA: da 13 em diante, toda migration nova entra sozinha neste teste
 \o /dev/null
-\! ls /tmp/cq_migrations/2026092100001[3-9]_*.sql /tmp/cq_migrations/202609210000[2-9][0-9]_*.sql | sort | sed 's/^/\\i /' > /tmp/cq_reapply.sql
+-- CQ_DIR: pasta do run-tests.sh dentro do container (por REPLAY_DB; padrão /tmp)
+\! ls ${CQ_DIR:-/tmp}/cq_migrations/2026092100001[3-9]_*.sql ${CQ_DIR:-/tmp}/cq_migrations/202609210000[2-9][0-9]_*.sql | sort | sed 's/^/\\i /' > ${CQ_DIR:-/tmp}/cq_reapply.sql  # (o "#" engole o  do checkout CRLF no Windows)
 \o
-\i /tmp/cq_reapply.sql
+\getenv cq_dir CQ_DIR
+\if :{?cq_dir}
+\else
+\set cq_dir /tmp
+\endif
+\i :cq_dir/cq_reapply.sql
 select t.eq('reaplicar as migrations não muda a quantidade de vínculos', (select count(*) from public.organization_memberships), :'vinculos_antes'::bigint);
 select t.eq('reaplicar as migrations não muda os recursos do clube', (select count(*) from public.club_features), :'feats_antes'::bigint);
 

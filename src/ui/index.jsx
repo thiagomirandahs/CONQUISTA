@@ -249,6 +249,9 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
 // Traduz a falha para o que a pessoa precisa saber: o que houve e o que dá pra fazer.
 // O texto cru do servidor NUNCA vai para a tela (eram ~24 telas mostrando `e.message`).
 const TRADUCOES = [
+  // Modo manutenção (migration 400): o servidor recusou a escrita inteira — nada ficou pela metade.
+  [/MANUTENCAO|em manutenção/i,
+    'O DesbravaClube está em manutenção agora. Nada foi perdido: o que você escreveu continua guardado neste aparelho — envie de novo quando a manutenção acabar.'],
   // Recusa ESPERADA de membro_definir_teste / membro_definir_foto: a flag de teste e a foto são da
   // PESSOA e valem em todos os clubes dela, então o servidor não deixa um clube mudá-las quando ela
   // também está em outro. Vem antes de "sem permissão" porque a pessoa precisa saber o PORQUÊ.

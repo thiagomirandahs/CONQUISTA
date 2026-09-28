@@ -15,6 +15,7 @@ import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
@@ -408,7 +409,8 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   const situacao = situacaoDoRequisito(r)
   const info = SITUACOES[situacao]
   const bloqueios = r.bloqueios || []
-  const [texto, setTexto] = useState(r.evidencia_texto || '')
+  // rascunho local (modo manutenção/rede): a resposta digitada fica no aparelho até ser salva
+  const [texto, setTexto, descartarRascunho, veioDoRascunho] = useRascunho(userId, `requisito:${r.id}`, r.evidencia_texto || '')
   const [foto, setFoto] = useState(null)
   const [previa, setPrevia] = useState(null)
   const [ocupado, setOcupado] = useState(false)
@@ -432,6 +434,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
     setOcupado(true); setErro('')
     try {
       await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
+      descartarRascunho()
       await onMudou()
     } catch (e) {
       setErro(e?.message || String(e)); setOcupado(false)
@@ -450,6 +453,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
         await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
       }
       await enviarRequisito(r.id)
+      descartarRascunho()
       festa()
       await onMudou()
     } catch (e) {
@@ -492,6 +496,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
               <span className="block text-xs text-blue-800 mt-0.5">Escreva aqui o que você fez ou aprendeu.</span>
               <textarea aria-label={`Sua resposta${obrigatoria ? ' (obrigatória)' : ''}`} value={texto} required={obrigatoria} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="Escreva aqui..."
                 className="mt-2 w-full text-base rounded-lg border-2 border-blue-200 bg-white px-3 py-2 focus:border-blue-500 focus:outline-none" />
+              {veioDoRascunho && <span className="block text-xs text-blue-800 mt-1">Recuperamos o que você tinha escrito neste aparelho — é só enviar.</span>}
             </label>
           )}
           {precisaFoto && (

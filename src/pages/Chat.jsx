@@ -3,6 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { supabase } from '../lib/supabase.js'
+import { useRascunho } from '../lib/rascunhos.js'
 import Avatar from '../components/Avatar.jsx'
 import {
   carregarChatUnidade, carregarChatGeral, carregarMinhasConversasDiretas, carregarMensagensDireta,
@@ -168,7 +169,8 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
   const [conversaId, setConversaId] = useState(conversaIdInicial || null)
   const [mensagens, setMensagens] = useState([])
   const [carregando, setCarregando] = useState(true)
-  const [texto, setTexto] = useState('')
+  // rascunho local (modo manutenção/rede): a mensagem digitada não se perde se o envio falhar
+  const [texto, setTexto, descartarRascunho] = useRascunho(meuId, `chat:${tipo}:${unidadeId || conversaIdInicial || destinatario?.id || 'geral'}`)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   const autoresRef = useRef({})
@@ -289,7 +291,7 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
         : tipo === 'unidade' ? await enviarMensagemUnidade(v)
         : await enviarMensagemDireta(destinatario.id, v)
       acerto(1)
-      setTexto('')
+      setTexto(''); descartarRascunho()
       // conversa nova: o efeito de carregamento lê tudo pelo id novo. Conversa que já existia:
       // relê já, sem esperar o tempo real (que não chega na aba do clube secundário).
       if (!conversaId && r?.conversa_id) setConversaId(r.conversa_id)

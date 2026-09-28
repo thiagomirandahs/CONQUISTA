@@ -21,7 +21,11 @@ import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
 import AdminAudiolivros from './AdminAudiolivros.jsx'
+<<<<<<< HEAD
 import AdminPaineisPlano from './AdminPaineisPlano.jsx'
+=======
+import AdminManutencao from './AdminManutencao.jsx'
+>>>>>>> frente-manutencao
 import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
@@ -47,6 +51,7 @@ const ABAS = [
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️' },
   { chave: 'chamados', rotulo: 'Chamados', icone: '📨' },
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟' },
+  { chave: 'manutencao', rotulo: 'Manutenção', icone: '🛠️' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜' },
   { chave: 'lixeira-clubes', rotulo: 'Lixeira de clubes', icone: '🗑️' },
 ]
@@ -149,6 +154,7 @@ export default function Admin() {
         {aba === 'provisionamento' && <Provisionamento />}
         {aba === 'chamados' && <AdminChamados inicial={params.get('chamado')} aoMudarContagem={atualizarChamados} />}
         {aba === 'suporte' && <Suporte />}
+        {aba === 'manutencao' && <AdminManutencao />}
         {aba === 'auditoria' && <Auditoria />}
         {aba === 'lixeira-clubes' && <LixeiraDeClubes />}
       </div>
