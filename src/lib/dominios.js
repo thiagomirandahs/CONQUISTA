@@ -5,8 +5,13 @@
 // `site.<host>` e `app.<host>` também valem para testar localmente (ex.: site.localhost:5173).
 const DOMINIO = 'desbravaclube.com.br'
 
+// Dentro do APK (Capacitor, telas embutidas desde a 1.3.0) o host é `localhost`: sem isto o app caía no
+// modo 'unico' e abria a LANDING em "/" (achado do dono, 29/09). No APK é sempre o APLICATIVO.
+export const ehApkNativo = () => !!globalThis.Capacitor?.isNativePlatform?.()
+
 export function modoDoHost(host = globalThis.location?.hostname || '') {
   const h = String(host).toLowerCase()
+  if (ehApkNativo() && (h === 'localhost' || h === '')) return 'app'
   if (h === DOMINIO || h === `www.${DOMINIO}` || h.startsWith('site.')) return 'site'
   if (h.startsWith('app.')) return 'app'
   return 'unico'
@@ -25,6 +30,7 @@ export function urlDoApp(caminho, loc = globalThis.location) {
 // Caminho no SITE público. Fora do modo 'app' continua relativo.
 export function urlDoSite(caminho, loc = globalThis.location) {
   if (modoDoHost(loc.hostname) !== 'app') return caminho
+  if (ehApkNativo()) return `https://${DOMINIO}${caminho}` // no APK o site é o público de verdade
   const base = loc.hostname.toLowerCase().replace(/^app\./, '')
   return montar(loc, base === DOMINIO ? DOMINIO : `site.${base}`, caminho)
 }

@@ -55,3 +55,15 @@ describe('Gestão → Pessoas: Inscrições vem antes de Aprovações', async ()
     expect(ins.desc).toBe('Link e QR Code para novos membros')
   })
 })
+
+describe('APK (Capacitor, telas embutidas)', () => {
+  afterEach(() => { delete globalThis.Capacitor })
+  it('localhost dentro do APK é o APLICATIVO (antes caía na landing)', () => {
+    globalThis.Capacitor = { isNativePlatform: () => true }
+    expect(modoDoHost('localhost')).toBe('app')
+    expect(urlDoSite('/planos', { protocol: 'https:', hostname: 'localhost', port: '' })).toBe('https://desbravaclube.com.br/planos')
+  })
+  it('localhost no navegador (desenvolvimento) continua "unico"', () => {
+    expect(modoDoHost('localhost')).toBe('unico')
+  })
+})
