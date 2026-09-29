@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Botao, Aviso, Campo } from '../ui/index.jsx'
 import { useAuth } from '../context/Auth.jsx'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { ROTULO_STATUS, formatarPreco } from '../services/comercial.js'
 import {
@@ -91,9 +91,20 @@ function Estado({ erro, dados, vazio, children, esqueleto }) {
 }
 
 export default function Admin() {
-  // ?aba=chamados&chamado=<id> (link da notificação de chamado novo)
-  const [params] = useState(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''))
-  const [aba, setAba] = useState(() => (ABAS.some((a) => a.chave === params.get('aba')) ? params.get('aba') : 'visao'))
+  // A seção vive na URL (?aba=chamados&chamado=<id> — link da notificação de chamado novo, link direto,
+  // voltar/avançar do navegador). Trocar de seção empilha no histórico (replace: false), então o botão
+  // "voltar" do aparelho volta para a seção anterior em vez de sair do /admin.
+  const [params, setParams] = useSearchParams()
+  const abaDaUrl = params.get('aba')
+  const aba = ABAS.some((a) => a.chave === abaDaUrl) ? abaDaUrl : 'visao'
+  const setAba = useCallback((nova) => {
+    setParams((p) => {
+      const q = new URLSearchParams(p)
+      if (nova === 'visao') q.delete('aba'); else q.set('aba', nova)
+      if (nova !== 'chamados') q.delete('chamado')
+      return q
+    }, { replace: false })
+  }, [setParams])
   const [clubeAberto, setClubeAberto] = useState(null)
   const [autorizado, setAutorizado] = useState(null)
   const [erroAcesso, setErroAcesso] = useState('')
@@ -130,8 +141,8 @@ export default function Admin() {
     )
   }
 
-  const abrirClube = (id) => { setClubeAberto(id); setAba('clubes') }
-  const trocarAba = (a) => { setClubeAberto(null); setAba(a) }
+  const abrirClube = (id) => { setClubeAberto(id); if (aba !== 'clubes') setAba('clubes') }
+  const trocarAba = (a) => { setClubeAberto(null); if (a !== aba) setAba(a) }
 
   return (
     // Mobile-first: o /admin fica fora do AppLayout, então o respiro lateral (16px) é daqui.
@@ -404,12 +415,14 @@ function Clubes({ aoAbrir }) {
   return (
     <Estado erro={erro} dados={dados} vazio={<EstadoVazio icone="🏕️" titulo="Nenhum clube ainda">Quando um clube se cadastrar, ele aparece aqui.</EstadoVazio>}>
       <div className="space-y-3">
-        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+        {/* 360px: busca e filtro empilhados, cada um com a largura toda (o filtro não corta as opções);
+            a partir de sm ficam lado a lado. */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] sm:items-end gap-2">
           <Campo id="admin-busca-clube" rotulo="Buscar clube" tipo="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Nome, sigla ou código" />
           <div className="mb-3">
             <label htmlFor="admin-filtro-clube" className="block text-sm font-medium text-ink mb-1">Filtro</label>
             <select id="admin-filtro-clube" value={filtro} onChange={(e) => setFiltro(e.target.value)}
-              className={`w-[8.5rem] sm:w-56 min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink ${FOCO}`}>
+              className={`w-full min-w-0 sm:w-56 min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink ${FOCO}`}>
               <option value="todos">Todos</option>
               <option value="onboarding">Em onboarding</option>
               <option value="sem_assinatura">Sem assinatura</option>
@@ -534,7 +547,7 @@ function DetalheClube({ clubId, aoVoltar }) {
                       <Linha rotulo="Pagamento">{c.provider === 'mock' || !c.provider ? 'Sem gateway — combinado fora do sistema' : c.provider}</Linha>
                       <div className="mt-4 space-y-4">
                         <TesteGratuito clubId={clubId} status={c.assinatura_status} trialAte={c.trial_ate} onFeito={recarregar} />
-                        <CaixaClara titulo="Status da assinatura"><TransicaoAssinatura assinatura={{ id: c.assinatura_id, status: c.assinatura_status }} onFeito={recarregar} /></CaixaClara>
+                        <CaixaClara titulo="Status da assinatura"><TransicaoAssinatura assinatura={{ id: c.assinatura_id, status: c.assinatura_status }} clube={c.nome} onFeito={recarregar} /></CaixaClara>
                         <CaixaClara titulo="Plano"><MudarPlano assinaturaId={c.assinatura_id} atual={`${c.plano_chave}|${c.plano_versao}`} onFeito={recarregar} /></CaixaClara>
                       </div>
                     </>
@@ -745,14 +758,38 @@ function TesteGratuito({ clubId, status, trialAte, onFeito }) {
 const STATUS_ASSINATURA = ['trial', 'ativa', 'pagamento_pendente', 'inadimplente', 'suspensa', 'cancelada']
 const SELECT = `w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 text-sm font-semibold text-ink ${FOCO}`
 
-function TransicaoAssinatura({ assinatura, onFeito }) {
+// Status que tiram (ou ameaçam tirar) o acesso do clube: botão vermelho + confirmação própria (P0 da
+// auditoria UX 6.11). Os demais (trial, ativa, pagamento pendente) seguem o fluxo neutro.
+const STATUS_PERIGOSOS = ['inadimplente', 'suspensa', 'cancelada']
+const IMPACTO_STATUS = {
+  inadimplente: 'O clube fica marcado com pagamento em atraso e vê o aviso de regularização.',
+  suspensa: 'O clube perde acesso às ferramentas até ser reativado. Nada é apagado.',
+  cancelada: 'A assinatura é encerrada; o clube perde acesso às ferramentas e precisa de uma assinatura nova para voltar. Nada é apagado.',
+}
+
+function TransicaoAssinatura({ assinatura, clube, onFeito }) {
   const [novo, setNovo] = useState(assinatura.status)
   const [motivo, setMotivo] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const perigoso = STATUS_PERIGOSOS.includes(novo) && novo !== assinatura.status
 
   async function confirmar() {
     if (novo === assinatura.status) return
     if (motivo.trim().length < 5) { avisar.erro(null, 'Descreva o motivo (mínimo 5 caracteres) — fica na auditoria.'); return }
+    if (perigoso) {
+      const ok = await avisar.confirmar({
+        titulo: `Mudar a assinatura para "${rotuloStatus(novo)}"?`,
+        descricao: [
+          `Clube: ${clube || '—'}.`,
+          `Status atual: ${rotuloStatus(assinatura.status)} → novo: ${rotuloStatus(novo)}.`,
+          `Impacto: ${IMPACTO_STATUS[novo]}`,
+          `Motivo (vai para a auditoria): ${motivo.trim()}`,
+        ].join(' '),
+        rotulo: `Confirmar: ${rotuloStatus(novo)}`,
+        perigo: true,
+      })
+      if (!ok) return
+    }
     setOcupado(true)
     try {
       await assinaturaTransicionar(assinatura.id, novo, motivo.trim())
@@ -771,8 +808,12 @@ function TransicaoAssinatura({ assinatura, onFeito }) {
       </select>
       <Campo id={`motivo-${assinatura.id}`} rotulo="Motivo (obrigatório, vai para a auditoria)" linhas={2}
         value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-      <Botao aoTocar={confirmar} carregando={ocupado} desabilitado={novo === assinatura.status} className="w-full" data-testid="confirmar-transicao">
-        Confirmar transição
+      {perigoso && (
+        <p className="mb-2 text-xs text-rose-700 dark:text-rose-300" role="note" data-testid="transicao-impacto">{IMPACTO_STATUS[novo]}</p>
+      )}
+      <Botao variacao={perigoso ? 'perigo' : 'primario'} aoTocar={confirmar} carregando={ocupado} desabilitado={novo === assinatura.status}
+        className="w-full" data-testid="confirmar-transicao">
+        {perigoso ? `Mudar para ${rotuloStatus(novo)}` : 'Confirmar transição'}
       </Botao>
     </div>
   )
@@ -1020,8 +1061,14 @@ const TOM_SUPORTE = { solicitado: 'atencao', autorizado: 'ok', recusado: 'neutro
 
 function Suporte() {
   const { dados: lista, erro, recarregar } = useFonte(suporteListar)
-  async function revogar(id) {
-    try { await suporteRevogar(id, 'Revogado pelo admin.'); recarregar() } catch (e) { avisar.erro(e) }
+  async function revogar(g) {
+    const ok = await avisar.confirmar({
+      titulo: 'Revogar este pedido de suporte?',
+      descricao: `"${g.motivo}" deixa de valer na hora e a revogação fica na auditoria.`,
+      rotulo: 'Revogar pedido',
+    })
+    if (!ok) return
+    try { await suporteRevogar(g.id, 'Revogado pelo admin.'); recarregar() } catch (e) { avisar.erro(e) }
   }
   return (
     <Estado erro={erro} dados={lista}>
@@ -1042,7 +1089,7 @@ function Suporte() {
                     <Chip tom={TOM_SUPORTE[g.status] || 'neutro'} ponto className="mt-1">{ROTULO_SUPORTE[g.status] || g.status}</Chip>
                   </div>
                   {['solicitado', 'autorizado'].includes(g.status) && (
-                    <Botao variacao="perigo" aoTocar={() => revogar(g.id)}>Revogar</Botao>
+                    <Botao variacao="perigo" aoTocar={() => revogar(g)}>Revogar</Botao>
                   )}
                 </li>
               ))}

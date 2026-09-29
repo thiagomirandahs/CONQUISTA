@@ -79,7 +79,7 @@ export default function AdminManutencao() {
         {estado.ativo
           ? <Botao className="w-full" carregando={ocupado} desabilitado={ocupado}
               aoTocar={() => aplicar({ ativo: false }, 'Manutenção desligada. O app voltou ao normal.')}>Desligar manutenção</Botao>
-          : <Botao className="w-full" variacao="secundario" carregando={ocupado} desabilitado={ocupado} aoTocar={ligar}>Ligar manutenção agora</Botao>}
+          : <Botao className="w-full" variacao="perigo" carregando={ocupado} desabilitado={ocupado} aoTocar={ligar} data-testid="manutencao-ligar">Ligar manutenção agora</Botao>}
       </Card>
 
       {!estado.ativo && (

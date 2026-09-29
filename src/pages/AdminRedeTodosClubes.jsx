@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { clubesListar } from '../services/admin.js'
 import { Botao, Card } from '../ui/index.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 // /admin › Comunidade — liga ou desliga a Rede DBV (recurso 'comunidade') em TODOS os clubes ativos de
 // uma vez. Chama a mesma RPC do liga/desliga clube a clube (admin_recurso_do_clube_definir), então as
@@ -13,10 +14,14 @@ export default function AdminRedeTodosClubes({ onFeito }) {
 
   async function aplicar(ligar) {
     const clubes = (await clubesListar()).filter((c) => c.status === 'ativo')
-    const frase = ligar
-      ? `Liberar a Rede DBV para os ${clubes.length} clubes ativos?\n\nCada desbravador ainda precisa da autorização do responsável para publicar.`
-      : `Desligar a Rede DBV em todos os ${clubes.length} clubes ativos?\n\nNada é apagado: tudo volta quando liberar de novo.`
-    if (!window.confirm(frase)) return
+    const confirmou = await avisar.confirmar(ligar
+      ? { titulo: `Liberar a Rede DBV para os ${clubes.length} clubes ativos?`,
+          descricao: 'Cada desbravador ainda precisa da autorização do responsável para publicar. Clube cujo plano não inclui a Comunidade fica de fora.',
+          rotulo: `Liberar em ${clubes.length} clube(s)`, perigo: false }
+      : { titulo: `Desligar a Rede DBV em todos os ${clubes.length} clubes ativos?`,
+          descricao: 'Nada é apagado: tudo volta quando liberar de novo.',
+          rotulo: `Desligar em ${clubes.length} clube(s)` })
+    if (!confirmou) return
     setOcupado(true)
     const falhas = []
     let ok = 0
@@ -35,7 +40,7 @@ export default function AdminRedeTodosClubes({ onFeito }) {
       <p className="text-xs text-muted mb-3">Liga ou desliga a Rede em todos os clubes ativos de uma vez. Para um clube só, use /admin → Clubes → clube.</p>
       <div className="grid grid-cols-2 gap-2">
         <Botao aoTocar={() => aplicar(true)} carregando={ocupado} data-testid="rede-liberar-todos">Liberar para todos</Botao>
-        <Botao variacao="secundario" aoTocar={() => aplicar(false)} desabilitado={ocupado}>Desligar de todos</Botao>
+        <Botao variacao="perigo" aoTocar={() => aplicar(false)} desabilitado={ocupado} data-testid="rede-desligar-todos">Desligar de todos</Botao>
       </div>
       {resultado && (
         <div className="mt-3 rounded-xl bg-surface2 p-3 text-sm text-ink" role="status">

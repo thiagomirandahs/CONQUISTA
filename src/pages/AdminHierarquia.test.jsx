@@ -15,7 +15,8 @@ vi.mock('../services/hierarquia.js', async (orig) => ({
   conviteRevogar: (...a) => conviteRevogar(...a),
   convitesLimparInativos: (...a) => convitesLimparInativos(...a),
 }))
-vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), erro: vi.fn(), info: vi.fn() } }))
+const confirmar = vi.fn()
+vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), erro: vi.fn(), info: vi.fn(), confirmar: (...a) => confirmar(...a) } }))
 const { default: AdminHierarquia } = await import('./AdminHierarquia.jsx')
 
 const conv = (id, situacao) => ({ id, rotulo: `Convite ${id}`, situacao, usos: 0, max_usos: 1, modo: 'fixo', prefixo: 'abc123', expira_em: '2026-10-01' })
@@ -26,7 +27,7 @@ beforeEach(() => {
   })
   conviteApagar.mockReset().mockResolvedValue({ ok: true })
   convitesLimparInativos.mockReset().mockResolvedValue({ ok: true, apagados: 2 })
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  confirmar.mockReset().mockResolvedValue(true)
 })
 
 describe('AdminHierarquia — convites', () => {
@@ -50,10 +51,18 @@ describe('AdminHierarquia — convites', () => {
     expect(conviteApagar).toHaveBeenCalledWith('r')
   })
 
-  it('limpar inativos pede confirmação e chama o servidor', async () => {
+  it('limpar inativos pede confirmação (modal do app, não window.confirm) e chama o servidor', async () => {
     render(<AdminHierarquia />)
     await userEvent.click(await screen.findByRole('button', { name: 'Limpar inativos (2)' }))
-    expect(window.confirm).toHaveBeenCalled()
+    expect(confirmar).toHaveBeenCalledTimes(1)
+    expect(confirmar.mock.calls[0][0].titulo).toContain('2 convite(s)')
     expect(convitesLimparInativos).toHaveBeenCalled()
+  })
+
+  it('limpar inativos: recusou, nada vai ao servidor', async () => {
+    confirmar.mockResolvedValueOnce(false)
+    render(<AdminHierarquia />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Limpar inativos (2)' }))
+    expect(convitesLimparInativos).not.toHaveBeenCalled()
   })
 })

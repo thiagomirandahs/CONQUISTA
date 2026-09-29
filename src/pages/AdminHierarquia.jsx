@@ -170,13 +170,14 @@ function Arvore({ unidades, clubes, ativas, ocupado, rodar }) {
       encerrarRef.current = null
     }
     const cancelar = () => { encerrar(); arrastoRef.current = null; setArrasto(null) }
-    function soltar(ev) {
+    async function soltar(ev) {
       const alvoId = alvoEm(ev.clientX, ev.clientY) || arrastoRef.current?.alvoId
       const st = arrastoRef.current
       cancelar()
       if (!st || !alvoId) return
       const alvo = alvoId === RAIZ ? RAIZ : itensRef.current.find((x) => x.id === alvoId)
-      if (!window.confirm(frasesDoMovimento(st.item, alvo, TIPO_ROTULO))) return
+      const [titulo, descricao] = frasesDoMovimento(st.item, alvo, TIPO_ROTULO).split('\n\n')
+      if (!(await avisar.confirmar({ titulo, descricao, rotulo: 'Mover', perigo: false }))) return
       const novoPai = alvo === RAIZ ? null : alvo.id
       if (st.item.tipo === 'clube') rodarRef.current(`v${st.item.id}`, () => clubeVincular(st.item.id, novoPai, 'arrastado no /admin'), 'Clube movido.')
       else rodarRef.current(`e${st.item.id}`, () => unidadeEditar(st.item.id, st.item.nome, novoPai), 'Unidade movida.')
@@ -275,8 +276,9 @@ function EditarUnidade({ unidade: u, ativas, ocupado, rodar }) {
         <div key={c.membership_id} className="flex items-center justify-between gap-2 py-1 border-b border-line last:border-0">
           <span className="text-sm text-ink">{c.nome} <span className="text-xs text-muted">· {rotuloPapel(c.papel)} · {c.status}</span></span>
           <Botao variacao="secundario" className="shrink-0" carregando={ocupado === `r${c.membership_id}`} desabilitado={!!ocupado}
-            aoTocar={() => {
-              if (!window.confirm(`Remover ${c.nome} da coordenação? O acesso ao portal acaba na hora.`)) return
+            aoTocar={async () => {
+              const ok = await avisar.confirmar({ titulo: `Remover ${c.nome} da coordenação?`, descricao: 'O acesso ao portal acaba na hora.', rotulo: 'Remover da coordenação' })
+              if (!ok) return
               rodar(`r${c.membership_id}`, () => coordenadorRemover(c.membership_id, 'removido no /admin'), 'Vínculo encerrado.')
             }}>Remover</Botao>
         </div>
@@ -397,8 +399,13 @@ function Convites({ convites, arquivados, ativas, ocupado, rodar }) {
 function ListaConvites({ convites, arquivados, filtro, setFiltro, ocupado, rodar }) {
   const inativos = convites.filter((c) => c.situacao !== 'valido')
   const lista = filtro === 'ativos' ? convites.filter((c) => c.situacao === 'valido') : filtro === 'inativos' ? inativos : convites
-  const limpar = () => {
-    if (!window.confirm(`Apagar ${inativos.length} convite(s) revogado(s), expirado(s) ou esgotado(s) da lista? O histórico fica guardado.`)) return
+  const limpar = async () => {
+    const ok = await avisar.confirmar({
+      titulo: `Apagar ${inativos.length} convite(s) da lista?`,
+      descricao: 'Só os revogados, expirados ou esgotados. O histórico fica guardado no servidor.',
+      rotulo: `Apagar ${inativos.length} convite(s)`,
+    })
+    if (!ok) return
     rodar('limpar', () => convitesLimparInativos(), 'Convites inativos apagados.')
   }
   return (

@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 
 const f = {
   souAdminPlataforma: vi.fn(), visaoGeral: vi.fn(), clubesListar: vi.fn(), clubeDetalhe: vi.fn(),
@@ -18,8 +19,20 @@ vi.mock('../services/hierarquia.js', async (original) => ({
   ...(await original()),
   hierarquiaAdmin: () => Promise.resolve({ pedidos_clube: [], coordenadores_pendentes: [] }),
 }))
+// Decisões destrutivas passam pelo modal de confirmação (avisar.confirmar); sem provider ele responde
+// `false`, então o teste controla a resposta aqui e nunca chega numa RPC sem confirmação explícita.
+const confirmar = vi.fn()
+vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: (...a) => confirmar(...a) } }))
 
 const { default: Admin, formatarBytes, diasRestantes, diasParado } = await import('./Admin.jsx')
+
+// A seção do painel vive na URL (?aba=) — o Admin precisa de um Router. `UrlAtual` expõe a URL do
+// MemoryRouter para o teste ler.
+function UrlAtual() {
+  const l = useLocation(); const navegar = useNavigate()
+  return <><span data-testid="url-atual">{l.pathname}{l.search}</span><button type="button" data-testid="voltar-teste" onClick={() => navegar(-1)}>voltar</button></>
+}
+const renderAdmin = (entrada = '/admin') => render(<MemoryRouter initialEntries={[entrada]}><Admin /><UrlAtual /></MemoryRouter>)
 
 const FUNDADOR = {
   club_id: 'c1', nome: 'Filhos da Conquista', slug: 'filhos-da-conquista', status: 'ativo', criado_em: '2026-09-24T21:00:00Z',
@@ -45,6 +58,7 @@ const PLANOS = [
 
 beforeEach(() => {
   for (const fn of Object.values(f)) fn.mockReset()
+  confirmar.mockReset().mockResolvedValue(true)
   f.visaoGeral.mockResolvedValue({ clubes_total: 2, clubes_ativos: 2, clubes_inativos: 0, onboarding_em_andamento: 1, onboarding_concluidos: 0,
     assinaturas_por_status: { trial: 1 }, planos_total: 6, planos_publicos: 1, armazenamento_total_bytes: 700 * 1048576,
     clubes_proximos_do_limite: 0, clubes_no_limite: 0, provisionamentos_pendentes: 0, eventos_admin_7d: 0, eventos_assinatura_7d: 1 })
@@ -64,19 +78,19 @@ beforeEach(() => {
 
 // a navegação do painel é um menu em lista: abre o menu e toca na área
 const abrirAba = async (nome) => { await userEvent.click(screen.getByTestId('admin-menu')); await userEvent.click(screen.getByRole('tab', { name: nome })) }
-const abrirComoAdmin = async () => { f.souAdminPlataforma.mockResolvedValue(true); render(<Admin />); await screen.findByRole('heading', { name: 'Administração' }) }
+const abrirComoAdmin = async (entrada) => { f.souAdminPlataforma.mockResolvedValue(true); renderAdmin(entrada); await screen.findByRole('heading', { name: 'Administração' }) }
 
 describe('Admin: guard — nunca mostra o painel sem confirmação do servidor', () => {
   it('não-admin: vê "área restrita" e nenhuma RPC administrativa é chamada', async () => {
     f.souAdminPlataforma.mockResolvedValue(false)
-    render(<Admin />)
+    renderAdmin()
     expect(await screen.findByText('Área restrita')).toBeInTheDocument()
     for (const k of ['visaoGeral', 'clubesListar', 'planosAdminListar', 'assinaturasListar', 'onboardingListar']) expect(f[k]).not.toHaveBeenCalled()
   })
 
   it('erro ao verificar: trata como NÃO-admin', async () => {
     f.souAdminPlataforma.mockRejectedValue(new Error('falhou'))
-    render(<Admin />)
+    renderAdmin()
     expect(await screen.findByText('Área restrita')).toBeInTheDocument()
   })
 
@@ -84,6 +98,41 @@ describe('Admin: guard — nunca mostra o painel sem confirmação do servidor',
     await abrirComoAdmin()
     expect(await screen.findByTestId('visao-clubes')).toHaveTextContent('2')
     expect(screen.getByText('Em onboarding')).toBeInTheDocument()
+  })
+})
+
+describe('Admin: seção ⇄ URL (?aba=)', () => {
+  it('link direto abre a seção da URL', async () => {
+    await abrirComoAdmin('/admin?aba=planos')
+    expect(await screen.findAllByTestId('plano-item')).toHaveLength(2)
+    expect(screen.getByTestId('admin-menu')).toHaveTextContent('Planos')
+  })
+
+  it('aba desconhecida cai na Visão geral', async () => {
+    await abrirComoAdmin('/admin?aba=nao-existe')
+    expect(await screen.findByTestId('visao-clubes')).toBeInTheDocument()
+  })
+
+  it('trocar de seção escreve ?aba= na URL (e a Visão geral limpa o parâmetro)', async () => {
+    await abrirComoAdmin()
+    await abrirAba(/Clubes/)
+    expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=clubes')
+    await abrirAba(/Suporte/)
+    expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=suporte')
+    await abrirAba(/Visão geral/)
+    expect(screen.getByTestId('url-atual')).toHaveTextContent(/^\/admin$/)
+  })
+
+  it('voltar do navegador volta para a seção anterior (replace: false)', async () => {
+    await abrirComoAdmin()
+    await abrirAba(/Clubes/)
+    await abrirAba(/Planos/)
+    expect(await screen.findAllByTestId('plano-item')).toHaveLength(2)
+    // MemoryRouter: history.back() não existe; o `navigate(-1)` é o que o botão do navegador dispara.
+    // Simulamos pelo próprio Router — voltar 1 entrada leva a ?aba=clubes.
+    await userEvent.click(screen.getByTestId('voltar-teste'))
+    expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=clubes')
+    expect(await screen.findAllByTestId('clube-item')).toHaveLength(2)
   })
 })
 
@@ -130,12 +179,61 @@ describe('Admin: Clubes', () => {
     await userEvent.click(await screen.findByText(/Exército da colina/))
     expect(f.clubeDetalhe).toHaveBeenCalledWith('c2')
     expect(await screen.findByText('Sem gateway — combinado fora do sistema')).toBeInTheDocument()
-    await userEvent.selectOptions(screen.getByTestId('assinatura-status'), 'suspensa')
+    await userEvent.selectOptions(screen.getByTestId('assinatura-status'), 'ativa')
     await userEvent.click(screen.getByTestId('confirmar-transicao'))
     expect(f.assinaturaTransicionar).not.toHaveBeenCalled()
-    await userEvent.type(screen.getByLabelText(/Motivo/), 'Pedido do próprio clube')
+    await userEvent.type(screen.getByLabelText(/Motivo/), 'Pagamento combinado fora do sistema')
     await userEvent.click(screen.getByTestId('confirmar-transicao'))
+    // status neutro: sem modal de confirmação, botão neutro
+    expect(confirmar).not.toHaveBeenCalled()
+    expect(f.assinaturaTransicionar).toHaveBeenCalledWith('s2', 'ativa', 'Pagamento combinado fora do sistema')
+  })
+
+  it('suspender/cancelar/inadimplente: botão vermelho + confirmação com clube, status, impacto e motivo (P0)', async () => {
+    await abrirComoAdmin()
+    await abrirAba(/Clubes/)
+    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await screen.findByText('Sem gateway — combinado fora do sistema')
+    await userEvent.selectOptions(screen.getByTestId('assinatura-status'), 'suspensa')
+    const botao = screen.getByTestId('confirmar-transicao')
+    expect(botao).toHaveClass('bg-rose-600')
+    expect(botao).toHaveTextContent('Mudar para Suspensa')
+    expect(screen.getByTestId('transicao-impacto')).toHaveTextContent('perde acesso às ferramentas')
+    await userEvent.type(screen.getByLabelText(/Motivo/), 'Pedido do próprio clube')
+
+    // recusou no modal: nada vai ao servidor
+    confirmar.mockResolvedValueOnce(false)
+    await userEvent.click(botao)
+    expect(confirmar).toHaveBeenCalledTimes(1)
+    const pedido = confirmar.mock.calls[0][0]
+    expect(pedido.perigo).toBe(true)
+    expect(pedido.titulo).toContain('Suspensa')
+    expect(pedido.descricao).toContain('Exército da colina')
+    expect(pedido.descricao).toContain('Período de teste → novo: Suspensa')
+    expect(pedido.descricao).toContain('perde acesso às ferramentas')
+    expect(pedido.descricao).toContain('Pedido do próprio clube')
+    expect(f.assinaturaTransicionar).not.toHaveBeenCalled()
+
+    // confirmou: chama a RPC auditada
+    confirmar.mockResolvedValueOnce(true)
+    await userEvent.click(botao)
     expect(f.assinaturaTransicionar).toHaveBeenCalledWith('s2', 'suspensa', 'Pedido do próprio clube')
+  })
+
+  it('cada status perigoso tem o seu impacto no modal', async () => {
+    await abrirComoAdmin()
+    await abrirAba(/Clubes/)
+    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await screen.findByText('Sem gateway — combinado fora do sistema')
+    await userEvent.type(screen.getByLabelText(/Motivo/), 'Motivo de teste')
+    for (const [status, trecho] of [['cancelada', 'assinatura nova'], ['inadimplente', 'pagamento em atraso']]) {
+      confirmar.mockResolvedValueOnce(false)
+      await userEvent.selectOptions(screen.getByTestId('assinatura-status'), status)
+      expect(screen.getByTestId('confirmar-transicao')).toHaveClass('bg-rose-600')
+      await userEvent.click(screen.getByTestId('confirmar-transicao'))
+      expect(confirmar.mock.calls.at(-1)[0].descricao).toContain(trecho)
+    }
+    expect(f.assinaturaTransicionar).not.toHaveBeenCalled()
   })
 
   it('alterar plano: excedente exige confirmação explícita antes de aplicar', async () => {
@@ -187,6 +285,13 @@ describe('Admin: Suporte — admin nunca autoriza o próprio pedido', () => {
     await abrirAba(/Suporte/)
     expect(await screen.findByText(/não concede acesso real/)).toBeInTheDocument()
     expect(screen.queryByText('Autorizar')).toBeNull()
+    // recusou a confirmação: nada é revogado
+    confirmar.mockResolvedValueOnce(false)
+    await userEvent.click(screen.getByText('Revogar'))
+    expect(confirmar).toHaveBeenCalledTimes(1)
+    expect(confirmar.mock.calls[0][0].descricao).toContain('Investigar erro relatado')
+    expect(f.suporteRevogar).not.toHaveBeenCalled()
+    confirmar.mockResolvedValueOnce(true)
     await userEvent.click(screen.getByText('Revogar'))
     expect(f.suporteRevogar).toHaveBeenCalledWith('g1', expect.any(String))
   })
