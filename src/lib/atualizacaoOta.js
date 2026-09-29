@@ -105,7 +105,9 @@ export async function iniciarAtualizacaoOta() {
       versaoAtual: typeof __OTA_VERSAO__ === 'string' ? __OTA_VERSAO__ : 'dev', // eslint-disable-line no-undef
       // Pedido NATIVO (não passa por CSP/CORS da WebView, que roda em https://localhost)
       buscarManifesto: async (url) => {
-        const r = await CapacitorHttp.get({ url: `${url}?t=${Date.now()}`, headers: { 'Cache-Control': 'no-cache' }, connectTimeout: 8000, readTimeout: 8000 })
+        // SEM ?t=…: na Vercel, /ota/versao.json com query cai no rewrite e volta o index.html (visto em 29/09).
+        // O no-cache já vem do vercel.json.
+        const r = await CapacitorHttp.get({ url, headers: { 'Cache-Control': 'no-cache' }, connectTimeout: 8000, readTimeout: 8000 })
         if (r.status !== 200) throw new Error(`HTTP ${r.status}`)
         return typeof r.data === 'string' ? JSON.parse(r.data) : r.data
       },
