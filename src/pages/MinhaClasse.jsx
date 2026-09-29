@@ -1,7 +1,6 @@
 import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
 import { hrefExterno } from '../lib/urlSegura.js'
 import { useState, useEffect, useCallback } from 'react'
-import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
@@ -14,7 +13,7 @@ import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvesti
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, Botao, Aviso, Selo, Progresso as BarraDeProgresso, Folha, Carregando } from '../ui/index.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
@@ -27,15 +26,17 @@ import { documentosDaMinhaClasse } from '../services/documentoIdade.js'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
-// Cada situação tem ícone E texto (nunca só cor), e um botão desabilitado sempre diz o motivo.
+// Cada situação tem símbolo E texto (nunca só cor — o `Selo` põe o símbolo do tom), e um botão
+// desabilitado sempre diz o motivo. Fase 6: os rótulos ficaram curtos (Concluído · Aguardando ·
+// Correção · Disponível · Bloqueado); a lógica de `situacaoDoRequisito` não mudou.
 const SITUACOES = {
-  nao_iniciado: { label: 'Não iniciado', icon: '⚪', badge: 'bg-surface2 text-muted border border-line' },
-  em_andamento: { label: 'Em andamento', icon: '✏️', badge: 'bg-blue-50 text-blue-700 border border-blue-200' },
-  bloqueado: { label: 'Bloqueado', icon: '🔒', badge: 'bg-amber-50 text-amber-800 border border-amber-200' },
-  pronto_pelo_historico: { label: 'Cumprido pelo seu histórico', icon: '✨', badge: 'bg-green-50 text-green-700 border border-green-200' },
-  aguardando_avaliacao: { label: 'Aguardando avaliação', icon: '⏳', badge: 'bg-amber-50 text-amber-700 border border-amber-200' },
-  aprovado: { label: 'Aprovado', icon: '✅', badge: 'bg-green-50 text-green-700 border border-green-200' },
-  correcao_solicitada: { label: 'Correção solicitada', icon: '↺', badge: 'bg-red-50 text-red-700 border border-red-200' },
+  nao_iniciado: { label: 'Disponível', tom: 'neutro' },
+  em_andamento: { label: 'Em andamento', tom: 'info' },
+  bloqueado: { label: 'Bloqueado', tom: 'atencao' },
+  pronto_pelo_historico: { label: 'Cumprido pelo seu histórico', tom: 'ok' },
+  aguardando_avaliacao: { label: 'Aguardando', tom: 'atencao' },
+  aprovado: { label: 'Concluído', tom: 'ok' },
+  correcao_solicitada: { label: 'Correção', tom: 'perigo' },
 }
 
 // Situação apresentada de um requisito = status operacional + o que o servidor declarou (bloqueios,
@@ -95,7 +96,7 @@ export default function MinhaClasse() {
       setMinhas(lista || [])
       if (!m) setDisponiveis(await carregarClassesDisponiveis())
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui carregar a sua classe.'))
     } finally {
       setCarregando(false)
     }
@@ -147,8 +148,10 @@ export default function MinhaClasse() {
         </div>
       </div>
 
-      {erro && <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800 mb-4">{erro}</div>}
+      {erro && <Aviso tom="erro">{erro}</Aviso>}
 
+      {/* As abas de classe têm emblema, cor da classe e percentual — o `Abas` do design system não tem
+          esses slots, então a AbasDeClasse continua própria (mesmos alvos de 44px+ e role="tablist"). */}
       {minha && (
         <AbasDeClasse minhas={minhas} idAberta={idAberta} onTrocar={trocarAba} mostrarOutras={mostrarOutras} onOutras={abrirOutras} />
       )}
@@ -207,12 +210,10 @@ export function CancelarClasse({ memberClassId, nome, onCancelada }) {
       </p>
       {erro && <p role="alert" className="text-sm text-red-700 mt-2">{erro}</p>}
       <div className="flex gap-2 mt-3">
-        <button type="button" onClick={() => { setConfirmando(false); setErro('') }} disabled={ocupado}
-          className="flex-1 min-h-[48px] rounded-xl bg-surface2 text-ink font-semibold">Voltar</button>
-        <button type="button" onClick={cancelar} disabled={ocupado} data-testid="confirmar-cancelar"
-          className="flex-1 min-h-[48px] rounded-xl bg-red-600 text-white font-bold disabled:opacity-60">
-          {ocupado ? 'Cancelando…' : 'Sim, cancelar'}
-        </button>
+        <Botao variacao="secundario" className="flex-1" aoTocar={() => { setConfirmando(false); setErro('') }} desabilitado={ocupado}>Voltar</Botao>
+        <Botao variacao="perigo" className="flex-1" aoTocar={cancelar} carregando={ocupado} data-testid="confirmar-cancelar">
+          Sim, cancelar
+        </Botao>
       </div>
     </div>
   )
@@ -362,12 +363,10 @@ function Progresso({ dados, userId, onMudou }) {
         </div>
         <div className="p-5 pt-3">
         {ehTeste && <p className="text-xs text-faint mb-2">{versao.fonte_descricao}</p>}
-        <div className="w-full rounded-full h-5 overflow-hidden mt-1 border-2" role="progressbar" aria-valuenow={mc.percentual} aria-valuemin="0" aria-valuemax="100" aria-label="Progresso na classe"
-          style={{ background: cor?.claro || undefined, borderColor: cor?.hex || 'transparent' }}>
-          <motion.div className={`h-full ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2'}`} style={cor ? { background: cor.hex } : undefined} initial={{ width: 0 }}
-            animate={{ width: `${mc.percentual}%` }} transition={{ duration: 0.6 }} />
+        <div className="mt-1">
+          <BarraDeProgresso valor={mc.percentual ?? 0} total={100} rotulo="Progresso na classe" />
         </div>
-        <p className="text-base font-bold mt-1.5" style={{ color: cor?.escuro }}>{mc.percentual}% concluído <span className="text-sm font-normal text-muted">· iniciada em {fmtData(mc.iniciada_em)}</span></p>
+        <p className="text-sm text-muted mt-1.5">iniciada em {fmtData(mc.iniciada_em)}</p>
 
         {etapa && (
           <div data-testid="etapa" data-etapa={mc.status} className="mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-800">
@@ -378,8 +377,10 @@ function Progresso({ dados, userId, onMudou }) {
           </div>
         )}
         {mc.status === 'em_andamento' && conclusao?.revisao?.status === 'correcao_solicitada' && conclusao.revisao.comentario && (
-          <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm text-red-800">
-            ↺ A revisão final pediu correção: "{conclusao.revisao.comentario}" — os requisitos reabertos estão marcados abaixo.
+          <div className="mt-3">
+            <Aviso tom="erro">
+              <p>A revisão final pediu correção: "{conclusao.revisao.comentario}" — os requisitos reabertos estão marcados abaixo.</p>
+            </Aviso>
           </div>
         )}
         {mc.status === 'investida' && (
@@ -422,9 +423,17 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState('')
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  // "Mais": ouvir o livro, catálogo, origem e histórico ficam recolhidos para não disputar com a tarefa.
+  // Quem chega com correção pedida vê o "Mais" já aberto (o histórico completo está ali).
+  const [mostrarMais, setMostrarMais] = useState(r.status === 'correcao_solicitada')
+  const idMais = `mais-${r.id}`
 
   const podeEditar = ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(r.status)
   const podeEnviar = podeEditar && bloqueios.length === 0
+  // o último comentário de correção do avaliador (vem no payload de minha_classe — sem chamada extra)
+  const comentarioDaCorrecao = r.status === 'correcao_solicitada'
+    ? ([...(r.avaliacoes || [])].reverse().find((a) => a.decisao === 'correcao_solicitada' && a.comentario)?.comentario || '')
+    : ''
   const precisaTexto = r.tipo_evidencia === 'texto'
   const precisaFoto = r.tipo_evidencia === 'foto'
   const obrigatoria = !!r.evidencia_obrigatoria
@@ -443,7 +452,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
       descartarRascunho()
       await onMudou()
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui salvar o rascunho.')); setOcupado(false)
     }
   }
 
@@ -463,25 +472,20 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
       festa()
       await onMudou()
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui enviar para avaliação.')); setOcupado(false)
     }
   }
 
   return (
     <article data-testid="requisito" aria-labelledby={idTitulo} className="p-4">
       {/* Situação EM CIMA do texto (antes ficava ao lado e espremia a leitura no celular). */}
-      <span className={`inline-block mb-1.5 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`} data-testid="situacao" data-situacao={situacao}>
-        <span aria-hidden="true">{info.icon}</span> {info.label}
+      <span className="inline-block mb-1.5" data-testid="situacao" data-situacao={situacao}>
+        <Selo tom={info.tom}>{info.label}</Selo>
       </span>
       <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug mb-1.5">
         <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
       </h5>
 
-      <OuvirLivro descricao={r.descricao} userId={userId} />
-      {termoDoRequisito(r.descricao) !== null && (
-        <Link to={`/catalogo-especialidades${termoDoRequisito(r.descricao) ? `?q=${encodeURIComponent(termoDoRequisito(r.descricao))}` : ''}`}
-          className="mt-1 inline-flex min-h-[40px] items-center text-xs font-bold text-brand" data-testid="requisito-catalogo">🔎 Ver no catálogo de especialidades</Link>
-      )}
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
 
@@ -494,9 +498,12 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
       ) : podeEditar ? (
         <div className="mt-2 space-y-2">
           {r.status === 'correcao_solicitada' && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-              ↺ A liderança pediu correção — veja o comentário no histórico abaixo e envie de novo.
-            </p>
+            // O comentário do avaliador aparece AQUI, sem precisar abrir o histórico (auditoria da Fase 6).
+            <Aviso tom="erro" titulo="A liderança pediu correção">
+              {comentarioDaCorrecao
+                ? <>"{comentarioDaCorrecao}" — ajuste e envie de novo.</>
+                : <>Ajuste a sua resposta e envie de novo. O histórico abaixo tem os detalhes.</>}
+            </Aviso>
           )}
           {/* Comprovação em destaque: caixa colorida com o passo dito em palavras simples — tem criança e
               responsável com dificuldade, então o "onde eu ponho?" precisa ser óbvio e o alvo de toque grande. */}
@@ -513,6 +520,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
             <div>
               <span className="block text-sm font-semibold text-ink mb-1.5">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
               {/* Área de envio "clean": caixa tracejada grande, ícone de câmera e uma frase — óbvio sem gritar. */}
+              {/* Fase 6: trocar por ZonaUpload */}
               <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-surface2 px-4 py-6 text-center transition hover:border-brand active:scale-[0.99]">
                 <input aria-label={`Foto de comprovação${obrigatoria ? ' (obrigatória)' : ''}`} type="file" accept="image/*" className="sr-only" onChange={(e) => escolherFoto(e.target.files?.[0])} />
                 {previa || r.evidencia_path ? (
@@ -532,33 +540,47 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
               {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
             </ul>
           )}
-          {erro && <p role="alert" className="text-xs text-red-700">{erro}</p>}
-          <div className="flex flex-wrap gap-2">
+          {erro && <Aviso tom="erro">{erro}</Aviso>}
+          {/* Hierarquia: UM botão principal, largo e alto; o rascunho é discreto. */}
+          <div className="space-y-1.5">
+            <Botao aoTocar={enviar} carregando={ocupado} desabilitado={!podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
+              data-testid="botao-enviar" className="w-full" style={cor ? { background: cor.hex, color: cor.texto, backgroundImage: 'none' } : undefined}>
+              {!podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
+            </Botao>
             {(precisaTexto || precisaFoto) && (
-              <button onClick={salvar} disabled={ocupado} className="min-h-[44px] rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted disabled:opacity-60">
+              <Botao variacao="discreto" aoTocar={salvar} desabilitado={ocupado} className="w-full text-muted">
                 Salvar rascunho
-              </button>
+              </Botao>
             )}
-            <button onClick={enviar} disabled={ocupado || !podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
-              data-testid="botao-enviar" style={cor ? { background: cor.hex, color: cor.texto } : undefined}
-              className={`min-h-[36px] rounded-md px-3 py-1 text-sm font-bold leading-tight shadow-soft active:scale-[0.98] disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
-              {ocupado ? 'Enviando...' : !podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
-            </button>
           </div>
         </div>
       ) : (
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
-          <button onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} className="text-xs font-semibold text-faint underline">
-            {mostrarHistorico ? 'Esconder' : 'Ver'} histórico ({r.avaliacoes.length} avaliaç{r.avaliacoes.length === 1 ? 'ão' : 'ões'})
-          </button>
-        )}
-        <OrigemDoRequisito requirementId={r.id} />
+      {/* Secundário, agrupado em "Mais" para não disputar com a tarefa: ouvir o livro, catálogo, origem, histórico.
+          Fase 6: trocar por MenuAcoes */}
+      <div className="mt-2">
+        <button type="button" onClick={() => setMostrarMais((v) => !v)} aria-expanded={mostrarMais} aria-controls={idMais}
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-2 text-xs font-semibold text-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <span aria-hidden="true" className={`transition-transform ${mostrarMais ? 'rotate-90' : ''}`}>▸</span> Mais
+        </button>
+        <div id={idMais} className={`mt-1 flex-wrap items-center gap-x-3 gap-y-1 pl-2 ${mostrarMais ? 'flex' : 'hidden'}`}>
+          <OuvirLivro descricao={r.descricao} userId={userId} />
+          {termoDoRequisito(r.descricao) !== null && (
+            <Link to={`/catalogo-especialidades${termoDoRequisito(r.descricao) ? `?q=${encodeURIComponent(termoDoRequisito(r.descricao))}` : ''}`}
+              className="inline-flex min-h-[44px] items-center text-xs font-bold text-brand" data-testid="requisito-catalogo">🔎 Ver no catálogo de especialidades</Link>
+          )}
+          {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
+            <button type="button" onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico}
+              className="min-h-[44px] text-xs font-semibold text-faint underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              {mostrarHistorico ? 'Esconder' : 'Ver'} histórico ({r.avaliacoes.length} avaliaç{r.avaliacoes.length === 1 ? 'ão' : 'ões'})
+            </button>
+          )}
+          <OrigemDoRequisito requirementId={r.id} />
+        </div>
+        {mostrarHistorico && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
       </div>
-      {mostrarHistorico && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
     </article>
   )
 }
@@ -573,14 +595,14 @@ function BotaoDocumento({ memberClassId, ehFinal }) {
     try {
       const r = await emitirDocumento(memberClassId)
       window.open(`/documento/${r.token}`, '_blank', 'noopener')
-    } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui gerar o documento.')) } finally { setOcupado(false) }
   }
   return (
     <div className="mt-3">
-      <button onClick={gerar} disabled={ocupado} className="w-full min-h-[44px] rounded-xl border border-line bg-surface2 text-ink font-semibold text-sm py-2 disabled:opacity-60">
-        {ocupado ? 'Gerando…' : ehFinal ? '📘 Ver / imprimir meu documento de conclusão' : '📘 Ver / imprimir meu caderno de acompanhamento'}
-      </button>
-      {erro && <p role="alert" className="text-xs text-red-700 mt-1">{erro}</p>}
+      <Botao variacao="secundario" aoTocar={gerar} carregando={ocupado} className="w-full">
+        {ehFinal ? '📘 Ver / imprimir meu documento de conclusão' : '📘 Ver / imprimir meu caderno de acompanhamento'}
+      </Botao>
+      {erro && <div className="mt-2"><Aviso tom="erro">{erro}</Aviso></div>}
     </div>
   )
 }
@@ -622,7 +644,7 @@ function Escolha({ r, podeEditar, onMudou }) {
       await escolherOpcoesRequisito(r.id, [...marcadas], livres)
       await onMudou()
     } catch (err) {
-      setErro(err?.message || String(err)); setSalvando(false)
+      setErro(mensagemDeErro(err, 'Não consegui salvar a escolha.')); setSalvando(false)
     }
   }
 
@@ -669,17 +691,17 @@ function Escolha({ r, podeEditar, onMudou }) {
                 <input value={novoLivre} onChange={(ev) => setNovoLivre(ev.target.value)} placeholder="Qual especialidade você fez?"
                   className="w-full text-sm rounded-lg border border-line px-3 py-1.5" />
               </label>
-              <button type="button" onClick={() => { const t = novoLivre.trim(); if (t && !livres.includes(t)) setLivres((l) => [...l, t]); setNovoLivre('') }}
-                className="min-h-[36px] rounded-lg border border-line px-3 text-xs font-semibold text-muted">Adicionar</button>
+              <Botao variacao="contorno" aoTocar={() => { const t = novoLivre.trim(); if (t && !livres.includes(t)) setLivres((l) => [...l, t]); setNovoLivre('') }}
+                className="text-xs">Adicionar</Botao>
             </div>
           )}
         </div>
       )}
       {erro && <p role="alert" className="text-red-700 mt-1">{erro}</p>}
       {podeEditar && mudou && (
-        <button type="button" onClick={salvar} disabled={salvando} className="mt-2 min-h-[36px] rounded-lg bg-brand text-white px-3 py-1 text-xs font-bold disabled:opacity-60">
-          {salvando ? 'Salvando…' : 'Salvar escolha'}
-        </button>
+        <Botao aoTocar={salvar} carregando={salvando} className="mt-2 text-xs">
+          Salvar escolha
+        </Botao>
       )}
     </fieldset>
   )
@@ -697,12 +719,12 @@ function HistoricoPorTentativa({ memberRequirementId }) {
     if (!memberRequirementId) return
     carregarHistoricoRequisito(memberRequirementId)
       .then((d) => { if (vivo) setDados(d) })
-      .catch((e) => { if (vivo) setErro(e?.message || 'Não consegui carregar o histórico.') })
+      .catch((e) => { if (vivo) setErro(mensagemDeErro(e, 'Não consegui carregar o histórico.')) })
     return () => { vivo = false }
   }, [memberRequirementId])
 
-  if (erro) return <p className="text-xs text-red-700 mt-1.5">{erro}</p>
-  if (!dados) return <p className="text-xs text-faint mt-1.5">Carregando histórico...</p>
+  if (erro) return <div className="mt-1.5"><Aviso tom="erro">{erro}</Aviso></div>
+  if (!dados) return <div className="mt-1.5"><Carregando linhas={1} texto="Carregando histórico" /></div>
 
   return <HistoricoDeTentativas tentativas={dados.tentativas || []} mostrarAvaliador className="mt-1.5" />
 }
@@ -717,28 +739,26 @@ function OrigemDoRequisito({ requirementId }) {
   }
   return (
     <>
-      <button onClick={verOrigem} disabled={abrindo} className="text-xs text-faint underline">
+      <button type="button" onClick={verOrigem} disabled={abrindo} aria-busy={abrindo || undefined}
+        className="min-h-[44px] text-xs text-faint underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
         {abrindo ? 'Carregando…' : 'Origem do requisito'}
       </button>
-      {origem && <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />}
+      <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />
     </>
   )
 }
 
+// Folha (bottom sheet): sobe de baixo no celular, fecha no Esc, no fundo e no ✕ de 44px.
 function OrigemRequisito({ origem, onFechar }) {
-  const req = origem.requisito || {}
-  const classe = origem.classe || {}
-  const versao = origem.versao || {}
+  const req = origem?.requisito || {}
+  const classe = origem?.classe || {}
+  const versao = origem?.versao || {}
   const omd = (o, rotulo) => o && (
     <li><span className="font-semibold">{rotulo}:</span> {o.id} — {o.titulo} ({fmtData(o.data)}){hrefExterno(o.url) && <> · <a href={hrefExterno(o.url)} target="_blank" rel="noreferrer" className="underline">documento</a></>}</li>
   )
   return (
-    <div role="dialog" aria-modal="true" aria-label="Origem do requisito" className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" onClick={onFechar}>
-      <div className="bg-surface rounded-2xl p-4 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-soft text-xs text-muted space-y-2" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h4 className="font-extrabold text-ink text-sm">Origem do requisito</h4>
-          <button onClick={onFechar} className="text-faint text-2xl leading-none min-w-[44px] min-h-[44px]" aria-label="Fechar">×</button>
-        </div>
+    <Folha aberta={!!origem} aoFechar={onFechar} titulo="Origem do requisito">
+      <div className="text-xs text-muted space-y-2">
         <p className="text-ink">{req.codigo}. {req.descricao}</p>
         <ul className="space-y-1">
           {req.manifesto_id && <li><span className="font-semibold">Item no manifesto:</span> <code>{req.manifesto_id}</code></li>}
@@ -762,7 +782,7 @@ function OrigemRequisito({ origem, onFechar }) {
           {versao.fonte_hash && <div className="break-all"><span className="font-semibold">Hash:</span> <code>{versao.fonte_hash}</code></div>}
         </div>
       </div>
-    </div>
+    </Folha>
   )
 }
 

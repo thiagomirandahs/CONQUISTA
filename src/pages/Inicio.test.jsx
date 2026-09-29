@@ -2,7 +2,7 @@
 // Antes, a pessoa entrava no Ranking — um placar — e nada dizia o que ela precisava fazer.
 // A tela NÃO prioriza nada: quem prioriza é o servidor (motor declarativo). Aqui só se desenha.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -12,6 +12,9 @@ let recursos
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => ({ marca: { nome: 'Clube Teste' }, temRecurso: (c) => recursos[c] === true }) }))
 const carregarInicio = vi.fn()
 vi.mock('../services/inicio.js', () => ({ carregarInicio: (...a) => carregarInicio(...a) }))
+// Fase 6: o cartão fixo da classe é UMA chamada a mais (minhas_classes), só no front
+const carregarMinhasClasses = vi.fn()
+vi.mock('../services/classes.js', () => ({ carregarMinhasClasses: (...a) => carregarMinhasClasses(...a) }))
 const { default: Inicio } = await import('./Inicio.jsx')
 
 const item = (chave, peso, titulo, rota = '/x') =>
@@ -20,6 +23,7 @@ const item = (chave, peso, titulo, rota = '/x') =>
 const renderT = () => render(<MemoryRouter><Inicio /></MemoryRouter>)
 beforeEach(() => {
   carregarInicio.mockReset().mockResolvedValue([])
+  carregarMinhasClasses.mockReset().mockResolvedValue([])
   recursos = { classes: true }
 })
 
@@ -114,5 +118,78 @@ describe('Inicio — especialidades desligadas neste clube', () => {
     carregarInicio.mockResolvedValue([correcao])
     renderT()
     expect(await screen.findByRole('link', { name: /Correção em uma especialidade/ })).toHaveAttribute('href', '/minhas-especialidades')
+  })
+})
+
+// Fase 6 (auditoria UX do Início): cartão fixo da classe, vazio honesto com classe a 0%, faixa do evento,
+// e a grade "Ir para" sem repetir o menu de baixo.
+describe('Inicio — Fase 6', () => {
+  const amigo = { member_class_id: 'mc1', class_id: 'k1', nome: 'Amigo', status: 'em_andamento', percentual: 40 }
+
+  it('mostra o cartão fixo da classe com nome, percentual e "Continuar" para /minha-classe', async () => {
+    carregarMinhasClasses.mockResolvedValue([amigo])
+    renderT()
+    const cartao = await screen.findByTestId('cartao-classe')
+    expect(cartao).toHaveAttribute('data-estado', 'em-andamento')
+    expect(within(cartao).getByRole('heading', { name: 'Amigo' })).toBeInTheDocument()
+    expect(within(cartao).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40')
+    expect(within(cartao).getByRole('link', { name: /Continuar/ })).toHaveAttribute('href', '/minha-classe')
+    expect(carregarMinhasClasses).toHaveBeenCalledTimes(1)
+  })
+
+  it('sem classe em andamento, convida a escolher uma', async () => {
+    carregarMinhasClasses.mockResolvedValue([{ ...amigo, status: 'investida', percentual: 100 }])
+    renderT()
+    const cartao = await screen.findByTestId('cartao-classe')
+    expect(cartao).toHaveAttribute('data-estado', 'sem-classe')
+    expect(within(cartao).getByRole('link', { name: 'Escolher classe' })).toHaveAttribute('href', '/minha-classe')
+  })
+
+  it('com o recurso "classes" desligado, não busca classe nem mostra o cartão', async () => {
+    recursos = {}
+    renderT()
+    await screen.findByText('Você está em dia!')
+    expect(carregarMinhasClasses).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cartao-classe')).toBeNull()
+  })
+
+  it('se a lista de classes falhar, o cartão some — o resto do Início segue normal', async () => {
+    carregarMinhasClasses.mockRejectedValue(new Error('boom'))
+    carregarInicio.mockResolvedValue([item('a', 100, 'Correção pedida')])
+    renderT()
+    expect(await screen.findByText('Correção pedida')).toBeInTheDocument()
+    expect(screen.queryByTestId('cartao-classe')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/boom/)
+  })
+
+  it('classe a 0% e nada pendente NÃO diz "em dia": aponta o começo da classe', async () => {
+    carregarMinhasClasses.mockResolvedValue([{ ...amigo, percentual: 0 }])
+    renderT()
+    expect(await screen.findByText(/a sua classe ainda não começou/)).toBeInTheDocument()
+    expect(screen.queryByText('Você está em dia!')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Começar a classe Amigo' })).toHaveAttribute('href', '/minha-classe')
+  })
+
+  it('o evento do meu_inicio vira uma faixa de agenda, fora da fila de ações (sem chamada extra)', async () => {
+    recursos = { classes: true, agenda: true }
+    carregarInicio.mockResolvedValue([
+      item('correcao', 100, 'Correção pedida'),
+      { ...item('evento', 50, 'Vem aí', '/agenda'), icone: '📅', descricao: 'Acampamento, sábado' },
+    ])
+    renderT()
+    const faixa = await screen.findByTestId('faixa-evento')
+    expect(faixa).toHaveAttribute('href', '/agenda')
+    expect(faixa).toHaveTextContent('Acampamento, sábado')
+    expect(screen.getByTestId('prioridades').querySelectorAll('li')).toHaveLength(1)
+  })
+
+  it('a grade "Ir para" não repete Jornada/Clube (já estão no menu de baixo); mantém Rede DBV e Minha classe', async () => {
+    recursos = { classes: true, comunidade: true }
+    renderT()
+    await screen.findByText('Você está em dia!')
+    expect(screen.getByRole('link', { name: /Rede DBV/ })).toHaveAttribute('href', '/rede')
+    expect(screen.getByRole('link', { name: /Minha classe/ })).toHaveAttribute('href', '/minha-classe')
+    expect(document.querySelector('a[href="/jornada"]')).toBeNull()
+    expect(document.querySelector('a[href="/meu-clube"]')).toBeNull()
   })
 })

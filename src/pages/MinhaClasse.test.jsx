@@ -143,7 +143,7 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(situacao('9')).toBe('correcao_solicitada')
     expect(within(card('5')).getByTestId('situacao')).toHaveTextContent('Bloqueado')
     expect(within(card('6')).getByTestId('situacao')).toHaveTextContent('Cumprido pelo seu histórico')
-    expect(within(card('8')).getByTestId('situacao')).toHaveTextContent('Aprovado')
+    expect(within(card('8')).getByTestId('situacao')).toHaveTextContent('Concluído')
   })
 
   it('simples: envia direto; com evidência: tem label e rascunho', async () => {
@@ -374,5 +374,38 @@ describe('MinhaClasse — várias classes e tema da classe', () => {
     expect(screen.getByTestId('classe-tema')).toHaveAttribute('data-cor', '#16a34a')
     expect(within(screen.getByTestId('cabecalho-classe')).getByTestId('selo-avancada')).toBeInTheDocument()
     expect(screen.getByRole('tab')).toHaveTextContent('Avançada')
+  })
+})
+
+// Fase 6 (auditoria UX de Minha Classe): botão principal largo e alto, rascunho discreto, comentário do
+// avaliador visível SEM abrir o histórico, situação em Selo, e secundários recolhidos em "Mais".
+describe('MinhaClasse — Fase 6', () => {
+  beforeEach(() => { carregarMinhaClasse.mockResolvedValue(MINHA); carregarHistoricoRequisito.mockReset() })
+
+  it('o comentário da correção aparece inline no card, antes de qualquer clique', async () => {
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
+    await screen.findByRole('heading', { level: 4 })
+    const c9 = card('9')
+    expect(within(c9).getByRole('alert')).toHaveTextContent('"Refaça"')
+    expect(carregarHistoricoRequisito).not.toHaveBeenCalled()
+  })
+
+  it('"Enviar para avaliação" é o botão principal: largo e com 44px; o rascunho é discreto', async () => {
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
+    await screen.findByRole('heading', { level: 4 })
+    const enviar = within(card('2')).getByRole('button', { name: 'Enviar para avaliação' })
+    expect(enviar.className).toMatch(/min-h-\[44px\]/)
+    expect(enviar.className).toMatch(/w-full/)
+    const rascunho = within(card('2')).getByRole('button', { name: 'Salvar rascunho' })
+    expect(rascunho.className).not.toMatch(/from-brand/)
+  })
+
+  it('ouvir o livro, catálogo e origem ficam sob "Mais" (recolhido por padrão, aberto quando há correção)', async () => {
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
+    await screen.findByRole('heading', { level: 4 })
+    expect(within(card('1')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(card('9')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(within(card('1')).getByRole('button', { name: /Mais/ }))
+    expect(within(card('1')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'true')
   })
 })

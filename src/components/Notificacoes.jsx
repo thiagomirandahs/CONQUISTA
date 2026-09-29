@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'
 import { pushSuportado, pushAtivo, ativarPush } from '../lib/push.js'
 import { ehNativo } from '../lib/nativo.js'
 import { estadoPushNativo, ativarPushNativo, MSG_NEGADO } from '../lib/pushNativo.js'
+import { Folha, Botao, Vazio, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 const iconePorTipo = { pontos: '🏆', atividade: '📋', missao: '🎯', cadastro: '👤', foto: '📸', aniversario: '🎂', geral: '📣' }
 
@@ -18,7 +18,16 @@ function tempoRel(iso) {
   return Math.floor(s / 86400) + ' d'
 }
 
+// Motivos conhecidos do Web Push, em palavras da pessoa. Qualquer outro erro passa por `mensagemDeErro`
+// (o texto cru do navegador/servidor nunca vai para a tela).
+const MOTIVOS_PUSH = {
+  SEM_SUPORTE: 'Este aparelho não suporta. No iPhone, instale o app na tela inicial primeiro.',
+  SEM_VAPID: 'Push ainda não configurado pela diretoria (veja PUSH-SETUP.md).',
+  PERMISSAO_NEGADA: 'Notificações bloqueadas. Libere nas configurações do navegador.',
+}
+
 // `icone`/`classeBotao`: a Rede DBV usa o mesmo sino com ícone de linha num quadradinho claro.
+// Fase 6: o painel é uma `Folha` (sobe de baixo no celular, diálogo no PC), com fechar de 44px e Esc.
 export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   const { profile } = useAuth()
   // O sino fica FORA da área que remonta ao trocar de clube (key={clubeId} no AppLayout): sem o
@@ -30,7 +39,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   const [vistoEm, setVistoEm] = useState(null)
   const [baseline, setBaseline] = useState(null) // congela as não-lidas no momento de abrir
   const [pushOn, setPushOn] = useState(false)
-  const [pushMsg, setPushMsg] = useState('')
+  const [pushMsg, setPushMsg] = useState(null) // { tom: 'ok' | 'erro' | 'info', texto }
   // No APK o push é o NATIVO (FCM), não o Web Push do navegador.
   const nativo = ehNativo()
   const suportaPush = nativo || pushSuportado()
@@ -44,7 +53,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   }, [profile?.id, profile?.notif_visto_em, clubeId])
 
   useEffect(() => {
-    if (nativo) estadoPushNativo().then((e) => { setPushOn(e === 'ativo'); if (e === 'negado') setPushMsg(MSG_NEGADO) })
+    if (nativo) estadoPushNativo().then((e) => { setPushOn(e === 'ativo'); if (e === 'negado') setPushMsg({ tom: 'erro', texto: MSG_NEGADO }) })
     else pushAtivo().then(setPushOn)
   }, [nativo, aberto])
 
@@ -62,24 +71,20 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   }, [])
 
   async function alternarPush() {
-    setPushMsg('')
+    setPushMsg(null)
     if (nativo) {
       const r = await ativarPushNativo(profile?.id)
-      if (r.ok) { setPushOn(true); setPushMsg('✅ Pronto! Este celular vai receber os avisos.') }
-      else setPushMsg(r.motivo === 'negado' || r.motivo === 'desligado' ? MSG_NEGADO : 'Não consegui ativar: ' + (r.detalhe || r.motivo))
+      if (r.ok) { setPushOn(true); setPushMsg({ tom: 'ok', texto: 'Pronto! Este celular vai receber os avisos.' }) }
+      else if (r.motivo === 'negado' || r.motivo === 'desligado') setPushMsg({ tom: 'erro', texto: MSG_NEGADO })
+      else setPushMsg({ tom: 'erro', texto: mensagemDeErro(r.detalhe || r.motivo, 'Não consegui ativar os avisos.') })
       return
     }
     try {
       await ativarPush(profile?.id)
       setPushOn(true)
-      setPushMsg('✅ Pronto! Este aparelho vai receber os avisos.')
+      setPushMsg({ tom: 'ok', texto: 'Pronto! Este aparelho vai receber os avisos.' })
     } catch (e) {
-      const msgs = {
-        SEM_SUPORTE: 'Este aparelho não suporta. No iPhone, instale o app na tela inicial primeiro.',
-        SEM_VAPID: 'Push ainda não configurado pela diretoria (veja PUSH-SETUP.md).',
-        PERMISSAO_NEGADA: 'Notificações bloqueadas. Libere nas configurações do navegador.',
-      }
-      setPushMsg(msgs[e?.message] || ('Erro: ' + (e?.message || e)))
+      setPushMsg({ tom: 'erro', texto: MOTIVOS_PUSH[e?.message] || mensagemDeErro(e, 'Não consegui ativar os avisos.') })
     }
   }
 
@@ -99,6 +104,8 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
     }
   }
 
+  const fechar = useCallback(() => setAberto(false), [])
+
   function abrirItem(n) {
     setAberto(false)
     if (n.link) navigate(n.link)
@@ -106,64 +113,59 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
 
   return (
     <>
-      <button onClick={abrir} aria-label="Notificações" className={`relative grid place-items-center ${classeBotao}`}>
-        {icone || <span className="text-xl">🔔</span>}
+      <button type="button" onClick={abrir} aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lida${naoLidas === 1 ? '' : 's'}` : 'Notificações'}
+        aria-haspopup="dialog" aria-expanded={aberto} data-testid="sino-notificacoes"
+        className={`relative grid place-items-center min-w-[44px] min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${classeBotao}`}>
+        {icone || <span className="text-xl" aria-hidden="true">🔔</span>}
         {naoLidas > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-xs font-bold grid place-items-center ring-2 ring-azul">
+          <span aria-hidden="true" data-testid="contador-nao-lidas"
+            className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-xs font-bold grid place-items-center ring-2 ring-azul">
             {naoLidas > 9 ? '9+' : naoLidas}
           </span>
         )}
       </button>
 
-      <AnimatePresence>
-        {aberto && (
-          <motion.div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[calc(4rem+var(--seguro-topo))] sm:pt-[calc(5rem+var(--seguro-topo))]"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAberto(false)}>
-            <motion.div onClick={(e) => e.stopPropagation()}
-              initial={{ y: -20, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -20, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[75vh] flex flex-col">
-              <div className="px-4 py-3 bg-azul text-white flex items-center justify-between">
-                <span className="font-extrabold">🔔 Notificações</span>
-                <button onClick={() => setAberto(false)} aria-label="Fechar notificações" className="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-sm">✕</button>
-              </div>
-              <div className="overflow-y-auto">
-                {mostradas.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 text-sm">
-                    <div className="text-3xl mb-2">✅</div>
-                    Nada por aqui ainda.
-                  </div>
-                ) : mostradas.map((n) => (
-                  <button key={n.id} onClick={() => abrirItem(n)}
-                    className={`w-full flex gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 hover:bg-slate-50 ${naoLidaNoPainel(n) ? 'bg-azul/5' : ''}`}>
-                    <span className="text-xl shrink-0">{iconePorTipo[n.tipo] || '🔔'}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-slate-800 text-sm">{n.titulo}</div>
-                      {n.corpo && <div className="text-xs text-slate-500 line-clamp-2">{n.corpo}</div>}
-                      <div className="text-xs text-slate-400 mt-0.5">{tempoRel(n.created_at)}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Ativar push neste aparelho */}
-              <div className="p-3 border-t border-slate-100 shrink-0">
-                {!suportaPush ? (
-                  <p className="text-xs text-slate-400 text-center">Avisos no celular não disponíveis neste aparelho.</p>
-                ) : pushOn ? (
-                  <p className="text-xs text-green-600 text-center font-semibold">📲 Avisos no celular ativados ✓</p>
-                ) : (
-                  <button onClick={alternarPush}
-                    className="w-full text-sm bg-azul/10 text-azul rounded-xl py-2.5 font-semibold hover:bg-azul/20">
-                    📲 Ativar avisos no celular
-                  </button>
-                )}
-                {pushMsg && <p className="text-xs text-slate-500 mt-2 text-center">{pushMsg}</p>}
-              </div>
-            </motion.div>
-          </motion.div>
+      <Folha aberta={aberto} aoFechar={fechar} titulo="Notificações">
+        {mostradas.length === 0 ? (
+          <Vazio icone="✅" titulo="Nada por aqui ainda.">Quando o clube avisar algo, aparece aqui.</Vazio>
+        ) : (
+          <ul className="-mx-5 -mt-5 divide-y divide-line" data-testid="lista-notificacoes">
+            {mostradas.map((n) => (
+              <li key={n.id}>
+                <button type="button" onClick={() => abrirItem(n)}
+                  className={`w-full flex gap-3 px-5 py-3 min-h-[44px] text-left hover:bg-surface2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${naoLidaNoPainel(n) ? 'bg-brand/5' : ''}`}>
+                  <span className="text-xl shrink-0" aria-hidden="true">{iconePorTipo[n.tipo] || '🔔'}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-ink text-sm">
+                      {naoLidaNoPainel(n) && <span className="sr-only">Não lida: </span>}{n.titulo}
+                    </span>
+                    {n.corpo && <span className="block text-xs text-muted line-clamp-2">{n.corpo}</span>}
+                    <span className="block text-xs text-faint mt-0.5">{tempoRel(n.created_at)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-      </AnimatePresence>
+
+        {/* Ativar push neste aparelho (Web Push no navegador; FCM no APK) */}
+        <div className="mt-4 pt-4 border-t border-line" data-testid="bloco-push">
+          {!suportaPush ? (
+            <p className="text-xs text-faint text-center">Avisos no celular não disponíveis neste aparelho.</p>
+          ) : pushOn ? (
+            <p className="text-xs text-emerald-700 text-center font-semibold" role="status">📲 Avisos no celular ativados ✓</p>
+          ) : (
+            <Botao variacao="secundario" className="w-full" aoTocar={alternarPush} data-testid="ativar-push">
+              📲 Ativar avisos no celular
+            </Botao>
+          )}
+          {pushMsg && (
+            <div className="mt-3">
+              <Aviso tom={pushMsg.tom}>{pushMsg.texto}</Aviso>
+            </div>
+          )}
+        </div>
+      </Folha>
     </>
   )
 }
