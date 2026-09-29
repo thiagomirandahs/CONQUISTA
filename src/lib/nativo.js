@@ -27,6 +27,16 @@ export async function vibrar(intensidade = 'leve') {
 
 // Chamado uma vez no arranque (main.jsx). Ajusta barra de status, botão voltar
 // do Android e esconde o splash quando o app já pintou.
+// Ponte com o MainActivity (Android): manda a cor de fundo do tema e se o tema é claro.
+export function pintarBarrasDoSistema() {
+  try {
+    const html = document.documentElement
+    const cor = getComputedStyle(html).getPropertyValue('--c-bg').trim() || '#eef2fb'
+    const claro = html.getAttribute('data-theme') !== 'dark'
+    globalThis.DesbravaBarras?.pintar?.(cor, claro)
+  } catch { /* fora do APK */ }
+}
+
 export async function iniciarNativo() {
   if (!ehNativo()) return
   // Marca o documento como "app nativo" pra o CSS tirar seleção de texto, realce
@@ -41,11 +51,12 @@ export async function iniciarNativo() {
       import('@capacitor/app'),
     ])
 
-    // Barra de status azul com ícones claros (combina com o app).
-    try {
-      await StatusBar.setStyle({ style: Style.Dark }) // Dark = ícones CLAROS sobre fundo escuro
-      await StatusBar.setBackgroundColor({ color: '#1e3a8a' })
-    } catch { /* alguns aparelhos/versões não deixam */ }
+    // Barras do sistema na COR DO TEMA (regra do dono, 29/09): o Android pinta a área da barra de
+    // status/navegação com o fundo da tela e escolhe ícones claros/escuros. Sem faixa preta nem azul.
+    pintarBarrasDoSistema()
+    try { new MutationObserver(pintarBarrasDoSistema).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-contraste', 'data-rede'] }) } catch { /* ok */ }
+    try { await StatusBar.setOverlaysWebView({ overlay: false }) } catch { /* ok */ }
+    void Style
 
     // Botão físico "voltar" do Android: volta na navegação; na tela inicial,
     // minimiza o app (não fecha de vez, comportamento esperado no Android).
