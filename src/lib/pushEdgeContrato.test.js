@@ -116,7 +116,7 @@ describe('Edge Function enviar-push: rota nativa (APK/FCM)', () => {
   it('a notificação carrega tag/collapse_key — duas iguais se substituem no aparelho', () => {
     expect(fonte).toMatch(/const tag = `cq-/)
     expect(fonte).toMatch(/collapse_key: tag/)
-    expect(fonte).toMatch(/notification: \{ tag,/)
+    expect(fonte).toMatch(/notification: \{ tag \}/) // sem click_action: o Capacitor abre a MainActivity ao tocar
   })
 
   it('nunca lê push_tokens sem filtro (o mesmo erro que o broadcast global foi)', () => {
