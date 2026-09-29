@@ -236,7 +236,7 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
         className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={caixa} tabIndex={-1} role="dialog" aria-modal="true" aria-label={titulo}
         className="folha-caixa relative w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        style={{ paddingBottom: 'var(--seguro-baixo)' }}>
         <div className="sticky top-0 bg-surface flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
           <h2 className="font-extrabold text-ink">{titulo}</h2>
           <button type="button" onClick={aoFechar} aria-label="Fechar"

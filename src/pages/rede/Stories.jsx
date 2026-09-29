@@ -165,7 +165,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
         <button type="button" aria-label="Story anterior" onClick={() => foiToque() && anterior()} className="absolute left-0 top-0 h-full w-1/3" />
         <button type="button" aria-label="Próximo story" onClick={() => foiToque() && proximo()} className="absolute right-0 top-0 h-full w-2/3" />
 
-        <div className="absolute inset-x-0 top-0 pt-[max(8px,env(safe-area-inset-top))] px-2 bg-gradient-to-b from-black/60 to-transparent pb-6">
+        <div className="absolute inset-x-0 top-0 pt-[max(8px,var(--seguro-topo))] px-2 bg-gradient-to-b from-black/60 to-transparent pb-6">
           <div className="flex gap-1" aria-hidden="true">
             {grupo.stories.map((s, i) => (
               <div key={s.id} className="h-[3px] flex-1 rounded-full bg-white/35 overflow-hidden">
@@ -189,7 +189,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
         </div>
 
         {story.texto && (
-          <p className="pointer-events-none absolute inset-x-4 bottom-[max(28px,env(safe-area-inset-bottom))] text-center text-[17px] font-semibold leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,.8)] break-words">
+          <p className="pointer-events-none absolute inset-x-4 bottom-[max(28px,var(--seguro-baixo))] text-center text-[17px] font-semibold leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,.8)] break-words">
             {story.texto}
           </p>
         )}
@@ -233,7 +233,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Novo story" className="fixed inset-0 z-[70] bg-black text-white flex flex-col">
-      <div className="flex items-center justify-between px-2 pt-[max(8px,env(safe-area-inset-top))]">
+      <div className="flex items-center justify-between px-2 pt-[max(8px,var(--seguro-topo))]">
         <button type="button" onClick={aoFechar} aria-label="Voltar" className="w-11 h-11 grid place-items-center"><Icone nome="voltar" /></button>
         <p className="font-semibold">Novo story</p>
         <span className="w-11" />
@@ -242,7 +242,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
         {previa ? <img src={previa} alt="Prévia do story" className="absolute inset-0 w-full h-full object-contain" />
           : !erro && <p className="absolute inset-0 grid place-items-center text-sm text-white/70">Otimizando a foto…</p>}
       </div>
-      <div className="mx-auto w-full max-w-[480px] px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 space-y-2">
+      <div className="mx-auto w-full max-w-[480px] px-3 pb-[max(12px,var(--seguro-baixo))] pt-2 space-y-2">
         {foto && <p className="text-[11px] text-white/70" data-testid="tamanho-story">Foto otimizada: {tamanhoLegivel(foto.antes)} → {tamanhoLegivel(foto.depois)} · localização removida</p>}
         <label htmlFor="story-texto" className="sr-only">Texto do story (opcional)</label>
         <input id="story-texto" value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 120))} maxLength={120}

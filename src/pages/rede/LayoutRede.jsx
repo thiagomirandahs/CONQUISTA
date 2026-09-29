@@ -57,7 +57,7 @@ function useSairDaRede() {
 function Topo() {
   const { coordenacao, sair } = useSairDaRede()
   return (
-    <header className="bg-white/95 backdrop-blur sticky top-0 z-30 border-b border-[#eef1f5]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className="bg-white/95 backdrop-blur sticky top-0 z-30 border-b border-[#eef1f5]" style={{ paddingTop: 'var(--seguro-topo)' }}>
       <div className="max-w-xl mx-auto flex items-center justify-between gap-2 px-3 h-14">
         <Link to="/rede" className="flex items-center gap-2 no-underline min-h-[44px]" aria-label="Rede DBV — início">
           <img src={MARCA_PRODUTO.logoUrl} alt="" className="w-8 h-8 rounded-lg" />
@@ -84,7 +84,7 @@ function BarraInferior({ eu }) {
     `w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[#3b5bff] bg-[#eef2ff]' : 'text-[#0f172a]'}`
   return (
     <nav aria-label="Navegação da Rede DBV" className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[#eef1f5]"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      style={{ paddingBottom: 'var(--seguro-baixo)' }}>
       <ul className="max-w-xl mx-auto grid grid-cols-5 h-[58px] items-center">
         <li className="flex justify-center"><NavLink to="/rede" end aria-label="Início" className={item}><Icone nome="casa" className="w-[26px] h-[26px]" /></NavLink></li>
         <li className="flex justify-center"><NavLink to="/rede/buscar" aria-label="Buscar" className={item}><Icone nome="busca" className="w-[26px] h-[26px]" /></NavLink></li>

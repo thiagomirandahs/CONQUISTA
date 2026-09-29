@@ -28,6 +28,9 @@
       "updateUrl": "",
       "statsUrl": "",
       "channelUrl": ""
+    },
+    "SystemBars": {
+      "insetsHandling": "css"
     }
   },
   "server": {

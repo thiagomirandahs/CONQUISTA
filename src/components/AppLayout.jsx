@@ -118,7 +118,7 @@ export default function AppLayout() {
       {/* ===== Coluna de conteúdo ===== */}
       <div className="flex-1 lg:pl-64 flex flex-col min-h-full">
         <header className="lg:hidden sticky top-0 z-20 glass border-b border-line"
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          style={{ paddingTop: 'var(--seguro-topo)' }}>
           <div className="px-4 py-2.5 flex items-center gap-3">
             <Logo className="w-10 h-10 rounded-xl shadow-soft" />
             <div className="leading-tight flex-1 min-w-0">
@@ -155,7 +155,7 @@ export default function AppLayout() {
 
       {/* ===== Destinos (celular) — no máximo 5, conforme o papel ===== */}
       <nav className="lg:hidden fixed z-30 left-3 right-3" aria-label="Destinos"
-        style={{ bottom: 'calc(10px + env(safe-area-inset-bottom))' }}>
+        style={{ bottom: 'calc(10px + var(--seguro-baixo))' }}>
         <div className="glass rounded-[24px] shadow-soft grid max-w-lg mx-auto px-1.5 py-1.5"
           style={{ gridTemplateColumns: `repeat(${destinos.length}, minmax(0, 1fr))` }}>
           {destinos.map((d) => (

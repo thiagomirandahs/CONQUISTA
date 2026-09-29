@@ -5,6 +5,8 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarNotificacoes, marcarNotificacoesVistas } from '../lib/dados.js'
 import { pushSuportado, pushAtivo, ativarPush } from '../lib/push.js'
+import { ehNativo } from '../lib/nativo.js'
+import { estadoPushNativo, ativarPushNativo, MSG_NEGADO } from '../lib/pushNativo.js'
 
 const iconePorTipo = { pontos: '🏆', atividade: '📋', missao: '🎯', cadastro: '👤', foto: '📸', aniversario: '🎂', geral: '📣' }
 
@@ -29,7 +31,9 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   const [baseline, setBaseline] = useState(null) // congela as não-lidas no momento de abrir
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState('')
-  const suportaPush = pushSuportado()
+  // No APK o push é o NATIVO (FCM), não o Web Push do navegador.
+  const nativo = ehNativo()
+  const suportaPush = nativo || pushSuportado()
 
   // notif_visto_em ainda é UM só por pessoa (profiles): ler o sino num clube zera as não-lidas do
   // outro. Guardar "visto em" por clube é mudança de banco; aqui só se garante a lista certa.
@@ -39,7 +43,10 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
     carregarNotificacoes().then(setLista)
   }, [profile?.id, profile?.notif_visto_em, clubeId])
 
-  useEffect(() => { pushAtivo().then(setPushOn) }, [])
+  useEffect(() => {
+    if (nativo) estadoPushNativo().then((e) => { setPushOn(e === 'ativo'); if (e === 'negado') setPushMsg(MSG_NEGADO) })
+    else pushAtivo().then(setPushOn)
+  }, [nativo, aberto])
 
   // Atualiza a contagem ao voltar pro app (antes só no login/refresh)
   useEffect(() => {
@@ -56,6 +63,12 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
 
   async function alternarPush() {
     setPushMsg('')
+    if (nativo) {
+      const r = await ativarPushNativo(profile?.id)
+      if (r.ok) { setPushOn(true); setPushMsg('✅ Pronto! Este celular vai receber os avisos.') }
+      else setPushMsg(r.motivo === 'negado' || r.motivo === 'desligado' ? MSG_NEGADO : 'Não consegui ativar: ' + (r.detalhe || r.motivo))
+      return
+    }
     try {
       await ativarPush(profile?.id)
       setPushOn(true)

@@ -237,3 +237,11 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
 :root[data-theme="dark"] [data-rede] textarea,
 :root[data-theme="dark"] [data-rede] select { color: #e5e7eb; }
 :root[data-theme="dark"] [data-rede] ::placeholder { color: #7c8aa0; }
+
+/* Áreas seguras (barra de status / navegação do celular). No APK (Capacitor 8, SystemBars
+   insetsHandling "css") o valor certo vem em --safe-area-inset-*; no Chromium antigo o env() dá 0 e o
+   topo do app cobria hora e bateria (achado do dono, 29/09). Usa o MAIOR dos dois; no navegador = env(). */
+:root {
+  --seguro-topo: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --seguro-baixo: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}

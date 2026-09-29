@@ -63,7 +63,7 @@ function Toasts({ itens, aoFechar }) {
   if (typeof document === 'undefined') return null
   return createPortal(
     <div className="fixed z-[60] left-3 right-3 flex flex-col items-center gap-2 pointer-events-none"
-      style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
+      style={{ bottom: 'calc(84px + var(--seguro-baixo))' }}>
       {itens.map((t) => {
         const conf = TOM_TOAST[t.tom] || TOM_TOAST.info
         return (

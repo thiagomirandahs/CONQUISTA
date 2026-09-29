@@ -32,4 +32,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: sem isto o pedido de permissão de notificação é negado na hora (push nativo nunca registrava) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

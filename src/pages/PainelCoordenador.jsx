@@ -206,7 +206,7 @@ export default function PainelCoordenador() {
 
       <a href={linkAjudaWhatsApp(escopo?.nome)} target="_blank" rel="noopener noreferrer" data-testid="preciso-de-ajuda"
         className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 min-h-[56px] px-5 rounded-full bg-[#25D366] text-[#07122f] text-base font-extrabold shadow-lg"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+        style={{ marginBottom: 'var(--seguro-baixo)' }}>
         💬 Preciso de ajuda
       </a>
     </div>
