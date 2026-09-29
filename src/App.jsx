@@ -101,6 +101,7 @@ const MinhasEspecialidades = lazy(() => import('./pages/MinhasEspecialidades.jsx
 const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.jsx'))
 const Ajuda = lazy(() => import('./pages/Ajuda.jsx'))
 const SiteAjuda = lazy(() => import('./pages/site/SiteAjuda.jsx'))
+const Conheca = lazy(() => import('./pages/site/Conheca.jsx'))
 
 // Sessão/clube ainda resolvendo: a mesma abertura do index.html (produto, nunca o clube).
 function Carregando() {
@@ -227,6 +228,7 @@ function RotasDoSite() {
       <Route path="/clubes/:slug" element={<SiteCartaoClube />} />
       <Route path="/parceiros" element={<SiteParceiros />} />
       <Route path="/ajuda" element={<SiteAjuda />} />
+      <Route path="/conheca" element={<Conheca />} />
     </Routes>
   )
 }
@@ -297,6 +299,8 @@ export default function App() {
             a vitrine que a landing usa. "Quero este plano" manda pra /criar-clube?plano=..., que já
             exige sessão e devolve pra cá sozinho via retornoPosLogin se a pessoa ainda não tem conta. */}
         <Route path="/adquirir" element={<Adquirir />} />
+        {/* Apresentação pública do produto em 8 etapas (Fase 6, item 7): sem sessão, como /adquirir */}
+        <Route path="/conheca" element={<Conheca />} />
         {/* Recuperacao de senha: as duas pernas sao PUBLICAS. /nova-senha recebe quem volta pelo
             link do e-mail, e nesse momento a sessao de recuperacao ainda esta sendo montada pelo
             supabase-js — passar por SessaoObrigatoria jogaria a pessoa de volta pro login. */}

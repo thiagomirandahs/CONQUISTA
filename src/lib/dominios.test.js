@@ -33,7 +33,7 @@ describe('urlDoApp / urlDoSite', () => {
 
 describe('rotaDoSite', () => {
   it.each([['/', true], ['/planos', true], ['/adquirir', true], ['/verificar/abc123', true],
-    ['/clubes', true], ['/clubes/filhos-da-conquista', true], ['/parceiros', true],
+    ['/clubes', true], ['/clubes/filhos-da-conquista', true], ['/parceiros', true], ['/ajuda', true], ['/conheca', true], ['/conheca/', true],
     ['/login', false], ['/criar-clube', false], ['/admin', false], ['/inicio', false], ['/verificar', false], ['/clubes/a/b', false]])(
     '%s → %s', (c, v) => expect(rotaDoSite(c)).toBe(v))
 })

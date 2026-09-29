@@ -28,6 +28,7 @@ const NAV = [
 ]
 // páginas públicas da vitrine (só no site): clubes que usam o DesbravaClube e parceiros
 const PAGINAS = [
+  { to: '/conheca', rotulo: 'Conheça' },
   { to: '/clubes', rotulo: 'Clubes' },
   { to: '/parceiros', rotulo: 'Parceiros' },
   { to: '/ajuda', rotulo: 'Como usar' },
@@ -308,7 +309,7 @@ function ComoFunciona() {
         ))}
       </ol>
       <div className="mt-10 text-center">
-        <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Começar agora <Icone nome="seta" className="w-5 h-5" /></Link>
+        <Link to="/conheca" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Conheça o DesbravaClube em 8 etapas <Icone nome="seta" className="w-5 h-5" /></Link>
       </div>
     </Secao>
   )
