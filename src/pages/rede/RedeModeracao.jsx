@@ -4,7 +4,7 @@ import {
   membrosAutorizacaoImagem, marcarAutorizacaoImagem,
 } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { Carregando, mensagemDeErro } from '../../ui/index.jsx'
+import { Aviso, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 import { CARD, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede } from './componentes.jsx'
 
 // =============================================================================
@@ -106,10 +106,14 @@ function AutorizacoesDeImagem() {
   if (!membros) return <Carregando linhas={3} />
   return (
     <div className="space-y-3">
-      <p className={`${CARD} p-4 text-sm ${TXT_SUAVE}`}>
-        Marque só quando o termo de uso de imagem ASSINADO estiver arquivado no clube. Sem ele, o perfil mostra as iniciais,
-        nunca a foto de rosto. O responsável pode desligar a qualquer momento pelo app.
-      </p>
+      <Aviso tom="info" titulo="A lista começa toda DESLIGADA">
+        <p>
+          Na Rede DBV ninguém aparece com a foto de rosto até você marcar aqui. A foto só aparece depois que a diretoria
+          arquiva no clube o termo de uso de imagem ASSINADO no papel e liga o interruptor da pessoa. Sem isso, todos veem as
+          iniciais (ou o personagem que a pessoa montou no app, que é um desenho sem rosto).
+        </p>
+        <p className="mt-2">O responsável pode desligar a qualquer momento pelo app (Meus filhos), e o "não" dele vale na hora.</p>
+      </Aviso>
       {membros.length === 0 ? <VazioRede icone="👥" titulo="Nenhum membro ativo" /> : (
         <ul className={`${CARD} divide-y divide-[#f0f1f7]`}>
           {membros.map((m) => (

@@ -63,10 +63,32 @@ describe('Rede DBV — perfil', () => {
   })
 
   it('com autorização de imagem a foto aparece', async () => {
-    f.carregarPerfil.mockResolvedValue({ ...PERFIL, foto: 'http://x/storage/v1/object/public/imagens/perfis/a-1.webp', imagem_autorizada: true })
+    // para OUTRA pessoa o servidor não manda imagem_autorizada (500) — a foto vir já diz tudo
+    f.carregarPerfil.mockResolvedValue({ ...PERFIL, foto: 'http://x/storage/v1/object/public/imagens/perfis/a-1.webp', imagem_autorizada: null })
     const { container } = renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })
     await screen.findByRole('heading', { name: 'Ana Souza' })
     expect(container.querySelector('img[src*="perfis/a-1.webp"]')).not.toBeNull()
+    expect(screen.queryByTestId('aviso-foto-eu')).toBeNull()
+  })
+
+  it('personagem (500): o desenho aparece em vez das iniciais, sem <img> de rosto', async () => {
+    f.carregarPerfil.mockResolvedValue({ ...PERFIL, avatar_tipo: 'personagem', avatar: { cabelo: 'curto', roupa: 'lisa', pele: '#f1c27d' } })
+    const { container } = renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })
+    await screen.findByRole('heading', { name: 'Ana Souza' })
+    expect(screen.getByTestId('avatar-personagem').querySelector('svg')).not.toBeNull()
+    expect(screen.queryByTestId('avatar-iniciais')).toBeNull()
+    expect(container.querySelector('section img')).toBeNull()
+  })
+
+  it('meu perfil sem autorização de imagem: aviso de uma linha explica; com personagem o aviso não aparece', async () => {
+    f.carregarPerfil.mockResolvedValue({ ...PERFIL, eu: true, imagem_autorizada: false })
+    const r = renderRede(<RedePerfil />, { rota: '/rede/perfil', caminho: '/rede/perfil' })
+    expect(await screen.findByTestId('aviso-foto-eu')).toHaveTextContent(/diretoria do seu clube arquivar a autorização de uso de imagem/)
+    r.unmount()
+    f.carregarPerfil.mockResolvedValue({ ...PERFIL, eu: true, imagem_autorizada: false, avatar_tipo: 'personagem', avatar: { cabelo: 'curto' } })
+    renderRede(<RedePerfil />, { rota: '/rede/perfil', caminho: '/rede/perfil' })
+    await screen.findByRole('heading', { name: 'Ana Souza' })
+    expect(screen.queryByTestId('aviso-foto-eu')).toBeNull()
   })
 })
 

@@ -5,7 +5,7 @@ import {
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { AnelStory, AvatarRede, Denuncia, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
+import { AnelStory, AvatarRede, Denuncia, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 
 // =============================================================================
 //  STORIES da Rede DBV (migration 480): fileira de bolinhas (rolagem horizontal SÓ dentro dela),
@@ -31,7 +31,8 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
             <button type="button" onClick={() => (meu ? aoAbrir(grupos.indexOf(meu)) : aoNovo())}
               aria-label={meu ? 'Ver o seu story' : 'Criar o seu story'} className="rounded-full">
               <AnelStory estado={meu ? 'novo' : 'nenhum'}>
-                <AvatarRede nome={eu?.nome} foto={eu?.foto} tamanho={meu ? 'w-[60px] h-[60px]' : 'w-[66px] h-[66px]'} texto="text-base" />
+                {/* `eu` vem de rede_perfil() (gateado), nunca do profile do Auth: a mesma cara que os outros veem */}
+                <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho={meu ? 'w-[60px] h-[60px]' : 'w-[66px] h-[66px]'} texto="text-base" />
               </AnelStory>
             </button>
             {podePublicar && (
@@ -49,7 +50,7 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
           <button type="button" onClick={() => aoAbrir(grupos.indexOf(g))} className="rounded-full"
             aria-label={`Story de ${g.autor?.nome}${g.todos_vistos ? ' (visto)' : ''}`} data-visto={g.todos_vistos ? 'sim' : 'nao'}>
             <AnelStory estado={g.todos_vistos ? 'visto' : 'novo'}>
-              <AvatarRede nome={g.autor?.nome} foto={g.autor?.foto} tamanho="w-[60px] h-[60px]" texto="text-base" />
+              <AvatarRede nome={g.autor?.nome} foto={g.autor?.foto} avatarPersonagem={avatarPersonagemDe(g.autor)} tamanho="w-[60px] h-[60px]" texto="text-base" />
             </AnelStory>
           </button>
           <span className={`text-[11px] ${TXT} truncate max-w-full`}>{primeiroNome(g.autor?.nome)}</span>
@@ -175,7 +176,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
             ))}
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <AvatarRede nome={grupo.autor?.nome} foto={grupo.autor?.foto} tamanho="w-8 h-8" texto="text-[10px]" />
+            <AvatarRede nome={grupo.autor?.nome} foto={grupo.autor?.foto} avatarPersonagem={avatarPersonagemDe(grupo.autor)} tamanho="w-8 h-8" texto="text-[10px]" />
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold truncate">{grupo.autor?.nome}{grupo.autor?.coordenacao && <SeloCoordenacao />} <span className="font-normal text-white/75">· {tempoRelativo(story.criado_em)}</span></p>
               <p className="text-[11px] text-white/75 truncate">{grupo.autor?.clube}</p>

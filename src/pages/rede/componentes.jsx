@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useImagem } from '../../lib/imagens.js'
+import AvatarPersonagem from '../../components/AvatarPersonagem.jsx'
 import {
   curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, urlDaFoto, tempoRelativo,
   MOTIVOS_DENUNCIA, CATEGORIAS_CONQUISTA, iniciais,
@@ -72,18 +73,34 @@ export function Icone({ nome, cheio = false, className = 'w-6 h-6', titulo, trac
   )
 }
 
-// ---------------------------------------------------------------- avatar (foto só com autorização)
-// O servidor só manda `foto` quando a autorização de uso de imagem está arquivada e o responsável não
-// desligou. Sem ela: iniciais num círculo claro.
-export function AvatarRede({ nome, foto, tamanho = 'w-9 h-9', texto = 'text-xs' }) {
-  const src = useImagem(foto || null)
+// ---------------------------------------------------------------- avatar (personagem > foto autorizada > iniciais)
+// Espelha o Avatar.jsx do app do clube (migration 500): 1) o PERSONAGEM (desenho de peças, sem rosto) que a
+// pessoa montou — o servidor só manda `avatar` quando avatar_tipo = 'personagem'; 2) a FOTO, que o servidor
+// só manda com a autorização de uso de imagem arquivada e o responsável sem desligar (vira URL assinada do
+// bucket privado); 3) iniciais num círculo claro. Enquanto a assinatura resolve: esqueleto circular.
+// Nunca uma <img> quebrada: erro de carga cai nas iniciais.
+// Mesmo `avatar` escolhido pela pessoa do que vem em `autor.avatar` (só quando avatar_tipo === 'personagem').
+export const avatarPersonagemDe = (pessoa) => (pessoa?.avatar_tipo === 'personagem' ? pessoa.avatar : undefined)
+
+export function AvatarRede({ nome, foto, avatarPersonagem, tamanho = 'w-9 h-9', texto = 'text-xs' }) {
+  const src = useImagem(avatarPersonagem ? null : foto || null)
   const [erro, setErro] = useState(false)
-  if (foto && src && !erro) {
+  if (avatarPersonagem) {
+    return (
+      <span data-testid="avatar-personagem" className="shrink-0 inline-block [&>div]:shadow-none [&>div]:ring-0">
+        <AvatarPersonagem avatar={avatarPersonagem} size={tamanho} />
+      </span>
+    )
+  }
+  if (foto && !erro) {
+    if (!src) {
+      return <span data-testid="avatar-esqueleto" aria-hidden="true" className={`${tamanho} shrink-0 rounded-full bg-[#f1f5f9] animate-pulse`} />
+    }
     return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setErro(true)}
       className={`${tamanho} shrink-0 rounded-full object-cover bg-[#f1f5f9]`} />
   }
   return (
-    <span aria-hidden="true" className={`${tamanho} ${texto} shrink-0 rounded-full grid place-items-center font-bold text-[#3b5bff] bg-[#eef2ff]`}>
+    <span aria-hidden="true" data-testid="avatar-iniciais" className={`${tamanho} ${texto} shrink-0 rounded-full grid place-items-center font-bold text-[#3b5bff] bg-[#eef2ff]`}>
       {iniciais(nome)}
     </span>
   )
@@ -229,7 +246,7 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
           <ul className="space-y-4 mb-4">
             {itens.map((c) => (
               <li key={c.id} className="flex gap-3">
-                <AvatarRede nome={c.autor?.nome} foto={c.autor?.foto} tamanho="w-8 h-8" texto="text-[10px]" />
+                <AvatarRede nome={c.autor?.nome} foto={c.autor?.foto} avatarPersonagem={avatarPersonagemDe(c.autor)} tamanho="w-8 h-8" texto="text-[10px]" />
                 <div className="min-w-0 flex-1">
                   <p className={`text-[13px] ${TXT} break-words`}><span className="font-semibold mr-1.5">{c.autor?.nome}{c.autor?.coordenacao && <SeloCoordenacao />}</span>{c.texto}</p>
                   <p className={`text-xs ${TXT_SUAVE}`}>{c.autor?.clube}
@@ -284,7 +301,7 @@ export function SeloCoordenacao() {
 function Cabeca({ autor, criadoEm, pequeno = false }) {
   const miolo = (
     <>
-      <AvatarRede nome={autor?.nome} foto={autor?.foto} tamanho={pequeno ? 'w-7 h-7' : 'w-9 h-9'} />
+      <AvatarRede nome={autor?.nome} foto={autor?.foto} avatarPersonagem={avatarPersonagemDe(autor)} tamanho={pequeno ? 'w-7 h-7' : 'w-9 h-9'} />
       <span className="min-w-0 block">
         <span className={`font-semibold ${TXT} truncate block text-[14px] leading-tight`}>{autor?.nome}{autor?.coordenacao && <SeloCoordenacao />}</span>
         <span className={`text-xs ${TXT_SUAVE} truncate block`}>{autor?.clube}{criadoEm ? ` · ${tempoRelativo(criadoEm)}` : ''}</span>

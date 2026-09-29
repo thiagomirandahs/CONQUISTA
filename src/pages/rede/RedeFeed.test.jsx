@@ -147,6 +147,59 @@ describe('Rede DBV — feed', () => {
   })
 })
 
+// Avatar na rede (migration 500): personagem (desenho) > foto autorizada > iniciais; nunca <img> quebrada.
+describe('Rede DBV — avatar do autor', () => {
+  const PERSONAGEM = { pele: '#f1c27d', cabelo: 'curto', corCabelo: '#2b1d0e', roupa: 'lisa', corRoupa: '#1e3a8a', acessorio: 'nenhum', corAcessorio: '#1e3a8a' }
+
+  it('quem escolheu o personagem aparece com o DESENHO, sem <img> de rosto', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [post({ autor: { id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias', foto: null, avatar_tipo: 'personagem', avatar: PERSONAGEM } })], proximo: null })
+    renderRede(<RedeFeed />)
+    const card = await screen.findByTestId('post')
+    expect(within(card).getByTestId('avatar-personagem').querySelector('svg')).not.toBeNull()
+    expect(within(card).queryByRole('img')).toBeNull()
+    expect(within(card).queryByTestId('avatar-iniciais')).toBeNull()
+  })
+
+  it('foto do servidor (só vem com a autorização de imagem): renderiza a <img>', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [post({ autor: { id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias', foto: 'http://x/storage/v1/object/public/imagens/perfis/u-ana-1.jpg' } })], proximo: null })
+    const { container } = renderRede(<RedeFeed />)
+    await screen.findByTestId('post')
+    expect(container.querySelector('header img[src*="perfis/u-ana-1.jpg"]')).not.toBeNull()
+    expect(screen.queryByTestId('avatar-personagem')).toBeNull()
+  })
+
+  it('sem personagem e sem foto: iniciais', async () => {
+    renderRede(<RedeFeed />)
+    const card = await screen.findByTestId('post')
+    expect(within(card).getByTestId('avatar-iniciais')).toHaveTextContent('AS')
+    expect(within(card).queryByRole('img')).toBeNull()
+  })
+
+  it('a foto falhou ao carregar: cai nas iniciais, nunca fica uma <img> quebrada', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [post({ autor: { id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias', foto: 'http://x/storage/v1/object/public/imagens/perfis/u-ana-1.jpg' } })], proximo: null })
+    const { container } = renderRede(<RedeFeed />)
+    const card = await screen.findByTestId('post')
+    const img = container.querySelector('header img[src*="perfis/u-ana-1.jpg"]')
+    fireEvent.error(img)
+    expect(container.querySelector('header img')).toBeNull()
+    expect(within(card).getByTestId('avatar-iniciais')).toHaveTextContent('AS')
+  })
+
+  it('"Seu story" usa o MEU perfil gateado (contexto), nunca a foto do profile do Auth', async () => {
+    // o profile mockado do Auth não tem foto; o contexto (rede_perfil) diz personagem → personagem
+    renderRede(<RedeFeed />, { eu: { id: 'eu', nome: 'Eu Mesmo', foto: null, avatar_tipo: 'personagem', avatar: PERSONAGEM } })
+    const fileira = await screen.findByTestId('fileira-stories')
+    expect(within(fileira).getByTestId('avatar-personagem')).toBeInTheDocument()
+  })
+
+  it('"Seu story" sem foto autorizada: iniciais (mesmo que o Auth tivesse foto)', async () => {
+    renderRede(<RedeFeed />, { eu: { id: 'eu', nome: 'Eu Mesmo', foto: null } })
+    const fileira = await screen.findByTestId('fileira-stories')
+    expect(within(fileira).getByTestId('avatar-iniciais')).toHaveTextContent('EM')
+    expect(within(fileira).queryByRole('img')).toBeNull()
+  })
+})
+
 describe('Rede DBV — fileira de stories', () => {
   const grupos = [
     { meu: true, todos_vistos: true, autor: { id: 'eu', nome: 'Eu Mesmo', clube: 'Clube A' }, stories: [{ id: 's0', foto: 'a/eu/0.webp', criado_em: new Date().toISOString(), visto: false }] },

@@ -118,6 +118,15 @@ describe('Rede DBV — viewer de story', () => {
     expect(texto()).toBe('Segundo')
   })
 
+  it('autor com personagem (500): o viewer mostra o desenho no cabeçalho, sem <img> de rosto', async () => {
+    const grupos = [{ ...GRUPOS[0], autor: { ...GRUPOS[0].autor, avatar_tipo: 'personagem', avatar: { cabelo: 'curto', roupa: 'lisa' } } }]
+    render(<ViewerStories grupos={grupos} inicio={0} aoFechar={vi.fn()} />)
+    await flush()
+    const v = screen.getByTestId('viewer-story')
+    expect(within(v).getByTestId('avatar-personagem').querySelector('svg')).not.toBeNull()
+    expect(v.querySelector('.w-8.h-8 img, img.w-8')).toBeNull()
+  })
+
   it('meu story: sem denunciar, com apagar', async () => {
     const meus = [{ ...GRUPOS[0], meu: true }]
     render(<ViewerStories grupos={meus} inicio={0} aoFechar={vi.fn()} />)
@@ -197,6 +206,22 @@ describe('Rede DBV — buscar', () => {
     await u.click(await screen.findByRole('button', { name: /Clube Águias/ }))
     expect(await screen.findByRole('link', { name: /Bia Lima/ })).toHaveAttribute('href', '/rede/perfil/u-bia')
     expect(f.buscarNaRede).toHaveBeenLastCalledWith(null, 'c1')
+  })
+
+  it('pessoa com personagem (500): o desenho aparece no resultado; com foto autorizada, a <img>; senão, iniciais', async () => {
+    const u = userEvent.setup()
+    const PERSONAGEM = { pele: '#f1c27d', cabelo: 'curto', corCabelo: '#2b1d0e', roupa: 'lisa', corRoupa: '#1e3a8a' }
+    f.buscarNaRede.mockResolvedValue({ clubes: [], pessoas: [
+      { id: 'u-caio', nome: 'Caio Pereira', clube: 'Clube Águias', foto: null, avatar_tipo: 'personagem', avatar: PERSONAGEM },
+      { id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias', foto: 'http://x/storage/v1/object/public/imagens/perfis/u-ana-1.jpg' },
+      { id: 'u-bia', nome: 'Bia Lima', clube: 'Clube Leões', foto: null },
+    ] })
+    const { container } = renderRede(<RedeBuscar />)
+    await u.type(screen.getByLabelText('Buscar clubes e pessoas'), 'clube')
+    const caio = await screen.findByRole('link', { name: /Caio Pereira/ })
+    expect(within(caio).getByTestId('avatar-personagem').querySelector('svg')).not.toBeNull()
+    expect(container.querySelector('img[src*="perfis/u-ana-1.jpg"]')).not.toBeNull()
+    expect(within(screen.getByRole('link', { name: /Bia Lima/ })).getByTestId('avatar-iniciais')).toHaveTextContent('BL')
   })
 
   it('nada encontrado', async () => {

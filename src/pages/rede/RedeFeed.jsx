@@ -15,7 +15,8 @@ const abasDoFeed = (coordenacao) => [['todos', 'Todos'], ['meu_clube', coordenac
 export default function RedeFeed() {
   const { profile } = useAuth()
   const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
-  const { status } = useRede()
+  // `eu` = o meu perfil GATEADO pela rede (500): personagem ou foto só com autorização; nunca profile.foto
+  const { status, eu } = useRede()
   const [filtro, setFiltro] = useState('todos')
   const [itens, setItens] = useState([])
   const [proximo, setProximo] = useState(null)
@@ -71,7 +72,7 @@ export default function RedeFeed() {
         </div>
       )}
 
-      <FileiraStories grupos={grupos} eu={profile} podePublicar={!!status?.pode_publicar}
+      <FileiraStories grupos={grupos} eu={eu || { id: profile?.id, nome: profile?.nome }} podePublicar={!!status?.pode_publicar}
         aoAbrir={(i) => setAberto(i)} aoNovo={() => inputStory.current?.click()} />
       <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
       <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"

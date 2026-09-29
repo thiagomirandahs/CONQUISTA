@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/Auth.jsx'
-import { meuStatus } from '../../services/rede.js'
+import { meuStatus, carregarPerfil } from '../../services/rede.js'
 import { MARCA_PRODUTO } from '../../lib/marca.js'
 import Notificacoes from '../../components/Notificacoes.jsx'
 import { RedeContexto } from './contexto.js'
-import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
+import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 import { Carregando } from '../../ui/index.jsx'
 import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from '../../lib/redeModo.js'
 
@@ -94,7 +94,8 @@ function BarraInferior({ eu }) {
           <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[#eef2ff]' : ''}`}>
             {({ isActive }) => (
               <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[#3b5bff]' : 'bg-transparent'}`}>
-                <AvatarRede nome={eu?.nome} foto={eu?.foto} tamanho="w-7 h-7" texto="text-[10px]" />
+                {/* `eu` = rede_perfil() gateado (500): a mesma cara que os outros veem, nunca o profile do Auth */}
+                <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-7 h-7" texto="text-[10px]" />
               </span>
             )}
           </NavLink>
@@ -109,6 +110,7 @@ export default function LayoutRede() {
   const { profile } = useAuth()
   const { coordenacao, sair } = useSairDaRede()
   const [status, setStatus] = useState(null)
+  const [eu, setEu] = useState(null)
   const [erro, setErro] = useState(null)
 
   const recarregar = useCallback(async () => {
@@ -116,6 +118,18 @@ export default function LayoutRede() {
     try { setStatus(await meuStatus()) } catch (e) { setErro(e) }
   }, [])
   useEffect(() => { recarregar() }, [recarregar])
+
+  // O MEU perfil da rede, gateado pelo servidor (500): comunidade_meu_status não traz foto/avatar, então
+  // rede_perfil() é carregado UMA vez aqui e compartilhado (barra de baixo, "Seu story"). Enquanto não
+  // chega (ou se falhar), cai no nome do Auth SEM a foto — iniciais, nunca a foto sem o gate.
+  const podeVer = !!status?.pode_ver
+  useEffect(() => {
+    if (!podeVer) { setEu(null); return undefined }
+    let vivo = true
+    carregarPerfil(null).then((p) => { if (vivo) setEu(p) }).catch(() => {})
+    return () => { vivo = false }
+  }, [podeVer])
+  const euNaRede = eu || (profile ? { id: profile.id, nome: profile.nome } : null)
   useEffect(() => { window.scrollTo?.(0, 0) }, [pathname])
 
   let conteudo
@@ -143,11 +157,11 @@ export default function LayoutRede() {
   }
 
   return (
-    <RedeContexto.Provider value={{ status, recarregar }}>
+    <RedeContexto.Provider value={{ status, eu: euNaRede, recarregar }}>
       <div className="min-h-screen bg-white overflow-x-hidden" data-rede>
         <Topo />
         <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
-        <BarraInferior eu={profile} />
+        <BarraInferior eu={euNaRede} />
       </div>
     </RedeContexto.Provider>
   )

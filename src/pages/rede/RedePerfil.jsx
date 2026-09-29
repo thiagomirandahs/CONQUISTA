@@ -4,7 +4,7 @@ import { carregarPerfil, carregarPostsDoPerfil, urlDaFoto } from '../../services
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando, Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { AvatarRede, CartaoPost, Icone, ListaDePosts, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { AvatarRede, CartaoPost, Icone, ListaDePosts, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 
 // Perfil da Rede DBV no estilo Instagram (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa):
 // avatar grande à esquerda, contadores à direita, nome, clube; abas por ícone — Fotos (grade 3 colunas),
@@ -98,7 +98,7 @@ function Perfil({ id }) {
     <div>
       <section className="px-4 pt-4 pb-3" aria-label={`Perfil de ${perfil.nome}`}>
         <div className="flex items-center gap-5">
-          <AvatarRede nome={perfil.nome} foto={perfil.foto} tamanho="w-[84px] h-[84px]" texto="text-2xl" />
+          <AvatarRede nome={perfil.nome} foto={perfil.foto} avatarPersonagem={avatarPersonagemDe(perfil)} tamanho="w-[84px] h-[84px]" texto="text-2xl" />
           <dl className="flex-1 grid grid-cols-3 text-center">
             {[['Publicações', perfil.publicacoes], ['Conquistas', perfil.conquistas], ['Pontos da rede', perfil.pontos]].map(([r, v]) => (
               <div key={r} className="flex flex-col-reverse">
@@ -120,8 +120,9 @@ function Perfil({ id }) {
             </Link>
           )}
         </div>
-        {perfil.eu && !perfil.imagem_autorizada && (
-          <p className={`text-xs ${TXT_SUAVE} mt-2`}>Sua foto de rosto aparece na rede quando a diretoria arquivar a autorização de uso de imagem.</p>
+        {/* só o dono recebe imagem_autorizada (500); quem usa o personagem não precisa do aviso (o desenho já aparece) */}
+        {perfil.eu && !perfil.imagem_autorizada && perfil.avatar_tipo !== 'personagem' && (
+          <p className={`text-xs ${TXT_SUAVE} mt-2`} data-testid="aviso-foto-eu">Sua foto de rosto aparece na rede quando a diretoria do seu clube arquivar a autorização de uso de imagem (papel assinado). Até lá, todos veem as suas iniciais.</p>
         )}
       </section>
 

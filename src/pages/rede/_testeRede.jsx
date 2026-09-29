@@ -13,10 +13,11 @@ export const post = (extra = {}) => ({
   eu_curti: false, eu_salvei: false, repost: null, ...extra,
 })
 
-export function renderRede(elemento, { status = STATUS, rota = '/', caminho = '*' } = {}) {
+// `eu` = o meu perfil GATEADO (rede_perfil), como o LayoutRede compartilha (500); por padrão só o nome.
+export function renderRede(elemento, { status = STATUS, eu = { id: 'eu', nome: 'Eu Mesmo' }, rota = '/', caminho = '*' } = {}) {
   return render(
     <MemoryRouter initialEntries={[rota]}>
-      <RedeContexto.Provider value={{ status, recarregar: vi.fn() }}>
+      <RedeContexto.Provider value={{ status, eu, recarregar: vi.fn() }}>
         <Routes><Route path={caminho} element={elemento} /></Routes>
       </RedeContexto.Provider>
     </MemoryRouter>,

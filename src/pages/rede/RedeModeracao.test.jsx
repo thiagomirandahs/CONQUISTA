@@ -84,4 +84,15 @@ describe('Rede DBV — moderação', () => {
     expect(f.marcarAutorizacaoImagem).toHaveBeenCalledWith('m1', true)
     expect(chave).toHaveAttribute('aria-checked', 'true')
   })
+
+  it('aba Imagem: aviso claro de que a lista nasce toda DESLIGADA e a foto só aparece depois do papel arquivado', async () => {
+    const u = userEvent.setup()
+    f.membrosAutorizacaoImagem.mockResolvedValue([])
+    renderRede(<RedeModeracao />)
+    await u.click(await screen.findByRole('tab', { name: 'Imagem' }))
+    const aviso = await screen.findByRole('status')
+    expect(aviso).toHaveTextContent('A lista começa toda DESLIGADA')
+    expect(aviso).toHaveTextContent(/termo de uso de imagem ASSINADO no papel/)
+    expect(aviso).toHaveTextContent(/personagem/)
+  })
 })
