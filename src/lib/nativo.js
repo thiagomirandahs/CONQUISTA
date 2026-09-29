@@ -32,6 +32,8 @@ export async function iniciarNativo() {
   // Marca o documento como "app nativo" pra o CSS tirar seleção de texto, realce
   // de toque e o efeito de esticar a rolagem — deixa com cara de app, não de site.
   try { document.documentElement.classList.add('app-nativo') } catch { /* ok */ }
+  // Telas novas sem reinstalar (OTA auto-hospedado, android/OTA.md). Não segura o arranque.
+  import('./atualizacaoOta.js').then((m) => m.iniciarAtualizacaoOta()).catch(() => {})
   try {
     const [{ SplashScreen }, { StatusBar, Style }, { App }] = await Promise.all([
       import('@capacitor/splash-screen'),

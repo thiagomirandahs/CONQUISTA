@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import legacy from '@vitejs/plugin-legacy'
 import { cspComHashes } from './vite-plugin-csp.js'
+import { versaoOta } from './scripts/versaoOta.mjs'
 
 // CAP_BUILD=1 → build pro app nativo (Capacitor/Android): SEM service worker
 // (dentro da WebView o SW guardaria versão velha e daria tela em branco, o mesmo
@@ -66,6 +67,9 @@ function origensDaApi(command, mode) {
 // `mode` — e é exatamente essa distinção que decide se a falta do endpoint para o build ou apenas
 // deixa o app sem conexão. Com o objeto estático não havia como saber para onde o build ia.
 export default defineConfig(({ command, mode }) => ({
+  // Versão do pacote de telas: o módulo de atualização do APK (src/lib/atualizacaoOta.js) compara
+  // com a publicada em /ota/versao.json. Ver android/OTA.md.
+  define: { __OTA_VERSAO__: JSON.stringify(versaoOta()) },
   plugins: [
     react(),
     tailwindcss(),
@@ -80,6 +84,8 @@ export default defineConfig(({ command, mode }) => ({
         globIgnores: ['**/*-legacy*.js', '**/polyfills*.js'],
         // Carrega o handler de push (public/push-sw.js) dentro do service worker
         importScripts: ['/push-sw.js'],
+        // /ota/* (pacote de telas do APK) nunca passa pelo service worker
+        navigateFallbackDenylist: [/^\/ota\//],
         // Cache em tempo de execução: SÓ conteúdo público.
         //
         // SEGURANÇA (hardening 28/08): o cache genérico de /rest/v1/ foi

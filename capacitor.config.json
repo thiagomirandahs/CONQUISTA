@@ -18,10 +18,19 @@
       "style": "LIGHT",
       "backgroundColor": "#1e3a8a",
       "overlaysWebView": false
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "appReadyTimeout": 10000,
+      "resetWhenUpdate": true,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true,
+      "updateUrl": "",
+      "statsUrl": "",
+      "channelUrl": ""
     }
   },
   "server": {
-    "url": "https://app.desbravaclube.com.br",
     "androidScheme": "https",
     "cleartext": false
   }

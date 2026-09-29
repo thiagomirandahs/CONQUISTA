@@ -37,7 +37,9 @@
     "curriculo:conteudo-anual:autoteste": "node supabase/curriculo-manifesto/conteudo-anual.autoteste.mjs",
     "test:auth:e2e": "node supabase/tests/e2e/auth-confirmacao.mjs",
     "test:smoke": "node supabase/tests/smoke/smoke.mjs",
-    "test:ambiente": "node supabase/tests/e2e/build-por-ambiente.mjs"
+    "test:ambiente": "node supabase/tests/e2e/build-por-ambiente.mjs",
+    "build:ota": "node scripts/gerar-ota.mjs",
+    "build:vercel": "npm run build && npm run build:ota"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
@@ -47,6 +49,7 @@
     "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@capgo/capacitor-updater": "^8.51.25",
     "@supabase/supabase-js": "^2.108.2",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.42.0",
@@ -71,6 +74,7 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "fflate": "^0.8.3",
     "globals": "^17.11.0",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4.3.1",
@@ -78,5 +82,8 @@
     "vite": "^8.1.0",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.11"
+  },
+  "desbravaclube": {
+    "otaMinimoNativo": "1.3.0"
   }
 }
