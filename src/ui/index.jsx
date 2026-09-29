@@ -262,6 +262,10 @@ const TRADUCOES = [
   // Estreita de propósito: "pertence a outro clube" (unidade, autor, participante) é OUTRO erro.
   [/também (participa|está|faz parte)[^.]*outros? clubes?|vínculos?[^.]*em outros? clubes?|mais de um clube/i,
     'Essa pessoa também participa de outro clube, e isso vale para todos os clubes dela — por isso não dá para mudar por aqui.'],
+  // Recusas ESPERADAS que trazem instrução útil: a frase do servidor já é a resposta certa,
+  // só ganha um verbo mais humano (Fase 6: sem isto caíam no genérico e a pessoa não sabia o que fazer).
+  [/leilão aberto/i, 'Há um leilão aberto agora. Encerre ou cancele o leilão antes de desligar essa ferramenta.'],
+  [/Termine a etapa .* antes de ir para[^.]*.?/i, (m) => `Ainda falta uma etapa: ${m[0]}`],
   [/sem permiss|apenas a liderança|Sem vínculo|não tem permissão/i,
     'Isso é coisa da liderança do clube. Se você acha que deveria poder, fale com a diretoria.'],
   // Teto de membros (migration 220): o número do limite é o que a diretoria precisa saber.
