@@ -5,16 +5,18 @@
 // Campos de um tópico:
 //   id          âncora (/ajuda#id) — os botões "?" das telas apontam para cá
 //   papel       seção (chave de PAPEIS_DO_TUTORIAL)
+//   video       (opcional) { youtubeId, poster } — vídeo curto no youtube-nocookie, só toca no toque
 //   rota        tela real do app (atalho "Abrir essa tela" — só aparece se o papel abre essa rota)
 //   recurso     recurso do clube de que o tópico depende (desligado no clube = o tópico some no app)
 //   soNoApp     não aparece no site público (ex.: recurso que ainda está fora do piloto)
 //   palavras    sinônimos para a busca
 
 export const PAPEIS_DO_TUTORIAL = [
-  { chave: 'desbravador', titulo: 'Desbravador', icone: '🧒', resumo: 'Sua classe, missões, jogos, ranking e o cantinho da sua unidade.' },
-  { chave: 'responsavel', titulo: 'Responsável (pais)', icone: '👨‍👩‍👧', resumo: 'Acompanhar o seu filho e pedir o vínculo com ele.' },
-  { chave: 'conselheiro', titulo: 'Conselheiro', icone: '🧭', resumo: 'Chamada, pontos da reunião e o cantinho da unidade.' },
-  { chave: 'instrutor', titulo: 'Instrutor / Capelão', icone: '🎖️', resumo: 'Avaliar classes, investidura, documentos, desafios, missões e experiências.' },
+  { chave: 'primeiros-passos', titulo: 'Primeiros passos', icone: '🧭', resumo: 'Onde fica cada coisa no app e os tours de cada área.' },
+  { chave: 'desbravador', titulo: 'Desbravadores', icone: '🧒', resumo: 'Sua classe, missões, jogos, ranking e o cantinho da sua unidade.' },
+  { chave: 'responsavel', titulo: 'Responsáveis (pais)', icone: '👨‍👩‍👧', resumo: 'Acompanhar o seu filho e pedir o vínculo com ele.' },
+  { chave: 'conselheiro', titulo: 'Conselheiros', icone: '🧭', resumo: 'Chamada, pontos da reunião e o cantinho da unidade.' },
+  { chave: 'instrutor', titulo: 'Instrutores / Capelão', icone: '🎖️', resumo: 'Avaliar classes, investidura, documentos, desafios, missões e experiências.' },
   { chave: 'diretoria', titulo: 'Diretoria', icone: '🏕️', resumo: 'Criar e configurar o clube, receber inscrições, montar a equipe e cuidar do plano.' },
   { chave: 'coordenacao', titulo: 'Coordenação', icone: '🏛️', resumo: 'Portal do distrito/região e visitas aos clubes.' },
   { chave: 'geral', titulo: 'Para todos', icone: '🛟', resumo: 'Atualizar o app, internet, fotos e privacidade.' },
@@ -23,7 +25,7 @@ export const PAPEIS_DO_TUTORIAL = [
 export const TOPICOS = [
   // ============================================================ DESBRAVADOR
   {
-    id: 'navegacao', papel: 'desbravador', icone: '🧭', titulo: 'Onde fica cada coisa (Início, Jornada, Clube, Jogos, Eu)',
+    id: 'navegacao', papel: 'primeiros-passos', icone: '🧭', titulo: 'Onde fica cada coisa (Início, Jornada, Clube, Jogos, Eu)',
     paraQueServe: 'A barra de baixo leva você às partes do app. O que aparece depende do seu papel no clube.',
     rota: '/inicio',
     passos: [
@@ -473,6 +475,30 @@ export const TOPICOS = [
   },
 
   // ============================================================ PARA TODOS
+  {
+    id: 'rede-dbv', papel: 'geral', icone: '🌎', titulo: 'Rede DBV: feed, stories e publicar',
+    paraQueServe: 'A rede social dos clubes de Desbravadores: ver e publicar fotos e textos com outros clubes, com moderação.',
+    rota: '/rede', recurso: 'comunidade', soNoApp: true,
+    passos: [
+      'Abra a Rede DBV. No feed aparecem as publicações dos clubes da Rede; dá para filtrar “Todos” ou “Meu clube”.',
+      'As bolinhas no topo são os stories: cada um fica no ar por 24 horas.',
+      'Para publicar, toque em ➕. Antes de enviar, o app pergunta se você tem certeza — a publicação fica visível para todos os clubes da Rede. Toque em “Publicar” ou em “Voltar”.',
+      'Viu algo errado? Toque em ⋮ → Denunciar. O conteúdo some na hora e a diretoria do clube de quem publicou é avisada.',
+      'Para sair da Rede, abra o seu perfil, toque em ☰ e escolha “Sair da rede”.',
+    ],
+    dicas: [
+      'A foto de rosto só aparece com a autorização de uso de imagem arquivada pela diretoria (o papel assinado). Sem ela, aparecem as iniciais.',
+      'O responsável pode desligar a autorização de imagem em Meus filhos, e esse “não” vale em qualquer clube.',
+      'As fotos dos posts somem depois de 90 dias; o post continua, sem a foto.',
+      'Os pontos dos desafios da Rede ficam só no perfil da Rede — não entram no ranking do clube.',
+    ],
+    problemas: [
+      { quando: 'Não aparece a Rede DBV', solucao: 'O seu clube ainda não usa a Rede, ou falta a autorização do responsável para entrar. Fale com a diretoria.' },
+      { quando: 'Minha foto aparece só com as iniciais', solucao: 'Falta a autorização de uso de imagem arquivada pela diretoria. Peça à diretoria do seu clube.' },
+      { quando: 'Um post meu sumiu', solucao: 'Pode ter sido denunciado (fica escondido até a diretoria revisar) ou a foto passou dos 90 dias.' },
+    ],
+    palavras: ['rede', 'comunidade', 'story', 'stories', 'feed', 'publicar', 'denunciar', 'instagram', 'autorizacao', 'imagem'],
+  },
   {
     id: 'atualizar-app', papel: 'geral', icone: '🔄', titulo: 'Atualizar o app',
     paraQueServe: 'Pegar a versão mais nova quando algo parece antigo ou diferente.',

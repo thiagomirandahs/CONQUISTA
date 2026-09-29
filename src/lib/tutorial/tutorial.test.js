@@ -26,7 +26,7 @@ describe('conteúdo do tutorial', () => {
   })
 
   it('as âncoras dos botões "?" existem', () => {
-    for (const id of ['minha-classe', 'cantinho', 'avaliar-classes', 'inscricoes', 'usuarios-equipe', 'gestao']) {
+    for (const id of ['navegacao', 'rede-dbv', 'minha-classe', 'cantinho', 'avaliar-classes', 'inscricoes', 'usuarios-equipe', 'gestao']) {
       expect(TOPICOS.some((t) => t.id === id), id).toBe(true)
     }
   })
@@ -54,7 +54,8 @@ describe('papel e seções', () => {
     expect(secaoDoPapel(null)).toBeNull()
   })
   it('a seção da pessoa vem primeiro', () => {
-    expect(secoesOrdenadas('conselheiro')[0].chave).toBe('conselheiro')
+    expect(secoesOrdenadas('conselheiro')[0].chave).toBe('primeiros-passos')
+    expect(secoesOrdenadas('conselheiro')[1].chave).toBe('conselheiro')
     expect(secoesOrdenadas('conselheiro')).toHaveLength(PAPEIS_DO_TUTORIAL.length)
   })
   it('no app, tópico de recurso desligado some; no site, os "soNoApp" somem', () => {

@@ -4,6 +4,8 @@ import { carregarAvaliacoesPendentes } from '../services/inicio.js'
 import { FERRAMENTAS, GRUPOS_GESTAO } from '../lib/permissoes.js'
 import { rotaLiberada } from '../lib/navegacao.js'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
+import TourDaArea from '../components/TourDaArea.jsx'
+import { useAuth } from '../context/Auth.jsx'
 import { Card, CardAcao, Cabecalho, Vazio, Selo, Carregando, Aviso, mensagemDeErro } from '../ui/index.jsx'
 
 // Gestão (fase 7): 4 grupos em vez de uma parede de 21 cards.
@@ -18,9 +20,11 @@ export default function Gestao() {
   const [abertos, setAbertos] = useState({})
   const disponivel = (f) => f.papeis.includes(meuPapel) && (!f.recurso || temRecurso(f.recurso))
   const minhas = FERRAMENTAS.filter(disponivel)
+  const { profile } = useAuth() || {}
 
   return (
     <div className="max-w-2xl mx-auto">
+      <TourDaArea id="gestao" uid={profile?.id} papel={meuPapel} />
       <Cabecalho icone="⚙️" titulo="Gestão" descricao="As ferramentas da liderança" acao={<BotaoAjuda topico="gestao" />} />
 
       {ehAdmin && <FilaDeAvaliacao />}

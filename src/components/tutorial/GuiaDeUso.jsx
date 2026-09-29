@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import {
   buscarTopicos, secoesOrdenadas, topicosDaSecao, topicosVisiveis,
 } from '../../lib/tutorial/tutorial.js'
+import VideoCurto from '../VideoCurto.jsx'
 
 // O miolo do tutorial, igual no APP e no SITE. Quem decide o que muda é quem monta:
 //   modo 'app'  -> `podeAbrir(rota)` diz se o atalho "Abrir essa tela" aparece; a seção do papel vem primeiro.
@@ -91,6 +92,12 @@ function Topico({ t, aberto, aoAlternar, atalho, classes }) {
       {aberto && (
         <div id={`corpo-${t.id}`} className={`space-y-3 px-4 pb-4 text-[15px] ${textoCor}`}>
           <p><strong className={tituloCor}>Para que serve: </strong>{t.paraQueServe}</p>
+          {/* Vídeo opcional (`video: { youtubeId, poster }`): poster + play; o iframe só nasce no toque. */}
+          {t.video?.youtubeId && (
+            <div data-testid="video-topico">
+              <VideoCurto key={t.video.youtubeId} youtubeId={t.video.youtubeId} poster={t.video.poster} titulo={t.titulo} />
+            </div>
+          )}
           {t.passos?.length > 0 && (
             <ol className="list-decimal space-y-1 pl-5">
               {t.passos.map((p) => <li key={p}>{p}</li>)}

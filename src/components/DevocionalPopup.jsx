@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarDevocionalPopup, fazerDevocional } from '../lib/dados.js'
+import { usePopup } from '../ui/popups.jsx'
+
+export const PRIORIDADE_DEVOCIONAL = 10
 
 export default function DevocionalPopup() {
   const { profile } = useAuth()
@@ -15,6 +18,9 @@ export default function DevocionalPopup() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
   const [feito, setFeito] = useState(null) // null = ainda respondendo; {livroAbrev,capitulo} = respondeu
+  // Fila de popups: o devocional é o último da fila; a regra de "já fez hoje" é do servidor.
+  const popup = usePopup('devocional', { prioridade: PRIORIDADE_DEVOCIONAL, ativo: aberto && !!versiculo, umaVezPorSessao: false })
+  const fechar = () => { setAberto(false); popup.fechar() }
 
   useEffect(() => {
     if (!profile?.id) return
@@ -45,13 +51,13 @@ export default function DevocionalPopup() {
   }
 
   function lerCapitulo() {
-    setAberto(false)
+    fechar()
     navigate('/biblia', { state: { livroAbrev: feito.livroAbrev, capitulo: feito.capitulo } })
   }
 
   return (
     <AnimatePresence>
-      {aberto && versiculo && (
+      {aberto && versiculo && popup.minhaVez && (
         <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}
@@ -70,7 +76,7 @@ export default function DevocionalPopup() {
                     <p className="text-sm text-slate-500">Quer ler o capítulo inteiro de onde saiu esse versículo?</p>
                   )}
                   <div className="flex gap-2">
-                    <button onClick={() => setAberto(false)} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Fechar</button>
+                    <button onClick={fechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Fechar</button>
                     {feito.livroAbrev && (
                       <motion.button onClick={lerCapitulo} whileTap={{ scale: 0.97 }}
                         className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5">
@@ -96,7 +102,7 @@ export default function DevocionalPopup() {
                   )}
                   {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
                   <div className="flex gap-2">
-                    <button onClick={() => setAberto(false)} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Depois</button>
+                    <button onClick={fechar} className="flex-1 rounded-xl bg-slate-100 text-slate-700 font-semibold py-2.5">Depois</button>
                     <motion.button onClick={concluir} disabled={enviando} whileTap={{ scale: 0.97 }}
                       className="flex-1 rounded-xl bg-azul text-white font-extrabold py-2.5 disabled:opacity-60">
                       {enviando ? '...' : '🙏 Fiz meu devocional (+5)'}

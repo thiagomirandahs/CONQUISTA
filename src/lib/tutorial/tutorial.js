@@ -23,11 +23,12 @@ export function secaoDoPapel(papel, { temEscopo = false } = {}) {
   return null
 }
 
-// Seções em ordem, com a do papel da pessoa PRIMEIRO (as outras continuam lá, para quem quer conhecer).
+// Seções em ordem, com a do papel da pessoa logo depois de "Primeiros passos" (as outras continuam lá, para quem quer conhecer).
+// "Primeiros passos" fica SEMPRE no topo (é por onde todo mundo começa); o resto segue a ordem de conteudo.js.
 export function secoesOrdenadas(secaoDaPessoa) {
-  if (!secaoDaPessoa) return [...PAPEIS_DO_TUTORIAL]
-  const minha = PAPEIS_DO_TUTORIAL.find((p) => p.chave === secaoDaPessoa)
-  return minha ? [minha, ...PAPEIS_DO_TUTORIAL.filter((p) => p !== minha)] : [...PAPEIS_DO_TUTORIAL]
+  const [primeiros, ...resto] = PAPEIS_DO_TUTORIAL
+  const minha = resto.find((p) => p.chave === secaoDaPessoa)
+  return minha ? [primeiros, minha, ...resto.filter((p) => p !== minha)] : [primeiros, ...resto]
 }
 
 // Tópicos que existem neste contexto.
@@ -85,23 +86,9 @@ export function atalhoPermitido(rota, { papel = null, temRecurso = () => false, 
 }
 
 // ---------------------------------------------------------------- tour de primeiro acesso
-// Uma vez por usuário, neste aparelho. localStorage pode faltar (aba anônima, dados bloqueados): nesse caso
-// o tour simplesmente não volta a incomodar na mesma sessão (o componente guarda o "fechado" em estado).
-const chaveDoTour = (uid) => `dc:tour-visto:${uid}`
+// Compatibilidade: o tour genérico virou o mini-tour 'primeiros-passos' (./tours.js), mesma chave no localStorage.
+import { TOURS, marcarTourDaAreaVisto, tourDaAreaVisto } from './tours.js'
 
-export function tourJaVisto(uid) {
-  if (!uid) return true
-  try { return globalThis.localStorage?.getItem(chaveDoTour(uid)) === '1' } catch { return false }
-}
-
-export function marcarTourVisto(uid) {
-  if (!uid) return
-  try { globalThis.localStorage?.setItem(chaveDoTour(uid), '1') } catch { /* sem armazenamento: tudo bem */ }
-}
-
-export const PASSOS_DO_TOUR = [
-  { icone: '🏠', titulo: 'Início', texto: 'Aqui aparece o que é importante agora: o que falta na sua classe, avisos e atalhos do dia.' },
-  { icone: '🎖️', titulo: 'Jornada', texto: 'Sua classe e tudo o que você está conquistando: requisitos, missões e experiências do clube.' },
-  { icone: '🏕️', titulo: 'Clube', texto: 'Ranking, o cantinho da sua unidade e as outras coisas do clube.' },
-  { icone: '👤', titulo: 'Eu', texto: 'Seu perfil, trocar de clube, atualizar o app e "Ajuda / Como usar" — onde você pode rever este tour.' },
-]
+export const tourJaVisto = (uid) => tourDaAreaVisto(uid, 'primeiros-passos')
+export const marcarTourVisto = (uid) => marcarTourDaAreaVisto(uid, 'primeiros-passos')
+export const PASSOS_DO_TOUR = TOURS['primeiros-passos'].passos

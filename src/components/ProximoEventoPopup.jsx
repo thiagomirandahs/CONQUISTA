@@ -5,6 +5,9 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarEventos } from '../lib/dados.js'
 import { detalhe, curto } from '../lib/eventos.js'
+import { usePopup } from '../ui/popups.jsx'
+
+export const PRIORIDADE_EVENTO = 20
 
 const hojeISO = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
 const iconeTipo = { Reunião: '📋', Acampamento: '🏕️', Passeio: '🥾', Culto: '🙏', Evento: '🎉' }
@@ -28,6 +31,9 @@ export default function ProximoEventoPopup() {
   const [ev, setEv] = useState(null)
   const [aberto, setAberto] = useState(false)
   const [agora, setAgora] = useState(Date.now())
+  // Fila de popups: só serializa; o "visto hoje" por evento continua aqui.
+  const popup = usePopup('proximo-evento', { prioridade: PRIORIDADE_EVENTO, ativo: aberto && !!ev, umaVezPorSessao: false })
+  const visivel = aberto && popup.minhaVez
 
   useEffect(() => {
     if (!profile?.id) return
@@ -55,14 +61,15 @@ export default function ProximoEventoPopup() {
 
   // relógio ao vivo só enquanto o popup está aberto
   useEffect(() => {
-    if (!aberto) return
+    if (!visivel) return
     const t = setInterval(() => setAgora(Date.now()), 1000)
     return () => clearInterval(t)
-  }, [aberto])
+  }, [visivel])
 
   function fechar() {
     try { if (ev?.id) localStorage.setItem('popupEvento:' + ev.id, hojeISO()) } catch { /* ignora */ }
     setAberto(false)
+    popup.fechar()
   }
 
   if (!ev) return null
@@ -71,7 +78,7 @@ export default function ProximoEventoPopup() {
 
   return (
     <AnimatePresence>
-      {aberto && (
+      {visivel && (
         <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[54] flex items-center justify-center p-4"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={fechar}>
           <motion.div onClick={(e) => e.stopPropagation()}

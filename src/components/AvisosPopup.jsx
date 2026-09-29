@@ -3,6 +3,10 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { lerConfigPopup, minhaMensalidadePendente } from '../lib/dados.js'
+import { usePopup } from '../ui/popups.jsx'
+
+// Lugar na fila de popups (só um por vez): tour > avisos > próximo evento > devocional.
+export const PRIORIDADE_AVISOS = 30
 
 // Hoje no fuso de Brasília (yyyy-mm-dd) — pra "não repetir hoje" bater com o dia certo
 const hojeISO = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
@@ -25,6 +29,8 @@ export default function AvisosPopup() {
   const { clubeId } = useClube()
   const [aviso, setAviso] = useState(null)
   const [aberto, setAberto] = useState(false)
+  // A fila só serializa: a regra de "já visto hoje" continua aqui (localStorage por texto).
+  const popup = usePopup('avisos', { prioridade: PRIORIDADE_AVISOS, ativo: aberto && !!aviso, umaVezPorSessao: false })
 
   useEffect(() => {
     if (!profile?.id) return
@@ -52,11 +58,12 @@ export default function AvisosPopup() {
   function fechar() {
     try { if (aviso?.chave) localStorage.setItem(aviso.chave, hojeISO()) } catch { /* ignora */ }
     setAberto(false)
+    popup.fechar()
   }
 
   return (
     <AnimatePresence>
-      {aberto && aviso && (
+      {aberto && aviso && popup.minhaVez && (
         <motion.div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}

@@ -18,6 +18,7 @@ import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
+import TourDaArea from '../components/TourDaArea.jsx'
 import OuvirLivro from '../components/OuvirLivro.jsx'
 import { termoDoRequisito } from '../lib/catalogoEspecialidades.js'
 import { Link } from 'react-router-dom'
@@ -136,6 +137,7 @@ export default function MinhaClasse() {
 
   return (
     <div>
+      <TourDaArea id="classes" uid={profile?.id} />
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-2xl font-extrabold text-ink">🎖️ Minha Classe</h2>

@@ -1,6 +1,6 @@
 // /ajuda no app e no site + tour de primeiro acesso.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -21,11 +21,41 @@ beforeEach(() => {
 })
 
 describe('/ajuda no app', () => {
-  it('mostra primeiro a seção do papel da pessoa', () => {
+  it('"Primeiros passos" no topo e, logo depois, a seção do papel da pessoa', () => {
     clube = { papel: 'pais', temRecurso: () => true }
     montar(<Ajuda />)
     const secoes = screen.getAllByTestId(/^secao-/)
-    expect(secoes[0].dataset.testid).toBe('secao-responsavel')
+    expect(secoes[0].dataset.testid).toBe('secao-primeiros-passos')
+    expect(secoes[1].dataset.testid).toBe('secao-responsavel')
+  })
+
+  it('sem papel, as seções seguem a ordem Primeiros passos · Desbravadores · Responsáveis · … · Coordenação', () => {
+    clube = { papel: null, temRecurso: () => true }
+    montar(<Ajuda />)
+    const ordem = screen.getAllByTestId(/^secao-/).map((s) => s.dataset.testid.replace('secao-', ''))
+    expect(ordem.slice(0, 7)).toEqual(['primeiros-passos', 'desbravador', 'responsavel', 'conselheiro', 'instrutor', 'diretoria', 'coordenacao'])
+  })
+
+  it('"Rever tour" lista os tours do papel: Gestão só para diretoria/instrutor', () => {
+    montar(<Ajuda />)
+    expect(screen.getByTestId('rever-tour').textContent).toBe('Primeiros passos')
+    expect(screen.getByTestId('rever-tour-classes')).toBeTruthy()
+    expect(screen.getByTestId('rever-tour-rede')).toBeTruthy()
+    expect(screen.queryByTestId('rever-tour-gestao')).toBeNull()
+  })
+
+  it('instrutor vê o tour de Gestão e consegue revê-lo', async () => {
+    clube = { papel: 'instrutor', temRecurso: () => true }
+    montar(<Ajuda />)
+    await userEvent.click(screen.getByTestId('rever-tour-gestao'))
+    expect(screen.getByTestId('tour').dataset.tour).toBe('gestao')
+  })
+
+  it('o tópico da Rede DBV existe e fala da confirmação e dos 90 dias', () => {
+    montar(<Ajuda />, '/ajuda#rede-dbv')
+    const t = document.getElementById('topico-rede-dbv')
+    expect(t.textContent).toMatch(/Tem certeza|tem certeza/)
+    expect(t.textContent).toMatch(/90 dias/)
   })
 
   it('chegando pela âncora, o tópico abre com o atalho permitido', () => {
@@ -81,20 +111,21 @@ describe('/ajuda no site', () => {
 describe('tour de primeiro acesso', () => {
   it('aparece uma vez e "Pular" não deixa voltar', async () => {
     const { unmount } = montar(<TourPrimeiroAcesso uid="u-9" />)
-    expect(screen.getByTestId('tour')).toBeTruthy()
+    expect(await screen.findByTestId('tour')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Pular' }))
-    expect(screen.queryByTestId('tour')).toBeNull()
+    await waitFor(() => expect(screen.queryByTestId('tour')).toBeNull())
     unmount()
     montar(<TourPrimeiroAcesso uid="u-9" />)
     expect(screen.queryByTestId('tour')).toBeNull()
   })
-  it('passa pelos 4 passos e termina em "Começar"', async () => {
+  it('passa pelos 4 passos e termina em "Concluir"', async () => {
     montar(<TourPrimeiroAcesso uid="u-8" />)
+    await screen.findByTestId('tour')
     for (let i = 0; i < 3; i++) await userEvent.click(screen.getByRole('button', { name: 'Próximo' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Começar' }))
-    expect(screen.queryByTestId('tour')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Concluir' }))
+    await waitFor(() => expect(screen.queryByTestId('tour')).toBeNull())
   })
-  it('é reaberto em /ajuda por "Ver o tour de novo"', async () => {
+  it('é reaberto em /ajuda por "Rever tour: Primeiros passos"', async () => {
     localStorage.setItem('dc:tour-visto:u-1', '1')
     montar(<Ajuda />)
     expect(screen.queryByTestId('tour')).toBeNull()

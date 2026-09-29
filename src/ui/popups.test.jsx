@@ -27,18 +27,17 @@ describe('usePopup', () => {
     expect(screen.getByRole('dialog', { name: 'devocional' })).toBeInTheDocument()
   })
 
-  it('prioridade maior entra primeiro mesmo montando depois (enquanto ninguém está na vez)', async () => {
-    // Os dois montam no mesmo render: quem pede primeiro pega a vez. Para testar a prioridade, o
-    // terceiro pede enquanto os outros dois esperam.
+  it('prioridade maior entra primeiro mesmo montando depois (pedidos no mesmo render disputam pela prioridade)', async () => {
+    // Os três montam no mesmo render: a vez é decidida no fim do tique, então vence a maior prioridade.
     render(<FilaDePopupsProvider><Popup id="a" /><Popup id="b" prioridade={1} /><Popup id="c" prioridade={10} /></FilaDePopupsProvider>)
-    await tique()
-    expect(screen.getByRole('dialog', { name: 'a' })).toBeInTheDocument()
-    fireEvent.click(screen.getByText('fechar a'))
     await tique()
     expect(screen.getByRole('dialog', { name: 'c' })).toBeInTheDocument()
     fireEvent.click(screen.getByText('fechar c'))
     await tique()
     expect(screen.getByRole('dialog', { name: 'b' })).toBeInTheDocument()
+    fireEvent.click(screen.getByText('fechar b'))
+    await tique()
+    expect(screen.getByRole('dialog', { name: 'a' })).toBeInTheDocument()
   })
 
   it('fechado uma vez, não reabre na mesma sessão (sessionStorage)', async () => {

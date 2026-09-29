@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao, Aviso, Campo, Selecao } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { Chip, Painel, Linha, EstadoVazio, Esqueleto, FOCO, dataHoraBR } from '../components/admin/AdminUI.jsx'
+import { useTelaLarga } from '../components/admin/Tabela.jsx'
 import {
   ROTULO_CATEGORIA, ROTULO_STATUS_CHAMADO, ROTULO_PRIORIDADE, PRIORIDADES,
   adminChamadosListar, adminChamadoVer, adminChamadoResponder, adminChamadoAtualizar, enviarAnexo, tempoDesde,
@@ -15,11 +16,14 @@ const TOM_STATUS = { aberto: 'info', em_andamento: 'atencao', aguardando_usuario
 const TOM_PRIO = { urgente: 'perigo', alta: 'atencao', normal: 'neutro', baixa: 'neutro' }
 const STATUS_OPCOES = Object.entries(ROTULO_STATUS_CHAMADO).map(([k, v]) => [k, v === 'Aguardando você' ? 'Aguardando usuário' : v])
 
+// ≥ lg (Fase 6, 5.7): dois painéis — fila à esquerda, chamado aberto à direita. No celular o detalhe
+// ocupa a tela e o botão "‹ Fila de chamados" volta.
 export default function AdminChamados({ inicial = null, aoMudarContagem }) {
   const [filtro, setFiltro] = useState('abertos')
   const [aberto, setAberto] = useState(inicial)
   const [lista, setLista] = useState(null)
   const [erro, setErro] = useState('')
+  const larga = useTelaLarga('lg')
 
   const carregar = useCallback(() => {
     setLista(null)
@@ -27,11 +31,13 @@ export default function AdminChamados({ inicial = null, aoMudarContagem }) {
   }, [filtro])
   useEffect(() => { carregar() }, [carregar])
 
-  if (aberto) {
-    return <DetalheChamado id={aberto} aoVoltar={() => { setAberto(null); carregar(); aoMudarContagem?.() }} aoMudar={aoMudarContagem} />
-  }
+  const detalhe = aberto && (
+    <DetalheChamado id={aberto} doisPaineis={larga} aoVoltar={() => { setAberto(null); carregar(); aoMudarContagem?.() }}
+      aoMudar={() => { aoMudarContagem?.(); if (larga) carregar() }} />
+  )
+  if (aberto && !larga) return detalhe
 
-  return (
+  const fila = (
     <div className="space-y-3">
       <div role="group" aria-label="Filtrar chamados" className="flex flex-wrap gap-1.5">
         {FILTROS.map(([k, r]) => (
@@ -47,8 +53,8 @@ export default function AdminChamados({ inicial = null, aoMudarContagem }) {
         <ul className="space-y-2">
           {lista.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => setAberto(c.id)} data-testid="chamado-item"
-                className={`w-full rounded-2xl border border-line bg-surface p-3.5 text-left active:bg-surface2 ${FOCO}`}>
+              <button type="button" onClick={() => setAberto(c.id)} data-testid="chamado-item" aria-current={aberto === c.id ? 'true' : undefined}
+                className={`w-full rounded-2xl border p-3.5 text-left active:bg-surface2 ${FOCO} ${aberto === c.id ? 'border-brand bg-brand/5' : 'border-line bg-surface'}`}>
                 <div className="flex items-start gap-2">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-bold text-ink">{c.assunto}</span>
@@ -69,9 +75,18 @@ export default function AdminChamados({ inicial = null, aoMudarContagem }) {
       )}
     </div>
   )
+  if (!larga) return fila
+  return (
+    <div className="grid grid-cols-[minmax(18rem,2fr)_3fr] gap-4 items-start" data-testid="chamados-dois-paineis">
+      <div className="min-w-0">{fila}</div>
+      <div className="min-w-0 lg:sticky lg:top-[calc(61px+var(--seguro-topo)+0.75rem)] lg:max-h-[calc(100dvh-61px-var(--seguro-topo)-1.5rem)] lg:overflow-y-auto">
+        {detalhe || <EstadoVazio icone="📨" titulo="Escolha um chamado na fila">O chamado abre aqui, ao lado da fila.</EstadoVazio>}
+      </div>
+    </div>
+  )
 }
 
-function DetalheChamado({ id, aoVoltar, aoMudar }) {
+function DetalheChamado({ id, aoVoltar, aoMudar, doisPaineis = false }) {
   const [c, setC] = useState(null)
   const [erro, setErro] = useState('')
   const [texto, setTexto] = useState('')
@@ -105,7 +120,7 @@ function DetalheChamado({ id, aoVoltar, aoMudar }) {
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={aoVoltar} className={`min-h-[44px] text-sm font-semibold text-brand ${FOCO}`}>‹ Fila de chamados</button>
+      <button type="button" onClick={aoVoltar} className={`min-h-[44px] text-sm font-semibold text-brand ${FOCO}`}>{doisPaineis ? '✕ Fechar chamado' : '‹ Fila de chamados'}</button>
       {erro && <Aviso tom="erro" titulo="Não deu pra abrir">{erro}</Aviso>}
       {!erro && !c && <Esqueleto />}
       {c && (

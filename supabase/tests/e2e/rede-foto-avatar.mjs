@@ -139,11 +139,11 @@ async function principal() {
     b1: await entrar('b1', clubeB), c1: await entrar('c1', clubeC),
   }
   const anon = createClient(URL_API, ANON, semSessao)
-  const P = { a1: `perfis/${id.a1}-1.png`, a2: `perfis/${id.a2}-1.png`, forjado: `perfis/${id.a1}-7.png` }
+  const P = { a1: `perfis/${id.a1}-1.png`, a2: `perfis/${id.a2}-1.png`, forjado: `perfis/${id.a1}-7.png`, forjadoA2: `perfis/${id.a2}-x.png` }
   const publica = (p) => `${URL_API}/storage/v1/object/public/imagens/${p}`
 
   console.log('\n== preparo: arquivos reais no bucket privado (o dono sobe o próprio avatar, como o app) ==')
-  for (const [quem, p] of [['a1', P.a1], ['a2', P.a2], ['a1', P.forjado]]) {
+  for (const [quem, p] of [['a1', P.a1], ['a2', P.a2], ['a1', P.forjado], ['a2', P.forjadoA2]]) {
     const { error } = await upar(c[quem], p)
     ok(`${quem} sobe ${p.replace(/perfis\/[0-9a-f-]{36}/, 'perfis/<uid>')}`, !error, error?.message)
     if (!error) criados.push(p)
@@ -205,6 +205,15 @@ async function principal() {
   ok('...também na assinatura individual', !s.url, s.erro || 'assinou!')
   pa2 = await rpc(c.b1, 'rede_perfil', { p_usuario: id.a2 })
   ok('a2 (personagem) mesmo com autorização arquivada: foto CONTINUA null e o personagem vem', pa2.data?.foto === null && pa2.data?.avatar_tipo === 'personagem', JSON.stringify({ foto: pa2.data?.foto, tipo: pa2.data?.avatar_tipo }))
+  // 501: personagem + autorização arquivada -> o ARQUIVO também fica fechado para outro clube
+  s = await assina(c.b1, P.a2)
+  ok('501: a2 (personagem, autorização arquivada) — outro clube NÃO assina a foto antiga', !s.url, s.erro || 'assinou!')
+  s = await assina(c.b1, P.forjadoA2)
+  ok('501: caminho FORJADO perfis/<a2>-x.png — outro clube NÃO assina', !s.url, s.erro || 'assinou!')
+  s = await assina(c.a1, P.a2)
+  ok('501: colega do MESMO clube segue assinando (policy do clube)', !!s.url, s.erro)
+  s = await assina(c.a2, P.a2)
+  ok('501: o próprio dono segue assinando', !!s.url, s.erro)
   const meu2 = await rpc(c.a1, 'rede_perfil')
   ok('a1 no próprio perfil: imagem_autorizada = true', meu2.data?.imagem_autorizada === true, JSON.stringify(meu2.data?.imagem_autorizada))
   const feed2 = await rpc(c.b1, 'rede_feed', { p_filtro: 'todos' })

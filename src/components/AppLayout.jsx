@@ -4,6 +4,7 @@ import { m as motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
 import Notificacoes from './Notificacoes.jsx'
 import BotaoAcessibilidade from './PreferenciasAcessibilidade.jsx'
+import { FilaDePopupsProvider } from '../ui/popups.jsx'
 // Popups de abertura em pedaços próprios: só aparecem depois que os dados deles chegam, então não
 // precisam pesar no bundle inicial nem atrasar o primeiro paint.
 const DevocionalPopup = lazy(() => import('./DevocionalPopup.jsx'))
@@ -55,6 +56,8 @@ export default function AppLayout() {
 
   return (
     <MotionConfig reducedMotion="user">
+    {/* Uma fila de popups para todas as telas do app: tour, avisos, próximo evento e devocional, um por vez. */}
+    <FilaDePopupsProvider>
     <div className="min-h-full lg:flex">
       <Suspense fallback={null}>
         {!ehPai && <DevocionalPopup />}
@@ -186,6 +189,7 @@ export default function AppLayout() {
       </nav>
 
     </div>
+    </FilaDePopupsProvider>
     </MotionConfig>
   )
 }

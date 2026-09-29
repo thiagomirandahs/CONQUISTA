@@ -79,6 +79,12 @@ beforeEach(() => {
 // a navegação do painel é um menu em lista: abre o menu e toca na área
 const abrirAba = async (nome) => { await userEvent.click(screen.getByTestId('admin-menu')); await userEvent.click(screen.getByRole('tab', { name: nome })) }
 const abrirComoAdmin = async (entrada) => { f.souAdminPlataforma.mockResolvedValue(true); renderAdmin(entrada); await screen.findByRole('heading', { name: 'Administração' }) }
+// detalhe do clube: leitura no "Resumo"; assinatura/plano/teste gratuito ficam na sub-aba "Assinatura"
+const abrirClubeNaAssinatura = async (nome = /Exército da colina/) => {
+  await abrirAba(/Clubes/)
+  await userEvent.click(await screen.findByText(nome))
+  await userEvent.click(await screen.findByTestId('clube-sub-assinatura'))
+}
 
 describe('Admin: guard — nunca mostra o painel sem confirmação do servidor', () => {
   it('não-admin: vê "área restrita" e nenhuma RPC administrativa é chamada', async () => {
@@ -117,7 +123,10 @@ describe('Admin: seção ⇄ URL (?aba=)', () => {
     await abrirComoAdmin()
     await abrirAba(/Clubes/)
     expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=clubes')
+    // a seção Suporte agrupa Chamados + Acessos: abre em chamados, a sub-aba leva a ?aba=suporte
     await abrirAba(/Suporte/)
+    expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=chamados')
+    await userEvent.click(screen.getByTestId('subaba-suporte'))
     expect(screen.getByTestId('url-atual')).toHaveTextContent('/admin?aba=suporte')
     await abrirAba(/Visão geral/)
     expect(screen.getByTestId('url-atual')).toHaveTextContent(/^\/admin$/)
@@ -175,8 +184,7 @@ describe('Admin: Clubes', () => {
 
   it('detalhe do clube: status da assinatura só muda com motivo (vai para a auditoria)', async () => {
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     expect(f.clubeDetalhe).toHaveBeenCalledWith('c2')
     expect(await screen.findByText('Sem gateway — combinado fora do sistema')).toBeInTheDocument()
     await userEvent.selectOptions(screen.getByTestId('assinatura-status'), 'ativa')
@@ -191,8 +199,7 @@ describe('Admin: Clubes', () => {
 
   it('suspender/cancelar/inadimplente: botão vermelho + confirmação com clube, status, impacto e motivo (P0)', async () => {
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     await screen.findByText('Sem gateway — combinado fora do sistema')
     await userEvent.selectOptions(screen.getByTestId('assinatura-status'), 'suspensa')
     const botao = screen.getByTestId('confirmar-transicao')
@@ -222,8 +229,7 @@ describe('Admin: Clubes', () => {
 
   it('cada status perigoso tem o seu impacto no modal', async () => {
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     await screen.findByText('Sem gateway — combinado fora do sistema')
     await userEvent.type(screen.getByLabelText(/Motivo/), 'Motivo de teste')
     for (const [status, trecho] of [['cancelada', 'assinatura nova'], ['inadimplente', 'pagamento em atraso']]) {
@@ -240,8 +246,7 @@ describe('Admin: Clubes', () => {
     f.planoMudar.mockResolvedValueOnce({ ok: false, precisa_confirmar: true, mensagem: 'O plano escolhido é menor que o uso atual.', excedentes: [{ clube: 'Exército da colina', limite: 'membros', uso: 30, teto: 20 }] })
       .mockResolvedValueOnce({ ok: true })
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     await userEvent.selectOptions(await screen.findByLabelText('Alterar plano'), 'anual|1')
     await userEvent.click(screen.getByText('Aplicar plano'))
     expect(f.planoMudar).toHaveBeenLastCalledWith('s2', 'anual', 1, false)
@@ -283,6 +288,7 @@ describe('Admin: Suporte — admin nunca autoriza o próprio pedido', () => {
     f.suporteListar.mockResolvedValue([{ id: 'g1', motivo: 'Investigar erro relatado', status: 'solicitado' }])
     await abrirComoAdmin()
     await abrirAba(/Suporte/)
+    await userEvent.click(screen.getByTestId('subaba-suporte'))
     expect(await screen.findByText(/não concede acesso real/)).toBeInTheDocument()
     expect(screen.queryByText('Autorizar')).toBeNull()
     // recusou a confirmação: nada é revogado
@@ -298,8 +304,10 @@ describe('Admin: Suporte — admin nunca autoriza o próprio pedido', () => {
 })
 
 describe('Admin: teste gratuito', () => {
-  it('Visão geral mostra o padrão de dias e salva um novo valor', async () => {
+  it('Planos mostra o padrão de dias e salva um novo valor (saiu da Visão geral)', async () => {
     await abrirComoAdmin()
+    expect(screen.queryByTestId('trial-padrao-atual')).toBeNull()
+    await abrirAba(/Planos/)
     expect(await screen.findByTestId('trial-padrao-atual')).toHaveTextContent('30 dia(s)')
     const campo = screen.getByLabelText('Dias de teste')
     await userEvent.clear(campo)
@@ -309,7 +317,7 @@ describe('Admin: teste gratuito', () => {
   })
 
   it('padrão inválido não chama o servidor', async () => {
-    await abrirComoAdmin()
+    await abrirComoAdmin('/admin?aba=planos')
     const campo = await screen.findByLabelText('Dias de teste')
     await userEvent.clear(campo)
     await userEvent.type(campo, '400')
@@ -321,8 +329,7 @@ describe('Admin: teste gratuito', () => {
     const vaiEncerrar = vi.spyOn(window, 'confirm').mockReturnValue(true)
     f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, trial_ate: '2026-10-10T12:00:00Z' } })
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     expect(await screen.findByTestId('teste-gratuito-situacao')).toHaveTextContent('Em teste até')
     await userEvent.click(screen.getByText('+15 dias'))
     expect(f.trialEstender).toHaveBeenLastCalledWith('c2', expect.objectContaining({ dias: 15 }))
@@ -337,8 +344,7 @@ describe('Admin: teste gratuito', () => {
   it('assinatura ativa: sem botões de teste', async () => {
     f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, assinatura_status: 'ativa' } })
     await abrirComoAdmin()
-    await abrirAba(/Clubes/)
-    await userEvent.click(await screen.findByText(/Exército da colina/))
+    await abrirClubeNaAssinatura()
     await screen.findByTestId('teste-gratuito')
     expect(screen.queryByText('+7 dias')).toBeNull()
     expect(screen.queryByTestId('trial-encerrar')).toBeNull()

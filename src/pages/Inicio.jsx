@@ -5,7 +5,8 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarInicio } from '../services/inicio.js'
 import { carregarMinhasClasses } from '../services/classes.js'
 import { rotaLiberada } from '../lib/navegacao.js'
-import TourPrimeiroAcesso from '../components/TourPrimeiroAcesso.jsx'
+import TourDaArea from '../components/TourDaArea.jsx'
+import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import { Card, CardAcao, Botao, Carregando, Vazio, Aviso, Progresso, mensagemDeErro } from '../ui/index.jsx'
 
@@ -76,11 +77,14 @@ export default function Inicio() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Tour de primeiro acesso (uma vez por usuário neste aparelho; reabre em Eu → Ajuda) */}
-      <TourPrimeiroAcesso uid={profile?.id} />
-      <header className="mb-5">
+      {/* Tour de primeiro acesso (uma vez por usuário neste aparelho, pela fila de popups; reabre em Eu → Ajuda) */}
+      <TourDaArea id="primeiros-passos" uid={profile?.id} />
+      <header className="mb-5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
         <p className="text-sm text-muted">{saudacao()}{primeiroNome ? `, ${primeiroNome}` : ''} 👋</p>
         <h1 className="text-2xl font-extrabold text-ink leading-tight">{marca?.nome || 'Seu clube'}</h1>
+        </div>
+        <BotaoAjuda topico="navegacao" />
       </header>
 
       {temClasses && classes !== null && classes !== false && (

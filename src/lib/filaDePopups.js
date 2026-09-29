@@ -38,7 +38,9 @@ export function criarFilaDePopups() {
     let resolver
     const promessa = new Promise((res) => { resolver = res })
     fila.push({ id, prioridade, ordem: ordem++, resolver, promessa })
-    avancar()
+    // Decide no fim do tique: pedidos que chegam JUNTOS (vários popups montando no mesmo render) disputam
+    // pela prioridade, em vez de o primeiro a montar ganhar a vez.
+    queueMicrotask(avancar)
     return promessa
   }
 
