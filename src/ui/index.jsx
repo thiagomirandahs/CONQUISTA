@@ -265,7 +265,7 @@ const TRADUCOES = [
   // Recusas ESPERADAS que trazem instrução útil: a frase do servidor já é a resposta certa,
   // só ganha um verbo mais humano (Fase 6: sem isto caíam no genérico e a pessoa não sabia o que fazer).
   [/leilão aberto/i, 'Há um leilão aberto agora. Encerre ou cancele o leilão antes de desligar essa ferramenta.'],
-  [/Termine a etapa .* antes de ir para[^.]*.?/i, (m) => `Ainda falta uma etapa: ${m[0]}`],
+  [/Termine a etapa .* antes de ir para/i, 'Ainda falta concluir a etapa anterior. Termine ela e continue.'],
   [/sem permiss|apenas a liderança|Sem vínculo|não tem permissão/i,
     'Isso é coisa da liderança do clube. Se você acha que deveria poder, fale com a diretoria.'],
   // Teto de membros (migration 220): o número do limite é o que a diretoria precisa saber.

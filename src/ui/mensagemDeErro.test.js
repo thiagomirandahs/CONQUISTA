@@ -8,9 +8,9 @@ describe('mensagemDeErro — recusas com instrução', () => {
     expect(t).toMatch(/Encerre ou cancele o leilão/)
     expect(t).toMatch(/^Não consegui salvar\./)
   })
-  it('onboarding: preserva a etapa que falta', () => {
-    const t = mensagemDeErro(new Error('Termine a etapa Unidades antes de ir para Convites.'))
-    expect(t).toBe('Ainda falta uma etapa: Termine a etapa Unidades antes de ir para Convites.')
+  it('onboarding: diz que falta uma etapa, sem vazar as chaves internas', () => {
+    const t = mensagemDeErro(new Error('Termine a etapa "conta" antes de ir para "clube".'))
+    expect(t).toBe('Ainda falta concluir a etapa anterior. Termine ela e continue.')
   })
   it('erro técnico continua virando o genérico', () => {
     expect(mensagemDeErro(new Error('relation "public.x" does not exist'))).not.toMatch(/relation/)
