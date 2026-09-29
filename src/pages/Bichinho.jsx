@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { m as motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
@@ -124,7 +125,7 @@ export default function Bichinho() {
 
   async function carregar() {
     setCarregando(true)
-    try { setBicho(await meuBichinho()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setBicho(await meuBichinho()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o bichinho.')) }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -158,7 +159,7 @@ export default function Bichinho() {
     try {
       await (dormir ? dormirBichinho() : acordarBichinho())
       await carregar() // pega do servidor as barras congeladas/retomadas (fica tudo em sincronia)
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui mudar o sono do bichinho.')) }
   }
 
   async function cuidar(acao) {
@@ -179,7 +180,7 @@ export default function Bichinho() {
         import('../lib/juice.js').then(({ acerto }) => acerto(1)).catch(() => {})
       }
       setTimeout(() => setFlash(''), 1800)
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui cuidar do bichinho agora.')) }
     setCuidando('')
   }
 
@@ -188,7 +189,7 @@ export default function Bichinho() {
     const anterior = bicho?.item
     setBicho((b) => b ? { ...b, item } : b) // otimista
     try { await equiparBichinho(item) }
-    catch (e) { setBicho((b) => b ? { ...b, item: anterior } : b); setErro(e?.message || String(e)) }
+    catch (e) { setBicho((b) => b ? { ...b, item: anterior } : b); setErro(mensagemDeErro(e, 'Não consegui equipar o item.')) }
   }
 
   // Personalizar visual: campo ∈ 'cenario' | 'cor' | 'olhos' (otimista).
@@ -197,7 +198,7 @@ export default function Bichinho() {
     const anterior = bicho?.[campo]
     setBicho((b) => b ? { ...b, [campo]: valor } : b)
     try { await vestirBichinho(campo, valor) }
-    catch (e) { setBicho((b) => b ? { ...b, [campo]: anterior } : b); setErro(e?.message || String(e)) }
+    catch (e) { setBicho((b) => b ? { ...b, [campo]: anterior } : b); setErro(mensagemDeErro(e, 'Não consegui mudar o visual.')) }
   }
 
   if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
@@ -436,7 +437,7 @@ function Adotar({ morto, nomeAntigo, especieAntiga, onPronto }) {
     if (!n) { setErro('Dê um nome ao bichinho 🙂'); return }
     setEnviando(true); setErro('')
     try { await adotarBichinho(n, especie); await onPronto() }
-    catch (e) { setErro(e?.message || String(e)); setEnviando(false) }
+    catch (e) { setErro(mensagemDeErro(e, 'Não consegui adotar o bichinho.')); setEnviando(false) }
   }
 
   return (

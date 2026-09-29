@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useRef } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -42,7 +43,7 @@ export default function Duelos({ onMudou }) {
 
   async function carregar() {
     setCarregando(true); setErro('')
-    try { setDados(await carregarDuelos()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setDados(await carregarDuelos()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar os duelos.')) }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -253,7 +254,7 @@ function ModalDesafiar({ catalogo, unidades, onFechar, onCriar }) {
     try {
       await onCriar(desafio, uni)
     } catch (err) {
-      setErro(err?.message || String(err))
+      setErro(mensagemDeErro(err, 'Não consegui criar o duelo.'))
       travado.current = false
       setEnviando(false)
     }
@@ -312,7 +313,7 @@ function ModalJulgar({ d, onFechar, onJulgar }) {
     try {
       await onJulgar(v)
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui registrar o resultado.'))
       travado.current = false
       setEnviando(false)
     }
@@ -421,7 +422,7 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
       await salvarDesafioUnidade(f, inicial.id)
       onSalvo()
     } catch (err) {
-      setErro(err?.message || String(err))
+      setErro(mensagemDeErro(err, 'Não consegui salvar o desafio.'))
       setSalvando(false)
     }
   }
@@ -429,7 +430,7 @@ function FormDesafio({ inicial, onFechar, onSalvo }) {
   async function apagar() {
     if (!(await avisar.confirmar({ titulo: 'Apagar este desafio do catálogo?', descricao: 'Ele deixa de aparecer para novas unidades. Isso não pode ser desfeito.', rotulo: 'Apagar o desafio' }))) return
     try { await excluirDesafioUnidade(inicial.id); onSalvo() }
-    catch (err) { setErro(err?.message || String(err)) }
+    catch (err) { setErro(mensagemDeErro(err, 'Não consegui apagar o desafio.')) }
   }
 
   return (
@@ -501,7 +502,7 @@ function ModalProgresso({ duelo, onFechar }) {
     let vivo = true
     progressoDuelo(duelo.id)
       .then((p) => { if (vivo) { setProg(p); setCarregando(false) } })
-      .catch((e) => { if (vivo) { setErro(e?.message || 'Erro'); setCarregando(false) } })
+      .catch((e) => { if (vivo) { setErro(mensagemDeErro(e, 'Não consegui carregar o progresso.')); setCarregando(false) } })
     return () => { vivo = false }
   }, [duelo.id])
 

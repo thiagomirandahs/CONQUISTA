@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -24,7 +25,7 @@ export default function Chefao() {
   const [editar, setEditar] = useState(false)
 
   async function carregar() {
-    try { setEst(await chefaoEstado()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setEst(await chefaoEstado()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o chefão.')) }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -55,7 +56,7 @@ export default function Chefao() {
       import('../lib/juice.js').then(({ acerto }) => acerto(3)).catch(() => {})
       setEst((e) => e ? { ...e, vida_atual: r.vida_atual, dano: (e.vida_total - r.vida_atual), venceu: r.venceu, golpe_pronto: false, ja_golpeei: true, proximo_golpe_em: new Date(Date.now() + 3600000).toISOString() } : e)
       if (r.venceu) { import('../lib/juice.js').then(({ vitoria }) => vitoria(3)).catch(() => {}); setTimeout(carregar, 400) }
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'O golpe não saiu.')) }
     setGolpeando(false)
   }
 
@@ -222,7 +223,7 @@ function FormChefao({ inicial, onSalvo }) {
     try {
       await chefaoConfig({ ...form, vida: Number(form.vida) || 3000, ativo: ligar })
       onSalvo()
-    } catch (e) { setErro(e?.message || String(e)); setSalvando(false) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui salvar o chefão.')); setSalvando(false) }
   }
 
   return (

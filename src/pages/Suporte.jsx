@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { useAuth } from '../context/Auth.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
-import { Botao, Campo, Selecao, Aviso, Card, Carregando, Vazio } from '../ui/index.jsx'
+import { Botao, Campo, Selecao, Aviso, Card, Carregando, Vazio, mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import {
   CATEGORIAS, ROTULO_CATEGORIA, ROTULO_STATUS_CHAMADO, PRIORIDADES,
@@ -32,7 +32,7 @@ export default function Suporte() {
   const [erro, setErro] = useState('')
 
   const carregar = useCallback(() => {
-    meusChamados().then((l) => { setErro(''); setLista(l) }).catch((e) => setErro(e.message))
+    meusChamados().then((l) => { setErro(''); setLista(l) }).catch((e) => setErro(mensagemDeErro(e, 'Não consegui carregar os chamados.')))
   }, [])
   useEffect(() => { carregar() }, [carregar])
 
@@ -122,7 +122,7 @@ function NovoChamado({ aoCancelar, aoCriar }) {
       avisar.sucesso('Chamado aberto! Avisaremos quando o suporte responder.')
       aoCriar(id)
     } catch (err) {
-      setErro(err.message)
+      setErro(mensagemDeErro(err, 'Não consegui abrir o chamado.'))
     } finally {
       setEnviando(false)
     }
@@ -177,7 +177,7 @@ function Conversa({ id, aoVoltar }) {
   const [enviando, setEnviando] = useState(false)
 
   const carregar = useCallback(() => {
-    chamadoVer(id).then((d) => { setErro(''); setC(d) }).catch((e) => setErro(e.message))
+    chamadoVer(id).then((d) => { setErro(''); setC(d) }).catch((e) => setErro(mensagemDeErro(e, 'Não consegui abrir o chamado.')))
   }, [id])
   useEffect(() => { carregar() }, [carregar])
 
@@ -191,7 +191,7 @@ function Conversa({ id, aoVoltar }) {
       setTexto(''); setArquivo(null); descartarTexto()
       carregar()
     } catch (err) {
-      avisar.erro(err.message)
+      avisar.erro(err, 'Não consegui responder ao chamado.')
     } finally {
       setEnviando(false)
     }

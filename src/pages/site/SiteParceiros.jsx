@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import SiteLayout, { CONTAINER, BOTAO_PRIMARIO, BOTAO_WHATSAPP, TopoDaPagina, useMetaDaPagina } from './SiteLayout.jsx'
 import { parceirosDoSite, linkWhatsApp, urlSegura } from '../../services/vitrine.js'
@@ -38,7 +39,7 @@ export default function SiteParceiros() {
   useEffect(() => {
     let vivo = true
     parceirosDoSite().then((p) => { if (vivo) setParceiros(p) })
-      .catch((e) => { if (vivo) { setErro(e?.message || 'Não foi possível carregar os parceiros.'); setParceiros([]) } })
+      .catch((e) => { if (vivo) { setErro(mensagemDeErro(e, 'Não foi possível carregar os parceiros.')); setParceiros([]) } })
     return () => { vivo = false }
   }, [])
 

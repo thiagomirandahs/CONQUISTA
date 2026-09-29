@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { guardarRetorno } from '../lib/retornoPosLogin.js'
 import { useClube } from '../context/Clube.jsx'
 import { abrirCodigo, abrirCodigoPublico, solicitarEntrada, abrirConvite, aceitarConvite } from '../services/entrada.js'
-import { Card, Botao } from '../ui/index.jsx'
+import { Card, Botao, mensagemDeErro, Aviso } from '../ui/index.jsx'
 
 // A porta de entrada em um clube (fase 8.6).
 //
@@ -45,7 +45,7 @@ export default function Entrar() {
     setOcupado(true)
     abrirConvite(tokenDaUrl)
       .then((d) => { if (d) { setDestino(d); setEhConvite(true) } else setErro('Este convite não vale mais.') })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemDeErro(e, 'Não consegui abrir o convite.')))
       .finally(() => setOcupado(false))
   }, [tokenDaUrl])
 
@@ -68,7 +68,7 @@ export default function Entrar() {
         setPronto({ clube: d.clube, jaEra: !!r.ja_era, situacao: r.situacao || null, convite: false })
         await recarregar()
       })
-      .catch((e) => setErro(e.message))
+      .catch((e) => setErro(mensagemDeErro(e, 'Não consegui pedir a entrada no clube.')))
       .finally(() => setOcupado(false))
   }, [codigoDaUrl, tokenDaUrl, pedirDireto, recarregar])
 
@@ -92,7 +92,7 @@ export default function Entrar() {
       if (!r) { setErro('Não vale mais. Peça outro à liderança do clube.'); setOcupado(false); return }
       setPronto({ clube: destino.clube, jaEra: !!(r.ja_era || r.ja_era_membro), situacao: r.situacao || null, convite: ehConvite })
       await recarregar()
-    } catch (e) { setErro(e.message) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui pedir a entrada no clube.')) }
     setOcupado(false)
   }
 
@@ -135,7 +135,7 @@ export default function Entrar() {
         <button onClick={() => { setDestino(null); setErro('') }} className="mt-2 w-full min-h-[44px] text-sm text-muted font-semibold">
           Não é este clube
         </button>
-        {erro && <p className="text-xs text-red-600 mt-3">{erro}</p>}
+        {erro && <Aviso tom="erro">{erro}</Aviso>}
       </Tela>
     )
   }
@@ -217,7 +217,7 @@ export function InscricaoPublica() {
     if (!codigo) return
     abrirCodigoPublico(codigo)
       .then((d) => { if (d) { setClube(d); setEstado('ok') } else setEstado('invalido') })
-      .catch((e) => { setErro(e.message); setEstado('erro') })
+      .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui abrir o código do clube.')); setEstado('erro') })
   }, [codigo])
 
   const volta = `/entrar?codigo=${encodeURIComponent(codigo)}&pedir=1`

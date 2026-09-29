@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -22,7 +23,7 @@ export default function JogosTrilha() {
 
   async function carregar() {
     setCarregando(true); setErro('')
-    try { setLista(await carregarJogosTrilha()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setLista(await carregarJogosTrilha()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar os jogos.')) }
     setCarregando(false)
   }
   useEffect(() => { if (ehAdmin) carregar(); else setCarregando(false) }, [ehAdmin])

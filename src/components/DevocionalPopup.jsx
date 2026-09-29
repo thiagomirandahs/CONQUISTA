@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -38,7 +39,7 @@ export default function DevocionalPopup() {
       setFeito(r?.livro_abrev && r?.capitulo ? { livroAbrev: r.livro_abrev, capitulo: r.capitulo } : {})
       setEnviando(false)
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui registrar a resposta.'))
       setEnviando(false)
     }
   }

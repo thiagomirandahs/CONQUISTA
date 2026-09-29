@@ -5,7 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarEventos, salvarEvento, excluirEvento } from '../lib/dados.js'
 import { curto, contagem, CORES_CONT } from '../lib/eventos.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS = ['Reunião', 'Acampamento', 'Passeio', 'Culto', 'Evento']
@@ -35,7 +35,7 @@ export default function Agenda() {
 
   async function carregar() {
     setCarregando(true); setErro('')
-    try { setLista(await carregarEventos()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setLista(await carregarEventos()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar a agenda.')) }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])

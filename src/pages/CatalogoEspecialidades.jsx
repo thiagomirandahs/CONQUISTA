@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { catalogoEspecialidades } from '../services/catalogoEspecialidades.js'
 import { filtrar, rotuloNivel } from '../lib/catalogoEspecialidades.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 // Catálogo de Especialidades e Mestrados (migration 460). Só consulta: nome, código, área, nível e o
 // link "Ver requisitos" (página de origem). Mobile-first: busca grande, áreas em botões que quebram
@@ -18,7 +19,7 @@ export default function CatalogoEspecialidades() {
   const [area, setArea] = useState('')
   const [limite, setLimite] = useState(POR_VEZ)
 
-  useEffect(() => { catalogoEspecialidades().then(setDados).catch((e) => setErro(e?.message || String(e))) }, [])
+  useEffect(() => { catalogoEspecialidades().then(setDados).catch((e) => setErro(mensagemDeErro(e, 'Não consegui carregar o catálogo.'))) }, [])
   useEffect(() => { setLimite(POR_VEZ) }, [busca, area, aba])
 
   const areas = useMemo(() => {

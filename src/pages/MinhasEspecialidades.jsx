@@ -1,4 +1,4 @@
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, Aviso } from '../ui/index.jsx'
 import { useState, useEffect, useCallback } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -36,7 +36,7 @@ export default function MinhasEspecialidades() {
       setMinha(m)
       setDisponiveis(await carregarEspecialidadesDisponiveis())
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui carregar as especialidades.'))
     } finally {
       setCarregando(false)
     }
@@ -165,7 +165,7 @@ function Requisito({ r, userId, onMudou }) {
       await salvarRequisitoEspecialidade({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
       await onMudou()
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui salvar o requisito.')); setOcupado(false)
     }
   }
 
@@ -179,7 +179,7 @@ function Requisito({ r, userId, onMudou }) {
       festa()
       await onMudou()
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui enviar o requisito.')); setOcupado(false)
     }
   }
 
@@ -216,7 +216,7 @@ function Requisito({ r, userId, onMudou }) {
               )}
             </div>
           )}
-          {erro && <p className="text-xs text-red-700">{erro}</p>}
+          {erro && <Aviso tom="erro">{erro}</Aviso>}
           <div className="flex gap-2">
             {(precisaTexto || precisaFoto) && (
               <button onClick={salvar} disabled={ocupado} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted disabled:opacity-60">

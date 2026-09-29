@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -195,7 +196,7 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
         setMensagens(msgs)
         msgs.forEach((m) => { autoresRef.current[m.autor_id] = m.autor })
       }
-    } catch (e) { setErro(e?.message || 'Erro') }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar as conversas.')) }
     setCarregando(false)
   }
   useEffect(() => { carregarInicial() }, [tipo, unidadeId, conversaId]) // eslint-disable-line
@@ -296,7 +297,7 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
       // relê já, sem esperar o tempo real (que não chega na aba do clube secundário).
       if (!conversaId && r?.conversa_id) setConversaId(r.conversa_id)
       else reler()
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui enviar a mensagem.')) }
     setEnviando(false)
   }
 

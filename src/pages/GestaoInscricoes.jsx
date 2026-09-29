@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { codigoAtual, gerarCodigo, revogarCodigo } from '../services/entrada.js'
 import { qrSvg } from '../lib/qr.js'
-import { Card, Botao, Cabecalho } from '../ui/index.jsx'
+import { Card, Botao, Cabecalho, mensagemDeErro, Aviso } from '../ui/index.jsx'
 import SolicitacoesPendentes from '../components/SolicitacoesPendentes.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
@@ -59,13 +59,13 @@ export default function GestaoInscricoes() {
       const r = await gerarCodigo(prazo ? Number(prazo) : null)
       setNovo({ codigo: r.codigo })
       carregar()
-    } catch (e) { setErro(e.message) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui gerar o código.')) }
     setOcupado(false)
   }
 
   async function revogar() {
     setErro(''); setOcupado(true)
-    try { await revogarCodigo(); setNovo(null); carregar() } catch (e) { setErro(e.message) }
+    try { await revogarCodigo(); setNovo(null); carregar() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui revogar o código.')) }
     setOcupado(false)
   }
 
@@ -144,7 +144,7 @@ export default function GestaoInscricoes() {
             Revogar o código atual
           </button>
         )}
-        {erro && <p className="text-xs text-red-600 mt-2">{erro}</p>}
+        {erro && <Aviso tom="erro">{erro}</Aviso>}
       </Card>
 
       <h3 className="text-sm font-extrabold text-ink mb-2">

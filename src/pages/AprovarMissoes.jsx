@@ -22,7 +22,7 @@ export default function AprovarMissoes() {
     if (!ehAdmin) { setCarregando(false); return }
     carregarMissoesPendentes()
       .then((d) => { setLista(d); setCarregando(false) })
-      .catch((e) => { setErro(e?.message || 'Erro'); setCarregando(false) })
+      .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar as missões.')); setCarregando(false) })
   }, [ehAdmin])
 
   if (!ehAdmin) {

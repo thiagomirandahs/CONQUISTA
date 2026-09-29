@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
@@ -30,7 +31,7 @@ export default function Experiencias() {
   const buscar = useCallback(async () => {
     setErro('')
     try { setLista(await carregarExperiencias(!!podeGerir)) }
-    catch (e) { setErro(e?.message || String(e)); setLista([]) }
+    catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar as experiências.')); setLista([]) }
   }, [podeGerir])
   useEffect(() => { buscar() }, [buscar])
 
@@ -108,13 +109,13 @@ function Detalhe({ id, onVoltar }) {
   const [rascunho, setRascunho] = useState({})
 
   const buscar = useCallback(async () => {
-    try { setD(await carregarExperiencia(id)) } catch (e) { setErro(e?.message || String(e)) }
+    try { setD(await carregarExperiencia(id)) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui abrir a experiência.')) }
   }, [id])
   useEffect(() => { buscar() }, [buscar])
 
   const agir = async (fn) => {
     setErro(''); setOcupado(true)
-    try { await fn(); await buscar() } catch (e) { setErro(e?.message || String(e)) }
+    try { await fn(); await buscar() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui concluir a ação.')) }
     finally { setOcupado(false) }
   }
 
@@ -177,7 +178,7 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
     try {
       const path = await subirComprovacao({ file, tipo: 'experiencias', userId: session?.user?.id })
       setValor({ ...valor, arquivo_path: path })
-    } catch (e) { setErro?.(e?.message || String(e)) }
+    } catch (e) { setErro?.(mensagemDeErro(e, 'Não consegui enviar o arquivo.')) }
     finally { setSubindo(false) }
   }
 

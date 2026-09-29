@@ -3,7 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']
@@ -23,7 +23,7 @@ export default function Conteudo() {
 
   async function carregar() {
     setCarregando(true); setErro('')
-    try { setLista(await carregarConteudo(aba)) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setLista(await carregarConteudo(aba)) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o conteúdo.')) }
     setCarregando(false)
   }
   useEffect(() => { if (ehAdmin) carregar(); else setCarregando(false) }, [aba, ehAdmin]) // eslint-disable-line

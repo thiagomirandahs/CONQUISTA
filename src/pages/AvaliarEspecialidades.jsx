@@ -5,7 +5,7 @@ import {
   carregarEspecialidadesDisponiveis, criarOfertaEspecialidade, carregarOfertasDoClube,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, Aviso } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 
@@ -61,7 +61,7 @@ function CriarTurma() {
       setTitulo(''); setSpecialtyId('')
       await carregar()
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui criar a turma.'))
     } finally {
       setCriando(false)
     }
@@ -96,7 +96,7 @@ function CriarTurma() {
               {criando ? 'Criando...' : 'Criar turma'}
             </button>
           </div>
-          {erro && <p className="text-xs text-red-700">{erro}</p>}
+          {erro && <Aviso tom="erro">{erro}</Aviso>}
           <p className="text-[11px] text-faint">O instrutor responsável (opcional) se define depois, atribuindo participantes à turma pela RPC — a tela completa de gestão de turma fica pra próxima fase.</p>
         </div>
       )}
@@ -112,7 +112,7 @@ function FilaDeAvaliacao() {
   useEffect(() => {
     carregarAvaliacoesPendentesDeEspecialidade()
       .then((d) => { setLista(d); setCarregando(false) })
-      .catch((e) => { setErro(e?.message || 'Erro'); setCarregando(false) })
+      .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar as avaliações.')); setCarregando(false) })
   }, [])
 
   return (

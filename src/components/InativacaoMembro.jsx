@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 // Inativação com MOTIVO e histórico do vínculo (migration 310, decisão do dono 26/09: inativo não
 // se apaga; fica no clube com o motivo registrado). Só a diretoria usa estas telas — o servidor
 // confere (pode_administrar_clube) e o membro nunca vê o motivo.
@@ -35,7 +36,7 @@ export function ModalInativar({ usuario, onFechar, onFeito }) {
       await inativarMembro(usuario.id, { categoria, texto })
       onFeito?.(usuario, { categoria, texto: texto.trim() })
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui inativar.')); setOcupado(false)
     }
   }
 
@@ -88,7 +89,7 @@ export function ModalReativar({ usuario, onFechar, onFeito }) {
       await reativarMembro(usuario.id, { texto })
       onFeito?.(usuario)
     } catch (e) {
-      setErro(e?.message || String(e)); setOcupado(false)
+      setErro(mensagemDeErro(e, 'Não consegui reativar.')); setOcupado(false)
     }
   }
 
@@ -115,7 +116,7 @@ export function ModalHistorico({ usuario, onFechar }) {
   const [itens, setItens] = useState(null)
   const [erro, setErro] = useState('')
   useEffect(() => {
-    historicoDoMembro(usuario.id).then(setItens).catch((e) => setErro(e?.message || String(e)))
+    historicoDoMembro(usuario.id).then(setItens).catch((e) => setErro(mensagemDeErro(e, 'Não consegui carregar o histórico.')))
   }, [usuario.id])
 
   return (

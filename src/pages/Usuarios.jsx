@@ -157,7 +157,7 @@ export default function Usuarios() {
         listarUnidades().then(setUnidades).catch(() => {})
         carregarCargosDeUnidade().then(setCargosUni).catch(() => {})
       })
-      .catch((e) => { setErroCarregar(e?.message || 'Erro ao carregar'); setCarregando(false) })
+      .catch((e) => { setErroCarregar(mensagemDeErro(e, 'Não consegui carregar os membros.')); setCarregando(false) })
   }, [ehAdmin])
 
   if (!ehAdmin) {
@@ -355,7 +355,7 @@ function ModalPontos({ usuario, lancadoPor, onFechar }) {
       await lancarPontosIndividual({ userId: usuario.id, pontos: n, motivo: motivo.trim(), lancadoPor })
       onFechar()
     } catch (e) {
-      setErro('Não foi possível: ' + (e?.message || e))
+      setErro(mensagemDeErro(e, 'Não foi possível lançar os pontos.'))
       setSalvando(false)
     }
   }
@@ -410,7 +410,7 @@ function ModalReset({ usuario, onFechar }) {
       await resetarSenha(usuario.id, senha)
       setPronto(true)
     } catch (e) {
-      setErro('Não foi possível: ' + (e?.message || e))
+      setErro(mensagemDeErro(e, 'Não foi possível trocar a senha.'))
       setSalvando(false)
     }
   }
@@ -493,7 +493,7 @@ function ModalExcluir({ usuario, onFechar, onExcluido }) {
       await excluirUsuario(usuario.id)
       onExcluido(usuario.id)
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui excluir.'))
       setApagando(false)
     }
   }

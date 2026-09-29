@@ -115,13 +115,15 @@ describe('Onboarding', () => {
     expect(screen.getByRole('button', { name: 'Anual', pressed: true })).toBeInTheDocument()
   })
 
-  it('erro do servidor (ex.: tentativa de pular etapa) aparece pro usuário', async () => {
+  it('erro do servidor (ex.: tentativa de pular etapa) aparece pro usuário em linguagem humana', async () => {
     carregarOnboarding.mockResolvedValue(sessao('conta'))
     salvarEtapaOnboarding.mockRejectedValue(new Error('Termine a etapa "conta" antes de ir para "clube".'))
     renderT()
     await userEvent.type(await screen.findByLabelText(/Nome do responsável/), 'X')
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Termine a etapa/)
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(/Não consegui salvar a etapa/)
+    expect(alerta).not.toHaveTextContent(/Termine a etapa/)
   })
 
   it('a etapa da equipe transforma a lista de e-mails em array antes de enviar', async () => {

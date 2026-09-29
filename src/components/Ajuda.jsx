@@ -1,3 +1,4 @@
+import { mensagemDeErro, Aviso } from '../ui/index.jsx'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import Avatar from './Avatar.jsx'
@@ -86,7 +87,7 @@ export function PedirAjuda({ jogo, enunciado, resposta, onAjudado }) {
             </div>
             <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Procurar amigo…"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-2 shrink-0 outline-none focus:border-azul" />
-            {erro && <p className="text-xs text-red-600 mb-2">{erro}</p>}
+            {erro && <Aviso tom="erro">{erro}</Aviso>}
             {colegas === null ? (
               <EsqueletoTela cabecalho={false} cartoes={2} />
             ) : (
@@ -164,7 +165,7 @@ export function CaixaAjuda({ pedidos, aoFechar, aoResolvido }) {
         setAviso(r.ganhou ? `✅ Você ajudou! +${r.ganhou} pontos 🎉` : '✅ Você ajudou! (limite de pontos de hoje atingido)')
         setTimeout(() => { aoResolvido(sel.id); setSel(null); setResp(''); setAviso('') }, 1700)
       } else setAviso(r.erro === 'sumiu' ? 'Esse pedido não está mais disponível.' : '❌ Não é essa. Tenta de novo!')
-    } catch (e) { setAviso(e?.message || 'Erro') }
+    } catch (e) { setAviso(mensagemDeErro(e, 'Não consegui registrar a ajuda.')) }
     setEnviando(false)
   }
 

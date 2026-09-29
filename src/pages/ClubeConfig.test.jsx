@@ -102,12 +102,13 @@ describe('identidade do clube', () => {
     expect(salvar()).toBeDisabled()
   })
 
-  it('erro do servidor aparece e nada é dado como salvo', async () => {
+  it('erro do servidor aparece traduzido (sem texto cru) e nada é dado como salvo', async () => {
     gravarMarca.mockRejectedValue(new Error('Sem permissão (apenas a liderança do clube).'))
     render(<ClubeConfig />)
     await userEvent.type(screen.getByLabelText('Nome do clube'), 'x')
     await userEvent.click(salvar())
-    expect(await screen.findByText(/Sem permissão/)).toBeInTheDocument()
+    expect(await screen.findByText(/liderança do clube/)).toBeInTheDocument()
+    expect(screen.queryByText(/Sem permissão \(apenas/)).toBeNull()
     expect(screen.queryByText('Identidade salva ✅')).toBeNull()
     expect(recarregar).not.toHaveBeenCalled()
   })
@@ -160,18 +161,20 @@ describe('recursos (feature flags) do clube', () => {
     await waitFor(() => expect(definirRecurso).toHaveBeenCalledWith('leilao', true))
   })
 
-  it('recusa do servidor (ex.: leilão aberto) aparece na tela', async () => {
+  it('recusa do servidor (ex.: leilão aberto) aparece na tela em linguagem humana', async () => {
     definirRecurso.mockRejectedValue(new Error('Há leilão aberto: encerre ou cancele antes de desligar o leilão.'))
     comoLideranca({ recursos: { chat: true, leilao: true } })
     render(<ClubeConfig />)
     await userEvent.click(await screen.findByRole('switch', { name: 'Leilão: ligado' }))
-    expect(await screen.findByText(/Há leilão aberto/)).toBeInTheDocument()
+    expect(await screen.findByText(/Não consegui mudar o recurso/)).toBeInTheDocument()
+    expect(screen.queryByText(/Há leilão aberto/)).toBeNull()
   })
 
   it('catálogo que não carrega: mostra o erro em vez de travar', async () => {
     carregarCatalogoRecursos.mockRejectedValue(new Error('negado'))
     render(<ClubeConfig />)
-    expect(await screen.findByText('negado')).toBeInTheDocument()
+    expect(await screen.findByText(/Não consegui carregar os recursos/)).toBeInTheDocument()
+    expect(screen.queryByText('negado')).toBeNull()
   })
 })
 

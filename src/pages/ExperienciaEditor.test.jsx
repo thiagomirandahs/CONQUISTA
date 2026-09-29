@@ -75,12 +75,14 @@ describe('ExperienciaEditor', () => {
     }))
   })
 
-  it('erro do servidor (vocabulário) aparece na tela, como veio', async () => {
+  it('erro do servidor (vocabulário) aparece na tela traduzido, nunca cru', async () => {
     salvarExperiencia.mockRejectedValue(new Error('O campo "título" não aceita HTML (os sinais < e >). Escreva só texto.'))
     renderT()
     await userEvent.type(await screen.findByLabelText('Título'), 'x')
     await userEvent.click(screen.getByRole('button', { name: 'Criar rascunho' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/não aceita HTML/)
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveTextContent(/Escreva só texto/)
+    expect(alerta).not.toHaveTextContent(/não aceita HTML/)
   })
 
   it('com o rascunho aberto, adiciona etapa escolhendo a evidência de uma lista fechada', async () => {

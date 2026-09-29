@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Cabecalho, Card, Botao, Aviso, Selo, Carregando, Vazio, Selecao, Campo } from '../ui/index.jsx'
+import { Cabecalho, Card, Botao, Aviso, Selo, Carregando, Vazio, Selecao, Campo, mensagemDeErro } from '../ui/index.jsx'
 import { carregarDocumentosDoClube, gerarPdf, baixarPdf, assinarLote, gerarRepresentacaoFinal, ROTULO_ESTADO } from '../services/documentos.js'
 import AssinarDocumentoModal from '../components/AssinarDocumentoModal.jsx'
 import RevisarDocumentoModal from '../components/RevisarDocumentoModal.jsx'
@@ -34,7 +34,7 @@ export default function GestaoDocumentos() {
   const [loteOcupado, setLoteOcupado] = useState(false)
 
   const carregar = useCallback(() => {
-    carregarDocumentosDoClube().then(setDocs).catch((e) => setErro(e.message))
+    carregarDocumentosDoClube().then(setDocs).catch((e) => setErro(mensagemDeErro(e, 'Não consegui carregar os documentos.')))
   }, [])
   useEffect(() => { carregar() }, [carregar])
 

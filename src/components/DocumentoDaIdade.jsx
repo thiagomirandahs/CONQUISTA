@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Comprovacao from './Comprovacao.jsx'
 import { enviarDocumento, apagarDocumentoConferido, documentoDoRequisito } from '../services/documentoIdade.js'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 const dataBR = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '')
 
@@ -21,7 +22,7 @@ export function DocumentoDaIdade({ info, requirementId, memberRequirementId, pod
   async function escolher(file) {
     if (!file) return
     setOcupado(true); setErro('')
-    try { await enviarDocumento({ requirementId, file, userId }); await onMudou?.() } catch (e) { setErro(e?.message || String(e)) }
+    try { await enviarDocumento({ requirementId, file, userId }); await onMudou?.() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui enviar o documento.')) }
     setOcupado(false)
   }
 

@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../../ui/index.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SiteLayout, { CONTAINER, BOTAO_PRIMARIO, TopoDaPagina, useMetaDaPagina } from './SiteLayout.jsx'
@@ -16,7 +17,7 @@ export default function SiteClubes() {
   useEffect(() => {
     let vivo = true
     clubesDaVitrine().then((c) => { if (vivo) setClubes(c) })
-      .catch((e) => { if (vivo) { setErro(e?.message || 'Não foi possível carregar os clubes.'); setClubes([]) } })
+      .catch((e) => { if (vivo) { setErro(mensagemDeErro(e, 'Não foi possível carregar os clubes.')); setClubes([]) } })
     return () => { vivo = false }
   }, [])
 

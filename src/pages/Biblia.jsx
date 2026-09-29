@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useRef } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
@@ -139,7 +140,7 @@ export default function Biblia() {
       }, 1000)
     } catch (e) {
       if (meuToken !== tokenRef.current) return
-      setErroMsg(e?.message || 'Não deu pra registrar a leitura agora.')
+      setErroMsg(mensagemDeErro(e, 'Não deu pra registrar a leitura agora.'))
       setFase('erro') // mostra o motivo real (ex: cadastro inativo), não "já lido"
     }
   }

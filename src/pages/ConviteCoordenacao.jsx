@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { conviteAbrir, conviteAceitar, rotuloPapel, TIPO_ROTULO } from '../services/hierarquia.js'
@@ -22,7 +23,7 @@ export default function ConviteCoordenacao() {
 
   useEffect(() => {
     if (!token) { setConvite({ encontrado: false }); return }
-    conviteAbrir(token).then(setConvite).catch((e) => setErro(e?.message || String(e)))
+    conviteAbrir(token).then(setConvite).catch((e) => setErro(mensagemDeErro(e, 'Não consegui abrir o convite.')))
   }, [token])
 
   const aceitar = async () => {
@@ -31,7 +32,7 @@ export default function ConviteCoordenacao() {
       const r = await conviteAceitar(token, convite.modo === 'escolha' ? escolha || null : null)
       if (!r?.encontrado) setConvite({ encontrado: false })
       else { setResultado(r); await escopoCtx?.recarregar?.() }
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui aceitar o convite.')) }
     setEnviando(false)
   }
 

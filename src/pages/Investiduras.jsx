@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura, emitirDocumento } from '../lib/dados.js'
@@ -32,7 +33,7 @@ export default function Investiduras() {
   const recarregar = useCallback(async () => {
     if (!ehAdmin) { setCarregando(false); return }
     setErro('')
-    try { setLista(await carregarRevisoesPendentes()) } catch (e) { setErro(e?.message || 'Erro') } finally { setCarregando(false) }
+    try { setLista(await carregarRevisoesPendentes()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar as investiduras.')) } finally { setCarregando(false) }
   }, [ehAdmin])
   useEffect(() => { recarregar() }, [recarregar])
 
@@ -95,7 +96,7 @@ function Conclusao({ it, onMudou }) {
       const r = await fn()
       if (r && r.ok === false) setResultado('Ainda não deu pra selar a conclusão — veja os bloqueios abaixo.')
       await onMudou()
-    } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui concluir a ação.')) } finally { setOcupado(false) }
   }
   const alternar = (id) => setMarcados((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
@@ -200,7 +201,7 @@ function Conclusao({ it, onMudou }) {
       )}
 
       {it.snapshot && (it.status === 'aguardando_revisao' || it.status === 'apto_investidura') && (
-        <button onClick={async () => { try { const r = await emitirDocumento(it.member_class_id); window.open(`/documento/${r.token}`, '_blank', 'noopener') } catch (e) { setErro(e?.message || String(e)) } }}
+        <button onClick={async () => { try { const r = await emitirDocumento(it.member_class_id); window.open(`/documento/${r.token}`, '_blank', 'noopener') } catch (e) { setErro(mensagemDeErro(e, 'Não consegui emitir o documento.')) } }}
           className="w-full min-h-[40px] rounded-lg border border-line text-xs font-semibold text-muted mt-2">
           📘 Ver caderno de acompanhamento
         </button>

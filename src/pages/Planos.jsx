@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { carregarPlanos, carregarAssinaturaDoClube, formatarPreco, ROTULO_STATUS } from '../services/comercial.js'
@@ -39,7 +40,7 @@ export default function Planos() {
       try {
         const [p, a] = await Promise.all([carregarPlanos(), carregarAssinaturaDoClube().catch(() => null)])
         if (vivo) { setPlanos(p); setAssinatura(a) }
-      } catch (e) { if (vivo) setErro(e?.message || String(e)) }
+      } catch (e) { if (vivo) setErro(mensagemDeErro(e, 'Não consegui carregar os planos.')) }
     })()
     return () => { vivo = false }
   }, [])

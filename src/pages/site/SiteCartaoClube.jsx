@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import SiteLayout, { CONTAINER, BOTAO_SECUNDARIO, useMetaDaPagina } from './SiteLayout.jsx'
@@ -21,7 +22,7 @@ export default function SiteCartaoClube() {
   useEffect(() => {
     let vivo = true
     cartaoDoClube(slug).then((c) => { if (vivo) setResposta({ slug, clube: c || { encontrado: false }, erro: '' }) })
-      .catch((e) => { if (vivo) setResposta({ slug, clube: { encontrado: false }, erro: e?.message || 'Não foi possível carregar o clube.' }) })
+      .catch((e) => { if (vivo) setResposta({ slug, clube: { encontrado: false }, erro: mensagemDeErro(e, 'Não foi possível carregar o clube.') }) })
     return () => { vivo = false }
   }, [slug])
 

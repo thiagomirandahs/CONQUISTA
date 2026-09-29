@@ -8,7 +8,7 @@ import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -93,7 +93,7 @@ export default function Atividades() {
         ? membrosDoClube({ papeis: PAPEIS_DE_UNIDADE }).then((data) => ({ data }), () => ({ data: [] }))
         : vazio,
     ])
-    if (ats.error) setErroBanco(ats.error.message)
+    if (ats.error) setErroBanco(mensagemDeErro(ats.error, 'Não consegui carregar as atividades.'))
     else setErroBanco('')
     setAtividades(ats.data || [])
     const map = {}
@@ -592,7 +592,7 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
     try {
       await onConfirmar(atividade, { texto, foto })
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui enviar a atividade.'))
       setEnviando(false)
     }
   }

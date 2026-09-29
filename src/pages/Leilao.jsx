@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -72,7 +73,7 @@ export default function Leilao() {
   }
   async function carregar() {
     setCarregando(true); setErro('')
-    try { await buscarDados() } catch (e) { setErro(e?.message || 'Erro') }
+    try { await buscarDados() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o leilão.')) }
     setCarregando(false)
   }
   // Atualização de fundo (poll/foco): mesma busca, mas SEM mostrar "Carregando..."
@@ -393,7 +394,7 @@ function ModalLance({ item, unidades, minhaUni, saldo, onFechar, onDado }) {
       acerto(2)
       if (r?.pendente) avisar.info('Lance registrado! Falta a(s) outra(s) unidade(s) convidada(s) confirmar pra valer.')
       onDado()
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui dar o lance.')) }
     setEnviando(false)
   }
 
@@ -477,7 +478,7 @@ function ModalCriarLeilao({ onFechar, onCriado }) {
       await criarLeilao(titulo.trim(), new Date(fechaEm).toISOString(),
         itens.map((i) => ({ ...i, preco_base: Number(i.preco_base) || 0, incremento_minimo: Number(i.incremento_minimo) || 5 })))
       onCriado()
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui criar o leilão.')) }
     setEnviando(false)
   }
 

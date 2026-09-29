@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { convitesDoClube, convidarParaEquipe, revogarConvite, meusConvites, aceitarConvite } from '../services/equipe.js'
-import { Card, Botao, Selecao } from '../ui/index.jsx'
+import { Card, Botao, Selecao, mensagemDeErro } from '../ui/index.jsx'
 
 // A interface do convite de equipe — a ponta que faltava do caminho "entrar num segundo clube".
 //
@@ -52,13 +52,13 @@ export function ConvidarEquipe() {
       await convidarParaEquipe(email.trim(), papel, cargo)
       setEmail(''); setMsg('Convite enviado. Ele vale por 14 dias.')
       carregar()
-    } catch (erro) { setMsg(erro.message || 'Não deu para convidar.') }
+    } catch (erro) { setMsg(mensagemDeErro(erro, 'Não deu para convidar.')) }
     setOcupado(false)
   }
 
   async function revogar(id) {
     setOcupado(true)
-    try { await revogarConvite(id); carregar() } catch (erro) { setMsg(erro.message) }
+    try { await revogarConvite(id); carregar() } catch (erro) { setMsg(mensagemDeErro(erro, 'Não deu para revogar o convite.')) }
     setOcupado(false)
   }
 
@@ -124,7 +124,7 @@ export function MeusConvites() {
       // O contexto precisa ser relido: o vínculo acabou de nascer, e sem isto o seletor de clube
       // continuaria mostrando a lista de antes até alguém recarregar a página.
       await recarregar()
-    } catch (erro) { setMsg(erro.message || 'Não deu para aceitar.') }
+    } catch (erro) { setMsg(mensagemDeErro(erro, 'Não deu para aceitar.')) }
     setOcupado(false)
   }
 

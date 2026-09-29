@@ -1,4 +1,4 @@
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useMemo } from 'react'
 import { Cabecalho, Aviso } from '../ui/index.jsx'
 import {
@@ -26,7 +26,7 @@ export default function GestaoAvaliacoes() {
     let vivo = true
     carregarFilaDeAvaliacao(filtroTipo || null, null)
       .then((d) => { if (vivo) setLista(d) })
-      .catch((e) => { if (vivo) { setErro(e?.message || 'Não consegui carregar a fila.'); setLista([]) } })
+      .catch((e) => { if (vivo) { setErro(mensagemDeErro(e, 'Não consegui carregar a fila.')); setLista([]) } })
     return () => { vivo = false }
   }, [filtroTipo])
 

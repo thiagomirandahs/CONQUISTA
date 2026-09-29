@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -84,7 +85,7 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
   async function trocarLogo(arquivo) {
     if (!arquivo) return
     setEnviandoLogo(true); setErro('')
-    try { mudar('logoUrl')(await subirLogoDoClube({ clubeId, file: arquivo })) } catch (e) { setErro(e?.message || String(e)) }
+    try { mudar('logoUrl')(await subirLogoDoClube({ clubeId, file: arquivo })) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui enviar a logo.')) }
     setEnviandoLogo(false)
   }
 
@@ -96,7 +97,7 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
       await gravarMarca(diff)
       setOk(true)
       await aoSalvar()
-    } catch (err) { setErro(err?.message || String(err)) }
+    } catch (err) { setErro(mensagemDeErro(err, 'Não consegui salvar as configurações.')) }
     setSalvando(false)
   }
 
@@ -172,13 +173,13 @@ function ListaRecursos({ recursos, aoMudar }) {
     let vivo = true
     carregarCatalogoRecursos()
       .then((c) => { if (vivo) setCatalogo(c) })
-      .catch((e) => { if (vivo) { setCatalogo([]); setErro(e?.message || String(e)) } })
+      .catch((e) => { if (vivo) { setCatalogo([]); setErro(mensagemDeErro(e, 'Não consegui carregar os recursos.')) } })
     return () => { vivo = false }
   }, [])
 
   async function alternar(chave, ligar) {
     setSalvando(chave); setErro('')
-    try { await definirRecurso(chave, ligar); await aoMudar() } catch (e) { setErro(e?.message || String(e)) }
+    try { await definirRecurso(chave, ligar); await aoMudar() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui mudar o recurso.')) }
     setSalvando(null)
   }
 

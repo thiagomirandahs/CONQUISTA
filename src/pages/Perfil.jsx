@@ -10,7 +10,7 @@ import EditarNascimento from '../components/EditarNascimento.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
 import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
 import { calcularNivel } from '../lib/nivel.js'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, Aviso } from '../ui/index.jsx'
 
 const CHAVE_NIVEL_VISTO = 'nivelVisto'
 
@@ -82,7 +82,7 @@ export default function Perfil() {
       await recarregarPerfil?.()
       setMsg('✅ Foto atualizada! Já aparece no ranking e nas unidades.')
     } catch (e) {
-      setErro('Não foi possível: ' + (e?.message || e))
+      setErro(mensagemDeErro(e, 'Não foi possível trocar a foto.'))
       setPrevia(null)
     }
     setEnviando(false)
@@ -145,7 +145,7 @@ export default function Perfil() {
         </div>
 
         {msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm mt-3 text-green-600 font-semibold">{msg}</motion.p>}
-        {erro && <p className="text-sm mt-3 text-red-600">{erro}</p>}
+        {erro && <Aviso tom="erro">{erro}</Aviso>}
       </div>
 
       <p className="text-center text-xs text-faint mt-4">A foto ideal é quadrada e mostra bem o rosto 🙂</p>

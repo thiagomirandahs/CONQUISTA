@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -54,7 +55,7 @@ export default function Missoes() {
       if (r?.status !== 'pendente') festa() // foto que vai pra aprovação não solta confete ainda
       await recarregar()
     } catch (e) {
-      setErro(e?.message || String(e))
+      setErro(mensagemDeErro(e, 'Não consegui enviar a missão.'))
       setEnviando(false)
     }
   }

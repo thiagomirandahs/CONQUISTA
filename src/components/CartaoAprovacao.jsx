@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { carregarCartaoInvestidura, decidirCartaoInvestidura, urlEvidenciaCurta } from '../services/institucional.js'
 import LinhaDoTempoInvestidura from './LinhaDoTempoInvestidura.jsx'
@@ -55,7 +56,7 @@ export default function CartaoAprovacao({ memberClassId, aoDecidir, somenteLeitu
 
   useEffect(() => {
     let vivo = true
-    carregarCartaoInvestidura(memberClassId).then((c) => { if (vivo) setCartao(c) }).catch((e) => { if (vivo) setErro(e?.message || 'Erro') })
+    carregarCartaoInvestidura(memberClassId).then((c) => { if (vivo) setCartao(c) }).catch((e) => { if (vivo) setErro(mensagemDeErro(e, 'Não consegui carregar o cartão.')) })
     return () => { vivo = false }
   }, [memberClassId])
 
@@ -67,7 +68,7 @@ export default function CartaoAprovacao({ memberClassId, aoDecidir, somenteLeitu
         : []
       await decidirCartaoInvestidura(memberClassId, decisao, comentario.trim() || null, correcoes)
       aoDecidir?.(decisao)
-    } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui registrar a decisão.')) } finally { setOcupado(false) }
   }
   const alternar = (id) => setMarcados((m) => { const n = { ...m }; if (id in n) delete n[id]; else n[id] = ''; return n })
 

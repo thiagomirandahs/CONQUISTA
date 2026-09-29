@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -18,7 +19,7 @@ export default function Atividade() {
     if (!ehAdmin) { setCarregando(false); return }
     atividadeJogos()
       .then((r) => { setD(r); setCarregando(false) })
-      .catch((e) => { setErro(e?.message || 'Erro'); setCarregando(false) })
+      .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar a atividade.')); setCarregando(false) })
   }, [ehAdmin])
 
   if (!ehAdmin) {

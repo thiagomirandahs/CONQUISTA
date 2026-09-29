@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { lerCartaoDoClube, salvarCartaoDoClube } from '../services/vitrine.js'
 import { CartaoDoClube } from './site/CartaoDoClube.jsx'
@@ -65,7 +66,7 @@ export default function ClubeVitrine({ clubeId, marca }) {
     let vivo = true
     lerCartaoDoClube(clubeId)
       .then((d) => { if (vivo) { setForm(doServidor(d)); setMeta(d || {}) } })
-      .catch((e) => { if (vivo) { setForm(doServidor(null)); setErro(e?.message || String(e)) } })
+      .catch((e) => { if (vivo) { setForm(doServidor(null)); setErro(mensagemDeErro(e, 'Não consegui carregar o cartão do clube.')) } })
     return () => { vivo = false }
   }, [clubeId])
 
@@ -79,7 +80,7 @@ export default function ClubeVitrine({ clubeId, marca }) {
     e.preventDefault()
     if (erros.length) return
     setSalvando(true); setErro('')
-    try { const d = await salvarCartaoDoClube(clubeId, form); setForm(doServidor(d)); setMeta(d || {}); setOk(true) } catch (err) { setErro(err?.message || String(err)) }
+    try { const d = await salvarCartaoDoClube(clubeId, form); setForm(doServidor(d)); setMeta(d || {}); setOk(true) } catch (err) { setErro(mensagemDeErro(err, 'Não consegui salvar o cartão do clube.')) }
     setSalvando(false)
   }
 

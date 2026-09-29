@@ -13,7 +13,7 @@ import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -314,7 +314,7 @@ function PontosUnidade({ unidade, onLancar, onFechar }) {
     try {
       await onLancar(n, motivo.trim())
     } catch (err) {
-      setErro('Não foi possível lançar: ' + (err?.message || err))
+      setErro(mensagemDeErro(err, 'Não foi possível lançar os pontos.'))
       setSalvando(false)
     }
   }

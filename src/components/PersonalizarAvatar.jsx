@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState } from 'react'
 import { m as motion } from 'framer-motion'
 import AvatarPersonagem from './AvatarPersonagem.jsx'
@@ -40,13 +41,13 @@ export default function PersonalizarAvatar({ avatarAtual, nivel, onFechar, onSal
       await salvarAvatar(av, 'personagem')
       festa(2)
       onSalvo?.(av)
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui salvar o avatar.')) }
     setSalvando(false)
   }
 
   async function usarFoto() {
     setSalvando(true)
-    try { await salvarAvatar(null, 'foto'); onSalvo?.(null, 'foto') } catch (e) { setErro(e?.message || String(e)) }
+    try { await salvarAvatar(null, 'foto'); onSalvo?.(null, 'foto') } catch (e) { setErro(mensagemDeErro(e, 'Não consegui remover a foto.')) }
     setSalvando(false)
   }
 

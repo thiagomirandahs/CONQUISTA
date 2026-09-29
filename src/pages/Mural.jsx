@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -451,7 +452,7 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
       await onEnviar({ file, legenda: legenda.trim() })
       onFechar()
     } catch (err) {
-      setErro('Não foi possível enviar: ' + (err?.message || err))
+      setErro(mensagemDeErro(err, 'Não foi possível enviar a foto.'))
       setEnviando(false)
     }
   }

@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
@@ -43,7 +44,7 @@ export default function Onboarding() {
   }, [searchParams])
 
   const buscar = useCallback(async () => {
-    try { setEstado(await carregarOnboarding()) } catch (e) { setErro(e?.message || String(e)) }
+    try { setEstado(await carregarOnboarding()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o passo a passo.')) }
   }, [])
   useEffect(() => { buscar() }, [buscar])
 
@@ -61,7 +62,7 @@ export default function Onboarding() {
 
   const comecar = async () => {
     setErro(''); setSalvando(true)
-    try { await iniciarOnboarding(); await buscar() } catch (e) { setErro(e?.message || String(e)) }
+    try { await iniciarOnboarding(); await buscar() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui começar.')) }
     finally { setSalvando(false) }
   }
 
@@ -73,10 +74,10 @@ export default function Onboarding() {
     try {
       if (antes) await antes()
       await salvarEtapaOnboarding(etapa, dados)
-      if (depois) { try { await depois() } catch (e) { setErro(e?.message || String(e)) } }
+      if (depois) { try { await depois() } catch (e) { setErro(mensagemDeErro(e, 'A etapa foi salva, mas o passo seguinte falhou.')) } }
       setForm({}); await buscar()
     }
-    catch (e) { setErro(e?.message || String(e)) }
+    catch (e) { setErro(mensagemDeErro(e, 'Não consegui salvar a etapa.')) }
     finally { setSalvando(false) }
   }
   const resgatar = async (codigo) => { const r = await resgatarCortesia(codigo); setCortesiaAte(r.ate); return r }
@@ -348,7 +349,7 @@ function CortesiaAvulsa({ onResgatar }) {
     ev.preventDefault()
     if (!codigo.trim()) return
     setErro(''); setOcupado(true)
-    try { await onResgatar(codigo.trim()) } catch (e) { setErro(e?.message || String(e)) } finally { setOcupado(false) }
+    try { await onResgatar(codigo.trim()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui resgatar o código.')) } finally { setOcupado(false) }
   }
   return (
     <details className="mt-3 bg-surface rounded-2xl p-4 shadow-soft" data-testid="cortesia-avulsa">

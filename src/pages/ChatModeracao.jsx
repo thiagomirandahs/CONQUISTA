@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -24,7 +25,7 @@ export default function ChatModeracao() {
 
   async function carregar() {
     setCarregando(true); setErro('')
-    try { setConversas(await carregarTodasConversasChat()) } catch (e) { setErro(e?.message || 'Erro') }
+    try { setConversas(await carregarTodasConversasChat()) } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar as conversas.')) }
     setCarregando(false)
   }
   useEffect(() => { if (ehAdmin) carregar() }, [ehAdmin]) // eslint-disable-line

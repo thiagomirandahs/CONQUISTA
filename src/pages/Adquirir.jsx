@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LinkApp from '../components/LinkApp.jsx'
@@ -22,7 +23,7 @@ export default function Adquirir() {
 
   useEffect(() => {
     let vivo = true
-    carregarPlanos().then((p) => { if (vivo) setPlanos(p) }).catch((e) => { if (vivo) setErro(e?.message || String(e)) })
+    carregarPlanos().then((p) => { if (vivo) setPlanos(p) }).catch((e) => { if (vivo) setErro(mensagemDeErro(e, 'Não consegui carregar os planos.')) })
     return () => { vivo = false }
   }, [])
 

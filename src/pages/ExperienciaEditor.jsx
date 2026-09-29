@@ -6,6 +6,7 @@ import {
   TIPO_ROTULO, EVIDENCIA_ROTULO, STATUS_ROTULO,
 } from '../services/experiencias.js'
 import { supabase } from '../lib/supabase.js'
+import { mensagemDeErro } from '../ui/index.jsx'
 
 // Construtor NO-CODE (fase 6). A liderança monta a experiência escolhendo de listas fechadas: o
 // front NUNCA inventa um campo nem monta expressão. Se algo estiver fora do vocabulário, quem recusa
@@ -47,7 +48,7 @@ export default function ExperienciaEditor() {
 
   const agir = async (fn) => {
     setErro(''); setOcupado(true)
-    try { return await fn() } catch (e) { setErro(e?.message || String(e)); return null }
+    try { return await fn() } catch (e) { setErro(mensagemDeErro(e, 'Não consegui salvar a experiência.')); return null }
     finally { setOcupado(false) }
   }
 

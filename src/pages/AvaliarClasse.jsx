@@ -22,7 +22,7 @@ export default function AvaliarClasse() {
     if (!ehAdmin) { setCarregando(false); return }
     carregarAvaliacoesPendentesDeClasse()
       .then((d) => { setLista(d); setCarregando(false) })
-      .catch((e) => { setErro(e?.message || 'Erro'); setCarregando(false) })
+      .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar a classe.')); setCarregando(false) })
   }, [ehAdmin])
 
   if (!ehAdmin) {

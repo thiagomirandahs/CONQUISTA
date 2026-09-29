@@ -1,3 +1,4 @@
+import { mensagemDeErro, Aviso } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -107,7 +108,7 @@ function ConvitesResponsavel() {
 
   async function carregar() {
     try { setLista(await listarConvitesResponsavel()); setErro('') }
-    catch (e) { setErro(e?.message || String(e)) }
+    catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar os convites.')) }
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -120,7 +121,7 @@ function ConvitesResponsavel() {
       setLinkNovo(link)
       try { await navigator.clipboard?.writeText(link); setCopiado(true) } catch { /* sem permissão: o link segue na tela */ }
       await carregar()
-    } catch (e) { setErro(e?.message || String(e)) }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui criar o convite.')) }
     setCriando(false)
   }
 
@@ -157,7 +158,7 @@ function ConvitesResponsavel() {
         </div>
       )}
 
-      {erro && <p className="text-xs text-red-600 mb-2">{erro}</p>}
+      {erro && <Aviso tom="erro">{erro}</Aviso>}
 
       {carregando ? (
         <p className="text-faint text-xs">Carregando...</p>
@@ -215,7 +216,7 @@ function ModalAprovar({ pedido, onFechar, onAprovado }) {
     if (salvando) return
     setSalvando(true); setErro('')
     try { await aprovarVinculo(pedido.id, desbravador.id); onAprovado() }
-    catch (e) { setErro(e?.message || String(e)); setSalvando(false) }
+    catch (e) { setErro(mensagemDeErro(e, 'Não consegui aprovar o vínculo.')); setSalvando(false) }
   }
 
   return (

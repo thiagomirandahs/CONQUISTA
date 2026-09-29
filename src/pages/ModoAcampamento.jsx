@@ -1,3 +1,4 @@
+import { mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -56,7 +57,7 @@ export default function ModoAcampamento() {
       setUnidades(us)
       setHistorico(hist)
       setMembros((membrosRaw || []).filter((m) => m.status === 'ativo' && (m.papel === 'desbravador' || m.papel === 'conselheiro')))
-    } catch (e) { setErro(e?.message || 'Erro') }
+    } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar o acampamento.')) }
     setCarregando(false)
   }
   useEffect(() => { if (ehAdmin) carregar() }, [ehAdmin]) // eslint-disable-line
@@ -122,7 +123,7 @@ export default function ModoAcampamento() {
       setColocacaoDe({})
       setAtividade('')
       carregar()
-    } catch (e) { setMsg('❌ ' + (e?.message || String(e))) }
+    } catch (e) { setMsg(mensagemDeErro(e, 'Não consegui lançar a colocação.')) }
     setEnviando(false)
   }
 
@@ -144,7 +145,7 @@ export default function ModoAcampamento() {
       setMsgAjuste(`✅ ${ajusteSinal === 'tirar' ? 'Tirados' : 'Dados'} ${n} pts ${ajusteSinal === 'tirar' ? 'de' : 'pra'} ${nomeU}.`)
       setAjusteUni(''); setAjusteVal(''); setAjusteMotivo('')
       carregar()
-    } catch (e) { setMsgAjuste('❌ ' + (e?.message || String(e))) }
+    } catch (e) { setMsgAjuste(mensagemDeErro(e, 'Não consegui ajustar os pontos.')) }
     setEnviandoAjuste(false)
   }
 
@@ -164,7 +165,7 @@ export default function ModoAcampamento() {
       const nomeM = (membros.find((m) => m.id === ajusteMbId)?.nome || 'o membro').split(' ')[0]
       setMsgMb(`✅ ${ajusteMbSinal === 'tirar' ? 'Tirados' : 'Dados'} ${n} pts ${ajusteMbSinal === 'tirar' ? 'de' : 'pra'} ${nomeM}.`)
       setAjusteMbId(''); setAjusteMbVal(''); setAjusteMbMotivo('')
-    } catch (e) { setMsgMb('❌ ' + (e?.message || String(e))) }
+    } catch (e) { setMsgMb(mensagemDeErro(e, 'Não consegui ajustar os pontos.')) }
     setEnviandoMb(false)
   }
 
