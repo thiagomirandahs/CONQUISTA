@@ -54,13 +54,7 @@ select t.eq('o próprio dono continua lendo', t.n(t.qtd_arq()), 1::bigint);
 select public.salvar_avatar(null, 'foto');
 select t.como('membro_b');
 select t.eq('voltou para foto (arquivada): outro clube lê de novo', t.n(t.qtd_arq()), 1::bigint);
--- avatar_tipo nulo conta como "não personagem"
-select t.como_cron();
-set local session_replication_role = replica;
-update public.profiles set avatar_tipo = null where id = t.id('membro_a2');
-set local session_replication_role = origin;
-select t.como('membro_b');
-select t.eq('avatar_tipo nulo = não personagem: continua abrindo', t.n(t.qtd_arq()), 1::bigint);
+-- (avatar_tipo é NOT NULL default 'foto' desde a migration 20260824000001: não existe caso nulo)
 
 -- 5. personagem de novo: fecha na hora
 select t.como('membro_a2');
