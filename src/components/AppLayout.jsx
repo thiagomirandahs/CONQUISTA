@@ -139,7 +139,7 @@ export default function AppLayout() {
           </div>
         )}
 
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-28 lg:pb-10">
+        <main className="flex-1 w-full max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-8 pb-[calc(7rem+var(--seguro-baixo))] lg:pb-10">
           {/* Troca de tela: só ENTRADA (fade + leve deslize/escala, 180ms). Sem animação de saída de
               propósito — com mode="wait" a tela nova esperava a velha sair (~0,5s a mais por toque). */}
           <motion.div

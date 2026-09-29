@@ -180,7 +180,7 @@ function MenuDaContaAdmin() {
         {/* renderizado direto no <body> (portal): a transição de página aplica transform no conteúdo, o que
             prendia o menu numa camada abaixo da barra de seção. Fixo, acima de tudo; tocar fora fecha. */}
         <button type="button" aria-label="Fechar menu" tabIndex={-1} onClick={() => setAberto(false)} className="fixed inset-0 z-[90] cursor-default bg-black/20" />
-        <div className="fixed right-4 top-16 z-[100] w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
+        <div className="fixed right-4 top-[calc(4rem+var(--seguro-topo))] z-[100] w-64 rounded-2xl border border-line bg-surface p-1.5 text-ink shadow-xl">
           <Link to="/conta/senha" className={item}><span aria-hidden="true">🔑</span>Trocar senha</Link>
           <Link to="/institucional" className={item}><span aria-hidden="true">🏛️</span>Portal da coordenação</Link>
           <button type="button" className={`${item} text-red-600`} onClick={sair} data-testid="admin-sair"><span aria-hidden="true">🚪</span>Sair da conta</button>
@@ -194,7 +194,7 @@ function MenuDaContaAdmin() {
 // Barra compacta azul-marinho (a mesma da landing), fixa no topo ao rolar.
 function CabecalhoAdmin() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07122f] text-white">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07122f] text-white" style={{ paddingTop: 'var(--seguro-topo)' }}>
       <div className="max-w-5xl mx-auto flex items-center gap-3 px-4 py-3">
         <img src={MARCA_PRODUTO.logoUrl} alt="" width="36" height="36" className="h-9 w-9 shrink-0 rounded-xl ring-1 ring-white/15" />
         <div className="min-w-0 flex-1">
@@ -225,7 +225,7 @@ function AbasDoAdmin({ abas, ativa, aoTrocar, contadores = {} }) {
     return () => window.removeEventListener('keydown', esc)
   }, [aberto])
   return (
-    <nav aria-label="Áreas da administração" className="sticky top-[61px] z-20 -mx-4 mb-4 border-b border-line bg-bg/95 px-4 py-2.5 backdrop-blur">
+    <nav aria-label="Áreas da administração" className="sticky top-[calc(61px+var(--seguro-topo))] z-20 -mx-4 mb-4 border-b border-line bg-bg/95 px-4 py-2.5 backdrop-blur">
       <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} aria-controls="admin-menu-lista"
         data-testid="admin-menu" className={`flex w-full min-h-[48px] items-center gap-3 rounded-xl border border-line bg-surface px-3.5 text-left ${FOCO}`}>
         <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-lg bg-surface2 text-lg">{atual.icone}</span>

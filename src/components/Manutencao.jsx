@@ -60,7 +60,7 @@ export function FaixaManutencao({ texto, admin = false }) {
   return (
     <div role="status" aria-live="polite" data-testid="faixa-manutencao"
       className="sticky top-0 z-[60] flex items-start gap-2 px-4 py-2.5 text-sm font-semibold"
-      style={{ background: admin ? '#0b1f4d' : '#fff7d6', color: admin ? '#f5c518' : '#5b4300', borderBottom: '1px solid rgba(245,197,24,.55)' }}>
+      style={{ paddingTop: 'calc(0.625rem + var(--seguro-topo))', background: admin ? '#0b1f4d' : '#fff7d6', color: admin ? '#f5c518' : '#5b4300', borderBottom: '1px solid rgba(245,197,24,.55)' }}>
       <span aria-hidden="true">🛠️</span>
       <span className="min-w-0 break-words">{texto}</span>
     </div>

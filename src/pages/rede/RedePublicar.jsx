@@ -93,7 +93,7 @@ export default function RedePublicar() {
 
   return (
     <div>
-      <div className="sticky top-14 z-20 px-2 py-1.5 bg-white border-b border-[#eef1f5] flex items-center justify-between gap-2">
+      <div className="sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 px-2 py-1.5 bg-white border-b border-[#eef1f5] flex items-center justify-between gap-2">
         <button type="button" onClick={() => navigate(-1)} aria-label="Voltar" className={`min-h-[44px] min-w-[44px] rounded-full grid place-items-center ${TXT}`}>
           <Icone nome="voltar" />
         </button>

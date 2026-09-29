@@ -244,4 +244,18 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
 :root {
   --seguro-topo: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
   --seguro-baixo: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --seguro-esq: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --seguro-dir: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 }
+/* Fase 6 (safe-area em TODO o app): todo overlay de tela cheia respeita as barras do sistema sem que
+   cada modal precise saber disso. Folha de baixo (items-end): o painel ganha a folga da barra de
+   navegação; modal centrado / visualizador: o contêiner nunca encosta na barra de status nem na de
+   baixo. Só vale para `fixed` (os jogos usam `absolute inset-0` dentro de um cartão). */
+.fixed.inset-0.items-end > * { padding-bottom: max(var(--seguro-baixo), 0px); }
+.fixed.inset-0:not(.items-end) {
+  padding-top: max(0.75rem, var(--seguro-topo));
+  padding-bottom: max(0.75rem, var(--seguro-baixo));
+  padding-left: max(0.75rem, var(--seguro-esq));
+  padding-right: max(0.75rem, var(--seguro-dir));
+}
+.fixed.inset-0.items-end { padding-left: var(--seguro-esq); padding-right: var(--seguro-dir); }

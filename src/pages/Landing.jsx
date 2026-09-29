@@ -68,7 +68,7 @@ export function Cabecalho({ naLanding = true }) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur" style={{ paddingTop: 'var(--seguro-topo)' }}>
       <div className={`${CONTAINER} flex h-16 items-center justify-between gap-4`}>
         {naLanding
           ? <a href="#inicio" className={`inline-flex min-h-[44px] items-center ${FOCO}`} aria-label="DesbravaClube — início"><Marca /></a>

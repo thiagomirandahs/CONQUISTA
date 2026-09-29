@@ -47,7 +47,7 @@ export default function RedeBuscar() {
 
   return (
     <div>
-      <div className="px-3 pt-3 pb-2 sticky top-14 z-20 bg-white">
+      <div className="px-3 pt-3 pb-2 sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 bg-white">
         <label htmlFor="rede-busca" className="sr-only">Buscar clubes e pessoas</label>
         <div className="flex items-center gap-2 rounded-xl bg-[#f1f5f9] px-3 min-h-[44px]">
           <Icone nome="busca" className={`w-5 h-5 ${TXT_SUAVE}`} />

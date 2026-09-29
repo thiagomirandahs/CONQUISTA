@@ -48,7 +48,7 @@ export default function LayoutConta({ children }) {
   const item = 'flex w-full min-h-[48px] items-center gap-3 rounded-xl px-3 text-left text-[15px] font-semibold text-ink active:bg-surface2'
   return (
     <div className="min-h-full">
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur" style={{ paddingTop: 'var(--seguro-topo)' }}>
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-2 px-4">
           <Logo produto className="h-8 w-8" />
           <span className="flex-1 truncate text-sm font-extrabold text-ink">DesbravaClube</span>

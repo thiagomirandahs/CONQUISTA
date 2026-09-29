@@ -146,7 +146,7 @@ export default function LayoutRede() {
     <RedeContexto.Provider value={{ status, recarregar }}>
       <div className="min-h-screen bg-white overflow-x-hidden" data-rede>
         <Topo />
-        <main className="max-w-xl mx-auto pb-24">{conteudo}</main>
+        <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
         <BarraInferior eu={profile} />
       </div>
     </RedeContexto.Provider>

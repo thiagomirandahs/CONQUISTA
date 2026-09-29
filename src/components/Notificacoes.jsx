@@ -117,7 +117,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
 
       <AnimatePresence>
         {aberto && (
-          <motion.div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-16 sm:pt-20"
+          <motion.div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-[calc(4rem+var(--seguro-topo))] sm:pt-[calc(5rem+var(--seguro-topo))]"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAberto(false)}>
             <motion.div onClick={(e) => e.stopPropagation()}
               initial={{ y: -20, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -20, opacity: 0 }}
