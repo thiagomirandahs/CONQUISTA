@@ -294,3 +294,9 @@ export function mensagemDeErro(erro, contexto) {
 }
 
 export { variaveisDeContraste, corDeTextoSobre, corDeMarcaLegivel, razaoDeContraste } from './contraste.js'
+
+// Peças da fase 6.3 (ver src/ui/README.md): listas, chips, cabeçalho de seção, menu ⋯, upload, fila de popups.
+export { ItemLista, GrupoLista, CabecalhoSecao, Chip } from './lista.jsx'
+export { MenuAcoes } from './menuAcoes.jsx'
+export { ZonaUpload } from './zonaUpload.jsx'
+export { FilaDePopupsProvider, usePopup, usePopups, popupJaVisto, marcarPopupVisto, esquecerPopupVisto } from './popups.jsx'

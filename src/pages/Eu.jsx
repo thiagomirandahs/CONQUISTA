@@ -1,10 +1,10 @@
 import { marcarInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import Avatar from '../components/Avatar.jsx'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
-import { Card, Selecao } from '../ui/index.jsx'
+import { Card, Selecao, GrupoLista, ItemLista } from '../ui/index.jsx'
 import { MeusConvites } from '../components/ConvitesDeEquipe.jsx'
 
 // "Eu" (fase 7): identidade, TROCA DE JORNADA e ajustes.
@@ -51,19 +51,19 @@ export default function Eu() {
         </div>
       </section>
 
-      <Grupo titulo="Conta">
-        <ItemLink para="/perfil" icone="🪪" titulo="Meu perfil" desc="Foto, avatar e seus dados" />
-        <ItemLink para="/trocar-senha" icone="🔑" titulo="Trocar senha" desc="Confirme a senha atual e crie uma nova" testid="ir-trocar-senha" />
-      </Grupo>
+      <GrupoLista titulo="Conta">
+        <ItemLista to="/perfil" icone="🪪" titulo="Meu perfil" descricao="Foto, avatar e seus dados" />
+        <ItemLista to="/trocar-senha" icone="🔑" titulo="Trocar senha" descricao="Confirme a senha atual e crie uma nova" testid="ir-trocar-senha" />
+      </GrupoLista>
 
       {(temGestao || temEscopo) && (
-        <Grupo titulo="Clube">
-          {temGestao && <ItemLink para="/clube" icone="🎨" titulo="Configurações do clube" desc="Identidade, recursos e plano" />}
+        <GrupoLista titulo="Clube">
+          {temGestao && <ItemLista to="/clube" icone="🎨" titulo="Configurações do clube" descricao="Identidade, recursos e plano" />}
           {temEscopo && (
-            <ItemLink para="/institucional" icone="🏛️" titulo="Portal institucional" testid="ir-portal"
-              desc={escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} />
+            <ItemLista to="/institucional" icone="🏛️" titulo="Portal institucional" testid="ir-portal"
+              descricao={escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} />
           )}
-        </Grupo>
+        </GrupoLista>
       )}
 
       {/* ---- convites recebidos: é por aqui que uma pessoa entra num SEGUNDO clube ---- */}
@@ -80,11 +80,11 @@ export default function Eu() {
         </section>
       )}
 
-      <Grupo titulo="Aplicativo">
-        <ItemLink para="/ajuda" icone="❓" titulo="Ajuda / Como usar" desc="Passo a passo de cada parte do app" testid="ir-ajuda" />
-        <ItemLink para="/suporte" icone="🛟" titulo="Suporte" desc="Abrir chamado e ver respostas" testid="ir-suporte" />
-        <ItemBotao icone="🔄" titulo="Atualizar o app" desc="Buscar a versão mais nova" aoTocar={atualizarApp} />
-      </Grupo>
+      <GrupoLista titulo="Aplicativo">
+        <ItemLista to="/ajuda" icone="❓" titulo="Ajuda / Como usar" descricao="Passo a passo de cada parte do app" testid="ir-ajuda" />
+        <ItemLista to="/suporte" icone="🛟" titulo="Suporte" descricao="Abrir chamado e ver respostas" testid="ir-suporte" />
+        <ItemLista onClick={atualizarApp} icone="🔄" titulo="Atualizar o app" descricao="Buscar a versão mais nova" testid="atualizar-app" />
+      </GrupoLista>
 
       <button type="button" onClick={sair}
         className="w-full min-h-[48px] rounded-2xl border border-line bg-surface text-sm font-bold text-red-600 active:bg-surface2">
@@ -94,48 +94,7 @@ export default function Eu() {
   )
 }
 
-// Lista agrupada (estilo ajustes do celular): um cartão por grupo, linhas separadas por divisória.
-function Grupo({ titulo, children }) {
-  return (
-    <section>
-      <h2 className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-faint">{titulo}</h2>
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">{children}</ul>
-    </section>
-  )
-}
-
-function Conteudo({ icone, titulo, desc }) {
-  return (
-    <>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface2 text-lg" aria-hidden="true">{icone}</span>
-      <span className="min-w-0 flex-1 text-left">
-        <span className="block text-[15px] font-semibold text-ink">{titulo}</span>
-        {desc && <span className="block truncate text-xs text-faint">{desc}</span>}
-      </span>
-      <span className="shrink-0 text-faint" aria-hidden="true">›</span>
-    </>
-  )
-}
-
-function ItemLink({ para, testid, ...c }) {
-  return (
-    <li>
-      <Link to={para} data-testid={testid} className="flex min-h-[56px] items-center gap-3 px-3.5 py-2.5 active:bg-surface2">
-        <Conteudo {...c} />
-      </Link>
-    </li>
-  )
-}
-
-function ItemBotao({ aoTocar, ...c }) {
-  return (
-    <li>
-      <button type="button" onClick={aoTocar} className="flex w-full min-h-[56px] items-center gap-3 px-3.5 py-2.5 active:bg-surface2">
-        <Conteudo {...c} />
-      </button>
-    </li>
-  )
-}
+// A lista agrupada (estilo ajustes do celular) virou GrupoLista/ItemLista em src/ui/lista.jsx.
 
 const PAPEIS = {
   desbravador: 'Desbravador', conselheiro: 'Conselheiro', instrutor: 'Instrutor',
