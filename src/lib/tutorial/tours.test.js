@@ -8,7 +8,7 @@ describe('mini-tours', () => {
   it('existem os 4 tours, todos com passos (ícone, título, texto)', () => {
     expect(IDS_DOS_TOURS).toEqual(['primeiros-passos', 'classes', 'rede', 'gestao'])
     for (const id of IDS_DOS_TOURS) {
-      expect(TOURS[id].passos.length, id).toBeGreaterThan(1)
+      expect(TOURS[id].passos.length, id).toBeGreaterThanOrEqual(3)
       for (const p of TOURS[id].passos) expect(p.icone && p.titulo && p.texto, id).toBeTruthy()
     }
   })

@@ -47,13 +47,13 @@ export default function RedeBuscar() {
 
   return (
     <div>
-      <div className="px-3 pt-3 pb-2 sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 bg-white">
+      <div className="px-3 pt-3 pb-2 sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 bg-[var(--rede-bg)]">
         <label htmlFor="rede-busca" className="sr-only">Buscar clubes e pessoas</label>
-        <div className="flex items-center gap-2 rounded-xl bg-[#f1f5f9] px-3 min-h-[44px]">
+        <div className="flex items-center gap-2 rounded-xl bg-[var(--rede-superficie)] px-3 min-h-[44px]">
           <Icone nome="busca" className={`w-5 h-5 ${TXT_SUAVE}`} />
           <input id="rede-busca" type="search" value={termo} autoComplete="off" enterKeyHint="search"
             onChange={(e) => { setTermo(e.target.value); setClube(null) }} placeholder="Buscar clubes e pessoas"
-            className={`flex-1 min-w-0 bg-transparent text-[15px] ${TXT} placeholder:text-[#94a3b8] outline-none min-h-[44px]`} />
+            className={`flex-1 min-w-0 bg-transparent text-[15px] ${TXT} placeholder:text-[var(--rede-ink-suave)] outline-none min-h-[44px]`} />
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export default function RedeBuscar() {
             {clubes.map((c) => (
               <li key={c.id}>
                 <button type="button" onClick={() => setClube(c)} className="w-full flex items-center gap-3 min-h-[60px] px-3 text-left">
-                  <span aria-hidden="true" className="w-11 h-11 rounded-full bg-[#f1f5f9] grid place-items-center text-[#3b5bff]"><Icone nome="escudo" className="w-6 h-6" /></span>
+                  <span aria-hidden="true" className="w-11 h-11 rounded-full bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-acao)]"><Icone nome="escudo" className="w-6 h-6" /></span>
                   <span className="min-w-0">
                     <span className={`block font-semibold text-[14px] ${TXT} truncate`}>{c.nome}</span>
                     <span className={`block text-[13px] ${TXT_SUAVE}`}>{c.membros} {c.membros === 1 ? 'pessoa' : 'pessoas'} na rede</span>

@@ -307,6 +307,8 @@ function TituloDaSecao({ secao, aba, aoTrocarAba, contadores = {} }) {
 // ---------------------------------------------------------------- Visão geral
 // KPIs SÓ do que o servidor fornece: admin_visao_geral (migration 103) + admin_chamados_contagem (290).
 // Não existe (e não se inventa): receita/MRR, churn, série histórica, usuários ativos.
+// KPI só aparece quando o servidor mandou o número (payload parcial não vira "undefined" na tela).
+const tem = (n) => n !== null && n !== undefined
 function VisaoGeral({ irPara, aoAbrirClube, chamadosAbertos }) {
   const { dados: v, erro } = useFonte(visaoGeral)
   return (
@@ -314,17 +316,17 @@ function VisaoGeral({ irPara, aoAbrirClube, chamadosAbertos }) {
       {v && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
-            <Kpi icone="🏕️" valor={v.clubes_total} rotulo="Clubes" detalhe={`${v.clubes_ativos} ativo(s) · ${v.clubes_inativos} inativo(s)`} testid="visao-clubes" aoTocar={() => irPara('clubes')} />
-            <Kpi icone="✅" tom="ok" valor={v.clubes_ativos} rotulo="Clubes ativos" testid="visao-ativos" aoTocar={() => irPara('clubes')} />
-            <Kpi icone="⛔" tom={v.clubes_inativos > 0 ? 'perigo' : 'neutro'} valor={v.clubes_inativos} rotulo="Clubes inativos" testid="visao-inativos" aoTocar={() => irPara('clubes')} />
-            <Kpi icone="🧭" tom="info" valor={v.onboarding_em_andamento} rotulo="Em onboarding" detalhe={`${v.onboarding_concluidos ?? 0} concluído(s)`} testid="visao-onboarding" aoTocar={() => irPara('onboarding')} />
-            <Kpi icone="⚙️" tom={v.provisionamentos_pendentes > 0 ? 'perigo' : 'neutro'} valor={v.provisionamentos_pendentes} rotulo="Provisionamentos pendentes" testid="visao-provisionamento" aoTocar={() => irPara('provisionamento')} />
+            {tem(v.clubes_total) && <Kpi icone="🏕️" valor={v.clubes_total} rotulo="Clubes" detalhe={`${v.clubes_ativos} ativo(s) · ${v.clubes_inativos} inativo(s)`} testid="visao-clubes" aoTocar={() => irPara('clubes')} />}
+            {tem(v.clubes_ativos) && <Kpi icone="✅" tom="ok" valor={v.clubes_ativos} rotulo="Clubes ativos" testid="visao-ativos" aoTocar={() => irPara('clubes')} />}
+            {tem(v.clubes_inativos) && <Kpi icone="⛔" tom={v.clubes_inativos > 0 ? 'perigo' : 'neutro'} valor={v.clubes_inativos} rotulo="Clubes inativos" testid="visao-inativos" aoTocar={() => irPara('clubes')} />}
+            {tem(v.onboarding_em_andamento) && <Kpi icone="🧭" tom="info" valor={v.onboarding_em_andamento} rotulo="Em onboarding" detalhe={`${v.onboarding_concluidos ?? 0} concluído(s)`} testid="visao-onboarding" aoTocar={() => irPara('onboarding')} />}
+            {tem(v.provisionamentos_pendentes) && <Kpi icone="⚙️" tom={v.provisionamentos_pendentes > 0 ? 'perigo' : 'neutro'} valor={v.provisionamentos_pendentes} rotulo="Provisionamentos pendentes" testid="visao-provisionamento" aoTocar={() => irPara('provisionamento')} />}
             <Kpi icone="📨" tom={chamadosAbertos > 0 ? 'atencao' : 'neutro'} valor={chamadosAbertos ?? '—'} rotulo="Chamados abertos" detalhe="abertos + em andamento" testid="visao-chamados" aoTocar={() => irPara('chamados')} />
-            <Kpi icone="💾" tom="ok" valor={formatarBytes(v.armazenamento_total_bytes)} rotulo="Armazenamento total" testid="visao-armazenamento"
-              detalhe={v.clubes_proximos_do_limite + v.clubes_no_limite > 0 ? `${v.clubes_proximos_do_limite} perto · ${v.clubes_no_limite} no limite` : 'Todos dentro do limite'} aoTocar={() => irPara('armazenamento')} />
-            <Kpi icone="💳" tom="dourado" valor={`${v.planos_publicos}/${v.planos_total}`} rotulo="Planos na vitrine / total" testid="visao-planos" aoTocar={() => irPara('planos')} />
-            <Kpi icone="📜" valor={v.eventos_admin_7d} rotulo="Ações de administração" detalhe="últimos 7 dias" testid="visao-eventos-admin" aoTocar={() => irPara('auditoria')} />
-            <Kpi icone="🧾" valor={v.eventos_assinatura_7d} rotulo="Eventos de assinatura" detalhe="últimos 7 dias" testid="visao-eventos-assinatura" aoTocar={() => irPara('assinaturas')} />
+            {tem(v.armazenamento_total_bytes) && <Kpi icone="💾" tom="ok" valor={formatarBytes(v.armazenamento_total_bytes)} rotulo="Armazenamento total" testid="visao-armazenamento"
+              detalhe={v.clubes_proximos_do_limite + v.clubes_no_limite > 0 ? `${v.clubes_proximos_do_limite} perto · ${v.clubes_no_limite} no limite` : 'Todos dentro do limite'} aoTocar={() => irPara('armazenamento')} />}
+            {tem(v.planos_total) && <Kpi icone="💳" tom="dourado" valor={`${v.planos_publicos}/${v.planos_total}`} rotulo="Planos na vitrine / total" testid="visao-planos" aoTocar={() => irPara('planos')} />}
+            {tem(v.eventos_admin_7d) && <Kpi icone="📜" valor={v.eventos_admin_7d} rotulo="Ações de administração" detalhe="últimos 7 dias" testid="visao-eventos-admin" aoTocar={() => irPara('auditoria')} />}
+            {tem(v.eventos_assinatura_7d) && <Kpi icone="🧾" valor={v.eventos_assinatura_7d} rotulo="Eventos de assinatura" detalhe="últimos 7 dias" testid="visao-eventos-assinatura" aoTocar={() => irPara('assinaturas')} />}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">

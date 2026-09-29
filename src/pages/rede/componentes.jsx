@@ -18,13 +18,13 @@ import { Folha, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 
 export const AZUL = '#3b5bff'
 export const GRADIENTE = 'bg-gradient-to-tr from-[#3b5bff] to-[#8b5cf6]'
-export const CARD = 'bg-white rounded-2xl border border-[#e2e8f0]'
+export const CARD = 'bg-[var(--rede-bg)] rounded-2xl border border-[var(--rede-linha)]'
 export const PILL = 'min-h-[44px] px-4 rounded-full font-semibold text-sm inline-flex items-center justify-center gap-2 no-underline'
-export const PILL_PRIMARIA = `${PILL} bg-[#3b5bff] text-white disabled:opacity-50`
-export const PILL_CLARA = `${PILL} bg-[#f1f5f9] text-[#0f172a] disabled:opacity-50`
-export const TXT = 'text-[#0f172a]'
-export const TXT_SUAVE = 'text-[#64748b]'
-export const LINHA = 'border-[#eef1f5]'
+export const PILL_PRIMARIA = `${PILL} bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] disabled:opacity-50`
+export const PILL_CLARA = `${PILL} bg-[var(--rede-superficie)] text-[var(--rede-ink)] disabled:opacity-50`
+export const TXT = 'text-[var(--rede-ink)]'
+export const TXT_SUAVE = 'text-[var(--rede-ink-suave)]'
+export const LINHA = 'border-[var(--rede-linha)]'
 
 // Erro que o servidor escreveu PARA a pessoa (regras da Comunidade): mostramos como veio.
 const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|perfil|salvos|ocultar|restaurar|clube/i
@@ -94,13 +94,13 @@ export function AvatarRede({ nome, foto, avatarPersonagem, tamanho = 'w-9 h-9', 
   }
   if (foto && !erro) {
     if (!src) {
-      return <span data-testid="avatar-esqueleto" aria-hidden="true" className={`${tamanho} shrink-0 rounded-full bg-[#f1f5f9] animate-pulse`} />
+      return <span data-testid="avatar-esqueleto" aria-hidden="true" className={`${tamanho} shrink-0 rounded-full bg-[var(--rede-superficie)] animate-pulse`} />
     }
     return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setErro(true)}
-      className={`${tamanho} shrink-0 rounded-full object-cover bg-[#f1f5f9]`} />
+      className={`${tamanho} shrink-0 rounded-full object-cover bg-[var(--rede-superficie)]`} />
   }
   return (
-    <span aria-hidden="true" data-testid="avatar-iniciais" className={`${tamanho} ${texto} shrink-0 rounded-full grid place-items-center font-bold text-[#3b5bff] bg-[#eef2ff]`}>
+    <span aria-hidden="true" data-testid="avatar-iniciais" className={`${tamanho} ${texto} shrink-0 rounded-full grid place-items-center font-bold text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]`}>
       {iniciais(nome)}
     </span>
   )
@@ -111,7 +111,7 @@ export function AnelStory({ estado = 'nenhum', children }) {
   if (estado === 'nenhum') return children
   return (
     <span className={`inline-grid place-items-center rounded-full p-[2.5px] ${estado === 'novo' ? GRADIENTE : 'bg-[#cbd5e1]'}`}>
-      <span className="rounded-full bg-white p-[2px] grid place-items-center">{children}</span>
+      <span className="rounded-full bg-[var(--rede-bg)] p-[2px] grid place-items-center">{children}</span>
     </span>
   )
 }
@@ -141,10 +141,10 @@ function FotoDoPost({ path, alt, aoDuploToque }) {
     } else ultimoToque.current = agora
   }
 
-  if (!url) return <div className="w-full aspect-[4/5] bg-[#f1f5f9] animate-pulse" aria-label="Carregando a foto" />
+  if (!url) return <div className="w-full aspect-[4/5] bg-[var(--rede-superficie)] animate-pulse" aria-label="Carregando a foto" />
   // sem link de download nem "abrir em nova aba": a foto só vive dentro do app
   return (
-    <div className="relative select-none w-full aspect-[4/5] bg-[#f1f5f9] overflow-hidden" onClick={tocar} data-testid="foto-post">
+    <div className="relative select-none w-full aspect-[4/5] bg-[var(--rede-superficie)] overflow-hidden" onClick={tocar} data-testid="foto-post">
       <img src={url} alt={alt || 'Foto da publicação'} loading="lazy" decoding="async" draggable={false}
         onContextMenu={(e) => e.preventDefault()} className="block w-full h-full object-cover" />
       {coracao > 0 && (
@@ -160,7 +160,7 @@ function FotoDoPost({ path, alt, aoDuploToque }) {
 export function TextoRico({ texto }) {
   const partes = String(texto || '').split(/(#[\p{L}\p{N}_]+)/u)
   return partes.map((p, i) => (p.startsWith('#') && p.length > 1
-    ? <span key={i} className="text-[#3b5bff]">{p}</span>
+    ? <span key={i} className="text-[var(--rede-acao)]">{p}</span>
     : <span key={i}>{p}</span>))
 }
 
@@ -258,11 +258,11 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
           </ul>
         )}
       {podeComentar && (
-        <form onSubmit={enviar} className="sticky bottom-0 bg-white pt-2 flex items-end gap-2 border-t border-[#eef1f5]">
+        <form onSubmit={enviar} className="sticky bottom-0 bg-[var(--rede-bg)] pt-2 flex items-end gap-2 border-t border-[var(--rede-linha)]">
           <label htmlFor={`comentar-${post.id}`} className="sr-only">Escreva um comentário</label>
           <textarea id={`comentar-${post.id}`} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={300} rows={1}
-            placeholder="Escreva algo gentil…" className="flex-1 min-h-[44px] rounded-2xl bg-[#f1f5f9] px-3 py-2.5 text-sm text-[#0f172a] resize-none" />
-          <button type="submit" disabled={!texto.trim() || enviando} className={`${PILL} text-[#3b5bff] disabled:opacity-40`}>{enviando ? '…' : 'Comentar'}</button>
+            placeholder="Escreva algo gentil…" className="flex-1 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 py-2.5 text-sm text-[var(--rede-ink)] resize-none" />
+          <button type="submit" disabled={!texto.trim() || enviando} className={`${PILL} text-[var(--rede-acao)] disabled:opacity-40`}>{enviando ? '…' : 'Comentar'}</button>
         </form>
       )}
       {recusa && <p role="alert" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-2 mt-2">{recusa}</p>}
@@ -278,7 +278,7 @@ const ROTULO_CONQUISTA = Object.fromEntries(CATEGORIAS_CONQUISTA.map(([k, r, i])
 // selos pequenos coloridos
 function Selo({ post }) {
   if (post.tipo === 'desafio' && post.desafio) {
-    return <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#6d28d9] bg-[#f3e8ff] rounded-full px-2.5 py-0.5">🏅 Desafio: {post.desafio.titulo}</span>
+    return <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--rede-acao)] bg-[var(--rede-acao-suave)] rounded-full px-2.5 py-0.5">🏅 Desafio: {post.desafio.titulo}</span>
   }
   if (post.tipo === 'conquista') {
     return <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#047857] bg-[#d1fae5] rounded-full px-2.5 py-0.5">Conquista · {ROTULO_CONQUISTA[post.conquista] || 'Conquista'}</span>
@@ -291,7 +291,7 @@ function Selo({ post }) {
 export function SeloCoordenacao() {
   return (
     <span data-testid="selo-coordenacao" title="Coordenação" aria-label="Coordenação"
-      className="ml-1 inline-grid place-items-center align-[-2px] w-4 h-4 rounded-full bg-[#3b5bff] text-white text-[9px] leading-none">
+      className="ml-1 inline-grid place-items-center align-[-2px] w-4 h-4 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] text-[9px] leading-none">
       <span aria-hidden="true">✓</span>
     </span>
   )
@@ -371,7 +371,7 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
   }
 
   return (
-    <article aria-label={`Publicação de ${post.autor?.nome}`} data-testid="post" className={`bg-white border-b ${LINHA} pb-2`}>
+    <article aria-label={`Publicação de ${post.autor?.nome}`} data-testid="post" className={`bg-[var(--rede-bg)] border-b ${LINHA} pb-2`}>
       <header className="flex items-center justify-between gap-1 pl-3 pr-1 py-1.5">
         <Cabeca autor={post.autor} criadoEm={post.criado_em} />
         <div className="flex items-center shrink-0">
@@ -384,10 +384,10 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
 
       {post.foto && <FotoDoPost path={post.foto} alt={post.foto_alt} aoDuploToque={noAr ? () => alternarCurtida(true) : undefined} />}
       {!post.foto && post.foto_expirada && (
-        <p className={`mx-3 rounded-2xl bg-[#f8fafc] border ${LINHA} p-4 text-center text-sm ${TXT_SUAVE}`}>📷 Foto expirada (as fotos ficam 90 dias na rede)</p>
+        <p className={`mx-3 rounded-2xl bg-[var(--rede-superficie)] border ${LINHA} p-4 text-center text-sm ${TXT_SUAVE}`}>📷 Foto expirada (as fotos ficam 90 dias na rede)</p>
       )}
       {soTexto && (
-        <div className={`mx-3 rounded-2xl bg-[#f8fafc] border ${LINHA} px-4 py-5`} data-testid="post-texto">
+        <div className={`mx-3 rounded-2xl bg-[var(--rede-superficie)] border ${LINHA} px-4 py-5`} data-testid="post-texto">
           <p className={`text-[19px] leading-snug font-medium ${TXT} whitespace-pre-line break-words`}><TextoRico texto={post.legenda} /></p>
         </div>
       )}
@@ -407,7 +407,7 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
       {noAr && (
         <div className="flex items-center px-1.5 pt-1">
           <BotaoIcone rotulo={`Curtir, ${post.curtidas} curtidas`} pressionado={!!post.eu_curti} disabled={ocupado} onClick={() => alternarCurtida()}>
-            <Icone nome="coracao" cheio={!!post.eu_curti} className={`w-[26px] h-[26px] ${post.eu_curti ? 'text-[#e11d48]' : ''}`} /> {post.curtidas}
+            <Icone nome="coracao" cheio={!!post.eu_curti} className={`w-[26px] h-[26px] ${post.eu_curti ? 'text-[var(--rede-curtido)]' : ''}`} /> {post.curtidas}
           </BotaoIcone>
           <BotaoIcone rotulo={`Ver ${post.comentarios} comentários`} onClick={() => setComentariosAbertos(true)}>
             <Icone nome="balao" className="w-[25px] h-[25px]" /> {post.comentarios}

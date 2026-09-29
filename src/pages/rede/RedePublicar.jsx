@@ -93,7 +93,7 @@ export default function RedePublicar() {
 
   return (
     <div>
-      <div className="sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 px-2 py-1.5 bg-white border-b border-[#eef1f5] flex items-center justify-between gap-2">
+      <div className="sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 px-2 py-1.5 bg-[var(--rede-bg)] border-b border-[var(--rede-linha)] flex items-center justify-between gap-2">
         <button type="button" onClick={() => navigate(-1)} aria-label="Voltar" className={`min-h-[44px] min-w-[44px] rounded-full grid place-items-center ${TXT}`}>
           <Icone nome="voltar" />
         </button>
@@ -106,7 +106,7 @@ export default function RedePublicar() {
           // ícone EM CIMA e nome embaixo, centralizados (lado a lado não cabia em 375 px: "Conquista"
           // encostava na borda e os ícones saíam do centro)
           <button key={chave} type="button" role="tab" aria-selected={tipo === chave} onClick={() => setTipo(chave)}
-            className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-semibold ${tipo === chave ? 'bg-[#eef2ff] text-[#3b5bff] ring-2 ring-[#3b5bff]' : `bg-[#f1f5f9] ${TXT}`}`}>
+            className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-semibold ${tipo === chave ? 'bg-[var(--rede-acao-suave)] text-[var(--rede-acao)] ring-2 ring-[var(--rede-acao)]' : `bg-[var(--rede-superficie)] ${TXT}`}`}>
             <Icone nome={icone} className="block h-6 w-6 shrink-0" />
             <span className="leading-none">{rotulo}</span>
           </button>
@@ -118,7 +118,7 @@ export default function RedePublicar() {
           <div>
             <label htmlFor="rede-desafio" className={`block text-sm font-bold ${TXT} mb-1`}>Qual desafio?</label>
             <select id="rede-desafio" value={desafioId} onChange={(e) => setDesafioId(e.target.value)}
-              className={`w-full min-h-[44px] rounded-2xl bg-[#f1f5f9] px-3 text-sm ${TXT}`}>
+              className={`w-full min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 text-sm ${TXT}`}>
               <option value="">Escolha um desafio ativo</option>
               {(desafios || []).map((d) => <option key={d.id} value={d.id}>{d.titulo} (+{d.pontos} pts)</option>)}
             </select>
@@ -131,7 +131,7 @@ export default function RedePublicar() {
             <div className="flex flex-wrap gap-2">
               {CATEGORIAS_CONQUISTA.map(([chave, rotulo, icone]) => (
                 <button key={chave} type="button" aria-pressed={conquista === chave} onClick={() => setConquista(chave)}
-                  className={`${PILL} ${conquista === chave ? 'bg-[#e7f6ea] text-[#1f5a2e] ring-2 ring-[#3aa35a]' : `bg-[#f5f6fb] ${TXT}`}`}>
+                  className={`${PILL} ${conquista === chave ? 'bg-[var(--rede-destaque-suave)] text-[var(--rede-destaque-texto)] ring-2 ring-[var(--rede-destaque)]' : `bg-[var(--rede-superficie)] ${TXT}`}`}>
                   <span aria-hidden="true">{icone}</span> {rotulo}
                 </button>
               ))}
@@ -145,21 +145,21 @@ export default function RedePublicar() {
           </label>
           <textarea id="rede-texto" value={texto} onChange={(e) => setTexto(e.target.value.slice(0, MAX))} maxLength={MAX} rows={4}
             placeholder="Conte como foi a reunião, o acampamento, a especialidade…"
-            className={`w-full rounded-2xl bg-[#f1f5f9] px-3 py-2.5 text-sm ${TXT}`} />
+            className={`w-full rounded-2xl bg-[var(--rede-superficie)] px-3 py-2.5 text-sm ${TXT}`} />
           <p className={`text-xs text-right ${texto.length >= MAX ? 'text-amber-700 font-bold' : TXT_SUAVE}`} aria-live="polite">{texto.length}/{MAX}</p>
         </div>
 
         {tipo !== 'conquista' && (
           <div>
             {!foto ? (
-              <label htmlFor="rede-foto" className={`flex flex-col items-center justify-center gap-1 min-h-[120px] rounded-3xl border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc] text-sm font-bold ${TXT_SUAVE} cursor-pointer`}>
+              <label htmlFor="rede-foto" className={`flex flex-col items-center justify-center gap-1 min-h-[120px] rounded-3xl border-2 border-dashed border-[var(--rede-linha)] bg-[var(--rede-superficie)] text-sm font-bold ${TXT_SUAVE} cursor-pointer`}>
                 <Icone nome="camera" className="w-9 h-9" />
                 {preparando ? 'Otimizando a foto…' : `Adicionar foto${tipo === 'foto' ? ' (opcional)' : ''}`}
               </label>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden bg-[#f1f5f9]">
+              <div className="relative rounded-2xl overflow-hidden bg-[var(--rede-superficie)]">
                 {previa && <img src={previa} alt="Prévia da foto" className="block w-full h-auto" />}
-                <button type="button" onClick={tirarFoto} className={`${PILL} absolute top-2 right-2 bg-white/90 ${TXT}`}>Trocar</button>
+                <button type="button" onClick={tirarFoto} className={`${PILL} absolute top-2 right-2 bg-[var(--rede-bg)]/90 ${TXT}`}>Trocar</button>
               </div>
             )}
             <input ref={input} id="rede-foto" type="file" accept="image/*" className="sr-only" onChange={escolherFoto} />
@@ -169,13 +169,13 @@ export default function RedePublicar() {
                 <label htmlFor="rede-alt" className={`block text-sm font-bold ${TXT} mt-3 mb-1`}>Descrição da imagem (para quem não consegue ver)</label>
                 <input id="rede-alt" value={alt} onChange={(e) => setAlt(e.target.value.slice(0, 200))} maxLength={200}
                   placeholder="Ex.: minha unidade montando a barraca"
-                  className={`w-full min-h-[44px] rounded-2xl bg-[#f1f5f9] px-3 text-sm ${TXT}`} />
+                  className={`w-full min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 text-sm ${TXT}`} />
               </>
             )}
           </div>
         )}
 
-        <p className="text-sm font-bold text-[#047857] bg-[#ecfdf5] rounded-xl px-3 py-2">✅ Localização removida da foto automaticamente</p>
+        <p className="text-sm font-bold text-[var(--rede-sucesso)] bg-[var(--rede-sucesso-suave)] rounded-xl px-3 py-2">✅ Localização removida da foto automaticamente</p>
         <p className={`text-xs ${TXT_SUAVE}`}>Não mostre documento, endereço, escola ou nome completo. Nada de telefone, @ ou links.</p>
         {recusa && <p role="alert" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3">{recusa}</p>}
       </div>

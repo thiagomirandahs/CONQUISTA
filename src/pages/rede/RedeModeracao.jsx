@@ -25,8 +25,8 @@ function Foto({ path }) {
     urlDaFoto(path).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
     return () => { vivo = false }
   }, [path])
-  if (!url) return <div className="mt-3 w-full aspect-[4/5] rounded-2xl bg-[#eceef6] animate-pulse" />
-  return <img src={url} alt="Foto para revisar" loading="lazy" className="mt-3 w-full h-auto max-h-[60vh] object-contain rounded-2xl bg-[#eceef6]" />
+  if (!url) return <div className="mt-3 w-full aspect-[4/5] rounded-2xl bg-[var(--rede-superficie)] animate-pulse" />
+  return <img src={url} alt="Foto para revisar" loading="lazy" className="mt-3 w-full h-auto max-h-[60vh] object-contain rounded-2xl bg-[var(--rede-superficie)]" />
 }
 
 function CartaoFila({ item, acoes, aoDecidir }) {
@@ -49,7 +49,7 @@ function CartaoFila({ item, acoes, aoDecidir }) {
       {item.denuncias > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           <span className="text-xs font-bold text-red-800 bg-red-50 rounded-full px-3 py-1">{item.denuncias} {item.denuncias === 1 ? 'denúncia' : 'denúncias'}</span>
-          {(item.motivos || []).map((m) => <span key={m} className={`text-xs font-bold ${TXT} bg-[#f1f3fb] rounded-full px-3 py-1`}>{ROTULO_MOTIVO[m] || m}</span>)}
+          {(item.motivos || []).map((m) => <span key={m} className={`text-xs font-bold ${TXT} bg-[var(--rede-superficie)] rounded-full px-3 py-1`}>{ROTULO_MOTIVO[m] || m}</span>)}
         </div>
       )}
       {item.texto && <p className={`mt-2 ${TXT} whitespace-pre-line break-words`}>{item.texto}</p>}
@@ -76,8 +76,8 @@ function Interruptor({ ligado, aoMudar, rotulo, desabilitado }) {
   return (
     <button type="button" role="switch" aria-checked={ligado} aria-label={rotulo} disabled={desabilitado} onClick={() => aoMudar(!ligado)}
       className="shrink-0 min-h-[44px] min-w-[56px] grid place-items-center disabled:opacity-60">
-      <span className={`relative block w-14 h-8 rounded-full transition-colors ${ligado ? 'bg-[#4b3cff]' : 'bg-[#cfd3e6]'}`}>
-        <span className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow transition-all ${ligado ? 'left-7' : 'left-1'}`} />
+      <span className={`relative block w-14 h-8 rounded-full transition-colors ${ligado ? 'bg-[var(--rede-acao)]' : 'bg-[var(--rede-linha)]'}`}>
+        <span className={`absolute top-1 w-6 h-6 rounded-full bg-[var(--rede-bg)] shadow transition-all ${ligado ? 'left-7' : 'left-1'}`} />
       </span>
     </button>
   )
@@ -115,7 +115,7 @@ function AutorizacoesDeImagem() {
         <p className="mt-2">O responsável pode desligar a qualquer momento pelo app (Meus filhos), e o "não" dele vale na hora.</p>
       </Aviso>
       {membros.length === 0 ? <VazioRede icone="👥" titulo="Nenhum membro ativo" /> : (
-        <ul className={`${CARD} divide-y divide-[#f0f1f7]`}>
+        <ul className={`${CARD} divide-y divide-[var(--rede-linha)]`}>
           {membros.map((m) => (
             <li key={m.usuario_id} className="flex items-center justify-between gap-3 px-4 py-2">
               <div className="min-w-0">
@@ -154,10 +154,10 @@ export default function RedeModeracao() {
   return (
     <div className="p-3">
       <h1 className={`text-xl font-extrabold ${TXT} mb-3`}>Moderação do clube</h1>
-      <div role="tablist" aria-label="Filas da moderação" className="grid grid-cols-4 gap-1 p-1 rounded-full bg-white border border-[#e8eaf3] mb-4">
+      <div role="tablist" aria-label="Filas da moderação" className="grid grid-cols-4 gap-1 p-1 rounded-full bg-[var(--rede-bg)] border border-[var(--rede-linha)] mb-4">
         {ABAS.map(([chave, rotulo]) => (
           <button key={chave} type="button" role="tab" aria-selected={aba === chave} onClick={() => setAba(chave)}
-            className={`min-h-[44px] rounded-full text-xs font-bold ${aba === chave ? 'bg-[#141a3a] text-white' : TXT_SUAVE}`}>
+            className={`min-h-[44px] rounded-full text-xs font-bold ${aba === chave ? 'bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)]' : TXT_SUAVE}`}>
             {rotulo}{contador[chave] > 0 ? ` (${contador[chave]})` : ''}
           </button>
         ))}

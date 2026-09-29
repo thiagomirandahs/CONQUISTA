@@ -37,7 +37,7 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
             </button>
             {podePublicar && (
               <button type="button" onClick={aoNovo} aria-label="Adicionar story"
-                className="alvo-livre absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-[#3b5bff] text-white grid place-items-center ring-[3px] ring-white">
+                className="alvo-livre absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] grid place-items-center ring-[3px] ring-[var(--rede-bg)]">
                 <Icone nome="mais" className="w-4 h-4" traco={2.6} />
               </button>
             )}
@@ -251,7 +251,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
         {erro && <p role="alert" className="text-sm text-amber-900 bg-amber-100 rounded-2xl p-2">{erro}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={aoFechar} className={`${PILL} flex-1 bg-white/15 text-white`}>Voltar</button>
-          <button type="button" onClick={publicar} disabled={!foto || enviando} className={`${PILL} flex-1 bg-[#3b5bff] text-white disabled:opacity-50`}>
+          <button type="button" onClick={publicar} disabled={!foto || enviando} className={`${PILL} flex-1 bg-[#e0b84a] text-[#07122f] disabled:opacity-50`}>
             {enviando ? 'Publicando…' : 'Publicar'}
           </button>
         </div>

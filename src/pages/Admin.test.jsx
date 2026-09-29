@@ -1,7 +1,7 @@
 // /admin — Administração da Plataforma. O guard real é o servidor (eh_admin_plataforma()); estes
 // testes garantem que o FRONT nunca desenha o painel antes da confirmação, que a visão é por CLUBE
 // (inclusive o fundador, sem conta comercial) e que as ações chamam as RPCs auditadas.
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
@@ -389,5 +389,80 @@ describe('formatarBytes', () => {
     expect(formatarBytes(2048)).toBe('2 KB')
     expect(formatarBytes(700 * 1048576)).toBe('700 MB')
     expect(formatarBytes(10 * 1024 ** 3)).toBe('10,0 GB')
+  })
+})
+
+describe('Admin: Visão geral só com o que o servidor fornece (Fase 6, 5.3)', () => {
+  it('KPIs só dos campos presentes no payload; nada de receita/MRR', async () => {
+    f.visaoGeral.mockResolvedValue({ clubes_total: 5, clubes_ativos: 4, clubes_inativos: 1, provisionamentos_pendentes: 0, assinaturas_por_status: {} })
+    await abrirComoAdmin()
+    expect(await screen.findByTestId('visao-clubes')).toHaveTextContent('5')
+    expect(screen.getByTestId('visao-ativos')).toHaveTextContent('4')
+    expect(screen.getByTestId('visao-inativos')).toHaveTextContent('1')
+    for (const t of ['visao-onboarding', 'visao-armazenamento', 'visao-planos', 'visao-eventos-admin', 'visao-eventos-assinatura']) {
+      expect(screen.queryByTestId(t), t).toBeNull()
+    }
+    expect(document.body.textContent).not.toMatch(/MRR|receita|churn/i)
+    expect(document.body.textContent).not.toMatch(/undefined|NaN/)
+  })
+
+  it('"Precisa da sua atenção" só lista o que está > 0', async () => {
+    f.visaoGeral.mockResolvedValue({ clubes_total: 2, clubes_ativos: 2, clubes_inativos: 0, onboarding_em_andamento: 0,
+      assinaturas_por_status: { inadimplente: 1, suspensa: 0, pagamento_pendente: 0 }, planos_total: 1, planos_publicos: 1,
+      armazenamento_total_bytes: 0, clubes_proximos_do_limite: 0, clubes_no_limite: 0, provisionamentos_pendentes: 2,
+      eventos_admin_7d: 0, eventos_assinatura_7d: 0 })
+    await abrirComoAdmin()
+    const painel = await screen.findByTestId('visao-atencao')
+    expect(await within(painel).findByText('2 provisionamento(s) pendente(s)')).toBeInTheDocument()
+    expect(within(painel).getByText('1 assinatura(s) com pagamento em atraso')).toBeInTheDocument()
+    expect(within(painel).queryByText(/limite de armazenamento/)).toBeNull()
+    expect(within(painel).queryByText(/perto do limite/)).toBeNull()
+    expect(within(painel).queryByText(/suspensa/)).toBeNull()
+    expect(within(painel).queryByText(/aguardando pagamento/)).toBeNull()
+  })
+
+  it('tudo zerado: "Tudo em dia"', async () => {
+    f.clubesListar.mockResolvedValue([FUNDADOR])
+    await abrirComoAdmin()
+    const painel = await screen.findByTestId('visao-atencao')
+    expect(await within(painel).findByText(/Tudo em dia/)).toBeInTheDocument()
+  })
+})
+
+describe('Admin: Clubes — busca, chip de status e ordenação (tabela ≥ md)', () => {
+  const ATIVA = { ...NOVO, club_id: 'c3', nome: 'Águias do Vale', slug: 'aguias', assinatura_id: 's3', assinatura_status: 'ativa', membros: 12 }
+  beforeEach(() => {
+    // ≥ md (tabela), mas < lg (menu ☰ continua sendo o caminho de navegação do teste)
+    window.matchMedia = vi.fn((q) => ({ matches: q.includes('768'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    f.clubesListar.mockResolvedValue([FUNDADOR, NOVO, ATIVA])
+  })
+  afterEach(() => { delete window.matchMedia })
+
+  const nomesDasLinhas = () => screen.getAllByTestId('clube-item').map((tr) => within(tr).getAllByRole('cell')[0].textContent)
+
+  it('busca, chip de status e ordenação por coluna', async () => {
+    await abrirComoAdmin()
+    await abrirAba(/Clubes/)
+    await screen.findByTestId('tabela')
+    expect(screen.getAllByTestId('clube-item')).toHaveLength(3)
+
+    const chips = screen.getByRole('group', { name: 'Status da assinatura' })
+    await userEvent.click(within(chips).getByRole('button', { name: /Ativa/ }))
+    expect(nomesDasLinhas()).toEqual([expect.stringContaining('Águias do Vale')])
+    await userEvent.click(within(chips).getByRole('button', { name: /Sem assinatura/ }))
+    expect(nomesDasLinhas()).toEqual([expect.stringContaining('Filhos da Conquista')])
+    await userEvent.click(within(chips).getByRole('button', { name: /Todos/ }))
+
+    await userEvent.type(screen.getByLabelText('Buscar clube'), 'aguias')
+    expect(screen.getAllByTestId('clube-item')).toHaveLength(1)
+    await userEvent.clear(screen.getByLabelText('Buscar clube'))
+
+    const th = screen.getByRole('columnheader', { name: /Membros/ })
+    await userEvent.click(within(th).getByRole('button'))
+    expect(th).toHaveAttribute('aria-sort', 'ascending')
+    expect(nomesDasLinhas().map((n) => n.slice(0, 6))).toEqual(['Exérci', 'Águias', 'Filhos'])
+    await userEvent.click(within(th).getByRole('button'))
+    expect(th).toHaveAttribute('aria-sort', 'descending')
+    expect(nomesDasLinhas().map((n) => n.slice(0, 6))).toEqual(['Filhos', 'Águias', 'Exérci'])
   })
 })

@@ -24,8 +24,8 @@ function Bloco({ titulo, children }) {
 
 function Linha({ para, icone, children }) {
   return (
-    <Link to={para} className={`min-h-[52px] flex items-center gap-3 rounded-2xl px-2 hover:bg-[#f5f6fb] font-bold ${TXT}`}>
-      <Icone nome={icone} className="w-6 h-6 text-[#4b3cff]" /> <span className="flex-1">{children}</span> <span aria-hidden="true" className={TXT_SUAVE}>›</span>
+    <Link to={para} className={`min-h-[52px] flex items-center gap-3 rounded-2xl px-2 hover:bg-[var(--rede-superficie)] font-bold ${TXT}`}>
+      <Icone nome={icone} className="w-6 h-6 text-[var(--rede-acao)]" /> <span className="flex-1">{children}</span> <span aria-hidden="true" className={TXT_SUAVE}>›</span>
     </Link>
   )
 }

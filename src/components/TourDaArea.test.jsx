@@ -1,5 +1,5 @@
 // TourDaArea + fila de popups: tour tem prioridade sobre os outros popups; um por vez; fechar revela o próximo.
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import TourDaArea from './TourDaArea.jsx'
@@ -36,6 +36,32 @@ describe('TourDaArea', () => {
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByTestId('tour')).toBeNull())
     expect(localStorage.getItem('dc:tour-visto:u2:rede')).toBe('1')
+  })
+
+  it('Pular no 1º passo e "Pular tour" no meio fecham e marcam visto', async () => {
+    const aoFechar = vi.fn()
+    const a = render(<TourDaArea id="classes" uid="u6" aoFechar={aoFechar} />)
+    await screen.findByTestId('tour')
+    expect(screen.queryByRole('button', { name: 'Voltar' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Pular' }))
+    await waitFor(() => expect(screen.queryByTestId('tour')).toBeNull())
+    expect(aoFechar).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem('dc:tour-visto:u6:classes')).toBe('1')
+    a.unmount()
+
+    render(<TourDaArea id="rede" uid="u6" />)
+    await screen.findByTestId('tour')
+    await userEvent.click(screen.getByRole('button', { name: 'Próximo' }))
+    expect(screen.getByText('Passo 2 de 5')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Pular tour' }))
+    await waitFor(() => expect(screen.queryByTestId('tour')).toBeNull())
+    expect(localStorage.getItem('dc:tour-visto:u6:rede')).toBe('1')
+  })
+
+  it('forcar (Ajuda → Rever tour) reabre mesmo já visto', async () => {
+    localStorage.setItem('dc:tour-visto:u7', '1')
+    render(<TourDaArea id="primeiros-passos" uid="u7" forcar />)
+    expect(await screen.findByTestId('tour')).toHaveAttribute('data-tour', 'primeiros-passos')
   })
 
   it('gestão não aparece para desbravador', async () => {

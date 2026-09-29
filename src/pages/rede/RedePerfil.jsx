@@ -40,7 +40,7 @@ function Miniatura({ post, aoAbrir }) {
   }, [post.foto])
   return (
     <button type="button" onClick={() => aoAbrir(post)} aria-label={post.foto_alt || `Foto de ${post.autor?.nome}`}
-      className="relative block aspect-square bg-[#f1f5f9] overflow-hidden">
+      className="relative block aspect-square bg-[var(--rede-superficie)] overflow-hidden">
       {url && <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="w-full h-full object-cover" />}
       {post.status === 'em_analise' && <span className="absolute left-1 top-1 text-[10px] font-semibold bg-amber-100 text-amber-900 rounded-full px-1.5">Em análise</span>}
     </button>
@@ -115,7 +115,7 @@ function Perfil({ id }) {
             {desde && <p className={`text-[13px] ${TXT_SUAVE}`}>{desde}</p>}
           </div>
           {perfil.eu && (
-            <Link to="/rede/mais" aria-label="Mais opções da rede" className="shrink-0 w-11 h-11 rounded-xl bg-[#f1f5f9] grid place-items-center text-[#0f172a]">
+            <Link to="/rede/mais" aria-label="Mais opções da rede" className="shrink-0 w-11 h-11 rounded-xl bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-ink)]">
               <Icone nome="menu" />
             </Link>
           )}
@@ -126,10 +126,10 @@ function Perfil({ id }) {
         )}
       </section>
 
-      <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[#eef1f5]">
+      <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[var(--rede-linha)]">
         {abas.map(([chave, rotulo, ic]) => (
           <button key={chave} type="button" role="tab" aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
-            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[#0f172a] text-[#0f172a]' : `border-transparent ${TXT_SUAVE}`}`}>
+            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[var(--rede-ink)] text-[var(--rede-ink)]' : `border-transparent ${TXT_SUAVE}`}`}>
             <Icone nome={ic} className="w-[22px] h-[22px]" />
           </button>
         ))}
@@ -142,7 +142,7 @@ function Perfil({ id }) {
               <div className="grid grid-cols-3 gap-[2px]" data-testid="grade-fotos">
                 {lista.map((p) => <Miniatura key={p.id} post={p} aoAbrir={setAberto} />)}
               </div>
-              {proximo && <div className="py-4 text-center"><button type="button" onClick={carregarMais} className="min-h-[44px] px-4 text-sm font-semibold text-[#3b5bff]">{mais ? 'Carregando…' : 'Ver mais'}</button></div>}
+              {proximo && <div className="py-4 text-center"><button type="button" onClick={carregarMais} className="min-h-[44px] px-4 text-sm font-semibold text-[var(--rede-acao)]">{mais ? 'Carregando…' : 'Ver mais'}</button></div>}
             </>
           )
         ) : (

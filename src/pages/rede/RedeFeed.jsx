@@ -78,7 +78,7 @@ export default function RedeFeed() {
       <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
 
-      <div role="tablist" aria-label="Filtro do feed" className="flex items-center gap-1 px-3 py-1.5 border-y border-[#eef1f5]">
+      <div role="tablist" aria-label="Filtro do feed" className="flex items-center gap-1 px-3 py-1.5 border-y border-[var(--rede-linha)]">
         {abasDoFeed(!!status?.coordenacao).map(([chave, rotulo], i) => (
           <span key={chave} className="flex items-center">
             {i > 0 && <span aria-hidden="true" className={`${TXT_SUAVE} px-1`}>·</span>}

@@ -11,13 +11,13 @@ import { CARD, Icone, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede
 const dias = (n) => (n === 0 ? 'último dia' : n === 1 ? 'falta 1 dia' : `faltam ${n} dias`)
 
 function Participar({ d, podePublicar, destaque }) {
-  if (d.participei) return <span className={`${PILL} bg-[#d1fae5] text-[#047857]`}>Você participou ✅</span>
+  if (d.participei) return <span className={`${PILL} bg-[var(--rede-sucesso-suave)] text-[var(--rede-sucesso)]`}>Você participou ✅</span>
   if (!podePublicar) return null
   return (
     <Link to={`/rede/publicar?desafio=${d.id}`} className={destaque ? PILL_PRIMARIA : PILL_CLARA}>Participar</Link>
   )
 }
-const CHIP = `rounded-full bg-[#f1f5f9] px-3 py-1 ${TXT}`
+const CHIP = `rounded-full bg-[var(--rede-superficie)] px-3 py-1 ${TXT}`
 
 export default function RedeDesafios() {
   const { status } = useRede()
@@ -40,7 +40,7 @@ export default function RedeDesafios() {
       <h1 className={`text-[22px] font-extrabold ${TXT} px-1`}>Desafios</h1>
       {semana ? (
         <section aria-labelledby="desafio-semana" className={`${CARD} p-4`}>
-          <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#6d28d9] bg-[#f3e8ff] rounded-full px-2.5 py-0.5">
+          <p className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--rede-acao)] bg-[var(--rede-acao-suave)] rounded-full px-2.5 py-0.5">
             <Icone nome="trofeu" className="w-3.5 h-3.5" /> Desafio da semana
           </p>
           <h2 id="desafio-semana" className={`text-xl font-bold mt-2 leading-tight ${TXT}`}>{semana.titulo}</h2>

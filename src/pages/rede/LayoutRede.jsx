@@ -25,7 +25,7 @@ const SEM_ACESSO = {
   area_sem_rede: ['🌎', 'A Rede DBV ainda não está liberada na sua área', 'Quando um clube da sua coordenação entrar na Rede DBV, ela abre aqui para você.'],
 }
 
-const QUADRADINHO = 'w-11 h-11 rounded-xl bg-[#f1f5f9] grid place-items-center text-[#0f172a]'
+const QUADRADINHO = 'w-11 h-11 rounded-xl bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-ink)]'
 
 // Mesmo tema do app do clube (data-theme no <html> + localStorage "tema"): trocar aqui vale lá também.
 function BotaoTema() {
@@ -57,7 +57,7 @@ function useSairDaRede() {
 function Topo() {
   const { coordenacao, sair } = useSairDaRede()
   return (
-    <header className="bg-white/95 backdrop-blur sticky top-0 z-30 border-b border-[#eef1f5]" style={{ paddingTop: 'var(--seguro-topo)' }}>
+    <header className="bg-[var(--rede-bg)]/95 backdrop-blur sticky top-0 z-30 border-b border-[var(--rede-linha)]" style={{ paddingTop: 'var(--seguro-topo)' }}>
       <div className="max-w-xl mx-auto flex items-center justify-between gap-2 px-3 h-14">
         <Link to="/rede" className="flex items-center gap-2 no-underline min-h-[44px]" aria-label="Rede DBV — início">
           <img src={MARCA_PRODUTO.logoUrl} alt="" className="w-8 h-8 rounded-lg" />
@@ -67,7 +67,7 @@ function Topo() {
           {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
           <button type="button" onClick={sair} data-testid="rede-sair"
             aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
-            className="min-h-[44px] px-3 rounded-xl bg-[#f1f5f9] text-[#0f172a] inline-flex items-center gap-1.5 text-sm font-semibold">
+            className="min-h-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center gap-1.5 text-sm font-semibold">
             <Icone nome="sair" className="w-5 h-5" /> Sair
           </button>
           {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
@@ -81,9 +81,9 @@ function Topo() {
 
 function BarraInferior({ eu }) {
   const item = ({ isActive }) =>
-    `w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[#3b5bff] bg-[#eef2ff]' : 'text-[#0f172a]'}`
+    `w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
   return (
-    <nav aria-label="Navegação da Rede DBV" className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-[#eef1f5]"
+    <nav aria-label="Navegação da Rede DBV" className="fixed bottom-0 inset-x-0 z-30 bg-[var(--rede-bg)] border-t border-[var(--rede-linha)]"
       style={{ paddingBottom: 'var(--seguro-baixo)' }}>
       <ul className="max-w-xl mx-auto grid grid-cols-5 h-[58px] items-center">
         <li className="flex justify-center"><NavLink to="/rede" end aria-label="Início" className={item}><Icone nome="casa" className="w-[26px] h-[26px]" /></NavLink></li>
@@ -91,9 +91,9 @@ function BarraInferior({ eu }) {
         <li className="flex justify-center"><NavLink to="/rede/publicar" aria-label="Publicar" className={item}><Icone nome="maisQuadrado" className="w-[27px] h-[27px]" /></NavLink></li>
         <li className="flex justify-center"><NavLink to="/rede/desafios" aria-label="Desafios" className={item}><Icone nome="trofeu" className="w-[26px] h-[26px]" /></NavLink></li>
         <li className="flex justify-center">
-          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[#eef2ff]' : ''}`}>
+          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
             {({ isActive }) => (
-              <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[#3b5bff]' : 'bg-transparent'}`}>
+              <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[var(--rede-acao)]' : 'bg-transparent'}`}>
                 {/* `eu` = rede_perfil() gateado (500): a mesma cara que os outros veem, nunca o profile do Auth */}
                 <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-7 h-7" texto="text-[10px]" />
               </span>
@@ -158,7 +158,7 @@ export default function LayoutRede() {
 
   return (
     <RedeContexto.Provider value={{ status, eu: euNaRede, recarregar }}>
-      <div className="min-h-screen bg-white overflow-x-hidden" data-rede>
+      <div className="min-h-screen bg-[var(--rede-bg)] overflow-x-hidden" data-rede>
         <Topo />
         <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
         <BarraInferior eu={euNaRede} />
