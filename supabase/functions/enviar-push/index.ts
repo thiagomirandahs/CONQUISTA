@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
                       priority: 'high',
                       // `collapse_key` é o equivalente FCM da `tag` do Web Push
                       collapse_key: tag,
-                      notification: { tag, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+                      notification: { tag }, // sem click_action: o Capacitor abre a MainActivity ao tocar
                     },
                   },
                 }),
