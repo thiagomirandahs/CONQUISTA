@@ -30,8 +30,7 @@
       "channelUrl": ""
     },
     "SystemBars": {
-      "insetsHandling": "css",
-      "style": "LIGHT"
+      "insetsHandling": "disable"
     }
   },
   "server": {
