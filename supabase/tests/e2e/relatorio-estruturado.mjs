@@ -53,13 +53,13 @@ const podeAbrir = async (p, path) => !(await p.c.storage.from('comprovacoes').do
 function limpar() {
   sql(`
     set session_replication_role = replica;
-    delete from public.requirement_approvals where member_specialty_requirement_id in (select id from public.member_specialty_requirements where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo = 'TE-001'));
-    delete from public.specialty_requirement_submissions where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo = 'TE-001');
-    delete from public.member_specialty_requirements where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo = 'TE-001');
-    delete from public.member_specialties where specialty_id in (select id from public.specialties where codigo = 'TE-001');
-    delete from public.specialty_requirements where specialty_id in (select id from public.specialties where codigo = 'TE-001');
-    delete from public.specialty_requirement_groups where specialty_id in (select id from public.specialties where codigo = 'TE-001');
-    delete from public.specialties where codigo = 'TE-001';
+    delete from public.requirement_approvals where member_specialty_requirement_id in (select id from public.member_specialty_requirements where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo in ('TE-001', 'TE-002')));
+    delete from public.specialty_requirement_submissions where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo in ('TE-001', 'TE-002'));
+    delete from public.member_specialty_requirements where specialty_requirement_id in (select r.id from public.specialty_requirements r join public.specialties s on s.id = r.specialty_id where s.codigo in ('TE-001', 'TE-002'));
+    delete from public.member_specialties where specialty_id in (select id from public.specialties where codigo in ('TE-001', 'TE-002'));
+    delete from public.specialty_requirements where specialty_id in (select id from public.specialties where codigo in ('TE-001', 'TE-002'));
+    delete from public.specialty_requirement_groups where specialty_id in (select id from public.specialties where codigo in ('TE-001', 'TE-002'));
+    delete from public.specialties where codigo in ('TE-001', 'TE-002');
     delete from public.curriculum_versions where identificador = 'especialidades-teste-local';
     delete from public.requirement_approvals where member_requirement_id in (select id from public.member_requirements where usuario_id in (md5('hml:desbravador')::uuid, md5('hml:desbravador2')::uuid, md5('hml:instrutor')::uuid, md5('hml:multi')::uuid, md5('hml:diretoria_a')::uuid));
     delete from public.requirement_submissions where member_requirement_id in (select id from public.member_requirements where usuario_id in (md5('hml:desbravador')::uuid, md5('hml:desbravador2')::uuid, md5('hml:instrutor')::uuid, md5('hml:multi')::uuid, md5('hml:diretoria_a')::uuid));
@@ -262,7 +262,7 @@ async function principal() {
 
   console.log('\n== limpeza: TE-001 e o que os testes criaram (só banco local) ==')
   limpar()
-  ok('TE-001 removida', sql(`select count(*) from public.specialties where codigo = 'TE-001'`) === '0')
+  ok('TE-001 removida', sql(`select count(*) from public.specialties where codigo in ('TE-001', 'TE-002')`) === '0')
   console.log(`\n${total - reprovados}/${total} ok${reprovados ? ` — ${reprovados} FALHA(S)` : ' — TUDO OK'}`)
   process.exitCode = reprovados ? 1 : 0
 }
