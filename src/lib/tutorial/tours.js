@@ -27,7 +27,7 @@ export const TOURS = {
   rede: {
     titulo: 'Rede DBV',
     passos: [
-      { icone: '📰', titulo: 'Feed', texto: 'Publicações dos clubes que participam da Rede DBV. Dá para ver todos ou só o seu clube.' },
+      { icone: '📰', titulo: 'Feed', texto: 'Duas abas: Meu Clube (só o seu clube vê, com stories e desafios) e Comunidade (o que a liderança publica para todos os clubes da Rede).' },
       { icone: '⭕', titulo: 'Stories', texto: 'As bolinhas no topo são stories: ficam no ar por 24 horas.' },
       { icone: '➕', titulo: 'Publicar', texto: 'Toque em ➕ para publicar. Antes de enviar, o app pergunta se você tem certeza: fica visível só para o seu clube (ou para a Rede, quando a liderança publica na Comunidade).' },
       { icone: '🚩', titulo: 'Denunciar', texto: 'Viu algo errado? Toque em ⋮ → Denunciar. O conteúdo some na hora e a diretoria do clube é avisada.' },
