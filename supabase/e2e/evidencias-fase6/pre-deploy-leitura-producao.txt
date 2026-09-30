@@ -7,3 +7,10 @@ club_features comunidade: 4 ligados
 storage: comprovacoes 58 obj/209 MB · comunidade 6/566 kB · imagens 361/461 MB · publico 4/162 kB
 mensalidades: 37 · comunidade_posts: 8
 profiles: 51 (9 personagem, 30 com foto)
+
+--- 2a leitura (30/09/2026, ~09:46 local), SOMENTE LEITURA — idêntica à primeira ---
+ledger_max: 20260930000501 (500 e 501 aplicadas; 502 e 503 NÃO)
+tabela rede_consentimento_imagem_historico: NÃO existe · função _comunidade_autor_json com unidade: NÃO
+_rede_pode_ver_foto_perfil com regra do personagem (501): SIM
+rede_autorizacao_imagem: vazia (nenhuma criança com imagem arquivada => nenhum rosto exibido na Rede hoje)
+manutenção: desligada · tenant001: ativo, 30 vínculos ativos, 1 encerrado
