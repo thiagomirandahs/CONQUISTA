@@ -1,0 +1,9 @@
+Leitura SOMENTE-LEITURA da produção — 30/09/2026 (antes do deploy da Fase 6)
+ledger: 20260930000501 (500 e 501 já aplicadas pelo dono? NÃO — ver nota abaixo)
+tenant001: Filhos da Conquista (bf23126e-…) ativo; vínculos: 30 ativos, 1 encerrado
+unidades: 4 clubes, 3 distritos, 1 região (todos ativos)
+subscriptions: ativa 1, cancelada 1, trial 2
+club_features comunidade: 4 ligados
+storage: comprovacoes 58 obj/209 MB · comunidade 6/566 kB · imagens 361/461 MB · publico 4/162 kB
+mensalidades: 37 · comunidade_posts: 8
+profiles: 51 (9 personagem, 30 com foto)

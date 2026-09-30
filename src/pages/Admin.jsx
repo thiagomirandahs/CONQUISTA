@@ -710,7 +710,7 @@ function DetalheClube({ clubId, aoVoltar }) {
                         {c.trial_ate && <Linha rotulo="Teste até">{data(c.trial_ate)}</Linha>}
                         {c.periodo_fim && <Linha rotulo="Período até">{data(c.periodo_fim)}</Linha>}
                         <Linha rotulo="Pagamento">{c.provider === 'mock' || !c.provider ? 'Sem gateway — combinado fora do sistema' : c.provider}</Linha>
-                        <div className="mt-4"><TesteGratuito clubId={clubId} status={c.assinatura_status} trialAte={c.trial_ate} onFeito={recarregar} /></div>
+                        <div className="mt-4"><TesteGratuito clubId={clubId} clube={c.nome} status={c.assinatura_status} trialAte={c.trial_ate} onFeito={recarregar} /></div>
                       </div>
                       <div className="space-y-4">
                         <CaixaClara titulo="Status da assinatura"><TransicaoAssinatura assinatura={{ id: c.assinatura_id, status: c.assinatura_status }} clube={c.nome} onFeito={recarregar} /></CaixaClara>
@@ -750,7 +750,7 @@ function DetalheClube({ clubId, aoVoltar }) {
                       ? <p className="text-sm text-muted">Sem ajuste por clube — vale o que o plano define.</p>
                       : <div className="flex flex-wrap gap-1.5">{d.recursos.map((r) => <Chip key={r.recurso} tom={r.ligado ? 'ok' : 'neutro'} ponto>{r.recurso}: {r.ligado ? 'ligado' : 'desligado'}</Chip>)}</div>}
                   </Painel>
-                  <AdminRecursosPlataforma clubId={clubId} recursos={d.recursos || []} onFeito={recarregar} />
+                  <AdminRecursosPlataforma clubId={clubId} clube={c.nome} recursos={d.recursos || []} onFeito={recarregar} />
                 </div>
               )}
 
@@ -838,7 +838,7 @@ function TrialPadrao() {
   )
 }
 
-function TesteGratuito({ clubId, status, trialAte, onFeito }) {
+function TesteGratuito({ clubId, clube, status, trialAte, onFeito }) {
   const [data_, setData] = useState('')
   const [ocupado, setOcupado] = useState(null)
   const podeEstender = ['trial', 'pagamento_pendente'].includes(status)
@@ -857,9 +857,22 @@ function TesteGratuito({ clubId, status, trialAte, onFeito }) {
     const ate = new Date(`${data_}T23:59:59`).toISOString()
     rodar('data', () => trialEstender(clubId, { ate, motivo: `teste gratuito até ${data_.split('-').reverse().join('/')}` }), 'Data do fim do teste atualizada.')
   }
-  const encerrar = () => {
-    if (!window.confirm('Encerrar o teste gratuito agora? O clube passa a "aguardando pagamento". Nada é apagado e nenhuma cobrança é criada.')) return
-    rodar('encerrar', () => trialEncerrar(clubId, 'teste gratuito encerrado pela administração'), 'Teste gratuito encerrado.')
+  const MOTIVO_ENCERRAR = 'teste gratuito encerrado pela administração'
+  const encerrar = async () => {
+    // Fase 6: confirmação do app (modal de avisos, não a nativa) com clube, estado atual → novo e impacto.
+    const ok = await avisar.confirmar({
+      titulo: 'Encerrar o teste gratuito agora?',
+      descricao: [
+        `Clube: ${clube || '—'}.`,
+        `Situação atual: Teste grátis (até ${data(trialAte)}) → nova: Encerrado (aguardando pagamento).`,
+        'Impacto: o clube perde o acesso do teste na hora e só volta a usar as ferramentas com uma licença. Nada é apagado e nenhuma cobrança é criada.',
+        `Motivo (vai para a auditoria): ${MOTIVO_ENCERRAR}.`,
+      ].join(' '),
+      rotulo: 'Encerrar teste agora',
+      perigo: true,
+    })
+    if (!ok) return
+    rodar('encerrar', () => trialEncerrar(clubId, MOTIVO_ENCERRAR), 'Teste gratuito encerrado.')
   }
 
   return (

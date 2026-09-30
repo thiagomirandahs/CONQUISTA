@@ -325,8 +325,7 @@ describe('Admin: teste gratuito', () => {
     expect(f.trialPadraoDefinir).not.toHaveBeenCalled()
   })
 
-  it('detalhe do clube em teste: +7/+15/+30, data escolhida e encerrar', async () => {
-    const vaiEncerrar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('detalhe do clube em teste: +7/+15/+30 e data escolhida não pedem confirmação', async () => {
     f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, trial_ate: '2026-10-10T12:00:00Z' } })
     await abrirComoAdmin()
     await abrirClubeNaAssinatura()
@@ -336,9 +335,35 @@ describe('Admin: teste gratuito', () => {
     await userEvent.type(screen.getByLabelText('Ou escolha a data final'), '2026-11-30')
     await userEvent.click(screen.getByText('Definir data'))
     expect(f.trialEstender).toHaveBeenLastCalledWith('c2', expect.objectContaining({ ate: expect.stringMatching(/^2026-1[12]-/) }))
-    await userEvent.click(screen.getByTestId('trial-encerrar'))
-    expect(f.trialEncerrar).toHaveBeenCalledWith('c2', expect.any(String))
-    vaiEncerrar.mockRestore()
+    expect(confirmar).not.toHaveBeenCalled()
+  })
+
+  it('encerrar teste: botão vermelho + confirmação do app com clube, "Teste grátis (até data)" → Encerrado, impacto e motivo (Fase 6)', async () => {
+    f.clubeDetalhe.mockResolvedValue({ ...DETALHE, clube: { ...NOVO, trial_ate: '2026-10-10T12:00:00Z' } })
+    await abrirComoAdmin()
+    await abrirClubeNaAssinatura()
+    const botao = await screen.findByTestId('trial-encerrar')
+    expect(botao).toHaveClass('bg-rose-600')
+
+    // recusou no modal: nada vai ao servidor
+    confirmar.mockResolvedValueOnce(false)
+    await userEvent.click(botao)
+    expect(confirmar).toHaveBeenCalledTimes(1)
+    const pedido = confirmar.mock.calls[0][0]
+    expect(pedido.perigo).toBe(true)
+    expect(pedido.titulo).toMatch(/Encerrar o teste/)
+    expect(pedido.rotulo).toBe('Encerrar teste agora')
+    expect(pedido.descricao).toContain('Clube: Exército da colina')
+    expect(pedido.descricao).toMatch(/Teste grátis \(até 10\/10\/2026\) → nova: Encerrado/)
+    expect(pedido.descricao).toContain('perde o acesso do teste')
+    expect(pedido.descricao).toContain('licença')
+    expect(pedido.descricao).toContain('Motivo (vai para a auditoria): teste gratuito encerrado pela administração')
+    expect(f.trialEncerrar).not.toHaveBeenCalled()
+
+    // confirmou: chama a RPC auditada com o mesmo motivo
+    confirmar.mockResolvedValueOnce(true)
+    await userEvent.click(botao)
+    expect(f.trialEncerrar).toHaveBeenCalledWith('c2', 'teste gratuito encerrado pela administração')
   })
 
   it('assinatura ativa: sem botões de teste', async () => {

@@ -3,6 +3,7 @@ import Avatar from '../../components/Avatar.jsx'
 import { carregarRecordesSemana, excluirRecorde } from '../../lib/dados.js'
 import { JOGOS, ARCADE } from './registry.jsx'
 import { EsqueletoTela } from '../../ui/carregamento.jsx'
+import { avisar } from '../../ui/avisos.jsx'
 
 // Placar por jogo: chips no topo trocam entre "Geral" e cada jogo.
 export default function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
@@ -24,7 +25,19 @@ export default function RankingTrilha({ dados, carregando, meuId, ehAdmin }) {
 
   // Liderança: apaga um recorde suspeito da semana (ex.: valor forjado)
   async function apagarRec(r) {
-    if (!window.confirm(`Apagar o recorde de ${r.nome || 'este membro'} (⚡ ${r.pontos}) desta semana?\n\nEle pode fazer um novo jogando de verdade.`)) return
+    // Fase 6: confirmação do app (modal de avisos, não a nativa). Apagar é irreversível → perigo.
+    const nomeJogo = JOGOS[jogo]?.curto || jogo
+    const ok = await avisar.confirmar({
+      titulo: `Apagar o recorde de ${r.nome || 'este membro'}?`,
+      descricao: [
+        `Recorde: ⚡ ${r.pontos} em ${nomeJogo}, desta semana.`,
+        'Situação atual: no placar da semana → nova: apagado.',
+        'Impacto: o recorde some do placar e não dá para desfazer; o membro pode fazer um novo jogando de verdade.',
+      ].join(' '),
+      rotulo: 'Apagar recorde',
+      perigo: true,
+    })
+    if (!ok) return
     try {
       await excluirRecorde(r.id, jogo)
       recarregarRecs()

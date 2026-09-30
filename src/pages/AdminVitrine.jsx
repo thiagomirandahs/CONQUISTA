@@ -105,7 +105,18 @@ function FormParceiro({ inicial, aoFechar, aoSalvar }) {
     setOcupado(false)
   }
   async function apagar() {
-    if (!window.confirm(`Apagar o parceiro "${inicial.nome}"?`)) return
+    // Fase 6: confirmação do app (modal de avisos, não a nativa). Apagar é irreversível → perigo.
+    const ok = await avisar.confirmar({
+      titulo: `Apagar o parceiro "${inicial.nome}"?`,
+      descricao: [
+        `Parceiro: ${inicial.nome}${inicial.categoria ? ` (${inicial.categoria})` : ''}.`,
+        `Situação atual: ${inicial.no_ar ? 'No ar em /parceiros' : inicial.ativo ? 'Fora do período' : 'Inativo'} → nova: Apagado.`,
+        'Impacto: o parceiro some do site público e desta lista de vez; não dá para desfazer. Se quiser só tirar do ar, desmarque "Ativo" e salve.',
+      ].join(' '),
+      rotulo: 'Apagar parceiro',
+      perigo: true,
+    })
+    if (!ok) return
     setOcupado(true)
     try { await adminParceiroApagar(inicial.id); avisar.sucesso('Parceiro apagado.'); aoSalvar() } catch (e) { avisar.erro(e) }
     setOcupado(false)

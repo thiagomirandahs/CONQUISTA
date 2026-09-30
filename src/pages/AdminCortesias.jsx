@@ -11,6 +11,8 @@ import { Chip, Esqueleto, EstadoVazio, Nota } from '../components/admin/AdminUI.
 // depois o job diário (cortesias_expirar) devolve ao fluxo normal (aguardando pagamento).
 const ROTULO = { ativo: 'Ativo', resgatado: 'Resgatado', revogado: 'Revogado', expirado: 'Expirado' }
 const TOM = { ativo: 'ok', resgatado: 'neutro', revogado: 'perigo', expirado: 'atencao' }
+// Situação da assinatura do clube (só para a confirmação de "aplicar cortesia" falar em português).
+const STATUS_ASSINATURA = { trial: 'Teste grátis', pagamento_pendente: 'Aguardando pagamento', ativa: 'Ativa', inadimplente: 'Inadimplente', suspensa: 'Suspensa', cancelada: 'Cancelada' }
 const data = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '—')
 
 export default function AdminCortesias() {
@@ -120,12 +122,38 @@ function LinhaCodigo({ c, onFeito }) {
     try { await fn(); avisar.sucesso(ok); onFeito?.() } catch (e) { avisar.erro(e) }
     setOcupado(null)
   }
-  const revogar = () => {
-    if (!window.confirm(`Revogar "${c.rotulo}"? Ninguém mais consegue resgatar. Quem já resgatou continua com a cortesia.`)) return
+  // Fase 6: confirmação do app (modal de avisos, não a nativa) — diz o código, o estado atual → novo e o impacto.
+  const clubesQueResgataram = (c.resgates || []).map((r) => r.clube).filter(Boolean)
+  const quem = clubesQueResgataram.length ? `Clubes que já resgataram: ${clubesQueResgataram.join(', ')}.` : 'Nenhum clube resgatou ainda.'
+  const revogar = async () => {
+    const ok = await avisar.confirmar({
+      titulo: `Revogar o código "${c.rotulo}"?`,
+      descricao: [
+        `Código: DC-${c.prefixo}-… (${c.usos}/${c.max_usos} uso(s)).`,
+        `Situação atual: ${ROTULO[c.status] || c.status} → nova: Revogado.`,
+        'Impacto: ninguém mais consegue resgatar este código; quem já resgatou continua com a cortesia até o fim.',
+        quem,
+        'Não dá para desfazer; fica na auditoria.',
+      ].join(' '),
+      rotulo: 'Revogar código',
+      perigo: true,
+    })
+    if (!ok) return
     rodar('revogar', () => cortesiaRevogar(c.id, 'revogado no /admin'), 'Código revogado.')
   }
-  const apagar = () => {
-    if (!window.confirm(`Apagar "${c.rotulo}" da lista? O histórico das cortesias concedidas fica.`)) return
+  const apagar = async () => {
+    const ok = await avisar.confirmar({
+      titulo: `Apagar o código "${c.rotulo}" da lista?`,
+      descricao: [
+        `Código: DC-${c.prefixo}-… (${ROTULO[c.status] || c.status}).`,
+        'Impacto: o código some desta lista de vez; o histórico das cortesias já concedidas aos clubes fica guardado.',
+        quem,
+        'Não dá para desfazer.',
+      ].join(' '),
+      rotulo: 'Apagar código',
+      perigo: true,
+    })
+    if (!ok) return
     rodar('apagar', () => cortesiaApagar(c.id), 'Código apagado.')
   }
   return (
@@ -162,7 +190,18 @@ function AplicarEmClube({ onFeito }) {
   async function aplicar() {
     const c = (clubes || []).find((x) => x.club_id === clubId)
     if (!c) { avisar.erro(null, 'Escolha o clube.'); return }
-    if (!window.confirm(`Dar ${meses} mese(s) de licença cortesia para "${c.nome}"? Nenhuma cobrança é criada.`)) return
+    // Fase 6: confirmação do app (modal de avisos, não a nativa). Não é destrutivo: botão neutro.
+    const ok = await avisar.confirmar({
+      titulo: `Dar ${meses} mese(s) de licença cortesia?`,
+      descricao: [
+        `Clube: ${c.nome}.`,
+        `Situação atual: ${STATUS_ASSINATURA[c.assinatura_status] || c.assinatura_status || '—'} → nova: Licença cortesia ativa por ${meses} mese(s).`,
+        'Impacto: o clube passa a usar o app sem cobrança até o fim da cortesia; depois volta sozinho para "aguardando pagamento". Nenhuma cobrança é criada e tudo fica na auditoria.',
+      ].join(' '),
+      rotulo: 'Aplicar cortesia',
+      perigo: false,
+    })
+    if (!ok) return
     setOcupado(true)
     try {
       const r = await cortesiaAplicar(clubId, Number(meses), 'ganhador de sorteio / promoção')

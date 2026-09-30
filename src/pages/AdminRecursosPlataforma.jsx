@@ -12,14 +12,27 @@ const RECURSOS = [
     ajuda: 'Fazer a especialidade no app, requisito por requisito. Só libera depois que o catálogo oficial do módulo (com requisitos) for publicado. O catálogo de consulta (📚 na Minha Classe) já funciona para todos.' },
 ]
 
-export default function AdminRecursosPlataforma({ clubId, recursos = [], onFeito }) {
+export default function AdminRecursosPlataforma({ clubId, clube, recursos = [], onFeito }) {
   const [ocupado, setOcupado] = useState(null)
   const [motivo, setMotivo] = useState(null) // { chave, texto } — recusa do servidor (plano, catálogo), escrita como veio
   const ligado = (k) => recursos.some((r) => r.recurso === k && r.ligado)
 
   async function trocar(r) {
     const novo = !ligado(r.chave)
-    if (!window.confirm(`${novo ? 'Liberar' : 'Desligar'} "${r.nome}" para este clube?${novo ? '' : '\n\nNada é apagado: os dados ficam guardados e voltam se liberar de novo.'}`)) return
+    // Fase 6: confirmação do app (modal de avisos, não a nativa). Desligar tira o recurso do clube na hora → perigo.
+    const ok = await avisar.confirmar({
+      titulo: `${novo ? 'Liberar' : 'Desligar'} "${r.nome}" para este clube?`,
+      descricao: [
+        `Clube: ${clube || '—'}.`,
+        `Situação atual: ${novo ? 'Desligado' : 'Liberado'} → nova: ${novo ? 'Liberado' : 'Desligado'}.`,
+        novo
+          ? `Impacto: o clube passa a ver e usar ${r.nome} na hora (o servidor ainda confere o plano do clube).`
+          : `Impacto: o clube deixa de ver e usar ${r.nome} na hora. Nada é apagado: os dados ficam guardados e voltam se liberar de novo.`,
+      ].join(' '),
+      rotulo: novo ? `Liberar ${r.nome}` : `Desligar ${r.nome}`,
+      perigo: !novo,
+    })
+    if (!ok) return
     setOcupado(r.chave); setMotivo(null)
     try {
       const { error } = await supabase.rpc('admin_recurso_do_clube_definir', { p_club_id: clubId, p_feature: r.chave, p_enabled: novo })
