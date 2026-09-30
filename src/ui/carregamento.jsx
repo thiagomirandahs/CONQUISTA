@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MARCA_PRODUTO } from '../lib/marca.js'
 import { encerrarAbertura } from '../lib/abertura.js'
+import { PRAZOS } from '../lib/prazo.js'
 
 // Carregamentos do app, num lugar só.
 //
@@ -13,14 +14,43 @@ import { encerrarAbertura } from '../lib/abertura.js'
 //
 // O leitor de tela ouve "Carregando…" pelo role="status"; os olhos veem forma, não texto.
 
-export function TelaDeAbertura({ texto = 'Carregando' }) {
+// Fases da abertura (fase 7 — travamento na abertura). Antes só existia "carregando": uma espera que
+// nunca terminava parecia o app quebrado e a única saída era fechar e abrir. Agora, quando a rede é o
+// problema, a tela DIZ isso e oferece "Tentar de novo" — o app continua sozinho quando a conexão volta.
+const PROBLEMAS = {
+  sem_conexao: { titulo: 'Sem conexão', texto: 'Seu login está guardado neste aparelho. Assim que a internet voltar, o app continua sozinho.' },
+  lento: { titulo: 'A conexão está lenta', texto: 'Ainda estamos tentando abrir. Se quiser, toque em "Tentar de novo".' },
+  erro: { titulo: 'Não deu para abrir agora', texto: 'Confira a internet e tente de novo. Nada foi perdido.' },
+}
+
+// `fase`: 'normal' (carregando) | 'sem_conexao' | 'lento' | 'erro'. `aoTentar`/`aoSair` só aparecem nas
+// fases de problema. `codigo` = id de correlação para citar ao suporte (sem dado pessoal).
+export function TelaDeAbertura({ texto = 'Carregando', fase = 'normal', aoTentar, aoSair, codigo }) {
+  const [demora, setDemora] = useState(false)
+  // depois de alguns segundos o texto "Conectando…" avisa que ainda está trabalhando (só informativo)
+  useEffect(() => {
+    if (fase !== 'normal') return undefined
+    const t = setTimeout(() => setDemora(true), PRAZOS.avisoMs)
+    return () => clearTimeout(t)
+  }, [fase])
+  const problema = PROBLEMAS[fase]
   return (
-    <div className="ab-tela" role="status" aria-live="polite" data-testid="tela-de-abertura">
-      <span className="sr-only">{texto}…</span>
+    <div className="ab-tela" role="status" aria-live="polite" data-testid="tela-de-abertura" data-fase={fase}>
+      <span className="sr-only">{problema ? `${problema.titulo}. ${problema.texto}` : `${texto}…`}</span>
       <div className="ab-emblema"><img src={MARCA_PRODUTO.logoUrl} alt="" width="96" height="96" decoding="async" /></div>
       <p className="ab-nome">{MARCA_PRODUTO.nome}</p>
       <p className="ab-lema">{MARCA_PRODUTO.lema}</p>
-      <div className="ab-barra" aria-hidden="true"><i /></div>
+      {!problema && <div className="ab-barra" aria-hidden="true"><i /></div>}
+      {!problema && demora && <p className="ab-aviso" data-testid="abertura-conectando">Conectando…</p>}
+      {problema && (
+        <div className="ab-problema" data-testid="abertura-problema">
+          <p className="ab-problema-titulo">{problema.titulo}</p>
+          <p className="ab-problema-texto">{problema.texto}</p>
+          {aoTentar && <button type="button" className="ab-botao" onClick={aoTentar} data-testid="abertura-tentar" autoFocus>Tentar de novo</button>}
+          {aoSair && <button type="button" className="ab-link" onClick={aoSair} data-testid="abertura-sair">Sair da conta neste aparelho</button>}
+          {codigo && <p className="ab-codigo">Se continuar, informe o código {codigo} ao suporte.</p>}
+        </div>
+      )}
     </div>
   )
 }

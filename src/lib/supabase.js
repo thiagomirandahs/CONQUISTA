@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { CHAVE_DA_SESSAO } from './chaveDaSessao.js'
+import { criarFetchComPrazo } from './fetchComPrazo.js'
 
 // As chaves vêm do arquivo .env (criado com os dados do SEU projeto Supabase).
 const url = import.meta.env.VITE_SUPABASE_URL
@@ -36,6 +38,9 @@ export function definirRedeComoNoTransporte(modo) {
   redeComoDaAba = modo === 'coordenacao' ? 'coordenacao' : null
 }
 
+// Pedidos de login e de dados ganham prazo (fase 7): um pedido pendurado deixava o app inteiro esperando.
+const fetchComPrazo = criarFetchComPrazo((...a) => fetch(...a))
+
 function fetchComClubeAtivo(input, init) {
   const opcoes = { ...(init || {}) }
   const cabecalhos = new Headers(opcoes.headers || (input && typeof input !== 'string' ? input.headers : undefined))
@@ -43,9 +48,11 @@ function fetchComClubeAtivo(input, init) {
   if (escopoAtivoDaAba) cabecalhos.set('x-escopo-atual', escopoAtivoDaAba)
   if (redeComoDaAba) cabecalhos.set('x-rede-como', redeComoDaAba)
   opcoes.headers = cabecalhos
-  return fetch(input, opcoes)
+  return fetchComPrazo(input, opcoes)
 }
 
 export const supabase = createClient(url || 'http://localhost', anonKey || 'placeholder', {
+  // storageKey explícita = a padrão da biblioteca (ver chaveDaSessao.js): permite saber se HÁ sessão guardada
+  auth: { storageKey: CHAVE_DA_SESSAO },
   global: { fetch: fetchComClubeAtivo },
 })

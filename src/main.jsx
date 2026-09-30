@@ -12,9 +12,14 @@ import { ClubeProvider } from './context/Clube.jsx'
 import { EscopoProvider } from './context/Escopo.jsx'
 import { AvisosProvider } from './ui/avisos.jsx'
 import { ehNativo, iniciarNativo } from './lib/nativo.js'
+import { marcar } from './lib/arranque.js'
 import './index.css'
 
 const carregarRecursosDeAnimacao = () => import('./lib/motionRecursos.js').then((r) => r.default)
+
+// o vigia do index.html (public/vigia-abertura.js) só age se o app NÃO iniciar: marca que iniciou (fase 7)
+window.__cqIniciou = true
+marcar('js_inicio')
 
 ligarObservabilidade()
 // jogos: resultado guardado sem internet é reenviado ao voltar a rede / abrir o app / logar

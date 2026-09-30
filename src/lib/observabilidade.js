@@ -92,6 +92,23 @@ export async function reportarErro(erro, { origem = 'ui', contexto = '' } = {}) 
   } catch { /* telemetria nunca atrapalha o produto */ }
 }
 
+// Abertura lenta (fase 7): `item` vem da fila local de lib/arranque.js ({ codigo, contexto }) — só etapa,
+// tempos e flags, NUNCA dado de pessoa. DIFERENTE de reportarErro: aqui a falha é PROPAGADA, para o item
+// continuar na fila e ser reenviado na próxima abertura (sem login não há como enviar: fica guardado).
+export async function reportarArranque({ codigo, contexto }) {
+  const { data: sessao } = await supabase.auth.getSession()
+  if (!sessao?.session) throw new Error('sem sessão para enviar')
+  const { error } = await supabase.rpc('registrar_erro', {
+    p_origem: 'ui',
+    p_correlacao: CORRELACAO,
+    p_rota: '/abertura',
+    p_contexto: String(contexto || '').slice(0, 200),
+    p_codigo: String(codigo || '').slice(0, 80),
+    p_agente: String(navigator.userAgent || '').slice(0, 120),
+  })
+  if (error) throw error
+}
+
 // Handlers globais: pegam o que escapou de todo try/catch. Instalados uma vez só.
 export function ligarObservabilidade() {
   if (ligado || typeof window === 'undefined') return

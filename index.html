@@ -45,6 +45,8 @@
       <div class="ab-barra" aria-hidden="true"><i></i></div>
     </div>
     <div id="root"></div>
+    <!-- vigia: se o app não iniciar em 15 s, a abertura mostra "Tentar de novo" (fase 7). Arquivo do mesmo domínio: a CSP já permite -->
+    <script src="/vigia-abertura.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

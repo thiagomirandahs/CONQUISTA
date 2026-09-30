@@ -38,3 +38,17 @@
   .ab-barra i { width: 100%; opacity: .6; }
   #abertura { transition: none; }
 }
+
+/* Fases de problema da abertura (fase 7): sem conexão / conexão lenta / erro. Mesma identidade (marinho +
+   dourado), alvo de toque de 48 px, sem depender de JS além do React já montado. */
+.ab-aviso { margin: 14px 0 0; font-size: 13px; color: rgba(219, 234, 254, .8); }
+.ab-problema { margin-top: 22px; width: min(340px, 100%); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ab-problema-titulo { margin: 0; font-size: 18px; font-weight: 800; }
+.ab-problema-texto { margin: 0; font-size: 14px; line-height: 1.45; color: rgba(219, 234, 254, .85); }
+.ab-botao {
+  width: 100%; min-height: 48px; margin-top: 6px; border: 0; border-radius: 14px; cursor: pointer;
+  background: #facc15; color: #07122f; font: inherit; font-size: 16px; font-weight: 800;
+}
+.ab-botao:focus-visible, .ab-link:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+.ab-link { min-height: 44px; padding: 0 12px; border: 0; background: none; color: rgba(219, 234, 254, .85); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.ab-codigo { margin: 4px 0 0; font-size: 12px; color: rgba(219, 234, 254, .6); word-break: break-all; }

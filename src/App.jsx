@@ -5,7 +5,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { useAuth } from './context/Auth.jsx'
 import { useClube } from './context/Clube.jsx'
 import { rotaInicial } from './lib/clube.js'
-import { reportarErro } from './lib/observabilidade.js'
+import { reportarErro, idDeCorrelacao } from './lib/observabilidade.js'
 import { guardarRetorno } from './lib/retornoPosLogin.js'
 import { modoDoHost, rotaDoSite, rotaSoDoSite, urlDoApp, urlDoSite } from './lib/dominios.js'
 import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
@@ -104,8 +104,10 @@ const SiteAjuda = lazy(() => import('./pages/site/SiteAjuda.jsx'))
 const Conheca = lazy(() => import('./pages/site/Conheca.jsx'))
 
 // Sessão/clube ainda resolvendo: a mesma abertura do index.html (produto, nunca o clube).
+// Quando o problema é a rede (fase 7), a tela DIZ isso e oferece "Tentar de novo" em vez de girar para sempre.
 function Carregando() {
-  return <TelaDeAbertura />
+  const { problema, tentarDeNovo, sairSemRede } = useAuth()
+  return <TelaDeAbertura fase={problema || 'normal'} aoTentar={tentarDeNovo} aoSair={sairSemRede} codigo={problema ? idDeCorrelacao() : undefined} />
 }
 
 function Protegido({ children }) {

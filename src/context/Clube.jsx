@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { PRAZOS, comPrazo } from '../lib/prazo.js'
+import { marcar } from '../lib/arranque.js'
 import { useAuth } from './Auth.jsx'
 import { carregarContexto } from '../services/clubes.js'
 import { definirClubeAtivoNoTransporte, definirEscopoAtivoNoTransporte } from '../lib/supabase.js'
@@ -55,7 +57,7 @@ export function ClubeProvider({ children }) {
 
   const buscar = useCallback(async (para) => {
     try {
-      const contexto = await carregarContexto(para)
+      const contexto = await comPrazo(carregarContexto(para), PRAZOS.contextoMs, 'clube')
       if (uidAtual.current === para) setEstado({ uid: para, contexto, erro: null })
     } catch (erro) {
       if (uidAtual.current === para) setEstado({ uid: para, contexto: null, erro })
@@ -68,8 +70,11 @@ export function ClubeProvider({ children }) {
     // pede logo o clube guardado NESTA aba (se houver) — sem isso, a 1ª resposta viria no clube
     // padrão do servidor e só corrigiria depois de um recarregar()
     definirClubeAtivoNoTransporte(lerClubePreferido(uid))
-    carregarContexto(uid)
-      .then((contexto) => { if (vivo) setEstado({ uid, contexto, erro: null }) })
+    marcar('clube_inicio')
+    // prazo (fase 7): uma chamada que pendura nunca erra — sem isto o ClubeGuard ficava na abertura para
+    // sempre e a tela "Tentar de novo" (que já existe) nunca aparecia
+    comPrazo(carregarContexto(uid), PRAZOS.contextoMs, 'clube')
+      .then((contexto) => { marcar('clube_fim'); if (vivo) setEstado({ uid, contexto, erro: null }) })
       .catch((erro) => { if (vivo) setEstado({ uid, contexto: null, erro }) })
     return () => { vivo = false }
   }, [uid])
@@ -147,6 +152,14 @@ export function ClubeProvider({ children }) {
   }, [vinculos, uid])
 
   const recarregar = useCallback(async () => { if (uid) await buscar(uid) }, [uid, buscar])
+
+  // A internet voltou com o erro de carregamento na tela: tenta sozinho (o botão "Tentar de novo" continua lá).
+  useEffect(() => {
+    if (!erro) return undefined
+    const voltou = () => { recarregar() }
+    window.addEventListener('online', voltou)
+    return () => window.removeEventListener('online', voltou)
+  }, [erro, recarregar])
 
   const papel = vinculo && vinculo.status === 'ativo' ? vinculo.papel : null
   const valor = useMemo(() => ({
