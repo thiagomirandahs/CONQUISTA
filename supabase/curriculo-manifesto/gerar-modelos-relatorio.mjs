@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Gerador da migration com os MODELOS DE RELATÓRIO das Classes (fase 7).
 // Fonte de verdade: supabase/curriculo-manifesto/modelos-de-relatorio/classes.json. Nada é editado à mão no banco.
 //

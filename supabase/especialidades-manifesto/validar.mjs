@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Validador do manifesto de ESPECIALIDADES (fase 7) — o MANIFESTO é a fonte de verdade do catálogo.
 // Formato: conquista.especialidades/2   →  supabase/especialidades-manifesto/areas/<AREA>.json
 //   (e, SÓ para teste local, teste/<nome>.json com "teste": true — nunca vira migration).

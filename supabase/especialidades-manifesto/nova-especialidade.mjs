@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Cria (ou atualiza) a entrada de uma especialidade no manifesto da área SEM escrever SQL nem JSON à mão.
 //   node supabase/especialidades-manifesto/nova-especialidade.mjs HM-049 "Arte com Barbante" --nivel 1 --fonte-url https://mda.wiki.br/... [--fonte-oficial https://www.adventistas.org/...]
 // Cria areas/<AREA>.json (se não existir) e adiciona a especialidade como "catalogo" (só nome; NÃO publicável).

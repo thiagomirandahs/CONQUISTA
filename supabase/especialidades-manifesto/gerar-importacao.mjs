@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Gerador do SQL de ESPECIALIDADES a partir do manifesto validado (fase 7). O manifesto é a fonte de verdade:
 // nada do catálogo é editado à mão no banco.
 //
