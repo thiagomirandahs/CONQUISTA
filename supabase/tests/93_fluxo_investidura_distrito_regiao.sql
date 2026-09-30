@@ -83,7 +83,7 @@ select t.eq('processo antigo NÃO passa por distrito/região (continua na v1): a
 select t.conclui_amigo('nova', 'clube_a', 'A1', 'lider_a', 'mc_nova');
 select t.eq('conclusão nova abre corrida na v2, etapa 1 (revisão do clube)', t.etapa('mc_nova'), '2|1|em_andamento|aguardando_revisao');
 update public.member_requirements set evidencia_texto = 'Resposta da Nova', evidencia_path = t.id('nova')::text || '/requisitos/foto-nova.jpg'
- where id = (select id from public.member_requirements where member_class_id = t.id('mc_nova') order by id limit 1);
+ where id = (select id from public.member_requirements where member_class_id = t.id('mc_nova') and not public._requisito_exige_documento(requirement_id) order by id limit 1);
 insert into storage.buckets (id, name, public) values ('comprovacoes', 'comprovacoes', false) on conflict (id) do nothing;
 insert into storage.objects (bucket_id, name, owner) values ('comprovacoes', t.id('nova')::text || '/requisitos/foto-nova.jpg', null);
 
@@ -143,8 +143,12 @@ select t.eq('...e a foto', t.nv($q$select count(*) from storage.objects where bu
 
 -- ==================== 3) região DEVOLVE marcando 2 requisitos ====================
 reset role;
-insert into t.ids (chave, id) select 'req1', id from public.member_requirements where member_class_id = t.id('mc_nova') order by id limit 1;
-insert into t.ids (chave, id) select 'req2', id from public.member_requirements where member_class_id = t.id('mc_nova') order by id offset 1 limit 1;
+-- FIXTURE DETERMINÍSTICA (30/09): o `order by id` é por UUID ALEATÓRIO; se caísse num dos 4 requisitos da Amigo que
+-- exigem foto de documento (migration 380: "Ter pelo menos 10 anos"...), o reenvio abaixo falhava com
+-- "Envie a foto do documento antes de enviar para avaliação" — falha intermitente (~1 em 8). Esses requisitos têm fluxo
+-- próprio (teste 98); aqui escolhemos só requisitos SEM documento. As assertivas seguem exatamente as mesmas.
+insert into t.ids (chave, id) select 'req1', id from public.member_requirements where member_class_id = t.id('mc_nova') and not public._requisito_exige_documento(requirement_id) order by id limit 1;
+insert into t.ids (chave, id) select 'req2', id from public.member_requirements where member_class_id = t.id('mc_nova') and not public._requisito_exige_documento(requirement_id) order by id offset 1 limit 1;
 select t.como('reg_r'); select t.pedir_escopo('regiao_r');
 select t.throws('requisito de OUTRO cartão é recusado', format($q$select public.coordenacao_investidura_decidir(%L, 'devolvido', 'x motivo', jsonb_build_array(jsonb_build_object('member_requirement_id', %L)))$q$,
   t.id('mc_nova'), (select id from public.member_requirements where member_class_id = t.id('mc_antigo') limit 1)), 'não é deste cartão');
