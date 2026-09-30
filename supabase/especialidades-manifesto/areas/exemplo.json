@@ -1,11 +1,24 @@
 {
-  "formato": "conquista.especialidades/1",
-  "exemplo": true,
-  "area": "AA",
-  "area_nome": "Atividades Agrícolas",
-  "preparado_em": "2026-09-30",
-  "observacao": "[EXEMPLO] só mostra o formato; nada aqui entra no banco.",
-  "especialidades": [
-    { "codigo": "AA-002", "nome": "Jardinagem e Horticultura", "nivel": 1, "fonte_url": "https://mda.wiki.br/Especialidade_de_Jardinagem_e_Horticultura", "estado": "catalogo" }
-  ]
+ "formato": "conquista.especialidades/2",
+ "versao": 1,
+ "exemplo": true,
+ "area": "AA",
+ "area_nome": "Atividades Agrícolas",
+ "preparado_em": "2026-09-30",
+ "observacao": "[EXEMPLO] só mostra o formato; nada aqui entra no banco.",
+ "fonte": {
+  "nome": "[EXEMPLO] fonte a definir pelo dono",
+  "url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+  "consultada_em": "2026-09-30",
+  "status": "pendente"
+ },
+ "especialidades": [
+  {
+   "codigo": "AA-002",
+   "nome": "Jardinagem e Horticultura",
+   "nivel": 1,
+   "fonte_url": "https://mda.wiki.br/Especialidade_de_Jardinagem_e_Horticultura",
+   "estado": "catalogo"
+  }
+ ]
 }

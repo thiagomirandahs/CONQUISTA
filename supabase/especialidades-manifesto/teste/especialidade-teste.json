@@ -1,0 +1,349 @@
+{
+ "formato": "conquista.especialidades/2",
+ "versao": 1,
+ "area": "TE",
+ "area_nome": "[TESTE] Área de teste local",
+ "preparado_em": "2026-09-30",
+ "teste": true,
+ "observacao": "[TESTE] Especialidade FICTÍCIA para provar o motor completo. Nunca vira migration nem aparece em produção.",
+ "fonte": {
+  "nome": "[TESTE] fonte fictícia",
+  "url": "https://exemplo.teste/fonte-ficticia",
+  "consultada_em": "2026-09-30",
+  "status": "conferido"
+ },
+ "especialidades": [
+  {
+   "codigo": "TE-001",
+   "nome": "[TESTE] Especialidade de Teste do Motor",
+   "nivel": 1,
+   "fonte_url": "https://exemplo.teste/fonte-ficticia",
+   "estado": "publicavel",
+   "grupos": [
+    {
+     "chave": "tecnicas",
+     "rotulo": "Técnicas (faça 2 de 4)",
+     "minimo": 2
+    }
+   ],
+   "requisitos": [
+    {
+     "ordem": 1,
+     "descricao": "[TESTE] Ler o texto fictício de apoio.",
+     "tipo_evidencia": "leitura",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "li",
+        "tipo": "confirmacao",
+        "rotulo": "Li o texto",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 2,
+     "descricao": "[TESTE] Responder por escrito a pergunta fictícia.",
+     "tipo_evidencia": "resposta",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "resposta",
+        "tipo": "texto_longo",
+        "rotulo": "Sua resposta",
+        "obrigatorio": true,
+        "max": 1000
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 3,
+     "descricao": "[TESTE] Relatar a visita fictícia.",
+     "tipo_evidencia": "relatorio",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "data",
+        "tipo": "data",
+        "rotulo": "Data",
+        "obrigatorio": true,
+        "nao_futura": true
+       },
+       {
+        "chave": "local",
+        "tipo": "texto_curto",
+        "rotulo": "Local",
+        "obrigatorio": true,
+        "max": 150
+       },
+       {
+        "chave": "descricao",
+        "tipo": "texto_longo",
+        "rotulo": "O que você fez",
+        "obrigatorio": true,
+        "max": 1500
+       },
+       {
+        "chave": "fotos",
+        "tipo": "anexos",
+        "rotulo": "Fotos (opcional)",
+        "obrigatorio": false,
+        "min": 0,
+        "max": 3,
+        "tipos": [
+         "imagem"
+        ]
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 4,
+     "descricao": "[TESTE] Enviar 1 foto do trabalho fictício.",
+     "tipo_evidencia": "foto",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "foto",
+        "tipo": "anexos",
+        "rotulo": "Foto do trabalho",
+        "obrigatorio": true,
+        "min": 1,
+        "max": 1,
+        "tipos": [
+         "imagem"
+        ]
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 5,
+     "descricao": "[TESTE] Enviar 2 a 4 arquivos do projeto fictício.",
+     "tipo_evidencia": "arquivo",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "arquivos",
+        "tipo": "anexos",
+        "rotulo": "Arquivos do projeto",
+        "obrigatorio": true,
+        "min": 2,
+        "max": 4,
+        "tipos": [
+         "arquivo",
+         "imagem"
+        ]
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 6,
+     "descricao": "[TESTE] Realizar a atividade prática fictícia.",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Fiz a atividade",
+        "obrigatorio": true
+       },
+       {
+        "chave": "obs",
+        "tipo": "texto_curto",
+        "rotulo": "Observação (opcional)",
+        "obrigatorio": false,
+        "max": 200
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 7,
+     "descricao": "[TESTE] Demonstrar a habilidade fictícia ao instrutor.",
+     "tipo_evidencia": "validacao",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "demonstrei",
+        "tipo": "confirmacao",
+        "rotulo": "Demonstrei ao instrutor",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 8,
+     "descricao": "[TESTE] Praticar por no mínimo 4 dias (meta).",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "dias",
+        "tipo": "numero",
+        "rotulo": "Dias praticados",
+        "obrigatorio": true,
+        "min": 4,
+        "unidade": "dias",
+        "inteiro": true
+       },
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Confirmo os dias",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 9,
+     "descricao": "[TESTE] Explicar o que aprendeu (só depois do requisito 2).",
+     "tipo_evidencia": "resposta",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "resposta",
+        "tipo": "texto_longo",
+        "rotulo": "Sua explicação",
+        "obrigatorio": true,
+        "max": 1000
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "depende_de": [
+      2
+     ]
+    },
+    {
+     "ordem": 10,
+     "descricao": "[TESTE] Técnica A (faça 2 das 4 técnicas).",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Fiz a técnica A",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "grupo": "tecnicas"
+    },
+    {
+     "ordem": 11,
+     "descricao": "[TESTE] Técnica B (faça 2 das 4 técnicas).",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Fiz a técnica B",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "grupo": "tecnicas"
+    },
+    {
+     "ordem": 12,
+     "descricao": "[TESTE] Técnica C (faça 2 das 4 técnicas).",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Fiz a técnica C",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "grupo": "tecnicas"
+    },
+    {
+     "ordem": 13,
+     "descricao": "[TESTE] Técnica D (faça 2 das 4 técnicas).",
+     "tipo_evidencia": "atividade",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "fiz",
+        "tipo": "confirmacao",
+        "rotulo": "Fiz a técnica D",
+        "obrigatorio": true
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "grupo": "tecnicas"
+    },
+    {
+     "ordem": 14,
+     "descricao": "[TESTE] Entregar a resposta final em até 30 dias (prazo).",
+     "tipo_evidencia": "resposta",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "resposta",
+        "tipo": "texto_longo",
+        "rotulo": "Sua resposta final",
+        "obrigatorio": true,
+        "max": 1000
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido",
+     "prazo_dias": 30
+    }
+   ]
+  }
+ ]
+}
