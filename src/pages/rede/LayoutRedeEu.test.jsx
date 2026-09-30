@@ -101,4 +101,12 @@ describe('LayoutRede — o "eu" gateado', () => {
     expect(await screen.findByText('A Rede DBV não está liberada')).toBeInTheDocument()
     expect(f.carregarPerfil).not.toHaveBeenCalled()
   })
+
+  // Achado da validação visual (30/09): em 360 px, com 4 botões no topo, "Rede DBV" quebrava em 2 linhas.
+  it('o título do topo nunca quebra em duas linhas (cabe com 4 botões em 360 px)', async () => {
+    montar()
+    const titulo = await screen.findByText('Rede DBV')
+    expect(titulo.className).toContain('whitespace-nowrap')
+    expect(titulo.className).toContain('text-[17px]')
+  })
 })

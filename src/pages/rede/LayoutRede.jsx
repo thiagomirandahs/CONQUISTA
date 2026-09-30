@@ -64,9 +64,9 @@ function Topo() {
       <div className="max-w-xl mx-auto flex items-center justify-between gap-2 px-3 h-14">
         <Link to="/rede" className="flex items-center gap-2 no-underline min-h-[44px]" aria-label="Rede DBV — início">
           <img src={MARCA_PRODUTO.logoUrl} alt="" className="w-8 h-8 rounded-lg" />
-          <span className={`font-extrabold text-[19px] tracking-tight ${TXT}`}>Rede DBV</span>
+          <span className={`font-extrabold text-[17px] min-[400px]:text-[19px] tracking-tight whitespace-nowrap ${TXT}`}>Rede DBV</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 min-[400px]:gap-2 shrink-0">
           {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
           <button type="button" onClick={sair} data-testid="rede-sair"
             aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
