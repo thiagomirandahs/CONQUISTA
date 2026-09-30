@@ -3,21 +3,22 @@ import { useAuth } from '../../context/Auth.jsx'
 import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { EsqueletoFeed, Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { EsqueletoFeed, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 
 // Feed da Rede DBV: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube" e os posts de ponta
 // a ponta (identidade marinho + dourado, Fase 6). Enquanto carrega, esqueletos no formato do post e das
 // bolinhas; feed vazio oferece "Publicar" a quem publica. O ➕ da barra de baixo leva à tela de publicar.
 // Coordenação (490): "Meu clube" vira "Minha área" — posts dos clubes da coordenação (o servidor filtra).
-const abasDoFeed = (coordenacao) => [['todos', 'Todos'], ['meu_clube', coordenacao ? 'Minha área' : 'Meu clube']]
+// Duas abas (515): "Meu Clube" (padrão) e "Comunidade" (publicações de liderança de todos os clubes).
+const abasDoFeed = (coordenacao) => [['meu_clube', coordenacao ? 'Minha área' : 'Meu Clube'], ['comunidade', 'Comunidade']]
 
 export default function RedeFeed() {
   const { profile } = useAuth()
   const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
   // `eu` = o meu perfil GATEADO pela rede (500): personagem ou foto só com autorização; nunca profile.foto
   const { status, eu } = useRede()
-  const [filtro, setFiltro] = useState('todos')
+  const [filtro, setFiltro] = useState('meu_clube')
   const [itens, setItens] = useState([])
   const [proximo, setProximo] = useState(null)
   const [carregando, setCarregando] = useState(true)
@@ -78,15 +79,20 @@ export default function RedeFeed() {
       <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
 
-      <div role="tablist" aria-label="Filtro do feed" className="flex items-center gap-1 px-3 py-1.5 border-y border-[var(--rede-linha)]">
-        {abasDoFeed(!!status?.coordenacao).map(([chave, rotulo], i) => (
-          <span key={chave} className="flex items-center">
-            {i > 0 && <span aria-hidden="true" className={`${TXT_SUAVE} px-1`}>·</span>}
-            <button type="button" role="tab" aria-selected={filtro === chave} onClick={() => setFiltro(chave)}
-              className={`min-h-[44px] px-2 inline-flex items-center gap-0.5 text-[15px] ${filtro === chave ? `font-bold ${TXT}` : `font-medium ${TXT_SUAVE}`}`}>
-              {rotulo}{chave === 'todos' && <Icone nome="seta" className="w-4 h-4" />}
-            </button>
-          </span>
+      <div role="tablist" aria-label="Filtro do feed" className="grid grid-cols-2 border-y border-[var(--rede-linha)]">
+        {abasDoFeed(!!status?.coordenacao).map(([chave, rotulo]) => (
+          <button key={chave} type="button" role="tab" id={`aba-feed-${chave}`} aria-selected={filtro === chave} tabIndex={filtro === chave ? 0 : -1}
+            onClick={() => setFiltro(chave)}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+              e.preventDefault()
+              const outra = abasDoFeed(!!status?.coordenacao).find(([c]) => c !== chave)[0]
+              setFiltro(outra)
+              document.getElementById(`aba-feed-${outra}`)?.focus()
+            }}
+            className={`min-h-[44px] px-2 text-[15px] border-b-2 ${filtro === chave ? `font-bold ${TXT} border-[var(--rede-acao)]` : `font-medium ${TXT_SUAVE} border-transparent`}`}>
+            {rotulo}
+          </button>
         ))}
       </div>
 
@@ -99,8 +105,9 @@ export default function RedeFeed() {
         ) : (
           <ListaDePosts itens={itens} setItens={setItens} proximo={proximo} carregarMais={carregarMais} maisCarregando={mais}
             status={status} clubeId={clubeId}
-            vazio={<VazioRede titulo="Ainda não há publicações" acao={status?.pode_publicar ? { rotulo: 'Publicar', para: '/rede/publicar' } : null}>
-              {status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
+            vazio={<VazioRede titulo={filtro === 'comunidade' ? 'Ainda não há publicações na Comunidade' : 'Ainda não há publicações'} acao={status?.pode_publicar ? { rotulo: 'Publicar', para: '/rede/publicar' } : null}>
+              {filtro === 'comunidade' ? 'A Comunidade mostra o que a liderança dos clubes compartilha com todos.'
+                : status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
             </VazioRede>} />
         )}
 

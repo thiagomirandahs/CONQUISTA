@@ -29,7 +29,9 @@ export const CATEGORIAS_CONQUISTA = [
   ['outra', 'Outra conquista', '🎉'],
 ]
 
-export const carregarFeed = (filtro = 'todos', cursor = null, limite = 10) =>
+// Feed em duas abas (515): 'meu_clube' (padrão) e 'comunidade' ('todos' é apelido antigo de comunidade).
+export const FILTROS_FEED = Object.freeze(['meu_clube', 'comunidade'])
+export const carregarFeed = (filtro = 'meu_clube', cursor = null, limite = 10) =>
   rpc('rede_feed', { p_filtro: filtro, p_antes: cursor?.antes ?? null, p_antes_id: cursor?.antes_id ?? null, p_limite: limite })
 
 export const salvar = (postId, salvarOuNao = true) => rpc('rede_salvar', { p_post: postId, p_salvar: salvarOuNao })
@@ -60,9 +62,18 @@ const novoId = () => (globalThis.crypto?.randomUUID?.() ||
 // Hoje (decisão do dono, 29/09/2026) foto publica DIRETO, depois de uma confirmação clara na tela.
 // O servidor decide (rede_foto_exige_aprovacao); estes textos são só o que a tela pergunta antes.
 export const CONFIRMAR_POST = {
-  titulo: 'Tem certeza que quer publicar?', descricao: 'Fica visível para todos os clubes da Rede DBV.',
+  titulo: 'Tem certeza que quer publicar?', descricao: 'Fica visível só para o seu clube.',
   rotulo: 'Publicar', cancelar: 'Voltar', perigo: false,
 }
+// Alcance "Comunidade" (515): só diretoria/instrutor; a confirmação é explícita porque todos os clubes veem.
+export const CONFIRMAR_POST_COMUNIDADE = {
+  titulo: 'Publicar na Comunidade?',
+  descricao: 'Todos os clubes da Rede DBV vão ver esta publicação, não só o seu clube. Confira o texto e a foto antes de continuar.',
+  rotulo: 'Publicar para todos os clubes', cancelar: 'Voltar', perigo: false,
+}
+export const confirmacaoDePublicar = (alcance) => (alcance === 'comunidade' ? CONFIRMAR_POST_COMUNIDADE : CONFIRMAR_POST)
+export const ALCANCES = Object.freeze(['clube', 'comunidade'])
+export const TIPOS_NOVOS = Object.freeze(['atividade', 'evento', 'aviso', 'foto_clube'])
 export const CONFIRMAR_STORY = {
   titulo: 'Tem certeza que quer publicar este story?',
   descricao: 'Ele fica visível para todos os clubes da Rede DBV por 24 horas.',
@@ -121,7 +132,8 @@ const apagarArquivo = async (path) => {
 // Publica na rede. `foto` é o resultado de prepararFoto (arquivo já limpo e comprimido).
 // Sobe em <clube>/<eu>/<uuid>.webp|jpg e só então pede a publicação. Se o servidor recusar
 // (triagem, limite, desafio), a foto que subiu é apagada.
-export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, conquista, clubeId, userId }) {
+export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, alcance = 'clube', clubeId, userId }) {
+  if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')
   let path = null
   if (foto?.arquivo) {
     exigirDono(clubeId, userId)
@@ -134,7 +146,7 @@ export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, conq
   try {
     r = await rpc('rede_publicar', {
       p_tipo: tipo, p_legenda: legenda || null, p_foto_path: path, p_foto_alt: path ? (alt || null) : null,
-      p_desafio: tipo === 'desafio' ? desafioId : null, p_conquista: tipo === 'conquista' ? conquista : null,
+      p_desafio: tipo === 'desafio' ? desafioId : null, p_alcance: alcance,
     })
   } catch (e) {
     await apagarArquivo(path)
@@ -142,6 +154,15 @@ export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, conq
   }
   if (!r?.ok) await apagarArquivo(path)
   return r
+}
+
+// Conquista NÃO é texto livre (515, D6): o servidor monta o texto a partir do registro real (classe investida /
+// especialidade concluída) do PRÓPRIO clube. Só diretoria/instrutor.
+export const ORIGENS_CONQUISTA = Object.freeze(['classe', 'especialidade'])
+export function publicarConquista({ origemTipo, origemId, alcance = 'clube' }) {
+  if (!ORIGENS_CONQUISTA.includes(origemTipo) || !origemId) throw new Error('Não encontramos essa conquista concluída no seu clube.')
+  if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')
+  return rpc('rede_publicar_conquista', { p_origem_tipo: origemTipo, p_origem_id: origemId, p_alcance: alcance })
 }
 
 // Iniciais para o avatar genérico ("Ana Souza" -> "AS")

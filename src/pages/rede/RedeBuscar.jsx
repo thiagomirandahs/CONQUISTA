@@ -9,15 +9,21 @@ import { AvatarRede, EsqueletoLinhas, Icone, SeloCoordenacao, TXT, TXT_SUAVE, Va
 export const ESPERA_BUSCA_MS = 300
 
 function Pessoa({ p }) {
+  const miolo = (
+    <>
+      <AvatarRede nome={p.nome} foto={p.foto} avatarPersonagem={avatarPersonagemDe(p)} tamanho="w-11 h-11" texto="text-sm" />
+      <span className="min-w-0">
+        <span className={`block font-semibold text-[14px] ${TXT} truncate`}>{p.nome}{p.coordenacao && <SeloCoordenacao />}</span>
+        <span className={`block text-[13px] ${TXT_SUAVE} truncate`}>{p.clube}</span>
+      </span>
+    </>
+  )
+  // Criança de outro clube não tem perfil aberto (515): sem id vindo do servidor, vira linha sem link.
   return (
     <li>
-      <Link to={`/rede/perfil/${p.id}`} className="flex items-center gap-3 min-h-[60px] px-3 no-underline">
-        <AvatarRede nome={p.nome} foto={p.foto} avatarPersonagem={avatarPersonagemDe(p)} tamanho="w-11 h-11" texto="text-sm" />
-        <span className="min-w-0">
-          <span className={`block font-semibold text-[14px] ${TXT} truncate`}>{p.nome}{p.coordenacao && <SeloCoordenacao />}</span>
-          <span className={`block text-[13px] ${TXT_SUAVE} truncate`}>{p.clube}</span>
-        </span>
-      </Link>
+      {p.id
+        ? <Link to={`/rede/perfil/${p.id}`} className="flex items-center gap-3 min-h-[60px] px-3 no-underline">{miolo}</Link>
+        : <div className="flex items-center gap-3 min-h-[60px] px-3">{miolo}</div>}
     </li>
   )
 }
@@ -94,7 +100,7 @@ export default function RedeBuscar() {
       {!carregando && pessoas.length > 0 && (
         <section aria-label="Pessoas">
           <h2 className={`px-3 pt-2 pb-1 text-[13px] font-semibold ${TXT_SUAVE}`}>Pessoas</h2>
-          <ul>{pessoas.map((p) => <Pessoa key={p.id} p={p} />)}</ul>
+          <ul>{pessoas.map((p, i) => <Pessoa key={p.id || `p${i}`} p={p} />)}</ul>
         </section>
       )}
     </div>

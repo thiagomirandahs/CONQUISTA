@@ -196,6 +196,15 @@ describe('Rede DBV — buscar', () => {
     expect(link).toHaveTextContent('Clube Águias')
   })
 
+  it('criança de outro clube (515): nome reduzido, sem link para perfil', async () => {
+    const u = userEvent.setup()
+    f.buscarNaRede.mockResolvedValue({ clubes: [], pessoas: [{ id: null, nome: 'Bia S.', clube: 'Clube Lobos', foto: null }] })
+    renderRede(<RedeBuscar />)
+    await u.type(screen.getByLabelText('Buscar clubes e pessoas'), 'bia')
+    expect(await screen.findByText('Bia S.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Bia/ })).toBeNull()
+  })
+
   it('clube no resultado: tocar lista as pessoas do clube', async () => {
     const u = userEvent.setup()
     f.buscarNaRede.mockImplementation(async (termo, clube) => (clube

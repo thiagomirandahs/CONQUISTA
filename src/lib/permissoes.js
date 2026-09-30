@@ -15,6 +15,10 @@
 // banco). O instrutor (e o capelão, que tem o mesmo papel) fica com avaliar Classes/Especialidades, desafios e
 // missões. Migration 212 (confirmado): pontos, apontamentos, acampamento, moderação, avisos, jogos e radar = diretoria.
 export const SO_DIRETORIA = Object.freeze(['diretoria'])
+// Quem gere atividades (pode_gerir_atividades no banco): diretoria e instrutor. Na Rede DBV só eles publicam na
+// Comunidade (todos os clubes) e compartilham conquistas. Espelho da UI; o servidor impõe (migration 515).
+export const PAPEIS_GERIR_ATIVIDADES = Object.freeze(['diretoria', 'instrutor'])
+export const podeGerirAtividades = (papel) => PAPEIS_GERIR_ATIVIDADES.includes(papel)
 
 export const FERRAMENTAS = [
   { to: '/gestao/inscricoes', icon: '🔗', titulo: 'Inscrições', desc: 'Link e QR Code para novos membros', papeis: SO_DIRETORIA, grupo: 'pessoas' },

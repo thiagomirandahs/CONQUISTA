@@ -65,7 +65,8 @@ describe('feed visto pela coordenação', () => {
     const u = userEvent.setup()
     renderRede(<RedeFeed />, { status: COORD })
     await screen.findByTestId('post')
-    expect(screen.queryByRole('tab', { name: 'Meu clube' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Meu Clube' })).toBeNull()
+    await u.click(screen.getByRole('tab', { name: 'Comunidade' }))
     await u.click(screen.getByRole('tab', { name: 'Minha área' }))
     expect(f.carregarFeed).toHaveBeenLastCalledWith('meu_clube')
   })
@@ -73,7 +74,7 @@ describe('feed visto pela coordenação', () => {
   it('para membro de clube, a aba continua "Meu clube"', async () => {
     renderRede(<RedeFeed />)
     await screen.findByTestId('post')
-    expect(screen.getByRole('tab', { name: 'Meu clube' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Meu Clube' })).toBeInTheDocument()
   })
 
   it('post da coordenação: nome, subtítulo "Coordenação · <unidade>" e selo', async () => {

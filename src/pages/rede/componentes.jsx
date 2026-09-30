@@ -27,7 +27,7 @@ export const TXT_SUAVE = 'text-[var(--rede-ink-suave)]'
 export const LINHA = 'border-[var(--rede-linha)]'
 
 // Erro que o servidor escreveu PARA a pessoa (regras da Comunidade): mostramos como veio.
-const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|perfil|salvos|ocultar|restaurar|clube/i
+const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|Descreva|Escolha|Alcance|Tipo de publicação|Só a diretoria|Compartilhar|perfil|salvos|ocultar|restaurar|clube/i
 export const textoDoErro = (e, contexto) => {
   const m = String(e?.message || '')
   return ERRO_DA_REDE.test(m) && m.length < 200 ? m : mensagemDeErro(e, contexto)

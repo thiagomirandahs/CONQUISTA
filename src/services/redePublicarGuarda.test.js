@@ -6,7 +6,7 @@ const upload = vi.fn(async () => ({ error: null }))
 const rpc = vi.fn(async () => ({ data: { ok: true }, error: null }))
 vi.mock('../lib/supabase.js', () => ({ supabase: { rpc: (...a) => rpc(...a), storage: { from: () => ({ upload: (...a) => upload(...a), remove: async () => ({}) }) } } }))
 
-const { publicarNaRede, publicarStory } = await import('./rede.js')
+const { publicarNaRede, publicarStory, publicarConquista, carregarFeed } = await import('./rede.js')
 const foto = { arquivo: new File(['x'], 'a.webp', { type: 'image/webp' }) }
 
 describe('publicar na Rede sem clube/perfil', () => {
@@ -31,5 +31,32 @@ describe('publicar na Rede sem clube/perfil', () => {
     upload.mockClear()
     await publicarNaRede({ tipo: 'foto', foto, clubeId: 'c1', userId: 'u1' })
     expect(upload.mock.calls[0][0]).toMatch(/^c1\/u1\/.+\.webp$/)
+  })
+})
+
+describe('alcance e conquista (515)', () => {
+  it('alcance padrão é "clube" e vai no p_alcance; conquista livre não é mais enviada', async () => {
+    rpc.mockClear()
+    await publicarNaRede({ tipo: 'atividade', legenda: 'x', foto: null, clubeId: 'c', userId: 'u' })
+    const args = rpc.mock.calls[0][1]
+    expect(args.p_alcance).toBe('clube')
+    expect(args).not.toHaveProperty('p_conquista')
+  })
+  it('alcance inválido falha antes de chamar o servidor', async () => {
+    rpc.mockClear()
+    await expect(publicarNaRede({ tipo: 'aviso', legenda: 'x', alcance: 'mundo', clubeId: 'c', userId: 'u' })).rejects.toThrow('Alcance inválido.')
+    expect(rpc).not.toHaveBeenCalled()
+  })
+  it('publicarConquista chama a RPC com origem real; recusa origem fora de classe/especialidade', async () => {
+    rpc.mockClear()
+    await publicarConquista({ origemTipo: 'classe', origemId: 'abc', alcance: 'comunidade' })
+    expect(rpc).toHaveBeenCalledWith('rede_publicar_conquista', { p_origem_tipo: 'classe', p_origem_id: 'abc', p_alcance: 'comunidade' })
+    expect(() => publicarConquista({ origemTipo: 'livre', origemId: 'abc' })).toThrow()
+    expect(() => publicarConquista({ origemTipo: 'classe', origemId: null })).toThrow()
+  })
+  it('feed padrão pede "meu_clube"', async () => {
+    rpc.mockClear()
+    await carregarFeed()
+    expect(rpc).toHaveBeenCalledWith('rede_feed', expect.objectContaining({ p_filtro: 'meu_clube' }))
   })
 })

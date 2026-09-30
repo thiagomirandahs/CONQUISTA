@@ -39,13 +39,30 @@ describe('Rede DBV — feed', () => {
     expect(within(card).getByText(/Clube Águias/)).toBeInTheDocument()
   })
 
-  it('aba "Meu clube" recarrega o feed com o filtro', async () => {
+  // MUDANÇA DE PROPÓSITO (515): abas "Meu Clube" (padrão) | "Comunidade"; "Todos" saiu.
+  it('abas Meu Clube (padrão) e Comunidade recarregam o feed com o filtro', async () => {
     const u = userEvent.setup()
     renderRede(<RedeFeed />)
     await screen.findByTestId('post')
-    expect(f.carregarFeed).toHaveBeenLastCalledWith('todos')
-    await u.click(screen.getByRole('tab', { name: 'Meu clube' }))
+    expect(screen.getByRole('tablist', { name: 'Filtro do feed' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Meu Clube' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('tab', { name: /Todos/ })).toBeNull()
     expect(f.carregarFeed).toHaveBeenLastCalledWith('meu_clube')
+    await u.click(screen.getByRole('tab', { name: 'Comunidade' }))
+    expect(f.carregarFeed).toHaveBeenLastCalledWith('comunidade')
+    expect(screen.getByRole('tab', { name: 'Comunidade' })).toHaveAttribute('aria-selected', 'true')
+    await u.click(screen.getByRole('tab', { name: 'Meu Clube' }))
+    expect(f.carregarFeed).toHaveBeenLastCalledWith('meu_clube')
+  })
+
+  it('teclado: seta alterna as abas e só a aba ativa entra na ordem do Tab', async () => {
+    const u = userEvent.setup()
+    renderRede(<RedeFeed />)
+    await screen.findByTestId('post')
+    expect(screen.getByRole('tab', { name: 'Comunidade' })).toHaveAttribute('tabindex', '-1')
+    screen.getByRole('tab', { name: 'Meu Clube' }).focus()
+    await u.keyboard('{ArrowRight}')
+    expect(f.carregarFeed).toHaveBeenLastCalledWith('comunidade')
   })
 
   // MUDANÇA DE UI (29/09/2026): o compositor "No que você está pensando?" saiu do feed (estilo Instagram);

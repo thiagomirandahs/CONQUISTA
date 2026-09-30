@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { FERRAMENTAS, PAPEIS_POR_ROTA, RECURSO_POR_ROTA } from './permissoes.js'
+import { podeGerirAtividades, FERRAMENTAS, PAPEIS_POR_ROTA, RECURSO_POR_ROTA } from './permissoes.js'
 
 describe('matriz de permissões', () => {
   it('toda ferramenta tem rota (to), título e ao menos um papel', () => {
@@ -97,5 +97,13 @@ describe('especialidades têm recurso próprio (não pegam carona em "classes")'
   it('o card de especialidades só aparece quando o próprio recurso "especialidades" está ligado', () => {
     expect(cardsDaGestao('diretoria', (c) => c === 'especialidades')).toContain('/avaliar-especialidades')
     expect(cardsDaGestao('diretoria', () => false)).not.toContain('/avaliar-especialidades')
+  })
+})
+
+describe('quem gere atividades (alcance Comunidade da Rede, 515)', () => {
+  it('só diretoria e instrutor', () => {
+    expect(podeGerirAtividades('diretoria')).toBe(true)
+    expect(podeGerirAtividades('instrutor')).toBe(true)
+    for (const p of ['desbravador', 'conselheiro', 'tesoureiro', 'pais', undefined, null]) expect(podeGerirAtividades(p)).toBe(false)
   })
 })
