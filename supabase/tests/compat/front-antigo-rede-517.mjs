@@ -8,6 +8,8 @@ if (!/^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test(URL_API)) { console.error('AB
 const ANON = env.VITE_SUPABASE_ANON_KEY
 const sql = (q) => execFileSync('docker', ['exec', '-i', 'supabase_db_CONQUISTA', 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-q', '-A', '-t'], { input: q, encoding: 'utf8' }).trim()
 const clube = sql(`select id from public.organizational_units where nome = 'Hml Clube A'`)
+// pré-requisito (só local): Rede ligada no clube de teste; desfeito no fim
+sql(`insert into public.club_features (club_id, feature, enabled) values ('${clube}', 'comunidade', true) on conflict (club_id, feature) do update set enabled = true`)
 async function entrar(email) {
   const r = await fetch(`${URL_API}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: ANON, 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'senha-homologacao-123' }) })
   return (await r.json()).access_token
