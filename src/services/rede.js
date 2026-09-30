@@ -80,6 +80,7 @@ export async function prepararFotoStory(file) {
 
 // Sobe a foto do story e publica; se o servidor recusar, apaga o arquivo que subiu.
 export async function publicarStory({ foto, texto, clubeId, userId }) {
+  exigirDono(clubeId, userId)
   const ext = foto.arquivo.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${clubeId}/${userId}/${novoId()}.${ext}`
   const { error } = await supabase.storage.from(BUCKET).upload(path, foto.arquivo, { upsert: false, contentType: foto.arquivo.type })
@@ -93,6 +94,11 @@ export async function publicarStory({ foto, texto, clubeId, userId }) {
   }
   if (!r?.ok) await apagarArquivo(path)
   return r
+}
+
+// Sem clube/perfil o caminho viraria "undefined/undefined/…" e o Storage recusaria com erro cru: falha ANTES, com texto humano.
+const exigirDono = (clubeId, userId) => {
+  if (!clubeId || !userId) throw new Error('Não consegui identificar seu clube ou seu perfil agora. Volte ao início e tente de novo. 🙂')
 }
 
 // Prepara a foto antes de publicar (a tela mostra "foto otimizada: 3,4 MB → 110 KB").
@@ -114,6 +120,7 @@ const apagarArquivo = async (path) => {
 export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, conquista, clubeId, userId }) {
   let path = null
   if (foto?.arquivo) {
+    exigirDono(clubeId, userId)
     const ext = foto.arquivo.type === 'image/webp' ? 'webp' : 'jpg'
     path = `${clubeId}/${userId}/${novoId()}.${ext}`
     const { error } = await supabase.storage.from(BUCKET).upload(path, foto.arquivo, { upsert: false, contentType: foto.arquivo.type })
