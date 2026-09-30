@@ -223,7 +223,22 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
     if (!aberta) return undefined
     const antes = document.activeElement
     caixa.current?.focus()
-    const tecla = (e) => { if (e.key === 'Escape') aoFechar?.() }
+    // Esc fecha; Tab/Shift+Tab CIRCULAM só dentro da folha (aria-modal="true" promete isso: sem o trap o foco
+    // escapava para a página de trás — achado da validação visual de 30/09). Filtro só por atributo: não
+    // depende de layout (jsdom não calcula offsetParent).
+    const tecla = (e) => {
+      if (e.key === 'Escape') { aoFechar?.(); return }
+      if (e.key !== 'Tab') return
+      const raiz = caixa.current
+      if (!raiz) return
+      const foco = [...raiz.querySelectorAll('a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter((el) => !el.disabled && el.getAttribute('aria-hidden') !== 'true' && el.tabIndex >= 0)
+      if (!foco.length) { e.preventDefault(); raiz.focus(); return }
+      const ativo = document.activeElement
+      const dentro = raiz.contains(ativo) && ativo !== raiz
+      if (e.shiftKey && (!dentro || ativo === foco[0])) { e.preventDefault(); foco[foco.length - 1].focus() }
+      else if (!e.shiftKey && (!dentro || ativo === foco[foco.length - 1])) { e.preventDefault(); foco[0].focus() }
+    }
     document.addEventListener('keydown', tecla)
     return () => { document.removeEventListener('keydown', tecla); antes?.focus?.() }
   }, [aberta, aoFechar])
@@ -232,7 +247,7 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
   // ao cabeçalho — `fixed` passa a medir pela caixa do ancestral com filtro — e aparecia cortada no topo.
   return createPortal(
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
-      <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={saindo ? -1 : undefined}
+      <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={-1}
         className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={caixa} tabIndex={-1} role="dialog" aria-modal="true" aria-label={titulo}
         className="folha-caixa relative w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
