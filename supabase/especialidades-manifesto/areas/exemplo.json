@@ -1,0 +1,11 @@
+{
+  "formato": "conquista.especialidades/1",
+  "exemplo": true,
+  "area": "AA",
+  "area_nome": "Atividades Agrícolas",
+  "preparado_em": "2026-09-30",
+  "observacao": "[EXEMPLO] só mostra o formato; nada aqui entra no banco.",
+  "especialidades": [
+    { "codigo": "AA-002", "nome": "Jardinagem e Horticultura", "nivel": 1, "fonte_url": "https://mda.wiki.br/Especialidade_de_Jardinagem_e_Horticultura", "estado": "catalogo" }
+  ]
+}
