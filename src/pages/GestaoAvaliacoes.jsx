@@ -1,3 +1,4 @@
+import AvisoAvaliadorUnico, { useEhMeuRequisito } from '../components/AvisoAvaliadorUnico.jsx'
 import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
 import { useState, useEffect, useMemo } from 'react'
 import { Cabecalho, Aviso } from '../ui/index.jsx'
@@ -85,6 +86,7 @@ export default function GestaoAvaliacoes() {
 }
 
 function ItemFila({ it, onFeito }) {
+  const ehMeu = useEhMeuRequisito(it.usuario_id)
   const [comentario, setComentario] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [historico, setHistorico] = useState(null)
@@ -146,6 +148,7 @@ function ItemFila({ it, onFeito }) {
         <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="O que precisa corrigir? (obrigatório para pedir correção)"
           className="w-full text-sm rounded-lg border border-line px-3 py-1.5" />
       </label>
+      {ehMeu ? <AvisoAvaliadorUnico /> : (
       <div className="flex gap-2">
         <button onClick={() => avaliar('correcao_solicitada')} disabled={ocupado}
           className="flex-1 min-h-[44px] rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-60">
@@ -156,6 +159,7 @@ function ItemFila({ it, onFeito }) {
           ✅ Aprovar
         </button>
       </div>
+      )}
     </li>
   )
 }

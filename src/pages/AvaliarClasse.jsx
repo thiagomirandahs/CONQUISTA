@@ -1,3 +1,4 @@
+import AvisoAvaliadorUnico, { useEhMeuRequisito } from '../components/AvisoAvaliadorUnico.jsx'
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoricoRequisito } from '../lib/dados.js'
@@ -68,6 +69,7 @@ export default function AvaliarClasse() {
 }
 
 function Item({ it, onFeito }) {
+  const ehMeu = useEhMeuRequisito(it.usuario_id)
   const [comentario, setComentario] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [historico, setHistorico] = useState(null)
@@ -159,6 +161,7 @@ function Item({ it, onFeito }) {
         <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="O que precisa corrigir? (obrigatório para pedir correção)"
           className="w-full text-sm rounded-lg border border-line px-3 py-1.5" />
       </label>
+      {ehMeu ? <AvisoAvaliadorUnico /> : (
       <div className="flex gap-2">
         <button onClick={() => avaliar('correcao_solicitada')} disabled={ocupado}
           className="flex-1 min-h-[44px] rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-60">
@@ -169,6 +172,7 @@ function Item({ it, onFeito }) {
           {bloqueios.length > 0 ? '🔒 Aprovar' : '✅ Aprovar'}
         </button>
       </div>
+      )}
     </article>
   )
 }

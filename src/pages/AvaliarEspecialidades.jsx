@@ -1,3 +1,4 @@
+import AvisoAvaliadorUnico, { useEhMeuRequisito } from '../components/AvisoAvaliadorUnico.jsx'
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import {
@@ -141,6 +142,7 @@ function FilaDeAvaliacao() {
 }
 
 function Item({ it, onFeito }) {
+  const ehMeu = useEhMeuRequisito(it.usuario_id)
   const [comentario, setComentario] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [historico, setHistorico] = useState(null)
@@ -196,6 +198,7 @@ function Item({ it, onFeito }) {
       {historico && <HistoricoTentativas tentativas={historico.tentativas || []} modelo={historico.modelo} mostrarAvaliador className="mb-2" />}
       <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="Orientação (obrigatória para pedir correção)"
         aria-label="Orientação (obrigatória para pedir correção)" className="w-full min-h-[44px] text-sm rounded-lg border border-line px-3 py-1.5 mb-2" />
+      {ehMeu ? <AvisoAvaliadorUnico /> : (
       <div className="flex gap-2">
         <button onClick={() => avaliar('correcao_solicitada')} disabled={ocupado}
           className="flex-1 min-h-[44px] rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-60">
@@ -206,6 +209,7 @@ function Item({ it, onFeito }) {
           ✅ Aprovar
         </button>
       </div>
+      )}
     </div>
   )
 }
