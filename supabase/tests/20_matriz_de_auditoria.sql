@@ -37,6 +37,8 @@ insert into t.excecoes values
   ('class_requirements',       'catálogo de requisitos da PLATAFORMA (parte do currículo versionado)'),
   ('specialties',              'catálogo de especialidades da PLATAFORMA (parte do currículo versionado, ver curriculum_versions)'),
   ('specialty_requirements',   'catálogo de requisitos de especialidade da PLATAFORMA'),
+  ('specialty_requirement_groups', 'grupos N-de-M do catálogo de especialidades da PLATAFORMA (migration 511): só o catálogo, nunca dado de pessoa'),
+  ('requisito_modelos',        'modelos de formulário/relatório dos requisitos de Classe (migration 510/512): catálogo GLOBAL, imutável, sem dado de pessoa'),
   ('curriculum_dependencies',  'dependência declarativa entre itens do CATÁLOGO (classe/especialidade concluída); a satisfação é checada por pessoa via curriculum_achievements (histórico portátil, fase 2.6), nunca a declaração em si'),
   ('dynamic_content_definitions', 'catálogo de conteúdo anual/dinâmico da PLATAFORMA (o "slot": ex. curso de leitura do ano) — fase 2.6; o valor vigente é resolvido por período (data), nunca por clube'),
   ('dynamic_content_values',    'valores versionados por período de vigência do catálogo acima — conteúdo da PLATAFORMA, mesma resposta pra todo clube na mesma data'),
