@@ -39,6 +39,7 @@
     "curriculo:conteudo-anual:check": "node supabase/curriculo-manifesto/gerar-conteudo-anual.mjs --check",
     "especialidades:validar": "node supabase/especialidades-manifesto/validar.mjs",
     "especialidades:nova": "node supabase/especialidades-manifesto/nova-especialidade.mjs",
+    "especialidades:autoteste": "vitest run src/lib/especialidadesManifesto.test.js",
     "especialidades:fixture": "node supabase/especialidades-manifesto/gerar-importacao.mjs --fixture",
     "especialidades:fixture:check": "node supabase/especialidades-manifesto/gerar-importacao.mjs --fixture --check",
     "especialidades:importacao:gerar": "node supabase/especialidades-manifesto/gerar-importacao.mjs",

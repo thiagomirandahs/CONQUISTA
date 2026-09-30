@@ -31,7 +31,7 @@ export const identificadorDaVersao = (dados) => (dados.teste ? 'especialidades-t
 // Só entram especialidades "publicavel". Devolve o pacote canônico (ordem estável) usado no hash.
 export function montarPacote(dados) {
   const especialidades = dados.especialidades.filter((e) => e.estado === 'publicavel').map((e) => ({
-    codigo: e.codigo, nome: e.nome, nivel: e.nivel ?? null, fonte_url: e.fonte_url,
+    codigo: e.codigo, nome: e.nome, nivel: e.nivel ?? null, fonte_url: e.fonte_url, depende_de_especialidades: e.depende_de_especialidades || [],
     grupos: (e.grupos || []).map((g) => ({ chave: g.chave, rotulo: g.rotulo, minimo: g.minimo })),
     requisitos: e.requisitos.map((r) => ({
       ordem: r.ordem, descricao: r.descricao, tipo_evidencia: r.tipo_evidencia, evidencia_obrigatoria: r.evidencia_obrigatoria ?? false,
@@ -42,7 +42,8 @@ export function montarPacote(dados) {
   return { formato: dados.formato, area: dados.area, versao: dados.versao, fonte: dados.fonte, especialidades }
 }
 
-export function gerarSql(dados, { modo = 'migration' } = {}) {
+// contexto: Map codigo → { ident, versao } das especialidades de OUTROS arquivos (dependência entre áreas).
+export function gerarSql(dados, { modo = 'migration', contexto = new Map() } = {}) {
   if (modo === 'migration' && dados.teste) throw new Error('Manifesto de TESTE nunca vira migration.')
   if (modo === 'fixture' && !dados.teste) throw new Error('Fixture só aceita manifesto de teste.')
   const pacote = montarPacote(dados)
@@ -89,8 +90,30 @@ export function gerarSql(dados, { modo = 'migration' } = {}) {
       )
     }
   })
+  // dependências ENTRE especialidades (curriculum_dependencies). O alvo tem que existir: se a área dele ainda não foi importada, a migration PARA com mensagem clara.
+  for (const e of pacote.especialidades) {
+    for (const dep of e.depende_de_especialidades) {
+      const naMesma = pacote.especialidades.find((x) => x.codigo === dep)
+      const fora = contexto.get(dep)
+      if (!naMesma && !fora) throw new Error(`${e.codigo} depende de ${dep}, que não está neste arquivo nem no contexto de importação.`)
+      const idAlvo = naMesma ? md5uuid(`${ident}:${versao}:${dep}`) : md5uuid(`${fora.ident}:${fora.versao}:${dep}`)
+      linhas.push(
+        `  if not exists (select 1 from public.specialties where id = ${q(idAlvo)}) then raise exception 'Especialidades ${ident}: ${e.codigo} depende de ${dep}, que ainda não foi importada — importe a área dela primeiro.'; end if;`,
+        `  insert into public.curriculum_dependencies (alvo_tipo, alvo_id, depende_de_tipo, depende_de_id) values ('specialty', ${q(md5uuid(`${ident}:${versao}:${e.codigo}`))}, 'specialty', ${q(idAlvo)}) on conflict do nothing;`,
+      )
+    }
+  }
   linhas.push('end $especialidades$;', '')
   return { sql: linhas.join('\n'), hash, pacote }
+}
+
+export function contextoDe(arquivos, areaAtual) {
+  const m = new Map()
+  for (const a of arquivos) {
+    if (!a.dados || a.dados.area === areaAtual) continue
+    for (const e of a.dados.especialidades) if (e.estado === 'publicavel') m.set(e.codigo, { ident: identificadorDaVersao(a.dados), versao: String(a.dados.versao) })
+  }
+  return m
 }
 
 function main() {
@@ -121,7 +144,7 @@ function main() {
     const num = args[iMig + 1]; const area = args[iMig + 2]
     const alvo = reais.find((a) => a.dados.area === area)
     if (!/^\d{3}$/.test(num || '') || !alvo) { console.error('Uso: --migration NNN AREA (área real e validada)'); process.exit(1) }
-    const g = gerarSql(alvo.dados, { modo: 'migration' })
+    const g = gerarSql(alvo.dados, { modo: 'migration', contexto: contextoDe(reais, alvo.dados.area) })
     if (!g) { console.error(`Área ${area} sem especialidade "publicavel".`); process.exit(1) }
     const destino = join(raiz, 'supabase', 'migrations', `20260930000${num}_especialidades-${area.toLowerCase()}.sql`)
     if (existsSync(destino)) { console.error('Migration já existe: ' + destino); process.exit(1) }
@@ -133,7 +156,7 @@ function main() {
   let falhas = 0
   let gerados = 0
   for (const a of reais) {
-    const g = gerarSql(a.dados, { modo: 'migration' })
+    const g = gerarSql(a.dados, { modo: 'migration', contexto: contextoDe(reais, a.dados.area) })
     if (!g) continue
     gerados++
     const caminho = join(dirGerado, `${a.dados.area}.sql`)

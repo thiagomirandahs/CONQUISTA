@@ -59,15 +59,15 @@ describe('validador de especialidades (formato /2)', () => {
     })
     it('grupo N de M: precisa existir, ter requisitos e mínimo coerente', () => {
       expect(erros(arq([esp({ requisitos: [req({ grupo: 'x' })] })]))).toMatch(/não declarado/)
-      const g = (minimo) => esp({ grupos: [{ chave: 'tec', rotulo: 'Técnicas', minimo }], requisitos: [req({ grupo: 'tec' }), req({ ordem: 2, grupo: 'tec' })] })
+      const g = (minimo) => esp({ grupos: [{ chave: 'tec', rotulo: 'Técnicas', minimo }], requisitos: [req({ grupo: 'tec', descricao: 'Técnica A conferida.' }), req({ ordem: 2, grupo: 'tec', descricao: 'Técnica B conferida.' })] })
       expect(validarEspecialidades([arq([g(1)])]).erros).toEqual([])
       expect(erros(arq([g(3)]))).toMatch(/maior que os 2 requisitos/)
       expect(erros(arq([esp({ grupos: [{ chave: 'vazio', rotulo: 'V', minimo: 1 }] })]))).toMatch(/sem requisitos/)
     })
     it('dependência só para ordens MENORES e nunca para requisito de grupo', () => {
-      expect(validarEspecialidades([arq([esp({ requisitos: [req(), req({ ordem: 2, depende_de: [1] })] })])]).erros).toEqual([])
+      expect(validarEspecialidades([arq([esp({ requisitos: [req(), req({ ordem: 2, depende_de: [1], descricao: 'Segundo requisito conferido.' })] })])]).erros).toEqual([])
       expect(erros(arq([esp({ requisitos: [req({ depende_de: [1] })] })]))).toMatch(/ordens MENORES/)
-      expect(erros(arq([esp({ requisitos: [req({ ordem: 1 }), req({ ordem: 2, depende_de: [3] }), req({ ordem: 3 })] })]))).toMatch(/ordens MENORES/)
+      expect(erros(arq([esp({ requisitos: [req({ ordem: 1 }), req({ ordem: 2, depende_de: [3], descricao: 'Requisito dois conferido.' }), req({ ordem: 3, descricao: 'Requisito três conferido.' })] })]))).toMatch(/ordens MENORES/)
     })
     it('prazo entre 1 e 730 dias', () => {
       expect(erros(arq([esp({ requisitos: [req({ prazo_dias: 0 })] })]))).toMatch(/prazo_dias/)
@@ -194,7 +194,7 @@ describe('cadastro pelo manifesto (sem SQL manual)', () => {
     const d = adicionarEspecialidade(null, { codigo: 'HM-049', nome: 'Arte com Barbante', nivel: 1, fonteUrl: OFICIAL })
     d.fonte = fonte()
     d.especialidades[0].estado = 'publicavel'
-    d.especialidades[0].requisitos = [{ ...modelos.resposta, ordem: 1 }, { ...modelos.atividade_pratica, ordem: 2, depende_de: [1] }]
+    d.especialidades[0].requisitos = [{ ...modelos.resposta, ordem: 1 }, { ...modelos.atividade_pratica, ordem: 2, depende_de: [1], descricao: 'Segundo requisito, parafraseado e conferido.' }]
     expect(validarEspecialidades([{ arquivo: 'HM.json', dados: d }]).erros).toEqual([])
     const a = gerarSql(d), b = gerarSql(d)
     expect(a.sql).toBe(b.sql)
@@ -237,5 +237,57 @@ describe('escala do manifesto (552 especialidades × 10 requisitos, sintético)'
     expect(x.sql.length).toBeLessThan(2 * 1024 * 1024)
     ar.dados.especialidades[0].requisitos[0].descricao = 'Texto alterado depois de publicado.'
     expect(gerarSql(ar.dados).hash).not.toBe(x.hash)
+  })
+})
+
+// ---------------------------------------------------------------------------------------------------------------
+// Fase 8: validações que o dono pediu para o manifesto oficial (área, duplicidade, dependência entre especialidades).
+// ---------------------------------------------------------------------------------------------------------------
+import { contextoDe } from '../../supabase/especialidades-manifesto/gerar-importacao.mjs'
+
+describe('validações do manifesto oficial (fase 8)', () => {
+  it('área inexistente no catálogo é recusada (9 áreas válidas)', () => {
+    expect(erros(arq([esp({ codigo: 'ZZ-001' })], { area: 'ZZ' }, 'ZZ.json'))).toMatch(/área inexistente/)
+    for (const a of ['AA', 'AD', 'AM', 'AP', 'AR', 'CS', 'EN', 'HD', 'HM']) {
+      expect(validarEspecialidades([arq([esp({ codigo: `${a}-001` })], { area: a }, `${a}.json`)]).erros, a).toEqual([])
+    }
+  })
+  it('requisito duplicado na mesma especialidade é recusado', () => {
+    expect(erros(arq([esp({ requisitos: [req(), req({ ordem: 2 })] })]))).toMatch(/requisito duplicado/)
+  })
+  it('código duplicado ENTRE arquivos é recusado', () => {
+    expect(erros(arq([esp()]), arq([esp()], { area: 'AA' }, 'AA.json'))).toMatch(/repetido|duplic/i)
+  })
+  describe('dependência entre especialidades', () => {
+    const a1 = esp({ codigo: 'AA-001', nome: 'Base' })
+    const a2 = (deps) => esp({ codigo: 'AA-002', nome: 'Avançada', depende_de_especialidades: deps })
+    it('válida quando o alvo existe e é publicável', () => {
+      expect(validarEspecialidades([arq([a1, a2(['AA-001'])])]).erros).toEqual([])
+    })
+    it('referência quebrada (alvo inexistente)', () => { expect(erros(arq([a1, a2(['AA-099'])]))).toMatch(/referência quebrada/) })
+    it('alvo só "catalogo" não serve', () => {
+      expect(erros(arq([esp({ codigo: 'AA-001', estado: 'catalogo', requisitos: undefined }), a2(['AA-001'])]))).toMatch(/não é "publicavel"/)
+    })
+    it('autorreferência, repetida e circular', () => {
+      expect(erros(arq([a2(['AA-002'])]))).toMatch(/depender de si mesma/)
+      expect(erros(arq([a1, a2(['AA-001', 'AA-001'])]))).toMatch(/repetido/)
+      const x = esp({ codigo: 'AA-001', depende_de_especialidades: ['AA-002'] })
+      expect(erros(arq([x, a2(['AA-001'])]))).toMatch(/circular/)
+    })
+    it('dependência entre ÁREAS: só vale se a outra área existe', () => {
+      const ar = arq([esp({ codigo: 'AR-001' })], { area: 'AR' }, 'AR.json')
+      const aa = arq([esp({ codigo: 'AA-002', depende_de_especialidades: ['AR-001'] })])
+      expect(validarEspecialidades([ar, aa]).erros).toEqual([])
+      expect(erros(aa)).toMatch(/referência quebrada/)
+    })
+    it('o gerador emite curriculum_dependencies (mesma área) e exige o contexto para áreas diferentes', () => {
+      const d = arq([a1, a2(['AA-001'])]).dados
+      expect(gerarSql(d).sql).toMatch(/insert into public\.curriculum_dependencies/)
+      const dc = arq([esp({ codigo: 'AA-002', depende_de_especialidades: ['AR-001'] })]).dados
+      expect(() => gerarSql(dc)).toThrow(/não está neste arquivo/)
+      const ar = arq([esp({ codigo: 'AR-001' })], { area: 'AR' }, 'AR.json')
+      const ctx = contextoDe([ar, arq([esp({ codigo: 'AA-002' })])], 'AA')
+      expect(gerarSql(dc, { contexto: ctx }).sql).toMatch(/ainda não foi importada/)
+    })
   })
 })

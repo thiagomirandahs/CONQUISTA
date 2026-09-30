@@ -1,12 +1,12 @@
 -- GERADO por supabase/especialidades-manifesto/gerar-importacao.mjs — NÃO editar à mão.
--- Manifesto: área TE, versão 1 (TESTE LOCAL — nunca vai para migration); 1 especialidade(s); sha256 fd0b6c8cac02e31ec9833552dac132f314d5e379a7c7b85d753f2b6469d640e9
+-- Manifesto: área TE, versão 1 (TESTE LOCAL — nunca vai para migration); 2 especialidade(s); sha256 d937d57504afa2aa769488b0974f9a8eebdec1b3c48b5131004f149bf089aed7
 -- Fonte: [TESTE] fonte fictícia — https://exemplo.teste/fonte-ficticia — consultada em 2026-09-30 — conferido
 do $especialidades$
 declare v_existente text;
 begin
   select fonte_hash into v_existente from public.curriculum_versions where identificador = 'especialidades-teste-local' and versao = '1';
   if found then
-    if v_existente is distinct from 'fd0b6c8cac02e31ec9833552dac132f314d5e379a7c7b85d753f2b6469d640e9' then
+    if v_existente is distinct from 'd937d57504afa2aa769488b0974f9a8eebdec1b3c48b5131004f149bf089aed7' then
       raise exception 'Especialidades especialidades-teste-local: a versão 1 já existe com OUTRO conteúdo — publique uma versão nova do manifesto.';
     end if;
     raise notice 'Especialidades especialidades-teste-local: versão 1 já importada (mesmo conteúdo).';
@@ -15,10 +15,10 @@ begin
   insert into public.curriculum_versions (id, origem, identificador, versao, vigente_desde, status, fonte_url, fonte_descricao, fonte_hash, fonte_arquivo, importado_em, fonte_detalhes)
   values ('eb96bbdd-1a29-a914-165b-edd5482889a9', 'oficial', 'especialidades-teste-local', '1', '2026-09-30', 'publicado', 'https://exemplo.teste/fonte-ficticia',
     'Especialidades — [TESTE] Área de teste local. Importado do manifesto (supabase/especialidades-manifesto), versão 1.',
-    'fd0b6c8cac02e31ec9833552dac132f314d5e379a7c7b85d753f2b6469d640e9', 'supabase/especialidades-manifesto/teste', now(),
+    'd937d57504afa2aa769488b0974f9a8eebdec1b3c48b5131004f149bf089aed7', 'supabase/especialidades-manifesto/teste', now(),
     '{"manifesto_versao":1,"area":"TE","fonte":{"nome":"[TESTE] fonte fictícia","url":"https://exemplo.teste/fonte-ficticia","consultada_em":"2026-09-30","status":"conferido"},"teste":true}'::jsonb);
   insert into public.specialties (id, curriculum_version_id, codigo, nome, categoria, nivel, ordem, fonte_url, fonte_consultada_em, fonte_revisao, status_fonte, manifesto_hash)
-  values ('e8c2d462-d52c-e51d-e07b-6ff413a72015', 'eb96bbdd-1a29-a914-165b-edd5482889a9', 'TE-001', '[TESTE] Especialidade de Teste do Motor', '[TESTE] Área de teste local', '1', 10, 'https://exemplo.teste/fonte-ficticia', '2026-09-30', null, 'conferido', 'fd0b6c8cac02e31ec9833552dac132f314d5e379a7c7b85d753f2b6469d640e9');
+  values ('e8c2d462-d52c-e51d-e07b-6ff413a72015', 'eb96bbdd-1a29-a914-165b-edd5482889a9', 'TE-001', '[TESTE] Especialidade de Teste do Motor', '[TESTE] Área de teste local', '1', 10, 'https://exemplo.teste/fonte-ficticia', '2026-09-30', null, 'conferido', 'd937d57504afa2aa769488b0974f9a8eebdec1b3c48b5131004f149bf089aed7');
   insert into public.specialty_requirement_groups (id, specialty_id, chave, rotulo, minimo) values ('b2fc5ddf-520c-8140-4778-02ebaaa57e3f', 'e8c2d462-d52c-e51d-e07b-6ff413a72015', 'tecnicas', 'Técnicas (faça 2 de 4)', 2);
   insert into public.specialty_requirements (id, specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem, modelo, grupo, depende_de, prazo_dias, fonte_url, status_fonte, manifesto_id)
   values ('7a7a7d2c-2ed8-cb32-4256-3e415607bd62', 'e8c2d462-d52c-e51d-e07b-6ff413a72015', '1', '[TESTE] Ler o texto fictício de apoio.', 'leitura', false, 10, '{"versao":1,"campos":[{"chave":"li","tipo":"confirmacao","rotulo":"Li o texto","obrigatorio":true}]}'::jsonb, null, '{}'::text[], null, 'https://exemplo.teste/fonte-ficticia', 'conferido', 'TE-001.1');
@@ -48,4 +48,12 @@ begin
   values ('d2b7a863-2168-3d14-83d0-5833efbdc94c', 'e8c2d462-d52c-e51d-e07b-6ff413a72015', '13', '[TESTE] Técnica D (faça 2 das 4 técnicas).', 'atividade', false, 130, '{"versao":1,"campos":[{"chave":"fiz","tipo":"confirmacao","rotulo":"Fiz a técnica D","obrigatorio":true}]}'::jsonb, 'tecnicas', '{}'::text[], null, 'https://exemplo.teste/fonte-ficticia', 'conferido', 'TE-001.13');
   insert into public.specialty_requirements (id, specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem, modelo, grupo, depende_de, prazo_dias, fonte_url, status_fonte, manifesto_id)
   values ('5696227e-0992-547b-30df-50401fcd03c4', 'e8c2d462-d52c-e51d-e07b-6ff413a72015', '14', '[TESTE] Entregar a resposta final em até 30 dias (prazo).', 'resposta', false, 140, '{"versao":1,"campos":[{"chave":"resposta","tipo":"texto_longo","rotulo":"Sua resposta final","obrigatorio":true,"max":1000}]}'::jsonb, null, '{}'::text[], 30, 'https://exemplo.teste/fonte-ficticia', 'conferido', 'TE-001.14');
+  insert into public.specialties (id, curriculum_version_id, codigo, nome, categoria, nivel, ordem, fonte_url, fonte_consultada_em, fonte_revisao, status_fonte, manifesto_hash)
+  values ('f9d8d39f-76d4-0e3f-bf6f-678b1c06af82', 'eb96bbdd-1a29-a914-165b-edd5482889a9', 'TE-002', '[TESTE] Especialidade Avançada de Teste (depende da TE-001)', '[TESTE] Área de teste local', '2', 20, 'https://exemplo.teste/fonte-ficticia', '2026-09-30', null, 'conferido', 'd937d57504afa2aa769488b0974f9a8eebdec1b3c48b5131004f149bf089aed7');
+  insert into public.specialty_requirements (id, specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem, modelo, grupo, depende_de, prazo_dias, fonte_url, status_fonte, manifesto_id)
+  values ('b55506a4-06ae-0276-ff47-22fbb6a6693a', 'f9d8d39f-76d4-0e3f-bf6f-678b1c06af82', '1', '[TESTE] Primeira resposta da avançada.', 'resposta', false, 10, '{"versao":1,"campos":[{"chave":"resposta","tipo":"texto_longo","rotulo":"Sua resposta","obrigatorio":true,"max":500}]}'::jsonb, null, '{}'::text[], null, 'https://exemplo.teste/fonte-ficticia', 'conferido', 'TE-002.1');
+  insert into public.specialty_requirements (id, specialty_id, codigo, descricao, tipo_evidencia, evidencia_obrigatoria, ordem, modelo, grupo, depende_de, prazo_dias, fonte_url, status_fonte, manifesto_id)
+  values ('d233309f-0c5b-0e09-1889-647018d1f685', 'f9d8d39f-76d4-0e3f-bf6f-678b1c06af82', '2', '[TESTE] Segunda resposta da avançada.', 'resposta', false, 20, '{"versao":1,"campos":[{"chave":"resposta","tipo":"texto_longo","rotulo":"Sua resposta","obrigatorio":true,"max":500}]}'::jsonb, null, '{}'::text[], null, 'https://exemplo.teste/fonte-ficticia', 'conferido', 'TE-002.2');
+  if not exists (select 1 from public.specialties where id = 'e8c2d462-d52c-e51d-e07b-6ff413a72015') then raise exception 'Especialidades especialidades-teste-local: TE-002 depende de TE-001, que ainda não foi importada — importe a área dela primeiro.'; end if;
+  insert into public.curriculum_dependencies (alvo_tipo, alvo_id, depende_de_tipo, depende_de_id) values ('specialty', 'f9d8d39f-76d4-0e3f-bf6f-678b1c06af82', 'specialty', 'e8c2d462-d52c-e51d-e07b-6ff413a72015') on conflict do nothing;
 end $especialidades$;

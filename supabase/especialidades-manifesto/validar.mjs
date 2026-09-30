@@ -24,11 +24,13 @@ import { validarModelo } from '../../src/lib/relatorio/modelo.js'
 export const FORMATO = 'conquista.especialidades/2'
 export const DOMINIOS_OFICIAIS = ['adventistas.org', 'cpb.com.br']
 export const DOMINIOS_COMUNITARIOS = ['mda.wiki.br']    // só para conferência: nunca conta como fonte oficial
+// Áreas do catálogo oficial (migration 460: 9 códigos). Área fora da lista é erro de digitação, não área nova.
+export const AREAS_VALIDAS = ['AA', 'AD', 'AM', 'AP', 'AR', 'CS', 'EN', 'HD', 'HM']
 export const TIPOS_EVIDENCIA = ['leitura', 'resposta', 'relatorio', 'foto', 'arquivo', 'atividade', 'validacao']
 const TIPOS_QUE_EXIGEM_MODELO = ['leitura', 'resposta', 'relatorio', 'foto', 'arquivo', 'atividade', 'validacao']
 const CHAVES_ARQUIVO = ['formato', 'versao', 'area', 'area_nome', 'preparado_em', 'teste', 'exemplo', 'observacao', 'fonte', 'especialidades']
 const CHAVES_FONTE = ['nome', 'url', 'consultada_em', 'revisao', 'status']
-const CHAVES_ESPEC = ['codigo', 'nome', 'nivel', 'fonte_url', 'estado', 'grupos', 'requisitos']
+const CHAVES_ESPEC = ['codigo', 'nome', 'nivel', 'fonte_url', 'estado', 'grupos', 'requisitos', 'depende_de_especialidades']
 const CHAVES_GRUPO = ['chave', 'rotulo', 'minimo']
 const CHAVES_REQ = ['ordem', 'descricao', 'tipo_evidencia', 'evidencia_obrigatoria', 'modelo', 'grupo', 'depende_de', 'prazo_dias', 'fonte_url', 'status_fonte']
 const PADRAO_CODIGO = /^([A-Z]{2})(?:-EB)?-\d{3}$/
@@ -58,6 +60,7 @@ export function validarEspecialidades(arquivos) {
     if (dados.formato !== FORMATO) falha(arquivo, `formato deve ser "${FORMATO}"`)
     for (const k of Object.keys(dados)) if (!CHAVES_ARQUIVO.includes(k)) falha(arquivo, `chave desconhecida "${k}"`)
     if (!/^[A-Z]{2}$/.test(dados.area || '')) falha(arquivo, 'area deve ter 2 letras maiúsculas')
+    else if (!doDirTeste && !AREAS_VALIDAS.includes(dados.area)) falha(arquivo, `área inexistente no catálogo (${dados.area}); válidas: ${AREAS_VALIDAS.join(', ')}`)
     if (!dados.area_nome) falha(arquivo, 'area_nome obrigatório')
     if (!Number.isInteger(dados.versao) || dados.versao < 1) falha(arquivo, 'versao inteira >= 1 (mudou conteúdo = versão nova)')
     if (dados.teste === true && !doDirTeste) falha(arquivo, '"teste": true só na pasta teste/')
@@ -136,6 +139,18 @@ export function validarEspecialidades(arquivos) {
         if (r.prazo_dias != null && !(Number.isInteger(r.prazo_dias) && r.prazo_dias >= 1 && r.prazo_dias <= 730)) falha(rid, 'prazo_dias inteiro de 1 a 730')
         if (r.evidencia_obrigatoria != null && typeof r.evidencia_obrigatoria !== 'boolean') falha(rid, 'evidencia_obrigatoria deve ser booleano')
       })
+      const vistos = new Map()
+      reqs.forEach((r) => {
+        const chave = String(r?.descricao || '').trim().toLowerCase().replace(/\s+/g, ' ')
+        if (chave && vistos.has(chave)) falha(id, `requisito duplicado (ordens ${vistos.get(chave)} e ${r.ordem})`)
+        else if (chave) vistos.set(chave, r.ordem)
+      })
+      if (e.depende_de_especialidades != null) {
+        if (!Array.isArray(e.depende_de_especialidades) || !e.depende_de_especialidades.every((c) => PADRAO_CODIGO.test(c || ''))) falha(id, 'depende_de_especialidades deve ser uma lista de códigos (AA-000)')
+        else if (e.depende_de_especialidades.includes(e.codigo)) falha(id, 'especialidade não pode depender de si mesma')
+        else if (new Set(e.depende_de_especialidades).size !== e.depende_de_especialidades.length) falha(id, 'depende_de_especialidades com código repetido')
+        else if (e.estado !== 'publicavel') falha(id, 'depende_de_especialidades só em especialidade "publicavel"')
+      }
       for (const [chave, g] of grupos) {
         const n = contagemGrupo.get(chave) || 0
         if (n === 0) falha(id, `grupo "${chave}" sem requisitos`)
@@ -143,6 +158,25 @@ export function validarEspecialidades(arquivos) {
         else if (g.minimo === n) avisos.push(`${id}: grupo "${chave}" exige todos os requisitos (minimo = total); talvez não precise de grupo`)
       }
     }
+  }
+  // ---- referências entre especialidades (dependência quebrada / circular), olhando TODOS os arquivos juntos ----
+  const todas = new Map()
+  for (const { dados } of arquivos) for (const e of dados?.especialidades || []) todas.set(e.codigo, e)
+  const visitando = new Set(); const ok = new Set()
+  const temCiclo = (cod) => {
+    if (ok.has(cod)) return false
+    if (visitando.has(cod)) return true
+    visitando.add(cod)
+    for (const d of todas.get(cod)?.depende_de_especialidades || []) if (todas.has(d) && temCiclo(d)) return true
+    visitando.delete(cod); ok.add(cod); return false
+  }
+  for (const [cod, e] of todas) {
+    for (const d of e.depende_de_especialidades || []) {
+      if (!todas.has(d)) erros.push(`${cod}: depende de ${d}, que não existe em nenhum manifesto (referência quebrada)`)
+      else if (todas.get(d).estado !== 'publicavel') erros.push(`${cod}: depende de ${d}, que não é "publicavel"`)
+    }
+    if ((e.depende_de_especialidades || []).length && temCiclo(cod)) erros.push(`${cod}: dependência circular entre especialidades`)
+    visitando.clear()
   }
   if (!arquivos.length) avisos.push('nenhum arquivo de área ainda (estrutura pronta; conteúdo depende de fonte aprovada)')
   return { erros, avisos }

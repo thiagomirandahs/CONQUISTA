@@ -191,6 +191,15 @@ select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('membro vê a especialidade concluída com o histórico', t.txt($q$select (x->'member_specialty'->>'status') || '|' || (x->'requisitos'->1->>'tentativas') from (select public.minha_especialidade() x) s$q$), 'concluida|2');
 reset role;
 
+-- ==================== 5b) dependência ENTRE especialidades (vinda do manifesto → curriculum_dependencies) ====================
+create function t.esp2() returns uuid language sql stable security definer as $$ select id from public.specialties where codigo = 'TE-002' $$;
+select t.eq('o manifesto gerou a dependência TE-002 → TE-001 em curriculum_dependencies', (select count(*) from public.curriculum_dependencies where alvo_tipo = 'specialty' and alvo_id = t.esp2() and depende_de_id = t.esp() and obrigatorio), 1);
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select t.permitido('quem CONCLUIU a TE-001 (membro_a) inicia a TE-002', format($q$select public.especialidade_iniciar(%L)$q$, t.esp2()));
+select t.como('membro_a2'); select t.pedir_clube('clube_a');
+select t.throws('quem NÃO concluiu a TE-001 não inicia a TE-002', format($q$select public.especialidade_iniciar(%L)$q$, t.esp2()), 'Falta concluir');
+reset role;
+
 -- ==================== 6) prazo (não penaliza correção) ====================
 select t.como('membro_a2'); select t.pedir_clube('clube_a');
 select t.permitido('membro_a2 inicia', format($q$select public.especialidade_iniciar(%L)$q$, t.esp()));

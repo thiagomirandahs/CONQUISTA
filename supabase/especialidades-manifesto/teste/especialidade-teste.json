@@ -344,6 +344,56 @@
      "prazo_dias": 30
     }
    ]
+  },
+  {
+   "codigo": "TE-002",
+   "nome": "[TESTE] Especialidade Avançada de Teste (depende da TE-001)",
+   "nivel": 2,
+   "fonte_url": "https://exemplo.teste/fonte-ficticia",
+   "estado": "publicavel",
+   "depende_de_especialidades": [
+    "TE-001"
+   ],
+   "requisitos": [
+    {
+     "ordem": 1,
+     "descricao": "[TESTE] Primeira resposta da avançada.",
+     "tipo_evidencia": "resposta",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "resposta",
+        "tipo": "texto_longo",
+        "rotulo": "Sua resposta",
+        "obrigatorio": true,
+        "max": 500
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    },
+    {
+     "ordem": 2,
+     "descricao": "[TESTE] Segunda resposta da avançada.",
+     "tipo_evidencia": "resposta",
+     "modelo": {
+      "versao": 1,
+      "campos": [
+       {
+        "chave": "resposta",
+        "tipo": "texto_longo",
+        "rotulo": "Sua resposta",
+        "obrigatorio": true,
+        "max": 500
+       }
+      ]
+     },
+     "fonte_url": "https://exemplo.teste/fonte-ficticia",
+     "status_fonte": "conferido"
+    }
+   ]
   }
  ]
 }
