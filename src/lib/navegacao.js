@@ -29,6 +29,9 @@ export const DESTINO = {
 export const HUB_JORNADA = [
   { to: '/minha-classe', label: 'Minha Classe', icon: '🎖️', desc: 'Os requisitos da sua classe', recurso: 'classes' },
   // recurso PRÓPRIO (fase 9, item 9): com as Classes oficiais ligadas, as especialidades de teste continuam de fora
+  { to: '/jornada/minha', label: 'Minha Jornada', icon: '🧭', desc: 'Seu caminho: classes, conquistas e leituras', recurso: 'classes' },
+  { to: '/jornada/portfolio', label: 'Portfólio', icon: '🗂️', desc: 'O que você já cumpriu e foi aprovado', recurso: 'classes' },
+  { to: '/leituras', label: 'Leituras', icon: '📚', desc: 'Livros para ler ou ouvir', recurso: 'classes' },
   { to: '/minhas-especialidades', label: 'Especialidades', icon: '🏅', desc: 'As suas especialidades', recurso: 'especialidades' },
   { to: '/experiencias', label: 'Experiências', icon: '✨', desc: 'Desafios e campanhas do clube', recurso: 'experiencias' },
   { to: '/atividades', label: 'Atividades', icon: '📋', desc: 'Tarefas com entrega', recurso: 'atividades' },
