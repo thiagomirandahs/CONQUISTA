@@ -201,8 +201,12 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
 /* =============================================================================
    REDE DBV — cores da identidade DesbravaClube (Fase 6): azul-marinho + dourado de destaque.
    Tudo da rede usa ESTAS variáveis (bg-[var(--rede-bg)] …); o tema escuro só troca os valores.
-   Nada de roxo, degradê de Instagram ou neon. O teste src/pages/rede/temaRede.test.js confere o
+   Nada de roxo, degradê de Instagram ou neon. O teste src/ui/contrasteRede.test.js confere o
    contraste (≥ 4.5:1) de tinta e ação sobre o fundo nos dois temas — mude aqui, rode o teste.
+   Papel de cada uma: bg/superficie (fundos) · ink/ink-suave (texto) · linha (bordas, anel de story
+   visto) · acao (botões, links, #hashtags, aba ativa; marinho no claro, tom claro legível no escuro)
+   · destaque (dourado: anel de story novo, selo de coordenação, conquista, sublinhado da aba do
+   perfil) · ambar (fim do degradê do anel) · curtido (coração).
    As variáveis também ficam no :root porque folhas e diálogos da rede são abertos em portal (fora
    do [data-rede]); o nome --rede-* não colide com nada do app do clube.
    ============================================================================= */
@@ -216,9 +220,11 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   --rede-acao: #0b1f4d;
   --rede-sobre-acao: #ffffff;
   --rede-acao-suave: #e8edf7;
-  --rede-destaque: #c9a227;
+  --rede-destaque: #b08a1e;          /* dourado fechado: ≥ 3:1 sobre o branco (anel, risco da barra) */
   --rede-destaque-suave: #faf1d6;
   --rede-destaque-texto: #6b4f00;
+  --rede-sobre-destaque: #07122f;
+  --rede-ambar: #c9741f;
   --rede-curtido: #d0103a;
   --rede-sucesso: #047857;
   --rede-sucesso-suave: #dcf5ea;
@@ -236,6 +242,8 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   --rede-destaque: #e0b84a;
   --rede-destaque-suave: #2b2410;
   --rede-destaque-texto: #f0cf73;
+  --rede-sobre-destaque: #07122f;
+  --rede-ambar: #e8973f;
   --rede-curtido: #fb7185;
   --rede-sucesso: #6ee7b7;
   --rede-sucesso-suave: #0f2e24;

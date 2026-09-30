@@ -1,6 +1,6 @@
 // Perfil e Desafios da Rede DBV.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const f = { carregarPerfil: vi.fn(), carregarPostsDoPerfil: vi.fn(), carregarDesafios: vi.fn(), urlDaFoto: vi.fn() }
@@ -37,6 +37,29 @@ describe('Rede DBV — perfil', () => {
     expect(screen.getAllByText('AS').length).toBeGreaterThan(0)
     expect(screen.queryByRole('img', { name: '' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Salvos' })).toBeNull()
+  })
+
+  it('identidade Fase 6: selo do papel em MARINHO, conquistas em DOURADO, aba ativa sublinhada de dourado; unidade só se vier', async () => {
+    renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })
+    await screen.findByRole('heading', { name: 'Ana Souza' })
+    const selos = screen.getByTestId('selos-perfil')
+    expect(within(selos).getByText('Desbravador(a)').className).toContain('var(--rede-acao)')
+    expect(within(selos).getByText('🏅 1 conquista').className).toContain('var(--rede-destaque')
+    expect(screen.getByTestId('perfil-clube')).toHaveTextContent(/^Clube Águias$/)
+    const ativa = screen.getByRole('tab', { name: 'Publicações' })
+    expect(ativa).toHaveAttribute('aria-selected', 'true')
+    expect(ativa.className).toContain('border-[var(--rede-destaque)]')
+    expect(screen.getByRole('tab', { name: 'Textos' }).className).toContain('border-transparent')
+  })
+
+  it('coordenação no perfil: selo DOURADO "Coordenação" no lugar do papel; unidade entra na linha do clube quando vier', async () => {
+    f.carregarPerfil.mockResolvedValue({ ...PERFIL, coordenacao: true, papel: 'coordenador_distrital', clube: 'Coordenação · Distrito Norte', unidade: 'Unidade Falcão', conquistas: 0 })
+    renderRede(<RedePerfil />, { rota: '/rede/perfil/u-ana', caminho: '/rede/perfil/:id' })
+    await screen.findByRole('heading', { name: /Ana Souza/ })
+    const selos = screen.getByTestId('selos-perfil')
+    expect(within(selos).getByText('Coordenação').className).toContain('var(--rede-destaque')
+    expect(within(selos).queryByText(/conquista/)).toBeNull()
+    expect(screen.getByTestId('perfil-clube')).toHaveTextContent('Unidade Falcão · Coordenação · Distrito Norte')
   })
 
   it('meu perfil tem a aba Salvos (só eu vejo) e troca de aba pede ao servidor', async () => {

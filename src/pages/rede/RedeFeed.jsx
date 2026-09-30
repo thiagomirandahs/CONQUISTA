@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
 import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { Carregando } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { EsqueletoFeed, Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 
-// Feed da Rede DBV no estilo Instagram: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube"
-// e os posts de ponta a ponta. O ➕ do topo e da barra de baixo levam à tela de publicar.
+// Feed da Rede DBV: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube" e os posts de ponta
+// a ponta (identidade marinho + dourado, Fase 6). Enquanto carrega, esqueletos no formato do post e das
+// bolinhas; feed vazio oferece "Publicar" a quem publica. O ➕ da barra de baixo leva à tela de publicar.
 // Coordenação (490): "Meu clube" vira "Minha área" — posts dos clubes da coordenação (o servidor filtra).
 const abasDoFeed = (coordenacao) => [['todos', 'Todos'], ['meu_clube', coordenacao ? 'Minha área' : 'Meu clube']]
 
@@ -23,7 +23,7 @@ export default function RedeFeed() {
   const [carregando, setCarregando] = useState(true)
   const [mais, setMais] = useState(false)
   const [erro, setErro] = useState(null)
-  const [grupos, setGrupos] = useState([])
+  const [grupos, setGrupos] = useState(null)      // null = ainda carregando (fileira-esqueleto)
   const [aberto, setAberto] = useState(null)       // índice do grupo no viewer
   const [arquivoStory, setArquivoStory] = useState(null)
   const inputStory = useRef(null)
@@ -56,7 +56,7 @@ export default function RedeFeed() {
   // o viewer avisa: visto (anel fica cinza) / removido (recarrega ao fechar)
   const mudouStory = useCallback(({ tipo, id }) => {
     if (tipo !== 'visto') return
-    setGrupos((gs) => gs.map((g) => {
+    setGrupos((gs) => (gs || []).map((g) => {
       if (!g.stories.some((s) => s.id === id)) return g
       const stories = g.stories.map((s) => (s.id === id ? { ...s, visto: true } : s))
       return { ...g, stories, todos_vistos: g.meu || stories.every((s) => s.visto) }
@@ -90,7 +90,7 @@ export default function RedeFeed() {
         ))}
       </div>
 
-      {carregando ? <div className="p-4"><Carregando /></div>
+      {carregando ? <EsqueletoFeed />
         : erro ? (
           <div className="p-6 text-center">
             <p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o feed.')}</p>
@@ -99,12 +99,12 @@ export default function RedeFeed() {
         ) : (
           <ListaDePosts itens={itens} setItens={setItens} proximo={proximo} carregarMais={carregarMais} maisCarregando={mais}
             status={status} clubeId={clubeId}
-            vazio={<VazioRede titulo="Ainda não há publicações">
+            vazio={<VazioRede titulo="Ainda não há publicações" acao={status?.pode_publicar ? { rotulo: 'Publicar', para: '/rede/publicar' } : null}>
               {status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
             </VazioRede>} />
         )}
 
-      {aberto !== null && grupos[aberto] && (
+      {aberto !== null && grupos?.[aberto] && (
         <ViewerStories grupos={grupos} inicio={aberto} aoFechar={fecharViewer} aoMudar={mudouStory} />
       )}
       {arquivoStory && (

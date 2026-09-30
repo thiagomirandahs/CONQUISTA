@@ -224,11 +224,25 @@ describe('Rede DBV — buscar', () => {
     expect(within(screen.getByRole('link', { name: /Bia Lima/ })).getByTestId('avatar-iniciais')).toHaveTextContent('BL')
   })
 
-  it('nada encontrado', async () => {
+  it('nada encontrado: vazio com dica (nome do clube ou sobrenome)', async () => {
     const u = userEvent.setup()
     f.buscarNaRede.mockResolvedValue({ clubes: [], pessoas: [] })
     renderRede(<RedeBuscar />)
     await u.type(screen.getByLabelText('Buscar clubes e pessoas'), 'zzz')
-    expect(await screen.findByText(/Ninguém encontrado/)).toBeInTheDocument()
+    expect(await screen.findByText(/Ninguém encontrado com “zzz”/)).toBeInTheDocument()
+    expect(screen.getByTestId('vazio-rede')).toHaveTextContent(/nome do clube ou o sobrenome/)
+  })
+
+  it('enquanto busca: linhas-esqueleto (avatar + nome + clube), não "Carregando…" solto', async () => {
+    const u = userEvent.setup()
+    let soltar
+    f.buscarNaRede.mockImplementation(() => new Promise((r) => { soltar = r }))
+    renderRede(<RedeBuscar />)
+    await u.type(screen.getByLabelText('Buscar clubes e pessoas'), 'ana')
+    expect(await screen.findByTestId('esqueleto-linhas')).toBeInTheDocument()
+    expect(screen.queryByTestId('esqueleto-tela')).toBeNull()
+    soltar({ clubes: [], pessoas: [{ id: 'u-ana', nome: 'Ana Souza', clube: 'Clube Águias', foto: null }] })
+    await screen.findByRole('link', { name: /Ana Souza/ })
+    expect(screen.queryByTestId('esqueleto-linhas')).toBeNull()
   })
 })

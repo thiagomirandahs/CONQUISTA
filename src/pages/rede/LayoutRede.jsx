@@ -4,17 +4,19 @@ import { useAuth } from '../../context/Auth.jsx'
 import { meuStatus, carregarPerfil } from '../../services/rede.js'
 import { MARCA_PRODUTO } from '../../lib/marca.js'
 import Notificacoes from '../../components/Notificacoes.jsx'
+import BotaoAjuda from '../../components/BotaoAjuda.jsx'
 import { RedeContexto } from './contexto.js'
 import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 import { Carregando } from '../../ui/index.jsx'
 import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from '../../lib/redeModo.js'
 
 // =============================================================================
-//  REDE DBV — o "outro mundo" dentro do app, no ESTILO INSTAGRAM (refeito em 29/09/2026 a pedido
-//  do dono). Layout PRÓPRIO (não usa o AppLayout do clube): fundo branco; topo com a logo à
-//  esquerda e, à direita, Sair, tema (claro/escuro) e 🔔 em quadradinhos arredondados leves; barra
-//  inferior SÓ de ícones (Início · Buscar · ➕ · Desafios · Perfil), ativo em azul com fundo suave.
-//  "Sair" fica no topo, sempre visível; acessibilidade e moderação ficam em /rede/mais (menu do meu perfil).
+//  REDE DBV — o "outro mundo" dentro do app: layout social limpo com a identidade DesbravaClube
+//  (azul-marinho + dourado, Fase 6). Layout PRÓPRIO (não usa o AppLayout do clube): topo com a logo
+//  à esquerda e, à direita, Sair, tema (claro/escuro), 🔔 e "?" (ajuda → /ajuda#rede-dbv) em
+//  quadradinhos da superfície; barra inferior SÓ de ícones (Início · Buscar · ➕ · Desafios · Perfil),
+//  ativo em marinho com um risco dourado embaixo. "Sair" fica no topo, sempre visível; acessibilidade
+//  e moderação ficam em /rede/mais (menu do meu perfil). Cores: só as variáveis --rede-* (index.css).
 //  Mobile-first: sem rolagem lateral, alvos ≥ 44px, área segura do iPhone respeitada.
 // =============================================================================
 
@@ -67,36 +69,49 @@ function Topo() {
           {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
           <button type="button" onClick={sair} data-testid="rede-sair"
             aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
-            className="min-h-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center gap-1.5 text-sm font-semibold">
-            <Icone nome="sair" className="w-5 h-5" /> Sair
+            className="min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center justify-center gap-1.5 text-sm font-semibold">
+            <Icone nome="sair" className="w-5 h-5" /><span className="hidden min-[400px]:inline">Sair</span>
           </button>
           {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
           <BotaoTema />
           <div className="relative"><Notificacoes classeBotao={QUADRADINHO} icone={<Icone nome="sino" className="w-6 h-6" />} /></div>
+          <BotaoAjuda topico="rede-dbv" estilo={QUADRADINHO} />
         </div>
       </div>
     </header>
   )
 }
 
+// Destino ativo: ícone marinho sobre fundo suave + um risco DOURADO embaixo (o único dourado da barra).
+const Indicador = () => <span aria-hidden="true" data-testid="indicador-ativo" className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-[var(--rede-destaque)]" />
 function BarraInferior({ eu }) {
   const item = ({ isActive }) =>
-    `w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
+    `relative w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
+  const destino = (para, rotulo, icone, extra = {}) => (
+    <li className="flex justify-center">
+      <NavLink to={para} aria-label={rotulo} className={item} {...extra}>
+        {({ isActive }) => (<><Icone nome={icone} className="w-[26px] h-[26px]" />{isActive && <Indicador />}</>)}
+      </NavLink>
+    </li>
+  )
   return (
     <nav aria-label="Navegação da Rede DBV" className="fixed bottom-0 inset-x-0 z-30 bg-[var(--rede-bg)] border-t border-[var(--rede-linha)]"
       style={{ paddingBottom: 'var(--seguro-baixo)' }}>
       <ul className="max-w-xl mx-auto grid grid-cols-5 h-[58px] items-center">
-        <li className="flex justify-center"><NavLink to="/rede" end aria-label="Início" className={item}><Icone nome="casa" className="w-[26px] h-[26px]" /></NavLink></li>
-        <li className="flex justify-center"><NavLink to="/rede/buscar" aria-label="Buscar" className={item}><Icone nome="busca" className="w-[26px] h-[26px]" /></NavLink></li>
-        <li className="flex justify-center"><NavLink to="/rede/publicar" aria-label="Publicar" className={item}><Icone nome="maisQuadrado" className="w-[27px] h-[27px]" /></NavLink></li>
-        <li className="flex justify-center"><NavLink to="/rede/desafios" aria-label="Desafios" className={item}><Icone nome="trofeu" className="w-[26px] h-[26px]" /></NavLink></li>
+        {destino('/rede', 'Início', 'casa', { end: true })}
+        {destino('/rede/buscar', 'Buscar', 'busca')}
+        {destino('/rede/publicar', 'Publicar', 'maisQuadrado')}
+        {destino('/rede/desafios', 'Desafios', 'trofeu')}
         <li className="flex justify-center">
-          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
+          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `relative w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
             {({ isActive }) => (
-              <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[var(--rede-acao)]' : 'bg-transparent'}`}>
-                {/* `eu` = rede_perfil() gateado (500): a mesma cara que os outros veem, nunca o profile do Auth */}
-                <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-7 h-7" texto="text-[10px]" />
-              </span>
+              <>
+                <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[var(--rede-acao)]' : 'bg-transparent'}`}>
+                  {/* `eu` = rede_perfil() gateado (500): a mesma cara que os outros veem, nunca o profile do Auth */}
+                  <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-7 h-7" texto="text-[10px]" />
+                </span>
+                {isActive && <Indicador />}
+              </>
             )}
           </NavLink>
         </li>

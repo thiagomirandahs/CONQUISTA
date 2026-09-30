@@ -7,7 +7,8 @@ import { CARD, Icone, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede
 
 // Desafios da Rede DBV (criados pelo admin da plataforma). Participar = publicar vinculado ao desafio.
 // Os pontos são SÓ da rede (aparecem no perfil da rede); não entram no ranking do clube.
-// Visual branco/limpo (29/09/2026): destaque por um card claro com selo roxo, sem gradiente forte.
+// Visual limpo (Fase 6): card claro com selo marinho no desafio da semana; "participou" em verde suave.
+// Só variáveis --rede-* (tema claro e escuro), sem gradiente forte.
 const dias = (n) => (n === 0 ? 'último dia' : n === 1 ? 'falta 1 dia' : `faltam ${n} dias`)
 
 function Participar({ d, podePublicar, destaque }) {

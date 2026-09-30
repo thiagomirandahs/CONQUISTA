@@ -10,14 +10,14 @@ import { avisar } from '../../ui/avisos.jsx'
 import { Folha, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 
 // =============================================================================
-//  Peças da REDE DBV — ESTILO INSTAGRAM (refeito em 29/09/2026 a pedido do dono): fundo BRANCO,
-//  posts de ponta a ponta (sem card com margem), separador fino, ícones de linha, azul de ação
-//  #3b5bff, anéis de story azul→roxo. Nada de sublinhado em nomes/rótulos, nada de neon.
+//  Peças da REDE DBV — layout social LIMPO (posts de ponta a ponta, separador fino, ícones de
+//  linha) com a IDENTIDADE DesbravaClube (Fase 6, 30/09/2026): azul-marinho para texto e ações,
+//  dourado só como destaque (anel de story novo, selo de coordenação, conquista, aba ativa do
+//  perfil). Toda cor vem das variáveis --rede-* de src/index.css (tema claro e escuro); nenhum hex
+//  solto aqui. Nada de roxo, degradê azul→roxo, neon ou sublinhado em nome/rótulo.
 //  Mobile-first 375–430 px, alvos ≥ 44 px, sem rolagem lateral da página.
 // =============================================================================
 
-export const AZUL = '#3b5bff'
-export const GRADIENTE = 'bg-gradient-to-tr from-[#3b5bff] to-[#8b5cf6]'
 export const CARD = 'bg-[var(--rede-bg)] rounded-2xl border border-[var(--rede-linha)]'
 export const PILL = 'min-h-[44px] px-4 rounded-full font-semibold text-sm inline-flex items-center justify-center gap-2 no-underline'
 export const PILL_PRIMARIA = `${PILL} bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] disabled:opacity-50`
@@ -106,13 +106,80 @@ export function AvatarRede({ nome, foto, avatarPersonagem, tamanho = 'w-9 h-9', 
   )
 }
 
-// Anel do story em volta do avatar: colorido = não visto; cinza = visto; sem anel = sem story.
+// Anel do story em volta do avatar: dourado→âmbar = não visto; cor de linha = visto; sem anel = sem story.
+export const ANEL_NOVO = 'bg-gradient-to-tr from-[var(--rede-destaque)] to-[var(--rede-ambar)]'
 export function AnelStory({ estado = 'nenhum', children }) {
   if (estado === 'nenhum') return children
   return (
-    <span className={`inline-grid place-items-center rounded-full p-[2.5px] ${estado === 'novo' ? GRADIENTE : 'bg-[#cbd5e1]'}`}>
+    <span data-testid="anel-story" data-estado={estado}
+      className={`inline-grid place-items-center rounded-full p-[2.5px] ${estado === 'novo' ? ANEL_NOVO : 'bg-[var(--rede-linha)]'}`}>
       <span className="rounded-full bg-[var(--rede-bg)] p-[2px] grid place-items-center">{children}</span>
     </span>
+  )
+}
+
+// ---------------------------------------------------------------- esqueletos (forma no lugar de "Carregando…")
+// Pulsam só com movimento permitido; o leitor de tela ouve "Carregando…" pelo role="status".
+const PULSO = 'bg-[var(--rede-superficie)] motion-safe:animate-pulse'
+
+// Fileira de stories: 5 bolinhas do tamanho das reais.
+export function EsqueletoStories({ quantidade = 5 }) {
+  return (
+    <div role="status" aria-live="polite" data-testid="esqueleto-stories" className="flex gap-3 px-3 py-3 overflow-hidden">
+      <span className="sr-only">Carregando…</span>
+      {Array.from({ length: quantidade }).map((_, i) => (
+        <div key={i} aria-hidden="true" className="shrink-0 w-[72px] flex flex-col items-center gap-1.5">
+          <div className={`w-[66px] h-[66px] rounded-full ${PULSO}`} />
+          <div className={`h-2.5 w-10 rounded-full ${PULSO}`} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Um post: cabeça (avatar + duas linhas), foto 4:5 e a linha das ações.
+export function EsqueletoPost() {
+  return (
+    <div aria-hidden="true" data-testid="esqueleto-post" className={`border-b ${LINHA} pb-3`}>
+      <div className="flex items-center gap-2.5 px-3 py-2">
+        <div className={`w-9 h-9 rounded-full ${PULSO}`} />
+        <div className="flex-1 space-y-1.5">
+          <div className={`h-3 w-2/5 rounded-full ${PULSO}`} />
+          <div className={`h-2.5 w-1/3 rounded-full ${PULSO}`} />
+        </div>
+      </div>
+      <div className={`w-full aspect-[4/5] ${PULSO}`} />
+      <div className="flex gap-3 px-3 pt-3">
+        <div className={`h-6 w-16 rounded-full ${PULSO}`} />
+        <div className={`h-6 w-20 rounded-full ${PULSO}`} />
+      </div>
+    </div>
+  )
+}
+export function EsqueletoFeed({ quantidade = 2 }) {
+  return (
+    <div role="status" aria-live="polite" data-testid="esqueleto-feed">
+      <span className="sr-only">Carregando…</span>
+      {Array.from({ length: quantidade }).map((_, i) => <EsqueletoPost key={i} />)}
+    </div>
+  )
+}
+
+// Linhas de lista (busca): avatar redondo + nome + clube.
+export function EsqueletoLinhas({ quantidade = 4 }) {
+  return (
+    <div role="status" aria-live="polite" data-testid="esqueleto-linhas">
+      <span className="sr-only">Carregando…</span>
+      {Array.from({ length: quantidade }).map((_, i) => (
+        <div key={i} aria-hidden="true" className="flex items-center gap-3 min-h-[60px] px-3">
+          <div className={`w-11 h-11 rounded-full ${PULSO}`} />
+          <div className="flex-1 space-y-1.5">
+            <div className={`h-3 w-1/2 rounded-full ${PULSO}`} />
+            <div className={`h-2.5 w-1/3 rounded-full ${PULSO}`} />
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -156,13 +223,17 @@ function FotoDoPost({ path, alt, aoDuploToque }) {
   )
 }
 
-// ---------------------------------------------------------------- texto com #hashtags em azul
+// ---------------------------------------------------------------- texto com #hashtags na cor de ação (marinho)
+export const CLASSE_HASHTAG = 'text-[var(--rede-acao)] font-semibold'
 export function TextoRico({ texto }) {
   const partes = String(texto || '').split(/(#[\p{L}\p{N}_]+)/u)
   return partes.map((p, i) => (p.startsWith('#') && p.length > 1
-    ? <span key={i} className="text-[var(--rede-acao)]">{p}</span>
+    ? <span key={i} className={CLASSE_HASHTAG}>{p}</span>
     : <span key={i}>{p}</span>))
 }
+
+// "1 curtida" / "12 curtidas" — contador sempre com rótulo (criança de 10 anos entende sem ícone).
+export const contagem = (n, singular, plural) => `${n} ${n === 1 ? singular : plural}`
 
 function Legenda({ nome, texto }) {
   const [aberta, setAberta] = useState(false)
@@ -275,36 +346,43 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
 
 const ROTULO_CONQUISTA = Object.fromEntries(CATEGORIAS_CONQUISTA.map(([k, r, i]) => [k, `${i} ${r}`]))
 
-// selos pequenos coloridos
+// Selos do tipo de post: conquista = DOURADO 🏅 (é o destaque da rede); desafio = MARINHO 🎯.
+export const SELO_DOURADO = 'text-[var(--rede-destaque-texto)] bg-[var(--rede-destaque-suave)]'
+export const SELO_MARINHO = 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]'
 function Selo({ post }) {
   if (post.tipo === 'desafio' && post.desafio) {
-    return <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--rede-acao)] bg-[var(--rede-acao-suave)] rounded-full px-2.5 py-0.5">🏅 Desafio: {post.desafio.titulo}</span>
+    return <span data-testid="selo-post" data-tipo="desafio" className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${SELO_MARINHO}`}>🎯 Desafio: {post.desafio.titulo}</span>
   }
   if (post.tipo === 'conquista') {
-    return <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#047857] bg-[#d1fae5] rounded-full px-2.5 py-0.5">Conquista · {ROTULO_CONQUISTA[post.conquista] || 'Conquista'}</span>
+    return <span data-testid="selo-post" data-tipo="conquista" className={`inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${SELO_DOURADO}`}>🏅 Conquista · {ROTULO_CONQUISTA[post.conquista] || 'Conquista'}</span>
   }
   return null
 }
 
 // Selo discreto de COORDENAÇÃO (490): quem fala pela coordenação (distrito, região…) e não por um clube.
-// O subtítulo já diz "Coordenação · Distrito X"; o selo ajuda a reconhecer de relance, sem gritar.
+// O subtítulo já diz "Coordenação · Distrito X"; o selo (dourado) ajuda a reconhecer de relance, sem gritar.
 export function SeloCoordenacao() {
   return (
     <span data-testid="selo-coordenacao" title="Coordenação" aria-label="Coordenação"
-      className="ml-1 inline-grid place-items-center align-[-2px] w-4 h-4 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] text-[9px] leading-none">
+      className="ml-1 inline-grid place-items-center align-[-2px] w-4 h-4 rounded-full bg-[var(--rede-destaque)] text-[var(--rede-sobre-destaque)] text-[9px] font-bold leading-none">
       <span aria-hidden="true">✓</span>
     </span>
   )
 }
 
-// Avatar + nome + "Clube · há 8 h" num link só (alvo grande, sem sublinhado) que abre o perfil.
+// Subtítulo do autor: "Unidade · Clube · há 8 h". A unidade só entra quando o servidor a mandar
+// (_comunidade_autor_json, migration 500, hoje só manda nome/clube/coordenacao/avatar/foto).
+export const subtituloDoAutor = (autor, criadoEm) =>
+  [autor?.unidade, autor?.clube, criadoEm ? tempoRelativo(criadoEm) : null].filter(Boolean).join(' · ')
+
+// Avatar + nome em negrito + "Unidade · Clube · há 8 h" num link só (alvo grande, sem sublinhado) que abre o perfil.
 function Cabeca({ autor, criadoEm, pequeno = false }) {
   const miolo = (
     <>
       <AvatarRede nome={autor?.nome} foto={autor?.foto} avatarPersonagem={avatarPersonagemDe(autor)} tamanho={pequeno ? 'w-7 h-7' : 'w-9 h-9'} />
       <span className="min-w-0 block">
-        <span className={`font-semibold ${TXT} truncate block text-[14px] leading-tight`}>{autor?.nome}{autor?.coordenacao && <SeloCoordenacao />}</span>
-        <span className={`text-xs ${TXT_SUAVE} truncate block`}>{autor?.clube}{criadoEm ? ` · ${tempoRelativo(criadoEm)}` : ''}</span>
+        <span className={`font-bold ${TXT} truncate block text-[14px] leading-tight`}>{autor?.nome}{autor?.coordenacao && <SeloCoordenacao />}</span>
+        <span data-testid="autor-subtitulo" className={`text-xs ${TXT_SUAVE} truncate block`}>{subtituloDoAutor(autor, criadoEm)}</span>
       </span>
     </>
   )
@@ -407,10 +485,12 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
       {noAr && (
         <div className="flex items-center px-1.5 pt-1">
           <BotaoIcone rotulo={`Curtir, ${post.curtidas} curtidas`} pressionado={!!post.eu_curti} disabled={ocupado} onClick={() => alternarCurtida()}>
-            <Icone nome="coracao" cheio={!!post.eu_curti} className={`w-[26px] h-[26px] ${post.eu_curti ? 'text-[var(--rede-curtido)]' : ''}`} /> {post.curtidas}
+            <Icone nome="coracao" cheio={!!post.eu_curti} className={`w-[26px] h-[26px] ${post.eu_curti ? 'text-[var(--rede-curtido)]' : ''}`} />
+            {post.curtidas > 0 && <span data-testid="contador-curtidas" className="text-[12px]">{contagem(post.curtidas, 'curtida', 'curtidas')}</span>}
           </BotaoIcone>
           <BotaoIcone rotulo={`Ver ${post.comentarios} comentários`} onClick={() => setComentariosAbertos(true)}>
-            <Icone nome="balao" className="w-[25px] h-[25px]" /> {post.comentarios}
+            <Icone nome="balao" className="w-[25px] h-[25px]" />
+            {post.comentarios > 0 && <span data-testid="contador-comentarios" className="text-[12px]">{contagem(post.comentarios, 'comentário', 'comentários')}</span>}
           </BotaoIcone>
           <span className="flex-1" />
           <BotaoIcone rotulo={post.eu_salvei ? 'Tirar dos salvos' : 'Salvar'} pressionado={!!post.eu_salvei} onClick={alternarSalvo}>
@@ -464,12 +544,14 @@ export function ListaDePosts({ itens, setItens, proximo, carregarMais, maisCarre
   )
 }
 
-export function VazioRede({ icone = '🌱', titulo, children }) {
+// Vazio com ação opcional: `acao={{ rotulo, para }}` vira um botão (link) marinho — "Publicar", por exemplo.
+export function VazioRede({ icone = '🌱', titulo, children, acao }) {
   return (
-    <div className="px-6 py-10 text-center">
+    <div className="px-6 py-10 text-center" data-testid="vazio-rede">
       <div className="text-4xl mb-2" aria-hidden="true">{icone}</div>
       <p className={`font-bold ${TXT}`}>{titulo}</p>
       {children && <p className={`text-sm ${TXT_SUAVE} mt-1`}>{children}</p>}
+      {acao?.para && <Link to={acao.para} className={`${PILL_PRIMARIA} mt-4`}>{acao.rotulo}</Link>}
     </div>
   )
 }

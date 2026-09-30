@@ -5,12 +5,14 @@ import {
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
-import { AnelStory, AvatarRede, Denuncia, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
+import { AnelStory, AvatarRede, Denuncia, EsqueletoStories, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 
 // =============================================================================
 //  STORIES da Rede DBV (migration 480): fileira de bolinhas (rolagem horizontal SÓ dentro dela),
 //  viewer em tela cheia e o envio de um story novo.
 //  Regra de hoje (decisão do dono, 29/09/2026): publica direto depois da confirmação; dura 24 h.
+//  Visual (Fase 6): anel dourado→âmbar = story novo; anel na cor de linha = visto; "+" marinho.
+//  Enquanto os grupos não chegam (`grupos` = null), uma fileira de 5 bolinhas-esqueleto.
 // =============================================================================
 
 export const DURACAO_STORY_MS = 5000
@@ -20,6 +22,7 @@ const primeiroNome = (nome) => String(nome || '').split(/\s+/)[0] || 'Membro'
 
 // ---------------------------------------------------------------- fileira
 export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
+  if (!grupos) return <EsqueletoStories />
   const meu = grupos.find((g) => g.meu)
   const outros = grupos.filter((g) => !g.meu)
   return (
@@ -251,7 +254,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
         {erro && <p role="alert" className="text-sm text-amber-900 bg-amber-100 rounded-2xl p-2">{erro}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={aoFechar} className={`${PILL} flex-1 bg-white/15 text-white`}>Voltar</button>
-          <button type="button" onClick={publicar} disabled={!foto || enviando} className={`${PILL} flex-1 bg-[#e0b84a] text-[#07122f] disabled:opacity-50`}>
+          <button type="button" onClick={publicar} disabled={!foto || enviando} className={`${PILL} flex-1 bg-[var(--rede-destaque)] text-[var(--rede-sobre-destaque)] disabled:opacity-50`}>
             {enviando ? 'Publicando…' : 'Publicar'}
           </button>
         </div>

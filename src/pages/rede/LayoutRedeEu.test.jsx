@@ -72,6 +72,29 @@ describe('LayoutRede — o "eu" gateado', () => {
     expect(within(barra()).queryByRole('img')).toBeNull()
   })
 
+  it('cabeçalho tem o "?" de ajuda (44 px, quadradinho da rede) apontando para /ajuda#rede-dbv', async () => {
+    f.carregarPerfil.mockResolvedValue({ id: 'eu', eu: true, nome: 'Eu Mesmo', foto: null })
+    montar()
+    const ajuda = await screen.findByTestId('botao-ajuda')
+    expect(ajuda).toHaveAttribute('href', '/ajuda#rede-dbv')
+    expect(ajuda.className).toMatch(/\bh-11\b/)
+    expect(ajuda.className).toMatch(/\bw-11\b/)
+    expect(ajuda.className).toContain('rounded-xl')
+    expect(ajuda.className).toContain('bg-[var(--rede-superficie)]')
+    expect(ajuda.className).not.toContain('rounded-full')
+  })
+
+  it('barra de baixo: o destino ativo é marinho com o risco DOURADO embaixo; os outros, sem risco', async () => {
+    f.carregarPerfil.mockResolvedValue({ id: 'eu', eu: true, nome: 'Eu Mesmo', foto: null })
+    montar()
+    await screen.findByTestId('eu-do-contexto')
+    const inicio = within(barra()).getByRole('link', { name: 'Início' })
+    expect(inicio.className).toContain('text-[var(--rede-acao)]')
+    expect(within(inicio).getByTestId('indicador-ativo').className).toContain('bg-[var(--rede-destaque)]')
+    expect(within(barra()).getAllByTestId('indicador-ativo')).toHaveLength(1)
+    expect(within(within(barra()).getByRole('link', { name: 'Buscar' })).queryByTestId('indicador-ativo')).toBeNull()
+  })
+
   it('sem acesso à rede (pode_ver = false): não pede o perfil', async () => {
     f.meuStatus.mockResolvedValue({ pode_ver: false, motivo: 'recurso_desligado' })
     montar()

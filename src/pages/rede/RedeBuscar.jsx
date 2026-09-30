@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buscarNaRede } from '../../services/rede.js'
-import { Carregando } from '../../ui/index.jsx'
-import { AvatarRede, Icone, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
+import { AvatarRede, EsqueletoLinhas, Icone, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 
 // Buscar na Rede DBV (migration 481): clubes e pessoas (nome + sobrenome, clube). O servidor só devolve
 // quem participa da rede em clube com o recurso ligado; a foto de rosto só vem com a autorização de imagem.
+// Enquanto busca, linhas-esqueleto; sem resultado, um vazio com dica (nome do clube ou sobrenome).
 export const ESPERA_BUSCA_MS = 300
 
 function Pessoa({ p }) {
@@ -64,13 +64,13 @@ export default function RedeBuscar() {
         </div>
       )}
 
-      {carregando && <div className="p-4"><Carregando linhas={2} /></div>}
+      {carregando && <EsqueletoLinhas />}
       {erro && <p role="alert" className={`px-4 py-6 text-center text-sm ${TXT_SUAVE}`}>{erro}</p>}
       {!carregando && !erro && !res && (
         <p className={`px-6 py-10 text-center text-sm ${TXT_SUAVE}`}>Digite pelo menos 2 letras do nome de um clube ou de uma pessoa.</p>
       )}
       {!carregando && res && !clube && clubes.length === 0 && pessoas.length === 0 && (
-        <p className={`px-6 py-10 text-center text-sm ${TXT_SUAVE}`}>Ninguém encontrado com “{t}”.</p>
+        <VazioRede icone="🔍" titulo={`Ninguém encontrado com “${t}”`}>Tente o nome do clube ou o sobrenome da pessoa. Só aparece quem participa da Rede DBV.</VazioRede>
       )}
 
       {!carregando && clubes.length > 0 && (

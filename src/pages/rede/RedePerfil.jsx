@@ -4,12 +4,17 @@ import { carregarPerfil, carregarPostsDoPerfil, urlDaFoto } from '../../services
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando, Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { AvatarRede, CartaoPost, Icone, ListaDePosts, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
+import {
+  AvatarRede, CartaoPost, EsqueletoFeed, Icone, ListaDePosts, SELO_DOURADO, SELO_MARINHO, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede,
+  avatarPersonagemDe, textoDoErro,
+} from './componentes.jsx'
 
-// Perfil da Rede DBV no estilo Instagram (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa):
-// avatar grande à esquerda, contadores à direita, nome, clube; abas por ícone — Fotos (grade 3 colunas),
-// Textos (lista), Conquistas, Desafios e Salvos (só no meu). A foto de rosto só vem do servidor com a
-// autorização de uso de imagem; sem ela, iniciais. Nada de classes aqui (decisão do dono).
+// Perfil da Rede DBV (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa): avatar grande à esquerda,
+// contadores à direita, nome, "Unidade · Clube" (a unidade só quando o servidor mandar), selos DBV (papel em
+// marinho, coordenação em dourado); abas por ícone com sublinhado DOURADO — Fotos (grade 3 colunas), Textos
+// (lista), Conquistas, Desafios e Salvos (só no meu). A foto de rosto só vem do servidor com a autorização
+// de uso de imagem; sem ela, iniciais. Nada de classes aqui (decisão do dono).
+const PAPEL = { desbravador: 'Desbravador(a)', conselheiro: 'Conselheiro(a)', instrutor: 'Instrutor(a)', tesoureiro: 'Tesoureiro(a)', diretoria: 'Diretoria', pais: 'Responsável' }
 const ABAS = [
   ['fotos', 'Publicações', 'grade'],
   ['textos', 'Textos', 'texto'],
@@ -111,8 +116,14 @@ function Perfil({ id }) {
         <div className="flex items-start justify-between gap-2 mt-3">
           <div className="min-w-0">
             <h1 className={`text-[15px] font-bold ${TXT}`}>{perfil.nome}{perfil.coordenacao && <SeloCoordenacao />}</h1>
-            <p className={`text-[14px] ${TXT}`}>{perfil.clube}</p>
+            <p className={`text-[14px] ${TXT}`} data-testid="perfil-clube">{[perfil.unidade, perfil.clube].filter(Boolean).join(' · ')}</p>
             {desde && <p className={`text-[13px] ${TXT_SUAVE}`}>{desde}</p>}
+            <div className="flex flex-wrap gap-1.5 mt-1.5" data-testid="selos-perfil">
+              {perfil.coordenacao
+                ? <span className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${SELO_DOURADO}`}>Coordenação</span>
+                : PAPEL[perfil.papel] && <span className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${SELO_MARINHO}`}>{PAPEL[perfil.papel]}</span>}
+              {perfil.conquistas > 0 && <span className={`text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${SELO_DOURADO}`}>🏅 {perfil.conquistas} {perfil.conquistas === 1 ? 'conquista' : 'conquistas'}</span>}
+            </div>
           </div>
           {perfil.eu && (
             <Link to="/rede/mais" aria-label="Mais opções da rede" className="shrink-0 w-11 h-11 rounded-xl bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-ink)]">
@@ -129,13 +140,13 @@ function Perfil({ id }) {
       <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[var(--rede-linha)]">
         {abas.map(([chave, rotulo, ic]) => (
           <button key={chave} type="button" role="tab" aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
-            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[var(--rede-ink)] text-[var(--rede-ink)]' : `border-transparent ${TXT_SUAVE}`}`}>
+            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[var(--rede-destaque)] text-[var(--rede-acao)]' : `border-transparent ${TXT_SUAVE}`}`}>
             <Icone nome={ic} className="w-[22px] h-[22px]" />
           </button>
         ))}
       </div>
 
-      {lista === null ? <div className="p-4"><Carregando linhas={2} /></div>
+      {lista === null ? <EsqueletoFeed quantidade={1} />
         : aba === 'fotos' ? (
           lista.length === 0 ? <VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede> : (
             <>

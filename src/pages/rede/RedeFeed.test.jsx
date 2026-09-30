@@ -112,23 +112,83 @@ describe('Rede DBV — feed', () => {
     expect(await screen.findByText(/Foto expirada/)).toBeInTheDocument()
   })
 
-  it('desafio e conquista ganham etiqueta', async () => {
+  it('desafio e conquista ganham etiqueta: desafio MARINHO 🎯, conquista DOURADA 🏅 (identidade Fase 6)', async () => {
     f.carregarFeed.mockResolvedValue({ itens: [
       post({ id: 'a', tipo: 'desafio', desafio: { id: 'd1', titulo: 'Nó de escota' } }),
       post({ id: 'b', tipo: 'conquista', conquista: 'classe' }),
     ], proximo: null })
     renderRede(<RedeFeed />)
-    expect(await screen.findByText(/Desafio: Nó de escota/)).toBeInTheDocument()
-    expect(screen.getByText(/Conquista · 🎖️ Classe/)).toBeInTheDocument()
+    const desafio = await screen.findByText(/Desafio: Nó de escota/)
+    const conquista = screen.getByText(/Conquista · 🎖️ Classe/)
+    expect(desafio).toHaveAttribute('data-tipo', 'desafio')
+    expect(desafio).toHaveTextContent('🎯')
+    expect(desafio.className).toContain('var(--rede-acao)')
+    expect(conquista).toHaveAttribute('data-tipo', 'conquista')
+    expect(conquista).toHaveTextContent('🏅')
+    expect(conquista.className).toContain('var(--rede-destaque')
+    // nenhum roxo/verde fixo: só variáveis da rede
+    expect(desafio.className + conquista.className).not.toMatch(/#[0-9a-f]{6}/i)
   })
 
-  it('post sem foto: texto maior em bloco, sem espaço de imagem vazio; #hashtag em azul', async () => {
+  it('post sem foto: texto maior em bloco, sem espaço de imagem vazio; #hashtag na cor de ação (marinho)', async () => {
     f.carregarFeed.mockResolvedValue({ itens: [post({ legenda: 'Reunião top #acampamento' })], proximo: null })
     renderRede(<RedeFeed />)
     const bloco = await screen.findByTestId('post-texto')
     expect(bloco).toHaveTextContent('Reunião top #acampamento')
-    expect(screen.getByText('#acampamento').className).toContain('text-[#3b5bff]')
+    expect(screen.getByText('#acampamento').className).toContain('text-[var(--rede-acao)]')
     expect(screen.queryByTestId('foto-post')).toBeNull()
+  })
+
+  it('contadores com rótulo: "1 curtida" / "12 curtidas" / "3 comentários"; zero não aparece', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [
+      post({ id: 'a', curtidas: 1, comentarios: 3 }),
+      post({ id: 'b', curtidas: 12, comentarios: 0 }),
+    ], proximo: null })
+    renderRede(<RedeFeed />)
+    const [a, b] = await screen.findAllByTestId('post')
+    expect(within(a).getByTestId('contador-curtidas')).toHaveTextContent('1 curtida')
+    expect(within(a).getByTestId('contador-comentarios')).toHaveTextContent('3 comentários')
+    expect(within(b).getByTestId('contador-curtidas')).toHaveTextContent('12 curtidas')
+    expect(within(b).queryByTestId('contador-comentarios')).toBeNull()
+    // o botão continua com o nome acessível de sempre
+    expect(within(b).getByRole('button', { name: 'Curtir, 12 curtidas' })).toBeInTheDocument()
+  })
+
+  it('cabeça do post: nome em negrito e "Clube · há x"; a unidade só entra quando o servidor mandar', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [
+      post({ id: 'a' }),
+      post({ id: 'b', autor: { id: 'u-bia', nome: 'Bia Lima', clube: 'Clube Leões', unidade: 'Unidade Falcão', foto: null } }),
+    ], proximo: null })
+    renderRede(<RedeFeed />)
+    const [a, b] = await screen.findAllByTestId('post')
+    expect(within(a).getByTestId('autor-subtitulo')).toHaveTextContent(/^Clube Águias · /)
+    expect(within(b).getByTestId('autor-subtitulo')).toHaveTextContent(/^Unidade Falcão · Clube Leões · /)
+    expect(within(a).getByText('Ana Souza', { selector: 'span' }).className).toContain('font-bold')
+  })
+
+  it('enquanto carrega: esqueleto no formato do post (e da fileira de stories), não "Carregando…" solto', async () => {
+    let soltar
+    f.carregarFeed.mockImplementation(() => new Promise((r) => { soltar = r }))
+    f.carregarStories.mockImplementation(() => new Promise(() => {}))
+    renderRede(<RedeFeed />)
+    expect(screen.getByTestId('esqueleto-feed')).toBeInTheDocument()
+    expect(screen.getAllByTestId('esqueleto-post').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('esqueleto-stories')).toBeInTheDocument()
+    expect(screen.queryByTestId('esqueleto-tela')).toBeNull()
+    soltar({ itens: [post()], proximo: null })
+    await screen.findByTestId('post')
+    expect(screen.queryByTestId('esqueleto-feed')).toBeNull()
+  })
+
+  it('feed vazio: quem publica ganha o botão "Publicar"; responsável não', async () => {
+    f.carregarFeed.mockResolvedValue({ itens: [], proximo: null })
+    const { unmount } = renderRede(<RedeFeed />)
+    expect(await screen.findByText('Ainda não há publicações')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Publicar' })).toHaveAttribute('href', '/rede/publicar')
+    unmount()
+    renderRede(<RedeFeed />, { status: { ...STATUS, papel: 'pais', pode_publicar: false } })
+    expect(await screen.findByText('Ainda não há publicações')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Publicar' })).toBeNull()
   })
 
   it('legenda longa com foto abre com "mais"', async () => {
@@ -207,15 +267,26 @@ describe('Rede DBV — fileira de stories', () => {
     { meu: false, todos_vistos: true, autor: { id: 'u-bia', nome: 'Bia Lima', clube: 'Clube Leões' }, stories: [{ id: 's2', foto: 'b/bia/2.webp', criado_em: new Date().toISOString(), visto: true }] },
   ]
 
-  it('meus primeiro ("Seu story"), anel colorido = não visto e cinza = visto', async () => {
+  it('meus primeiro ("Seu story"), anel dourado→âmbar = não visto e cor de linha = visto', async () => {
     f.carregarStories.mockResolvedValue(grupos)
     renderRede(<RedeFeed />)
     const fileira = await screen.findByTestId('fileira-stories')
     const itens = within(fileira).getAllByRole('listitem')
     expect(itens[0]).toHaveTextContent('Seu story')
-    expect(within(fileira).getByRole('button', { name: 'Story de Ana Souza' })).toHaveAttribute('data-visto', 'nao')
-    expect(within(fileira).getByRole('button', { name: 'Story de Bia Lima (visto)' })).toHaveAttribute('data-visto', 'sim')
+    const ana = within(fileira).getByRole('button', { name: 'Story de Ana Souza' })
+    const bia = within(fileira).getByRole('button', { name: 'Story de Bia Lima (visto)' })
+    expect(ana).toHaveAttribute('data-visto', 'nao')
+    expect(bia).toHaveAttribute('data-visto', 'sim')
     expect(within(fileira).getByText('Ana')).toBeInTheDocument()
+    const anelAna = within(ana).getByTestId('anel-story')
+    const anelBia = within(bia).getByTestId('anel-story')
+    expect(anelAna.className).toContain('from-[var(--rede-destaque)]')
+    expect(anelAna.className).toContain('to-[var(--rede-ambar)]')
+    expect(anelBia.className).toContain('bg-[var(--rede-linha)]')
+    // nada de azul→roxo do Instagram
+    expect(anelAna.className).not.toMatch(/3b5bff|8b5cf6|purple|violet/)
+    // o "+" de criar story é marinho (cor de ação), não dourado
+    expect(within(fileira).getByRole('button', { name: 'Adicionar story' }).className).toContain('bg-[var(--rede-acao)]')
   })
 
   it('tocar numa bolinha abre o viewer e marca visto', async () => {
