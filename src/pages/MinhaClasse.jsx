@@ -7,10 +7,12 @@ import {
   carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
   carregarHistoricoRequisito, cancelarClasse, carregarHistoricoDoCartao,
-  carregarFormulariosDaClasse, salvarRelatorioRequisito, subirAnexoDeRelatorio,
+  carregarFormulariosDaClasse, carregarFormularioRequisito, salvarRelatorioRequisito, subirAnexoDeRelatorio,
 } from '../lib/dados.js'
 import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import AvisoCopiaDeSeguranca from '../components/relatorio/AvisoCopiaDeSeguranca.jsx'
+import { chaveLocalDe } from '../lib/relatorio/rascunhoLocal.js'
 import LinhaDoTempoInvestidura from '../components/LinhaDoTempoInvestidura.jsx'
 import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvestidura.js'
 import Comprovacao from '../components/Comprovacao.jsx'
@@ -512,6 +514,12 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
     await onMudou()
   }
   const usaFormulario = podeEditar && !!form
+  const chaveLocal = chaveLocalDe(userId, 'classe', r.id)
+  // releitura do servidor (só quando um rascunho local pendente volta a rede): conferir antes de empurrar
+  const carregarServidor = async () => {
+    const f = await carregarFormularioRequisito(r.id)
+    return { conteudo: f?.rascunho || {}, anexos: f?.anexos || [], editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(f?.status) }
+  }
 
   return (
     <article data-testid="requisito" aria-labelledby={idTitulo} className="p-4">
@@ -551,6 +559,7 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
                 valorInicial={{ conteudo: form.rascunho || {}, anexos: form.anexos || [] }}
                 comentarioDevolucao={r.status === 'correcao_solicitada' ? comentarioDaCorrecao : ''}
                 onSalvarRascunho={salvarFormulario} onEnviar={enviarFormulario}
+                chaveLocal={chaveLocal} carregarServidor={carregarServidor}
                 subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
                 enviarDesativado={!podeEnviar} descricaoEnviarId={idBloqueios} />
             </>
@@ -602,6 +611,7 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
       ) : (
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
       )}
+      {!podeEditar && <AvisoCopiaDeSeguranca chaveLocal={chaveLocal} />}
 
       {/* Secundário no menu "⋯" (MenuAcoes): ouvir o livro, catálogo, histórico, origem — nada disputa com a
           tarefa. Cada ação abre o seu conteúdo AQUI no card (o menu fecha e o foco volta ao "⋯"). */}

@@ -10,6 +10,8 @@ import {
 import Comprovacao from '../components/Comprovacao.jsx'
 import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import AvisoCopiaDeSeguranca from '../components/relatorio/AvisoCopiaDeSeguranca.jsx'
+import { chaveLocalDe } from '../lib/relatorio/rascunhoLocal.js'
 import { schemaDoModelo, fmtDataBR } from '../lib/relatorio/conteudo.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
@@ -149,13 +151,13 @@ function Progresso({ dados, userId, onMudou }) {
       </div>
 
       <div className="bg-surface rounded-2xl shadow-soft overflow-hidden divide-y divide-line">
-        {(requisitos || []).map((r) => <Requisito key={r.id} r={r} userId={userId} onMudou={onMudou} />)}
+        {(requisitos || []).map((r) => <Requisito key={r.id} r={r} userId={userId} memberSpecialtyId={ms.id} onMudou={onMudou} />)}
       </div>
     </div>
   )
 }
 
-function Requisito({ r, userId, onMudou }) {
+function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
   const info = STATUS_INFO[r.status] || STATUS_INFO.nao_iniciado
   const [texto, setTexto] = useState(r.evidencia_texto || '')
   const [foto, setFoto] = useState(null)
@@ -198,6 +200,13 @@ function Requisito({ r, userId, onMudou }) {
   const comentarioDaCorrecao = r.status === 'correcao_solicitada'
     ? ([...(r.avaliacoes || [])].reverse().find((a) => a.decisao === 'correcao_solicitada' && a.comentario)?.comentario || '')
     : ''
+  const chaveLocal = chaveLocalDe(userId, 'especialidade', r.id)
+  // releitura da especialidade (só quando um rascunho local pendente volta a rede): conferir antes de empurrar
+  const carregarServidor = async () => {
+    const d = await carregarMinhaEspecialidade(memberSpecialtyId)
+    const q = (d?.requisitos || []).find((x) => x.id === r.id)
+    return { conteudo: q?.rascunho || {}, anexos: q?.anexos || [], editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(q?.status) }
+  }
   const salvarForm = (conteudo, anexos) => salvarRelatorioEspecialidade({ requirementId: r.id, conteudo, anexos })
   async function enviarForm(conteudo, anexos) {
     await salvarForm(conteudo, anexos)
@@ -236,7 +245,7 @@ function Requisito({ r, userId, onMudou }) {
             <FormularioRelatorio key={r.id} schema={schema}
               valorInicial={{ conteudo: r.rascunho || {}, anexos: r.anexos || [] }}
               comentarioDevolucao={comentarioDaCorrecao}
-              onSalvarRascunho={salvarForm} onEnviar={enviarForm}
+              onSalvarRascunho={salvarForm} onEnviar={enviarForm} chaveLocal={chaveLocal} carregarServidor={carregarServidor}
               subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
               enviarDesativado={bloqueios.length > 0} descricaoEnviarId={idBloqueios} />
           )}
@@ -275,6 +284,7 @@ function Requisito({ r, userId, onMudou }) {
       ) : (
         <p className="text-xs text-faint mt-1">Aguardando a liderança avaliar.</p>
       )}
+      {!podeEditar && <AvisoCopiaDeSeguranca chaveLocal={chaveLocal} />}
 
       {schema && r.tentativas > 0 && r.member_specialty_requirement_id && (
         <div className="mt-2">

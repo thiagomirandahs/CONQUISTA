@@ -133,7 +133,7 @@ describe('FormularioRelatorio — envio', () => {
 })
 
 describe('FormularioRelatorio — rascunho automático', () => {
-  it('salva só depois de ~1,5 s parado, uma vez, e mostra "Rascunho salvo"', async () => {
+  it('salva só depois de ~1,5 s parado, uma vez, e mostra "Salvo"', async () => {
     vi.useFakeTimers()
     const salvar = vi.fn().mockResolvedValue()
     const onEnviar = vi.fn()
@@ -148,19 +148,20 @@ describe('FormularioRelatorio — rascunho automático', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(600) })
     expect(salvar).toHaveBeenCalledTimes(1)
     expect(salvar).toHaveBeenCalledWith({ resumo: 'ab' }, [])
-    expect(screen.getByTestId('estado-rascunho')).toHaveTextContent('Rascunho salvo')
+    expect(screen.getByTestId('estado-rascunho')).toHaveTextContent(/^Salvo$/)
     await act(async () => { await vi.advanceTimersByTimeAsync(5000) })
     expect(salvar).toHaveBeenCalledTimes(1)
     expect(onEnviar).not.toHaveBeenCalled() // rascunho NUNCA envia
   })
 
-  it('falha ao salvar mostra aviso discreto e não envia', async () => {
+  it('recusa do servidor mostra "Erro ao sincronizar" com "Tentar de novo" e não envia', async () => {
     vi.useFakeTimers()
     const salvar = vi.fn().mockRejectedValue(new Error('rede'))
     render(<FormularioRelatorio schema={S(TODOS.campos[0])} onSalvarRascunho={salvar} onEnviar={vi.fn()} />)
     fireEvent.change(screen.getByLabelText(/Resumo/), { target: { value: 'a' } })
     await act(async () => { await vi.advanceTimersByTimeAsync(1600) })
-    expect(screen.getByTestId('estado-rascunho')).toHaveTextContent(/Não consegui salvar o rascunho/)
+    expect(screen.getByTestId('estado-rascunho')).toHaveTextContent('Erro ao sincronizar')
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
   })
 
   it('somente leitura não salva nada', async () => {

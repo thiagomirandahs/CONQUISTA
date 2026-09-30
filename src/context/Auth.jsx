@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { esquecerInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
+import { limparRascunhosLocais } from '../lib/relatorio/rascunhoLocal.js'
 import { supabase } from '../lib/supabase.js'
 import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js'
 import { sincronizarPush, desassociarPush } from '../lib/push.js'
@@ -244,6 +245,7 @@ export function AuthProvider({ children }) {
     // o aparelho deixa de receber os avisos de quem sai (antes do signOut: precisa da sessão)
     await Promise.allSettled([desassociarPush(), desassociarPushNativo()])
     await supabase.auth.signOut()
+    limparRascunhosLocais() // rascunhos de relatório (de criança) não ficam no aparelho depois de sair
     setProfile(null)
     // Sair recomeça a navegação do zero: o login substitui a tela atual e o VOLTAR não reabre
     // nada da conta que saiu (nem o clube dela).
@@ -256,6 +258,7 @@ export function AuthProvider({ children }) {
   async function sairSemRede() {
     try { await comPrazo(supabase.auth.signOut({ scope: 'local' }), 4000, 'sair') } catch { /* apaga na mão abaixo */ }
     try { localStorage.removeItem(CHAVE_DA_SESSAO) } catch { /* ok */ }
+    limparRascunhosLocais()
     setProfile(null)
     esquecerInicioDaNavegacao()
     try { window.location.replace('/login') } catch { /* fora do navegador */ }

@@ -13,6 +13,8 @@ import { limparConteudo, completarEntradas } from '../../lib/relatorio/conteudo.
 import Comprovacao from '../Comprovacao.jsx'
 import { Aviso, Botao } from '../../ui/index.jsx'
 import { textoDoErro } from './mensagens.js'
+import { useRascunhoRelatorio, decidirInicio } from './useRascunhoRelatorio.js'
+import { ehErroDeRede } from '../../lib/prazo.js'
 
 const juntar = (...c) => c.filter(Boolean).join(' ')
 const ENTRADA = 'w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 py-2.5 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand disabled:opacity-70'
@@ -31,39 +33,22 @@ export default function FormularioRelatorio({
   schema, valorInicial, desativado = false, comentarioDevolucao = '',
   onSalvarRascunho, onEnviar, subirAnexo,
   rotuloEnviar = 'Enviar para avaliação', enviarDesativado = false, descricaoEnviarId,
-  autosaveMs = 1500, className,
+  autosaveMs = 1500, chaveLocal = null, carregarServidor, className,
 }) {
   const base = useId()
   const campos = useMemo(() => schema?.campos || [], [schema])
-  const [conteudo, setConteudo] = useState(() => valorInicial?.conteudo || {})
-  const [anexos, setAnexos] = useState(() => valorInicial?.anexos || [])
+  // abertura: servidor, local (servidor não mudou) ou conflito — decidido uma vez, sem escrever no storage
+  const [inicio] = useState(() => decidirInicio({ chaveLocal, valorInicial }))
+  const [conteudo, setConteudo] = useState(inicio.conteudo)
+  const [anexos, setAnexos] = useState(inicio.anexos)
   const [erros, setErros] = useState([])
-  const [salvo, setSalvo] = useState('ocioso') // ocioso | salvando | salvo | erro
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
   const resumoRef = useRef(null)
-  const [assinaturaInicial] = useState(() => JSON.stringify([valorInicial?.conteudo || {}, valorInicial?.anexos || []]))
-  const ultimoSalvo = useRef(assinaturaInicial)
-  const assinaturaAtual = useRef(assinaturaInicial)
-  const parou = useRef(false) // depois de enviar, o autosave não roda mais
-
-  // ---- autosave: só quando algo MUDOU, com debounce; nunca dispara envio ----
-  useEffect(() => {
-    const assinatura = JSON.stringify([conteudo, anexos])
-    assinaturaAtual.current = assinatura
-    if (desativado || !onSalvarRascunho || parou.current || assinatura === ultimoSalvo.current) return undefined
-    const t = setTimeout(async () => {
-      setSalvo('salvando')
-      try {
-        await onSalvarRascunho(limparConteudo(campos, conteudo), anexos)
-        ultimoSalvo.current = assinatura
-        setSalvo(assinaturaAtual.current === assinatura ? 'salvo' : 'ocioso')
-      } catch {
-        setSalvo('erro')
-      }
-    }, autosaveMs)
-    return () => clearTimeout(t)
-  }, [conteudo, anexos, desativado, onSalvarRascunho, autosaveMs, campos])
+  const rasc = useRascunhoRelatorio({
+    campos, conteudo, anexos, setConteudo, setAnexos, desativado, onSalvarRascunho, autosaveMs, chaveLocal, carregarServidor, inicio,
+  })
+  const { estado } = rasc
 
   useEffect(() => { if (erros.length) resumoRef.current?.focus() }, [erros])
 
@@ -71,9 +56,8 @@ export default function FormularioRelatorio({
     setConteudo((c) => definir(c, chave, valor))
     setErros([])
     setErroEnvio('')
-    setSalvo((s) => (s === 'salvo' ? 'ocioso' : s))
   }
-  function mudarAnexos(novos) { setAnexos(novos); setErros([]); setSalvo((s) => (s === 'salvo' ? 'ocioso' : s)) }
+  function mudarAnexos(novos) { setAnexos(novos); setErros([]) }
 
   async function enviar() {
     const pronto = limparConteudo(campos, completarEntradas(campos, conteudo))
@@ -81,11 +65,12 @@ export default function FormularioRelatorio({
     setErros(lista)
     if (lista.length) return
     setEnviando(true); setErroEnvio('')
-    parou.current = true
+    rasc.parar()
     try {
       await onEnviar?.(pronto, anexos)
+      rasc.aoEnviado() // enviou: o rascunho local (e o backup) já não servem
     } catch (e) {
-      parou.current = false
+      rasc.retomar()
       setErroEnvio(textoDoErro(e, 'Não consegui enviar.'))
     } finally {
       setEnviando(false)
@@ -104,7 +89,24 @@ export default function FormularioRelatorio({
         </Aviso>
       )}
 
-      <Campos campos={campos} dados={conteudo} aoMudar={mudar} erros={erros} base={base} desativado={desativado}
+      {rasc.conflito && (
+        <Aviso tom="erro" titulo="Encontramos um rascunho neste aparelho diferente do que está salvo no servidor">
+          <div data-testid="conflito-rascunho">
+            <p>Nada foi sobrescrito. Escolha qual versão usar; a outra fica guardada neste aparelho e dá para recuperar.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <Botao variacao="secundario" aoTocar={() => rasc.resolverConflito('servidor')} className="flex-1">Usar o do servidor</Botao>
+              <Botao variacao="secundario" aoTocar={() => rasc.resolverConflito('local')} className="flex-1">Usar o deste aparelho</Botao>
+            </div>
+          </div>
+        </Aviso>
+      )}
+      {rasc.encerrado && (
+        <Aviso tom="info">
+          <p data-testid="aviso-encerrado">Este requisito já foi enviado/aprovado; guardamos uma cópia do seu texto neste aparelho.</p>
+        </Aviso>
+      )}
+
+      <Campos campos={campos} dados={conteudo} aoMudar={mudar} erros={erros} base={base} desativado={desativado || rasc.encerrado}
         anexosProps={{ anexos, aoMudar: mudarAnexos, subirAnexo, erros }} />
 
       {erros.length > 0 && (
@@ -119,11 +121,23 @@ export default function FormularioRelatorio({
       {!desativado && (
         <div className="space-y-1.5">
           <p role="status" aria-live="polite" data-testid="estado-rascunho" className="min-h-[1.25rem] text-xs text-muted">
-            {salvo === 'salvando' && 'Salvando o rascunho…'}
-            {salvo === 'salvo' && '✓ Rascunho salvo'}
-            {salvo === 'erro' && 'Não consegui salvar o rascunho agora. Vou tentar de novo quando você mexer.'}
+            {estado === 'salvando' && 'Salvando...'}
+            {estado === 'salvo' && 'Salvo'}
+            {estado === 'local' && 'Salvo neste aparelho'}
+            {estado === 'erro' && 'Erro ao sincronizar'}
           </p>
-          <Botao tipo="submit" carregando={enviando} desabilitado={enviarDesativado} aria-describedby={enviarDesativado ? descricaoEnviarId : undefined}
+          {estado === 'erro' && (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-rose-800" data-testid="erro-sincronizar">
+              {rasc.motivo && <span>{rasc.motivo}</span>}
+              <button type="button" onClick={rasc.tentarDeNovo}
+                className="inline-flex min-h-[44px] items-center rounded-xl px-3 font-bold underline">Tentar de novo</button>
+            </div>
+          )}
+          {rasc.temBackup && !rasc.conflito && (
+            <button type="button" onClick={rasc.recuperarBackup} data-testid="recuperar-versao"
+              className="inline-flex min-h-[44px] items-center text-sm font-semibold text-muted underline">Recuperar a outra versão</button>
+          )}
+          <Botao tipo="submit" carregando={enviando} desabilitado={enviarDesativado || !!rasc.conflito} aria-describedby={enviarDesativado ? descricaoEnviarId : undefined}
             data-testid="botao-enviar-relatorio" className="w-full">
             {enviarDesativado ? `🔒 ${rotuloEnviar}` : rotuloEnviar}
           </Botao>
@@ -413,7 +427,9 @@ function CampoAnexos({ c, id, anexos, aoMudar, subirAnexo, desativado, erros }) 
       const path = await subirAnexo(arquivo, c.chave)
       aoMudar([...anexos, { campo: c.chave, path }])
     } catch (err) {
-      setErroSubida(textoDoErro(err, 'Não consegui enviar a foto.'))
+      setErroSubida(ehErroDeRede(err) || (typeof navigator !== 'undefined' && navigator.onLine === false)
+        ? 'Sem internet: não deu para anexar agora; o texto foi guardado neste aparelho.'
+        : textoDoErro(err, 'Não consegui enviar a foto.'))
     } finally {
       setSubindo(false)
     }
