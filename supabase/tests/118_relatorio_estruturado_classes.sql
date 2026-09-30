@@ -208,6 +208,23 @@ select t.permitido('...e mesmo salvando texto pelo caminho antigo por cima', for
 select t.throws('...o envio continua exigindo o formulário completo', format($q$select public.requisito_enviar(%L)$q$, t.req('amigo.V.2')), 'Formulário incompleto');
 reset role;
 
+-- classe_formularios: todos os formulários EDITÁVEIS da matrícula numa chamada só (4G fraco)
+select t.como('membro_a'); select t.pedir_clube('clube_a');
+select id as mc_a from public.member_classes where usuario_id = t.id('membro_a') and club_id = t.id('clube_a') limit 1 \gset
+select t.ok('classe_formularios traz o requisito em andamento com o rascunho e o modelo',
+  (public.classe_formularios(:'mc_a') -> t.req('amigo.V.2')::text ->> 'status') = 'em_andamento'
+  and (public.classe_formularios(:'mc_a') -> t.req('amigo.V.2')::text -> 'rascunho' ->> 'compromisso') = 'vou me cuidar'
+  and (public.classe_formularios(:'mc_a') -> t.req('amigo.V.2')::text -> 'modelo' ->> 'familia') = 'A6');
+select t.ok('...traz também os ainda não iniciados que têm formulário', (public.classe_formularios(:'mc_a') -> t.req('amigo.VIII.3')::text ->> 'status') = 'nao_iniciado');
+select t.ok('...NÃO traz o já aprovado (IV.1) nem o que aguarda avaliação (II.2)',
+  (public.classe_formularios(:'mc_a') -> t.req('amigo.IV.1')::text) is null and (public.classe_formularios(:'mc_a') -> t.req('amigo.II.2')::text) is null);
+select t.ok('...nem requisito SEM formulário (I.1)', (public.classe_formularios(:'mc_a') -> t.req('amigo.I.1')::text) is null);
+select t.como('membro_b'); select t.pedir_clube('clube_b');
+select t.throws('matrícula de OUTRA pessoa/clube: recusada', format($q$select public.classe_formularios(%L)$q$, :'mc_a'), 'não encontrada');
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('nem a liderança abre os formulários (rascunho) de outra pessoa', format($q$select public.classe_formularios(%L)$q$, :'mc_a'), 'não encontrada');
+reset role;
+
 -- ==================== 8) o validador do servidor (casos do modelo real) ====================
 create function t.val(p_chave text, p_conteudo text, p_envio boolean default true, p_anexos text default '[]') returns text language sql stable as $$
   select coalesce(public._erros_em_texto(public._relatorio_validar((select schema from public.requisito_modelos where chave = p_chave and versao = 1 and alvo = 'classe'), p_conteudo::jsonb, p_anexos::jsonb, p_envio)), 'ok') $$;

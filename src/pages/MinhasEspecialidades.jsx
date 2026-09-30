@@ -5,8 +5,12 @@ import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaEspecialidade, carregarEspecialidadesDisponiveis, iniciarEspecialidade,
   salvarRequisitoEspecialidade, enviarRequisitoEspecialidade,
+  salvarRelatorioEspecialidade, carregarHistoricoEspecialidade, subirAnexoDeRelatorio,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
+import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import { schemaDoModelo, fmtDataBR } from '../lib/relatorio/conteudo.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -127,6 +131,16 @@ function Progresso({ dados, userId, onMudou }) {
             animate={{ width: `${ms.percentual}%` }} transition={{ duration: 0.6 }} />
         </div>
         <p className="text-sm text-muted mt-1.5">{ms.percentual}% concluído · iniciada em {fmtData(ms.iniciada_em)}</p>
+        {(dados.grupos || []).length > 0 && (
+          <ul className="mt-3 space-y-1" data-testid="grupos">
+            {dados.grupos.map((g) => (
+              <li key={g.chave} data-testid="grupo" className="rounded-lg bg-surface2 px-3 py-1.5 text-sm text-ink">
+                <span className="font-semibold">{g.rotulo}</span>
+                {' — '}{g.aprovados >= g.minimo ? '✅ ' : ''}{g.aprovados} de {g.minimo} feitas
+              </li>
+            ))}
+          </ul>
+        )}
         {ms.status === 'concluida' && (
           <div className="mt-3 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 text-sm text-green-800 font-semibold">
             🏅 Especialidade concluída!
@@ -148,6 +162,10 @@ function Requisito({ r, userId, onMudou }) {
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState('')
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  const [tentativas, setTentativas] = useState(null) // histórico completo (só requisito com formulário)
+  const schema = schemaDoModelo(r.modelo)
+  const bloqueios = r.bloqueios || []
+  const idBloqueios = `bloq-esp-${r.id}`
 
   const podeEditar = ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(r.status)
   const precisaTexto = r.tipo_evidencia === 'texto'
@@ -177,12 +195,30 @@ function Requisito({ r, userId, onMudou }) {
     }
   }
 
+  const comentarioDaCorrecao = r.status === 'correcao_solicitada'
+    ? ([...(r.avaliacoes || [])].reverse().find((a) => a.decisao === 'correcao_solicitada' && a.comentario)?.comentario || '')
+    : ''
+  const salvarForm = (conteudo, anexos) => salvarRelatorioEspecialidade({ requirementId: r.id, conteudo, anexos })
+  async function enviarForm(conteudo, anexos) {
+    await salvarForm(conteudo, anexos)
+    await enviarRequisitoEspecialidade(r.id)
+    festa()
+    await onMudou()
+  }
+  async function alternarTentativas() {
+    if (tentativas) { setTentativas(null); return }
+    try { setTentativas(await carregarHistoricoEspecialidade(r.member_specialty_requirement_id)) } catch (e) { avisar.erro(e) }
+  }
+
   return (
-    <div className="p-4">
+    <div className="p-4" data-testid="requisito-especialidade">
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <p className="text-sm font-semibold text-ink leading-snug">{r.codigo}. {r.descricao}</p>
         <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`}>{info.icon} {info.label}</span>
       </div>
+      {r.prazo_em && r.status !== 'aprovado' && (
+        <p data-testid="prazo" className="mb-1.5 text-xs font-semibold text-muted">📅 Até {fmtDataBR(r.prazo_em).slice(0, 5)}</p>
+      )}
 
       {r.status === 'aprovado' ? (
         <>
@@ -191,16 +227,29 @@ function Requisito({ r, userId, onMudou }) {
         </>
       ) : podeEditar ? (
         <div className="mt-2 space-y-2">
-          {r.status === 'correcao_solicitada' && (
+          {r.status === 'correcao_solicitada' && !schema && (
             <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
               A liderança pediu correção — veja o comentário no histórico abaixo e envie de novo.
             </p>
           )}
-          {precisaTexto && (
+          {schema && (
+            <FormularioRelatorio key={r.id} schema={schema}
+              valorInicial={{ conteudo: r.rascunho || {}, anexos: r.anexos || [] }}
+              comentarioDevolucao={comentarioDaCorrecao}
+              onSalvarRascunho={salvarForm} onEnviar={enviarForm}
+              subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
+              enviarDesativado={bloqueios.length > 0} descricaoEnviarId={idBloqueios} />
+          )}
+          {bloqueios.length > 0 && (
+            <ul id={idBloqueios} data-testid="bloqueios" className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 space-y-0.5">
+              {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
+            </ul>
+          )}
+          {!schema && precisaTexto && (
             <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="Escreva aqui..."
               className="w-full text-sm rounded-lg border border-line px-3 py-2" />
           )}
-          {precisaFoto && (
+          {!schema && precisaFoto && (
             /* ZonaUpload (design system), igual à de Minha Classe: a foto salva vem do bucket privado como
                `miniatura`; "Remover" só para a foto escolhida agora. Validação/compressão seguem no service. */
             <ZonaUpload rotulo="Foto de comprovação" accept="image/*" arquivo={foto} aoEscolher={setFoto}
@@ -210,6 +259,7 @@ function Requisito({ r, userId, onMudou }) {
                 : undefined} />
           )}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
+          {!schema && (
           <div className="flex gap-2">
             {(precisaTexto || precisaFoto) && (
               <button onClick={salvar} disabled={ocupado} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted disabled:opacity-60">
@@ -220,12 +270,22 @@ function Requisito({ r, userId, onMudou }) {
               {ocupado ? 'Enviando...' : 'Enviar para avaliação'}
             </button>
           </div>
+          )}
         </div>
       ) : (
         <p className="text-xs text-faint mt-1">Aguardando a liderança avaliar.</p>
       )}
 
-      {(r.avaliacoes || []).length > 0 && (
+      {schema && r.tentativas > 0 && r.member_specialty_requirement_id && (
+        <div className="mt-2">
+          <button type="button" onClick={alternarTentativas} data-testid="ver-tentativas"
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-faint underline">
+            {tentativas ? 'Esconder' : 'Ver'} histórico ({r.tentativas} tentativa{r.tentativas === 1 ? '' : 's'})
+          </button>
+          {tentativas && <HistoricoTentativas tentativas={tentativas.tentativas || []} modelo={tentativas.modelo} mostrarAvaliador className="mt-1.5" />}
+        </div>
+      )}
+      {!schema && (r.avaliacoes || []).length > 0 && (
         <div className="mt-2">
           <button onClick={() => setMostrarHistorico((v) => !v)} className="text-xs font-semibold text-faint underline">
             {mostrarHistorico ? 'Esconder' : 'Ver'} histórico de avaliação ({r.avaliacoes.length})

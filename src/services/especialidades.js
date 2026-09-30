@@ -71,9 +71,27 @@ export async function carregarAvaliacoesPendentesDeEspecialidade() {
   return data || []
 }
 
-export async function avaliarRequisitoEspecialidade(memberSpecialtyRequirementId, decisao, comentario = null) {
+// submissionId (opcional) = a tentativa que a tela viu; ativa a trava de concorrência no servidor.
+export async function avaliarRequisitoEspecialidade(memberSpecialtyRequirementId, decisao, comentario = null, submissionId = null) {
   const { error } = await supabase.rpc('especialidade_requisito_avaliar', {
     p_member_specialty_requirement_id: memberSpecialtyRequirementId, p_decisao: decisao, p_comentario: comentario,
+    p_submission_id: submissionId,
   })
   if (error) throw new Error(error.message)
+}
+
+// ---- motor de relatório estruturado (fase 7) ----
+// Rascunho do formulário de um requisito de especialidade (o envio segue em enviarRequisitoEspecialidade).
+export async function salvarRelatorioEspecialidade({ requirementId, conteudo, anexos = [] }) {
+  const { error } = await supabase.rpc('especialidade_requisito_relatorio_salvar', {
+    p_specialty_requirement_id: requirementId, p_conteudo: conteudo ?? {}, p_anexos: anexos ?? [],
+  })
+  if (error) throw new Error(error.message)
+}
+
+// Histórico de tentativas (dono ou avaliador do clube em uso): `modelo` vem como o schema direto.
+export async function carregarHistoricoEspecialidade(memberSpecialtyRequirementId) {
+  const { data, error } = await supabase.rpc('especialidade_historico', { p_member_specialty_requirement_id: memberSpecialtyRequirementId })
+  if (error) throw new Error(error.message)
+  return data
 }

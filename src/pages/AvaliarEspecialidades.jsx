@@ -3,8 +3,12 @@ import { useClube } from '../context/Clube.jsx'
 import {
   carregarAvaliacoesPendentesDeEspecialidade, avaliarRequisitoEspecialidade,
   carregarEspecialidadesDisponiveis, criarOfertaEspecialidade, carregarOfertasDoClube,
+  carregarHistoricoEspecialidade,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
+import RelatorioLeitura from '../components/relatorio/RelatorioLeitura.jsx'
+import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import { schemaDoModelo } from '../lib/relatorio/conteudo.js'
 import { mensagemDeErro, Aviso } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
@@ -139,11 +143,23 @@ function FilaDeAvaliacao() {
 function Item({ it, onFeito }) {
   const [comentario, setComentario] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [historico, setHistorico] = useState(null)
+  const schema = schemaDoModelo(it.modelo)
+
+  async function verHistorico() {
+    if (historico) { setHistorico(null); return }
+    try { setHistorico(await carregarHistoricoEspecialidade(it.member_specialty_requirement_id)) } catch (e) { avisar.erro(e) }
+  }
 
   async function avaliar(decisao) {
+    if (decisao === 'correcao_solicitada' && !comentario.trim()) {
+      avisar.erro(new Error('Explique o que precisa ser corrigido antes de enviar.'))
+      return
+    }
     setOcupado(true)
     try {
-      await avaliarRequisitoEspecialidade(it.member_specialty_requirement_id, decisao, comentario.trim() || null)
+      // it.submission_id = a tentativa que ESTA tela viu (o servidor recusa se ela já foi decidida ou reenviada)
+      await avaliarRequisitoEspecialidade(it.member_specialty_requirement_id, decisao, comentario.trim() || null, it.submission_id ?? null)
       onFeito(it.member_specialty_requirement_id)
     } catch (e) {
       avisar.erro(e)
@@ -158,19 +174,35 @@ function Item({ it, onFeito }) {
         <span className="text-xs text-faint shrink-0">{it.especialidade_nome}</span>
       </div>
       <p className="text-sm text-ink mb-2">{it.requisito_codigo}. {it.requisito_descricao}</p>
-      {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
-      {it.evidencia_path && (
-        <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
+      {it.tentativa_numero > 1 && (
+        <span className="mb-2 inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">Tentativa {it.tentativa_numero}</span>
       )}
-      <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="Comentário (opcional)"
-        className="w-full text-sm rounded-lg border border-line px-3 py-1.5 mb-2" />
+      {schema && it.conteudo ? (
+        <RelatorioLeitura schema={schema} conteudo={it.conteudo} anexos={it.anexos || []} className="mb-2" />
+      ) : (
+        <>
+          {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
+          {it.evidencia_path && (
+            <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
+          )}
+        </>
+      )}
+      {(it.tentativa_numero > 1 || schema) && (
+        <button type="button" onClick={verHistorico} data-testid="ver-historico"
+          className="mb-1 inline-flex min-h-[44px] items-center text-sm font-semibold text-brand underline">
+          {historico ? 'Ocultar histórico' : `Ver histórico${it.tentativa_numero > 1 ? ` (${it.tentativa_numero} tentativas)` : ''}`}
+        </button>
+      )}
+      {historico && <HistoricoTentativas tentativas={historico.tentativas || []} modelo={historico.modelo} mostrarAvaliador className="mb-2" />}
+      <input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder="Orientação (obrigatória para pedir correção)"
+        aria-label="Orientação (obrigatória para pedir correção)" className="w-full min-h-[44px] text-sm rounded-lg border border-line px-3 py-1.5 mb-2" />
       <div className="flex gap-2">
         <button onClick={() => avaliar('correcao_solicitada')} disabled={ocupado}
-          className="flex-1 rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-60">
+          className="flex-1 min-h-[44px] rounded-lg border border-line py-2 text-sm font-semibold text-muted hover:bg-surface2 disabled:opacity-60">
           Pedir correção
         </button>
         <button onClick={() => avaliar('aprovado')} disabled={ocupado}
-          className="flex-1 rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">
+          className="flex-1 min-h-[44px] rounded-lg bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-semibold disabled:opacity-60">
           ✅ Aprovar
         </button>
       </div>

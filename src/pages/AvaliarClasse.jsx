@@ -3,6 +3,9 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoricoRequisito } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
+import RelatorioLeitura from '../components/relatorio/RelatorioLeitura.jsx'
+import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import { schemaDoModelo } from '../lib/relatorio/conteudo.js'
 import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -93,6 +96,7 @@ function Item({ it, onFeito }) {
 
   // regras do servidor: a mesma lista que recusa a aprovação (aprovar NÃO contorna regra curricular)
   const bloqueios = it.bloqueios || []
+  const schema = schemaDoModelo(it.modelo)
   const escolha = it.escolha
   const idBloq = `bloq-${it.member_requirement_id}`
 
@@ -123,9 +127,16 @@ function Item({ it, onFeito }) {
         </div>
       )}
       <DocumentoParaConferir memberRequirementId={it.member_requirement_id} />
-      {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
-      {it.evidencia_path && (
-        <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
+      {schema && it.conteudo ? (
+        // relatório estruturado: o conteúdo daquela tentativa, com rótulos legíveis e as fotos
+        <RelatorioLeitura schema={schema} conteudo={it.conteudo} anexos={it.anexos || []} className="mb-2" />
+      ) : (
+        <>
+          {it.evidencia_texto && <p className="text-sm text-muted italic mb-2">"{it.evidencia_texto}"</p>}
+          {it.evidencia_path && (
+            <Comprovacao ampliavel valor={it.evidencia_path} alt="evidência" classImg="w-full max-h-72 object-contain bg-black/5 rounded-lg mb-2" />
+          )}
+        </>
       )}
       {bloqueios.length > 0 && (
         <ul id={idBloq} className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-2 space-y-0.5">
@@ -133,13 +144,15 @@ function Item({ it, onFeito }) {
           {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
         </ul>
       )}
-      {it.tentativa_numero > 1 && (
-        <button type="button" onClick={verHistorico} className="text-xs font-semibold text-brand mb-2 underline">
-          {historico ? 'Ocultar histórico' : `Ver histórico (${it.tentativa_numero} tentativas)`}
+      {(it.tentativa_numero > 1 || schema) && (
+        <button type="button" onClick={verHistorico} className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand mb-1 underline">
+          {historico ? 'Ocultar histórico' : `Ver histórico${it.tentativa_numero > 1 ? ` (${it.tentativa_numero} tentativas)` : ''}`}
         </button>
       )}
       {historico && (
-        <HistoricoDeTentativas tentativas={historico.tentativas || []} mostrarAvaliador className="mb-2" />
+        historico.modelo
+          ? <HistoricoTentativas tentativas={historico.tentativas || []} modelo={historico.modelo} mostrarAvaliador className="mb-2" />
+          : <HistoricoDeTentativas tentativas={historico.tentativas || []} mostrarAvaliador className="mb-2" />
       )}
       <label className="block mb-2">
         <span className="sr-only">Orientação (obrigatória para pedir correção)</span>

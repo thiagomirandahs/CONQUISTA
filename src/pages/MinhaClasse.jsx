@@ -7,7 +7,10 @@ import {
   carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
   carregarHistoricoRequisito, cancelarClasse, carregarHistoricoDoCartao,
+  carregarFormulariosDaClasse, salvarRelatorioRequisito, subirAnexoDeRelatorio,
 } from '../lib/dados.js'
+import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
+import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
 import LinhaDoTempoInvestidura from '../components/LinhaDoTempoInvestidura.jsx'
 import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvestidura.js'
 import Comprovacao from '../components/Comprovacao.jsx'
@@ -85,6 +88,7 @@ export default function MinhaClasse() {
   const [selecionada, setSelecionada] = useState(null) // member_class_id da aba aberta (null = o servidor escolhe)
   const [mostrarOutras, setMostrarOutras] = useState(false)
   const [disponiveis, setDisponiveis] = useState([])
+  const [formularios, setFormularios] = useState({}) // requirement_id → formulário (uma chamada por carga)
   const [erro, setErro] = useState('')
 
   const recarregar = useCallback(async (idAba) => {
@@ -95,6 +99,11 @@ export default function MinhaClasse() {
         carregarMinhaClasse(idAba),
         carregarMinhasClasses().catch(() => []),
       ])
+      // formulários da classe inteira numa chamada só; falha (servidor antigo/rede) = UI antiga, nunca quebra
+      const forms = m?.member_class?.id
+        ? await Promise.resolve().then(() => carregarFormulariosDaClasse(m.member_class.id)).catch(() => ({}))
+        : {}
+      setFormularios(forms && typeof forms === 'object' ? forms : {})
       setMinha(m)
       setMinhas(lista || [])
       if (!m) setDisponiveis(await carregarClassesDisponiveis())
@@ -169,7 +178,7 @@ export default function MinhaClasse() {
         <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
       ) : (
         <>
-          <Progresso key={idAberta} dados={minha} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
+          <Progresso key={idAberta} dados={minha} formularios={formularios} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
           {minha.member_class?.status === 'em_andamento' && (
             <CancelarClasse key={`cancelar-${idAberta}`} memberClassId={idAberta} nome={minha.classe?.nome}
               onCancelada={async () => { setSelecionada(null); setMostrarOutras(false); await recarregar(null) }} />
@@ -326,7 +335,7 @@ function CaminhoDoCartao({ memberClassId, status }) {
   )
 }
 
-function Progresso({ dados, userId, onMudou }) {
+function Progresso({ dados, formularios = {}, userId, onMudou }) {
   const { member_class: mc, classe, curriculum_version: versao, conclusao, secoes } = dados
   const ehTeste = versao?.origem === 'piloto_teste'
   // fase 4: 100% aprovado NÃO é "investido" — os estados são separados e vêm do servidor
@@ -407,7 +416,7 @@ function Progresso({ dados, userId, onMudou }) {
           </div>
           <div className="divide-y divide-line">
             {(s.requisitos || []).map((r) => (
-              <Requisito key={r.id} r={r} cor={cor} userId={userId} onMudou={mudouComDocs} documento={docs[r.id]} />
+              <Requisito key={r.id} r={r} formulario={formularios[r.id] || null} cor={cor} userId={userId} onMudou={mudouComDocs} documento={docs[r.id]} />
             ))}
           </div>
         </section>
@@ -416,7 +425,7 @@ function Progresso({ dados, userId, onMudou }) {
   )
 }
 
-function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
+function Requisito({ r, formulario = null, cor = null, userId, onMudou, documento = null }) {
   const situacao = situacaoDoRequisito(r)
   const info = SITUACOES[situacao]
   const bloqueios = r.bloqueios || []
@@ -434,6 +443,8 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   const [origem, setOrigem] = useState(null)
   const [abrindoOrigem, setAbrindoOrigem] = useState(false)
   const navegar = useNavigate()
+  // Motor de relatório (fase 7): o formulário já veio com a classe (classe_formularios) — sem piscar nem chamada por requisito.
+  const form = formulario?.modelo?.schema ? formulario : null
 
   // A ação "Ouvir o livro" só entra no menu quando o catálogo (uma leitura por sessão) tem o livro
   // citado no requisito — o mesmo critério do <OuvirLivro>, que renderiza nada quando não tem.
@@ -491,6 +502,17 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
     }
   }
 
+  // enviar pelo formulário: grava o rascunho final e só então envia (o servidor valida e congela a tentativa)
+  const salvarFormulario = (conteudo, anexos) => salvarRelatorioRequisito({ requirementId: r.id, conteudo, anexos })
+  async function enviarFormulario(conteudo, anexos) {
+    if (documento && !documento.documento?.evidencia_path) throw new Error('Envie a foto do documento antes de enviar para avaliação.')
+    await salvarFormulario(conteudo, anexos)
+    await enviarRequisito(r.id)
+    festa()
+    await onMudou()
+  }
+  const usaFormulario = podeEditar && !!form
+
   return (
     <article data-testid="requisito" aria-labelledby={idTitulo} className="p-4">
       {/* Situação EM CIMA do texto (antes ficava ao lado e espremia a leitura no celular). */}
@@ -512,7 +534,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
         </>
       ) : podeEditar ? (
         <div className="mt-2 space-y-2">
-          {r.status === 'correcao_solicitada' && (
+          {r.status === 'correcao_solicitada' && !usaFormulario && (
             // O comentário do avaliador aparece AQUI, sem precisar abrir o histórico (auditoria da Fase 6).
             <Aviso tom="erro" titulo="A liderança pediu correção">
               {comentarioDaCorrecao
@@ -522,7 +544,18 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
           )}
           {/* Comprovação em destaque: caixa colorida com o passo dito em palavras simples — tem criança e
               responsável com dificuldade, então o "onde eu ponho?" precisa ser óbvio e o alvo de toque grande. */}
-          {precisaTexto && (
+          {usaFormulario && (
+            <>
+              {form.modelo?.nota && <p className="text-xs text-muted">{form.modelo.nota}</p>}
+              <FormularioRelatorio key={r.id} schema={form.modelo.schema}
+                valorInicial={{ conteudo: form.rascunho || {}, anexos: form.anexos || [] }}
+                comentarioDevolucao={r.status === 'correcao_solicitada' ? comentarioDaCorrecao : ''}
+                onSalvarRascunho={salvarFormulario} onEnviar={enviarFormulario}
+                subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
+                enviarDesativado={!podeEnviar} descricaoEnviarId={idBloqueios} />
+            </>
+          )}
+          {!usaFormulario && precisaTexto && (
             <label className="block rounded-xl border-2 border-blue-300 bg-blue-50 p-3">
               <span className="block text-sm font-bold text-blue-900"><span aria-hidden="true">✍️ </span><span>Sua resposta{obrigatoria ? ' (obrigatória)' : ''}</span></span>
               <span className="block text-xs text-blue-800 mt-0.5">Escreva aqui o que você fez ou aprendeu.</span>
@@ -531,7 +564,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
               {veioDoRascunho && <span className="block text-xs text-blue-800 mt-1">Recuperamos o que você tinha escrito neste aparelho — é só enviar.</span>}
             </label>
           )}
-          {precisaFoto && (
+          {!usaFormulario && precisaFoto && (
             <div>
               <span className="block text-sm font-semibold text-ink mb-1.5">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
               {/* ZonaUpload (design system): sem `capture` de propósito — a pessoa escolhe entre câmera e galeria.
@@ -552,6 +585,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
           )}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
           {/* Hierarquia: UM botão principal, largo e alto; o rascunho é discreto. */}
+          {!usaFormulario && (
           <div className="space-y-1.5">
             <Botao aoTocar={enviar} carregando={ocupado} desabilitado={!podeEnviar} aria-describedby={!podeEnviar ? idBloqueios : undefined}
               data-testid="botao-enviar" className="w-full" style={cor ? { background: cor.hex, color: cor.texto, backgroundImage: 'none' } : undefined}>
@@ -563,6 +597,7 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
               </Botao>
             )}
           </div>
+          )}
         </div>
       ) : (
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
@@ -742,6 +777,8 @@ function HistoricoPorTentativa({ memberRequirementId }) {
   if (erro) return <div className="mt-1.5"><Aviso tom="erro">{erro}</Aviso></div>
   if (!dados) return <div className="mt-1.5"><Carregando linhas={1} texto="Carregando histórico" /></div>
 
+  // requisito com formulário: cada tentativa mostra o relatório que foi enviado NAQUELA vez
+  if (dados.modelo) return <HistoricoTentativas tentativas={dados.tentativas || []} modelo={dados.modelo} mostrarAvaliador className="mt-1.5" />
   return <HistoricoDeTentativas tentativas={dados.tentativas || []} mostrarAvaliador className="mt-1.5" />
 }
 

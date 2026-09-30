@@ -68,6 +68,37 @@ export async function salvarRequisito({ requirementId, texto = null, foto = null
   })
 }
 
+// ---- motor de relatório estruturado (fase 7) ----
+// Formulário do requisito (só o dono): modelo, rascunho, anexos, nº de tentativas e a última avaliação.
+// `tem_formulario: false` = requisito antigo (texto/foto como sempre).
+export async function carregarFormularioRequisito(requirementId) {
+  const { data, error } = await supabase.rpc('requisito_formulario', { p_requirement_id: requirementId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Formulários de TODOS os requisitos editáveis da classe, numa chamada só: { "<requirement_id>": {modelo, rascunho, …} }.
+// Requisito sem formulário (ou já enviado/aprovado) não aparece no objeto.
+export async function carregarFormulariosDaClasse(memberClassId) {
+  const { data, error } = await supabase.rpc('classe_formularios', { p_member_class_id: memberClassId })
+  if (error) throw new Error(error.message)
+  return data || {}
+}
+
+// Rascunho do formulário (o servidor valida só a FORMA; quem valida o "completo" é o envio).
+export async function salvarRelatorioRequisito({ requirementId, conteudo, anexos = [] }) {
+  const { error } = await supabase.rpc('requisito_relatorio_salvar', {
+    p_requirement_id: requirementId, p_conteudo: conteudo ?? {}, p_anexos: anexos ?? [],
+  })
+  if (error) throw new Error(error.message)
+}
+
+// Upload de um anexo do formulário: MESMO bucket privado e mesma pasta ('requisitos', a única que a
+// limpeza de órfãos e a policy conhecem) — vale para classes e especialidades. Devolve o CAMINHO.
+export function subirAnexoDeRelatorio(file, userId) {
+  return subirComprovacao({ file, tipo: 'requisitos', userId })
+}
+
 // Escolha N-de-M: registra QUAIS opções a pessoa cumpriu (ids das opções do cartão; texto livre só quando
 // o cartão não lista opções). O servidor valida e é ele quem decide se a regra ficou satisfeita.
 export async function escolherOpcoesRequisito(requirementId, optionIds = [], rotulosLivres = []) {

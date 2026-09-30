@@ -377,6 +377,43 @@ $$;
 revoke all on function public.requisito_formulario(uuid) from public, anon;
 grant execute on function public.requisito_formulario(uuid) to authenticated;
 
+-- Todos os formulários EDITÁVEIS de uma matrícula, de uma vez só (evita 1 chamada por requisito em 4G fraco).
+-- Devolve um objeto { "<requirement_id>": { modelo, member_requirement_id, status, rascunho, anexos, tentativas, ultima_avaliacao } }
+-- só para requisitos que têm modelo e ainda podem ser editados (nao_iniciado | em_andamento | correcao_solicitada).
+create or replace function public.classe_formularios(p_member_class_id uuid)
+returns json
+language plpgsql stable security definer set search_path = '' as $$
+declare v_uid uuid := auth.uid(); v_club uuid := public.clube_atual_id(); v_mc record;
+begin
+  if v_uid is null or v_club is null then raise exception 'Sem clube em uso.'; end if;
+  perform public._exigir_classes_habilitado(v_club);
+  select * into v_mc from public.member_classes where id = p_member_class_id and usuario_id = v_uid and club_id = v_club;
+  if not found or not public._classe_do_catalogo_oficial(v_mc.class_id) then raise exception 'Matrícula não encontrada para você neste clube.'; end if;
+  return coalesce((
+    select json_object_agg(mr.requirement_id::text, json_build_object(
+      'modelo', json_build_object('versao', m.versao, 'schema', m.schema, 'categoria', m.categoria, 'familia', m.familia, 'nota', m.nota),
+      'member_requirement_id', mr.id,
+      'status', mr.status,
+      'rascunho', mr.rascunho,
+      'anexos', mr.rascunho_anexos,
+      'tentativas', (select count(*) from public.requirement_submissions s where s.member_requirement_id = mr.id),
+      'ultima_avaliacao', (
+        select json_build_object('decisao', ap.decisao, 'comentario', ap.comentario, 'avaliado_em', ap.created_at, 'avaliado_papel', ap.avaliado_papel, 'avaliado_por_nome', av.nome)
+          from public.requirement_approvals ap left join public.profiles av on av.id = ap.avaliado_por
+         where ap.member_requirement_id = mr.id order by ap.created_at desc limit 1)
+    ))
+    from public.member_requirements mr
+    join public.class_requirements r on r.id = mr.requirement_id
+    join lateral (
+      select m2.* from public.requisito_modelos m2 where m2.alvo = 'classe' and m2.chave = r.manifesto_id order by m2.versao desc limit 1
+    ) m on true
+    where mr.member_class_id = v_mc.id and mr.status in ('nao_iniciado', 'em_andamento', 'correcao_solicitada')
+  ), '{}'::json);
+end;
+$$;
+revoke all on function public.classe_formularios(uuid) from public, anon;
+grant execute on function public.classe_formularios(uuid) to authenticated;
+
 -- Envio: requisito COM formulário valida no servidor e CONGELA conteúdo + anexos na tentativa (imutável).
 -- Requisito SEM formulário: caminho idêntico ao da migration 87.
 create or replace function public.requisito_enviar(p_requirement_id uuid) returns json
