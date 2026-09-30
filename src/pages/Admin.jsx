@@ -144,7 +144,7 @@ export default function Admin() {
       ...c, provisionamento: v.provisionamentos_pendentes || 0, onboarding: v.onboarding_em_andamento || 0,
     }))).catch(() => {})
     atualizarChamados()
-  }, [autorizado]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autorizado])
   // contador de chamados que pedem atenção (aberto + em andamento) — badge "Suporte" no menu
   function atualizarChamados() {
     adminChamadosContagem().then((n) => setContadores((c) => ({ ...c, chamados: n }))).catch(() => {})

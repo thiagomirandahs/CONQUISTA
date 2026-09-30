@@ -86,6 +86,7 @@ export function GavetaAdmin({ aberta, aoFechar, secoes, ativa, aoTrocar, contado
   useEffect(() => {
     if (!aberta) return undefined
     const painel = caixa.current
+    const botao = refBotao?.current // guardado agora: na limpeza o ref já pode ter mudado
     const focaveis = () => Array.from(painel?.querySelectorAll('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])') || [])
     ;(painel?.querySelector('[aria-selected="true"]') || focaveis()[0] || painel)?.focus?.()
     const tecla = (e) => {
@@ -103,7 +104,7 @@ export function GavetaAdmin({ aberta, aoFechar, secoes, ativa, aoTrocar, contado
     return () => {
       document.removeEventListener('keydown', tecla)
       document.body.style.overflow = antes
-      refBotao?.current?.focus?.()
+      botao?.focus?.()
     }
   }, [aberta, aoFechar, refBotao])
   if (!aberta) return null

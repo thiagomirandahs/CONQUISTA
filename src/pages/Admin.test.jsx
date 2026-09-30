@@ -438,7 +438,8 @@ describe('Admin: Clubes — busca, chip de status e ordenação (tabela ≥ md)'
   })
   afterEach(() => { delete window.matchMedia })
 
-  const nomesDasLinhas = () => screen.getAllByTestId('clube-item').map((tr) => within(tr).getAllByRole('cell')[0].textContent)
+  // a 1ª célula tem o avatar (sigla em texto) + nome: lê só o nome (span em negrito)
+  const nomesDasLinhas = () => screen.getAllByTestId('clube-item').map((tr) => within(tr).getAllByRole('cell')[0].querySelector('.font-bold').textContent)
 
   it('busca, chip de status e ordenação por coluna', async () => {
     await abrirComoAdmin()
