@@ -370,12 +370,13 @@ export function SeloCoordenacao() {
   )
 }
 
-// Subtítulo do autor: "Unidade · Clube · há 8 h". A unidade só entra quando o servidor a mandar
-// (_comunidade_autor_json, migration 500, hoje só manda nome/clube/coordenacao/avatar/foto).
+// Subtítulo do autor: "Clube · Unidade · há 8 h" (ordem pedida pelo dono). A unidade só entra quando o
+// servidor a mandar (_comunidade_autor_json, migration 502: nome da unidade do vínculo ativo no clube do
+// conteúdo; null para coordenação e para quem não tem unidade). O front nunca inventa unidade.
 export const subtituloDoAutor = (autor, criadoEm) =>
-  [autor?.unidade, autor?.clube, criadoEm ? tempoRelativo(criadoEm) : null].filter(Boolean).join(' · ')
+  [autor?.clube, autor?.unidade, criadoEm ? tempoRelativo(criadoEm) : null].filter(Boolean).join(' · ')
 
-// Avatar + nome em negrito + "Unidade · Clube · há 8 h" num link só (alvo grande, sem sublinhado) que abre o perfil.
+// Avatar + nome em negrito + "Clube · Unidade · há 8 h" num link só (alvo grande, sem sublinhado) que abre o perfil.
 function Cabeca({ autor, criadoEm, pequeno = false }) {
   const miolo = (
     <>

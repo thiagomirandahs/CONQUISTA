@@ -107,9 +107,9 @@ describe('matriz manifesto → UI: as 6 Classes Regulares 2026', () => {
           expect(within(card).getByTestId('situacao')).toHaveAttribute('data-situacao', 'nao_iniciado')
           expect(within(card).getByRole('button', { name: 'Enviar para avaliação' })).toBeEnabled()
         }
-        // nada técnico no card: OMD, hash e id do manifesto só na "Origem do requisito"
+        // nada técnico no card: OMD, hash e id do manifesto só na "Origem do requisito", que fica no menu "⋯"
         expect(card.textContent).not.toMatch(/OMD-|[0-9a-f]{64}|manifesto_id/)
-        expect(within(card).getByRole('button', { name: 'Origem do requisito' })).toBeInTheDocument()
+        expect(within(card).getByRole('button', { name: 'Mais sobre este requisito' })).toBeInTheDocument()
       })
       unmount()
     })

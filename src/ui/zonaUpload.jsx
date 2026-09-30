@@ -28,6 +28,8 @@ const TEXTO_VAZIO = { imagem: 'Toque para tirar uma foto ou escolher da galeria'
  * @param {number|string} [p.progresso]   número (0–100) ou texto livre durante o envio
  * @param {string} [p.erro]               mensagem humana (estado erro)
  * @param {string} [p.previaUrl]          miniatura já pronta (ex.: foto salva no servidor)
+ * @param {import('react').ReactNode} [p.miniatura]  miniatura como ELEMENTO, quando a URL não é conhecida
+ *        de fora (ex.: `<Comprovacao>` do bucket privado, que assina a URL sozinho); conta como "selecionado"
  * @param {string} [p.accept='image/*']
  * @param {string} [p.capture]            'environment' | 'user' (abre a câmera direto no celular)
  * @param {string} [p.rotulo='Foto']      nome acessível do input
@@ -39,12 +41,13 @@ const TEXTO_VAZIO = { imagem: 'Toque para tirar uma foto ou escolher da galeria'
  * <ZonaUpload rotulo="Foto de comprovação" arquivo={foto} aoEscolher={setFoto} aoRemover={() => setFoto(null)}
  *   estado={enviando ? 'enviando' : undefined} progresso={pct} erro={erro} capture="environment" />
  */
-export function ZonaUpload({ arquivo = null, aoEscolher, aoRemover, estado, progresso, erro, previaUrl, accept = 'image/*',
+export function ZonaUpload({ arquivo = null, aoEscolher, aoRemover, estado, progresso, erro, previaUrl, miniatura, accept = 'image/*',
   capture, rotulo = 'Foto', ajuda, obrigatorio = false, desabilitado = false, className }) {
   const idInput = useId()
   const idAjuda = `${idInput}-ajuda`
   const ehImagem = accept.startsWith('image')
-  const efetivo = estado || (arquivo || previaUrl ? 'selecionado' : 'vazio')
+  const temAlgo = !!(arquivo || previaUrl || miniatura)
+  const efetivo = estado || (temAlgo ? 'selecionado' : 'vazio')
   const enviando = efetivo === 'enviando'
   const travado = desabilitado || enviando
 
@@ -70,6 +73,8 @@ export function ZonaUpload({ arquivo = null, aoEscolher, aoRemover, estado, prog
 
         {previa ? (
           <img src={previa} alt="" className="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
+        ) : miniatura ? (
+          <span className="block" data-testid="zona-upload-miniatura">{miniatura}</span>
         ) : (
           <span aria-hidden="true" className="grid h-14 w-14 place-items-center rounded-full bg-surface text-3xl shadow-soft">
             {efetivo === 'erro' ? '⚠️' : efetivo === 'concluido' ? '✅' : ehImagem ? '📷' : '📎'}
@@ -102,7 +107,7 @@ export function ZonaUpload({ arquivo = null, aoEscolher, aoRemover, estado, prog
       )}
       {efetivo === 'erro' && erro && <p role="alert" className="sr-only">{erro}</p>}
 
-      {aoRemover && !enviando && (arquivo || previaUrl) && (
+      {aoRemover && !enviando && temAlgo && (
         <button type="button" onClick={aoRemover} disabled={desabilitado}
           className="mt-2 min-h-[44px] w-full rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50">
           {ehImagem ? 'Remover foto' : 'Remover arquivo'}

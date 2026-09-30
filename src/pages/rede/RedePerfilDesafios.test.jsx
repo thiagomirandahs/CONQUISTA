@@ -59,7 +59,7 @@ describe('Rede DBV — perfil', () => {
     const selos = screen.getByTestId('selos-perfil')
     expect(within(selos).getByText('Coordenação').className).toContain('var(--rede-destaque')
     expect(within(selos).queryByText(/conquista/)).toBeNull()
-    expect(screen.getByTestId('perfil-clube')).toHaveTextContent('Unidade Falcão · Coordenação · Distrito Norte')
+    expect(screen.getByTestId('perfil-clube')).toHaveTextContent('Coordenação · Distrito Norte · Unidade Falcão')
   })
 
   it('meu perfil tem a aba Salvos (só eu vejo) e troca de aba pede ao servidor', async () => {

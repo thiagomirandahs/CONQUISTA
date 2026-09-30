@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -432,7 +432,6 @@ function ModalDesenho({ onFechar, onEnviar }) {
 
 function UploadFoto({ categoria, onEnviar, onFechar }) {
   const [file, setFile] = useState(null)
-  const [previa, setPrevia] = useState(null)
   const [legenda, setLegenda] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
@@ -440,7 +439,6 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
   function escolher(f) {
     setErro('')
     setFile(f || null)
-    setPrevia(f ? URL.createObjectURL(f) : null)
   }
 
   async function enviar(e) {
@@ -467,23 +465,23 @@ function UploadFoto({ categoria, onEnviar, onFechar }) {
         <h3 className="text-lg font-extrabold text-ink mb-1">Adicionar foto</h3>
         <p className="text-sm text-muted mb-4">Álbum: <strong>{categoria.icon} {categoria.nome}</strong></p>
 
-        <label className="block aspect-video rounded-2xl border-2 border-dashed border-line overflow-hidden cursor-pointer grid place-items-center text-faint mb-3 bg-surface2">
-          {previa
-            ? <img src={previa} alt="prévia" className="w-full h-full object-cover" />
-            : <span className="text-sm">📷 Toque para escolher uma foto</span>}
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => escolher(e.target.files?.[0])} />
-        </label>
+        {/* ZonaUpload (design system): a miniatura, o "Trocar" e o "Remover" vêm dela; a validação e a
+            compressão continuam em adicionarFoto (services), como antes. Sem `capture`: câmera OU galeria. */}
+        <ZonaUpload rotulo="Foto para o álbum" accept="image/*" arquivo={file} aoEscolher={escolher}
+          aoRemover={() => escolher(null)} estado={enviando ? 'enviando' : undefined} progresso="Enviando a foto" className="mb-3" />
 
-        <input type="text" value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
+        <label className="sr-only" htmlFor="mural-legenda">Legenda (opcional)</label>
+
+        <input id="mural-legenda" type="text" value={legenda} onChange={(e) => setLegenda(e.target.value)} maxLength={120}
           placeholder="Legenda (opcional)"
-          className="w-full rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
+          className="w-full min-h-[44px] rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 mb-3" />
 
-        {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
+        {erro && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3">{erro}</div>}
 
         <div className="flex gap-2">
-          <button type="button" onClick={onFechar} className="flex-1 rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
+          <button type="button" onClick={onFechar} className="flex-1 min-h-[44px] rounded-xl bg-surface2 text-ink font-semibold py-2.5">Cancelar</button>
           <motion.button type="submit" disabled={enviando} whileTap={{ scale: 0.97 }}
-            className="flex-1 rounded-xl text-white font-semibold py-2.5 disabled:opacity-60" style={{ backgroundColor: categoria.cor }}>
+            className="flex-1 min-h-[44px] rounded-xl text-white font-semibold py-2.5 disabled:opacity-60" style={{ backgroundColor: categoria.cor }}>
             {enviando ? 'Enviando...' : 'Enviar foto'}
           </motion.button>
         </div>

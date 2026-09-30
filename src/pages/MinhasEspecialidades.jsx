@@ -8,7 +8,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { vitoria as festa } from '../lib/juice.js'
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 
 const STATUS_INFO = {
@@ -145,7 +145,6 @@ function Requisito({ r, userId, onMudou }) {
   const info = STATUS_INFO[r.status] || STATUS_INFO.nao_iniciado
   const [texto, setTexto] = useState(r.evidencia_texto || '')
   const [foto, setFoto] = useState(null)
-  const [previa, setPrevia] = useState(null)
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState('')
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
@@ -153,11 +152,6 @@ function Requisito({ r, userId, onMudou }) {
   const podeEditar = ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(r.status)
   const precisaTexto = r.tipo_evidencia === 'texto'
   const precisaFoto = r.tipo_evidencia === 'foto'
-
-  function escolherFoto(f) {
-    setFoto(f || null)
-    setPrevia(f ? URL.createObjectURL(f) : null)
-  }
 
   async function salvar() {
     setOcupado(true); setErro('')
@@ -207,14 +201,13 @@ function Requisito({ r, userId, onMudou }) {
               className="w-full text-sm rounded-lg border border-line px-3 py-2" />
           )}
           {precisaFoto && (
-            <div>
-              <input type="file" accept="image/*" className="text-sm" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-              {(previa || r.evidencia_path) && (
-                previa
-                  ? <img src={previa} alt="prévia" className="mt-2 w-32 h-32 object-cover rounded-lg" />
-                  : <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="mt-2 w-32 h-32 object-cover rounded-lg" />
-              )}
-            </div>
+            /* ZonaUpload (design system), igual à de Minha Classe: a foto salva vem do bucket privado como
+               `miniatura`; "Remover" só para a foto escolhida agora. Validação/compressão seguem no service. */
+            <ZonaUpload rotulo="Foto de comprovação" accept="image/*" arquivo={foto} aoEscolher={setFoto}
+              aoRemover={foto ? () => setFoto(null) : undefined} estado={ocupado && foto ? 'enviando' : undefined} progresso="Só um instante"
+              miniatura={!foto && r.evidencia_path
+                ? <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
+                : undefined} />
           )}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
           <div className="flex gap-2">

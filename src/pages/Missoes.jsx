@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -22,7 +22,6 @@ export default function Missoes() {
   const [resumo, setResumo] = useState({ feito: false, sequencia: 0, foto: null })
   const [resposta, setResposta] = useState(null)
   const [foto, setFoto] = useState(null)
-  const [previa, setPrevia] = useState(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -41,7 +40,6 @@ export default function Missoes() {
   function escolherFoto(f) {
     setErro('')
     setFoto(f || null)
-    setPrevia(f ? URL.createObjectURL(f) : null)
   }
 
   async function concluir() {
@@ -147,16 +145,18 @@ export default function Missoes() {
 
             {missao.pede_foto && (
               <div>
-                <p className="text-sm font-semibold text-ink mb-1">📷 Foto da missão</p>
-                <input type="file" accept="image/*" className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-                {previa && <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />}
+                <p className="text-sm font-semibold text-ink mb-1"><span aria-hidden="true">📷 </span>Foto da missão</p>
+                {/* ZonaUpload (design system): miniatura, trocar e remover vêm dela; validação/compressão
+                    seguem em enviarMissao (services). Sem `capture`: a criança escolhe câmera ou galeria. */}
+                <ZonaUpload rotulo="Foto da missão" obrigatorio accept="image/*" arquivo={foto} aoEscolher={escolherFoto}
+                  aoRemover={() => escolherFoto(null)} estado={enviando && foto ? 'enviando' : undefined} progresso="Enviando a foto" />
               </div>
             )}
 
-            {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
+            {erro && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}
 
             <motion.button onClick={concluir} disabled={enviando} whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-extrabold py-3 shadow-glow disabled:opacity-60">
+              className="w-full min-h-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-extrabold py-3 shadow-glow disabled:opacity-60">
               {enviando ? 'Enviando...' : 'Concluir missão 🎉'}
             </motion.button>
           </div>

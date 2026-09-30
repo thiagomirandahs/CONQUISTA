@@ -13,15 +13,17 @@ import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvesti
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
-import { mensagemDeErro, Botao, Aviso, Selo, Progresso as BarraDeProgresso, Folha, Carregando } from '../ui/index.jsx'
+import { mensagemDeErro, Botao, Aviso, Selo, Progresso as BarraDeProgresso, Folha, Carregando, ZonaUpload, MenuAcoes } from '../ui/index.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
 import TourDaArea from '../components/TourDaArea.jsx'
 import OuvirLivro from '../components/OuvirLivro.jsx'
+import { audiolivros } from '../services/audiolivros.js'
+import { livroDoRequisito } from '../lib/audiolivros.js'
 import { termoDoRequisito } from '../lib/catalogoEspecialidades.js'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { DocumentoDaIdade } from '../components/DocumentoDaIdade.jsx'
 import { documentosDaMinhaClasse } from '../services/documentoIdade.js'
 
@@ -421,14 +423,30 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   // rascunho local (modo manutenção/rede): a resposta digitada fica no aparelho até ser salva
   const [texto, setTexto, descartarRascunho, veioDoRascunho] = useRascunho(userId, `requisito:${r.id}`, r.evidencia_texto || '')
   const [foto, setFoto] = useState(null)
-  const [previa, setPrevia] = useState(null)
   const [ocupado, setOcupado] = useState(false)
   const [erro, setErro] = useState('')
+  // Secundários (ouvir o livro, catálogo, histórico, origem) ficam no menu "⋯" (MenuAcoes) para não
+  // disputar com a tarefa. O histórico só é buscado quando a pessoa pede (o comentário da correção já
+  // aparece inline no card, sem chamada extra).
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
-  // "Mais": ouvir o livro, catálogo, origem e histórico ficam recolhidos para não disputar com a tarefa.
-  // Quem chega com correção pedida vê o "Mais" já aberto (o histórico completo está ali).
-  const [mostrarMais, setMostrarMais] = useState(r.status === 'correcao_solicitada')
-  const idMais = `mais-${r.id}`
+  const [mostrarOuvir, setMostrarOuvir] = useState(false)
+  const [temLivro, setTemLivro] = useState(false)
+  const [origem, setOrigem] = useState(null)
+  const [abrindoOrigem, setAbrindoOrigem] = useState(false)
+  const navegar = useNavigate()
+
+  // A ação "Ouvir o livro" só entra no menu quando o catálogo (uma leitura por sessão) tem o livro
+  // citado no requisito — o mesmo critério do <OuvirLivro>, que renderiza nada quando não tem.
+  useEffect(() => {
+    let vivo = true
+    audiolivros().then((ls) => { if (vivo) setTemLivro(!!livroDoRequisito(r.descricao, ls)) }).catch(() => {})
+    return () => { vivo = false }
+  }, [r.descricao])
+
+  async function verOrigem() {
+    setAbrindoOrigem(true)
+    try { setOrigem(await carregarOrigemRequisito(r.id)) } catch (e) { avisar.erro(e) } finally { setAbrindoOrigem(false) }
+  }
 
   const podeEditar = ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(r.status)
   const podeEnviar = podeEditar && bloqueios.length === 0
@@ -441,11 +459,6 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
   const obrigatoria = !!r.evidencia_obrigatoria
   const idTitulo = `req-${r.id}`
   const idBloqueios = `bloq-${r.id}`
-
-  function escolherFoto(f) {
-    setFoto(f || null)
-    setPrevia(f ? URL.createObjectURL(f) : null)
-  }
 
   async function salvar() {
     setOcupado(true); setErro('')
@@ -521,20 +534,15 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
           {precisaFoto && (
             <div>
               <span className="block text-sm font-semibold text-ink mb-1.5">Foto de comprovação{obrigatoria ? ' (obrigatória)' : ''}</span>
-              {/* Área de envio "clean": caixa tracejada grande, ícone de câmera e uma frase — óbvio sem gritar. */}
-              {/* Fase 6: trocar por ZonaUpload */}
-              <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-surface2 px-4 py-6 text-center transition hover:border-brand active:scale-[0.99]">
-                <input aria-label={`Foto de comprovação${obrigatoria ? ' (obrigatória)' : ''}`} type="file" accept="image/*" className="sr-only" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-                {previa || r.evidencia_path ? (
-                  previa
-                    ? <img src={previa} alt="prévia da foto escolhida" className="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
-                    : <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
-                ) : (
-                  <span aria-hidden="true" className="grid h-14 w-14 place-items-center rounded-full bg-surface text-3xl shadow-soft">📷</span>
-                )}
-                <span aria-hidden="true" className="text-base font-bold text-ink">{previa || r.evidencia_path ? 'Trocar foto' : 'Adicionar foto'}</span>
-                <span aria-hidden="true" className="text-xs text-muted">Toque para tirar uma foto ou escolher da galeria</span>
-              </label>
+              {/* ZonaUpload (design system): sem `capture` de propósito — a pessoa escolhe entre câmera e galeria.
+                  A foto já salva vem do bucket privado, por isso entra como `miniatura` (<Comprovacao> assina a URL).
+                  "Remover" só vale para a foto escolhida agora: a salva no servidor não se apaga daqui. */}
+              <ZonaUpload rotulo="Foto de comprovação" obrigatorio={obrigatoria} accept="image/*" arquivo={foto}
+                aoEscolher={setFoto} aoRemover={foto ? () => setFoto(null) : undefined}
+                estado={ocupado && foto ? 'enviando' : undefined} progresso="Só um instante"
+                miniatura={!foto && r.evidencia_path
+                  ? <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
+                  : undefined} />
             </div>
           )}
           {bloqueios.length > 0 && (
@@ -560,31 +568,37 @@ function Requisito({ r, cor = null, userId, onMudou, documento = null }) {
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
       )}
 
-      {/* Secundário, agrupado em "Mais" para não disputar com a tarefa: ouvir o livro, catálogo, origem, histórico.
-          Fase 6: trocar por MenuAcoes */}
-      <div className="mt-2">
-        <button type="button" onClick={() => setMostrarMais((v) => !v)} aria-expanded={mostrarMais} aria-controls={idMais}
-          className="inline-flex min-h-[44px] items-center gap-1 rounded-xl px-2 text-xs font-semibold text-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-          <span aria-hidden="true" className={`transition-transform ${mostrarMais ? 'rotate-90' : ''}`}>▸</span> Mais
-        </button>
-        <div id={idMais} className={`mt-1 flex-wrap items-center gap-x-3 gap-y-1 pl-2 ${mostrarMais ? 'flex' : 'hidden'}`}>
-          <OuvirLivro descricao={r.descricao} userId={userId} />
-          {termoDoRequisito(r.descricao) !== null && (
-            <Link to={`/catalogo-especialidades${termoDoRequisito(r.descricao) ? `?q=${encodeURIComponent(termoDoRequisito(r.descricao))}` : ''}`}
-              className="inline-flex min-h-[44px] items-center text-xs font-bold text-brand" data-testid="requisito-catalogo">🔎 Ver no catálogo de especialidades</Link>
-          )}
-          {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
-            <button type="button" onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico}
-              className="min-h-[44px] text-xs font-semibold text-faint underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-              {mostrarHistorico ? 'Esconder' : 'Ver'} histórico ({r.avaliacoes.length} avaliaç{r.avaliacoes.length === 1 ? 'ão' : 'ões'})
-            </button>
-          )}
-          <OrigemDoRequisito requirementId={r.id} />
-        </div>
-        {mostrarHistorico && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
+      {/* Secundário no menu "⋯" (MenuAcoes): ouvir o livro, catálogo, histórico, origem — nada disputa com a
+          tarefa. Cada ação abre o seu conteúdo AQUI no card (o menu fecha e o foco volta ao "⋯"). */}
+      <div className="mt-2 flex items-center justify-end">
+        <MenuAcoes rotulo="Mais sobre este requisito" acoes={acoesDoRequisito({
+          r, temLivro, mostrarOuvir, mostrarHistorico, abrindoOrigem,
+          ouvir: () => setMostrarOuvir(true),
+          catalogo: (termo) => navegar(`/catalogo-especialidades${termo ? `?q=${encodeURIComponent(termo)}` : ''}`),
+          historico: () => setMostrarHistorico((v) => !v),
+          origem: verOrigem,
+        })} />
       </div>
+      {mostrarOuvir && <OuvirLivro descricao={r.descricao} userId={userId} />}
+      {mostrarHistorico && r.member_requirement_id && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
+      <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />
     </article>
   )
+}
+
+// Ações do "⋯" de um requisito, na ordem em que aparecem. Pura (exportada para teste): só decide
+// QUAIS ações existem e com que rótulo — quem executa é o card.
+export function acoesDoRequisito({ r, temLivro, mostrarOuvir, mostrarHistorico, abrindoOrigem, ouvir, catalogo, historico, origem }) {
+  const acoes = []
+  if (temLivro && !mostrarOuvir) acoes.push({ rotulo: 'Ouvir o livro', icone: '🎧', onClick: ouvir })
+  const termo = termoDoRequisito(r.descricao)
+  if (termo !== null) acoes.push({ rotulo: 'Ver no catálogo de especialidades', icone: '🔎', onClick: () => catalogo(termo) })
+  const n = (r.avaliacoes || []).length
+  if (n > 0 && r.member_requirement_id) {
+    acoes.push({ rotulo: `${mostrarHistorico ? 'Esconder' : 'Ver'} histórico (${n} avaliaç${n === 1 ? 'ão' : 'ões'})`, icone: '🕘', onClick: historico })
+  }
+  acoes.push({ rotulo: abrindoOrigem ? 'Carregando…' : 'Origem do requisito', icone: '📜', onClick: origem, desabilitada: abrindoOrigem })
+  return acoes
 }
 
 // Gera (ou reobtém, idempotente) o Caderno da própria pessoa e abre a versão imprimível numa aba nova.
@@ -731,25 +745,7 @@ function HistoricoPorTentativa({ memberRequirementId }) {
   return <HistoricoDeTentativas tentativas={dados.tentativas || []} mostrarAvaliador className="mt-1.5" />
 }
 
-// "Origem do requisito": proveniência sob demanda (auditoria/liderança) — não polui o card.
-function OrigemDoRequisito({ requirementId }) {
-  const [origem, setOrigem] = useState(null)
-  const [abrindo, setAbrindo] = useState(false)
-  async function verOrigem() {
-    setAbrindo(true)
-    try { setOrigem(await carregarOrigemRequisito(requirementId)) } catch (e) { avisar.erro(e) } finally { setAbrindo(false) }
-  }
-  return (
-    <>
-      <button type="button" onClick={verOrigem} disabled={abrindo} aria-busy={abrindo || undefined}
-        className="min-h-[44px] text-xs text-faint underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-        {abrindo ? 'Carregando…' : 'Origem do requisito'}
-      </button>
-      <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />
-    </>
-  )
-}
-
+// "Origem do requisito": proveniência sob demanda (auditoria/liderança), aberta pelo menu "⋯" do card.
 // Folha (bottom sheet): sobe de baixo no celular, fecha no Esc, no fundo e no ✕ de 44px.
 function OrigemRequisito({ origem, onFechar }) {
   const req = origem?.requisito || {}

@@ -5,9 +5,10 @@ import { meuStatus, carregarPerfil } from '../../services/rede.js'
 import { MARCA_PRODUTO } from '../../lib/marca.js'
 import Notificacoes from '../../components/Notificacoes.jsx'
 import BotaoAjuda from '../../components/BotaoAjuda.jsx'
+import TourDaArea from '../../components/TourDaArea.jsx'
 import { RedeContexto } from './contexto.js'
 import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
-import { Carregando } from '../../ui/index.jsx'
+import { Carregando, FilaDePopupsProvider } from '../../ui/index.jsx'
 import { destinoDeSaidaDaRede, redeComoCoordenacao, sairDoModoCoordenacao } from '../../lib/redeModo.js'
 
 // =============================================================================
@@ -171,13 +172,19 @@ export default function LayoutRede() {
     conteudo = <Outlet />
   }
 
+  // Mini-tour da Rede (Fase 6, item 3): só quando a pessoa PODE VER a rede (nunca por cima da tela de
+  // "sem acesso"), 1x por usuário neste aparelho (TourDaArea marca "visto"), pela FilaDePopups — este
+  // layout não usa o AppLayout, então a fila é provida aqui (um popup por vez; "Rever tour" fica em /ajuda).
   return (
-    <RedeContexto.Provider value={{ status, eu: euNaRede, recarregar }}>
-      <div className="min-h-screen bg-[var(--rede-bg)] overflow-x-hidden" data-rede>
-        <Topo />
-        <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
-        <BarraInferior eu={euNaRede} />
-      </div>
-    </RedeContexto.Provider>
+    <FilaDePopupsProvider>
+      <RedeContexto.Provider value={{ status, eu: euNaRede, recarregar }}>
+        <div className="min-h-screen bg-[var(--rede-bg)] overflow-x-hidden" data-rede>
+          <Topo />
+          <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
+          <BarraInferior eu={euNaRede} />
+          {podeVer && !erro && <TourDaArea id="rede" uid={profile?.id} />}
+        </div>
+      </RedeContexto.Provider>
+    </FilaDePopupsProvider>
   )
 }

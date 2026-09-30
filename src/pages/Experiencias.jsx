@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
@@ -168,19 +168,24 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
   const feito = env?.status === 'aprovada'
   const aguardando = env?.status === 'enviada'
   const [subindo, setSubindo] = useState(false)
+  const [arquivo, setArquivo] = useState(null) // o File escolhido (só para a miniatura/nome na ZonaUpload)
+  const [erroArquivo, setErroArquivo] = useState('')
 
   // Evidência de arquivo REAPROVEITA o bucket privado que já existe ('comprovacoes', pasta do próprio
   // usuário). Nenhuma infraestrutura nova de arquivo: mesma política, mesma privacidade.
-  const escolherArquivo = async (ev) => {
-    const file = ev.target.files?.[0]
+  const escolherArquivo = async (file) => {
     if (!file) return
-    setSubindo(true)
+    setSubindo(true); setErroArquivo('')
+    setArquivo(file)
     try {
       const path = await subirComprovacao({ file, tipo: 'experiencias', userId: session?.user?.id })
       setValor({ ...valor, arquivo_path: path })
-    } catch (e) { setErro?.(mensagemDeErro(e, 'Não consegui enviar o arquivo.')) }
-    finally { setSubindo(false) }
+    } catch (e) {
+      const msg = mensagemDeErro(e, 'Não consegui enviar o arquivo.')
+      setErroArquivo(msg); setErro?.(msg)
+    } finally { setSubindo(false) }
   }
+  const removerArquivo = () => { setArquivo(null); setErroArquivo(''); setValor({ ...valor, arquivo_path: '' }) }
 
   const enviar = (ev) => {
     ev.preventDefault()
@@ -229,12 +234,13 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
           )}
           {(s.evidencia === 'foto' || s.evidencia === 'arquivo') && (
             <>
-              <label className="block">
-                <span className="text-xs text-muted">{s.evidencia === 'foto' ? 'Foto' : 'Arquivo'}</span>
-                <input type="file" accept={s.evidencia === 'foto' ? 'image/*' : undefined}
-                  aria-label={`Arquivo da etapa ${s.titulo}`} onChange={escolherArquivo}
-                  className="mt-1 w-full text-sm text-ink" />
-              </label>
+              {/* ZonaUpload (design system): aqui o arquivo SOBE na hora da escolha (bucket privado), então os
+                  estados são reais: enviando → concluído (caminho pronto) → erro. `accept` aberto quando a
+                  etapa aceita qualquer arquivo. Sem `capture`: câmera ou galeria. */}
+              <ZonaUpload rotulo={`Arquivo da etapa ${s.titulo}`} accept={s.evidencia === 'foto' ? 'image/*' : '*/*'}
+                arquivo={arquivo} aoEscolher={escolherArquivo} aoRemover={removerArquivo}
+                estado={subindo ? 'enviando' : erroArquivo ? 'erro' : valor.arquivo_path ? 'concluido' : undefined}
+                progresso="Enviando o arquivo…" erro={erroArquivo} />
               <p className="text-xs text-faint">
                 {subindo ? 'Enviando o arquivo…'
                   : valor.arquivo_path ? '✅ Arquivo pronto para enviar.'

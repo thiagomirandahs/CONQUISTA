@@ -10,7 +10,7 @@ import {
 } from './componentes.jsx'
 
 // Perfil da Rede DBV (/rede/perfil = o meu; /rede/perfil/:id = de outra pessoa): avatar grande à esquerda,
-// contadores à direita, nome, "Unidade · Clube" (a unidade só quando o servidor mandar), selos DBV (papel em
+// contadores à direita, nome, "Clube · Unidade" (a unidade só quando o servidor mandar, 502), selos DBV (papel em
 // marinho, coordenação em dourado); abas por ícone com sublinhado DOURADO — Fotos (grade 3 colunas), Textos
 // (lista), Conquistas, Desafios e Salvos (só no meu). A foto de rosto só vem do servidor com a autorização
 // de uso de imagem; sem ela, iniciais. Nada de classes aqui (decisão do dono).
@@ -116,7 +116,7 @@ function Perfil({ id }) {
         <div className="flex items-start justify-between gap-2 mt-3">
           <div className="min-w-0">
             <h1 className={`text-[15px] font-bold ${TXT}`}>{perfil.nome}{perfil.coordenacao && <SeloCoordenacao />}</h1>
-            <p className={`text-[14px] ${TXT}`} data-testid="perfil-clube">{[perfil.unidade, perfil.clube].filter(Boolean).join(' · ')}</p>
+            <p className={`text-[14px] ${TXT}`} data-testid="perfil-clube">{[perfil.clube, perfil.unidade].filter(Boolean).join(' · ')}</p>
             {desde && <p className={`text-[13px] ${TXT_SUAVE}`}>{desde}</p>}
             <div className="flex flex-wrap gap-1.5 mt-1.5" data-testid="selos-perfil">
               {perfil.coordenacao

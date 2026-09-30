@@ -154,15 +154,17 @@ describe('Rede DBV — feed', () => {
     expect(within(b).getByRole('button', { name: 'Curtir, 12 curtidas' })).toBeInTheDocument()
   })
 
-  it('cabeça do post: nome em negrito e "Clube · há x"; a unidade só entra quando o servidor mandar', async () => {
+  it('cabeça do post: nome em negrito e "Clube · Unidade · há x"; a unidade só entra quando o servidor mandar (502)', async () => {
     f.carregarFeed.mockResolvedValue({ itens: [
       post({ id: 'a' }),
       post({ id: 'b', autor: { id: 'u-bia', nome: 'Bia Lima', clube: 'Clube Leões', unidade: 'Unidade Falcão', foto: null } }),
+      post({ id: 'c', autor: { id: 'u-cid', nome: 'Cid Melo', clube: 'Clube Leões', unidade: null, foto: null } }),
     ], proximo: null })
     renderRede(<RedeFeed />)
-    const [a, b] = await screen.findAllByTestId('post')
-    expect(within(a).getByTestId('autor-subtitulo')).toHaveTextContent(/^Clube Águias · /)
-    expect(within(b).getByTestId('autor-subtitulo')).toHaveTextContent(/^Unidade Falcão · Clube Leões · /)
+    const [a, b, c] = await screen.findAllByTestId('post')
+    expect(within(a).getByTestId('autor-subtitulo')).toHaveTextContent(/^Clube Águias · (agora|há )/)
+    expect(within(b).getByTestId('autor-subtitulo')).toHaveTextContent(/^Clube Leões · Unidade Falcão · (agora|há )/)
+    expect(within(c).getByTestId('autor-subtitulo')).toHaveTextContent(/^Clube Leões · (agora|há )/)
     expect(within(a).getByText('Ana Souza', { selector: 'span' }).className).toContain('font-bold')
   })
 

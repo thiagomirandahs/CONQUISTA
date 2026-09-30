@@ -77,6 +77,11 @@ function preparar() {
       from e2e_p p;
     insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
     select md5('e2e-rede:' || p.k)::uuid, (select id from public.organizational_units where slug = p.clube), p.papel, 'ativo' from e2e_p p;
+    -- 502: a2 tem UNIDADE no clube A ("Águias"); a1 não tem unidade
+    insert into public.unidades (nome, cor, club_id)
+    select 'E2E Unidade Águias', '#111111', id from public.organizational_units where slug = 'e2e-rede-clube-a';
+    update public.organization_memberships set unidade_id = (select id from public.unidades where nome = 'E2E Unidade Águias')
+     where user_id = md5('e2e-rede:a2')::uuid;
     insert into public.responsaveis (responsavel_id, desbravador_id, nome_digitado, status, club_id)
     select md5('e2e-rede:pais_a')::uuid, md5('e2e-rede:a1')::uuid, 'Ana', 'aprovado', id from public.organizational_units where slug = 'e2e-rede-clube-a';
   `)
@@ -100,6 +105,7 @@ function limparBanco() {
     delete from public.club_features where club_id in (select id from e2e_u);
     delete from public.responsaveis where responsavel_id in (select id from e2e_us) or desbravador_id in (select id from e2e_us);
     delete from public.organization_memberships where user_id in (select id from e2e_us);
+    delete from public.unidades where club_id in (select id from e2e_u);
     delete from public.profiles where id in (select id from e2e_us);
     delete from auth.users where id in (select id from e2e_us);
     delete from public.organizational_units where id in (select id from e2e_u);
@@ -181,6 +187,16 @@ async function principal() {
   const busca = await rpc(c.b1, 'rede_buscar', { p_termo: 'caio', p_clube: null })
   const pessoaA2 = (busca.data?.pessoas || []).find((p) => p.id === id.a2)
   ok('busca do clube B: a2 com personagem', pessoaA2?.avatar_tipo === 'personagem' && pessoaA2?.foto === null, JSON.stringify(pessoaA2))
+
+  console.log('\n== 2b. UNIDADE do autor (502): nome da unidade visível entre clubes; null para quem não tem ==')
+  ok('feed do clube B: o post de a2 traz unidade = "E2E Unidade Águias"', itemA2?.autor?.unidade === 'E2E Unidade Águias', JSON.stringify(itemA2?.autor?.unidade))
+  ok('...e o clube junto (o app monta "Clube · Unidade · há X")', itemA2?.autor?.clube === 'E2E Rede Clube A', JSON.stringify(itemA2?.autor?.clube))
+  ok('rede_perfil(a2) para o clube B: unidade vem', pa2.data?.unidade === 'E2E Unidade Águias', JSON.stringify(pa2.data?.unidade))
+  ok('rede_perfil(a1) para o clube B: a1 não tem unidade → null', 'unidade' in (pa1.data || {}) && pa1.data.unidade === null, JSON.stringify(pa1.data?.unidade))
+  const meuA2 = await rpc(c.a2, 'rede_perfil')
+  ok('a2 no próprio perfil: unidade vem', meuA2.data?.unidade === 'E2E Unidade Águias', JSON.stringify(meuA2.data?.unidade))
+  ok('só o NOME da unidade sai no autor (sem id/cor): chaves = 500 + unidade',
+    Object.keys(itemA2?.autor || {}).sort().join(',') === 'avatar,avatar_tipo,clube,coordenacao,foto,id,nome,unidade', Object.keys(itemA2?.autor || {}).sort().join(','))
 
   console.log('\n== 3. Diretoria ARQUIVA a autorização: foto de quem usa foto aparece para outro clube; personagem continua ==')
   const m1 = await rpc(c.lider_a, 'rede_marcar_autorizacao_imagem', { p_usuario: id.a1, p_arquivada: true })

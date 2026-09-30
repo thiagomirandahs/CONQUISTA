@@ -89,6 +89,11 @@ beforeEach(() => {
 
 const card = (codigo) => screen.getAllByTestId('requisito').find((a) => within(a).getByTestId('requisito-texto').textContent.startsWith(codigo + '. '))
 const situacao = (codigo) => within(card(codigo)).getByTestId('situacao').getAttribute('data-situacao')
+// abre o menu "⋯" do card (no jsdom não há matchMedia → MenuAcoes sobe como Folha, um dialog com o nome do menu)
+async function abrirMais(c) {
+  await userEvent.click(within(c).getByRole('button', { name: 'Mais sobre este requisito' }))
+  return screen.findByRole('dialog', { name: 'Mais sobre este requisito' })
+}
 
 describe('situacaoDoRequisito (lógica pura)', () => {
   it('prioriza o status operacional final, depois bloqueio, depois histórico, depois o status', () => {
@@ -224,11 +229,13 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(within(card('8')).queryByRole('button', { name: /Enviar/ })).not.toBeInTheDocument()
     const c9 = card('9')
     expect(within(c9).getByText(/A liderança pediu correção/)).toBeInTheDocument()
-    await userEvent.click(within(c9).getByRole('button', { name: /histórico/ }))
+    await abrirMais(c9)
+    await userEvent.click(screen.getByRole('button', { name: /Ver histórico \(1 avaliação\)/ }))
     expect(await within(c9).findByText('"Refaça"')).toBeInTheDocument()
+    expect(carregarHistoricoRequisito).toHaveBeenCalledWith('mr9')
   })
 
-  it('"Origem do requisito" é secundária (um link por card) e abre a proveniência sob demanda', async () => {
+  it('"Origem do requisito" é secundária (ação do menu "⋯" do card) e abre a proveniência sob demanda', async () => {
     carregarOrigemRequisito.mockResolvedValue({
       requisito: { codigo: '1', descricao: 'Requisito simples de teste.', manifesto_id: 'teste.I.1', status_fonte: 'ALTERADO_POR_OMD',
         alterado_por_omd: { id: 'OMD-999-2020', titulo: 'OMD de teste', data: '2020-01-01', url: 'https://exemplo.test/omd.pdf' } },
@@ -239,7 +246,9 @@ describe('MinhaClasse — os estados de requisito', () => {
     await screen.findByRole('heading', { level: 4 })
     expect(screen.queryByText(/OMD-999/)).not.toBeInTheDocument()
     expect(screen.queryByText('abc123')).not.toBeInTheDocument()
-    await userEvent.click(within(card('1')).getByRole('button', { name: 'Origem do requisito' }))
+    expect(within(card('1')).queryByRole('button', { name: 'Origem do requisito' })).not.toBeInTheDocument()
+    await abrirMais(card('1'))
+    await userEvent.click(screen.getByRole('button', { name: /Origem do requisito/ }))
     expect(carregarOrigemRequisito).toHaveBeenCalledWith('r1')
     const dialog = await screen.findByRole('dialog', { name: 'Origem do requisito' })
     expect(within(dialog).getByText(/OMD-999-2020/)).toBeInTheDocument()
