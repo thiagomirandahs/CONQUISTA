@@ -1,9 +1,10 @@
 import { Carregando as Esqueleto, Aviso } from '../ui/index.jsx'
+import ListaEspecialidades from '../components/especialidades/ListaEspecialidades.jsx'
 import { useState, useEffect, useCallback } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import {
-  carregarMinhaEspecialidade, carregarEspecialidadesDisponiveis, iniciarEspecialidade,
+  carregarMinhaEspecialidade, buscarEspecialidades, iniciarEspecialidade,
   salvarRequisitoEspecialidade, enviarRequisitoEspecialidade,
   salvarRelatorioEspecialidade, carregarHistoricoEspecialidade, subirAnexoDeRelatorio,
 } from '../lib/dados.js'
@@ -27,86 +28,80 @@ const STATUS_INFO = {
 
 const fmtData = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '')
 
+const ABAS_MINHAS = [{ valor: 'iniciadas', rotulo: 'Em andamento' }, { valor: 'concluidas', rotulo: 'Concluídas' }]
+const ABAS_ESCOLHER = [{ valor: 'disponiveis', rotulo: 'Disponíveis' }]
+
+// Duas vistas: LISTA paginada (Minhas / Escolher) e DETALHE de uma especialidade (o de sempre, com formulário,
+// histórico, grupos, bloqueios e prazo). Quem só tem UMA em andamento cai direto no detalhe, como antes.
 export default function MinhasEspecialidades() {
   const { profile } = useAuth()
-  const [carregando, setCarregando] = useState(true)
+  const [vista, setVista] = useState('carregando') // carregando | lista | detalhe
+  const [aba, setAba] = useState('minhas') // minhas | escolher
   const [minha, setMinha] = useState(null)
-  const [disponiveis, setDisponiveis] = useState([])
-  const [erro, setErro] = useState('')
 
-  const recarregar = useCallback(async () => {
-    setCarregando(true)
-    setErro('')
+  const abrir = useCallback(async (memberSpecialtyId = null) => {
+    setVista('carregando')
     try {
-      const m = await carregarMinhaEspecialidade()
-      setMinha(m)
-      setDisponiveis(await carregarEspecialidadesDisponiveis())
+      const m = await carregarMinhaEspecialidade(memberSpecialtyId)
+      if (m) { setMinha(m); setVista('detalhe') } else setVista('lista')
     } catch (e) {
-      setErro(mensagemDeErro(e, 'Não consegui carregar as especialidades.'))
-    } finally {
-      setCarregando(false)
+      avisar.erro(e, 'Não consegui abrir a especialidade.')
+      setVista('lista')
     }
   }, [])
 
-  useEffect(() => { recarregar() }, [recarregar])
+  useEffect(() => {
+    let vivo = true
+    ;(async () => {
+      try {
+        // só pergunto quantas estão em andamento (no máximo 2 itens) — nunca o catálogo
+        const r = await buscarEspecialidades({ situacao: 'iniciadas', limite: 2 })
+        if (!vivo) return
+        const unica = (r.itens || []).length === 1 && (r.total ?? 1) === 1
+        if (unica) await abrir(r.itens[0].member_specialty_id)
+        else setVista('lista')
+      } catch {
+        if (vivo) setVista('lista') // a própria lista mostra o erro, com "Tentar de novo"
+      }
+    })()
+    return () => { vivo = false }
+  }, [abrir])
 
-  async function iniciar(specialtyId) {
-    try {
-      await iniciarEspecialidade(specialtyId)
-      await recarregar()
-    } catch (e) {
-      avisar.erro(e)
-    }
+  if (vista === 'carregando') return <div className="mt-4"><Esqueleto /></div>
+
+  if (vista === 'detalhe' && minha) {
+    return (
+      <div className="space-y-5">
+        <div>
+          <button type="button" onClick={() => { setAba('minhas'); setVista('lista') }} data-testid="voltar-lista"
+            className="inline-flex min-h-[44px] items-center text-sm font-bold text-brand underline">← Todas as especialidades</button>
+          <h2 className="text-2xl font-extrabold text-ink">🏅 Minhas Especialidades</h2>
+          <p className="text-sm text-muted">Seu progresso em cada especialidade, requisito por requisito</p>
+        </div>
+        <Progresso dados={minha} userId={profile?.id} onMudou={() => abrir(minha.member_specialty.id)} />
+      </div>
+    )
   }
 
-  if (carregando) return <div className="mt-4"><Esqueleto /></div>
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-extrabold text-ink">🏅 Minhas Especialidades</h2>
-        <p className="text-sm text-muted">Seu progresso em cada especialidade, requisito por requisito</p>
+        <h2 className="text-2xl font-extrabold text-ink">🏅 Especialidades</h2>
+        <p className="text-sm text-muted">Acompanhe as suas ou escolha uma nova para começar</p>
       </div>
-
-      {erro && <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">{erro}</div>}
-
-      {minha && <Progresso dados={minha} userId={profile?.id} onMudou={recarregar} />}
-
-      <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
-    </div>
-  )
-}
-
-function ListaDisponiveis({ disponiveis, onIniciar }) {
-  if (disponiveis.length === 0) return null
-  return (
-    <div>
-      <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2">Disponíveis pra começar</h3>
-      <div className="space-y-2">
-        {disponiveis.map((sp) => {
-          const bloqueada = (sp.dependencias_pendentes || []).length > 0
-          return (
-            <div key={sp.specialty_id} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-bold text-ink truncate">{sp.nome}</div>
-                <div className="text-xs text-faint truncate">{[sp.categoria, sp.nivel].filter(Boolean).join(' · ')}</div>
-                {sp.curriculum_version?.origem === 'piloto_teste' && (
-                  <span className="inline-block mt-1 text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                    Dados de teste
-                  </span>
-                )}
-                {bloqueada && (
-                  <p className="text-xs text-red-700 mt-1">🔒 Falta concluir antes: {sp.dependencias_pendentes.join(', ')}</p>
-                )}
-              </div>
-              <button onClick={() => onIniciar(sp.specialty_id)} disabled={bloqueada}
-                className="shrink-0 rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold text-sm px-4 py-2 shadow-glow disabled:opacity-40">
-                Iniciar
-              </button>
-            </div>
-          )
-        })}
+      <div role="tablist" aria-label="Especialidades" className="flex gap-2">
+        {[['minhas', 'Minhas especialidades'], ['escolher', 'Escolher uma especialidade']].map(([v, r]) => (
+          <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
+            className={`min-h-[48px] flex-1 rounded-xl px-2 text-sm font-extrabold ${aba === v ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow' : 'border border-line bg-surface text-muted'}`}
+            style={aba === v ? { color: 'var(--marca-1-texto, #fff)' } : undefined}>{r}</button>
+        ))}
       </div>
+      {aba === 'minhas' ? (
+        <ListaEspecialidades key="minhas" abas={ABAS_MINHAS} aoAbrir={(it) => abrir(it.member_specialty_id)} />
+      ) : (
+        <ListaEspecialidades key="escolher" abas={ABAS_ESCOLHER}
+          aoComecar={async (it) => { const r = await iniciarEspecialidade(it.specialty_id); await abrir(r?.member_specialty_id ?? null) }} />
+      )}
     </div>
   )
 }

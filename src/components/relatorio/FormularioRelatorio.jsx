@@ -193,6 +193,7 @@ function CampoTexto({ c, id, valor, aoMudar, desativado, erros }) {
     <Bloco>
       <label htmlFor={id} className="block text-sm font-bold text-ink"><Legenda c={c} /></label>
       <Controle id={id} value={texto} maxLength={max} disabled={desativado} rows={longo ? 5 : undefined} type={longo ? undefined : 'text'}
+        autoComplete="off" autoCapitalize="sentences" enterKeyHint={longo ? 'enter' : 'next'}
         onChange={(e) => aoMudar(e.target.value)} aria-invalid={erros.length ? 'true' : undefined} aria-describedby={idAjuda}
         className={juntar(ENTRADA, 'mt-1.5', erros.length && 'border-rose-400')} />
       <Ajuda id={idAjuda}>
@@ -312,7 +313,7 @@ function CampoLista({ c, id, valor, aoMudar, desativado, erros }) {
               <div className="min-w-0 flex-1">
                 <label htmlFor={`${id}-${i}`} className="sr-only">{rot} {i + 1}</label>
                 <Controle id={`${id}-${i}`} value={v} maxLength={limite} rows={longo ? 3 : undefined} type={longo ? undefined : 'text'}
-                  placeholder={`${rot} ${i + 1}`} onChange={(e) => trocar(i, e.target.value)} className={ENTRADA} />
+                  placeholder={`${rot} ${i + 1}`} autoComplete="off" autoCapitalize="sentences" enterKeyHint="next" onChange={(e) => trocar(i, e.target.value)} className={ENTRADA} />
               </div>
               {linhas.length > minimo && !desativado && (
                 <button type="button" onClick={() => aoMudar(linhas.filter((_, j) => j !== i))} aria-label={`Remover ${rot} ${i + 1}`}

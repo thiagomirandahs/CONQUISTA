@@ -10,6 +10,18 @@ export async function carregarEspecialidadesDisponiveis() {
   return data || []
 }
 
+// Catálogo PAGINADO (nunca o catálogo inteiro): busca por nome/código, área, situação e cursor opaco.
+// Devolve { itens, proximo, total, areas } — `areas` só vem na 1ª página. O limite é saneado para 1–50.
+export async function buscarEspecialidades({ busca = null, area = null, situacao = 'todas', limite = 30, depois = null } = {}) {
+  const n = Math.trunc(Number(limite))
+  const lim = Number.isFinite(n) ? Math.min(Math.max(n, 1), 50) : 30
+  const { data, error } = await supabase.rpc('especialidades_buscar', {
+    p_busca: (busca || '').trim() || null, p_area: area || null, p_situacao: situacao || 'todas', p_limite: lim, p_depois: depois || null,
+  })
+  if (error) throw new Error(error.message)
+  return data || { itens: [], proximo: null, total: 0, areas: [] }
+}
+
 export async function iniciarEspecialidade(specialtyId, ofertaId = null) {
   const { data, error } = await supabase.rpc('especialidade_iniciar', { p_specialty_id: specialtyId, p_oferta_id: ofertaId })
   if (error) throw new Error(error.message)
