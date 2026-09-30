@@ -23,6 +23,7 @@
     "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:pdf:e2e": "node supabase/tests/e2e/pdf-ponta-a-ponta.mjs",
     "test:lote:e2e": "node supabase/tests/e2e/assinatura-lote-ponta-a-ponta.mjs",
+    "test:relatorio:e2e": "node supabase/tests/e2e/relatorio-estruturado.mjs",
     "test:fluxo:e2e": "node supabase/tests/e2e/fluxo-pedagogico-investidura.mjs",
     "homologacao:seed": "node supabase/tests/e2e/_seed_homologacao.mjs",
     "homologacao:personas": "node supabase/tests/e2e/homologacao-personas.mjs",
