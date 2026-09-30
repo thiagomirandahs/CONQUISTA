@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-const f = { carregarDesafios: vi.fn(), prepararFoto: vi.fn(), publicarNaRede: vi.fn(), publicarConquista: vi.fn() }
+const f = { carregarDesafios: vi.fn(), prepararFoto: vi.fn(), publicarNaRede: vi.fn(), publicarConquista: vi.fn(), listarConquistasPublicaveis: vi.fn() }
 vi.mock('../../services/rede.js', async () => {
   const real = await vi.importActual('../../services/rede.js')
   return { ...real, ...Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])) }
@@ -23,6 +23,7 @@ const DESAFIOS = { semana: { id: 'd1', titulo: 'Foto na natureza', pontos: 50, p
 beforeEach(() => {
   for (const fn of Object.values(f)) fn.mockReset()
   f.carregarDesafios.mockResolvedValue(DESAFIOS)
+  f.listarConquistasPublicaveis.mockResolvedValue([])
   globalThis.URL.createObjectURL = vi.fn(() => 'blob:previa')
   globalThis.URL.revokeObjectURL = vi.fn()
 })
@@ -210,39 +211,111 @@ describe('Rede DBV — publicar', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Alcance inválido.')
   })
 
-  it('conquista não é texto livre: sem caixa de texto nem foto; usa rede_publicar_conquista com a origem real', async () => {
+  const CONQ = [
+    { origem_tipo: 'classe', origem_id: ID1, titulo: 'Amigo', rotulo: 'Classe concluída', concluida_em: '2026-09-20T10:00:00Z', previa: 'Ana S. concluiu a classe Amigo! 🎖️' },
+    { origem_tipo: 'especialidade', origem_id: ID2, titulo: 'Nós e amarras', rotulo: 'Especialidade concluída', concluida_em: null, previa: 'Bia L. concluiu a especialidade Nós e amarras! 🏅' },
+  ]
+  const abrirConquistas = async (u) => { await u.click(screen.getByRole('button', { name: /Compartilhar conquista/ })) }
+
+  // MUDANÇA DE PROPÓSITO (517): conquista vem de uma LISTA do servidor + preview seguro, sem parâmetros de URL.
+  it('conquista: lista do servidor -> preview seguro (sem texto livre) -> publica só com origem da lista', async () => {
     const u = userEvent.setup()
+    f.listarConquistasPublicaveis.mockResolvedValue(CONQ)
     f.publicarConquista.mockResolvedValue({ ok: true, mensagem: 'Conquista publicada! 🎉' })
-    renderRede(<RedePublicar />, { status: LIDER, rota: `/rede/publicar?origem_tipo=classe&origem_id=${ID1}` })
-    expect(screen.getByTestId('conquista-origem')).toBeInTheDocument()
+    renderRede(<RedePublicar />, { status: LIDER })
+    await abrirConquistas(u)
+    expect(f.listarConquistasPublicaveis).toHaveBeenCalledWith('clube')
+    await u.click(await screen.findByRole('button', { name: /Amigo/ }))
+    expect(screen.getByTestId('previa-conquista')).toHaveTextContent('Ana S. concluiu a classe Amigo! 🎖️')
     expect(screen.queryByLabelText('No que você está pensando?')).toBeNull()
     expect(screen.queryByLabelText(/Adicionar foto/)).toBeNull()
+    expect(screen.queryByRole('textbox')).toBeNull()
     await u.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(f.publicarConquista).toHaveBeenCalledTimes(1)
     expect(f.publicarConquista).toHaveBeenCalledWith({ origemTipo: 'classe', origemId: ID1, alcance: 'clube' })
     expect(f.publicarNaRede).not.toHaveBeenCalled()
     expect(avisos.sucesso).toHaveBeenCalledWith('Conquista publicada! 🎉')
   })
 
-  it('conquista na Comunidade manda alcance "comunidade" (com confirmação)', async () => {
+  it('preview: "Voltar" volta à lista; "Voltar" na confirmação não publica', async () => {
     const u = userEvent.setup()
+    f.listarConquistasPublicaveis.mockResolvedValue(CONQ)
+    renderRede(<RedePublicar />, { status: LIDER })
+    await abrirConquistas(u)
+    await u.click(await screen.findByRole('button', { name: /Nós e amarras/ }))
+    await u.click(screen.getByRole('button', { name: 'Voltar' }))
+    expect(screen.getByRole('button', { name: /Amigo/ })).toBeInTheDocument()
+    await u.click(screen.getByRole('button', { name: /Amigo/ }))
+    avisos.confirmar.mockImplementationOnce(async () => false)
+    await u.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(f.publicarConquista).not.toHaveBeenCalled()
+  })
+
+  it('conquista na Comunidade: lista com alcance "comunidade", confirmação explícita e payload com alcance', async () => {
+    const u = userEvent.setup()
+    f.listarConquistasPublicaveis.mockResolvedValue(CONQ)
     f.publicarConquista.mockResolvedValue({ ok: true, mensagem: 'Conquista publicada! 🎉' })
-    renderRede(<RedePublicar />, { status: DIRETORIA, rota: `/rede/publicar?origem_tipo=especialidade&origem_id=${ID2}` })
+    renderRede(<RedePublicar />, { status: DIRETORIA })
     await u.click(screen.getByRole('radio', { name: 'Comunidade (todos os clubes)' }))
+    await abrirConquistas(u)
+    await u.click(await screen.findByRole('button', { name: /Nós e amarras/ }))
+    expect(f.listarConquistasPublicaveis).toHaveBeenLastCalledWith('comunidade')
     await u.click(screen.getByRole('button', { name: 'Publicar' }))
     expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Publicar na Comunidade?' }))
-    expect(f.publicarConquista).toHaveBeenCalledWith(expect.objectContaining({ origemTipo: 'especialidade', alcance: 'comunidade' }))
+    expect(f.publicarConquista).toHaveBeenCalledWith({ origemTipo: 'especialidade', origemId: ID2, alcance: 'comunidade' })
   })
 
-  it('conquista sem origem real: explica e não deixa publicar', async () => {
+  it('lista vazia: estado claro e nada para publicar', async () => {
     const u = userEvent.setup()
     renderRede(<RedePublicar />, { status: LIDER })
-    await u.click(screen.getByRole('button', { name: /Compartilhar conquista/ }))
-    expect(screen.getByTestId('conquista-origem')).toHaveTextContent(/não é texto livre/)
-    expect(screen.getByRole('button', { name: 'Publicar' })).toBeDisabled()
+    await abrirConquistas(u)
+    expect(await screen.findByText('Nenhuma conquista para compartilhar ainda')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publicar' })).toBeNull()
   })
 
-  it('desbravador com ?origem_... na URL não publica conquista (só liderança)', () => {
+  it('erro ao carregar: "Tentar de novo" recarrega', async () => {
+    const u = userEvent.setup()
+    f.listarConquistasPublicaveis.mockRejectedValueOnce(new Error('falhou feio')).mockResolvedValueOnce(CONQ)
+    renderRede(<RedePublicar />, { status: LIDER })
+    await abrirConquistas(u)
+    await u.click(await screen.findByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByRole('button', { name: /Amigo/ })).toBeInTheDocument()
+    expect(f.listarConquistasPublicaveis).toHaveBeenCalledTimes(2)
+  })
+
+  it('sem parâmetros de URL o fluxo normal funciona (lista)', async () => {
+    const u = userEvent.setup()
+    f.listarConquistasPublicaveis.mockResolvedValue(CONQ)
+    renderRede(<RedePublicar />, { status: LIDER, rota: '/rede/publicar' })
+    await abrirConquistas(u)
+    expect(await screen.findAllByRole('button', { name: /Classe concluída|Especialidade concluída/ })).toHaveLength(2)
+  })
+
+  it('compatibilidade: ?origem_* só pré-seleciona item que EXISTE na lista; origem forjada é ignorada', async () => {
+    f.listarConquistasPublicaveis.mockResolvedValue(CONQ)
+    const a = renderRede(<RedePublicar />, { status: LIDER, rota: `/rede/publicar?origem_tipo=classe&origem_id=${ID1}` })
+    expect(await screen.findByTestId('previa-conquista')).toHaveTextContent('Amigo')
+    a.unmount()
+    renderRede(<RedePublicar />, { status: LIDER, rota: '/rede/publicar?origem_tipo=classe&origem_id=99999999-9999-9999-9999-999999999999' })
+    expect(await screen.findByRole('button', { name: /Amigo/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('previa-conquista')).toBeNull()
+    expect(f.publicarConquista).not.toHaveBeenCalled()
+  })
+
+  it('desbravador com ?origem_... na URL: não carrega nem publica conquista (só liderança)', () => {
     renderRede(<RedePublicar />, { rota: `/rede/publicar?origem_tipo=classe&origem_id=${ID1}` })
-    expect(screen.getByRole('button', { name: 'Publicar' })).toBeDisabled()
+    expect(f.listarConquistasPublicaveis).not.toHaveBeenCalled()
+    expect(screen.getByText(/Só a diretoria e os instrutores compartilham conquistas/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publicar' })).toBeNull()
+  })
+
+  it('recusa crua do servidor (RLS) vira português', async () => {
+    const u = userEvent.setup()
+    f.publicarNaRede.mockRejectedValue(new Error('new row violates row-level security policy'))
+    renderRede(<RedePublicar />)
+    await u.click(screen.getByRole('tab', { name: 'Aviso' }))
+    await u.type(screen.getByLabelText('No que você está pensando?'), 'Oi')
+    await u.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Você não tem permissão')
   })
 })

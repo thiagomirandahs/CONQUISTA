@@ -1,9 +1,10 @@
+import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
 import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { EsqueletoFeed, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
+import { EsqueletoFeed, Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 
 // Feed da Rede DBV: fileira de stories no topo, filtro discreto "Todos ▾ · Meu clube" e os posts de ponta
@@ -11,7 +12,10 @@ import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 // bolinhas; feed vazio oferece "Publicar" a quem publica. O ➕ da barra de baixo leva à tela de publicar.
 // Coordenação (490): "Meu clube" vira "Minha área" — posts dos clubes da coordenação (o servidor filtra).
 // Duas abas (515): "Meu Clube" (padrão) e "Comunidade" (publicações de liderança de todos os clubes).
+// Organização (517): "Meu Clube" = conversa interna (feed, stories, desafios); "Comunidade" = conteúdo interclubes
+// (conquistas, atividades, eventos, avisos, fotos permitidas), SEM stories nem desafios. Uma só Comunidade.
 const abasDoFeed = (coordenacao) => [['meu_clube', coordenacao ? 'Minha área' : 'Meu Clube'], ['comunidade', 'Comunidade']]
+const SUBTITULO = { meu_clube: 'Só o seu clube vê', comunidade: 'Todos os clubes da Rede' }
 
 export default function RedeFeed() {
   const { profile } = useAuth()
@@ -73,12 +77,6 @@ export default function RedeFeed() {
         </div>
       )}
 
-      <FileiraStories grupos={grupos} eu={eu || { id: profile?.id, nome: profile?.nome }} podePublicar={!!status?.pode_publicar}
-        aoAbrir={(i) => setAberto(i)} aoNovo={() => inputStory.current?.click()} />
-      <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
-      <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
-
       <div role="tablist" aria-label="Filtro do feed" className="grid grid-cols-2 border-y border-[var(--rede-linha)]">
         {abasDoFeed(!!status?.coordenacao).map(([chave, rotulo]) => (
           <button key={chave} type="button" role="tab" id={`aba-feed-${chave}`} aria-selected={filtro === chave} tabIndex={filtro === chave ? 0 : -1}
@@ -95,6 +93,24 @@ export default function RedeFeed() {
           </button>
         ))}
       </div>
+
+      <p data-testid="subtitulo-aba" className={`px-3 pt-2 text-xs font-semibold ${TXT_SUAVE}`}>{SUBTITULO[filtro]}</p>
+
+      {filtro === 'meu_clube' && (
+        <>
+          <FileiraStories grupos={grupos} eu={eu || { id: profile?.id, nome: profile?.nome }} podePublicar={!!status?.pode_publicar}
+            aoAbrir={(i) => setAberto(i)} aoNovo={() => inputStory.current?.click()} />
+          <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
+          <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
+
+          <Link to="/rede/desafios" data-testid="atalho-desafios"
+            className="mx-3 mb-2 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 flex items-center gap-2 text-sm font-semibold text-[var(--rede-ink)] no-underline">
+            <Icone nome="trofeu" className="w-5 h-5 text-[var(--rede-acao)]" /> Desafios do clube
+            <Icone nome="seta" className="w-4 h-4 -rotate-90 ml-auto text-[var(--rede-ink-suave)]" />
+          </Link>
+        </>
+      )}
 
       {carregando ? <EsqueletoFeed />
         : erro ? (

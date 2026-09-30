@@ -76,7 +76,7 @@ export const ALCANCES = Object.freeze(['clube', 'comunidade'])
 export const TIPOS_NOVOS = Object.freeze(['atividade', 'evento', 'aviso', 'foto_clube'])
 export const CONFIRMAR_STORY = {
   titulo: 'Tem certeza que quer publicar este story?',
-  descricao: 'Ele fica visível para todos os clubes da Rede DBV por 24 horas.',
+  descricao: 'Ele fica visível só para o seu clube por 24 horas.',
   rotulo: 'Publicar', cancelar: 'Voltar', perigo: false,
 }
 export const carregarStories = () => rpc('rede_stories')
@@ -159,6 +159,13 @@ export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, alca
 // Conquista NÃO é texto livre (515, D6): o servidor monta o texto a partir do registro real (classe investida /
 // especialidade concluída) do PRÓPRIO clube. Só diretoria/instrutor.
 export const ORIGENS_CONQUISTA = Object.freeze(['classe', 'especialidade'])
+// Lista das conquistas que a liderança pode compartilhar (517): o servidor devolve só o que é real e já traz a
+// `previa` com o texto exatamente como será publicado. Vazio se a pessoa não é diretoria|instrutor.
+export async function listarConquistasPublicaveis(alcance = 'clube') {
+  if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')
+  const r = await rpc('rede_conquistas_publicaveis', { p_alcance: alcance })
+  return (Array.isArray(r) ? r : []).filter((c) => ORIGENS_CONQUISTA.includes(c?.origem_tipo) && c?.origem_id)
+}
 export function publicarConquista({ origemTipo, origemId, alcance = 'clube' }) {
   if (!ORIGENS_CONQUISTA.includes(origemTipo) || !origemId) throw new Error('Não encontramos essa conquista concluída no seu clube.')
   if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')

@@ -27,9 +27,20 @@ export const TXT_SUAVE = 'text-[var(--rede-ink-suave)]'
 export const LINHA = 'border-[var(--rede-linha)]'
 
 // Erro que o servidor escreveu PARA a pessoa (regras da Comunidade): mostramos como veio.
-const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|Descreva|Escolha|Alcance|Tipo de publicação|Só a diretoria|Compartilhar|perfil|salvos|ocultar|restaurar|clube/i
+const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|Descreva|Escolha|Alcance|Tipo de publicação|Só a diretoria|Compartilhar|perfil|salvos|ocultar|restaurar|clube|aviso|evento|instrutor|diretoria|comentar/i
+// Regras por papel (517): aviso/evento/Comunidade só liderança; comentar na Comunidade só quem o servidor permite.
+// Se o servidor devolver a recusa crua (permissão/RLS/"not allowed"), traduzimos; se já vier em português, mostramos como veio.
+const RECUSA_POR_PAPEL = [
+  [/(aviso|evento).*(diretoria|instrutor|lideran)|(diretoria|instrutor|lideran).*(aviso|evento)/i, 'Avisos e eventos são publicados só pela diretoria e pelos instrutores do clube. Você pode publicar uma foto ou atividade no Meu Clube 🙂'],
+  [/(coment).*(comunidade|permiss|autoriz)|(comunidade).*(coment)/i, 'Você não pode comentar nesta publicação da Comunidade. Nos posts do seu clube você comenta normalmente 🙂'],
+  [/(permission denied|not allowed|row-level security|violates row|forbidden|42501)/i, 'Você não tem permissão para fazer isso na Rede DBV. Se acha que é um engano, fale com a diretoria do seu clube.'],
+]
 export const textoDoErro = (e, contexto) => {
   const m = String(e?.message || '')
+  if (/^[A-Za-zÀ-ú]/.test(m) && !/[áàâãéêíóôõúç]/i.test(m)) {
+    const hit = RECUSA_POR_PAPEL.find(([re]) => re.test(m))
+    if (hit) return hit[1]
+  }
   return ERRO_DA_REDE.test(m) && m.length < 200 ? m : mensagemDeErro(e, contexto)
 }
 

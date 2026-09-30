@@ -63,7 +63,7 @@ export default function RedeMais() {
         <ul className={`text-sm ${TXT} space-y-1.5 list-disc pl-5`}>
           <li>Respeito sempre. Palavrão, ofensa e deboche não passam.</li>
           <li>Nada de telefone, @, links, e-mail, endereço ou escola. Não existe mensagem privada.</li>
-          <li>Antes de publicar, o app pergunta se você tem certeza: tudo fica visível para todos os clubes da Rede DBV. Fotos saem daqui em 90 dias; stories, em 24 horas.</li>
+          <li>Antes de publicar, o app pergunta se você tem certeza: em “Só meu clube” só o seu clube vê; em “Comunidade” (só diretoria e instrutor publicam) todos os clubes da Rede veem. Fotos saem daqui em 90 dias; stories, em 24 horas.</li>
           <li>Viu algo errado? Toque em ⋮ → Denunciar (no story, na bandeira): o conteúdo some na hora e a diretoria revisa.</li>
           <li>Três avisos em 30 dias pausam a sua rede por alguns dias.</li>
         </ul>

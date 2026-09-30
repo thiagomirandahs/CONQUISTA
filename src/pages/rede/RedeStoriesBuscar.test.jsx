@@ -149,7 +149,7 @@ describe('Rede DBV — story novo', () => {
     await u.click(screen.getByRole('button', { name: 'Publicar' }))
     expect(avisos.confirmar).toHaveBeenCalledWith(CONFIRMAR_STORY)
     expect(CONFIRMAR_STORY.titulo).toBe('Tem certeza que quer publicar este story?')
-    expect(CONFIRMAR_STORY.descricao).toBe('Ele fica visível para todos os clubes da Rede DBV por 24 horas.')
+    expect(CONFIRMAR_STORY.descricao).toBe('Ele fica visível só para o seu clube por 24 horas.')
     expect(CONFIRMAR_STORY.cancelar).toBe('Voltar')
     expect(f.publicarStory).not.toHaveBeenCalled()
   })

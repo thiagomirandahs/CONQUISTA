@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/Auth.jsx'
-import { carregarDesafios, prepararFoto, publicarNaRede, publicarConquista, confirmacaoDePublicar, ORIGENS_CONQUISTA } from '../../services/rede.js'
+import { carregarDesafios, prepararFoto, publicarNaRede, publicarConquista, listarConquistasPublicaveis, confirmacaoDePublicar } from '../../services/rede.js'
 import { podeGerirAtividades } from '../../lib/permissoes.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
-import { Icone, PILL, PILL_PRIMARIA, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
+import { CARD, Icone, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, textoDoErro } from './componentes.jsx'
 
 // Nova publicação da Rede DBV: Foto · Desafio · Atividade · Evento · Aviso · Foto do clube (+ "Compartilhar
 // conquista", só liderança, montada pelo servidor a partir do registro real — nunca texto livre; sem vídeo).
@@ -41,9 +41,12 @@ export default function RedePublicar() {
   const [desafios, setDesafios] = useState(null)
   const [desafioId, setDesafioId] = useState(desafioDaUrl || '')
   const [alcance, setAlcance] = useState('clube')
-  const origemTipo = params.get('origem_tipo')
-  const origemId = params.get('origem_id')
-  const origemValida = ORIGENS_CONQUISTA.includes(origemTipo) && !!origemId
+  // Conquista (517): lista vinda do servidor -> preview seguro -> publicar. O cliente só manda origem_tipo/origem_id
+  // que VIERAM da lista. ?origem_tipo/?origem_id antigos só pré-selecionam um item que exista na lista.
+  const origemDaUrl = { tipo: params.get('origem_tipo'), id: params.get('origem_id') }
+  const [conquistas, setConquistas] = useState(null)     // null = carregando
+  const [erroConquistas, setErroConquistas] = useState(null)
+  const [conquista, setConquista] = useState(null)       // item escolhido da lista
   const [enviando, setEnviando] = useState(false)
   const [recusa, setRecusa] = useState('')
   const input = useRef(null)
@@ -57,6 +60,19 @@ export default function RedePublicar() {
     }).catch(() => { if (vivo) setDesafios([]) })
     return () => { vivo = false }
   }, [])
+  const liderancaPodeConquista = podeGerirAtividades(status?.papel)
+  const alcanceConq = podeComunidade ? alcance : 'clube'
+  const carregarConquistas = useCallback(async () => {
+    setConquistas(null); setErroConquistas(null); setConquista(null)
+    try {
+      const lista = await listarConquistasPublicaveis(alcanceConq)
+      setConquistas(lista)
+      const daUrl = lista.find((c) => c.origem_tipo === origemDaUrl.tipo && c.origem_id === origemDaUrl.id)
+      if (daUrl) setConquista(daUrl)
+    } catch (e) { setErroConquistas(e) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alcanceConq])
+  useEffect(() => { if (tipo === 'conquista' && liderancaPodeConquista) carregarConquistas() }, [tipo, liderancaPodeConquista, carregarConquistas])
   useEffect(() => () => { if (previa) URL.revokeObjectURL?.(previa) }, [previa])
 
   async function escolherFoto(e) {
@@ -78,7 +94,7 @@ export default function RedePublicar() {
   const alcanceEfetivo = podeComunidade ? alcance : 'clube'
   const tipoFinal = tipo === 'foto' ? (foto ? 'foto' : 'livre') : tipo
   const pronto = !enviando && !preparando && texto.length <= MAX && (
-    tipo === 'conquista' ? podeGerirAtividades(status?.papel) && origemValida
+    tipo === 'conquista' ? liderancaPodeConquista && !!conquista
       : tipo === 'foto' ? (!!foto || !!texto.trim())
         : tipo === 'desafio' ? !!desafioId && (!!foto || !!texto.trim())
           : tipo === 'foto_clube' ? !!foto && !!alt.trim()
@@ -96,7 +112,7 @@ export default function RedePublicar() {
     setEnviando(true); setRecusa('')
     try {
       const r = tipo === 'conquista'
-        ? await publicarConquista({ origemTipo, origemId, alcance: alcanceEfetivo })
+        ? await publicarConquista({ origemTipo: conquista.origem_tipo, origemId: conquista.origem_id, alcance: alcanceEfetivo })
         : await publicarNaRede({ tipo: tipoFinal, legenda: texto.trim(), foto, alt: alt.trim(), desafioId, alcance: alcanceEfetivo, clubeId, userId: profile?.id })
       if (r?.ok) { avisar.sucesso(r.mensagem); navigate('/rede') } else setRecusa(r?.mensagem || 'Não foi possível publicar.')
     } catch (err) { setRecusa(textoDoErro(err, 'Não consegui publicar.')) }
@@ -117,11 +133,13 @@ export default function RedePublicar() {
   return (
     <div>
       <div className="sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 px-2 py-1.5 bg-[var(--rede-bg)] border-b border-[var(--rede-linha)] flex items-center justify-between gap-2">
-        <button type="button" onClick={() => navigate(-1)} aria-label="Voltar" className={`min-h-[44px] min-w-[44px] rounded-full grid place-items-center ${TXT}`}>
+        <button type="button" onClick={() => navigate(-1)} aria-label="Voltar à tela anterior" className={`min-h-[44px] min-w-[44px] rounded-full grid place-items-center ${TXT}`}>
           <Icone nome="voltar" />
         </button>
         <h1 className={`font-bold text-[17px] ${TXT}`}>Nova publicação</h1>
-        <button type="button" onClick={publicar} disabled={!pronto} className={PILL_PRIMARIA}>{enviando ? 'Publicando…' : 'Publicar'}</button>
+        {tipo === 'conquista'
+          ? <span className="min-w-[44px]" aria-hidden="true" />   // na conquista o "Publicar" fica no preview seguro
+          : <button type="button" onClick={publicar} disabled={!pronto} className={PILL_PRIMARIA}>{enviando ? 'Publicando…' : 'Publicar'}</button>}
       </div>
 
       {podeComunidade && (
@@ -177,18 +195,50 @@ export default function RedePublicar() {
           </div>
         )}
         {tipo === 'conquista' && (
-          <div data-testid="conquista-origem" className="rounded-2xl bg-[var(--rede-superficie)] p-3 text-sm">
-            <p className={`font-bold ${TXT}`}>Compartilhar conquista</p>
-            {origemValida ? (
-              <p className={`${TXT_SUAVE} mt-1`}>
-                O texto é montado pelo sistema a partir do registro real ({origemTipo === 'classe' ? 'classe concluída' : 'especialidade concluída'} do seu clube),
-                com o nome reduzido. Não dá para escrever um texto livre nem anexar foto.
-              </p>
+          <div data-testid="conquista-origem" className="space-y-3">
+            {!liderancaPodeConquista ? (
+              <p className={`rounded-2xl bg-[var(--rede-superficie)] p-3 text-sm ${TXT_SUAVE}`}>Só a diretoria e os instrutores compartilham conquistas.</p>
+            ) : conquista ? (
+              <div className={`${CARD} p-4`}>
+                <p className={`text-xs font-semibold ${TXT_SUAVE}`}>Assim vai aparecer ({alcanceEfetivo === 'comunidade' ? 'Comunidade' : 'Meu Clube'})</p>
+                <p data-testid="previa-conquista" className={`mt-2 text-[15px] leading-snug whitespace-pre-line ${TXT}`}>{conquista.previa}</p>
+                <p className={`mt-2 text-xs ${TXT_SUAVE}`}>O texto é montado pelo sistema a partir do registro real, com o nome reduzido. Não dá para editar nem anexar foto.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => { setConquista(null); setRecusa('') }} disabled={enviando} className={PILL_CLARA}>Voltar</button>
+                  <button type="button" onClick={publicar} disabled={!pronto} className={PILL_PRIMARIA}>{enviando ? 'Publicando…' : 'Publicar'}</button>
+                </div>
+              </div>
+            ) : erroConquistas ? (
+              <div className="p-4 text-center">
+                <p className={TXT}>{textoDoErro(erroConquistas, 'Não consegui carregar as conquistas.')}</p>
+                <button type="button" onClick={carregarConquistas} className={`${PILL_CLARA} mt-3`}>Tentar de novo</button>
+              </div>
+            ) : conquistas === null ? (
+              <p role="status" className={`p-4 text-center text-sm ${TXT_SUAVE}`}>Carregando conquistas…</p>
+            ) : conquistas.length === 0 ? (
+              <div className={`${CARD} p-5 text-center`}>
+                <p className={`font-bold ${TXT}`}>Nenhuma conquista para compartilhar ainda</p>
+                <p className={`mt-1 text-sm ${TXT_SUAVE}`}>Quando uma classe ou especialidade do seu clube for concluída, ela aparece aqui.</p>
+              </div>
             ) : (
-              <p className={`${TXT_SUAVE} mt-1`}>
-                Abra a conquista concluída (classe ou especialidade) de um membro do seu clube e toque em compartilhar.
-                Conquista não é texto livre: só se publica a partir de um registro real.
-              </p>
+              <>
+                <p className={`text-sm font-bold ${TXT}`}>Escolha a conquista</p>
+                <ul className="space-y-2">
+                  {conquistas.map((c) => (
+                    <li key={`${c.origem_tipo}:${c.origem_id}`}>
+                      <button type="button" onClick={() => { setConquista(c); setRecusa('') }}
+                        className={`${CARD} w-full min-h-[56px] px-4 py-3 text-left flex items-center gap-3`}>
+                        <span aria-hidden="true" className="text-xl">{c.origem_tipo === 'classe' ? '🎖️' : '🏅'}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className={`block font-semibold leading-tight ${TXT}`}>{c.titulo}</span>
+                          <span className={`block text-xs ${TXT_SUAVE}`}>{c.rotulo}{c.concluida_em ? ` · ${new Date(c.concluida_em).toLocaleDateString('pt-BR')}` : ''}</span>
+                        </span>
+                        <Icone nome="seta" className="w-5 h-5 -rotate-90 text-[var(--rede-ink-suave)]" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </div>
         )}

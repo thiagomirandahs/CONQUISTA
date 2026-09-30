@@ -74,6 +74,20 @@ describe('Rede DBV — feed', () => {
     expect(screen.getByText('Seu story')).toBeInTheDocument()
   })
 
+  // 517: Meu Clube = feed + stories + desafios; Comunidade = só conteúdo interclubes (sem stories/desafios).
+  it('Meu Clube mostra stories e atalho de Desafios; Comunidade não (subtítulos diferenciam as abas)', async () => {
+    const u = userEvent.setup()
+    renderRede(<RedeFeed />)
+    expect(await screen.findByTestId('fileira-stories')).toBeInTheDocument()
+    expect(screen.getByTestId('atalho-desafios')).toHaveAttribute('href', '/rede/desafios')
+    expect(screen.getByTestId('subtitulo-aba')).toHaveTextContent('Só o seu clube vê')
+    await u.click(screen.getByRole('tab', { name: 'Comunidade' }))
+    expect(screen.queryByTestId('fileira-stories')).toBeNull()
+    expect(screen.queryByTestId('atalho-desafios')).toBeNull()
+    expect(screen.queryByText('Seu story')).toBeNull()
+    expect(screen.getByTestId('subtitulo-aba')).toHaveTextContent('Todos os clubes da Rede')
+  })
+
   it('responsável (não publica): sem "Seu story"', async () => {
     renderRede(<RedeFeed />, { status: { ...STATUS, papel: 'pais', pode_publicar: false } })
     await screen.findByTestId('post')

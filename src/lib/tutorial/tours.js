@@ -29,7 +29,7 @@ export const TOURS = {
     passos: [
       { icone: '📰', titulo: 'Feed', texto: 'Publicações dos clubes que participam da Rede DBV. Dá para ver todos ou só o seu clube.' },
       { icone: '⭕', titulo: 'Stories', texto: 'As bolinhas no topo são stories: ficam no ar por 24 horas.' },
-      { icone: '➕', titulo: 'Publicar', texto: 'Toque em ➕ para publicar. Antes de enviar, o app pergunta se você tem certeza: fica visível para todos os clubes da Rede.' },
+      { icone: '➕', titulo: 'Publicar', texto: 'Toque em ➕ para publicar. Antes de enviar, o app pergunta se você tem certeza: fica visível só para o seu clube (ou para a Rede, quando a liderança publica na Comunidade).' },
       { icone: '🚩', titulo: 'Denunciar', texto: 'Viu algo errado? Toque em ⋮ → Denunciar. O conteúdo some na hora e a diretoria do clube é avisada.' },
       { icone: '🖼️', titulo: 'Autorização de imagem', texto: 'A foto de rosto só aparece com a autorização de imagem arquivada pela diretoria. Sem ela, aparecem as iniciais.' },
     ],
