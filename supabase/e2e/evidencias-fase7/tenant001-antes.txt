@@ -1,0 +1,20 @@
+class_completion_snapshots | 0 | d41d8cd98f00b204e9800998ecf8427e
+class_requirements | 666 | 14b54e70cd2a0e494b80c5af16b4c913
+classes_catalogo | 31 | f2f2ed5eb25dd9e018f6a9b7e4f9ea5c
+club_features | 19 | 26f6bf892f5ce8fba183f5c4646172eb
+member_classes | 25 | 97688e6a5bc31e61bf54a88e8adeba81
+member_requirements | 558 | 60359252e52c67a681f57d2fbe7cb3b7
+member_specialty_requirements | 0 | d41d8cd98f00b204e9800998ecf8427e
+memberships | 31 | 831d349dbad465d01e28d935fd8fd46b
+mensalidades | 37 | 0b10109bc8de14d0ec0812f2fd60990a
+perfis | 51 | b1a3649e6dad350819669ff4e3b73d28
+requirement_approvals | 25 | d48297ddc436bface960f90d3d1264d4
+requirement_submissions | 32 | cc355dd3406649cb4f4a524da9002cab
+storage_buckets | 8 | 913b3ec12cd3c6ee541556190da2012d
+storage_comprovacoes | 58 | 2f220ce52512fc5238e3caf45ce61747
+storage_comunidade | 6 | 0961c138b171c708260f1d80ba52a15a
+storage_imagens | 362 | 4666ecd0d07d50d3ce8882c294377284
+storage_publico | 4 | 1db858bb2295b942040e49b013cc8850
+tenant001_ativo | 1 | 
+unidades | 7 | 6b728ed91310c29cbe691805746b07ff
+vinculos_ativos | 30 | 

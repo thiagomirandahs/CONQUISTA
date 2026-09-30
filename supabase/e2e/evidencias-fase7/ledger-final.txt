@@ -1,0 +1,8 @@
+20260930000500 | rede-dbv-avatar-personagem
+20260930000501 | rede-foto-personagem-fecha-arquivo
+20260930000502 | rede-unidade-no-post
+20260930000503 | rede-consentimento-imagem-auditavel
+20260930000510 | motor-de-relatorio-estruturado-e-tentativas
+20260930000511 | motor-de-especialidades-ampliado
+20260930000512 | modelos-de-relatorio-das-classes
+20260930000513 | especialidades-busca-paginada
