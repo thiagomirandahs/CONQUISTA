@@ -4,6 +4,8 @@
 // redesenhada e comprimida no aparelho (WebP/JPEG, ≤ 1080 px, alvo 150 KB, sem EXIF/GPS).
 import { supabase } from '../lib/supabase.js'
 import { validarImagem } from '../lib/upload.js'
+import { validarImagem as validarImagemReal } from '../lib/imagens/validar.js'
+import { PERFIS } from '../lib/imagens/perfis.js'
 import { otimizarFoto, LIMITE_BUCKET_REDE, FOTO_STORY } from '../lib/imagem.js'
 
 export {
@@ -103,8 +105,10 @@ const exigirDono = (clubeId, userId) => {
 
 // Prepara a foto antes de publicar (a tela mostra "foto otimizada: 3,4 MB → 110 KB").
 export async function prepararFoto(file) {
-  await validarImagem(file)
-  const r = await otimizarFoto(file)
+  // MIME real por assinatura (só JPEG/PNG/WebP; recusa SVG/GIF/HEIC/disfarçados) + dimensões; perfil 'feed' = FOTO_REDE.
+  await validarImagemReal(file)
+  const { maxLado, minLado, alvoBytes, qualidade, qualidadeMin } = PERFIS.feed
+  const r = await otimizarFoto(file, { maxLado, minLado, alvoBytes, qualidade, qualidadeMin })
   if (r.depois > LIMITE_BUCKET_REDE) throw new Error('Essa foto ficou grande demais mesmo depois de otimizar. Tente outra. 🙂')
   return r
 }
