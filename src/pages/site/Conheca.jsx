@@ -119,7 +119,7 @@ export default function Conheca() {
               <li key={e.id} className="shrink-0">
                 <button type="button" onClick={() => irPara(i)} aria-current={i === atual ? 'step' : undefined}
                   aria-label={`Etapa ${e.numero}: ${e.titulo}`}
-                  className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors ${FOCO} focus-visible:ring-offset-[#0b1b46] ${
+                  className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors ${FOCO} focus-visible:ring-offset-[#0b1b46] ${
                     i === atual ? 'bg-[#f5b012] text-[#0b1b46]' : i < atual ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>
                   <span className="tabular-nums">{pad(e.numero)}</span>
                   <span className="hidden md:inline">{e.titulo}</span>
@@ -148,7 +148,7 @@ export default function Conheca() {
               {ETAPAS.map((e, i) => (
                 <li key={e.id}>
                   <button type="button" onClick={() => irPara(i)} aria-label={`Ir para a etapa ${e.numero}`} aria-current={i === atual ? 'step' : undefined}
-                    className={`grid h-11 w-6 place-items-center ${FOCO} rounded-full`}>
+                    className={`grid h-11 w-8 place-items-center ${FOCO} rounded-full`}>
                     <span className={`block rounded-full transition-all ${i === atual ? 'h-2.5 w-6 bg-[#f5b012]' : 'h-2 w-2 bg-slate-300'}`} />
                   </button>
                 </li>
