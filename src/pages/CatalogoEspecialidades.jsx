@@ -42,7 +42,7 @@ export default function CatalogoEspecialidades() {
   return (
     <div className="space-y-4" data-testid="catalogo-especialidades">
       <div>
-        <Link to="/minha-classe" className="text-sm font-semibold text-muted">← Minha Classe</Link>
+        <Link to="/minha-classe" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-muted">← Minha Classe</Link>
         <h2 className="mt-1 text-2xl font-extrabold text-ink">📚 Especialidades e mestrados</h2>
         <p className="text-sm text-muted">{dados.especialidades.filter((e) => !e.extinta).length} especialidades de Desbravadores e {dados.mestrados.length} mestrados. Toque em "Ver requisitos" para abrir a página completa.</p>
       </div>
