@@ -82,8 +82,9 @@ export default function OuvirLivro({ descricao, userId }) {
             </ol>
           </details>
 
-          <p className="text-xs text-muted">
-            💡 Ouça no Wi-Fi para economizar seus dados. O áudio vem do YouTube{livro.canal ? ` (${livro.canal})` : ''}; ouvir ajuda a ler, mas não substitui o que o requisito pede.
+          <p className="text-xs text-muted" data-testid="ouvir-origem">
+            💡 Ouça no Wi-Fi para economizar seus dados. Conteúdo de terceiros, não produzido pelo DesbravaClube: o áudio de
+            «{livro.titulo}»{livro.autor ? `, de ${livro.autor},` : ''} vem do YouTube{livro.canal ? ` (canal ${livro.canal})` : ''}; ouvir ajuda a ler, mas não substitui o que o requisito pede.
           </p>
         </div>
       )}
