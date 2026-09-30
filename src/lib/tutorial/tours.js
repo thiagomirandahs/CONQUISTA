@@ -18,7 +18,7 @@ export const TOURS = {
   classes: {
     titulo: 'Classes',
     passos: [
-      { icone: '🎖️', titulo: 'Escolher a classe', texto: 'Comece pela classe da sua idade. Se tiver mais de uma, cada uma fica numa aba.' },
+      { icone: '🎖️', titulo: 'Escolher a classe', texto: 'Comece pela classe da sua idade. Se ficou alguma classe anterior pendente, dá para fazer também: elas aparecem em “Classes anteriores disponíveis”. Cada classe em andamento fica numa aba.' },
       { icone: '📋', titulo: 'Requisitos', texto: 'A classe é dividida em requisitos. Toque em um para ver o que pede e como comprovar (texto ou foto).' },
       { icone: '📤', titulo: 'Enviar para avaliação', texto: 'Fez o requisito? Escreva ou tire a foto e toque em enviar. Ele fica "em avaliação" até o instrutor olhar.' },
       { icone: '✏️', titulo: 'Correção do avaliador', texto: 'Se o avaliador pedir correção, o comentário dele aparece no requisito. Ajuste e envie de novo.' },
