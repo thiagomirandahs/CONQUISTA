@@ -370,7 +370,8 @@ begin
     'ultima_avaliacao', (
       select json_build_object('decisao', ap.decisao, 'comentario', ap.comentario, 'avaliado_em', ap.created_at, 'avaliado_papel', ap.avaliado_papel, 'avaliado_por_nome', av.nome)
         from public.requirement_approvals ap left join public.profiles av on av.id = ap.avaliado_por
-       where ap.member_requirement_id = v_mr.id order by ap.created_at desc limit 1)
+          left join public.requirement_submissions sb on sb.id = ap.submission_id
+       where ap.member_requirement_id = v_mr.id order by sb.tentativa_numero desc nulls last, ap.created_at desc limit 1)
   );
 end;
 $$;
@@ -400,7 +401,8 @@ begin
       'ultima_avaliacao', (
         select json_build_object('decisao', ap.decisao, 'comentario', ap.comentario, 'avaliado_em', ap.created_at, 'avaliado_papel', ap.avaliado_papel, 'avaliado_por_nome', av.nome)
           from public.requirement_approvals ap left join public.profiles av on av.id = ap.avaliado_por
-         where ap.member_requirement_id = mr.id order by ap.created_at desc limit 1)
+            left join public.requirement_submissions sb on sb.id = ap.submission_id
+         where ap.member_requirement_id = mr.id order by sb.tentativa_numero desc nulls last, ap.created_at desc limit 1)
     ))
     from public.member_requirements mr
     join public.class_requirements r on r.id = mr.requirement_id
