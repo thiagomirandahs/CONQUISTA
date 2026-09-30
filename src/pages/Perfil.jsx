@@ -205,7 +205,7 @@ export default function Perfil() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-extrabold text-ink">⭐ Meu histórico de pontos</h3>
           {!carregandoExtrato && extrato.length > 0 && (
-            <span className="text-right leading-tight"><span className="block text-brand font-extrabold">{totalPts} pts</span><span className="block text-[11px] text-faint">nesta temporada</span></span>
+            <span className="text-right leading-tight"><span className="block text-brand font-extrabold">{totalPts} pts</span><span className="block text-xs text-faint">nesta temporada</span></span>
           )}
         </div>
         {carregandoExtrato ? (
