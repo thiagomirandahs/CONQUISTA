@@ -1,5 +1,5 @@
 Leitura SOMENTE-LEITURA da produção — 30/09/2026 (antes do deploy da Fase 6)
-ledger: 20260930000501 (500 e 501 já aplicadas pelo dono? NÃO — ver nota abaixo)
+ledger: 20260930000501 — 500 e 501 JÁ ESTÃO APLICADAS em produção (drift em relação ao briefing; aguardando confirmação do dono)
 tenant001: Filhos da Conquista (bf23126e-…) ativo; vínculos: 30 ativos, 1 encerrado
 unidades: 4 clubes, 3 distritos, 1 região (todos ativos)
 subscriptions: ativa 1, cancelada 1, trial 2
