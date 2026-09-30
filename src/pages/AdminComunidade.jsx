@@ -92,7 +92,7 @@ export default function AdminComunidade() {
               <Selo tom={t.categoria === 'contato' ? 'info' : 'perigo'}>{t.categoria}</Selo>
               {t.modo === 'radical' && <Selo>radical</Selo>}
               <Botao variacao="discreto" aoTocar={() => alternar(t)}>{t.ativo ? 'Desativar' : 'Ativar'}</Botao>
-              <Botao variacao="discreto" aoTocar={() => remover(t)} aria-label={`Remover ${t.termo}`}>✕</Botao>
+              <Botao variacao="discreto" aoTocar={() => remover(t)} aria-label={`Remover ${t.termo}`} className="min-w-[44px]">✕</Botao>
             </li>
           ))}
         </ul>

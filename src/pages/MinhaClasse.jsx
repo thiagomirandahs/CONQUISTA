@@ -695,7 +695,7 @@ function Escolha({ r, podeEditar, onMudou }) {
               {livres.map((t) => (
                 <li key={t} className="flex items-center justify-between gap-2">
                   <span className="text-ink">• {t}</span>
-                  {podeEditar && <button type="button" onClick={() => setLivres((l) => l.filter((x) => x !== t))} className="text-faint underline" aria-label={`Remover ${t}`}>remover</button>}
+                  {podeEditar && <button type="button" onClick={() => setLivres((l) => l.filter((x) => x !== t))} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-faint underline" aria-label={`Remover ${t}`}>remover</button>}
                 </li>
               ))}
             </ul>

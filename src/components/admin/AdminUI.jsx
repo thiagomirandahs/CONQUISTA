@@ -191,7 +191,7 @@ export function Nota({ icone = 'ℹ️', children }) {
 export function LinkAcao({ aoTocar, children, className }) {
   return (
     <button type="button" onClick={aoTocar}
-      className={juntar('inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-brand hover:underline', FOCO, className)}>
+      className={juntar('inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 text-sm font-semibold text-brand hover:underline', FOCO, className)}>
       {children} <span aria-hidden="true">→</span>
     </button>
   )

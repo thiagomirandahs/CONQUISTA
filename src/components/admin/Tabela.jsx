@@ -117,7 +117,7 @@ export function Tabela({ colunas, linhas, id, cartao, aoTocarLinha, ordem, orden
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aoTocarLinha(l) }
   }
   return (
-    <div className={juntar('overflow-x-auto rounded-2xl border border-line bg-surface', className)}>
+    <div className={juntar('relative overflow-x-auto rounded-2xl border border-line bg-surface', className)}>
       <table className="w-full border-collapse text-sm" data-testid="tabela">
         <caption className="sr-only">{legenda}</caption>
         <thead className="bg-surface2/70 text-left text-xs uppercase tracking-wide text-muted">
@@ -129,7 +129,7 @@ export function Tabela({ colunas, linhas, id, cartao, aoTocarLinha, ordem, orden
                 <th key={c.chave} scope="col" aria-sort={sort} className={juntar('px-3 py-2 font-semibold', c.alinhar === 'direita' && 'text-right', c.classe)} style={c.largura ? { width: c.largura } : undefined}>
                   {c.ordenavel && ordenarPor ? (
                     <button type="button" onClick={() => ordenarPor(c.chave)}
-                      className={juntar('inline-flex min-h-[44px] items-center gap-1 rounded-lg px-1 -mx-1 uppercase hover:text-ink', ativa && 'text-ink', FOCO)}>
+                      className={juntar('inline-flex min-h-[44px] min-w-[44px] items-center gap-1 rounded-lg px-1 -mx-1 uppercase hover:text-ink', ativa && 'text-ink', FOCO)}>
                       {c.rotulo}
                       <span aria-hidden="true" className={juntar('text-[10px]', !ativa && 'opacity-40')}>{ativa ? (ordem.direcao === 'asc' ? '▲' : '▼') : '⇅'}</span>
                       <span className="sr-only">{ativa ? (ordem.direcao === 'asc' ? ', crescente' : ', decrescente') : ', ordenar'}</span>

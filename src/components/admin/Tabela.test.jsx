@@ -118,3 +118,21 @@ describe('Tabela: modo cartão (< md)', () => {
     expect(abrir.mock.calls.map((c) => c[0].id)).toEqual(['c1', 'c2'])
   })
 })
+
+// Achado da validação visual (30/09): o texto `sr-only` (position:absolute) do botão de ordenar escapava do
+// `overflow-x-auto` da tabela e esticava a PÁGINA em ~7 px em 768/1024. O wrapper precisa ser `relative`
+// (contém o absoluto) e o botão de ordenar ter alvo mínimo de 44 px de largura também.
+describe('Tabela: regressão de rolagem lateral e alvo de toque', () => {
+  it('o wrapper da tabela é relative (contém o sr-only) e tem rolagem própria', () => {
+    render(<Harness lista={gerar(3)} />)
+    const wrapper = screen.getByTestId('tabela').parentElement
+    expect(wrapper.className).toMatch(/\brelative\b/)
+    expect(wrapper.className).toMatch(/overflow-x-auto/)
+  })
+  it('o botão de ordenar tem min-w e min-h de 44 px', () => {
+    render(<Harness lista={gerar(3)} />)
+    const btn = within(cabecalho('Nome')).getByRole('button')
+    expect(btn.className).toMatch(/min-h-\[44px\]/)
+    expect(btn.className).toMatch(/min-w-\[44px\]/)
+  })
+})

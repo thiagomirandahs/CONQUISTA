@@ -208,7 +208,7 @@ function Arvore({ unidades, clubes, ativas, ocupado, rodar }) {
           style={{ paddingLeft: `${prof * 16}px` }}>
           <span role="button" tabIndex={-1} aria-label={`Arrastar ${n.nome}`} data-testid="hier-alca"
             onPointerDown={(e) => comecar(e, n)}
-            className="grid h-11 w-9 shrink-0 cursor-grab place-items-center text-lg text-faint active:cursor-grabbing"
+            className="grid h-11 w-11 shrink-0 cursor-grab place-items-center text-lg text-faint active:cursor-grabbing"
             style={{ touchAction: 'none' }}>⠿</span>
           <button type="button" onClick={() => { if (!arrastando) setAberta(aberta?.id === n.id ? null : n) }}
             className="flex min-h-[44px] flex-1 items-center gap-2 rounded-xl px-1 text-left hover:bg-surface2">
