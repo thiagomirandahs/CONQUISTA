@@ -13,6 +13,18 @@ export async function carregarClassesDisponiveis() {
   return data || []
 }
 
+// Classes que a pessoa já concluiu em OUTROS clubes (migration 519). Complementar: banco sem a RPC (518)
+// ou qualquer falha = lista vazia, sem erro visível.
+export async function carregarClassesConcluidasAnteriormente() {
+  try {
+    const { data, error } = await supabase.rpc('classes_concluidas_anteriormente')
+    if (error || !Array.isArray(data)) return []
+    return data
+  } catch {
+    return []
+  }
+}
+
 export async function iniciarClasse(classId) {
   const { data, error } = await supabase.rpc('classe_iniciar', { p_class_id: classId })
   if (error) throw new Error(error.message)

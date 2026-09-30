@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
-  carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, iniciarClasse,
+  carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, carregarClassesConcluidasAnteriormente, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
   carregarHistoricoRequisito, cancelarClasse, carregarHistoricoDoCartao,
   carregarFormulariosDaClasse, carregarFormularioRequisito, salvarRelatorioRequisito, subirAnexoDeRelatorio,
@@ -78,6 +78,16 @@ export const fmtData = (iso) => {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
 
+// Complementar e silencioso: banco sem a 519, função ausente ou falha = nada a mostrar.
+async function buscarConcluidasAntes() {
+  try {
+    const r = await Promise.resolve().then(() => carregarClassesConcluidasAnteriormente())
+    return Array.isArray(r) ? r : []
+  } catch {
+    return []
+  }
+}
+
 export default function MinhaClasse() {
   const { profile } = useAuth()
   const [carregando, setCarregando] = useState(true)
@@ -86,6 +96,7 @@ export default function MinhaClasse() {
   const [selecionada, setSelecionada] = useState(null) // member_class_id da aba aberta (null = o servidor escolhe)
   const [mostrarOutras, setMostrarOutras] = useState(false)
   const [disponiveis, setDisponiveis] = useState([])
+  const [concluidasAntes, setConcluidasAntes] = useState([]) // concluídas em outros clubes (519); falha = []
   const [formularios, setFormularios] = useState({}) // requirement_id → formulário (uma chamada por carga)
   const [erro, setErro] = useState('')
 
@@ -104,7 +115,10 @@ export default function MinhaClasse() {
       setFormularios(forms && typeof forms === 'object' ? forms : {})
       setMinha(m)
       setMinhas(lista || [])
-      if (!m) setDisponiveis(await carregarClassesDisponiveis())
+      if (!m) {
+        setDisponiveis(await carregarClassesDisponiveis())
+        setConcluidasAntes(await buscarConcluidasAntes())
+      }
     } catch (e) {
       setErro(mensagemDeErro(e, 'Não consegui carregar a sua classe.'))
     } finally {
@@ -125,6 +139,7 @@ export default function MinhaClasse() {
     setMostrarOutras(abrir)
     if (abrir) {
       try { setDisponiveis(await carregarClassesDisponiveis()) } catch (e) { avisar.erro(e) }
+      setConcluidasAntes(await buscarConcluidasAntes())
     }
   }
 
@@ -168,12 +183,12 @@ export default function MinhaClasse() {
       )}
       {minha && mostrarOutras && (
         <div className="mb-4" data-testid="outras-classes">
-          <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
+          <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} concluidasAnteriormente={concluidasAntes} />
         </div>
       )}
 
       {!minha ? (
-        <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} />
+        <ListaDisponiveis disponiveis={disponiveis} onIniciar={iniciar} concluidasAnteriormente={concluidasAntes} />
       ) : (
         <>
           <Progresso key={idAberta} dados={minha} formularios={formularios} userId={profile?.id} onMudou={() => recarregar(selecionada)} />
@@ -301,8 +316,44 @@ const SECOES_DISPONIVEIS = [
   { chave: 'bloqueadas', titulo: 'Bloqueadas', apoio: null },
 ]
 
-export function ListaDisponiveis({ disponiveis, onIniciar }) {
-  if (!disponiveis || disponiveis.length === 0) {
+const MSG_NASCIMENTO = 'Informe a data de nascimento para verificar quais classes estão disponíveis.'
+const ID_AVISO_NASCIMENTO = 'aviso-nascimento-classes'
+
+// Classes já concluídas em OUTRO clube: só informativo (sem Iniciar); valem aqui.
+export function ConcluidasAnteriormente({ itens }) {
+  const lista = Array.isArray(itens) ? itens : []
+  if (lista.length === 0) return null
+  return (
+    <section aria-labelledby="secao-classes-concluidas-antes" data-testid="secao-concluidas-anteriormente">
+      <h3 id="secao-classes-concluidas-antes" className="text-sm font-extrabold uppercase tracking-wide text-muted">Concluídas anteriormente</h3>
+      <p className="mt-0.5 text-sm text-muted">Você já concluiu estas classes em outro clube. Elas valem aqui.</p>
+      <ul className="mt-2 space-y-2">
+        {lista.map((c) => {
+          const cor = corDaClasse(c.nome)
+          const data = fmtData(c.concluida_em)
+          return (
+            <li key={c.class_id} className="bg-surface rounded-2xl p-3 shadow-soft flex items-center gap-3"
+              style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
+              <EmblemaDaClasse nome={c.nome} tamanho={36} />
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-ink text-base leading-tight"><span aria-hidden="true">✓ </span>{c.nome}</div>
+                {(data || c.origem_clube_nome) && (
+                  <div className="text-xs text-muted">
+                    {data && <>Concluída em {data}</>}{data && c.origem_clube_nome && ' '}{c.origem_clube_nome && <>no clube {c.origem_clube_nome}</>}
+                  </div>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+export function ListaDisponiveis({ disponiveis, onIniciar, concluidasAnteriormente = [] }) {
+  const temConcluidas = Array.isArray(concluidasAnteriormente) && concluidasAnteriormente.length > 0
+  if ((!disponiveis || disponiveis.length === 0) && !temConcluidas) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2" aria-hidden="true">🎖️</div>
@@ -312,8 +363,19 @@ export function ListaDisponiveis({ disponiveis, onIniciar }) {
     )
   }
   const grupos = agruparDisponiveis(disponiveis)
+  const semNascimento = (Array.isArray(disponiveis) ? disponiveis : []).some((c) => c.bloqueio === 'nascimento')
   return (
     <div className="space-y-5">
+      {semNascimento && (
+        <div role="note" data-testid="aviso-nascimento"
+          className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p id={ID_AVISO_NASCIMENTO} className="text-sm font-semibold text-amber-900">{MSG_NASCIMENTO}</p>
+          <Link to="/perfil" data-testid="informar-nascimento"
+            className="mt-2 inline-flex min-h-[44px] items-center rounded-xl bg-brand px-4 text-sm font-bold text-white">
+            Informar data de nascimento
+          </Link>
+        </div>
+      )}
       {SECOES_DISPONIVEIS.map(({ chave, titulo, apoio }) => {
         const itens = grupos[chave]
         if (itens.length === 0) return null
@@ -328,6 +390,7 @@ export function ListaDisponiveis({ disponiveis, onIniciar }) {
           </section>
         )
       })}
+      <ConcluidasAnteriormente itens={concluidasAnteriormente} />
     </div>
   )
 }
@@ -340,6 +403,7 @@ function ItemDisponivel({ c, onIniciar }) {
   const cor = corDaClasse(c.nome)
   const avancada = c.avancada === true || ehClasseAvancada(c.nome)
   // `bloqueio` (idade | pre_requisito) é aditivo: sem ele (banco antigo) cai no 🔒 de sempre
+  const porNascimento = inelegivel && c.bloqueio === 'nascimento' // um aviso único no topo cuida do texto
   const icone = c.bloqueio === 'idade' ? '🎂' : c.bloqueio === 'pre_requisito' ? '🔗' : '🔒'
   const rotuloBloqueio = c.bloqueio === 'idade' ? 'Por idade' : c.bloqueio === 'pre_requisito' ? 'Falta uma classe antes' : null
   return (
@@ -358,12 +422,12 @@ function ItemDisponivel({ c, onIniciar }) {
             Dados de teste
           </span>
         )}
-        {inelegivel && rotuloBloqueio && (
+        {inelegivel && !porNascimento && rotuloBloqueio && (
           <span data-testid="rotulo-bloqueio" className="inline-block mt-1 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">{rotuloBloqueio}</span>
         )}
-        {inelegivel && <div id={idMotivo} className="text-xs text-amber-800 mt-1">{icone} {c.motivo_inelegivel || MOTIVO_GENERICO}</div>}
+        {inelegivel && !porNascimento && <div id={idMotivo} className="text-xs text-amber-800 mt-1">{icone} {c.motivo_inelegivel || MOTIVO_GENERICO}</div>}
       </div>
-      <button type="button" onClick={() => onIniciar(c.class_id)} disabled={inelegivel} aria-describedby={inelegivel ? idMotivo : undefined}
+      <button type="button" onClick={() => onIniciar(c.class_id)} disabled={inelegivel} aria-describedby={porNascimento ? ID_AVISO_NASCIMENTO : inelegivel ? idMotivo : undefined}
         style={cor ? { background: cor.hex, color: cor.texto } : undefined}
         className={`shrink-0 min-h-[48px] rounded-xl font-bold text-base px-4 py-2 shadow-soft disabled:opacity-40 disabled:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
         Iniciar
