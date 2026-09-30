@@ -230,32 +230,50 @@ export function CancelarClasse({ memberClassId, nome, onCancelada }) {
   )
 }
 
+// Status da matrícula que já não é "em andamento": a pessoa terminou os requisitos (mesmo que a investidura
+// ainda dependa da liderança). O servidor decide o status; aqui só agrupamos para mostrar.
+const STATUS_CONCLUIDA = ['requisitos_concluidos', 'aguardando_revisao', 'apto_investidura', 'investida', 'concluida']
+export const estaConcluida = (c) => STATUS_CONCLUIDA.includes(c?.status)
+
 // Abas grandes (uma por classe da pessoa no clube) + "Iniciar outra classe". Rola na horizontal no
 // celular; cada aba tem o emblema, o nome e a % — e a aberta fica na cor dela, com contorno forte.
+// As classes em andamento vêm primeiro; as concluídas depois, com "✓ Concluída" (sem ocupar mais espaço).
 function AbasDeClasse({ minhas, idAberta, onTrocar, mostrarOutras, onOutras }) {
+  const andamento = minhas.filter((c) => !estaConcluida(c))
+  const concluidas = minhas.filter(estaConcluida)
+  const aba = (c) => {
+    const cor = corDaClasse(c.nome)
+    const aberta = c.member_class_id === idAberta
+    const concluida = estaConcluida(c)
+    return (
+      <button key={c.member_class_id} type="button" role="tab" aria-selected={aberta} data-testid="aba-classe"
+        data-concluida={concluida ? 'true' : 'false'}
+        onClick={() => !aberta && onTrocar(c.member_class_id)}
+        className={`shrink-0 min-h-[64px] min-w-[132px] flex items-center gap-2 rounded-2xl px-3 py-2 text-left shadow-soft border-4 transition active:scale-[0.98] ${aberta ? '' : 'bg-surface'}`}
+        style={aberta
+          ? { background: cor?.hex || '#334155', color: cor?.texto || '#fff', borderColor: cor?.escuro || '#1e293b' }
+          : { borderColor: cor?.hex || 'transparent' }}>
+        <EmblemaDaClasse nome={c.nome} tamanho={32} />
+        <span className="min-w-0">
+          <span className={`block font-extrabold text-base leading-tight ${aberta ? '' : 'text-ink'}`}>{c.nome}</span>
+          {ehClasseAvancada(c.nome) && <span className="block text-xs font-extrabold uppercase tracking-wide" style={aberta ? undefined : { color: cor?.escuro }}>★ Avançada</span>}
+          <span className={`block text-sm font-semibold ${aberta ? '' : 'text-muted'}`}>
+            {c.status === 'investida' ? '🏅 Investido' : concluida ? '✓ Concluída' : `${c.percentual ?? 0}%`}
+          </span>
+        </span>
+      </button>
+    )
+  }
+  const grupo = (titulo, lista) => lista.length > 0 && (
+    <div role="presentation" className="flex shrink-0 flex-col gap-1">
+      <span aria-hidden="true" data-testid="rotulo-grupo" className="text-xs font-bold uppercase tracking-wide text-faint">{titulo}</span>
+      <div role="presentation" className="flex gap-2">{lista.map(aba)}</div>
+    </div>
+  )
   return (
-    <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-2" role="tablist" aria-label="Minhas classes">
-      {minhas.map((c) => {
-        const cor = corDaClasse(c.nome)
-        const aberta = c.member_class_id === idAberta
-        return (
-          <button key={c.member_class_id} type="button" role="tab" aria-selected={aberta} data-testid="aba-classe"
-            onClick={() => !aberta && onTrocar(c.member_class_id)}
-            className={`shrink-0 min-h-[64px] min-w-[132px] flex items-center gap-2 rounded-2xl px-3 py-2 text-left shadow-soft border-4 transition active:scale-[0.98] ${aberta ? '' : 'bg-surface'}`}
-            style={aberta
-              ? { background: cor?.hex || '#334155', color: cor?.texto || '#fff', borderColor: cor?.escuro || '#1e293b' }
-              : { borderColor: cor?.hex || 'transparent' }}>
-            <EmblemaDaClasse nome={c.nome} tamanho={32} />
-            <span className="min-w-0">
-              <span className={`block font-extrabold text-base leading-tight ${aberta ? '' : 'text-ink'}`}>{c.nome}</span>
-              {ehClasseAvancada(c.nome) && <span className="block text-xs font-extrabold uppercase tracking-wide" style={aberta ? undefined : { color: cor?.escuro }}>★ Avançada</span>}
-              <span className={`block text-sm font-semibold ${aberta ? '' : 'text-muted'}`}>
-                {c.status === 'investida' ? '🏅 Investido' : `${c.percentual ?? 0}%`}
-              </span>
-            </span>
-          </button>
-        )
-      })}
+    <div className="mb-4 -mx-1 flex items-end gap-3 overflow-x-auto px-1 pb-2" role="tablist" aria-label="Minhas classes">
+      {grupo('Em andamento', andamento)}
+      {grupo('Concluídas', concluidas)}
       <button type="button" onClick={onOutras} aria-expanded={mostrarOutras} data-testid="iniciar-outra"
         className="shrink-0 min-h-[64px] min-w-[132px] rounded-2xl border-4 border-dashed border-line bg-surface2 px-3 py-2 text-base font-extrabold text-ink active:scale-[0.98]">
         {mostrarOutras ? '✕ Fechar' : '+ Iniciar outra classe'}
@@ -264,8 +282,27 @@ function AbasDeClasse({ minhas, idAberta, onTrocar, mostrarOutras, onOutras }) {
   )
 }
 
-function ListaDisponiveis({ disponiveis, onIniciar }) {
-  if (disponiveis.length === 0) {
+// Separa as classes do servidor em seções. Compatível com banco SEM os campos novos (`anterior`/`bloqueio`
+// undefined): elegível = "Disponíveis", inelegível = "Bloqueadas". Nenhuma classe some; só é agrupada.
+export function agruparDisponiveis(disponiveis) {
+  const lista = Array.isArray(disponiveis) ? disponiveis : []
+  const bloqueadas = lista.filter((c) => c.elegivel === false)
+  const liberadas = lista.filter((c) => c.elegivel !== false)
+  return {
+    disponiveis: liberadas.filter((c) => c.anterior !== true),
+    anteriores: liberadas.filter((c) => c.anterior === true),
+    bloqueadas,
+  }
+}
+
+const SECOES_DISPONIVEIS = [
+  { chave: 'disponiveis', titulo: 'Disponíveis', apoio: null },
+  { chave: 'anteriores', titulo: 'Classes anteriores disponíveis', apoio: 'Você já tem idade para estas classes. Dá para fazer as que ficaram pendentes.' },
+  { chave: 'bloqueadas', titulo: 'Bloqueadas', apoio: null },
+]
+
+export function ListaDisponiveis({ disponiveis, onIniciar }) {
+  if (!disponiveis || disponiveis.length === 0) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
         <div className="text-4xl mb-2" aria-hidden="true">🎖️</div>
@@ -274,39 +311,64 @@ function ListaDisponiveis({ disponiveis, onIniciar }) {
       </div>
     )
   }
+  const grupos = agruparDisponiveis(disponiveis)
   return (
-    <ul className="space-y-3">
-      {disponiveis.map((c) => {
-        const inelegivel = c.elegivel === false
-        const idMotivo = `motivo-${c.class_id}`
-        const cor = corDaClasse(c.nome)
-        const avancada = c.avancada === true || ehClasseAvancada(c.nome)
+    <div className="space-y-5">
+      {SECOES_DISPONIVEIS.map(({ chave, titulo, apoio }) => {
+        const itens = grupos[chave]
+        if (itens.length === 0) return null
+        const idTitulo = `secao-classes-${chave}`
         return (
-          <li key={c.class_id} data-avancada={avancada ? 'true' : 'false'} className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
-            style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
-            <EmblemaDaClasse nome={c.nome} tamanho={44} />
-            <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-ink text-base leading-tight">{c.nome}</h3>
-              {avancada && <div className="mt-0.5"><SeloAvancada cor={cor} /></div>}
-              {cor && <div className="text-xs font-semibold" style={{ color: cor.escuro }}>Cor da classe: {cor.nome}</div>}
-              {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
-              {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
-              {c.curriculum_version?.origem === 'piloto_teste' && (
-                <span className="inline-block mt-1 text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                  Dados de teste
-                </span>
-              )}
-              {inelegivel && c.motivo_inelegivel && <div id={idMotivo} className="text-xs text-amber-800 mt-1">🔒 {c.motivo_inelegivel}</div>}
-            </div>
-            <button onClick={() => onIniciar(c.class_id)} disabled={inelegivel} aria-describedby={inelegivel ? idMotivo : undefined}
-              style={cor ? { background: cor.hex, color: cor.texto } : undefined}
-              className={`shrink-0 min-h-[48px] rounded-xl font-bold text-base px-4 py-2 shadow-soft disabled:opacity-40 disabled:shadow-none ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
-              Iniciar
-            </button>
-          </li>
+          <section key={chave} aria-labelledby={idTitulo} data-testid={`secao-${chave}`}>
+            <h3 id={idTitulo} className="text-sm font-extrabold uppercase tracking-wide text-muted">{titulo}</h3>
+            {apoio && <p className="mt-0.5 text-sm text-muted">{apoio}</p>}
+            <ul className="mt-2 space-y-3">
+              {itens.map((c) => <ItemDisponivel key={c.class_id} c={c} onIniciar={onIniciar} />)}
+            </ul>
+          </section>
         )
       })}
-    </ul>
+    </div>
+  )
+}
+
+const MOTIVO_GENERICO = 'Esta classe ainda não está liberada para você.'
+
+function ItemDisponivel({ c, onIniciar }) {
+  const inelegivel = c.elegivel === false
+  const idMotivo = `motivo-${c.class_id}`
+  const cor = corDaClasse(c.nome)
+  const avancada = c.avancada === true || ehClasseAvancada(c.nome)
+  // `bloqueio` (idade | pre_requisito) é aditivo: sem ele (banco antigo) cai no 🔒 de sempre
+  const icone = c.bloqueio === 'idade' ? '🎂' : c.bloqueio === 'pre_requisito' ? '🔗' : '🔒'
+  const rotuloBloqueio = c.bloqueio === 'idade' ? 'Por idade' : c.bloqueio === 'pre_requisito' ? 'Falta uma classe antes' : null
+  return (
+    <li data-avancada={avancada ? 'true' : 'false'} data-bloqueio={inelegivel ? (c.bloqueio || 'outro') : undefined}
+      className="bg-surface rounded-2xl p-4 shadow-soft flex items-center justify-between gap-3"
+      style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
+      <EmblemaDaClasse nome={c.nome} tamanho={44} />
+      <div className="min-w-0 flex-1">
+        <h4 className="font-bold text-ink text-base leading-tight">{c.nome}</h4>
+        {avancada && <div className="mt-0.5"><SeloAvancada cor={cor} /></div>}
+        {cor && <div className="text-xs font-semibold" style={{ color: cor.escuro }}>Cor da classe: {cor.nome}</div>}
+        {c.idade_minima != null && <div className="text-xs text-faint truncate">A partir de {c.idade_minima} anos</div>}
+        {c.idade_minima == null && c.faixa_etaria && <div className="text-xs text-faint truncate">{c.faixa_etaria}</div>}
+        {c.curriculum_version?.origem === 'piloto_teste' && (
+          <span className="inline-block mt-1 text-xs font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+            Dados de teste
+          </span>
+        )}
+        {inelegivel && rotuloBloqueio && (
+          <span data-testid="rotulo-bloqueio" className="inline-block mt-1 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">{rotuloBloqueio}</span>
+        )}
+        {inelegivel && <div id={idMotivo} className="text-xs text-amber-800 mt-1">{icone} {c.motivo_inelegivel || MOTIVO_GENERICO}</div>}
+      </div>
+      <button type="button" onClick={() => onIniciar(c.class_id)} disabled={inelegivel} aria-describedby={inelegivel ? idMotivo : undefined}
+        style={cor ? { background: cor.hex, color: cor.texto } : undefined}
+        className={`shrink-0 min-h-[48px] rounded-xl font-bold text-base px-4 py-2 shadow-soft disabled:opacity-40 disabled:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${cor ? '' : 'bg-gradient-to-r from-brand to-brand2 text-white'}`}>
+        Iniciar
+      </button>
+    </li>
   )
 }
 
