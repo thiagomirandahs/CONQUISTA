@@ -156,7 +156,7 @@ export default function Unidades() {
                 {sel.bandeira && <ImagemPrivada src={sel.bandeira} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                 {sel.bandeira && <div className="absolute inset-0 bg-black/45" />}
                 <div className="relative p-5">
-                  <button onClick={() => setSel(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+                  <button onClick={() => setSel(null)} aria-label="Fechar" className="absolute top-3 right-3 w-11 h-11 rounded-full bg-white/20 grid place-items-center">✕</button>
                   {sel.emblema ? (
                     <ImagemPrivada src={sel.emblema} alt={sel.nome} className="w-14 h-14 rounded-full object-cover mb-2 ring-2 ring-white/40" />
                   ) : (

@@ -67,7 +67,7 @@ export default function Mural() {
             {/* Cabeçalho do álbum */}
             <div className="mb-5 flex items-center gap-3">
               <button onClick={() => setCategoria(null)}
-                className="w-9 h-9 rounded-full bg-surface shadow-soft grid place-items-center text-muted shrink-0">←</button>
+                aria-label="Voltar" className="w-11 h-11 rounded-full bg-surface shadow-soft grid place-items-center text-muted shrink-0">←</button>
               <div className="flex-1 min-w-0">
                 <h2 className="text-2xl font-extrabold text-ink flex items-center gap-2">
                   <span>{categoria.icon}</span>

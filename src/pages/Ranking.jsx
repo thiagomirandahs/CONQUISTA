@@ -145,7 +145,7 @@ export default function Ranking() {
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               className="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
               <div className="p-6 text-center text-white relative shrink-0" style={{ backgroundColor: card.item.cor }}>
-                <button onClick={() => setCard(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 grid place-items-center">✕</button>
+                <button onClick={() => setCard(null)} aria-label="Fechar" className="absolute top-2 right-2 w-11 h-11 rounded-full bg-white/20 grid place-items-center">✕</button>
                 <div className="flex justify-center mb-2">
                   <Avatar foto={ehUnidade ? card.item.emblema : card.item.foto} nome={card.item.nome} cor={card.item.cor} size="w-24 h-24" textSize="text-5xl"
                     avatarPersonagem={card.item.avatarTipo === 'personagem' ? card.item.avatar : undefined} />
