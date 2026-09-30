@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Compatibilidade das migrations 510–513 com dados que JÁ EXISTEM (fase 7). 100% LOCAL (docker exec no container local).
+#  Compatibilidade das migrations 510–514 com dados que JÁ EXISTEM (fase 7). 100% LOCAL (docker exec no container local).
 #    1) monta um banco isolado no estado da migration 503 (o de produção hoje);
 #    2) grava comprovações ANTIGAS pelo caminho de sempre (compat/pre.sql);
 #    3) tira a IMPRESSÃO DIGITAL das tabelas antigas (e2e/_impressao_comprovacoes.sql);
-#    4) aplica 510, 511, 512 e 513 (cada uma em transação);
+#    4) aplica 510, 511, 512, 513 e 514 (cada uma em transação);
 #    5) confere que a impressão digital é IDÊNTICA e roda compat/post.sql (o motor novo convive com o antigo).
 #  Uso: bash supabase/tests/compat/compat-510-513.sh        (npm run test:db:compat)
 # =============================================================================
@@ -22,15 +22,19 @@ docker exec -w "$CQ/cq_tests/compat" -i "$CONT" psql -U postgres -d "$DB" -X -q 
 IMP() { docker exec -i "$CONT" psql -U postgres -d "$DB" -At -F' | ' < "$ROOT/supabase/tests/e2e/_impressao_comprovacoes.sql"; }
 ANTES="$(IMP)"
 echo "==> [3/5] impressão digital ANTES:"; echo "$ANTES" | sed 's/^/     /'
-echo "==> [4/5] aplicando 510, 511, 512 e 513 (cada uma em transação)"
-for f in "$ROOT"/supabase/migrations/20260930000510_*.sql "$ROOT"/supabase/migrations/20260930000511_*.sql "$ROOT"/supabase/migrations/20260930000512_*.sql "$ROOT"/supabase/migrations/20260930000513_*.sql; do
+echo "==> [4/5] aplicando 510, 511, 512, 513 e 514 (cada uma em transação)"
+for f in "$ROOT"/supabase/migrations/20260930000510_*.sql "$ROOT"/supabase/migrations/20260930000511_*.sql "$ROOT"/supabase/migrations/20260930000512_*.sql "$ROOT"/supabase/migrations/20260930000513_*.sql "$ROOT"/supabase/migrations/20260930000514_*.sql; do
   b="$(basename "$f")"; echo "     $b"
   { echo "begin;"; cat "$f"; echo "commit;"; } | docker exec -i "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 >/dev/null || { echo "FALHOU ao aplicar $b"; exit 3; }
+  if [[ "$b" == 20260930000513_* ]]; then
+    O13="$(docker exec -w "$CQ/cq_tests/compat" -i "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 -f post.sql 2>&1)"; rc13=$?
+    if [ $rc13 -eq 0 ] && ! echo "$O13" | grep -q FALHOU; then echo "     >> [frontend ANTIGO + banco 513] post.sql OK ($(echo "$O13" | grep -oE '[0-9]+ asserts' | head -1))"; else echo "FALHOU post.sql em 513"; echo "$O13" | tail; exit 5; fi
+  fi
 done
 DEPOIS="$(IMP)"
 echo "==> [5/5] conferindo"
 if [ "$ANTES" = "$DEPOIS" ]; then echo "   OK     comprovações antigas IDÊNTICAS (linhas e hash de cada tabela)"; else echo "   FALHOU impressão digital mudou:"; diff <(echo "$ANTES") <(echo "$DEPOIS"); exit 4; fi
 OUT="$(docker exec -w "$CQ/cq_tests/compat" -i "$CONT" psql -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 -f post.sql 2>&1)"; rc=$?
-if [ $rc -eq 0 ] && ! echo "$OUT" | grep -q FALHOU; then echo "   OK     post.sql ($(echo "$OUT" | grep -oE '[0-9]+ asserts' | head -1))"; else echo "   FALHOU post.sql"; echo "$OUT" | tail -20; exit 5; fi
+if [ $rc -eq 0 ] && ! echo "$OUT" | grep -q FALHOU; then echo "   OK     [frontend ANTIGO + banco 514] post.sql ($(echo "$OUT" | grep -oE '[0-9]+ asserts' | head -1))"; else echo "   FALHOU post.sql"; echo "$OUT" | tail -20; exit 5; fi
 docker exec "$CONT" psql -U supabase_admin -d template1 -c "drop database if exists $DB with (force)" >/dev/null 2>&1 || true
 echo "COMPATIBILIDADE OK"

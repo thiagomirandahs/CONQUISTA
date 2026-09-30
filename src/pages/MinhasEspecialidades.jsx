@@ -1,7 +1,6 @@
 import { Carregando as Esqueleto, Aviso } from '../ui/index.jsx'
 import ListaEspecialidades from '../components/especialidades/ListaEspecialidades.jsx'
 import { useState, useEffect, useCallback } from 'react'
-import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaEspecialidade, buscarEspecialidades, iniciarEspecialidade,
@@ -17,26 +16,24 @@ import { schemaDoModelo, fmtDataBR } from '../lib/relatorio/conteudo.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
-
-const STATUS_INFO = {
-  nao_iniciado: { label: 'Não iniciado', badge: 'bg-surface2 text-muted border border-line', icon: '⚪' },
-  em_andamento: { label: 'Em andamento', badge: 'bg-blue-50 text-blue-700 border border-blue-200', icon: '✏️' },
-  aguardando_avaliacao: { label: 'Aguardando avaliação', badge: 'bg-amber-50 text-amber-700 border border-amber-200', icon: '⏳' },
-  aprovado: { label: 'Aprovado', badge: 'bg-green-50 text-green-700 border border-green-200', icon: '✅' },
-  correcao_solicitada: { label: 'Correção solicitada', badge: 'bg-red-50 text-red-700 border border-red-200', icon: '↺' },
-}
+import StatusRequisito from '../components/jornada/StatusRequisito.jsx'
+import BarraProgresso from '../components/jornada/BarraProgresso.jsx'
+import { statusDaJornada } from '../lib/requisitos/jornada.js'
 
 const fmtData = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR') : '')
 
-const ABAS_MINHAS = [{ valor: 'iniciadas', rotulo: 'Em andamento' }, { valor: 'concluidas', rotulo: 'Concluídas' }]
-const ABAS_ESCOLHER = [{ valor: 'disponiveis', rotulo: 'Disponíveis' }]
+const ABAS = [
+  { valor: 'iniciadas', rotulo: 'Em andamento', situacao: 'iniciadas' },
+  { valor: 'concluidas', rotulo: 'Concluídas', situacao: 'concluidas' },
+  { valor: 'explorar', rotulo: 'Explorar', situacao: 'todas' },
+]
 
 // Duas vistas: LISTA paginada (Minhas / Escolher) e DETALHE de uma especialidade (o de sempre, com formulário,
 // histórico, grupos, bloqueios e prazo). Quem só tem UMA em andamento cai direto no detalhe, como antes.
 export default function MinhasEspecialidades() {
   const { profile } = useAuth()
   const [vista, setVista] = useState('carregando') // carregando | lista | detalhe
-  const [aba, setAba] = useState('minhas') // minhas | escolher
+  const [aba, setAba] = useState('iniciadas') // iniciadas | concluidas | explorar
   const [minha, setMinha] = useState(null)
 
   const abrir = useCallback(async (memberSpecialtyId = null) => {
@@ -73,7 +70,7 @@ export default function MinhasEspecialidades() {
     return (
       <div className="space-y-5">
         <div>
-          <button type="button" onClick={() => { setAba('minhas'); setVista('lista') }} data-testid="voltar-lista"
+          <button type="button" onClick={() => { setVista('lista') }} data-testid="voltar-lista"
             className="inline-flex min-h-[44px] items-center text-sm font-bold text-brand underline">← Todas as especialidades</button>
           <h2 className="text-2xl font-extrabold text-ink">🏅 Minhas Especialidades</h2>
           <p className="text-sm text-muted">Seu progresso em cada especialidade, requisito por requisito</p>
@@ -87,21 +84,29 @@ export default function MinhasEspecialidades() {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-extrabold text-ink">🏅 Especialidades</h2>
-        <p className="text-sm text-muted">Acompanhe as suas ou escolha uma nova para começar</p>
+        <p className="text-sm text-muted">Acompanhe as suas ou explore para começar uma nova</p>
       </div>
       <div role="tablist" aria-label="Especialidades" className="flex gap-2">
-        {[['minhas', 'Minhas especialidades'], ['escolher', 'Escolher uma especialidade']].map(([v, r]) => (
-          <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
-            className={`min-h-[48px] flex-1 rounded-xl px-2 text-sm font-extrabold ${aba === v ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow' : 'border border-line bg-surface text-muted'}`}
-            style={aba === v ? { color: 'var(--marca-1-texto, #fff)' } : undefined}>{r}</button>
+        {ABAS.map((a) => (
+          <button key={a.valor} type="button" role="tab" id={`aba-esp-${a.valor}`} aria-selected={aba === a.valor}
+            aria-controls="painel-esp" tabIndex={aba === a.valor ? 0 : -1} onClick={() => setAba(a.valor)}
+            onKeyDown={(e) => {
+              const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+              if (!d) return
+              e.preventDefault()
+              const prox = ABAS[(ABAS.findIndex((x) => x.valor === aba) + d + ABAS.length) % ABAS.length]
+              setAba(prox.valor)
+              document.getElementById(`aba-esp-${prox.valor}`)?.focus()
+            }}
+            className={`min-h-[48px] flex-1 rounded-xl px-2 text-sm font-extrabold ${aba === a.valor ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow' : 'border border-line bg-surface text-muted'}`}
+            style={aba === a.valor ? { color: 'var(--marca-1-texto, #fff)' } : undefined}>{a.rotulo}</button>
         ))}
       </div>
-      {aba === 'minhas' ? (
-        <ListaEspecialidades key="minhas" abas={ABAS_MINHAS} aoAbrir={(it) => abrir(it.member_specialty_id)} />
-      ) : (
-        <ListaEspecialidades key="escolher" abas={ABAS_ESCOLHER}
+      <div role="tabpanel" id="painel-esp" aria-labelledby={`aba-esp-${aba}`}>
+        <ListaEspecialidades key={aba} abas={[{ valor: ABAS.find((a) => a.valor === aba).situacao, rotulo: '' }]}
+          aoAbrir={(it) => abrir(it.member_specialty_id)}
           aoComecar={async (it) => { const r = await iniciarEspecialidade(it.specialty_id); await abrir(r?.member_specialty_id ?? null) }} />
-      )}
+      </div>
     </div>
   )
 }
@@ -121,12 +126,13 @@ function Progresso({ dados, userId, onMudou }) {
             </span>
           )}
         </div>
+        <p className="text-xs text-muted mb-1" data-testid="area-especialidade">
+          {[especialidade?.categoria, especialidade?.codigo].filter(Boolean).join(' · ')}
+        </p>
+        {especialidade?.descricao && <p className="text-sm text-ink mb-1" data-testid="descricao-especialidade">{especialidade.descricao}</p>}
         {oferta?.titulo && <p className="text-xs text-faint mb-1">Turma: {oferta.titulo}{oferta.instrutor_responsavel_nome ? ` · com ${oferta.instrutor_responsavel_nome}` : ''}</p>}
         {ehTeste && <p className="text-xs text-faint mb-2">{versao.fonte_descricao}</p>}
-        <div className="w-full bg-surface2 rounded-full h-3 overflow-hidden mt-2">
-          <motion.div className="h-full bg-gradient-to-r from-brand to-brand2" initial={{ width: 0 }}
-            animate={{ width: `${ms.percentual}%` }} transition={{ duration: 0.6 }} />
-        </div>
+        <BarraProgresso valor={ms.percentual} rotulo="Progresso na especialidade" className="mt-2" />
         <p className="text-sm text-muted mt-1.5">{ms.percentual}% concluído · iniciada em {fmtData(ms.iniciada_em)}</p>
         {(dados.grupos || []).length > 0 && (
           <ul className="mt-3 space-y-1" data-testid="grupos">
@@ -153,7 +159,7 @@ function Progresso({ dados, userId, onMudou }) {
 }
 
 function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
-  const info = STATUS_INFO[r.status] || STATUS_INFO.nao_iniciado
+  const statusJornada = statusDaJornada(r, { rascunho: r.rascunho })
   const [texto, setTexto] = useState(r.evidencia_texto || '')
   const [foto, setFoto] = useState(null)
   const [ocupado, setOcupado] = useState(false)
@@ -218,7 +224,7 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
     <div className="p-4" data-testid="requisito-especialidade">
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <p className="text-sm font-semibold text-ink leading-snug">{r.codigo}. {r.descricao}</p>
-        <span className={`shrink-0 text-xs font-bold rounded-full px-2 py-0.5 ${info.badge}`}>{info.icon} {info.label}</span>
+        <StatusRequisito status={statusJornada} className="shrink-0" />
       </div>
       {r.prazo_em && r.status !== 'aprovado' && (
         <p data-testid="prazo" className="mb-1.5 text-xs font-semibold text-muted">📅 Até {fmtDataBR(r.prazo_em).slice(0, 5)}</p>

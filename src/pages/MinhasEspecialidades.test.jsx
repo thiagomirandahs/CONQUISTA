@@ -99,6 +99,22 @@ describe('MinhasEspecialidades — relatório estruturado', () => {
   })
 })
 
+describe('MinhasEspecialidades — detalhe', () => {
+  it('mostra área, descrição (se houver), barra e status com ícone + texto por requisito', async () => {
+    carregarMinhaEspecialidade.mockResolvedValue({ ...DADOS, especialidade: { nome: 'Nós', categoria: 'Habilidades', codigo: 'HB-001', descricao: 'Aprenda nós úteis.' },
+      requisitos: [req({ id: 'a', codigo: '1', status: 'aprovado' }), req({ id: 'b', codigo: '2', status: 'aguardando_avaliacao' }),
+        req({ id: 'c', codigo: '3', status: 'correcao_solicitada' }), req({ id: 'd', codigo: '4', status: 'em_andamento' }),
+        req({ id: 'e', codigo: '5' }), req({ id: 'f', codigo: '6', bloqueios: ['Antes o 1.'] })] })
+    render(<MinhasEspecialidades />)
+    await screen.findAllByTestId('requisito-especialidade')
+    expect(screen.getByTestId('area-especialidade')).toHaveTextContent('Habilidades')
+    expect(screen.getByTestId('descricao-especialidade')).toHaveTextContent('Aprenda nós úteis.')
+    expect(screen.getByRole('progressbar', { name: 'Progresso na especialidade' })).toHaveAttribute('aria-valuenow', '25')
+    const esperado = { 1: '✓Aprovado', 2: '⏳Aguardando avaliação', 3: '⚠Correção solicitada', 4: '✎Rascunho', 5: '○Não iniciado', 6: '🔒Bloqueado' }
+    for (const [cod, txt] of Object.entries(esperado)) expect(card(cod).querySelector('[data-status]')).toHaveTextContent(txt)
+  })
+})
+
 describe('MinhasEspecialidades — lista paginada', () => {
   it('uma só em andamento: abre direto no detalhe (consulta só 2 itens, nunca o catálogo)', async () => {
     render(<MinhasEspecialidades />)
@@ -113,34 +129,51 @@ describe('MinhasEspecialidades — lista paginada', () => {
         ? respostaBusca([cartao('a'), cartao('b')], 2)
         : respostaBusca([cartao('a'), cartao('b', { percentual: 60 })], 2)))
     render(<MinhasEspecialidades />)
-    expect(await screen.findByRole('tab', { name: 'Minhas especialidades' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('tab', { name: 'Em andamento' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Em andamento', 'Concluídas', 'Explorar'])
     expect(carregarMinhaEspecialidade).not.toHaveBeenCalled()
     fireEvent.click(await screen.findByRole('button', { name: 'Abrir Espec b' }))
     await screen.findAllByTestId('requisito-especialidade')
     expect(carregarMinhaEspecialidade).toHaveBeenCalledWith('ms-b')
     // e dá para voltar para a lista
     fireEvent.click(screen.getByTestId('voltar-lista'))
-    expect(await screen.findByRole('tab', { name: 'Minhas especialidades' })).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Em andamento' })).toBeInTheDocument()
   })
 
-  it('"Escolher uma especialidade": Começar inicia a disponível e abre a recém-iniciada', async () => {
+  it('"Explorar": Começar inicia a disponível e abre a recém-iniciada', async () => {
     buscarEspecialidades.mockImplementation(async ({ situacao, limite }) => {
       if (limite === 2) return respostaBusca([], 0)
-      if (situacao === 'disponiveis') return respostaBusca([cartao('z', { situacao: 'disponivel', member_specialty_id: null, percentual: null })])
+      if (situacao === 'todas') return respostaBusca([cartao('z', { situacao: 'disponivel', member_specialty_id: null, percentual: null })])
       return respostaBusca([], 0)
     })
     render(<MinhasEspecialidades />)
-    fireEvent.click(await screen.findByRole('tab', { name: 'Escolher uma especialidade' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Explorar' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Começar Espec z' }))
     await screen.findAllByTestId('requisito-especialidade')
     expect(iniciarEspecialidade).toHaveBeenCalledWith('z')
     expect(carregarMinhaEspecialidade).toHaveBeenCalledWith('ms-nova')
   })
 
+  it('abas Concluídas e Explorar consultam a situação certa e dão pra navegar por setas', async () => {
+    buscarEspecialidades.mockResolvedValue(respostaBusca([], 0))
+    render(<MinhasEspecialidades />)
+    const andamento = await screen.findByRole('tab', { name: 'Em andamento' })
+    fireEvent.keyDown(andamento, { key: 'ArrowRight' })
+    expect(screen.getByRole('tab', { name: 'Concluídas' })).toHaveAttribute('aria-selected', 'true')
+    await screen.findByTestId('vazio-especialidades')
+    expect(buscarEspecialidades).toHaveBeenLastCalledWith(expect.objectContaining({ situacao: 'concluidas' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Explorar' }))
+    await screen.findByTestId('vazio-especialidades')
+    expect(buscarEspecialidades).toHaveBeenLastCalledWith(expect.objectContaining({ situacao: 'todas', depois: null }))
+    expect(screen.getByRole('searchbox')).toBeInTheDocument()
+    expect(screen.getByLabelText('Filtrar por área')).toBeInTheDocument()
+    expect(screen.getByRole('tabpanel')).toBeInTheDocument()
+  })
+
   it('falha ao consultar as iniciadas cai na lista (que mostra o erro), sem quebrar', async () => {
     buscarEspecialidades.mockRejectedValue(new Error('Failed to fetch'))
     render(<MinhasEspecialidades />)
-    expect(await screen.findByRole('tab', { name: 'Minhas especialidades' })).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Em andamento' })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
   })
 })

@@ -79,6 +79,9 @@ describe('Chat: reforço do tempo real', () => {
   it('ao voltar para o app a leitura é COMPLETA (o websocket dorme em segundo plano; e pega mensagem apagada)', async () => {
     clube = { papel: 'desbravador', unidadeId: 'un1', clubeDaAbaEhOPadrao: true }
     await abrirChat()
+    // o texto já está na tela, mas os efeitos (que ligam o ouvinte de foco) rodam depois do commit: sem
+    // esta espera o evento pode sair ANTES do ouvinte existir (corrida do teste, vista só sob carga)
+    await act(async () => {})
     await act(async () => { window.dispatchEvent(new Event('focus')) })
     expect(carregarMensagensDesde).toHaveBeenCalledWith('c1', null, expect.any(Object))
   })

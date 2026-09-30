@@ -56,7 +56,7 @@ describe('ListaEspecialidades', () => {
     buscar.mockResolvedValue(pagina([item(1)], 'Artes|AR-001', 5))
     render(<ListaEspecialidades />)
     await passar(10)
-    fireEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver mais' }))
     await passar(10)
     expect(buscar.mock.calls[1][0].depois).toBe('Artes|AR-001')
     buscar.mockClear()
@@ -69,17 +69,17 @@ describe('ListaEspecialidades', () => {
     expect(screen.getByRole('tab', { name: 'Concluídas' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('"Carregar mais" concatena sem duplicar e some quando não há próximo', async () => {
+  it('"Ver mais" concatena sem duplicar e some quando não há próximo', async () => {
     buscar.mockResolvedValueOnce(pagina([item(1), item(2)], 'Artes|AR-002', 3))
       .mockResolvedValueOnce(pagina([item(2), item(3)], null, 3))
     render(<ListaEspecialidades limite={2} />)
     await passar(10)
     expect(screen.getAllByTestId('cartao-especialidade')).toHaveLength(2)
-    fireEvent.click(screen.getByRole('button', { name: 'Carregar mais' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver mais' }))
     await passar(10)
     expect(buscar.mock.calls[1][0]).toMatchObject({ depois: 'Artes|AR-002', limite: 2 })
     expect(screen.getAllByTestId('cartao-especialidade').map((c) => within(c).getByRole('heading').textContent)).toEqual(['Especialidade 1', 'Especialidade 2', 'Especialidade 3'])
-    expect(screen.queryByRole('button', { name: 'Carregar mais' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Ver mais' })).toBeNull()
     expect(screen.getByTestId('contador-especialidades')).toHaveTextContent('Mostrando 3 de 3')
   })
 
@@ -150,7 +150,7 @@ describe('ListaEspecialidades', () => {
     await passar(10)
     const [a, b] = screen.getAllByTestId('cartao-especialidade')
     expect(within(a).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40')
-    expect(within(b).getByText('✅ Concluída')).toBeInTheDocument()
+    expect(within(b).getByText('✓ Concluída')).toBeInTheDocument()
     expect(within(b).queryByRole('progressbar')).toBeNull()
     fireEvent.click(within(a).getByRole('button', { name: 'Abrir Especialidade 1' }))
     expect(aoAbrir).toHaveBeenCalledWith(expect.objectContaining({ member_specialty_id: 'ms1' }))

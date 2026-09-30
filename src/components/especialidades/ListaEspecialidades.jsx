@@ -1,4 +1,4 @@
-// Lista PAGINADA do catálogo de especialidades (centenas de itens): busca, área, situação e "Carregar mais".
+// Lista PAGINADA do catálogo de especialidades (centenas de itens): busca, área, situação e "Ver mais".
 // Nunca pede o catálogo inteiro: cada chamada traz no máximo `limite` itens e o servidor devolve um cursor.
 //
 // Corrida de respostas: cada consulta ganha um número (`contador`). Mudou a busca/área/situação (ou chamou
@@ -6,8 +6,10 @@
 // Enquanto a nova busca não volta, a lista anterior continua na tela com o aviso "Buscando…".
 import { useEffect, useRef, useState } from 'react'
 import { buscarEspecialidades } from '../../lib/dados.js'
-import { Aviso, Botao, Progresso, mensagemDeErro } from '../../ui/index.jsx'
+import { Aviso, Botao, mensagemDeErro } from '../../ui/index.jsx'
 import { avisar } from '../../ui/avisos.jsx'
+import BarraProgresso from '../jornada/BarraProgresso.jsx'
+import StatusRequisito from '../jornada/StatusRequisito.jsx'
 import { EsqueletoTela } from '../../ui/carregamento.jsx'
 
 export const ABAS_PADRAO = [
@@ -166,13 +168,14 @@ export default function ListaEspecialidades({ abas = ABAS_PADRAO, situacaoInicia
                         {it.codigo} · {it.categoria}{it.total_requisitos != null ? ` · ${it.total_requisitos} requisito${it.total_requisitos === 1 ? '' : 's'}` : ''}
                       </p>
                     </div>
+                    {it.situacao === 'em_andamento' && <StatusRequisito status="rascunho" rotulo="Em andamento" className="shrink-0" />}
                     {it.situacao === 'concluida' && (
-                      <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-bold text-green-700">✅ Concluída</span>
+                      <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-bold text-green-700">✓ Concluída</span>
                     )}
                   </div>
 
                   {it.situacao === 'em_andamento' && (
-                    <div className="mt-2"><Progresso valor={it.percentual ?? 0} total={100} rotulo="Progresso" /></div>
+                    <div className="mt-2"><BarraProgresso valor={it.percentual ?? 0} rotulo={`Progresso em ${it.nome}`} /></div>
                   )}
 
                   {it.situacao === 'disponivel' && dep.length > 0 && (
@@ -198,7 +201,7 @@ export default function ListaEspecialidades({ abas = ABAS_PADRAO, situacaoInicia
 
           {proximo && !erro && (
             <Botao variacao="contorno" aoTocar={() => executar(proximo)} carregando={carregandoMais} desabilitado={buscando} className="w-full">
-              Carregar mais
+              Ver mais
             </Botao>
           )}
         </>
