@@ -134,6 +134,8 @@ select t.eq('7 eventos no total', t.hist_total('membro_a'), 7::bigint);
 reset role;
 select t.throws('postgres não altera o histórico', $q$update public.rede_consentimento_imagem_historico set evento = 'desmarcada' where evento = 'arquivada'$q$, 'imutável');
 select t.throws('postgres não apaga o histórico', $q$delete from public.rede_consentimento_imagem_historico where escopo = 'imagem'$q$, 'imutável');
+-- reset role NÃO limpa o JWT da sessão anterior: para simular rotina do banco (sem JWT) é preciso zerar as claims
+select t.como_cron();
 delete from public.rede_autorizacao_imagem where usuario_id = t.id('membro_a');
 select t.eq('apagar a linha de estado: histórico anterior continua', t.hist('membro_a', 'arquivada'), 2::bigint);
 select t.eq('...e registra registro_removido', t.hist('membro_a', 'registro_removido'), 1::bigint);
