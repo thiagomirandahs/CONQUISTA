@@ -181,7 +181,7 @@ select t.eq('ocultação registrada pelo sistema', (select count(*) from public.
 select t.como('lider_b');
 select t.eq('sumiu para TODOS (outro clube)', t.n(format($q$select count(*) from jsonb_array_elements(public.comunidade_feed()->'itens') e where e->>'id' = %L$q$, t.id('post_a'))), 0::bigint);
 -- 515: o repost é do alcance 'clube' (B); aparece no "Meu clube", não no feed da Comunidade
-select t.eq('o repost mostra "indisponível"', t.txt($q$select (e->'repost'->>'indisponivel') from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->'repost' is not null limit 1$q$), 'true');
+select t.eq('o repost mostra "indisponível"', t.txt($q$select (e->'repost'->>'indisponivel') from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where jsonb_typeof(e->'repost') = 'object' limit 1$q$), 'true');   -- 517: jsonb null nao e SQL null; antes pegava um post qualquer (flaky por empate de created_at)
 select t.throws('ninguém comenta no oculto', format($q$select public.comunidade_comentar(%L, 'oi')$q$, t.id('post_a')), 'não está disponível');
 select t.throws('fila: diretoria de OUTRO clube não modera', format($q$select public.comunidade_moderar('post', %L, 'restaurar')$q$, t.id('post_a')), 'não encontrado');
 select t.eq('...e não vê a denúncia na fila dela', t.n($q$select jsonb_array_length(public.comunidade_fila_moderacao()->'denuncias')$q$), 0::bigint);
