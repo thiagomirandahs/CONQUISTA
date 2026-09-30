@@ -88,12 +88,19 @@ export function descricaoDaJornada(temRecurso) {
 // `extras`: { temEscopo } — quem também tem vínculo institucional.
 export function destinosDoPapel({ ehPais, temGestao } = {}, temRecurso = () => true, extras = {}) {
   if (ehPais) return [DESTINO.filhos, DESTINO.eu]
-  const base = [DESTINO.inicio, DESTINO.jornada, DESTINO.clube]
+  // Fase 8: um destino cujo hub ficaria VAZIO neste clube (todos os recursos dele desligados) sai da barra — nunca
+  // leva a uma tela vazia. Nada se perde: um hub vazio não tem tela nenhuma para alcançar. Início, Clube (núcleo:
+  // Ranking e Unidades), Gestão e Eu nunca saem. Rede DBV, Leituras, Portfólio e Especialidades continuam a 2 toques
+  // (hubs Clube/Jornada) e a Rede também por atalho do Início.
+  const base = [DESTINO.inicio]
+  if (itensDoHub(HUB_JORNADA, temRecurso).length > 0) base.push(DESTINO.jornada)
+  base.push(DESTINO.clube)
   // A liderança não perde os jogos: eles passam a viver dentro de Clube, porque ela não é o público
   // deles — e o 4º destino dela precisa ser a operação do clube.
-  base.push(temGestao ? DESTINO.gestao : DESTINO.jogos)
+  if (temGestao) base.push(DESTINO.gestao)
+  else if (itensDoHub(HUB_JOGOS, temRecurso).length > 0) base.push(DESTINO.jogos)
   base.push(DESTINO.eu)
-  void temRecurso; void extras
+  void extras
   return base
 }
 

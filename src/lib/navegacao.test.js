@@ -144,3 +144,67 @@ describe('especialidades: com "classes" ligado e "especialidades" desligado, nad
     expect(descricaoDaJornada(ligados({ classes: true, especialidades: true }))).toMatch(/especialidades/)
   })
 })
+
+// Fase 8: a barra de baixo não vira barra cheia e nunca leva a um hub vazio.
+describe('fase 8: barra enxuta e sem destino vazio', () => {
+  const tudo = () => true
+  const nada = () => false
+  const rotasBarra = (papel, temRecurso) => rotas(destinosDoPapel(permissoesDoPapel(papel), temRecurso))
+
+  it('por papel, em qualquer combinação de recursos: no máximo 5 destinos e sempre Início + Eu', () => {
+    const combos = [tudo, nada, ligados({ classes: true }), ligados({ jogos: true }), ligados({ comunidade: true })]
+    for (const papel of PAPEIS.filter((p) => p !== 'pais')) {
+      for (const c of combos) {
+        const d = rotasBarra(papel, c)
+        expect(d.length, papel).toBeLessThanOrEqual(5)
+        expect(d[0], papel).toBe('/inicio')
+        expect(d[d.length - 1], papel).toBe('/eu')
+        expect(new Set(d).size, 'sem repetidos').toBe(d.length)
+      }
+    }
+  })
+
+  it('jogos desligados: o desbravador não ganha o destino Jogos (hub vazio)', () => {
+    const d = rotasBarra('desbravador', ligados({ classes: true }))
+    expect(d).toEqual(['/inicio', '/jornada', '/meu-clube', '/eu'])
+  })
+
+  it('sem nenhum recurso de jornada: sai o destino Jornada, o núcleo (Início, Clube, Eu) fica', () => {
+    expect(rotasBarra('desbravador', nada)).toEqual(['/inicio', '/meu-clube', '/eu'])
+    expect(rotasBarra('diretoria', nada)).toEqual(['/inicio', '/meu-clube', '/gestao', '/eu'])
+  })
+
+  it('só "especialidades" ligado ainda justifica o destino Jornada', () => {
+    expect(rotasBarra('desbravador', ligados({ especialidades: true }))).toContain('/jornada')
+  })
+
+  it('todo destino que fica na barra abre um hub com pelo menos uma tela', () => {
+    const hubs = { '/jornada': HUB_JORNADA, '/meu-clube': HUB_CLUBE, '/jogos': HUB_JOGOS }
+    for (const papel of PAPEIS.filter((p) => p !== 'pais')) {
+      for (const c of [tudo, nada, ligados({ classes: true }), ligados({ chat: true })]) {
+        for (const r of rotasBarra(papel, c)) if (hubs[r]) expect(itensDoHub(hubs[r], c).length, `${papel} ${r}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('nada some: toda tela liberada de Jornada/Clube/Jogos continua na gaveta do PC e em um hub', () => {
+    for (const papel of PAPEIS.filter((p) => p !== 'pais')) {
+      const gaveta = gruposDoMenuLateral(permissoesDoPapel(papel), tudo).flatMap((g) => rotas(g.itens))
+      for (const i of [...HUB_JORNADA, ...HUB_CLUBE, ...HUB_JOGOS]) expect(gaveta, `${papel} ${i.to}`).toContain(i.to)
+    }
+    const rotasJornada = rotas(HUB_JORNADA)
+    for (const r of ['/jornada/minha', '/jornada/portfolio', '/leituras', '/minhas-especialidades', '/minha-classe']) expect(rotasJornada).toContain(r)
+    expect(rotas(HUB_CLUBE)).toContain('/rede')
+  })
+
+  it('a Rede some do hub Clube quando "comunidade" está desligado e volta quando liga', () => {
+    expect(rotas(itensDoHub(HUB_CLUBE, ligados({ comunidade: false })))).not.toContain('/rede')
+    expect(rotas(itensDoHub(HUB_CLUBE, ligados({ comunidade: true })))).toContain('/rede')
+  })
+
+  it('a liderança alcança os jogos pelo hub Clube (não tem destino Jogos)', () => {
+    const d = rotasBarra('diretoria', tudo)
+    expect(d).not.toContain('/jogos')
+    expect(d).toContain('/gestao')
+  })
+})

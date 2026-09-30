@@ -161,14 +161,14 @@ export default function AppLayout() {
         style={{ height: "calc(84px + var(--seguro-baixo))" }} />
 
       {/* ===== Destinos (celular) — no máximo 5, conforme o papel ===== */}
-      <nav className="lg:hidden fixed z-30 left-3 right-3" aria-label="Destinos"
-        style={{ bottom: 'calc(10px + var(--seguro-baixo))' }}>
+      <nav className="lg:hidden fixed z-30" aria-label="Destinos"
+        style={{ bottom: 'calc(10px + var(--seguro-baixo))', left: 'max(0.75rem, var(--seguro-esq))', right: 'max(0.75rem, var(--seguro-dir))' }}>
         <div className="bg-surface border border-line rounded-[24px] shadow-soft grid max-w-lg mx-auto px-1.5 py-1.5"
           style={{ gridTemplateColumns: `repeat(${destinos.length}, minmax(0, 1fr))` }}>
           {destinos.map((d) => (
             <NavLink key={d.to} to={d.to}
               className={({ isActive }) =>
-                `relative flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-2xl transition-[color,transform] duration-150 active:scale-95 ${isActive ? 'text-brand' : 'text-faint'}`
+                `relative flex flex-col items-center justify-center gap-0.5 min-h-[52px] rounded-2xl transition-[color,transform] duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand ${isActive ? 'text-brand' : 'text-faint'}`
               }>
               {({ isActive }) => (
                 <>
