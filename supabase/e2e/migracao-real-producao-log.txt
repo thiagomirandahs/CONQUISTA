@@ -1,0 +1,121 @@
+# PASSO 5-REAL — migração da produção real
+data/hora: 2026-09-24T21:15:27.199Z
+
+== pré-voo ANTES (produção real, leitura) ==
+RESUMO	PROBLEMA	6 problema(s), 12 aviso(s), 23 ok — pré-voo das migrations 20260921000001..20260930000080	NÃO abra a janela: corrija cada PROBLEMA (coluna correcao) e rode o pré-voo de novo.
+
+== aplicando o pré-janela na PRODUÇÃO REAL ==
+   ok, sem erro
+
+== aplicando a remoção do Cartão de Classe na PRODUÇÃO REAL ==
+   ok, sem erro
+
+== pré-voo DEPOIS do pré-janela (produção real) ==
+RESUMO	PROBLEMA	1 problema(s), 9 aviso(s), 31 ok — pré-voo das migrations 20260921000001..20260930000080	NÃO abra a janela: corrija cada PROBLEMA (coluna correcao) e rode o pré-voo de novo.
+   único PROBLEMA é o falso positivo já conhecido (listar_usuarios) — segue
+
+== aplicando as 86 migrations SaaS NA PRODUÇÃO REAL ==
+   OK  20260921000001_fundacao-saas-multitenant.sql  (2399ms)
+   OK  20260921000002_mapear-perfis-legados-tenant-001.sql  (1154ms)
+   OK  20260921000003_tenantiza-unidades.sql  (2005ms)
+   OK  20260921000004_tenantiza-nucleo-operacional.sql  (4275ms)
+   OK  20260921000005_isola-perfis-e-gestao.sql  (1639ms)
+   OK  20260921000006_isola-fotos-por-clube.sql  (1822ms)
+   OK  20260921000007_recursos-por-clube.sql  (1709ms)
+   OK  20260921000008_tenantiza-temporadas-e-ranking.sql  (2222ms)
+   OK  20260921000009_tenantiza-agenda.sql  (1612ms)
+   OK  20260921000010_tenantiza-notificacoes.sql  (1987ms)
+   OK  20260921000011_tenantiza-mensalidades.sql  (2092ms)
+   OK  20260921000012_convites-responsaveis.sql  (1423ms)
+   OK  20260921000013_papeis-vinculos-e-escopo-legado.sql  (4077ms)
+   OK  20260921000014_rls-por-clube-e-blindagem-de-responsaveis.sql  (3192ms)
+   OK  20260921000015_leilao-cron-e-escopo.sql  (2634ms)
+   OK  20260921000016_isolamento-de-rpcs-e-storage.sql  (4014ms)
+   OK  20260921000017_convites-e-push-por-clube.sql  (2382ms)
+   OK  20260921000018_correcoes-da-revisao.sql  (3030ms)
+   OK  20260921000019_regressoes-de-desempenho-e-compat.sql  (2620ms)
+   FALHOU  20260921000020_config-por-clube-e-provisionamento.sql  (3469ms)
+   ERROR:  deadlock detected
+
+=== PARADO — migration falhou na PRODUÇÃO REAL ===
+arquivo: 20260921000020_config-por-clube-e-provisionamento.sql
+erro: ERROR:  deadlock detected
+as migrations ANTERIORES a esta já estão aplicadas em produção (transações atômicas: cada uma aplicou tudo ou nada).
+NÃO tentei corrigir automaticamente. Aguardando decisão humana.
+# PASSO 5-REAL — migração da produção real
+data/hora: 2026-09-24T21:31:25.339Z
+
+== RETOMANDO de 20260921000020 — pré-voo/pré-janela já aplicados numa rodada anterior, ledger confirma ==
+
+== aplicando as 86 migrations SaaS NA PRODUÇÃO REAL ==
+   OK  20260921000020_config-por-clube-e-provisionamento.sql  (4343ms)
+   OK  20260921000021_duelos-por-clube.sql  (3341ms)
+   OK  20260921000022_missoes-e-devocional-por-clube.sql  (3324ms)
+   OK  20260921000023_leilao-por-clube.sql  (4397ms)
+   OK  20260921000024_jogos-por-clube.sql  (8332ms)
+   OK  20260921000025_chat-bichinho-biblia-por-clube.sql  (3605ms)
+   OK  20260921000026_remove-helpers-legados.sql  (1554ms)
+   OK  20260921000027_conteudo-por-clube.sql  (2616ms)
+   OK  20260921000028_correcoes-das-revisoes-da-rodada-2.sql  (3419ms)
+   OK  20260921000029_chat-mensagem-moderada.sql  (1923ms)
+   OK  20260921000030_oraculos-de-uuid.sql  (1886ms)
+   OK  20260921000031_imagens-por-clube.sql  (2797ms)
+   OK  20260921000032_imagens-privado.sql  (1018ms)
+   OK  20260921000033_contexto-do-clube.sql  (2476ms)
+   OK  20260921000034_multiclube-real.sql  (4308ms)
+   OK  20260921000035_jogos-sem-papel-de-profiles.sql  (3015ms)
+   OK  20260921000036_motor-curricular-classes.sql  (6633ms)
+   OK  20260921000037_especialidades-e-dependencias.sql  (7946ms)
+   OK  20260921000038_motor-de-regras-curriculares.sql  (5587ms)
+   OK  20260921000039_catalogo-oficial-classes.sql  (2908ms)
+   OK  20260921000040_importar-classes-regulares-2026-1.sql  (1247ms)
+   OK  20260921000041_regras-bloqueiam-envio-e-aprovacao.sql  (2452ms)
+   OK  20260921000042_importador-versao-nova-e-escolha-aberta.sql  (1234ms)
+   OK  20260921000043_importar-classes-regulares-2026-2.sql  (1284ms)
+   OK  20260921000044_snapshot-curricular-e-investidura.sql  (5270ms)
+   OK  20260921000045_documento-e-verificacao-publica.sql  (2982ms)
+   OK  20260921000046_hierarquia-institucional-e-workflow-investidura.sql  (4397ms)
+   OK  20260921000047_escopo-institucional-e-portal.sql  (2431ms)
+   OK  20260921000048_fundacao-comercial-saas.sql  (11946ms)
+   OK  20260921000049_motor-de-experiencias.sql  (9622ms)
+   OK  20260921000050_inicio-contextual.sql  (1702ms)
+   OK  20260923000051_desempenho-chat-e-mural.sql  (1673ms)
+   OK  20260923000052_push-infra-reproduzivel.sql  (2421ms)
+   OK  20260923000053_observabilidade-minima.sql  (2121ms)
+   OK  20260923000054_armazenamento-por-clube.sql  (2473ms)
+   OK  20260924000055_push-idempotente.sql  (3836ms)
+   OK  20260924000056_rpcs-cross-tenant.sql  (2322ms)
+   OK  20260924000057_canal-de-alerta.sql  (2808ms)
+   OK  20260924000058_paginacao-keyset-chat.sql  (1220ms)
+   OK  20260924000059_mensalidades-ano-agregado.sql  (1163ms)
+   OK  20260925000060_leilao-rateio-unico.sql  (1334ms)
+   OK  20260926000061_convite-de-equipe.sql  (1805ms)
+   OK  20260926000062_leitura-escopada-na-aba.sql  (1248ms)
+   OK  20260926000063_aba-invalida-nao-cai-em-outro-clube.sql  (1079ms)
+   OK  20260926000064_operacao-no-clube-da-requisicao.sql  (1350ms)
+   OK  20260927000065_marca-do-tenant-001-sai-do-icone-do-produto.sql  (1172ms)
+   OK  20260927000066_convite-de-equipe-expira.sql  (1937ms)
+   OK  20260927000067_apontamento-e-leilao-no-clube-da-aba.sql  (1362ms)
+   OK  20260927000068_escrita-escopada-na-aba.sql  (1640ms)
+   OK  20260927000069_portatil-sem-evidencia-privada.sql  (2055ms)
+   OK  20260928000070_identidade-sem-clube.sql  (1385ms)
+   OK  20260928000071_entrada-por-convite-e-codigo.sql  (3489ms)
+   OK  20260928000072_fecha-a-janela-anonima-do-legado.sql  (1202ms)
+   OK  20260929000073_o-clube-do-ato-e-a-aba.sql  (1670ms)
+   OK  20260929000074_mensalidade-unica-por-clube.sql  (1253ms)
+   OK  20260929000075_clube-em-uso-e-so-clube.sql  (1072ms)
+   OK  20260929000076_superficie-anonima-sem-clube-legado.sql  (1076ms)
+   OK  20260929000077_auditoria-de-operacoes-e-telemetria-sem-segredo.sql  (2280ms)
+   OK  20260929000078_chat-e-o-espelho-do-perfil.sql  (1856ms)
+   OK  20260929000079_telemetria-sem-token-de-documento.sql  (1153ms)
+   OK  20260930000080_pessoas-do-clube-pelo-vinculo.sql  (2224ms)
+   OK  20260930000081_jogos-e-ajudas-no-clube-da-aba.sql  (2401ms)
+   OK  20260930000082_carimbos-e-avisos-pela-aba.sql  (1714ms)
+   OK  20260930000083_especialidades-com-recurso-da-plataforma.sql  (4203ms)
+   OK  20260930000084_conteudo-anual-com-vigencia-explicita.sql  (3051ms)
+   OK  20260930000085_defeitos-achados-no-pre-voo.sql  (2273ms)
+   OK  20260930000086_correcoes-da-revisao-adversarial.sql  (5186ms)
+
+67/67 aplicadas na PRODUÇÃO REAL, total 192.5s
+
+== JANELA REAL APLICADA. Prosseguir para verificação pós-migração. ==

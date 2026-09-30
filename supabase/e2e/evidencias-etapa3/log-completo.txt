@@ -1,0 +1,226 @@
+# Etapa 3 — RUN 1: reproduzir o defeito (sem a remoção do Cartão de Classe)
+
+== RUN 1: restaurando o backup real num ambiente descartável ==
+   OK      restore do banco (custom, 3.1s, 0 aviso(s) benigno(s))
+   OK      o banco restaurado tem o dono original (postgres)
+   OK      ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+
+-- pré-voo ANTES do pré-janela (mesmo do inventário da Etapa 1, agora como postgres de verdade) --
+   RESUMO: PROBLEMA — 6 problema(s), 12 aviso(s), 23 ok — pré-voo das migrations 20260921000001..20260930000080
+   PROBLEMA  RESUMO: 6 problema(s), 12 aviso(s), 23 ok — pré-voo das migrations 20260921000001..20260930000080
+   PROBLEMA  ledger-do-cli-supabase_migrations-ausente: 1 achado(s): supabase_migrations.schema_migrations não existe: o insert do ledger anexado a cada migration aborta (e desfaz) a migration
+   PROBLEMA  colunas-legadas-ausentes-ou-divergentes: 5 achado(s): tabela public.ajudas ausente (rode 20260801000001_pedir-ajuda.sql) | tabela public.migracoes_aplicadas ausente (rode 20260828000006_ledger-migrations.sql) | tabela public.push_tokens ause
+   PROBLEMA  funcoes-legadas-ausentes-ou-com-assinatura-diferente: 8 achado(s): ajuda_status(p_id uuid): ausente | ajudas_recebidas(): ausente | cancelar_ajuda(p_id uuid): ausente | norm_txt(t text): ausente | pedir_ajuda(p_para uuid, p_jogo text, p_enunciado jsonb, 
+   PROBLEMA  funcoes-que-chamam-funcoes-dropadas: 1 achado(s): avaliar_requisito(p_usuario_id uuid, p_requisito_id uuid, p_aprovar boolean) chama um helper que a 26 dropa (dono postgres)
+   PROBLEMA  dependentes-de-funcoes-dropadas: 2 achado(s): policy gerir classe_requisitos on table classe_requisitos depende de pode_gerir() (a 05/20/26 dropa sem cascade e aborta) | policy ler requisito_cumprido on table requisito_cumprido depen
+   PROBLEMA  constraints-e-indices-unicos-fora-do-padrao: 5 achado(s): FK fora do repo: partidas partidas_jogo_fkey — FOREIGN KEY (jogo) REFERENCES jogos_trilha(chave) | FK fora do repo: partidas partidas_usuario_id_fkey — FOREIGN KEY (usuario_id) REFERENCES
+
+-- aplicando o pré-janela: ledger do CLI + os 3 SQLs legados nunca rodados neste projeto (SEM ainda tocar no Cartão de Classe) --
+   ok, sem erro (é o mesmo texto que vai para o SQL Editor de produção)
+
+-- pré-voo DEPOIS do pré-janela --
+   RESUMO: PROBLEMA — 3 problema(s), 11 aviso(s), 27 ok — pré-voo das migrations 20260921000001..20260930000080
+   PROBLEMA  RESUMO: 3 problema(s), 11 aviso(s), 27 ok — pré-voo das migrations 20260921000001..20260930000080
+   PROBLEMA  funcoes-legadas-ausentes-ou-com-assinatura-diferente: 1 achado(s): listar_usuarios() → TABLE(id uuid, nome text, foto text, papel text, status text, unidade_id uuid, email text): assinatura diferente ou sobrecarga extra
+   PROBLEMA  funcoes-que-chamam-funcoes-dropadas: 1 achado(s): avaliar_requisito(p_usuario_id uuid, p_requisito_id uuid, p_aprovar boolean) chama um helper que a 26 dropa (dono postgres)
+   PROBLEMA  dependentes-de-funcoes-dropadas: 2 achado(s): policy gerir classe_requisitos on table classe_requisitos depende de pode_gerir() (a 05/20/26 dropa sem cascade e aborta) | policy ler requisito_cumprido on table requisito_cumprido depende de pode_gerir() (a 05/20/26 dropa sem cascade e aborta)
+   AVISO     pacote-curricular-colado-integro: 1 achado(s): conferência pendente, fora do banco: a colagem de ~39 KB da 40 e da 43 só existe na janela — confira-a com o BLOCO À PARTE no fim deste arquivo (sh
+   AVISO     tesoureiro-ativo-vs-mensalidades_ano: 1 achado(s): 1 tesoureiro(s) ativo(s): a 20260924000059 cria mensalidades_ano com o portão de gestão e só a 20260930000080 o troca por pode_financeiro_no_clube 
+   AVISO     webhook-de-push-do-painel: 1 achado(s): gatilho push-notificacoes em notificacoes → supabase_functions.http_request() (sem x-push-webhook-secret: vira 401 e alerta crítico depois da 55/57
+   AVISO     segredos-de-push-no-vault: 2 achado(s): falta o segredo push_edge_url no Vault | falta o segredo push_webhook_secret no Vault
+   AVISO     funcoes-fora-do-repo-ou-de-outro-dono: 3 achado(s): avaliar_requisito(p_usuario_id uuid, p_requisito_id uuid, p_aprovar boolean): fora do repo | desmarcar_requisito(p_requisito_id uuid): fora do repo
+   AVISO     objetos-em-tabelas-so-de-producao: 5 achado(s): FK de requisito_cumprido para tabela legada: requisito_cumprido_avaliado_por_fkey — FOREIGN KEY (avaliado_por) REFERENCES profiles(id) ON DELETE SE
+   AVISO     nascimento-implausivel: 6 achado(s): perfil 15fda72d-37f6-4185-a738-05fb7b76bf6d (desbravador, ativo): nascimento no futuro | perfil 1ba3a864-3a85-43f2-b477-b2cf096712e7 (desbravador, 
+   AVISO     uploads-que-a-28-e-a-31-recusam: 60 achado(s): imagens/atividades/22726b03-4bbb-4d41-9a08-0490b69c7a4e-1b9614db-0b29-470c-a5b6-f63737736e5e-1787527295529.mp4: caminho fora do formato que pode_s
+   AVISO     comprovacoes-sem-linha-com-o-nome-exato: 15 achado(s): comprovacoes/1a1e3c03-e2cf-4b27-9635-b4f1d828ff88/atividades/1788463579659.mp4: nenhuma linha cita o nome exato — a liderança deixa de ver | compr
+   AVISO     objetos-de-storage-sem-clube: 2 achado(s): bucket comprovacoes: 1 objeto(s) sem dono ativo, 85923 bytes fora da conta do clube | bucket imagens: 1 objeto(s) sem dono ativo, 30932 bytes fora 
+   AVISO     fim-de-linha-crlf-no-metodo-de-aplicacao: 108 achado(s): _biblia_segundos_min tem CR (\r) no corpo | _bichinho_estagio tem CR (\r) no corpo | _bichinho_nivel_cenario tem CR (\r) no corpo | _bichinho_niv
+
+-- auditoria de dependência do Cartão de Classe legado (classe_requisitos/requisito_cumprido), na cópia real --
+   constraint classe_requisitos_pkey on table classe_requisitos|a
+   constraint requisito_cumprido_avaliado_por_fkey on table requisito_cumprido|a
+   constraint requisito_cumprido_pkey on table requisito_cumprido|a
+   constraint requisito_cumprido_requisito_id_fkey on table requisito_cumprido|n
+   constraint requisito_cumprido_requisito_id_fkey on table requisito_cumprido|a
+   constraint requisito_cumprido_usuario_id_fkey on table requisito_cumprido|a
+   constraint requisito_cumprido_usuario_id_requisito_id_key on table requisito_cumprido|a
+   constraint requisito_cumprido_usuario_id_requisito_id_key on table requisito_cumprido|a
+   default value for column ativo of table classe_requisitos|a
+   default value for column created_at of table classe_requisitos|a
+   default value for column created_at of table requisito_cumprido|a
+   default value for column id of table classe_requisitos|a
+   default value for column id of table requisito_cumprido|a
+   default value for column ordem of table classe_requisitos|a
+   default value for column status of table requisito_cumprido|a
+   index idx_classe_req|a
+   index idx_classe_req|a
+   index idx_req_cumprido_status|a
+   index idx_req_cumprido_user|a
+   policy gerir classe_requisitos on table classe_requisitos|a
+   policy ler classe_requisitos on table classe_requisitos|a
+   policy ler requisito_cumprido on table requisito_cumprido|n
+   policy ler requisito_cumprido on table requisito_cumprido|a
+   toast table pg_toast.pg_toast_18890|i
+   toast table pg_toast.pg_toast_19091|i
+   type classe_requisitos|i
+   type requisito_cumprido|i
+   OK      nenhuma OUTRA função (fora do próprio Cartão de Classe) cita esses objetos no corpo
+   OK      nenhuma FK de FORA apontando para as duas tabelas (FK delas para profiles é interna e cai junto no DROP TABLE)
+   OK      0 linhas de dado nas duas tabelas (confirmado de novo nesta cópia)
+   ·       Dependência real (do pg_depend): só as 2 policies ("gerir classe_requisitos", "ler requisito_cumprido") e as 3 funções do próprio Cartão de Classe. Nada do motor curricular novo aparece — ele usa outras tabelas (class_requirements, member_classes, etc.), que não existem ainda nesta cópia (só entram na migration 36+).
+
+-- tentando aplicar as migrations do SaaS (só as >= 20260921000001; a produção já tem o legado por outro caminho), para REPRODUZIR o abort (sem corrigir o Cartão de Classe) --
+   ·       86 migrations do SaaS (de 20260921000001_fundacao-saas-multitenant.sql a 20260930000086_correcoes-da-revisao-adversarial.sql)
+   OK      o abort aconteceu, e é o esperado (dependência do Cartão de Classe)
+   ·       RUN 1 prova o defeito: 20260921000026_remove-helpers-legados.sql aborta com "ERROR:  cannot drop function pode_gerir() because other objects depend on it"
+
+
+# Etapa 3 — RUN 2: correção testada (remove o Cartão de Classe legado) + migração completa, do zero
+
+== RUN 2: restaurando o backup real num ambiente descartável ==
+   OK      restore do banco (custom, 2.9s, 0 aviso(s) benigno(s))
+   OK      o banco restaurado tem o dono original (postgres)
+   OK      ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+
+-- aplicando a remoção do Cartão de Classe (testada acima: só ele depende desses objetos) --
+   ok, sem erro
+
+-- pré-voo final, antes da janela --
+   RESUMO: PROBLEMA — 1 problema(s), 9 aviso(s), 31 ok — pré-voo das migrations 20260921000001..20260930000080
+   OK      RESUMO = ok, ou só o falso-positivo verificado de listar_usuarios (DROP+CREATE na migration 5)
+   AVISO     pacote-curricular-colado-integro: 1 achado(s): conferência pendente, fora do banco: a colagem de ~39 KB da 40 e da 43 só existe na janela — confira-a com o BLOCO À PARTE no fim deste arquivo (sh
+   AVISO     tesoureiro-ativo-vs-mensalidades_ano: 1 achado(s): 1 tesoureiro(s) ativo(s): a 20260924000059 cria mensalidades_ano com o portão de gestão e só a 20260930000080 o troca por pode_financeiro_no_clube 
+   AVISO     webhook-de-push-do-painel: 1 achado(s): gatilho push-notificacoes em notificacoes → supabase_functions.http_request() (sem x-push-webhook-secret: vira 401 e alerta crítico depois da 55/57
+   AVISO     segredos-de-push-no-vault: 2 achado(s): falta o segredo push_edge_url no Vault | falta o segredo push_webhook_secret no Vault
+   AVISO     nascimento-implausivel: 6 achado(s): perfil 15fda72d-37f6-4185-a738-05fb7b76bf6d (desbravador, ativo): nascimento no futuro | perfil 1ba3a864-3a85-43f2-b477-b2cf096712e7 (desbravador, 
+   AVISO     uploads-que-a-28-e-a-31-recusam: 60 achado(s): imagens/atividades/22726b03-4bbb-4d41-9a08-0490b69c7a4e-1b9614db-0b29-470c-a5b6-f63737736e5e-1787527295529.mp4: caminho fora do formato que pode_s
+   AVISO     comprovacoes-sem-linha-com-o-nome-exato: 15 achado(s): comprovacoes/1a1e3c03-e2cf-4b27-9635-b4f1d828ff88/atividades/1788463579659.mp4: nenhuma linha cita o nome exato — a liderança deixa de ver | compr
+   AVISO     objetos-de-storage-sem-clube: 2 achado(s): bucket comprovacoes: 1 objeto(s) sem dono ativo, 85923 bytes fora da conta do clube | bucket imagens: 1 objeto(s) sem dono ativo, 30932 bytes fora 
+   AVISO     fim-de-linha-crlf-no-metodo-de-aplicacao: 105 achado(s): _biblia_segundos_min tem CR (\r) no corpo | _bichinho_estagio tem CR (\r) no corpo | _bichinho_nivel_cenario tem CR (\r) no corpo | _bichinho_niv
+
+-- retrato ANTES das migrations do SaaS (schema legado real) --
+   auth.users                   33
+   profiles                     30
+   unidades                     5
+   pontos_linhas                17425
+   pontos_soma                  325004
+   mensalidades                 37
+   atividades                   20
+   entregas                     140
+   eventos                      1
+   chat_conversas               9
+   chat_mensagens               71
+   jogos_trilha_catalogo        28
+   trilha_jogos                 14487
+   partidas                     8309
+   recordes                     191
+   leiloes                      1
+   duelos                       2
+   devocional                   1076
+   missoes_feitas               743
+   biblia_leituras              224
+   bichinhos                    24
+   responsaveis                 2
+   notificacoes                 1668
+   config_clube                 18
+   storage_objetos              395
+   storage_buckets              2
+   cron_jobs                    9
+   funcoes_public               120
+   policies_public              62
+   fks_public                   58
+   ajudas                       0
+   push_tokens                  0
+   orfaos_auth_sem_profile      3
+
+-- aplicando as migrations do SaaS, uma por uma, na ordem, com o ledger na mesma transação --
+   OK      todas as 86 migrations aplicaram (20.2s)
+   OK      ledger conferido pelo CONJUNTO: nada faltando
+   OK      o banco restaurado tem o dono original (postgres)
+   OK      ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+   ·       as 5 migrations mais lentas: 20260921000024_jogos-por-clube.sql (0.6s), 20260921000004_tenantiza-nucleo-operacional.sql (0.4s), 20260921000022_missoes-e-devocional-por-clube.sql (0.3s), 20260930000086_correcoes-da-revisao-adversarial.sql (0.3s), 20260921000043_importar-classes-regulares-2026-2.sql (0.3s)
+
+-- retrato DEPOIS: o Tenant 001 (Conquista) dentro do DesbravaClube --
+   clube_legado_existe          1
+   auth.users                   33
+   organization_memberships_total 30
+   memberships_no_legado        30
+   memberships_fora_do_legado   0
+   unidades                     5
+   unidades_fora_do_legado      0
+   pontos_linhas                17425
+   pontos_soma                  325004
+   pontos_fora_do_legado        0
+   mensalidades                 37
+   mensalidades_fora            0
+   atividades                   20
+   entregas                     140
+   eventos                      1
+   chat_mensagens               71
+   trilha_jogos                 14487
+   partidas                     8309
+   devocional                   1076
+   missoes_feitas               743
+   biblia_leituras              224
+   bichinhos                    24
+   responsaveis                 2
+   notificacoes                 1668
+   storage_objetos              395
+   club_storage_objetos         393
+   club_storage_fora            0
+   cron_jobs                    13
+   platform_admins              0
+   reconciliacao_pendente       0
+
+-- COMPARAÇÃO ANTES × DEPOIS --
+   OK      auth.users                               antes=33       depois=33       (nenhuma conta pode sumir nem nascer)
+   OK      vínculos no Tenant 001 = profiles de antes antes=30       depois=30       (a migration 2 cria 1 vínculo por perfil)
+   OK      unidades                                 antes=5        depois=5        
+   OK      pontos (linhas)                          antes=17425    depois=17425    
+   OK      pontos (soma)                            antes=325004   depois=325004   
+   OK      mensalidades                             antes=37       depois=37       
+   OK      atividades                               antes=20       depois=20       
+   OK      entregas                                 antes=140      depois=140      
+   OK      eventos                                  antes=1        depois=1        
+   OK      chat_mensagens                           antes=71       depois=71       
+   OK      trilha_jogos                             antes=14487    depois=14487    
+   OK      partidas                                 antes=8309     depois=8309     
+   OK      devocional                               antes=1076     depois=1076     
+   OK      missoes_feitas                           antes=743      depois=743      
+   OK      biblia_leituras                          antes=224      depois=224      
+   OK      bichinhos                                antes=24       depois=24       
+   OK      responsaveis                             antes=2        depois=2        
+   OK      notificacoes                             antes=1668     depois=1668     
+   OK      storage.objects                          antes=395      depois=395      (metadados, não deve perder nenhum)
+   FALHOU  todo objeto do Storage está no controle de uso do Tenant 001  [antes=395 controle=393]
+   OK      nenhum ponto/vínculo/unidade/mensalidade/storage foi parar FORA do Tenant 001
+   OK      reconciliação perfil×vínculo não tem nada a ajustar
+   OK      3 usuários órfãos de auth.users preservados (mesma quantidade de antes)
+
+-- item 11 do pedido: nenhum fallback de "clube legado/padrão" voltou a existir --
+   ·       migration 72 ("fecha a janela anônima do legado") aplicou sem erro (ver duracoes-migrations.json) — o fallback anônimo para o clube legado foi FECHADO por ela, como já era esperado.
+   FALHOU  anon NÃO consegue chamar clube_legado_id() (superfície anônima fechada, migration 76)  [anon conseguiu chamar — deveria ter sido recusado]
+
+-- suíte de banco (pgTAP), sobre a cópia REAL já migrada --
+   46 arquivos ok, 19 com falha (log completo em supabase/e2e/evidencias-etapa3/suite-sobre-dado-real.log)
+   FALHOU 03_responsavel.sql
+   FALHOU 05_lider_tenant002.sql
+   FALHOU 07_push_por_clube.sql
+   FALHOU 11_revisao_independente.sql
+   FALHOU 12_regressoes_tenant001.sql
+   FALHOU 13_config_por_clube.sql
+   FALHOU 14_duelos_por_clube.sql
+   FALHOU 16_leilao_por_clube.sql
+   FALHOU 17_jogos_por_clube.sql
+   FALHOU 18_jogos_cron_por_clube.sql
+   FALHOU 19_chat_bichinho_biblia_por_clube.sql
+   FALHOU 25_imagens_privadas.sql
+   FALHOU 30_jogos_premios_multiclube_isolados.sql
+   FALHOU 45_chat_matriz_de_acesso.sql
+   FALHOU 47_push_nativo_e_infra.sql
+   FALHOU 49_armazenamento_por_clube.sql
+   FALHOU 52_paginacao_keyset.sql
+   FALHOU 61_crianca_em_dois_clubes.sql
+   FALHOU multi_tenant_isolation.sql
+
+ RESULTADO GERAL: 21 FALHA(S)

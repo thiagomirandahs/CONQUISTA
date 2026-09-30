@@ -1,0 +1,432 @@
+[
+ {
+  "f": "20260921000024_jogos-por-clube.sql",
+  "ok": true,
+  "ms": 616
+ },
+ {
+  "f": "20260921000004_tenantiza-nucleo-operacional.sql",
+  "ok": true,
+  "ms": 441
+ },
+ {
+  "f": "20260921000022_missoes-e-devocional-por-clube.sql",
+  "ok": true,
+  "ms": 263
+ },
+ {
+  "f": "20260930000086_correcoes-da-revisao-adversarial.sql",
+  "ok": true,
+  "ms": 260
+ },
+ {
+  "f": "20260921000043_importar-classes-regulares-2026-2.sql",
+  "ok": true,
+  "ms": 257
+ },
+ {
+  "f": "20260924000057_canal-de-alerta.sql",
+  "ok": true,
+  "ms": 255
+ },
+ {
+  "f": "20260921000048_fundacao-comercial-saas.sql",
+  "ok": true,
+  "ms": 254
+ },
+ {
+  "f": "20260921000049_motor-de-experiencias.sql",
+  "ok": true,
+  "ms": 253
+ },
+ {
+  "f": "20260921000040_importar-classes-regulares-2026-1.sql",
+  "ok": true,
+  "ms": 249
+ },
+ {
+  "f": "20260921000018_correcoes-da-revisao.sql",
+  "ok": true,
+  "ms": 246
+ },
+ {
+  "f": "20260921000023_leilao-por-clube.sql",
+  "ok": true,
+  "ms": 246
+ },
+ {
+  "f": "20260921000038_motor-de-regras-curriculares.sql",
+  "ok": true,
+  "ms": 246
+ },
+ {
+  "f": "20260923000053_observabilidade-minima.sql",
+  "ok": true,
+  "ms": 242
+ },
+ {
+  "f": "20260921000037_especialidades-e-dependencias.sql",
+  "ok": true,
+  "ms": 240
+ },
+ {
+  "f": "20260921000047_escopo-institucional-e-portal.sql",
+  "ok": true,
+  "ms": 240
+ },
+ {
+  "f": "20260926000061_convite-de-equipe.sql",
+  "ok": true,
+  "ms": 240
+ },
+ {
+  "f": "20260921000035_jogos-sem-papel-de-profiles.sql",
+  "ok": true,
+  "ms": 236
+ },
+ {
+  "f": "20260929000078_chat-e-o-espelho-do-perfil.sql",
+  "ok": true,
+  "ms": 236
+ },
+ {
+  "f": "20260921000014_rls-por-clube-e-blindagem-de-responsaveis.sql",
+  "ok": true,
+  "ms": 235
+ },
+ {
+  "f": "20260921000020_config-por-clube-e-provisionamento.sql",
+  "ok": true,
+  "ms": 235
+ },
+ {
+  "f": "20260921000036_motor-curricular-classes.sql",
+  "ok": true,
+  "ms": 235
+ },
+ {
+  "f": "20260926000062_leitura-escopada-na-aba.sql",
+  "ok": true,
+  "ms": 235
+ },
+ {
+  "f": "20260921000016_isolamento-de-rpcs-e-storage.sql",
+  "ok": true,
+  "ms": 234
+ },
+ {
+  "f": "20260921000011_tenantiza-mensalidades.sql",
+  "ok": true,
+  "ms": 233
+ },
+ {
+  "f": "20260921000046_hierarquia-institucional-e-workflow-investidura.sql",
+  "ok": true,
+  "ms": 233
+ },
+ {
+  "f": "20260921000013_papeis-vinculos-e-escopo-legado.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260921000025_chat-bichinho-biblia-por-clube.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260921000034_multiclube-real.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260921000044_snapshot-curricular-e-investidura.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260923000052_push-infra-reproduzivel.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260924000059_mensalidades-ano-agregado.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260927000067_apontamento-e-leilao-no-clube-da-aba.sql",
+  "ok": true,
+  "ms": 232
+ },
+ {
+  "f": "20260921000050_inicio-contextual.sql",
+  "ok": true,
+  "ms": 231
+ },
+ {
+  "f": "20260930000085_defeitos-achados-no-pre-voo.sql",
+  "ok": true,
+  "ms": 231
+ },
+ {
+  "f": "20260923000051_desempenho-chat-e-mural.sql",
+  "ok": true,
+  "ms": 230
+ },
+ {
+  "f": "20260926000064_operacao-no-clube-da-requisicao.sql",
+  "ok": true,
+  "ms": 230
+ },
+ {
+  "f": "20260929000073_o-clube-do-ato-e-a-aba.sql",
+  "ok": true,
+  "ms": 230
+ },
+ {
+  "f": "20260929000077_auditoria-de-operacoes-e-telemetria-sem-segredo.sql",
+  "ok": true,
+  "ms": 230
+ },
+ {
+  "f": "20260921000003_tenantiza-unidades.sql",
+  "ok": true,
+  "ms": 229
+ },
+ {
+  "f": "20260921000010_tenantiza-notificacoes.sql",
+  "ok": true,
+  "ms": 229
+ },
+ {
+  "f": "20260921000015_leilao-cron-e-escopo.sql",
+  "ok": true,
+  "ms": 229
+ },
+ {
+  "f": "20260923000054_armazenamento-por-clube.sql",
+  "ok": true,
+  "ms": 229
+ },
+ {
+  "f": "20260930000081_jogos-e-ajudas-no-clube-da-aba.sql",
+  "ok": true,
+  "ms": 229
+ },
+ {
+  "f": "20260921000041_regras-bloqueiam-envio-e-aprovacao.sql",
+  "ok": true,
+  "ms": 228
+ },
+ {
+  "f": "20260927000065_marca-do-tenant-001-sai-do-icone-do-produto.sql",
+  "ok": true,
+  "ms": 228
+ },
+ {
+  "f": "20260928000071_entrada-por-convite-e-codigo.sql",
+  "ok": true,
+  "ms": 228
+ },
+ {
+  "f": "20260921000006_isola-fotos-por-clube.sql",
+  "ok": true,
+  "ms": 227
+ },
+ {
+  "f": "20260921000019_regressoes-de-desempenho-e-compat.sql",
+  "ok": true,
+  "ms": 227
+ },
+ {
+  "f": "20260921000021_duelos-por-clube.sql",
+  "ok": true,
+  "ms": 227
+ },
+ {
+  "f": "20260929000075_clube-em-uso-e-so-clube.sql",
+  "ok": true,
+  "ms": 227
+ },
+ {
+  "f": "20260921000009_tenantiza-agenda.sql",
+  "ok": true,
+  "ms": 226
+ },
+ {
+  "f": "20260928000072_fecha-a-janela-anonima-do-legado.sql",
+  "ok": true,
+  "ms": 226
+ },
+ {
+  "f": "20260924000056_rpcs-cross-tenant.sql",
+  "ok": true,
+  "ms": 224
+ },
+ {
+  "f": "20260921000031_imagens-por-clube.sql",
+  "ok": true,
+  "ms": 223
+ },
+ {
+  "f": "20260930000083_especialidades-com-recurso-da-plataforma.sql",
+  "ok": true,
+  "ms": 223
+ },
+ {
+  "f": "20260921000002_mapear-perfis-legados-tenant-001.sql",
+  "ok": true,
+  "ms": 222
+ },
+ {
+  "f": "20260921000027_conteudo-por-clube.sql",
+  "ok": true,
+  "ms": 222
+ },
+ {
+  "f": "20260930000080_pessoas-do-clube-pelo-vinculo.sql",
+  "ok": true,
+  "ms": 222
+ },
+ {
+  "f": "20260927000068_escrita-escopada-na-aba.sql",
+  "ok": true,
+  "ms": 221
+ },
+ {
+  "f": "20260930000084_conteudo-anual-com-vigencia-explicita.sql",
+  "ok": true,
+  "ms": 221
+ },
+ {
+  "f": "20260921000029_chat-mensagem-moderada.sql",
+  "ok": true,
+  "ms": 220
+ },
+ {
+  "f": "20260921000001_fundacao-saas-multitenant.sql",
+  "ok": true,
+  "ms": 219
+ },
+ {
+  "f": "20260921000008_tenantiza-temporadas-e-ranking.sql",
+  "ok": true,
+  "ms": 219
+ },
+ {
+  "f": "20260928000070_identidade-sem-clube.sql",
+  "ok": true,
+  "ms": 219
+ },
+ {
+  "f": "20260921000012_convites-responsaveis.sql",
+  "ok": true,
+  "ms": 218
+ },
+ {
+  "f": "20260924000055_push-idempotente.sql",
+  "ok": true,
+  "ms": 218
+ },
+ {
+  "f": "20260929000076_superficie-anonima-sem-clube-legado.sql",
+  "ok": true,
+  "ms": 218
+ },
+ {
+  "f": "20260921000045_documento-e-verificacao-publica.sql",
+  "ok": true,
+  "ms": 217
+ },
+ {
+  "f": "20260921000030_oraculos-de-uuid.sql",
+  "ok": true,
+  "ms": 216
+ },
+ {
+  "f": "20260926000063_aba-invalida-nao-cai-em-outro-clube.sql",
+  "ok": true,
+  "ms": 216
+ },
+ {
+  "f": "20260921000007_recursos-por-clube.sql",
+  "ok": true,
+  "ms": 215
+ },
+ {
+  "f": "20260921000028_correcoes-das-revisoes-da-rodada-2.sql",
+  "ok": true,
+  "ms": 215
+ },
+ {
+  "f": "20260929000079_telemetria-sem-token-de-documento.sql",
+  "ok": true,
+  "ms": 215
+ },
+ {
+  "f": "20260921000026_remove-helpers-legados.sql",
+  "ok": true,
+  "ms": 214
+ },
+ {
+  "f": "20260921000042_importador-versao-nova-e-escolha-aberta.sql",
+  "ok": true,
+  "ms": 214
+ },
+ {
+  "f": "20260921000032_imagens-privado.sql",
+  "ok": true,
+  "ms": 213
+ },
+ {
+  "f": "20260921000033_contexto-do-clube.sql",
+  "ok": true,
+  "ms": 213
+ },
+ {
+  "f": "20260924000058_paginacao-keyset-chat.sql",
+  "ok": true,
+  "ms": 213
+ },
+ {
+  "f": "20260925000060_leilao-rateio-unico.sql",
+  "ok": true,
+  "ms": 212
+ },
+ {
+  "f": "20260927000066_convite-de-equipe-expira.sql",
+  "ok": true,
+  "ms": 210
+ },
+ {
+  "f": "20260927000069_portatil-sem-evidencia-privada.sql",
+  "ok": true,
+  "ms": 210
+ },
+ {
+  "f": "20260921000017_convites-e-push-por-clube.sql",
+  "ok": true,
+  "ms": 208
+ },
+ {
+  "f": "20260930000082_carimbos-e-avisos-pela-aba.sql",
+  "ok": true,
+  "ms": 206
+ },
+ {
+  "f": "20260929000074_mensalidade-unica-por-clube.sql",
+  "ok": true,
+  "ms": 203
+ },
+ {
+  "f": "20260921000005_isola-perfis-e-gestao.sql",
+  "ok": true,
+  "ms": 202
+ },
+ {
+  "f": "20260921000039_catalogo-oficial-classes.sql",
+  "ok": true,
+  "ms": 196
+ }
+]

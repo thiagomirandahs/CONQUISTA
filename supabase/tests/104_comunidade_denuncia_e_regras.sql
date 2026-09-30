@@ -125,20 +125,32 @@ select t.como('membro_a');
 select t.eq('com autorização publica', t.txt($q$select public.comunidade_publicar('Nosso acampamento foi incrível!')->>'status'$q$), 'publicado');
 reset role;
 insert into t.ids (chave, id) select 'post_a', id from public.comunidade_posts where autor_id = t.id('membro_a');
+-- 515 (AJUSTE DE REGRA, D1/D2): o que a criança publica nasce 'clube' e só o próprio clube vê. Para continuar provando aqui as
+-- regras entre clubes (curtir, repost, denúncia, foto, isolamento), o post é levado à 'comunidade' como FIXTURE (direto no banco):
+-- pelas RPCs um desbravador não publica na Comunidade (provado no teste 122).
+update public.comunidade_posts set alcance = 'comunidade' where id = t.id('post_a');
 select t.como('membro_b');
 select t.eq('membro de OUTRO clube vê no feed', t.n($q$select jsonb_array_length(public.comunidade_feed()->'itens')$q$), 1::bigint);
 -- MUDANÇA DE REGRA (migration 470, decisão do dono para a rede DBV): o perfil público passou de "só o primeiro
 -- nome" para NOME + SOBRENOME (as duas primeiras palavras do nome). O que continua proibido: o nome completo
 -- (a 3ª palavra em diante), nascimento e e-mail.
-select t.eq('perfil público = nome + sobrenome (duas primeiras palavras)', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'nome'$q$), 'Ana Clara');
+select t.eq('perfil público = nome + sobrenome (duas primeiras palavras)', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'nome'$q$), 'Ana C.');   -- 515 (D4/menores): criança vista de outro clube = 1º nome + inicial
 select t.eq('...+ nome do clube', t.txt($q$select public.comunidade_feed()->'itens'->0->'autor'->>'clube'$q$), t.nome_clube('clube_a'));
 select t.ok('...e NUNCA o nome completo, nascimento ou e-mail', t.txt($q$select public.comunidade_feed()::text$q$) !~ '(Souza|2014|teste\.local|nascimento|email)');
 select t.eq('curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
 select t.eq('curtir de novo não duplica', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
-select t.eq('criança de outro clube comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'Que legal!')->>'ok'$q$, t.id('post_a'))), 'true');
+-- 515 (G4): antes "criança de outro clube comenta" = true; agora desbravador só comenta no PRÓPRIO clube.
+select t.throws('criança de outro clube NÃO comenta (só curte)', format($q$select public.comunidade_comentar(%L, 'Que legal!')$q$, t.id('post_a')), 'seu clube');
 select t.eq('compartilhar DENTRO do app (repost)', t.txt(format($q$select public.comunidade_publicar(null, null, %L)->>'ok'$q$, t.id('post_a'))), 'true');
+-- 515: o "comentário de B" que as seções seguintes denunciam agora é num post do PRÓPRIO clube B (G4)
+select public.comunidade_publicar('Nossa unidade B está pronta!');
 reset role;
 insert into t.ids (chave, id) select 'repost_b', id from public.comunidade_posts where autor_id = t.id('membro_b') and repost_de is not null;
+insert into t.ids (chave, id) select 'post_b', id from public.comunidade_posts where autor_id = t.id('membro_b') and repost_de is null;
+update public.comunidade_posts set alcance = 'comunidade' where id = t.id('post_b');   -- fixture (ver acima)
+select t.como('membro_b');
+select t.eq('criança comenta no post do PRÓPRIO clube', t.txt(format($q$select public.comunidade_comentar(%L, 'Que legal!')->>'ok'$q$, t.id('post_b'))), 'true');
+reset role;
 select t.como('lider_b');
 select t.throws('adulto de OUTRO clube NÃO comenta em post de criança', format($q$select public.comunidade_comentar(%L, 'Parabéns!')$q$, t.id('post_a')), 'Adultos de outro clube');
 select t.eq('...mas pode curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '2');
@@ -150,7 +162,7 @@ select t.ok('responsável acompanha o feed', t.n($q$select jsonb_array_length(pu
 select t.throws('responsável NÃO publica', $q$select public.comunidade_publicar('oi')$q$, 'não publicam');
 select t.throws('responsável NÃO comenta', format($q$select public.comunidade_comentar(%L, 'oi')$q$, t.id('post_a')), 'não publicam');
 select t.como('membro_b');
-select t.eq('comentários listados com primeiro nome', t.n(format($q$select jsonb_array_length(public.comunidade_comentarios(%L)->'itens')$q$, t.id('post_a'))), 2::bigint);
+select t.eq('comentários listados com primeiro nome', t.n(format($q$select jsonb_array_length(public.comunidade_comentarios(%L)->'itens')$q$, t.id('post_a'))), 1::bigint);   -- 515: era 2 (a criança de B comentava)
 reset role;
 
 -- =============================================================================
@@ -168,7 +180,8 @@ select t.eq('diretoria do clube de quem DENUNCIOU (B) não', t.notif('lider_b'),
 select t.eq('ocultação registrada pelo sistema', (select count(*) from public.comunidade_moderacao_log where alvo_id = t.id('post_a') and acao = 'ocultado_por_denuncia' and via = 'sistema'), 1::bigint);
 select t.como('lider_b');
 select t.eq('sumiu para TODOS (outro clube)', t.n(format($q$select count(*) from jsonb_array_elements(public.comunidade_feed()->'itens') e where e->>'id' = %L$q$, t.id('post_a'))), 0::bigint);
-select t.eq('o repost mostra "indisponível"', t.txt($q$select (e->'repost'->>'indisponivel') from jsonb_array_elements(public.comunidade_feed()->'itens') e where e->'repost' is not null limit 1$q$), 'true');
+-- 515: o repost é do alcance 'clube' (B); aparece no "Meu clube", não no feed da Comunidade
+select t.eq('o repost mostra "indisponível"', t.txt($q$select (e->'repost'->>'indisponivel') from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->'repost' is not null limit 1$q$), 'true');
 select t.throws('ninguém comenta no oculto', format($q$select public.comunidade_comentar(%L, 'oi')$q$, t.id('post_a')), 'não está disponível');
 select t.throws('fila: diretoria de OUTRO clube não modera', format($q$select public.comunidade_moderar('post', %L, 'restaurar')$q$, t.id('post_a')), 'não encontrado');
 select t.eq('...e não vê a denúncia na fila dela', t.n($q$select jsonb_array_length(public.comunidade_fila_moderacao()->'denuncias')$q$), 0::bigint);
@@ -201,7 +214,7 @@ insert into public.comunidade_denuncias (club_id, alvo_tipo, alvo_id, denunciant
 select t.id('clube_a'), 'post', gen_random_uuid(), t.id('membro_b'), 'outro', 'improcedente', now() - interval '1 day'
   from generate_series(1, 2);
 select t.como('lider_a');
-select public.comunidade_publicar('Reunião ótima hoje');
+select public.rede_publicar('aviso', 'Reunião ótima hoje', null, null, null, null, 'comunidade');   -- 515: a diretoria publica na Comunidade
 reset role;
 insert into t.ids (chave, id) select 'post_lider_a', id from public.comunidade_posts where autor_id = t.id('lider_a');
 select t.como('membro_b');
@@ -288,9 +301,10 @@ reset role;
 create or replace function public.rede_foto_exige_aprovacao() returns boolean language sql stable set search_path = '' as $f$ select true $f$;
 select t.como('membro_b');
 select t.eq('foto entra EM ANÁLISE', t.txt(format($q$select public.comunidade_publicar('Nossa unidade!', %L)->>'status'$q$, (select p from caminho))), 'em_analise');
-select t.eq('o autor vê a própria foto em análise no feed', t.txt($q$select public.comunidade_feed()->'itens'->0->>'status'$q$), 'em_analise');
+select t.eq('o autor vê a própria foto em análise no feed', t.txt($q$select public.rede_feed('meu_clube')->'itens'->0->>'status'$q$), 'em_analise');   -- 515: Meu clube (o post nasce 'clube')
 reset role;
 insert into t.ids (chave, id) select 'post_foto', id from public.comunidade_posts where foto_path = (select p from caminho);
+update public.comunidade_posts set alcance = 'comunidade' where id = t.id('post_foto');   -- fixture (ver acima)
 select t.ok('diretoria B avisada da foto', (select count(*) from public.notificacoes where para_usuario = t.id('lider_b') and titulo like '%Foto aguardando%') = 1);
 select t.como('membro_a');
 select t.eq('outro clube NÃO vê a foto em análise no feed', t.n(format($q$select count(*) from jsonb_array_elements(public.comunidade_feed()->'itens') e where e->>'id' = %L$q$, t.id('post_foto'))), 0::bigint);

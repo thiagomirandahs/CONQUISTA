@@ -4,6 +4,9 @@
 -- vínculo suspenso/encerrado não vaza unidade; unidade de outro clube não é usada; só o NOME sai
 -- (as chaves do JSON do autor são exatamente as da 500 + `unidade`); anon não executa nada;
 -- grants e search_path continuam fechados.
+-- 515 (AJUSTE DE REGRA, menores): os posts deste teste nascem 'clube'; como FIXTURE (direto no banco) eles sao levados a 'comunidade'
+-- para seguir provando a unidade entre clubes. O que mudou de proposito: a CRIANCA vista por outro clube perde unidade e nome completo
+-- (e o perfil dela fica indisponivel); quem e do clube dela continua vendo tudo.
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -79,6 +82,7 @@ select t.eq('membro que vai ser suspenso publica', t.txt($q$select public.rede_p
 select t.como('coord_112');
 select t.eq('coordenação publica', t.txt($q$select public.rede_publicar('livre', 'Bom dia, clubes do distrito!')->>'status'$q$), 'publicado');
 reset role;
+update public.comunidade_posts set alcance = 'comunidade';   -- fixture (ver cabeçalho)
 
 -- =============================================================================
 --  3. Mesmo clube vê a unidade; outro clube também; sem unidade e coordenação → null
@@ -90,12 +94,14 @@ select t.eq('mesmo clube: rede_perfil traz a unidade', t.txt(format($q$select pu
 select t.eq('meu perfil: minha unidade', t.txt($q$select public.rede_perfil()->>'unidade'$q$), 'Teste A2');
 
 select t.como('membro_b');
-select t.eq('OUTRO clube: unidade do autor no feed', t.autor_no_feed('membro_a', 'unidade'), 'Teste A1');
+select t.eq('OUTRO clube: a CRIANÇA perde a unidade (515)', coalesce(t.autor_no_feed('membro_a', 'unidade'), 'nula'), 'nula');
+select t.eq('OUTRO clube: ...e o nome vem reduzido (1º nome + inicial)', t.autor_no_feed('membro_a', 'nome'), 'Membro A.');
+select t.eq('...já o adulto mantém o nome (nome + sobrenome)', t.autor_no_feed('lider_a', 'nome'), 'Lider A');
 select t.eq('OUTRO clube: o clube continua', t.autor_no_feed('membro_a', 'clube'), 'Filhos da Conquista');
 select t.eq('OUTRO clube: diretoria sem unidade → null', coalesce(t.autor_no_feed('lider_a', 'unidade'), 'nula'), 'nula');
 select t.eq('OUTRO clube: autor de coordenação → unidade null', coalesce(t.autor_no_feed('coord_112', 'unidade'), 'nula'), 'nula');
 select t.eq('...e o subtítulo da coordenação segue', t.autor_no_feed('coord_112', 'clube'), 'Coordenação · Distrito 112');
-select t.eq('OUTRO clube: rede_perfil traz a unidade', t.txt(format($q$select public.rede_perfil(%L)->>'unidade'$q$, t.id('membro_a'))), 'Teste A1');
+select t.throws('OUTRO clube: rede_perfil da criança fica indisponível (515)', format($q$select public.rede_perfil(%L)$q$, t.id('membro_a')), 'não está disponível');
 select t.eq('OUTRO clube: rede_perfil da diretoria sem unidade → null', t.txt(format($q$select coalesce(public.rede_perfil(%L)->>'unidade', 'nula')$q$, t.id('lider_a'))), 'nula');
 select t.eq('OUTRO clube: rede_perfil da coordenação → null', t.txt(format($q$select coalesce(public.rede_perfil(%L)->>'unidade', 'nula')$q$, t.id('coord_112'))), 'nula');
 
@@ -107,9 +113,11 @@ reset role;
 -- =============================================================================
 --  4. Vínculo suspenso/encerrado não vaza a unidade; unidade de OUTRO clube não conta
 -- =============================================================================
-select t.como('membro_b');
-select t.eq('antes da suspensão: unidade vem', t.autor_no_feed('susp_112', 'unidade'), 'Teste A2');
+select t.como('membro_a2');
+select t.eq('antes da suspensão: unidade vem (para quem é do clube)', t.autor_no_feed('susp_112', 'unidade'), 'Teste A2');
 reset role;
+-- 515: as chamadas diretas abaixo rodam como postgres; quem "lê" é a diretoria do clube A (membro do clube vê a unidade da criança)
+select set_config('request.jwt.claim.sub', t.id('lider_a')::text, true);
 update public.organization_memberships set status = 'suspenso' where user_id = t.id('susp_112') and organizational_unit_id = t.id('clube_a');
 select t.eq('vínculo SUSPENSO: _comunidade_autor_json devolve unidade null',
   coalesce(public._comunidade_autor_json(t.id('susp_112'), t.id('clube_a'))->>'unidade', 'nula'), 'nula');

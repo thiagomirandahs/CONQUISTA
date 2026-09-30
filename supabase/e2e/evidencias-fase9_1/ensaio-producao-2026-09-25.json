@@ -1,0 +1,49 @@
+{
+  "rotulo": "producao-2026-09-25",
+  "veredito": "NO-GO — 1 falha(s)",
+  "falhas": 1,
+  "checks": [
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "restore sem erro (6.2s)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "o banco restaurado tem o dono original (postgres)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "1. Ambiente descartável e restore",
+      "nome": "auth, API e storage sobem sobre o banco restaurado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "2. Em que estado a cópia está",
+      "nome": "o estado é coerente: sem ledger, também sem nenhuma tabela do SaaS (nada aplicado à mão fora do ledger)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "3. Pré-voo de produção (supabase/PREFLIGHT-PRODUCAO.sql)",
+      "nome": "o pré-voo roda numa transação SOMENTE LEITURA (não escreve nada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "etapa": "3. Pré-voo de produção (supabase/PREFLIGHT-PRODUCAO.sql)",
+      "nome": "pré-voo sem PROBLEMA (a janela real pararia aqui)",
+      "ok": false,
+      "detalhe": "upgrade-parcial-ou-objetos-saas | dados-que-violam-constraints-novas | colunas-legadas-ausentes-ou-divergentes | funcoes-legadas-ausentes-ou-com-assinatura-diferente | policies-fora-do-repo | constraints-e-indices-unicos-fora-do-padrao | gatilhos-fora-do-repo | buckets-de-storage | cron-jobs-conflit"
+    }
+  ]
+}

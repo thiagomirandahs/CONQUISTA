@@ -1,0 +1,63 @@
+# Janela real — ensaio final sobre backup fresco
+
+== restaurando o backup FRESCO num ambiente descartável ==
+restore: {"formato":"custom","benignos":[],"erros":[]}
+   OK  o banco restaurado tem o dono original (postgres) (dono=postgres)
+   OK  ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+
+== pré-voo ANTES do pré-janela ==
+RESUMO	PROBLEMA	6 problema(s), 12 aviso(s), 23 ok — pré-voo das migrations 20260921000001..20260930000080	NÃO abra a janela: corrija cada PROBLEMA (coluna correcao) e rode o pré-voo de novo.
+
+== aplicando o pré-janela (ledger + legado nunca rodado) ==
+   ok, sem erro
+
+== aplicando a remoção do Cartão de Classe (já autorizada e provada na Etapa 3) ==
+   ok, sem erro
+
+== pré-voo DEPOIS do pré-janela ==
+RESUMO	PROBLEMA	1 problema(s), 9 aviso(s), 31 ok — pré-voo das migrations 20260921000001..20260930000080	NÃO abra a janela: corrija cada PROBLEMA (coluna correcao) e rode o pré-voo de novo.
+   nenhum PROBLEMA — segue
+
+== estado ANTES das migrations (dentro da cópia) ==
+{}
+
+== aplicando as 86 migrations SaaS ==
+   86/86 aplicadas, total 19.1s
+   mais demoradas: 20260921000024_jogos-por-clube.sql (599ms) | 20260921000004_tenantiza-nucleo-operacional.sql (474ms) | 20260921000049_motor-de-experiencias.sql (247ms) | 20260930000086_correcoes-da-revisao-adversarial.sql (247ms) | 20260921000048_fundacao-comercial-saas.sql (243ms)
+   faltando no ledger: nenhuma — 100% registrado
+   OK  o banco restaurado tem o dono original (postgres) (dono=postgres)
+   OK  ...e o papel do SQL Editor ainda CRIA no public: a próxima migration passa
+
+== estado DEPOIS das migrations (dentro da cópia) ==
+{
+ "responsaveis": "2",
+ "unidades": "5",
+ "bichinhos": "24",
+ "mensalidades": "37",
+ "auth.users": "33",
+ "orfaos_auth_sem_profile": "3",
+ "biblia_leituras": "224",
+ "clube_legado_existe": "1",
+ "cron_jobs": "13",
+ "memberships_total": "30",
+ "unidades_fora_do_legado": "0",
+ "platform_admins": "0",
+ "memberships_no_legado": "30",
+ "club_storage_objetos": "395",
+ "reconciliacao_pendente": "0",
+ "missoes_feitas": "743",
+ "memberships_fora_do_legado": "0",
+ "club_storage_fora": "0",
+ "devocional": "1076",
+ "storage_objects": "395",
+ "notificacoes": "1668",
+ "partidas": "8311",
+ "trilha_jogos": "14487",
+ "pontos_soma": "325004",
+ "pontos_linhas": "17425",
+ "pontos_apontamento": "127",
+ "pontos_fora_do_legado": "0"
+}
+
+== JANELA REAL: ensaio sobre backup fresco concluído até aqui. Container mantido para os gates. ==
+CONTAINER=supabase_db_CONQUISTA-RESTORE

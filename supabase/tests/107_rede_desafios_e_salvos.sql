@@ -120,20 +120,28 @@ select t.throws('responsável não participa (não publica)', format($q$select p
 -- =============================================================================
 select t.recuar(5);
 select t.como('membro_b');
-select t.throws('conquista sem categoria é recusada', $q$select public.rede_publicar('conquista', 'Concluí a classe Amigo')$q$, 'tipo da conquista');
-select t.eq('conquista categorizada', t.txt($q$select public.rede_publicar('conquista', 'Concluí a classe Amigo', null, null, null, 'classe')->'post'->>'conquista'$q$), 'classe');
+-- 515 (D6, AJUSTE DE REGRA): conquista não é mais texto livre. Antes: "sem categoria é recusada" e "categorizada publica";
+-- agora rede_publicar NÃO aceita tipo conquista (só rede_publicar_conquista, a partir do registro real — teste 122).
+select t.throws('conquista por texto livre é recusada (sem categoria)', $q$select public.rede_publicar('conquista', 'Concluí a classe Amigo')$q$, 'registro real');
+select t.throws('...e com categoria também', $q$select public.rede_publicar('conquista', 'Concluí a classe Amigo', null, null, null, 'classe')$q$, 'registro real');
 select t.throws('texto acima de 300 é recusado', format($q$select public.rede_publicar('livre', %L)$q$, repeat('a', 301)), 'até 300');
 select t.eq('triagem continua valendo na rede', t.txt($q$select public.rede_publicar('livre', 'me chama no zap')->>'motivo'$q$), 'contato');
-select t.eq('perfil: 1 conquista', t.txt($q$select public.rede_perfil()->>'conquistas'$q$), '1');
-select t.eq('aba Conquistas do perfil', t.n($q$select jsonb_array_length(public.rede_perfil_posts(null, 'conquistas')->'itens')$q$), 1::bigint);
-select t.eq('aba Desafios de outra pessoa', t.n(format($q$select jsonb_array_length(public.rede_perfil_posts(%L, 'desafios')->'itens')$q$, t.id('membro_a'))), 1::bigint);
+select t.eq('perfil: 0 conquistas (nada de texto livre)', t.txt($q$select public.rede_perfil()->>'conquistas'$q$), '0');
+select t.eq('aba Conquistas do perfil vazia', t.n($q$select jsonb_array_length(public.rede_perfil_posts(null, 'conquistas')->'itens')$q$), 0::bigint);
+-- 515 (menores): a criança de OUTRO clube não tem perfil/abas visíveis; quem é do clube dela vê
+select t.throws('aba Desafios da criança de OUTRO clube: indisponível', format($q$select public.rede_perfil_posts(%L, 'desafios')$q$, t.id('membro_a')), 'não está disponível');
+select t.como('lider_a');
+select t.eq('aba Desafios da criança para quem é do clube dela', t.n(format($q$select jsonb_array_length(public.rede_perfil_posts(%L, 'desafios')->'itens')$q$, t.id('membro_a'))), 1::bigint);
+-- a diretoria publica UM aviso na Comunidade (515): é o que o feed "Todos" (= Comunidade) passa a mostrar
+select t.eq('diretoria publica na Comunidade', t.txt($q$select public.rede_publicar('aviso', 'Reunião geral no sábado', null, null, null, null, 'comunidade')->>'ok'$q$), 'true');
 reset role;
 
 -- =============================================================================
 --  6. Feed: Todos x Meu clube
 -- =============================================================================
 select t.como('membro_b');
-select t.ok('Todos: vê o clube A', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'clube_id' = %L$q$, t.id('clube_a'))) >= 1);
+select t.ok('Todos (= Comunidade): vê o que o clube A publicou NA COMUNIDADE', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'clube_id' = %L$q$, t.id('clube_a'))) >= 1);
+select t.eq('...mas NÃO o que a criança do clube A publicou só no clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->'autor'->>'id' = %L$q$, t.id('membro_a'))), 0::bigint);
 select t.eq('Meu clube: só o clube B', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'clube_id' <> %L$q$, t.id('clube_b'))), 0::bigint);
 select t.throws('filtro inventado é recusado', $q$select public.rede_feed('outro')$q$, 'Filtro inválido');
 
@@ -141,7 +149,8 @@ select t.throws('filtro inventado é recusado', $q$select public.rede_feed('outr
 --  7. Salvos: só do próprio usuário
 -- =============================================================================
 reset role;
-insert into t.ids (chave, id) select 'post_a_vivo', id from public.comunidade_posts where autor_id = t.id('membro_a') and status = 'publicado' limit 1;
+-- 515: o post "vivo" do clube A para salvar/ocultar é o aviso da diretoria NA COMUNIDADE (o da criança é só do clube A)
+insert into t.ids (chave, id) select 'post_a_vivo', id from public.comunidade_posts where autor_id = t.id('lider_a') and status = 'publicado' and alcance = 'comunidade' limit 1;
 select t.como('membro_b');
 select t.eq('salva', t.txt(format($q$select public.rede_salvar(%L, true)->>'eu_salvei'$q$, t.id('post_a_vivo'))), 'true');
 select t.eq('salvar de novo não duplica', t.txt(format($q$select public.rede_salvar(%L, true)->>'ok'$q$, t.id('post_a_vivo'))), 'true');
@@ -170,7 +179,7 @@ select t.throws('não oculta o que já está oculto', format($q$select public.co
 select t.eq('Manter (= restaurar) volta ao ar', t.txt(format($q$select public.comunidade_moderar('post', %L, 'restaurar')->>'status'$q$, t.id('post_a_vivo'))), 'publicado');
 reset role;
 select t.eq('ocultar registrado no histórico pela diretoria', (select count(*) from public.comunidade_moderacao_log where alvo_id = t.id('post_a_vivo') and acao = 'ocultado_por_denuncia' and via = 'diretoria'), 1::bigint);
-select t.eq('ocultar NÃO dá aviso (strike) ao autor', (select count(*) from public.comunidade_avisos where usuario_id = t.id('membro_a')), 0::bigint);
+select t.eq('ocultar NÃO dá aviso (strike) ao autor', (select count(*) from public.comunidade_avisos where usuario_id = t.id('lider_a')), 0::bigint);
 
 -- =============================================================================
 --  9. Armazenamento mínimo e VIDA ÚTIL das fotos
@@ -199,6 +208,7 @@ select t.eq('descrição guardada como alt', (select foto_alt from public.comuni
 select t.ok('foto nasce com validade de 90 dias',
   (select foto_expira_em between now() + interval '89 days' and now() + interval '91 days' from public.comunidade_posts where foto_path = (select p1 from caminhos)));
 insert into t.ids (chave, id) select 'post_foto', id from public.comunidade_posts where foto_path = (select p1 from caminhos);
+update public.comunidade_posts set alcance = 'comunidade' where id = t.id('post_foto');   -- 515: fixture (desbravador só publica 'clube'; aqui provamos a validade da foto entre clubes)
 select t.como('lider_b');
 select public.comunidade_moderar('post', t.id('post_foto'), 'aprovar_foto');
 reset role;

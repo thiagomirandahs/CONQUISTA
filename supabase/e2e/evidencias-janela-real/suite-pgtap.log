@@ -1,0 +1,158 @@
+==> [4/4] Rodando testes no banco 'postgres'
+   OK     01_leilao_cron_vs_manual.sql  (19 asserts)
+   OK     02_membro_comum.sql  (68 asserts)
+   FALHOU 03_responsavel.sql
+          psql:/tmp/cq_tests/03_responsavel.sql:90: ERROR:  FALHOU: 1 de 48 asserts:
+            - líder A vê o pedido pendente  [obtido=3 esperado=1]
+   OK     04_lider_tenant001.sql  (65 asserts)
+   FALHOU 05_lider_tenant002.sql
+          psql:/tmp/cq_tests/05_lider_tenant002.sql:104: ERROR:  FALHOU: 1 de 54 asserts:
+            - nenhum ponto novo no clube A  [obtido=16680 esperado=17427]
+   OK     06_leitura_escrita_cruzada.sql  (191 asserts)
+   FALHOU 07_push_por_clube.sql
+          psql:/tmp/cq_tests/07_push_por_clube.sql:98: ERROR:  FALHOU: 3 de 28 asserts:
+            - push "todos" do clube A: só membros ativos do A (sem responsável, sem clube B)  [obtido=<23 valores, redigido -- continha PII> esperado=instrutor_a,lider_a,membro_a]
+            - push "lideranca" do clube A: só a liderança do A  [obtido=<5 valores, redigido -- continha PII> esperado=instrutor_a,lider_a]
+            - push "todos": membro suspenso não recebe mais  [obtido=<22 valores, redigido -- continha PII> esperado=instrutor_a,lider_a]
+   OK     08_convites_responsavel.sql  (43 asserts)
+   OK     09_compat_e_hardening.sql  (24 asserts)
+   OK     10_reino_legado_fechado.sql  (57 asserts)
+   FALHOU 11_revisao_independente.sql
+          psql:/tmp/cq_tests/11_revisao_independente.sql:138: ERROR:  FALHOU: 4 de 51 asserts:
+            - chefão do clube A não recebe dano do clube B (dano < 1000)  [condição = false]
+            - chefão do clube A não é vencido por pontos do clube B  [condição = false]
+            - membro A lista só os próprios arquivos  [obtido=138 esperado=1]
+            - líder A vê os arquivos do próprio clube (não os do B)  [obtido=341 esperado=1]
+   FALHOU 12_regressoes_tenant001.sql
+          psql:/tmp/cq_tests/12_regressoes_tenant001.sql:86: ERROR:  FALHOU: 2 de 18 asserts:
+            - o total de pontos do membro continua certo (40 mil linhas + os do fixture)  [obtido=23623 esperado=40000]
+            - o membro enxerga as 5 mil mensagens do chat geral  [obtido=5041 esperado=5000]
+   FALHOU 13_config_por_clube.sql
+          psql:/tmp/cq_tests/13_config_por_clube.sql:126: ERROR:  FALHOU: 2 de 54 asserts:
+            - reflexo_so_desbravador() do clube A = padrão sim  [obtido=false esperado=true]
+            - reflexo_so_desbravador() do clube A não mudou  [obtido=false esperado=true]
+   FALHOU 14_duelos_por_clube.sql
+          psql:/tmp/cq_tests/14_duelos_por_clube.sql:140: ERROR:  FALHOU: 3 de 59 asserts:
+            - só 1 duelo por clube foi criado (as tentativas cruzadas não deixaram rastro)  [obtido=4 esperado=2]
+            - ...o clube A só recebeu o aviso do próprio duelo  [obtido=3 esperado=1]
+            - membro A2 lê o duelo do clube A  [obtido=3 esperado=1]
+   OK     15_missoes_e_devocional_por_clube.sql  (76 asserts)
+   FALHOU 16_leilao_por_clube.sql
+          psql:/tmp/cq_tests/16_leilao_por_clube.sql:152: ERROR:  FALHOU: 4 de 46 asserts:
+            - itens, lances e lance_unidades do clube A herdaram o clube do leilão  [obtido=146 esperado=7]
+            - ...e o clube A só tem o aviso do próprio leilão  [obtido=2 esperado=1]
+            - membro A vê só o leilão do clube A  [obtido=2 esperado=1]
+            - ...com os 2 itens do clube A  [obtido=7 esperado=2]
+   FALHOU 17_jogos_por_clube.sql
+          psql:/tmp/cq_tests/17_jogos_por_clube.sql:203: ERROR:  FALHOU: 10 de 96 asserts:
+            - o "genius" do clube A continua desligado  [obtido=true esperado=false]
+            - ranking dos jogos: o clube A só tem gente do clube A  [obtido=28 esperado=1]
+            - ...e o líder do ranking é o membro A  [obtido=<nome real, redigido -- pessoa real do Conquista> esperado=Membro A]
+            - membro A também completou (no clube dele): bônus de 50  [obtido=0 esperado=50]
+            - os bônus caíram cada um no seu clube  [obtido=1 esperado=2]
+            - ...e a liberação some só do clube B  [obtido=1 esperado=0]
+            - recordes da semana no clube A: só o do membro A  [obtido=4:77 esperado=1:77]
+            - o golpe ficou no clube A  [obtido=53 esperado=1]
+            - aviso "chefão apareceu": 1 no clube A e 1 no clube B, cada um só no seu  [obtido=4 esperado=2]
+            - líder A: hoje jogou 1 no clube A (só o membro A)  [obtido=7 esperado=1]
+   FALHOU 18_jogos_cron_por_clube.sql
+          psql:/tmp/cq_tests/18_jogos_cron_por_clube.sql:103: WARNING:  chefao_premiar: o clube 6d46c32d-27f1-44fe-bc75-9812084353cb falhou e foi pulado: invalid input syntax for type integer: "abc"
+          psql:/tmp/cq_tests/18_jogos_cron_por_clube.sql:107: ERROR:  FALHOU: 19 de 32 asserts:
+            - clube A: o melhor do dia (3★) levou +10 no clube A  [obtido=0 esperado=1]
+            - só 2 prêmios no total (um por clube; ninguém do outro clube concorreu)  [obtido=4 esperado=2]
+            - rodar de novo NÃO paga em dobro  [obtido=4 esperado=2]
+            - ninguém mais foi premiado no recorde  [obtido=18 esperado=2]
+            - aviso "Recorde da semana": 1 por clube  [obtido=171 esperado=11]
+            - rodar de novo NÃO paga em dobro  [obtido=18 esperado=2]
+            - clube A: campeão das estrelas (membro A) levou +30 no clube A  [obtido=0 esperado=1]
+            - jogo da semana (memória): +20 pro melhor de cada clube, no clube dele  [obtido=1 esperado=2]
+            - só houve esses 4 prêmios de rodada (nada cruzou clubes)  [obtido=21 esperado=4]
+            - avisos da rodada: cada clube recebeu só os seus (estrelas + jogo + novo jogo)  [obtido=263 esperado=33]
+            - rodar de novo NÃO paga em dobro  [obtido=21 esperado=4]
+            - lembrete de ausência: 1 ausente em cada clube, no clube dele (quem jogou ontem/hoje fica de fora)  [obtido=1 esperado=11]
+            - ...e ninguém mais foi lembrado  [obtido=268 esperado=2]
+            - lembrete de ausência não repete no mesmo dia  [obtido=268 esperado=2]
+            - clube A derrotou o chefão: o prêmio (vida 1000, só dano do A) foi pago no clube A  [obtido=140 esperado=1000]
+            - aviso "derrotado" só no clube A; aviso "recuou" só no clube B  [obtido=21 esperado=11]
+            - ...e nenhum aviso de chefão no clube errado  [obtido=2 esperado=0]
+            - rodar de novo NÃO paga em dobro  [obtido=5998 esperado=1000]
+            - ...e o clube A (config boa, depois do clube com falha na fila) foi julgado: ganhou de novo (vida 900)  [obtido=266 esperado=1900]
+   FALHOU 19_chat_bichinho_biblia_por_clube.sql
+          psql:/tmp/cq_tests/19_chat_bichinho_biblia_por_clube.sql:168: ERROR:  FALHOU: 4 de 73 asserts:
+            - membro A lê só o chat do clube A (2 mensagens)  [obtido=43 esperado=2]
+            - a lista de conversas da liderança (chat_todas_conversas): só o clube A (geral, unidade A1, direta A/A2)  [obtido=11 esperado=3]
+            - "bichinhos do clube" do A: só o Rex  [obtido=<25 valores, redigido -- continha PII> esperado=Rex]
+            - líder A lê os bichinhos do clube A (1) e nenhum do B  [obtido=25 esperado=1]
+   OK     20_matriz_de_auditoria.sql  (27 asserts)
+   OK     21_revisao_de_seguranca_rodada2.sql  (33 asserts)
+   OK     22_revisao_de_regressao_rodada2.sql  (22 asserts)
+   OK     23_chat_mensagem_moderada.sql  (43 asserts)
+   OK     24_oraculos_de_uuid.sql  (45 asserts)
+   FALHOU 25_imagens_privadas.sql
+          psql:/tmp/cq_tests/25_imagens_privadas.sql:162: ERROR:  FALHOU: 3 de 62 asserts:
+            - membro A: a listagem inteira tem exatamente 8 arquivos (sem erro de policy)  [obtido=145 esperado=8]
+            - membro A2: a listagem inteira tem exatamente 6 arquivos  [obtido=143 esperado=6]
+            - líder A vê TUDO do clube A (11), inclusive avatar de pendente/responsável e o comprovante antigo  [obtido=351 esperado=11]
+   OK     26_contexto_do_clube.sql  (95 asserts)
+   OK     27_multiclube_real.sql  (52 asserts)
+   OK     28_entitlements_recursos.sql  (23 asserts)
+   OK     29_sem_profiles_papel_operacional.sql  (12 asserts)
+   FALHOU 30_jogos_premios_multiclube_isolados.sql
+          psql:/tmp/cq_tests/30_jogos_premios_multiclube_isolados.sql:123: ERROR:  FALHOU: 1 de 29 asserts:
+            - ranking do clube A NÃO tem o jogo "minado" (é do B)  [condição = false]
+   OK     31_motor_curricular_estrutura.sql  (14 asserts)
+   OK     32_classes_multiclube_isolado.sql  (61 asserts)
+   OK     33_especialidades_estrutura.sql  (27 asserts)
+   OK     34_especialidades_multiclube_isolado.sql  (47 asserts)
+   OK     35_motor_de_regras_curriculares.sql  (174 asserts)
+   OK     36_curriculo_oficial_integridade.sql  (43 asserts)
+   OK     37_classes_regulares_2026_cenarios.sql  (86 asserts)
+   OK     38_matriz_manifesto_api.sql  (18 asserts)
+   OK     39_snapshot_e_investidura.sql  (64 asserts)
+   OK     40_documento_e_verificacao.sql  (41 asserts)
+   OK     41_hierarquia_e_workflow_investidura.sql  (62 asserts)
+   OK     42_portal_institucional_e_verificacao.sql  (54 asserts)
+   OK     43_fundacao_comercial_saas.sql  (157 asserts)
+   OK     44_motor_de_experiencias.sql  (112 asserts)
+   FALHOU 45_chat_matriz_de_acesso.sql
+          psql:/tmp/cq_tests/45_chat_matriz_de_acesso.sql:47: ERROR:  duplicate key value violates unique constraint "ids_pkey"
+          DETAIL:  Key (chave)=(conv_4_direta_a) already exists.
+   OK     46_desempenho_estrutural.sql  (17 asserts)
+   FALHOU 47_push_nativo_e_infra.sql
+          psql:/tmp/cq_tests/47_push_nativo_e_infra.sql:149: ERROR:  FALHOU: 1 de 24 asserts:
+            - web: "todos" do clube A não inclui responsável nem ninguém do clube B  [obtido=23 esperado=3]
+   OK     48_observabilidade.sql  (27 asserts)
+   FALHOU 49_armazenamento_por_clube.sql
+          psql:/tmp/cq_tests/49_armazenamento_por_clube.sql:201: ERROR:  FALHOU: 2 de 26 asserts:
+            - a contagem de objetos acompanha  [obtido=395 esperado=2]
+            - ...e a contagem de objetos bate  [obtido=444 esperado=51]
+   OK     50_push_idempotente.sql  (47 asserts)
+   OK     51_rpcs_cross_tenant.sql  (26 asserts)
+   FALHOU 52_paginacao_keyset.sql
+          psql:/tmp/cq_tests/52_paginacao_keyset.sql:255: ERROR:  FALHOU: 5 de 33 asserts:
+            - ...as mais RECENTES primeiro (é um chat, não um arquivo)  [obtido=Oi gente esperado=msg 025]
+            - percorrendo de 10 em 10, lê as 25 mensagens, sem repetir nenhuma  [obtido=66 esperado=25]
+            - ...e sem pular nenhuma (as 25 distintas)  [obtido=61 esperado=25]
+            - com 10 mensagens no MESMO instante, a coleção inteira ainda é lida (35)  [obtido=76 esperado=35]
+            - ...nenhuma repetida  [obtido=71 esperado=35]
+   OK     53_leilao_rateio_conjunto.sql  (103 asserts)
+   OK     54_vinculo_multiclube_pelo_produto.sql  (42 asserts)
+   OK     55_matriz_multiclube.sql  (84 asserts)
+   OK     56_gate_multiclube_permanente.sql  (28 asserts)
+   OK     57_entrada_em_clube.sql  (56 asserts)
+   OK     58_multiclube_opera_nos_dois_clubes.sql  (14 asserts)
+   OK     59_contexto_so_aceita_clube.sql  (7 asserts)
+   OK     60_auditoria_de_operacoes.sql  (23 asserts)
+   FALHOU 61_crianca_em_dois_clubes.sql
+          psql:/tmp/cq_tests/61_crianca_em_dois_clubes.sql:704: ERROR:  FALHOU: 4 de 163 asserts:
+            - [chefão] A derrotou o chefão com o dano de A: a criança levou a vida inteira (400) em A  [obtido=21 esperado=400]
+            - [jogos] ...e completa os jogos do dia de A: bônus em A  [obtido=0 esperado=50]
+            - [jogos] um bônus em cada clube  [obtido=B esperado=A,B]
+            - [responsável] quem é diretoria em A e B vê, na aba A, só o pedido de A  [obtido=3 esperado=1]
+   OK     62_especialidades_fora_do_piloto.sql  (66 asserts)
+   OK     63_defeitos_do_pre_voo.sql  (40 asserts)
+   OK     64_curriculo_revisao_adversarial.sql  (49 asserts)
+   FALHOU multi_tenant_isolation.sql
+          psql:/tmp/cq_tests/multi_tenant_isolation.sql:208: ERROR:  Esperadas exatamente duas unidades organizacionais no seed local
+----------------------------------------------------------------
+Testes: 46 ok, 19 com falha  -> 03_responsavel.sql 05_lider_tenant002.sql 07_push_por_clube.sql 11_revisao_independente.sql 12_regressoes_tenant001.sql 13_config_por_clube.sql 14_duelos_por_clube.sql 16_leilao_por_clube.sql 17_jogos_por_clube.sql 18_jogos_cron_por_clube.sql 19_chat_bichinho_biblia_por_clube.sql 25_imagens_privadas.sql 30_jogos_premios_multiclube_isolados.sql 45_chat_matriz_de_acesso.sql 47_push_nativo_e_infra.sql 49_armazenamento_por_clube.sql 52_paginacao_keyset.sql 61_crianca_em_dois_clubes.sql multi_tenant_isolation.sql

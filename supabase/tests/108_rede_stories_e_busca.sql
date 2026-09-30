@@ -6,15 +6,18 @@
 -- clube de quem publicou (Manter/Remover pela mesma moderação); isolamento entre clubes; recurso
 -- desligado bloqueia; anon sem acesso; se a regra voltar a exigir aprovação, o story nasce em análise
 -- e as 24 h contam da aprovação; busca só acha quem participa da rede.
+-- 515 (AJUSTE DE REGRA, D1): STORIES são só do clube (alcance 'clube', congelado). O leitor "de outro clube" (membro_a) virou
+-- leitor_b (mesmo clube do autor) e há asserts de NEGAÇÃO para o outro clube; a busca esconde criança de outro clube (G7).
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
 
 \o /dev/null
 select t.como_cron();
+select t.mk('leitor_b', 'Leitor B', 'desbravador', 'ativo', 'clube_b', 'B1', date '2014-07-07');
 set local session_replication_role = replica;
 update public.profiles set created_at = now() - interval '60 days'
- where id in (t.id('membro_a'), t.id('membro_b'), t.id('lider_a'), t.id('lider_b'));
+ where id in (t.id('membro_a'), t.id('membro_b'), t.id('lider_a'), t.id('lider_b'), t.id('leitor_b'));
 set local session_replication_role = origin;
 select t.mk('admin_st', 'Admin Plataforma', 'diretoria', 'ativo', 'clube_b');
 insert into public.platform_admins (user_id, papel) values (t.id('admin_st'), 'operacao');
@@ -126,7 +129,10 @@ select t.como('membro_b');
 select t.eq('meus stories vêm primeiro', t.txt($q$select public.rede_stories()->0->>'meu'$q$), 'true');
 select t.eq('...agrupados (2 stories numa bolinha)', t.n($q$select jsonb_array_length(public.rede_stories()->0->'stories')$q$), 2::bigint);
 select t.como('membro_a');
-select t.eq('outro clube vê o story (nome + sobrenome)', t.txt($q$select public.rede_stories()->0->'autor'->>'nome'$q$), 'Membro B');
+select t.eq('OUTRO clube NÃO vê o story (stories são só do clube)', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 0::bigint);
+select t.eq('...nem abre o arquivo dele', t.nv($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = (select s1 from t.cam)$q$), 0::bigint);
+select t.como('leitor_b');
+select t.eq('quem é do clube vê o story (nome + sobrenome)', t.txt($q$select public.rede_stories()->0->'autor'->>'nome'$q$), 'Membro B');
 select t.eq('...ainda não visto', t.txt($q$select public.rede_stories()->0->>'todos_vistos'$q$), 'false');
 select t.eq('...e abre o arquivo (URL assinada passa na policy)', t.n($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = (select s1 from t.cam)$q$), 1::bigint);
 select public.rede_story_visto(t.id('st1'));
@@ -151,7 +157,7 @@ select t.eq('visto gravado uma vez', (select count(*) from public.rede_stories_v
 -- =============================================================================
 select t.como('membro_b');
 select t.throws('não denuncia o próprio story', format($q$select public.comunidade_denunciar('story', %L, 'outro')$q$, t.id('st2')), 'mesmo publicou');
-select t.como('membro_a');
+select t.como('leitor_b');
 select t.eq('denúncia esconde o story na hora', t.txt(format($q$select public.comunidade_denunciar('story', %L, 'imagem')->>'ocultou'$q$, t.id('st2'))), 'true');
 select t.eq('...sumiu da fileira (fica só o outro)', t.n($q$select jsonb_array_length(public.rede_stories()->0->'stories')$q$), 1::bigint);
 select t.throws('...e não marca mais visto', format($q$select public.rede_story_visto(%L)$q$, t.id('st2')), 'não está disponível');
@@ -181,7 +187,7 @@ select t.eq('remover dá aviso (strike) ao autor', (select count(*) from public.
 --  6. 24 h: expirou, sumiu
 -- =============================================================================
 update public.rede_stories set expira_em = now() - interval '1 minute', publicado_em = now() - interval '24 hours 1 minute' where id = t.id('st1');
-select t.como('membro_a');
+select t.como('leitor_b');
 select t.eq('expirado some da fileira', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 0::bigint);
 select t.throws('...não marca visto', format($q$select public.rede_story_visto(%L)$q$, t.id('st1')), 'não está disponível');
 select t.throws('...não aceita denúncia', format($q$select public.comunidade_denunciar('story', %L, 'outro')$q$, t.id('st1')), 'não está disponível');
@@ -205,18 +211,18 @@ select t.ok('story marcado com a foto apagada', (select foto_apagada_em is not n
 select t.recuar(5);
 select t.como('membro_b');
 select public.rede_story_publicar((select s3 from t.cam), 'Nó de escota');
-select t.como('membro_a');
-select t.eq('story novo de B aparece para A', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 1::bigint);
+select t.como('leitor_b');
+select t.eq('story novo de B aparece para o clube B', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 1::bigint);
 select t.como('admin_st');
 select public.admin_recurso_do_clube_definir(t.id('clube_b'), 'comunidade', false);
-select t.como('membro_a');
-select t.eq('B desligou: some da fileira de A', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 0::bigint);
+select t.como('leitor_b');
+select t.throws('B desligou: a fileira do próprio clube B fecha', $q$select public.rede_stories()$q$, 'não está liberada');
 select t.eq('...e o arquivo não abre', t.nv($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = (select s3 from t.cam)$q$), 0::bigint);
 select t.como('admin_st');
 select public.admin_recurso_do_clube_definir(t.id('clube_b'), 'comunidade', true);
 select t.como('pais_b');
 select public.comunidade_autorizar(t.id('membro_b'), false);
-select t.como('membro_a');
+select t.como('leitor_b');
 select t.eq('responsável retirou a autorização: o story da criança some', t.n($q$select jsonb_array_length(public.rede_stories())$q$), 0::bigint);
 select t.como('pais_b');
 select public.comunidade_autorizar(t.id('membro_b'), true);
@@ -226,13 +232,16 @@ reset role;
 --  8. Busca
 -- =============================================================================
 select t.como('membro_a');
+select t.eq('criança de OUTRO clube NÃO aparece na busca (515)', t.n($q$select count(*) from jsonb_array_elements(public.rede_buscar('membro b')->'pessoas') e$q$), 0::bigint);
+select t.eq('...nem pelo nome do clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_buscar(%L)->'pessoas') e where e->>'nome' = 'Membro B'$q$, t.nome_clube('clube_b'))), 0::bigint);
+select t.como('leitor_b');
 select t.eq('termo curto não busca', t.n($q$select jsonb_array_length(public.rede_buscar('m')->'pessoas')$q$), 0::bigint);
 select t.ok('acha pessoa pelo nome público', t.n($q$select count(*) from jsonb_array_elements(public.rede_buscar('membro b')->'pessoas') e where e->>'nome' = 'Membro B'$q$) = 1);
 select t.ok('...sem acento/maiúscula', t.n($q$select count(*) from jsonb_array_elements(public.rede_buscar('MÉMBRO B')->'pessoas') e where e->>'nome' = 'Membro B'$q$) = 1);
 select t.eq('criança SEM autorização dos pais não aparece', t.n($q$select count(*) from jsonb_array_elements(public.rede_buscar('membro a2')->'pessoas') e$q$), 0::bigint);
 select t.eq('responsável não aparece', t.n($q$select count(*) from jsonb_array_elements(public.rede_buscar('pais')->'pessoas') e$q$), 0::bigint);
 select t.eq('acha o clube pelo nome', t.txt(format($q$select public.rede_buscar(%L)->'clubes'->0->>'id'$q$, t.nome_clube('clube_b'))), t.id('clube_b')::text);
-select t.ok('lista as pessoas de um clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_buscar(null, %L)->'pessoas') e where e->>'clube' = %L$q$, t.id('clube_b'), t.nome_clube('clube_b'))) >= 2);
+select t.ok('lista as pessoas do PRÓPRIO clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_buscar(null, %L)->'pessoas') e where e->>'clube' = %L$q$, t.id('clube_b'), t.nome_clube('clube_b'))) >= 2);
 select t.como('admin_st');
 select public.admin_recurso_do_clube_definir(t.id('clube_b'), 'comunidade', false);
 select t.como('membro_a');
@@ -268,7 +277,8 @@ reset role;
 select t.ok('as 24 h contam da aprovação (não do envio)',
   (select expira_em > now() + interval '23 hours 59 minutes' from public.rede_stories where id = t.id('st4')));
 select t.como('membro_a');
-select t.eq('aprovado: aparece para outro clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_stories()) g, jsonb_array_elements(g->'stories') e where e->>'id' = %L$q$, t.id('st4'))), 1::bigint);
+select t.como('leitor_b');
+select t.eq('aprovado: aparece para o clube', t.n(format($q$select count(*) from jsonb_array_elements(public.rede_stories()) g, jsonb_array_elements(g->'stories') e where e->>'id' = %L$q$, t.id('st4'))), 1::bigint);
 reset role;
 
 select t.fim();

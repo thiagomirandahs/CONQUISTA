@@ -14,7 +14,7 @@ values (t.id('clube_a'), 'comunidade', true), (t.id('clube_b'), 'comunidade', tr
 on conflict (club_id, feature) do update set enabled = true;
 -- contas antigas (fora da "observação" de conta nova)
 set local session_replication_role = replica;
-update public.profiles set created_at = now() - interval '60 days' where id in (t.id('membro_a'), t.id('membro_b'), t.id('lider_a'), t.id('lider_b'));
+update public.profiles set created_at = now() - interval '60 days' where id in (t.id('membro_a'), t.id('membro_a2'), t.id('membro_b'), t.id('lider_a'), t.id('lider_b'));
 set local session_replication_role = origin;
 select t.mk('admin_com', 'Admin Plataforma', 'diretoria', 'ativo', 'clube_b');
 insert into public.platform_admins (user_id, papel) values (t.id('admin_com'), 'operacao');
@@ -106,7 +106,7 @@ select t.como('membro_a');
 select t.eq('texto limpo SEM foto publica direto', t.txt($q$select public.comunidade_publicar('Amei a reunião de hoje!')->>'status'$q$), 'publicado');
 reset role;
 insert into t.ids (chave, id) select 'post1', id from public.comunidade_posts limit 1;
-select t.como('membro_b');
+select t.como('membro_a2');
 select t.eq('comentário ruim → mensagem pedida pelo dono',
   t.txt(format($q$select public.comunidade_comentar(%L, 'seu arrombado')->>'mensagem'$q$, t.id('post1'))),
   'Esse comentário não pode ser publicado. Vamos manter o respeito 🙂');
@@ -115,9 +115,9 @@ select t.eq('comentário com telefone → mensagem de segurança',
 reset role;
 select t.eq('nenhum comentário ruim entrou', (select count(*) from public.comunidade_comentarios), 0::bigint);
 select t.eq('o bloqueio de telefone guarda o trecho SEM os dígitos',
-  (select count(*) from public.comunidade_bloqueios where autor_id = t.id('membro_b') and motivo = 'contato' and trecho !~ '[0-9]' and trecho like '%#%'), 1::bigint);
+  (select count(*) from public.comunidade_bloqueios where autor_id = t.id('membro_a2') and motivo = 'contato' and trecho !~ '[0-9]' and trecho like '%#%'), 1::bigint);
 select t.comun_zerar();
-select t.como('membro_b');
+select t.como('membro_a2');
 select t.eq('comentário limpo entra',
   t.txt(format($q$select public.comunidade_comentar(%L, 'Parabéns pelo 1º lugar!')->>'ok'$q$, t.id('post1'))), 'true');
 reset role;

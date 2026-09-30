@@ -102,14 +102,16 @@ select t.eq('o post fica na unidade de coordenação', (select club_id from publ
 select t.recuar(5);
 
 select t.como('membro_a');
+-- 515 (AJUSTE DE REGRA, D1): o post da coordenação nasce 'clube' (alcance da unidade dela); a criança do clube da área o lê em "Meu clube"
+-- (clube + coordenação acima), não no feed da Comunidade.
 select t.eq('criança do clube vê o post: nome + sobrenome',
-  t.txt($q$select e->'autor'->>'nome' from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'Carla Mendes');
+  t.txt($q$select e->'autor'->>'nome' from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'Carla Mendes');
 select t.eq('...subtítulo "Coordenação · <unidade>"',
-  t.txt($q$select e->'autor'->>'clube' from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'Coordenação · Distrito Norte');
+  t.txt($q$select e->'autor'->>'clube' from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'Coordenação · Distrito Norte');
 select t.eq('...selo de coordenação',
-  t.txt($q$select e->'autor'->>'coordenacao' from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'true');
+  t.txt($q$select e->'autor'->>'coordenacao' from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 'true');
 select t.ok('...foto do perfil (adulto, sem autorização de imagem)',
-  t.txt($q$select e->'autor'->>'foto' from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$) like '%foto-carla%');
+  t.txt($q$select e->'autor'->>'foto' from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$) like '%foto-carla%');
 select t.eq('criança publica', t.txt($q$select public.rede_publicar('livre', 'Hoje teve acampamento!')->>'status'$q$), 'publicado');
 reset role;
 insert into t.ids (chave, id) select 'post_crianca', id from public.comunidade_posts where autor_id = t.id('membro_a') and status = 'publicado';
@@ -121,7 +123,7 @@ select t.recuar(5);
 --  4. Coordenação: curtir, salvar, comentar (criança no escopo), perfil, busca, story
 -- =============================================================================
 select t.como('c109_dist');
-select t.eq('vê o feed Todos (post da criança)', t.n($q$select count(*) from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_crianca')$q$), 1::bigint);
+select t.eq('o feed Todos (= Comunidade) NÃO traz o post da criança (alcance clube)', t.n($q$select count(*) from jsonb_array_elements(public.rede_feed('todos')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_crianca')$q$), 0::bigint);
 select t.eq('"Minha área" traz o post do clube da área', t.n($q$select count(*) from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_crianca')$q$), 1::bigint);
 select t.eq('...e o meu', t.n($q$select count(*) from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_coord')$q$), 1::bigint);
 select t.eq('curte', t.txt($q$select public.comunidade_curtir((select id from t.ids where chave = 'post_crianca'), true)->>'eu_curti'$q$), 'true');
@@ -151,6 +153,14 @@ select t.como('admin_109');
 select public.admin_recurso_do_clube_definir(t.id('clube_b'), 'comunidade', true);
 select t.como('c109_outro');
 select t.eq('com o clube B ligado, entra', t.txt($q$select public.comunidade_meu_status()->>'unidade'$q$), 'Distrito Sul');
+-- 515: alcance 'clube' não cruza distritos (nem para a coordenação de outro distrito)
+select t.throws('distrito vizinho NÃO vê o post da criança (alcance clube)', $q$select public.comunidade_curtir((select id from t.ids where chave = 'post_crianca'), true)$q$, 'não está disponível');
+select t.throws('...nem o post da coordenação do outro distrito', $q$select public.comunidade_comentar((select id from t.ids where chave = 'post_coord'), 'Oi')$q$, 'não está disponível');
+reset role;
+-- FIXTURE: os dois posts "chegam" à Comunidade (pelas RPCs só diretoria/instrutor publica lá; ver teste 122), para seguir provando as
+-- regras de comentar/curtir entre áreas (a coordenação só comenta em criança da sua área; adulto de outro clube não comenta).
+update public.comunidade_posts set alcance = 'comunidade' where id in (t.id('post_crianca'), t.id('post_coord'));
+select t.como('c109_outro');
 select t.throws('NÃO comenta em post de criança de clube fora da sua área',
   $q$select public.comunidade_comentar((select id from t.ids where chave = 'post_crianca'), 'Muito bem!')$q$, 'clubes da sua área');
 select t.eq('...mas curte', t.txt($q$select public.comunidade_curtir((select id from t.ids where chave = 'post_crianca'), true)->>'eu_curti'$q$), 'true');

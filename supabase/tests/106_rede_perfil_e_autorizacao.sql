@@ -4,6 +4,8 @@
 -- qualquer clube); diretoria de OUTRO clube não marca; instrutor não marca; o arquivo da foto de
 -- perfil (bucket 'imagens') só abre na rede com autorização; tudo bloqueado com o recurso desligado;
 -- anon sem acesso; tabela sem acesso direto.
+-- 515 (menores): a criança (membro_a) só é vista com nome completo/unidade/foto por quem é do clube dela; os checks que liam a
+-- criança 'de outro clube' passaram a ler como instrutor_a (mesmo clube) e o outro clube ganhou asserts de NEGAÇÃO.
 begin;
 \ir _lib.sql
 \ir _fixtures.sql
@@ -82,19 +84,23 @@ select t.bloqueado('diretoria não lê a tabela de autorização direto', $q$sel
 -- =============================================================================
 select t.como('membro_a');
 select public.comunidade_publicar('Olá, rede!');
-select t.como('membro_b');
-select t.eq('feed: nome + sobrenome (pula "de")', t.txt($q$select public.rede_feed()->'itens'->0->'autor'->>'nome'$q$), 'Ana Souza');
-select t.ok('...nunca o nome completo', t.txt($q$select public.rede_feed()::text$q$) !~ 'Lima');
-select t.eq('...com o nome do clube embaixo', t.txt($q$select public.rede_feed()->'itens'->0->'autor'->>'clube'$q$),
+select t.como('instrutor_a');
+select t.eq('feed: nome + sobrenome (pula "de")', t.txt($q$select public.rede_feed('meu_clube')->'itens'->0->'autor'->>'nome'$q$), 'Ana Souza');
+select t.ok('...nunca o nome completo', t.txt($q$select public.rede_feed('meu_clube')::text$q$) !~ 'Lima');
+select t.eq('...com o nome do clube embaixo', t.txt($q$select public.rede_feed('meu_clube')->'itens'->0->'autor'->>'clube'$q$),
   t.nome_clube('clube_a'));
-select t.eq('sem autorização de imagem: foto do autor NÃO vem', t.txt($q$select coalesce(public.rede_feed()->'itens'->0->'autor'->>'foto', 'nula')$q$), 'nula');
-select t.eq('perfil de outro clube: nome + sobrenome', t.txt(format($q$select public.rede_perfil(%L)->>'nome'$q$, t.id('membro_a'))), 'Ana Souza');
+select t.eq('sem autorização de imagem: foto do autor NÃO vem', t.txt($q$select coalesce(public.rede_feed('meu_clube')->'itens'->0->'autor'->>'foto', 'nula')$q$), 'nula');
+select t.eq('perfil do MESMO clube: nome + sobrenome', t.txt(format($q$select public.rede_perfil(%L)->>'nome'$q$, t.id('membro_a'))), 'Ana Souza');
 select t.eq('perfil: "desde" = ano do vínculo', t.txt(format($q$select (public.rede_perfil(%L)->>'desde')$q$, t.id('membro_a'))),
   t.ano_vinculo('membro_a', 'clube_a'));
 select t.eq('perfil: 1 publicação', t.txt(format($q$select public.rede_perfil(%L)->>'publicacoes'$q$, t.id('membro_a'))), '1');
 select t.eq('perfil sem autorização: sem foto', t.txt(format($q$select coalesce(public.rede_perfil(%L)->>'foto', 'nula')$q$, t.id('membro_a'))), 'nula');
-select t.eq('...e o ARQUIVO da foto de perfil não abre para outro clube',
+select t.eq('...e o ARQUIVO da foto de perfil não abre sem autorização',
   t.nv(format($q$select count(*) from storage.objects where bucket_id = 'imagens' and name = %L$q$, 'perfis/' || t.id('membro_a') || '-1.jpg')), 0::bigint);
+-- 515 (menores): quem é de OUTRO clube não vê a criança em lugar nenhum (nem perfil, nem nome completo)
+select t.como('membro_b');
+select t.throws('OUTRO clube: perfil da criança indisponível', format($q$select public.rede_perfil(%L)$q$, t.id('membro_a')), 'não está disponível');
+select t.eq('OUTRO clube: a criança não entra na busca', t.n($q$select jsonb_array_length(public.rede_buscar('Ana')->'pessoas')$q$), 0::bigint);
 select t.como('membro_a2');
 select t.throws('criança sem autorização dos pais não vê perfis', format($q$select public.rede_perfil(%L)$q$, t.id('membro_a')), 'responsável');
 
@@ -116,7 +122,7 @@ reset role;
 select t.eq('marcação auditada', (select count(*) from public.auditoria_operacoes where operacao = 'rede_autorizacao_imagem' and alvo = t.id('membro_a')), 1::bigint);
 
 -- o responsável tinha desligado na seção 1: continua sem foto até ele religar
-select t.como('membro_b');
+select t.como('instrutor_a');
 select t.eq('arquivada, mas o responsável desligou: sem foto', t.txt(format($q$select coalesce(public.rede_perfil(%L)->>'foto', 'nula')$q$, t.id('membro_a'))), 'nula');
 select t.como('pais_a');
 select t.eq('o responsável religa o que ele mesmo desligou', t.txt(format($q$select public.rede_responsavel_imagem(%L, false)->>'imagem_autorizada'$q$, t.id('membro_a'))), 'true');
@@ -125,11 +131,14 @@ select t.eq('o responsável vê o estado na tela Meus filhos', t.txt($q$select p
 -- =============================================================================
 --  5. Com autorização: foto aparece (feed, perfil e o arquivo)
 -- =============================================================================
-select t.como('membro_b');
-select t.ok('com autorização: foto do autor no feed', t.txt($q$select public.rede_feed()->'itens'->0->'autor'->>'foto'$q$) like '%perfis/%');
+select t.como('instrutor_a');
+select t.ok('com autorização: foto do autor no feed', t.txt($q$select public.rede_feed('meu_clube')->'itens'->0->'autor'->>'foto'$q$) like '%perfis/%');
 select t.ok('...e no perfil', t.txt(format($q$select public.rede_perfil(%L)->>'foto'$q$, t.id('membro_a'))) like '%perfis/%');
-select t.eq('...e o ARQUIVO abre para quem está na rede (outro clube)',
+select t.eq('...e o ARQUIVO abre para quem é do clube dele',
   t.n(format($q$select count(*) from storage.objects where bucket_id = 'imagens' and name = %L$q$, 'perfis/' || t.id('membro_a') || '-1.jpg')), 1::bigint);
+select t.como('membro_b');
+select t.eq('...mas NUNCA para outro clube (515: rosto de menor só dentro do clube)',
+  t.nv(format($q$select count(*) from storage.objects where bucket_id = 'imagens' and name = %L$q$, 'perfis/' || t.id('membro_a') || '-1.jpg')), 0::bigint);
 select t.como('membro_a2');
 select t.eq('...mas não para criança sem autorização dos pais',
   t.nv(format($q$select count(*) from storage.objects where bucket_id = 'imagens' and name = %L$q$, 'perfis/' || t.id('membro_a') || '-1.jpg')), 0::bigint);
@@ -139,13 +148,13 @@ select t.eq('...mas não para criança sem autorização dos pais',
 -- =============================================================================
 select t.como('pais_a');
 select t.eq('responsável desliga', t.txt(format($q$select public.rede_responsavel_imagem(%L, true)->>'imagem_autorizada'$q$, t.id('membro_a'))), 'false');
-select t.como('membro_b');
-select t.eq('desligado: foto some do feed', t.txt($q$select coalesce(public.rede_feed()->'itens'->0->'autor'->>'foto', 'nula')$q$), 'nula');
+select t.como('instrutor_a');
+select t.eq('desligado: foto some do feed', t.txt($q$select coalesce(public.rede_feed('meu_clube')->'itens'->0->'autor'->>'foto', 'nula')$q$), 'nula');
 select t.eq('...e o arquivo deixa de abrir',
   t.nv(format($q$select count(*) from storage.objects where bucket_id = 'imagens' and name = %L$q$, 'perfis/' || t.id('membro_a') || '-1.jpg')), 0::bigint);
 select t.como('lider_a');
 select public.rede_marcar_autorizacao_imagem(t.id('membro_a'), true);
-select t.como('membro_b');
+select t.como('instrutor_a');
 select t.eq('a diretoria remarcar NÃO passa por cima do "não" do responsável',
   t.txt(format($q$select coalesce(public.rede_perfil(%L)->>'foto', 'nula')$q$, t.id('membro_a'))), 'nula');
 
