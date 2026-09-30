@@ -104,6 +104,7 @@ describe('LayoutRede — o "eu" gateado', () => {
 
   // Achado da validação visual (30/09): em 360 px, com 4 botões no topo, "Rede DBV" quebrava em 2 linhas.
   it('o título do topo nunca quebra em duas linhas (cabe com 4 botões em 360 px)', async () => {
+    f.carregarPerfil.mockResolvedValue({ id: 'eu', eu: true, nome: 'Eu Mesmo', foto: null })
     montar()
     const titulo = await screen.findByText('Rede DBV')
     expect(titulo.className).toContain('whitespace-nowrap')
