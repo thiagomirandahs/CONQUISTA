@@ -1,0 +1,7 @@
+# Pendências de CONTEÚDO OFICIAL (nada é inventado enquanto estiverem abertas)
+
+| # | Onde | Pendência | O que o app faz hoje | Quem resolve |
+|---|---|---|---|---|
+| 1 | Classe Guia — `guia.V.2` (4ª opção: "especialidade de Nutrição / liderar Cultura física") | O texto do requisito não diz como comprovar essa opção (basta ter a especialidade? concluir pelo app? "liderar Cultura física" é outra atividade?). | A opção aparece **desativada** ("decisão pendente"). As outras 3 (poesia/artigo, corrida com treino, ler Temperança e apresentar 10 textos) funcionam normalmente. Nenhuma forma de comprovação foi inventada. | Dono, com o texto oficial da DSA/SGC. Quando definido: nova versão do modelo (`versao: 2`) em `modelos-de-relatorio/classes.json` e migration gerada — as tentativas antigas ficam com a versão em que foram feitas. |
+| 2 | Especialidades — fonte | Fonte oficial e permissão de uso do texto (adventistas.org é © da Igreja; Manual impresso da Divisão). | Nenhum requisito real importado. | Dono. |
+| 3 | Especialidades — piloto real | Arte com Barbante (HM-049) é só **candidata**. | Não publicada. O validador e um teste impedem "publicavel" real antes da aprovação. | Dono. |

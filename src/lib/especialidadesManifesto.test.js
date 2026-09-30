@@ -156,3 +156,86 @@ describe('travas de segurança do conteúdo', () => {
     }
   })
 })
+
+// ---------------------------------------------------------------------------------------------------------------
+// Cadastrar uma especialidade completa pelo manifesto, sem escrever SQL: modelos prontos + criação da entrada.
+// ---------------------------------------------------------------------------------------------------------------
+import { adicionarEspecialidade } from '../../supabase/especialidades-manifesto/nova-especialidade.mjs'
+
+describe('cadastro pelo manifesto (sem SQL manual)', () => {
+  const modelos = JSON.parse(readFileSync('supabase/especialidades-manifesto/modelos-de-requisito.json', 'utf8')).modelos
+
+  it('cada modelo de requisito pronto é VÁLIDO (o cadastro nunca começa quebrado)', () => {
+    for (const [nome, m] of Object.entries(modelos)) {
+      const extra = {}
+      if (nome === 'grupo_n_de_m') extra.grupos = [{ chave: 'tecnicas', rotulo: 'Técnicas', minimo: 1 }]
+      const reqs = nome === 'dependente' ? [req({ ordem: 1, descricao: 'Primeiro requisito conferido.' }), { ...m, ordem: 2, depende_de: [1] }] : [{ ...m, ordem: 1 }]
+      expect(validarEspecialidades([arq([esp({ ...extra, requisitos: reqs })])]).erros, nome).toEqual([])
+    }
+  })
+  it('os modelos cobrem todos os tipos do motor', () => {
+    const tipos = new Set(Object.values(modelos).map((m) => m.tipo_evidencia))
+    for (const t of ['leitura', 'resposta', 'relatorio', 'foto', 'arquivo', 'atividade', 'validacao']) expect(tipos.has(t), t).toBe(true)
+    expect(Object.keys(modelos)).toEqual(expect.arrayContaining(['meta_quantidade', 'escolha_dentro_do_requisito', 'dependente', 'prazo', 'grupo_n_de_m']))
+  })
+  it('nova-especialidade cria a área e a entrada "catalogo" (não publicável)', () => {
+    const d = adicionarEspecialidade(null, { codigo: 'HM-049', nome: 'Arte com Barbante', nivel: 1, fonteUrl: WIKI })
+    expect(d.area).toBe('HM')
+    expect(d.especialidades[0]).toMatchObject({ codigo: 'HM-049', estado: 'catalogo' })
+    expect(d.fonte.status).toBe('pendente')
+    expect(validarEspecialidades([{ arquivo: 'HM.json', dados: d }]).erros).toEqual([])
+    expect(gerarSql(d)).toBeNull()                       // "catalogo" nunca gera SQL de conteúdo
+  })
+  it('recusa duplicar', () => {
+    const d = adicionarEspecialidade(null, { codigo: 'HM-049', nome: 'X', fonteUrl: WIKI })
+    expect(() => adicionarEspecialidade(d, { codigo: 'HM-049', nome: 'Y', fonteUrl: WIKI })).toThrow(/já está/)
+  })
+  it('fluxo completo: entrada → requisitos conferidos → "publicavel" → SQL determinístico', () => {
+    const d = adicionarEspecialidade(null, { codigo: 'HM-049', nome: 'Arte com Barbante', nivel: 1, fonteUrl: OFICIAL })
+    d.fonte = fonte()
+    d.especialidades[0].estado = 'publicavel'
+    d.especialidades[0].requisitos = [{ ...modelos.resposta, ordem: 1 }, { ...modelos.atividade_pratica, ordem: 2, depende_de: [1] }]
+    expect(validarEspecialidades([{ arquivo: 'HM.json', dados: d }]).erros).toEqual([])
+    const a = gerarSql(d), b = gerarSql(d)
+    expect(a.sql).toBe(b.sql)
+    expect(a.sql).toMatch(/'HM-049'/)
+  })
+})
+
+// ---------------------------------------------------------------------------------------------------------------
+// ESCALA: 552 especialidades × 10 requisitos (dados SINTÉTICOS só em memória — nada disto é versionado como catálogo).
+// ---------------------------------------------------------------------------------------------------------------
+describe('escala do manifesto (552 especialidades × 10 requisitos, sintético)', () => {
+  const AREAS = { AA: 16, AD: 9, AM: 58, AP: 68, AR: 119, CS: 43, EN: 105, HD: 13, HM: 121 }
+  const sintetico = () => Object.entries(AREAS).map(([area, n]) => arq(
+    Array.from({ length: n }, (_, i) => esp({
+      codigo: `${area}-${String(i + 1).padStart(3, '0')}`, nome: `Sintética ${area} ${i + 1}`,
+      requisitos: Array.from({ length: 10 }, (_, k) => req({ ordem: k + 1, descricao: `Requisito sintético ${k + 1} conferido.`, ...(k === 9 && i > 0 ? { depende_de: [1] } : {}) })),
+    })), { area, area_nome: `Área ${area}` }, `${area}.json`))
+
+  it('valida 552 especialidades / 5.520 requisitos em poucos segundos, sem erro', () => {
+    const arqs = sintetico()
+    const t0 = Date.now()
+    const { erros } = validarEspecialidades(arqs)
+    expect(erros).toEqual([])
+    expect(Date.now() - t0).toBeLessThan(5000)
+    expect(arqs.reduce((n, a) => n + a.dados.especialidades.length, 0)).toBe(552)
+  })
+  it('gera 1 SQL por área, determinístico, e o tamanho total é razoável para migration', () => {
+    const arqs = sintetico()
+    let bytes = 0
+    for (const a of arqs) {
+      const x = gerarSql(a.dados), y = gerarSql(a.dados)
+      expect(x.sql).toBe(y.sql)
+      bytes += x.sql.length
+    }
+    expect(bytes).toBeLessThan(6 * 1024 * 1024)          // < 6 MB no total (uma migration por área fica bem abaixo disso)
+  })
+  it('uma área grande (AR, 119 especialidades) cabe numa migration só e recusa mudança silenciosa', () => {
+    const ar = sintetico().find((a) => a.arquivo === 'AR.json')
+    const x = gerarSql(ar.dados)
+    expect(x.sql.length).toBeLessThan(2 * 1024 * 1024)
+    ar.dados.especialidades[0].requisitos[0].descricao = 'Texto alterado depois de publicado.'
+    expect(gerarSql(ar.dados).hash).not.toBe(x.hash)
+  })
+})

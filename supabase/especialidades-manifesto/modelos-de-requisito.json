@@ -1,0 +1,336 @@
+{
+ "formato": "conquista.especialidades.modelos-de-requisito/1",
+ "uso": "Copie o trecho do tipo desejado para \"requisitos\" da especialidade em areas/<AREA>.json e substitua descricao/campos pelo requisito CONFERIDO na fonte (paráfrase própria). \"dependente\" precisa de \"depende_de\":[ordem anterior]; \"grupo_n_de_m\" precisa de \"grupos\":[{chave:\"tecnicas\",rotulo,minimo}] na especialidade. Estes são MODELOS DE ESTRUTURA, não conteúdo de especialidade.",
+ "modelos": {
+  "leitura": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "leitura",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "li",
+      "tipo": "confirmacao",
+      "rotulo": "Li o material indicado",
+      "obrigatorio": true
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "resposta": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "resposta",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "resposta",
+      "tipo": "texto_longo",
+      "rotulo": "Sua resposta",
+      "obrigatorio": true,
+      "max": 1500
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "resposta_lista": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "resposta",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "itens",
+      "tipo": "lista",
+      "rotulo": "Liste",
+      "obrigatorio": true,
+      "min": 5,
+      "max": 5,
+      "rotulo_item": "Item",
+      "tipo_item": "texto_curto"
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "relatorio": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "relatorio",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "data",
+      "tipo": "data",
+      "rotulo": "Data",
+      "obrigatorio": true,
+      "nao_futura": true
+     },
+     {
+      "chave": "local",
+      "tipo": "texto_curto",
+      "rotulo": "Local",
+      "obrigatorio": true,
+      "max": 150
+     },
+     {
+      "chave": "descricao",
+      "tipo": "texto_longo",
+      "rotulo": "O que você fez",
+      "obrigatorio": true,
+      "max": 1500
+     },
+     {
+      "chave": "aprendizado",
+      "tipo": "texto_longo",
+      "rotulo": "O que você aprendeu",
+      "obrigatorio": true,
+      "max": 1500
+     },
+     {
+      "chave": "fotos",
+      "tipo": "anexos",
+      "rotulo": "Fotos (opcional)",
+      "obrigatorio": false,
+      "min": 0,
+      "max": 3,
+      "tipos": [
+       "imagem"
+      ]
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "foto": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "foto",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "foto",
+      "tipo": "anexos",
+      "rotulo": "Foto do trabalho",
+      "obrigatorio": true,
+      "min": 1,
+      "max": 1,
+      "tipos": [
+       "imagem"
+      ]
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "arquivo": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "arquivo",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "arquivos",
+      "tipo": "anexos",
+      "rotulo": "Arquivos",
+      "obrigatorio": true,
+      "min": 1,
+      "max": 4,
+      "tipos": [
+       "arquivo",
+       "imagem"
+      ]
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "atividade_pratica": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "atividade",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "fiz",
+      "tipo": "confirmacao",
+      "rotulo": "Fiz a atividade",
+      "obrigatorio": true
+     },
+     {
+      "chave": "obs",
+      "tipo": "texto_curto",
+      "rotulo": "Observação (opcional)",
+      "obrigatorio": false,
+      "max": 200
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "validacao_do_instrutor": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "validacao",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "demonstrei",
+      "tipo": "confirmacao",
+      "rotulo": "Demonstrei ao instrutor",
+      "obrigatorio": true
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "meta_quantidade": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "atividade",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "quantidade",
+      "tipo": "numero",
+      "rotulo": "Quantidade feita",
+      "obrigatorio": true,
+      "min": 4,
+      "unidade": "vezes",
+      "inteiro": true
+     },
+     {
+      "chave": "fiz",
+      "tipo": "confirmacao",
+      "rotulo": "Confirmo a quantidade",
+      "obrigatorio": true
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "escolha_dentro_do_requisito": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "atividade",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "forma",
+      "tipo": "escolha",
+      "rotulo": "Escolha UMA forma",
+      "obrigatorio": true,
+      "opcoes": [
+       {
+        "chave": "a",
+        "rotulo": "Forma A",
+        "campos": [
+         {
+          "chave": "fiz",
+          "tipo": "confirmacao",
+          "rotulo": "Fiz a forma A",
+          "obrigatorio": true
+         }
+        ]
+       },
+       {
+        "chave": "b",
+        "rotulo": "Forma B",
+        "campos": [
+         {
+          "chave": "texto",
+          "tipo": "texto_longo",
+          "rotulo": "Descreva",
+          "obrigatorio": true,
+          "max": 1000
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "dependente": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "resposta",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "resposta",
+      "tipo": "texto_longo",
+      "rotulo": "Sua resposta",
+      "obrigatorio": true,
+      "max": 1000
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido"
+  },
+  "prazo": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "resposta",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "resposta",
+      "tipo": "texto_longo",
+      "rotulo": "Sua resposta",
+      "obrigatorio": true,
+      "max": 1000
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido",
+   "prazo_dias": 30
+  },
+  "grupo_n_de_m": {
+   "ordem": 1,
+   "descricao": "[PARAFRASE do requisito, conferido na fonte oficial]",
+   "tipo_evidencia": "atividade",
+   "modelo": {
+    "versao": 1,
+    "campos": [
+     {
+      "chave": "fiz",
+      "tipo": "confirmacao",
+      "rotulo": "Fiz esta técnica",
+      "obrigatorio": true
+     }
+    ]
+   },
+   "fonte_url": "https://www.adventistas.org/pt/desbravadores/especialidades/",
+   "status_fonte": "conferido",
+   "grupo": "tecnicas"
+  }
+ }
+}
