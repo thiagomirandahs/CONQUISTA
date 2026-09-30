@@ -96,7 +96,7 @@ export default function Login() {
           )}
 
           <motion.button type="submit" disabled={carregando} whileHover={{ scale: carregando ? 1 : 1.02 }} whileTap={{ scale: 0.97 }}
-            className="w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">
+            className="w-full min-h-[44px] rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-60">
             {carregando ? 'Entrando...' : 'Entrar'}
           </motion.button>
         </form>
