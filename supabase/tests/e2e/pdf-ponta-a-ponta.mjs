@@ -17,6 +17,7 @@
 // =============================================================================
 import { execFileSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
+import { enviarRequisitoComDocumento } from './_documento.mjs'
 import zlib from 'node:zlib'
 import { createHash } from 'node:crypto'
 
@@ -55,6 +56,7 @@ function ok(nome, cond, detalhe = '') { total++; if (!cond) { reprovados++; cons
 async function principal() {
   limpar()
   const idLider = uid('lider')
+  const idAv = uid('avaliador')   // 2ª pessoa da liderança: ninguém avalia o PRÓPRIO requisito (fase 7)
   sql(`
     set session_replication_role = replica;
     insert into public.club_features (club_id, feature, enabled) select id, 'classes', true from public.organizational_units where slug='filhos-da-conquista' on conflict (club_id, feature) do update set enabled=true;
@@ -63,9 +65,14 @@ async function principal() {
       email_change_token_current, reauthentication_token, is_sso_user, is_anonymous)
     values ('00000000-0000-0000-0000-000000000000', '${idLider}', 'authenticated', 'authenticated', 'e2e-pdf-lider@teste.local',
       extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
-    insert into public.profiles (id, nome, papel, status) values ('${idLider}', 'E2E PDF Lider', 'diretoria', 'ativo');
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+      created_at, updated_at, confirmation_token, recovery_token, email_change_token_new, email_change, phone_change, phone_change_token,
+      email_change_token_current, reauthentication_token, is_sso_user, is_anonymous)
+    values ('00000000-0000-0000-0000-000000000000', '${idAv}', 'authenticated', 'authenticated', 'e2e-pdf-avaliador@teste.local',
+      extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
+    insert into public.profiles (id, nome, papel, status) values ('${idLider}', 'E2E PDF Lider', 'diretoria', 'ativo'), ('${idAv}', 'E2E PDF Avaliador', 'diretoria', 'ativo');
     insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
-    select '${idLider}', id, 'diretoria', 'ativo' from public.organizational_units where slug='filhos-da-conquista';
+    select u, id, 'diretoria', 'ativo' from public.organizational_units, unnest(array['${idLider}'::uuid, '${idAv}'::uuid]) u where slug='filhos-da-conquista';
     insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
     select d.id, extract(year from public._data_no_brasil())::int, 'Livro do ano [FIXTURE DE TESTE E2E-PDF]',
            make_date(extract(year from public._data_no_brasil())::int, 1, 1), make_date(extract(year from public._data_no_brasil())::int, 12, 31),
@@ -78,6 +85,10 @@ async function principal() {
   const c = createClient(API_URL, ANON, { auth: { persistSession: false } })
   const { error: errLogin } = await c.auth.signInWithPassword({ email: 'e2e-pdf-lider@teste.local', password: SENHA })
   ok('login', !errLogin, errLogin?.message)
+
+  const cAv = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const { error: errLoginAv } = await cAv.auth.signInWithPassword({ email: 'e2e-pdf-avaliador@teste.local', password: SENHA })
+  ok('login avaliador', !errLoginAv, errLoginAv?.message)
 
   const { data: classeAmigo } = await c.from('classes').select('id').eq('manifesto_id', 'amigo').limit(1).single()
   const { data: mc, error: errIniciar } = await c.rpc('classe_iniciar', { p_class_id: classeAmigo.id })
@@ -97,13 +108,13 @@ async function principal() {
       if (r.escolha) ({ error: e } = await c.rpc('requisito_escolher', { p_requirement_id: r.id, p_option_ids: r.escolha.opcoes?.[0]?.id ? [r.escolha.opcoes[0].id] : [], p_rotulos_livres: r.escolha.opcoes?.[0]?.id ? [] : ['[TESTE E2E-PDF]'] }))
       else ({ error: e } = await c.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: '[TESTE E2E-PDF]', p_evidencia_path: null }))
       if (e && process.env.DEBUG) console.log(`   [debug] ${secao.codigo}.${r.codigo} preencher falhou:`, e.message)
-      const { error: eEnv } = await c.rpc('requisito_enviar', { p_requirement_id: r.id })
+      const { error: eEnv } = await enviarRequisitoComDocumento(c, r.id)
       if (eEnv && process.env.DEBUG) console.log(`   [debug] ${secao.codigo}.${r.codigo} enviar falhou:`, eEnv.message)
     }
   }
-  const { data: pendentes } = await c.rpc('classe_avaliacoes_pendentes')
+  const { data: pendentes } = await cAv.rpc('classe_avaliacoes_pendentes')
   for (const p of pendentes || []) {
-    const { error: eAv } = await c.rpc('requisito_avaliar', { p_member_requirement_id: p.member_requirement_id, p_decisao: 'aprovado', p_comentario: '[TESTE E2E-PDF]', p_submission_id: p.submission_id ?? null })
+    const { error: eAv } = await cAv.rpc('requisito_avaliar', { p_member_requirement_id: p.member_requirement_id, p_decisao: 'aprovado', p_comentario: '[TESTE E2E-PDF]', p_submission_id: p.submission_id ?? null })
     if (eAv && process.env.DEBUG) console.log(`   [debug] avaliar ${p.requisito_codigo} falhou:`, eAv.message)
   }
   minha = await carregar()

@@ -19,6 +19,7 @@
 //  apagada no início. NUNCA toca em produção: a URL é fixa em 127.0.0.1.
 // =============================================================================
 import { createClient } from '@supabase/supabase-js'
+import { enviarRequisitoComDocumento } from './_documento.mjs'
 import { execFileSync } from 'node:child_process'
 import crypto from 'node:crypto'
 
@@ -173,7 +174,7 @@ async function principal() {
       const ev = r.evidencia_obrigatoria && r.tipo_evidencia === 'foto' ? await subirFoto(desb, 'req') : null
       await desb.c.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: '[E2E-FLUXO]', p_evidencia_path: ev })
     }
-    const env = await desb.c.rpc('requisito_enviar', { p_requirement_id: r.id })
+    const env = await enviarRequisitoComDocumento(desb.c, r.id)
     if (env.error) throw new Error(`requisito_enviar ${r.codigo}: ${env.error.message}`)
   }
   for (let volta = 0; volta < 5; volta++) {

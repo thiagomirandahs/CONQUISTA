@@ -11,6 +11,7 @@
 // =============================================================================
 import { execFileSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
+import { enviarRequisitoComDocumento } from './_documento.mjs'
 
 const CONT = process.env.SUPABASE_DB_CONTAINER || 'supabase_db_CONQUISTA'
 const SENHA = 'senha-e2e-lote-123'
@@ -50,6 +51,7 @@ async function principal() {
   limpar()
   const idLider = uid('lider')
   const idMembro = uid('membro')
+  const idAv = uid('avaliador')   // 2ª pessoa da liderança: ninguém avalia o PRÓPRIO requisito (fase 7)
   sql(`
     set session_replication_role = replica;
     insert into public.club_features (club_id, feature, enabled) select id, 'classes', true from public.organizational_units where slug='filhos-da-conquista' on conflict (club_id, feature) do update set enabled=true;
@@ -60,13 +62,16 @@ async function principal() {
       ('00000000-0000-0000-0000-000000000000', '${idLider}', 'authenticated', 'authenticated', 'e2e-lote-lider@teste.local',
         extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false),
       ('00000000-0000-0000-0000-000000000000', '${idMembro}', 'authenticated', 'authenticated', 'e2e-lote-membro@teste.local',
+        extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false),
+      ('00000000-0000-0000-0000-000000000000', '${idAv}', 'authenticated', 'authenticated', 'e2e-lote-avaliador@teste.local',
         extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
     insert into public.profiles (id, nome, papel, status) values
+      ('${idAv}', 'E2E Lote Avaliador', 'diretoria', 'ativo'),
       ('${idLider}', 'E2E Lote Lider', 'diretoria', 'ativo'),
       ('${idMembro}', 'E2E Lote Membro', 'desbravador', 'ativo');
     insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
     select u.id, o.id, u.role, 'ativo' from public.organizational_units o,
-      (values ('${idLider}'::uuid, 'diretoria'), ('${idMembro}'::uuid, 'desbravador')) u(id, role)
+      (values ('${idLider}'::uuid, 'diretoria'), ('${idAv}'::uuid, 'diretoria'), ('${idMembro}'::uuid, 'desbravador')) u(id, role)
     where o.slug='filhos-da-conquista';
     insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)
     select d.id, extract(year from public._data_no_brasil())::int, 'Livro do ano [FIXTURE DE TESTE E2E-LOTE]',
@@ -80,6 +85,9 @@ async function principal() {
   const c = createClient(API_URL, ANON, { auth: { persistSession: false } })
   const { error: errLogin } = await c.auth.signInWithPassword({ email: 'e2e-lote-lider@teste.local', password: SENHA })
   ok('login líder', !errLogin, errLogin?.message)
+  const cAv = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const { error: errLoginAv } = await cAv.auth.signInWithPassword({ email: 'e2e-lote-avaliador@teste.local', password: SENHA })
+  ok('login avaliador', !errLoginAv, errLoginAv?.message)
   const cMembro = createClient(API_URL, ANON, { auth: { persistSession: false } })
   const { error: errLoginM } = await cMembro.auth.signInWithPassword({ email: 'e2e-lote-membro@teste.local', password: SENHA })
   ok('login membro', !errLoginM, errLoginM?.message)
@@ -110,13 +118,13 @@ async function principal() {
           const { error: errSalvar } = await quemInicia.rpc('requisito_salvar', { p_requirement_id: r.id, p_texto: `[TESTE E2E-LOTE ${sufixo}]`, p_evidencia_path: evidencia })
           if (errSalvar) throw new Error(`requisito_salvar falhou pra ${sufixo}: ${errSalvar.message}`)
         }
-        const { error: errEnv } = await quemInicia.rpc('requisito_enviar', { p_requirement_id: r.id })
+        const { error: errEnv } = await enviarRequisitoComDocumento(quemInicia, r.id)
         if (errEnv) throw new Error(`requisito_enviar falhou pra ${sufixo}: ${errEnv.message}`)
       }
     }
-    const { data: pendentes } = await c.rpc('classe_avaliacoes_pendentes')
+    const { data: pendentes } = await cAv.rpc('classe_avaliacoes_pendentes')
     for (const p of pendentes || []) {
-      await c.rpc('requisito_avaliar', { p_member_requirement_id: p.member_requirement_id, p_decisao: 'aprovado', p_comentario: `[TESTE E2E-LOTE ${sufixo}]`, p_submission_id: p.submission_id ?? null })
+      await cAv.rpc('requisito_avaliar', { p_member_requirement_id: p.member_requirement_id, p_decisao: 'aprovado', p_comentario: `[TESTE E2E-LOTE ${sufixo}]`, p_submission_id: p.submission_id ?? null })
     }
     await c.rpc('revisao_final_decidir', { p_member_class_id: memberClassId, p_decisao: 'aprovado', p_observacao: `[TESTE E2E-LOTE ${sufixo}]`, p_requisitos_para_corrigir: [] })
     await c.rpc('investidura_registrar', { p_member_class_id: memberClassId, p_data: new Date().toISOString().slice(0, 10), p_observacao: `[TESTE E2E-LOTE ${sufixo}]` })
