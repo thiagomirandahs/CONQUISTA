@@ -62,6 +62,7 @@ const MeuFilho = lazy(() => import('./pages/MeuFilho.jsx'))
 const VinculosPais = lazy(() => import('./pages/VinculosPais.jsx'))
 const ClubeConfig = lazy(() => import('./pages/ClubeConfig.jsx'))
 const MinhaClasse = lazy(() => import('./pages/MinhaClasse.jsx'))
+const Leituras = lazy(() => import('./pages/Leituras.jsx'))
 const CatalogoEspecialidades = lazy(() => import('./pages/CatalogoEspecialidades.jsx'))
 const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
@@ -419,6 +420,7 @@ export default function App() {
           <Route path="/experiencias" element={<RecursoOpcional recurso="experiencias"><Experiencias /></RecursoOpcional>} />
           <Route path="/experiencias/novo" element={<RotaRestrita><ExperienciaEditor /></RotaRestrita>} />
           <Route path="/minha-classe" element={<RecursoOpcional recurso="classes"><MinhaClasse /></RecursoOpcional>} />
+          <Route path="/leituras" element={<RecursoOpcional recurso="classes"><Leituras /></RecursoOpcional>} />
           {/* catálogo de referência (migration 460) — NÃO é o módulo de Especialidades, que segue no recurso próprio */}
           <Route path="/catalogo-especialidades" element={<RecursoOpcional recurso="classes"><CatalogoEspecialidades /></RecursoOpcional>} />
           <Route path="/avaliar-classe" element={<RotaRestrita><AvaliarClasse /></RotaRestrita>} />

@@ -23,6 +23,7 @@ import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
 import AdminAudiolivros from './AdminAudiolivros.jsx'
+import AdminLeitura from './AdminLeitura.jsx'
 import AdminPaineisPlano from './AdminPaineisPlano.jsx'
 import AdminManutencao from './AdminManutencao.jsx'
 import AdminComunidade from './AdminComunidade.jsx'
@@ -55,6 +56,7 @@ const ABAS = [
   { chave: 'hierarquia', rotulo: 'Hierarquia', icone: '🌳' },
   { chave: 'vitrine', rotulo: 'Vitrine do site', icone: '🪧' },
   { chave: 'audiolivros', rotulo: 'Audiolivros', icone: '🎧' },
+  { chave: 'leituras', rotulo: 'Leituras', icone: '📚' },
   // exceção declarada: a Comunidade é conteúdo PÚBLICO entre clubes; a plataforma modera (primeiro nome + clube, nunca dado pessoal)
   { chave: 'comunidade', rotulo: 'Rede DBV', icone: '🌎' },
   { chave: 'chamados', rotulo: 'Chamados', icone: '📨' },
@@ -72,7 +74,7 @@ export const SECOES = [
   { chave: 'onboarding', rotulo: 'Onboarding', icone: '🧭', abas: ['onboarding'], descricao: 'Cadastros de clube em andamento, concluídos ou parados.' },
   { chave: 'provisionamento', rotulo: 'Provisionamento', icone: '⚙️', abas: ['provisionamento'], descricao: 'Clubes cuja montagem inicial falhou.' },
   { chave: 'hierarquia', rotulo: 'Hierarquia', icone: '🌳', abas: ['hierarquia'], descricao: 'Distritos, regiões, associações e coordenadores.' },
-  { chave: 'recursos', rotulo: 'Recursos', icone: '🧩', abas: ['vitrine', 'audiolivros'], descricao: 'Vitrine do site e catálogo de audiolivros.' },
+  { chave: 'recursos', rotulo: 'Recursos', icone: '🧩', abas: ['vitrine', 'audiolivros', 'leituras'], descricao: 'Vitrine do site, audiolivros e catálogo de leitura.' },
   { chave: 'rede', rotulo: 'Rede DBV', icone: '🌎', abas: ['comunidade'], descricao: 'Moderação da comunidade entre clubes.' },
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟', abas: ['chamados', 'suporte'], descricao: 'Central de chamados e acessos de suporte autorizados pelos clubes.' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜', abas: ['auditoria'], descricao: 'Trilha imutável de tudo que a administração fez.' },
@@ -196,6 +198,7 @@ export default function Admin() {
           {aba === 'cortesias' && <AdminCortesias />}
           {aba === 'vitrine' && <AdminVitrine />}
           {aba === 'audiolivros' && <AdminAudiolivros />}
+          {aba === 'leituras' && <AdminLeitura />}
           {aba === 'comunidade' && <AdminComunidade />}
           {aba === 'armazenamento' && <Armazenamento aoAbrirClube={abrirClube} />}
           {aba === 'onboarding' && <Onboarding aoAbrirClube={abrirClube} />}

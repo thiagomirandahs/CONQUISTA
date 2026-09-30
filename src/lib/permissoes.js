@@ -93,6 +93,7 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/rede/mais': 'comunidade',
   '/experiencias': 'experiencias',
   '/minha-classe': 'classes',
+  '/leituras': 'classes',
   '/minhas-especialidades': 'especialidades',   // não 'classes': ligar as Classes oficiais não pode abrir as especialidades de teste
   ...Object.fromEntries(FERRAMENTAS.filter((f) => f.recurso).map((f) => [f.to, f.recurso])),
 })
