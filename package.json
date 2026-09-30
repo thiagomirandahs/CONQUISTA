@@ -20,6 +20,7 @@
     "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay",
     "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
     "test:rede:e2e": "node supabase/tests/e2e/rede-foto-avatar.mjs",
+    "test:rede:admin-foto:e2e": "node supabase/tests/e2e/rede-admin-foto-storage.mjs",
     "storage:fix-local": "bash supabase/tests/e2e/fix-storage-local.sh",
     "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:pdf:e2e": "node supabase/tests/e2e/pdf-ponta-a-ponta.mjs",
