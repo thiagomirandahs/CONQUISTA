@@ -3,7 +3,7 @@
 // estados pedidos na fase 3.1: simples, com evidência, dinâmico (com/sem conteúdo), bloqueado, escolha
 // N-de-M, cumprido pelo histórico, aguardando avaliação, aprovado, correção solicitada.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 
@@ -87,7 +87,8 @@ beforeEach(() => {
   carregarOrigemRequisito.mockReset()
 })
 
-const card = (codigo) => screen.getAllByTestId('requisito').find((a) => within(a).getByTestId('requisito-texto').textContent.startsWith(codigo + '. '))
+const abrir = (a) => { const t = within(a).getByTestId('abrir-requisito'); if (t.getAttribute('aria-expanded') === 'false') fireEvent.click(t); return a }
+const card = (codigo) => abrir(screen.getAllByTestId('requisito').find((a) => within(a).getByTestId('requisito-texto').textContent.startsWith(codigo + '. ')))
 const situacao = (codigo) => within(card(codigo)).getByTestId('situacao').getAttribute('data-situacao')
 // abre o menu "⋯" do card (no jsdom não há matchMedia → MenuAcoes sobe como Folha, um dialog com o nome do menu)
 async function abrirMais(c) {
@@ -148,7 +149,7 @@ describe('MinhaClasse — os estados de requisito', () => {
     expect(situacao('9')).toBe('correcao_solicitada')
     expect(within(card('5')).getByTestId('situacao')).toHaveTextContent('Bloqueado')
     expect(within(card('6')).getByTestId('situacao')).toHaveTextContent('Cumprido pelo seu histórico')
-    expect(within(card('8')).getByTestId('situacao')).toHaveTextContent('Concluído')
+    expect(within(card('8')).getByTestId('situacao')).toHaveTextContent('Aprovado')
   })
 
   it('simples: envia direto; com evidência: tem label e rascunho', async () => {

@@ -21,6 +21,7 @@ const assinar = (c, a) => JSON.stringify([c, a])
 // Roda UMA vez, na montagem: decide entre servidor, local e conflito (sem escrever nada no storage).
 export function decidirInicio({ chaveLocal, valorInicial }) {
   const servidor = { conteudo: valorInicial?.conteudo || {}, anexos: valorInicial?.anexos || [], editavel: true }
+  const emServidor = valorInicial?.rascunhoEm ?? null // horário do rascunho na nuvem (null = rascunho antigo, sem horário)
   const base = {
     conteudo: servidor.conteudo, anexos: servidor.anexos, baseHash: hashRascunho(servidor.conteudo, servidor.anexos),
     sigServidor: assinar(servidor.conteudo, servidor.anexos), pendente: false, conflito: null, limpar: false,
@@ -32,7 +33,10 @@ export function decidirInicio({ chaveLocal, valorInicial }) {
   if (d.acao === 'conflito') {
     return {
       ...base, conteudo: local.conteudo, anexos: local.anexos, pendente: true,
-      conflito: { local: { conteudo: local.conteudo, anexos: local.anexos }, servidor: { conteudo: servidor.conteudo, anexos: servidor.anexos } },
+      conflito: {
+        local: { conteudo: local.conteudo, anexos: local.anexos, em: local.editadoEm ?? null },
+        servidor: { conteudo: servidor.conteudo, anexos: servidor.anexos, em: emServidor },
+      },
     }
   }
   return { ...base, limpar: d.limpar === true }
@@ -79,7 +83,10 @@ export function useRascunhoRelatorio({
           const hs = hashRascunho(srv.conteudo, srv.anexos)
           if (hs !== s.base && hs !== hashRascunho(limpo, ax)) {
             s.conflito = true
-            setConflito({ local: { conteudo: limpo, anexos: ax }, servidor: { conteudo: srv.conteudo || {}, anexos: srv.anexos || [] } })
+            setConflito({
+              local: { conteudo: limpo, anexos: ax, em: (chaveLocal && lerLocal(chaveLocal)?.editadoEm) || Date.now() },
+              servidor: { conteudo: srv.conteudo || {}, anexos: srv.anexos || [], em: srv.rascunhoEm ?? null },
+            })
             setEstado('local')
             return
           }

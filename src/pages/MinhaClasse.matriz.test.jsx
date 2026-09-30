@@ -4,7 +4,7 @@
 // (o elo manifesto → API é o teste SQL 38; o elo manifesto → banco é o 36). Se alguém mudar a tela e
 // um requisito sumir, duplicar, trocar de ordem ou de texto, este teste falha.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -88,6 +88,7 @@ describe('matriz manifesto → UI: as 6 Classes Regulares 2026', () => {
       const reqs = classe.secoes.flatMap((s) => s.requisitos)
       reqs.forEach((r, i) => {
         const card = cards[i]
+        fireEvent.click(within(card).getByTestId('abrir-requisito')) // abre o detalhe (a ação vive nele)
         if (r.tipo === 'anual_dinamico') {
           expect(within(card).getByTestId('aviso-leitura')).toHaveTextContent('Escreva o nome do livro do Curso de Leitura deste ano e o seu resumo')
           expect(within(card).getByTestId('situacao')).toHaveAttribute('data-situacao', 'nao_iniciado')

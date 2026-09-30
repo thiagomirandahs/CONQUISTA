@@ -200,7 +200,7 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
   const carregarServidor = async () => {
     const d = await carregarMinhaEspecialidade(memberSpecialtyId)
     const q = (d?.requisitos || []).find((x) => x.id === r.id)
-    return { conteudo: q?.rascunho || {}, anexos: q?.anexos || [], editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(q?.status) }
+    return { conteudo: q?.rascunho || {}, anexos: q?.anexos || [], rascunhoEm: q?.rascunho_em ?? null, editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(q?.status) }
   }
   const salvarForm = (conteudo, anexos) => salvarRelatorioEspecialidade({ requirementId: r.id, conteudo, anexos })
   async function enviarForm(conteudo, anexos) {
@@ -238,7 +238,7 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
           )}
           {schema && (
             <FormularioRelatorio key={r.id} schema={schema}
-              valorInicial={{ conteudo: r.rascunho || {}, anexos: r.anexos || [] }}
+              valorInicial={{ conteudo: r.rascunho || {}, anexos: r.anexos || [], rascunhoEm: r.rascunho_em ?? null }}
               comentarioDevolucao={comentarioDaCorrecao}
               onSalvarRascunho={salvarForm} onEnviar={enviarForm} chaveLocal={chaveLocal} carregarServidor={carregarServidor}
               subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}

@@ -152,7 +152,7 @@ describe('rascunho offline — conflito e requisito já enviado', () => {
     semeiaLocal('do aparelho')
     const salvar = vi.fn().mockResolvedValue()
     montar({ valorInicial: { conteudo: { resumo: 'do servidor' }, anexos: [] }, onSalvarRascunho: salvar })
-    expect(screen.getByText(/Encontramos um rascunho neste aparelho diferente do que está salvo no servidor/)).toBeInTheDocument()
+    expect(screen.getByText(/Encontramos duas versões deste relatório/)).toBeInTheDocument()
     expect(estado()).toHaveTextContent('Salvo neste aparelho')
     expect(screen.getByTestId('botao-enviar-relatorio')).toBeDisabled()
     await passar(120000)
@@ -160,10 +160,10 @@ describe('rascunho offline — conflito e requisito já enviado', () => {
     expect(lerLocal(K).conteudo).toEqual({ resumo: 'do aparelho' })
   })
 
-  it('"Usar o do servidor": aplica o do servidor e a versão do aparelho vira backup recuperável', async () => {
+  it('"Usar da nuvem": aplica o do servidor e a versão do aparelho vira backup recuperável', async () => {
     semeiaLocal('do aparelho')
     montar({ valorInicial: { conteudo: { resumo: 'do servidor' }, anexos: [] } })
-    fireEvent.click(screen.getByRole('button', { name: 'Usar o do servidor' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Usar da nuvem' }))
     expect(campo()).toHaveValue('do servidor')
     expect(screen.queryByTestId('conflito-rascunho')).toBeNull()
     expect(lerBackup(K).conteudo).toEqual({ resumo: 'do aparelho' })
@@ -172,11 +172,11 @@ describe('rascunho offline — conflito e requisito já enviado', () => {
     expect(lerBackup(K).conteudo).toEqual({ resumo: 'do servidor' }) // dá para voltar
   })
 
-  it('"Usar o deste aparelho": sincroniza o local e a versão do servidor vira backup', async () => {
+  it('"Usar deste aparelho": sincroniza o local e a versão do servidor vira backup', async () => {
     semeiaLocal('do aparelho')
     const salvar = vi.fn().mockResolvedValue()
     montar({ valorInicial: { conteudo: { resumo: 'do servidor' }, anexos: [] }, onSalvarRascunho: salvar })
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Usar o deste aparelho' })) })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Usar deste aparelho' })) })
     await passar(10)
     expect(salvar).toHaveBeenCalledTimes(1)
     expect(salvar).toHaveBeenCalledWith({ resumo: 'do aparelho' }, [])

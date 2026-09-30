@@ -18,7 +18,7 @@ import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvesti
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
-import { mensagemDeErro, Botao, Aviso, Selo, Progresso as BarraDeProgresso, Folha, Carregando, ZonaUpload, MenuAcoes } from '../ui/index.jsx'
+import { mensagemDeErro, Botao, Aviso, Folha, Carregando, ZonaUpload, MenuAcoes } from '../ui/index.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
@@ -31,21 +31,17 @@ import { termoDoRequisito } from '../lib/catalogoEspecialidades.js'
 import { Link, useNavigate } from 'react-router-dom'
 import { DocumentoDaIdade } from '../components/DocumentoDaIdade.jsx'
 import { documentosDaMinhaClasse } from '../services/documentoIdade.js'
+import StatusRequisito from '../components/jornada/StatusRequisito.jsx'
+import BarraProgresso from '../components/jornada/BarraProgresso.jsx'
+import { statusDaJornada, contagens, progressoDaSecao, secaoTemPendencia, proximoRequisito } from '../lib/requisitos/jornada.js'
+import { tipoDoRequisito, soConfirmacao, TIPOS } from '../lib/requisitos/tipos.js'
+import CardLivroDaClasse from '../components/leitura/CardLivroDaClasse.jsx'
 
 // Tudo que a tela mostra vem do servidor (minha_classe): seções, requisitos, regras (escolha/conteúdo
 // dinâmico), bloqueios e status. A tela NÃO interpreta texto de requisito nem decide regra — só apresenta.
-// Cada situação tem símbolo E texto (nunca só cor — o `Selo` põe o símbolo do tom), e um botão
-// desabilitado sempre diz o motivo. Fase 6: os rótulos ficaram curtos (Concluído · Aguardando ·
-// Correção · Disponível · Bloqueado); a lógica de `situacaoDoRequisito` não mudou.
-const SITUACOES = {
-  nao_iniciado: { label: 'Disponível', tom: 'neutro' },
-  em_andamento: { label: 'Em andamento', tom: 'info' },
-  bloqueado: { label: 'Bloqueado', tom: 'atencao' },
-  pronto_pelo_historico: { label: 'Cumprido pelo seu histórico', tom: 'ok' },
-  aguardando_avaliacao: { label: 'Aguardando', tom: 'atencao' },
-  aprovado: { label: 'Concluído', tom: 'ok' },
-  correcao_solicitada: { label: 'Correção', tom: 'perigo' },
-}
+// Jornada (fase 7): a situação de cada requisito é ícone + texto (<StatusRequisito>, nunca só cor); um
+// botão desabilitado sempre diz o motivo. A lógica de `situacaoDoRequisito` não mudou.
+const ROTULO_PELO_HISTORICO = 'Cumprido pelo seu histórico'
 
 // Situação apresentada de um requisito = status operacional + o que o servidor declarou (bloqueios,
 // escolha cumprida pelo histórico). Exportada pra teste.
@@ -355,6 +351,34 @@ function Progresso({ dados, formularios = {}, userId, onMudou }) {
   useEffect(() => { lerDocs() }, [lerDocs])
   const mudouComDocs = useCallback(async () => { await onMudou(); await lerDocs() }, [onMudou, lerDocs])
 
+  // Jornada: seções colapsáveis (abre a que tem algo a fazer) e detalhe de UM requisito por vez na tela.
+  // `secoesAbertas` só guarda o que a pessoa mexeu; o resto segue o padrão (aberta se há pendência).
+  const [secoesAbertas, setSecoesAbertas] = useState({})
+  const [abertos, setAbertos] = useState(() => new Set())
+  const [focoEm, setFocoEm] = useState(null)
+  const total = contagens(secoes)
+  const proximo = proximoRequisito(secoes, formularios)
+  const secaoAberta = (s) => (s.id in secoesAbertas ? secoesAbertas[s.id] : secaoTemPendencia(s))
+  const alternarRequisito = useCallback((id, abrir) => {
+    setAbertos((a) => { const n = new Set(a); if (abrir) n.add(id); else n.delete(id); return n })
+  }, [])
+  function continuar() {
+    if (!proximo) return
+    setSecoesAbertas((o) => ({ ...o, [proximo.secaoId]: true }))
+    alternarRequisito(proximo.requisitoId, true)
+    setFocoEm({ id: proximo.requisitoId }) // objeto novo a cada toque: refoca mesmo no mesmo requisito
+  }
+  // depois de abrir pelo [CONTINUAR]: leva o foco (e a vista) ao requisito
+  useEffect(() => {
+    if (!focoEm) return
+    const el = document.getElementById(`abrir-${focoEm.id}`)
+    if (el) {
+      el.focus()
+      const reduz = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+      el.scrollIntoView?.({ block: 'center', behavior: reduz ? 'auto' : 'smooth' })
+    }
+  }, [focoEm])
+
   return (
     <div className="space-y-4" data-testid="classe-tema" data-cor={cor?.hex || ''}>
       <div className="bg-surface rounded-2xl shadow-soft overflow-hidden">
@@ -378,10 +402,24 @@ function Progresso({ dados, formularios = {}, userId, onMudou }) {
         </div>
         <div className="p-5 pt-3">
         {ehTeste && <p className="text-xs text-faint mb-2">{versao.fonte_descricao}</p>}
-        <div className="mt-1">
-          <BarraDeProgresso valor={mc.percentual ?? 0} total={100} rotulo="Progresso na classe" />
+        <div className="mt-1" data-testid="jornada">
+          {/* o percentual é do SERVIDOR (member_class.percentual); as contagens só agrupam o status de cada requisito */}
+          <BarraProgresso valor={mc.percentual ?? 0} rotulo="Progresso na classe" mostrarRotulo />
+          <p data-testid="jornada-contagem" className="mt-2 text-base font-bold text-ink">{total.aprovados} de {total.total} requisitos aprovados</p>
+          <ul data-testid="jornada-resumo" className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink">
+            <li><span aria-hidden="true">✓ </span>{total.aprovados} {total.aprovados === 1 ? 'aprovado' : 'aprovados'}</li>
+            <li><span aria-hidden="true">⏳ </span>{total.aguardando} aguardando avaliação</li>
+            <li><span aria-hidden="true">⚠ </span>{total.correcao} {total.correcao === 1 ? 'precisa' : 'precisam'} de correção</li>
+          </ul>
+          {proximo ? (
+            <Botao aoTocar={continuar} data-testid="continuar" className="mt-3 w-full">
+              Continuar
+            </Botao>
+          ) : (
+            <p data-testid="nada-pendente" className="mt-3 rounded-xl bg-surface2 px-3 py-2.5 text-sm font-semibold text-ink">Nada pendente por aqui</p>
+          )}
         </div>
-        <p className="text-sm text-muted mt-1.5">iniciada em {fmtData(mc.iniciada_em)}</p>
+        <p className="text-sm text-muted mt-2">iniciada em {fmtData(mc.iniciada_em)}</p>
 
         {etapa && (
           <div data-testid="etapa" data-etapa={mc.status} className="mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm text-blue-800">
@@ -408,28 +446,51 @@ function Progresso({ dados, formularios = {}, userId, onMudou }) {
         </div>
       </div>
 
-      {(secoes || []).map((s) => (
-        <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden"
-          style={cor ? { border: `2px solid ${cor.hex}` } : undefined}>
-          <div className={`flex items-center justify-between gap-2 px-4 py-2 ${cor ? '' : 'bg-surface2 text-ink'}`}
-            style={cor ? { background: cor.hex, color: cor.texto } : undefined}>
-            <h4 id={`secao-${s.id}`} className="font-extrabold text-base">{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</h4>
-            <ProgressoDaSecao requisitos={s.requisitos || []} />
-          </div>
-          <div className="divide-y divide-line">
-            {(s.requisitos || []).map((r) => (
-              <Requisito key={r.id} r={r} formulario={formularios[r.id] || null} cor={cor} userId={userId} onMudou={mudouComDocs} documento={docs[r.id]} />
-            ))}
-          </div>
-        </section>
-      ))}
+      {(secoes || []).map((s) => {
+        const aberta = secaoAberta(s)
+        const { feitos, total: n } = progressoDaSecao(s.requisitos)
+        const idCorpo = `secao-corpo-${s.id}`
+        return (
+          <section key={s.id} data-testid="secao" aria-labelledby={`secao-${s.id}`} className="bg-surface rounded-2xl shadow-soft overflow-hidden"
+            style={cor ? { border: `2px solid ${cor.hex}` } : undefined}>
+            <div className={`flex items-center justify-between gap-2 ${cor ? '' : 'bg-surface2 text-ink'}`}
+              style={cor ? { background: cor.hex, color: cor.texto } : undefined}>
+              <h4 id={`secao-${s.id}`} className="min-w-0 flex-1 font-extrabold text-base">
+                <button type="button" data-testid="alternar-secao" aria-expanded={aberta} aria-controls={idCorpo}
+                  onClick={() => setSecoesAbertas((o) => ({ ...o, [s.id]: !aberta }))}
+                  className="flex min-h-[48px] w-full items-center gap-2 px-4 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-current">
+                  <span aria-hidden="true" className={`shrink-0 text-sm transition-transform motion-reduce:transition-none before:content-['▸'] ${aberta ? 'rotate-90' : ''}`} />
+                  <span className="min-w-0">{s.codigo ? `${s.codigo}. ` : ''}{s.nome}</span>
+                </button>
+              </h4>
+              <span className="pr-4"><ProgressoDaSecao feitos={feitos} total={n} /></span>
+            </div>
+            <div className="px-4 py-2 border-b border-line">
+              <BarraProgresso feitos={feitos} total={n} tamanho="fina" rotulo={`Progresso da seção ${s.codigo ? `${s.codigo}. ` : ''}${s.nome}`} />
+            </div>
+            {aberta && (
+              <div id={idCorpo} className="divide-y divide-line">
+                {(s.requisitos || []).map((r) => (
+                  <Requisito key={r.id} r={r} secao={s} classeManifesto={classe?.manifesto_id || null} formulario={formularios[r.id] || null} cor={cor} userId={userId} onMudou={mudouComDocs} documento={docs[r.id]}
+                    aberto={abertos.has(r.id)} onAlternar={(abrir) => alternarRequisito(r.id, abrir)} />
+                ))}
+              </div>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }
 
-function Requisito({ r, formulario = null, cor = null, userId, onMudou, documento = null }) {
+function Requisito({ r, secao = null, classeManifesto = null, formulario = null, cor = null, userId, onMudou, documento = null, aberto = false, onAlternar = () => {} }) {
   const situacao = situacaoDoRequisito(r)
-  const info = SITUACOES[situacao]
+  const statusJornada = statusDaJornada(r, formulario)
+  const tipo = tipoDoRequisito({ requisito: r, formulario })
+  const idDetalhe = `detalhe-${r.id}`
+  // o detalhe monta na primeira abertura e depois só fica escondido: digitar e fechar não perde nada em andamento
+  const [jaAbriu, setJaAbriu] = useState(aberto)
+  if (aberto && !jaAbriu) setJaAbriu(true)
   const bloqueios = r.bloqueios || []
   // rascunho local (modo manutenção/rede): a resposta digitada fica no aparelho até ser salva
   const [texto, setTexto, descartarRascunho, veioDoRascunho] = useRascunho(userId, `requisito:${r.id}`, r.evidencia_texto || '')
@@ -472,6 +533,7 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
   const obrigatoria = !!r.evidencia_obrigatoria
   const idTitulo = `req-${r.id}`
   const idBloqueios = `bloq-${r.id}`
+  const prazo = r.prazo_em || r.prazo || null
 
   async function salvar() {
     setOcupado(true); setErro('')
@@ -518,18 +580,60 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
   // releitura do servidor (só quando um rascunho local pendente volta a rede): conferir antes de empurrar
   const carregarServidor = async () => {
     const f = await carregarFormularioRequisito(r.id)
-    return { conteudo: f?.rascunho || {}, anexos: f?.anexos || [], editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(f?.status) }
+    return { conteudo: f?.rascunho || {}, anexos: f?.anexos || [], rascunhoEm: f?.rascunho_em ?? null, editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(f?.status) }
+  }
+
+  function fechar() {
+    onAlternar(false)
+    document.getElementById(`abrir-${r.id}`)?.focus()
+  }
+  // Esc fecha o detalhe (só quando a tecla vem de DENTRO deste card: menus/folhas em portal cuidam do seu Esc)
+  function aoTeclar(e) {
+    if (e.key === 'Escape' && aberto && !e.defaultPrevented && e.currentTarget.contains(e.target)) { e.stopPropagation(); fechar() }
   }
 
   return (
-    <article data-testid="requisito" aria-labelledby={idTitulo} className="p-4">
-      {/* Situação EM CIMA do texto (antes ficava ao lado e espremia a leitura no celular). */}
-      <span className="inline-block mb-1.5" data-testid="situacao" data-situacao={situacao}>
-        <Selo tom={info.tom}>{info.label}</Selo>
-      </span>
-      <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug mb-1.5">
-        <span data-testid="requisito-texto">{r.codigo}. {r.descricao}</span>
+    <article data-testid="requisito" aria-labelledby={idTitulo} className="" onKeyDown={aoTeclar}>
+      {/* Linha da jornada: situação (ícone + texto) EM CIMA do texto; tocar abre/fecha o detalhe. */}
+      <h5 id={idTitulo} className="text-sm font-semibold text-ink leading-snug">
+        <button type="button" id={`abrir-${r.id}`} data-testid="abrir-requisito" aria-expanded={aberto} aria-controls={idDetalhe}
+          onClick={() => onAlternar(!aberto)}
+          className="flex min-h-[56px] w-full items-start gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand">
+          <span className="min-w-0 flex-1">
+            <span className="mb-1.5 block" data-testid="situacao" data-situacao={situacao}>
+              <StatusRequisito status={statusJornada} rotulo={situacao === 'pronto_pelo_historico' ? ROTULO_PELO_HISTORICO : undefined} />
+            </span>
+            <span data-testid="requisito-texto" className={aberto ? 'block' : 'line-clamp-3 block'}>{r.codigo}. {r.descricao}</span>
+          </span>
+          <span aria-hidden="true" className={`mt-1 shrink-0 text-lg text-muted transition-transform motion-reduce:transition-none before:content-['▾'] ${aberto ? 'rotate-180' : ''}`} />
+        </button>
       </h5>
+
+      {jaAbriu && (
+      <div id={idDetalhe} role="region" aria-labelledby={idTitulo} hidden={!aberto} data-testid="detalhe-requisito" className="px-4 pb-4">
+      {/* Detalhe: o "o que precisa ser feito" é o texto do requisito na linha acima (aberta, sem corte); aqui
+          vêm tipo, dependências, prazo, material e a ação apropriada. */}
+      <div className="mb-2 flex flex-wrap items-center gap-1.5" data-testid="tipos-requisito">
+        {secao && <span className="text-xs text-muted">Seção {secao.codigo ? `${secao.codigo}. ` : ''}{secao.nome}</span>}
+        {tipo.chips.map((c) => (
+          <span key={c.rotulo} data-tipo={c.tipo || 'neutro'} className="inline-flex items-center rounded-full border border-line bg-surface2 px-2 py-0.5 text-xs font-bold text-ink">{c.rotulo}</span>
+        ))}
+      </div>
+      {prazo && <p data-testid="prazo" className="mb-2 text-sm text-ink"><span aria-hidden="true">📅 </span>Prazo: <span className="font-semibold">{fmtData(prazo)}</span></p>}
+      {bloqueios.length > 0 && r.status !== 'aprovado' && (
+        <div className="mb-2">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Antes de enviar</p>
+          <ul id={idBloqueios} data-testid="bloqueios" className="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 space-y-0.5">
+            {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
+          </ul>
+        </div>
+      )}
+      {/* Material relacionado: "Ouvir o livro" (audiolivros) e, nos requisitos de LEITURA, o card do livro da classe
+          (só com o manifesto_id da classe, para nunca mostrar o livro de outra). O card some sozinho se não há livro. */}
+      {tipo.tipo === TIPOS.LEITURA && classeManifesto && r.status !== 'aprovado' && (
+        <div className="mb-2"><CardLivroDaClasse classeManifesto={classeManifesto} userId={userId} /></div>
+      )}
+      <MaterialDoRequisito temLivro={temLivro} mostrarOuvir={mostrarOuvir} aoOuvir={() => setMostrarOuvir(true)} descricao={r.descricao} userId={userId} />
 
       {r.conteudo_dinamico && <ConteudoDoPeriodo dinamico={r.conteudo_dinamico} mostrarAviso={!podeEditar || bloqueios.length === 0} />}
       {r.escolha && <Escolha r={r} podeEditar={podeEditar} onMudou={onMudou} />}
@@ -556,12 +660,13 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
             <>
               {form.modelo?.nota && <p className="text-xs text-muted">{form.modelo.nota}</p>}
               <FormularioRelatorio key={r.id} schema={form.modelo.schema}
-                valorInicial={{ conteudo: form.rascunho || {}, anexos: form.anexos || [] }}
+                valorInicial={{ conteudo: form.rascunho || {}, anexos: form.anexos || [], rascunhoEm: form.rascunho_em ?? null }}
                 comentarioDevolucao={r.status === 'correcao_solicitada' ? comentarioDaCorrecao : ''}
                 onSalvarRascunho={salvarFormulario} onEnviar={enviarFormulario}
                 chaveLocal={chaveLocal} carregarServidor={carregarServidor}
                 subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
-                enviarDesativado={!podeEnviar} descricaoEnviarId={idBloqueios} />
+                enviarDesativado={!podeEnviar} descricaoEnviarId={idBloqueios}
+                rotuloEnviar={soConfirmacao(form.modelo.schema) ? 'Marcar como feito' : undefined} />
             </>
           )}
           {!usaFormulario && precisaTexto && (
@@ -587,11 +692,6 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
                   : undefined} />
             </div>
           )}
-          {bloqueios.length > 0 && (
-            <ul id={idBloqueios} data-testid="bloqueios" className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 space-y-0.5">
-              {bloqueios.map((b, i) => <li key={i}>🔒 {b}</li>)}
-            </ul>
-          )}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
           {/* Hierarquia: UM botão principal, largo e alto; o rascunho é discreto. */}
           {!usaFormulario && (
@@ -612,30 +712,40 @@ function Requisito({ r, formulario = null, cor = null, userId, onMudou, document
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
       )}
       {!podeEditar && <AvisoCopiaDeSeguranca chaveLocal={chaveLocal} />}
+      {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
+        <button type="button" onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} data-testid="alternar-historico"
+          className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-muted underline">
+          <span aria-hidden="true">🕘</span> {mostrarHistorico ? 'Esconder' : 'Ver'} histórico de tentativas
+        </button>
+      )}
 
       {/* Secundário no menu "⋯" (MenuAcoes): ouvir o livro, catálogo, histórico, origem — nada disputa com a
           tarefa. Cada ação abre o seu conteúdo AQUI no card (o menu fecha e o foco volta ao "⋯"). */}
       <div className="mt-2 flex items-center justify-end">
         <MenuAcoes rotulo="Mais sobre este requisito" acoes={acoesDoRequisito({
-          r, temLivro, mostrarOuvir, mostrarHistorico, abrindoOrigem,
-          ouvir: () => setMostrarOuvir(true),
+          r, mostrarHistorico, abrindoOrigem,
           catalogo: (termo) => navegar(`/catalogo-especialidades${termo ? `?q=${encodeURIComponent(termo)}` : ''}`),
           historico: () => setMostrarHistorico((v) => !v),
           origem: verOrigem,
         })} />
       </div>
-      {mostrarOuvir && <OuvirLivro descricao={r.descricao} userId={userId} />}
       {mostrarHistorico && r.member_requirement_id && <HistoricoPorTentativa memberRequirementId={r.member_requirement_id} />}
       <OrigemRequisito origem={origem} onFechar={() => setOrigem(null)} />
+      <button type="button" onClick={fechar} data-testid="fechar-requisito"
+        className="mt-3 min-h-[44px] w-full rounded-xl bg-surface2 px-4 text-sm font-bold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+        Fechar detalhes
+      </button>
+      </div>
+      )}
     </article>
   )
 }
 
 // Ações do "⋯" de um requisito, na ordem em que aparecem. Pura (exportada para teste): só decide
 // QUAIS ações existem e com que rótulo — quem executa é o card.
-export function acoesDoRequisito({ r, temLivro, mostrarOuvir, mostrarHistorico, abrindoOrigem, ouvir, catalogo, historico, origem }) {
+// (o "Ouvir o livro" saiu do menu: agora vive na seção Material do detalhe — <MaterialDoRequisito>.)
+export function acoesDoRequisito({ r, mostrarHistorico, abrindoOrigem, catalogo, historico, origem }) {
   const acoes = []
-  if (temLivro && !mostrarOuvir) acoes.push({ rotulo: 'Ouvir o livro', icone: '🎧', onClick: ouvir })
   const termo = termoDoRequisito(r.descricao)
   if (termo !== null) acoes.push({ rotulo: 'Ver no catálogo de especialidades', icone: '🔎', onClick: () => catalogo(termo) })
   const n = (r.avaliacoes || []).length
@@ -644,6 +754,25 @@ export function acoesDoRequisito({ r, temLivro, mostrarOuvir, mostrarHistorico, 
   }
   acoes.push({ rotulo: abrindoOrigem ? 'Carregando…' : 'Origem do requisito', icone: '📜', onClick: origem, desabilitada: abrindoOrigem })
   return acoes
+}
+
+// Material relacionado ao requisito. Hoje: "Ouvir o livro" (catálogo de audiolivros, migration 370).
+// (O card do livro da classe — CardLivroDaClasse — é renderizado logo acima deste bloco, no detalhe dos requisitos de leitura.)
+function MaterialDoRequisito({ temLivro, mostrarOuvir, aoOuvir, descricao, userId }) {
+  if (!temLivro && !mostrarOuvir) return null
+  return (
+    <div className="mb-2" data-testid="material-requisito">
+      <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Material para estudar</p>
+      {mostrarOuvir
+        ? <OuvirLivro descricao={descricao} userId={userId} />
+        : (
+          <button type="button" onClick={aoOuvir}
+            className="mt-1 inline-flex min-h-[44px] w-full items-center gap-2 rounded-xl border-2 border-violet-200 bg-violet-50 px-3 text-left text-sm font-bold text-violet-900">
+            <span aria-hidden="true">🎧</span> Ouvir o livro
+          </button>
+        )}
+    </div>
+  )
 }
 
 // Gera (ou reobtém, idempotente) o Caderno da própria pessoa e abre a versão imprimível numa aba nova.
@@ -831,10 +960,8 @@ function OrigemRequisito({ origem, onFechar }) {
   )
 }
 
-// Andamento da seção no cabeçalho: cinza (nada aprovado), âmbar (parcial), verde (tudo aprovado).
-function ProgressoDaSecao({ requisitos }) {
-  const total = requisitos.length
-  const feitos = requisitos.filter((r) => r.status === 'aprovado').length
+// Andamento da seção no cabeçalho ("8/10"): texto + ícone (✓ quando tudo aprovado), nunca só cor.
+function ProgressoDaSecao({ feitos, total }) {
   if (!total) return null
   const tudo = feitos === total
   const estilo = tudo ? 'bg-green-600 text-white' : feitos > 0 ? 'bg-amber-400 text-amber-950' : 'bg-white/90 text-gray-700'

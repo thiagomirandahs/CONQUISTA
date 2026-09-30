@@ -15,6 +15,7 @@ import { Aviso, Botao } from '../../ui/index.jsx'
 import { textoDoErro } from './mensagens.js'
 import { useRascunhoRelatorio, decidirInicio } from './useRascunhoRelatorio.js'
 import { ehErroDeRede } from '../../lib/prazo.js'
+import ConflitoRascunho from './ConflitoRascunho.jsx'
 
 const juntar = (...c) => c.filter(Boolean).join(' ')
 const ENTRADA = 'w-full min-h-[44px] rounded-xl border border-line bg-surface px-3 py-2.5 text-base text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand disabled:opacity-70'
@@ -89,17 +90,7 @@ export default function FormularioRelatorio({
         </Aviso>
       )}
 
-      {rasc.conflito && (
-        <Aviso tom="erro" titulo="Encontramos um rascunho neste aparelho diferente do que está salvo no servidor">
-          <div data-testid="conflito-rascunho">
-            <p>Nada foi sobrescrito. Escolha qual versão usar; a outra fica guardada neste aparelho e dá para recuperar.</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <Botao variacao="secundario" aoTocar={() => rasc.resolverConflito('servidor')} className="flex-1">Usar o do servidor</Botao>
-              <Botao variacao="secundario" aoTocar={() => rasc.resolverConflito('local')} className="flex-1">Usar o deste aparelho</Botao>
-            </div>
-          </div>
-        </Aviso>
-      )}
+      {rasc.conflito && <ConflitoRascunho conflito={rasc.conflito} aoEscolher={rasc.resolverConflito} />}
       {rasc.encerrado && (
         <Aviso tom="info">
           <p data-testid="aviso-encerrado">Este requisito já foi enviado/aprovado; guardamos uma cópia do seu texto neste aparelho.</p>

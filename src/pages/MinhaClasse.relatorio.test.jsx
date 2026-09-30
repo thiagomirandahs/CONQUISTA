@@ -51,7 +51,8 @@ const MINHA = {
 }
 const MODELO = { versao: 1, familia: 'T1', nota: null, schema: { versao: 1, campos: [{ chave: 'resumo', tipo: 'texto_longo', rotulo: 'Conte o que fez', obrigatorio: true }] } }
 
-const card = (codigo) => screen.getAllByTestId('requisito').find((a) => within(a).getByTestId('requisito-texto').textContent.startsWith(codigo + '. '))
+const abrir = (a) => { const t = within(a).getByTestId('abrir-requisito'); if (t.getAttribute('aria-expanded') === 'false') fireEvent.click(t); return a }
+const card = (codigo) => abrir(screen.getAllByTestId('requisito').find((a) => within(a).getByTestId('requisito-texto').textContent.startsWith(codigo + '. ')))
 
 beforeEach(() => {
   carregarMinhaClasse.mockReset().mockResolvedValue(MINHA)
