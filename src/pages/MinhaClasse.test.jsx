@@ -409,12 +409,23 @@ describe('MinhaClasse — Fase 6', () => {
     expect(rascunho.className).not.toMatch(/from-brand/)
   })
 
-  it('ouvir o livro, catálogo e origem ficam sob "Mais" (recolhido por padrão, aberto quando há correção)', async () => {
+  it('ações secundárias (origem, histórico) ficam no menu ⋯, fechado por padrão — nada disputa com a tarefa', async () => {
     render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
     await screen.findByRole('heading', { level: 4 })
-    expect(within(card('1')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'false')
-    expect(within(card('9')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'true')
-    await userEvent.click(within(card('1')).getByRole('button', { name: /Mais/ }))
-    expect(within(card('1')).getByRole('button', { name: /Mais/ })).toHaveAttribute('aria-expanded', 'true')
+    const menu1 = within(card('1')).getByRole('button', { name: /Mais sobre este requisito/ })
+    expect(menu1).toHaveAttribute('aria-haspopup')
+    // fechado: nenhuma ação secundária visível
+    expect(within(card('1')).queryByText(/Origem do requisito/)).toBeNull()
+    await userEvent.click(menu1)
+    expect(await screen.findByText(/Origem do requisito/)).toBeInTheDocument()
+  })
+
+  it('requisito com correção: o comentário do avaliador aparece SEM abrir o menu, e o histórico está no menu', async () => {
+    render(<MemoryRouter><MinhaClasse /></MemoryRouter>)
+    await screen.findByRole('heading', { level: 4 })
+    const c9 = card('9')
+    expect(within(c9).getByText(/Refaça/)).toBeInTheDocument()
+    await userEvent.click(within(c9).getByRole('button', { name: /Mais sobre este requisito/ }))
+    expect(await screen.findByText(/Ver histórico \(1 avaliação\)/)).toBeInTheDocument()
   })
 })
