@@ -19,6 +19,7 @@ export default function Trilha() {
   const { profile } = useAuth()
   const { papel: meuPapel } = useClube()
   const [carregando, setCarregando] = useState(true)
+  const [erroCarga, setErroCarga] = useState(false)   // a trilha não veio (sem internet/prazo): mostra "Tentar de novo"
   const [prog, setProg] = useState({ feito: false, passos: 0, hoje: [] })
   const [jogando, setJogando] = useState(false)
   const [resultado, setResultado] = useState(null)
@@ -80,8 +81,9 @@ export default function Trilha() {
     return () => { clearInterval(t); window.removeEventListener('focus', foco); document.removeEventListener('visibilitychange', foco) }
   }, [profile?.id])
   async function recarregar() {
-    setCarregando(true)
-    try { setProg(await carregarTrilha()) } finally { setCarregando(false) }
+    setCarregando(true); setErroCarga(false)
+    // Nunca deixa a promessa estourar solta (era o que gerava erro 'promessa' em /trilha quando a rede falhava)
+    try { setProg(await carregarTrilha()) } catch { setErroCarga(true) } finally { setCarregando(false) }
   }
 
   // Carrega o ranking só quando a aba abre (e recarrega quando o jogo termina)
@@ -175,6 +177,12 @@ export default function Trilha() {
           ehAdmin={['instrutor', 'diretoria'].includes(meuPapel)} />
       ) : carregando ? (
         <Esqueleto />
+      ) : erroCarga && !jogando ? (
+        <div className="text-center p-6" role="alert" data-testid="trilha-erro">
+          <p className="font-bold text-ink">Não consegui carregar sua trilha agora.</p>
+          <p className="text-sm text-muted mt-1">Confira a internet e tente de novo.</p>
+          <button type="button" onClick={recarregar} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+        </div>
       ) : jogando ? (
         (() => {
           const Jogo = JOGOS[jogoAtual]?.Comp || JogoMemoria
