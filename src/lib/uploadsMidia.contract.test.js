@@ -29,6 +29,7 @@ const PONTOS_DE_HEIC = {
   'lib/storageGc.js': 'classificação do GC (HEIC não saneável)',
   'services/rede.js': 'comentário/tratamento da foto da Rede (otimizarFoto)',
   'lib/tutorial/conteudo.js': 'texto do tutorial (não é caminho de upload)',
+  'lib/heicFixtures.js': 'fixtures SINTÉTICAS usadas só por testes (não é importado pelo app)',
 }
 
 describe('mídia: vídeo e HEIC só entram pelos pontos declarados', () => {
