@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { m as motion } from 'framer-motion'
+import { codigoDoRetorno, CHAVE_METADADO } from '../lib/entradaDoCadastro.js'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import { clubesDaVitrine } from '../services/vitrine.js'
 import Logo from '../components/Logo.jsx'
@@ -24,6 +25,7 @@ export default function Cadastro() {
   // veio do convite de COORDENAÇÃO (distrito/região/associação): não é membro de clube — o formulário
   // não pede função no clube nem fala em aprovação da diretoria.
   const ehCoordenacao = typeof retorno === 'string' && retorno.startsWith('/coordenacao')
+  const codigoDeEntrada = codigoDoRetorno(retorno)
   const [convite] = useState(() => lerTokenConvite(window.location))
   useEffect(() => { if (convite) limparConviteDaUrl(window.location, window.history) }, [convite])
   const [form, setForm] = useState({ nome: '', email: '', senha: '', nascimento: '', cargo: 'Desbravador' })
@@ -72,6 +74,9 @@ export default function Cadastro() {
         convite_responsavel: ehPai ? convite : '',
         nascimento: ehPai || ehCoordenacao ? '' : form.nascimento,
         cargo: ehPai ? '' : ehCoordenacao ? 'Coordenação' : form.cargo,
+        // O código do link/QR vai junto da conta: a confirmação de e-mail pode abrir em OUTRO navegador,
+        // onde `?proximo=`/sessionStorage não existem. Só o código (formato validado) — nunca papel/clube.
+        ...(codigoDeEntrada ? { [CHAVE_METADADO]: codigoDeEntrada } : {}),
       } },
     })
 

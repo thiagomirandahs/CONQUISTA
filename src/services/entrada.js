@@ -36,6 +36,20 @@ export async function solicitarEntrada(codigo) {
   return conferir(data, error)
 }
 
+// Código que veio junto da CONTA (user_metadata.entrada_codigo): o cadastro foi confirmado em outro
+// navegador e o retorno do fluxo se perdeu. É o MESMO caminho de sempre — o servidor valida o código,
+// cria o vínculo PENDENTE e decide o papel; o cliente só apresenta o segredo. Nunca ativa sozinho.
+//   'pedido'   pedido criado (pendente)      'ja_era'  já havia vínculo/pedido: nada novo
+//   'invalido' código vencido/revogado/errado  'erro'   falha (rede/limite): NÃO limpa o metadado
+export async function aplicarEntradaDoCadastro(codigo) {
+  let r
+  try { r = await solicitarEntrada(codigo) } catch { return { estado: 'erro' } }
+  // código resolvido (valendo ou não): o metadado cumpriu o papel e sai da conta
+  try { await supabase.auth.updateUser({ data: { entrada_codigo: null } }) } catch { /* limpa na próxima */ }
+  if (!r) return { estado: 'invalido' }
+  return { estado: r.ja_era ? 'ja_era' : 'pedido', situacao: r.situacao || null }
+}
+
 export async function abrirConvite(token) {
   const { data, error } = await supabase.rpc('convite_abrir', { p_token: token })
   return conferir(data, error)

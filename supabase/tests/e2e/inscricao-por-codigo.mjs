@@ -327,6 +327,39 @@ async function principal() {
   const pede = abre.data?.encontrado ? await n8.c.rpc('entrada_solicitar', { p_codigo: C4 }) : null
   ok('simulação do retorno (abrir + solicitar automático): vínculo PENDENTE no A, aparece em Aprovações', pede?.data?.situacao === 'pendente' && ((await dirA.c.rpc('entradas_pendentes')).data || []).some((x) => x.id === n8.id))
   ok('ClubeGuard/Aprovações: GestaoInscricoes lista SolicitacoesPendentes (entradas_pendentes -> vinculo_gerir)', gestao.includes('<SolicitacoesPendentes') && readFileSync(new URL('../../../src/components/SolicitacoesPendentes.jsx', import.meta.url), 'utf8').includes("rpc('vinculo_gerir'"))
+
+  console.log('\n== 12. confirmação de e-mail em OUTRO navegador: o código viaja no user_metadata (entrada_codigo) ==')
+  // cadastro no navegador 1 (signUp com o código no metadata, como Cadastro.jsx faz), confirmação via SQL e
+  // login num navegador 2 SEM nenhum estado (cliente novo: sem sessionStorage, sem ?proximo, sem header de clube)
+  const forja = { entrada_codigo: C4, papel: 'diretoria', role: 'diretoria', club_id: B, status: 'ativo' }
+  const n9 = await novaPessoa('n9', forja)
+  ok('signUp com entrada_codigo (+ papel/role/club_id/status forjados): conta sem vínculo nenhum, perfil desbravador/membro (trigger ignora chaves extras)',
+    vinculos(n9.id, A).length === 0 && vinculos(n9.id, B).length === 0
+    && sql(`select papel || '/' || tipo_cadastro || '/' || status from public.profiles where id='${n9.id}'`) === 'desbravador/membro/ativo')
+  const noMeta = await createClient(API_URL, ANON, semSessao).auth.signInWithPassword({ email: n9.email, password: SENHA })
+  ok('login no navegador 2 (cliente novo, sem estado): a sessão traz user_metadata.entrada_codigo', noMeta.data?.user?.user_metadata?.entrada_codigo === C4, JSON.stringify(noMeta.data?.user?.user_metadata))
+  const nav2 = cliente()
+  await nav2.c.auth.signInWithPassword({ email: n9.email, password: SENHA })
+  const metaSessao = (await nav2.c.auth.getUser()).data.user.user_metadata
+  // o que aplicarEntradaDoCadastro (src/services/entrada.js) faz: só o código vai ao servidor
+  const ap9 = await nav2.c.rpc('entrada_solicitar', { p_codigo: metaSessao.entrada_codigo })
+  vv = vinculos(n9.id, A)
+  ok('aplicar o fluxo do serviço: vínculo PENDENTE no clube do CÓDIGO (A), papel do servidor (desbravador), origem codigo_de_entrada',
+    ap9.data?.situacao === 'pendente' && ap9.data.papel === 'desbravador' && vv.length === 1 && vv[0].status === 'pendente' && vv[0].role === 'desbravador' && vv[0].source === 'codigo_de_entrada', JSON.stringify(vv))
+  ok('o metadado forjado (papel/role/club_id/status) segue ignorado: nada no clube B, nada ativo', vinculos(n9.id, B).length === 0 && vv[0].status !== 'ativo')
+  const limpou = await nav2.c.auth.updateUser({ data: { entrada_codigo: null } })
+  const depois = (await nav2.c.auth.getUser()).data.user.user_metadata
+  ok('updateUser({entrada_codigo: null}) remove a chave do metadado', !limpou.error && !('entrada_codigo' in depois) && depois.papel === 'diretoria', JSON.stringify(depois))
+  ok('o próprio metadado "papel" forjado continua sem efeito no banco (perfil e vínculo)', sql(`select papel from public.profiles where id='${n9.id}'`) === 'desbravador' && vinculos(n9.id, A)[0].role === 'desbravador')
+  const ap9b = await nav2.c.rpc('entrada_solicitar', { p_codigo: C4 })
+  ok('quem já tem pedido não repete: ja_era=true, situação pendente, ainda 1 vínculo', ap9b.data?.ja_era === true && ap9b.data.situacao === 'pendente' && vinculos(n9.id, A).length === 1, JSON.stringify(ap9b.data))
+  // código que morreu entre o cadastro e a confirmação
+  const n10 = await novaPessoa('n10', { entrada_codigo: C4 })
+  await dirA.c.rpc('clube_codigo_gerar', { p_dias: null })   // regera: C4 morre
+  const nav3 = cliente()
+  await nav3.c.auth.signInWithPassword({ email: n10.email, password: SENHA })
+  const morto = await nav3.c.rpc('entrada_solicitar', { p_codigo: (await nav3.c.auth.getUser()).data.user.user_metadata.entrada_codigo })
+  ok('código vencido/revogado entre cadastro e confirmação: encontrado=false, nenhum vínculo (o app mostra a mensagem e o "Entrar com código")', morto.data?.encontrado === false && vinculos(n10.id, A).length === 0, JSON.stringify(morto.data))
 }
 
 let erroFatal = null
