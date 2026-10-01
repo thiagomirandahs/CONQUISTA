@@ -1,0 +1,15 @@
+-- 528 — Segurança: retira o webhook LEGADO `push-notificacoes` (criado pelo painel do Supabase) da tabela notificacoes. Aditiva; não mexe em <= 527.
+--
+-- ACHADO (Fase 9, auditoria pós-deploy da Fase 8): esse gatilho chama supabase_functions.http_request(...) com a chave `service_role`
+-- ESCRITA NA PRÓPRIA DEFINIÇÃO (cabeçalho Authorization). Tudo que mostra a definição de gatilhos (pg_get_triggerdef, pg_dump, Studio,
+-- logs de erro do pg_restore) revela o segredo. É o único objeto do banco com JWT literal (varredura de gatilhos, funções, cron e views).
+--
+-- POR QUE É SEGURO REMOVER: o push de verdade já vai por OUTRO caminho — `trg_notificacao_push` → `_push_disparar()` (security definer)
+-- lê a URL e o segredo do COFRE (vault: push_edge_url, push_webhook_secret) e chama a Edge Function com o cabeçalho `x-push-webhook-secret`.
+-- A Edge Function `enviar-push` EXIGE esse cabeçalho e responde 401 sem ele; o webhook legado nunca o envia, então TODA chamada dele
+-- volta 401 (em produção, em 01/10/2026: 13 respostas 200 pelo caminho novo × 13 respostas 401 pelo legado). Ele só gera ruído e expõe o segredo.
+--
+-- O QUE NÃO MUDA: nenhuma outra função, gatilho, política ou dado. Idempotente (se o gatilho não existir — bancos locais/ensaios — não faz nada).
+-- ATENÇÃO: remover o gatilho NÃO apaga cópias antigas da chave que já estejam em dumps/backups; isso só se resolve ROTACIONANDO a chave
+-- (ver SEGURANCA-ROTACAO-DE-CHAVES.md), decisão do dono.
+drop trigger if exists "push-notificacoes" on public.notificacoes;
