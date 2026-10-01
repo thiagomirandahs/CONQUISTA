@@ -28,3 +28,17 @@ Pastas com a chave antiga (todas fora do Git): `backup-conquista-pre-fase6-2026-
 
 ## 5. Ordem recomendada
 (1) aplicar 528 → (2) senha do banco → (3) tokens de acesso → (4) service_role pelo caminho A → (5) criptografar/limpar backups antigos → (6) apagar o env file e o documento com a senha. Cada passo com sua autorização.
+
+---
+## Atualização — rodada de segurança da Fase 9 (01/10/2026, depois da execução)
+**Feito em produção (autorizado):** migration **528** (webhook legado removido; auditoria de segredos: **0 JWT literal** em gatilhos, funções, views e cron; `pg_stat_statements` sem JWT; push novo intacto — prova em `scripts/janela-fase8/prova-push-producao.sql`).
+**Ainda NÃO feito (decisão sua):** rotação de qualquer credencial; criptografia/eliminação dos backups antigos.
+
+**Verificação do APK (antes de qualquer mudança em chave legada):** baixei os APKs publicados (v1.3.0, v1.3.3, v1.3.6, v1.3.8) e o APK de teste da Fase 8 e procurei, sem imprimir valores, as chaves embutidas: **todos embutem a chave publicável nova (`sb_publishable_…`) e nenhum JWT legado** (`anon`/`service_role`). O front web também. Consequência: desativar as chaves *legacy* **não deve quebrar nenhum APK 1.3.x nem o site** — o risco que sobra é o das Edge Functions (leem `SUPABASE_SERVICE_ROLE_KEY` injetada) e de scripts/integrações externas que eu não enxergo. APKs 1.2.x carregam o site direto (usam a chave do site = publicável). **Não rotacionei nem desativei nada.**
+
+**Ordem prática recomendada a partir daqui (cada passo com a sua autorização):**
+1. Senha do banco → reset no painel; atualizar `~/.desbravaclube-prod.env`; testar `psql … select 1` e `00-pre-leitura.sql`.
+2. Tokens de acesso (Management API): revogar o do env file e o da "Etapa 2"; criar um novo, curto e com escopo mínimo, só para as próximas janelas.
+3. `service_role` legada: trocar as 4 Edge Functions para a chave secreta nova (pequena mudança de código + `test:edge:bundle` + redeploy), observar 24 h, só então **desativar as chaves legacy** no painel (nada de rotacionar o JWT secret: desloga todos).
+4. Backups antigos: `bash scripts/seguranca/backups-com-segredo-plano.sh` (lista, somente leitura) → criptografar com `gpg --symmetric` → provar a volta pelo hash → só então apagar o texto claro (com a sua confirmação). Backups feitos **depois** da 528 já não contêm a chave.
+5. Apagar o env file de produção e o `PLANO-JANELA-MIGRACAO-REAL.md` (senha/token em texto) quando terminar a janela.
