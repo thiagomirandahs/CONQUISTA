@@ -53,7 +53,11 @@ const estado = (bucket, caminho) => sql(`select estado||':'||coalesce(ultima_men
 const venceCarencia = (like) => sql(`update public.storage_exclusao_fila set processar_apos = now() - interval '1 minute', reservado_ate = null where caminho like '${like}' and estado='pendente'`)
 const envelhece = (bucket, caminho) => sql(`update storage.objects set created_at = now() - interval '10 days', updated_at = now() - interval '10 days' where bucket_id='${bucket}' and name='${caminho}'`)
 async function chamar(segredo, corpo = '{}') {
-  const r = await fetch(FUNCAO_URL, { method: 'POST', headers: { 'x-storage-excluir-secret': segredo ?? '', 'content-type': 'application/json' }, body: corpo })
+  // a 1ª chamada ao edge-runtime pode encontrar o container ainda aquecendo (máquina carregada): tenta de novo só em ERRO DE REDE (nunca em resposta HTTP)
+  let r
+  for (let i = 0; i < 6; i++) {
+    try { r = await fetch(FUNCAO_URL, { method: 'POST', headers: { 'x-storage-excluir-secret': segredo ?? '', 'content-type': 'application/json' }, body: corpo }); break } catch (e) { if (i === 5) throw e; await new Promise((res) => setTimeout(res, 2000)) }
+  }
   let c = null; try { c = await r.json() } catch { /* */ }
   return { status: r.status, corpo: c }
 }

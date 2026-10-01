@@ -82,7 +82,11 @@ async function usuario(nome) {
 const linhaObj = (bucket, caminho) => sql(`select coalesce(owner_id,'∅')||'|'||coalesce(owner::text,'∅')||'|'||coalesce(metadata->>'size','')||'|'||coalesce(metadata->>'mimetype','')||'|'||coalesce(updated_at::text,'') from storage.objects where bucket_id='${bucket}' and name='${caminho}'`)
 const policiesHash = () => sql(`select md5(string_agg(policyname||cmd||coalesce(qual,'')||coalesce(with_check,''), '|' order by policyname)) from pg_policies where schemaname='storage' and tablename='objects'`)
 async function chamarFuncao(segredo) {
-  const r = await fetch(FUNCAO_URL, { method: 'POST', headers: { 'x-saneamento-secret': segredo ?? '', 'content-type': 'application/json' }, body: '{}' })
+  // a 1ª chamada ao edge-runtime pode encontrar o container ainda aquecendo (máquina carregada): tenta de novo só em ERRO DE REDE (nunca em resposta HTTP)
+  let r
+  for (let i = 0; i < 6; i++) {
+    try { r = await fetch(FUNCAO_URL, { method: 'POST', headers: { 'x-saneamento-secret': segredo ?? '', 'content-type': 'application/json' }, body: '{}' }); break } catch (e) { if (i === 5) throw e; await new Promise((res) => setTimeout(res, 2000)) }
+  }
   let corpo = null; try { corpo = await r.json() } catch { /* */ }
   return { status: r.status, corpo }
 }
