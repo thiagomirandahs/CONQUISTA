@@ -3,7 +3,7 @@
 //   imagens com GPS / com outros metadados (JPEG/PNG/WebP) · HEIC e vídeos (não analisáveis como limpos: podem ter GPS) · JWT service_role/anon legacy ·
 //   tabela auth.users (hashes de senha) em dump · token sbp_ / sb_secret_ / senha em URL de banco em texto.
 // NUNCA imprime coordenadas, JWT, senha, token, hash nem caminhos. Uso:  node scripts/seguranca/auditar-backups.mjs <pasta> [<pasta> ...]
-import { readdirSync, statSync, readFileSync, openSync, readSync, closeSync } from 'node:fs'
+import { readdirSync, statSync, readFileSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { classificar } from '../lib/analisarImagem.mjs'
