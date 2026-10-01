@@ -35,3 +35,20 @@ export function codigoDoRetorno(retorno) {
 export function codigoDoMetadado(user) {
   return codigoValido(user?.user_metadata?.[CHAVE_METADADO])
 }
+
+// ---- clube escolhido na LISTA durante o cadastro (entrada_solicitar_clube) ----
+// Mesmo raciocínio: com confirmação de e-mail ligada o signUp não devolve sessão, então o pedido não
+// sai na hora. O slug (identificador público do clube, o mesmo da vitrine) vai junto da conta.
+export const CHAVE_METADADO_CLUBE = 'entrada_clube_slug'
+
+const FORMATO_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+export function slugValido(valor) {
+  if (typeof valor !== 'string') return null
+  const s = valor.trim().toLowerCase()
+  return s.length >= 2 && s.length <= 80 && FORMATO_SLUG.test(s) ? s : null
+}
+
+export function slugDoMetadado(user) {
+  return slugValido(user?.user_metadata?.[CHAVE_METADADO_CLUBE])
+}

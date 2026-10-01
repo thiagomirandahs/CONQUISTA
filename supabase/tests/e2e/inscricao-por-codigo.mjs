@@ -360,6 +360,28 @@ async function principal() {
   await nav3.c.auth.signInWithPassword({ email: n10.email, password: SENHA })
   const morto = await nav3.c.rpc('entrada_solicitar', { p_codigo: (await nav3.c.auth.getUser()).data.user.user_metadata.entrada_codigo })
   ok('código vencido/revogado entre cadastro e confirmação: encontrado=false, nenhum vínculo (o app mostra a mensagem e o "Entrar com código")', morto.data?.encontrado === false && vinculos(n10.id, A).length === 0, JSON.stringify(morto.data))
+
+  console.log('\n== 13. clube escolhido na LISTA do cadastro: o slug viaja no user_metadata (entrada_clube_slug) ==')
+  const n11 = await novaPessoa('n11', { entrada_clube_slug: 'hml-clube-a', papel: 'diretoria', role: 'diretoria', club_id: B, status: 'ativo' })
+  ok('signUp com entrada_clube_slug (+ papel/club_id/status forjados): conta sem vínculo, perfil desbravador/membro (trigger ignora chaves extras)',
+    vinculos(n11.id, A).length === 0 && vinculos(n11.id, B).length === 0
+    && sql(`select papel || '/' || tipo_cadastro || '/' || status from public.profiles where id='${n11.id}'`) === 'desbravador/membro/ativo')
+  const nav4 = cliente()
+  await nav4.c.auth.signInWithPassword({ email: n11.email, password: SENHA })
+  const slugSessao = (await nav4.c.auth.getUser()).data.user.user_metadata.entrada_clube_slug
+  ok('login em outro navegador (cliente novo): a sessão traz o slug', slugSessao === 'hml-clube-a', String(slugSessao))
+  const s11 = await nav4.c.rpc('entrada_solicitar_clube', { p_slug: slugSessao })
+  vv = vinculos(n11.id, A)
+  ok('aplicar o serviço (só o slug): PENDENTE no clube escolhido, papel do servidor, origem cadastro_escolheu_clube; nada no B',
+    s11.data?.situacao === 'pendente' && s11.data.papel === 'desbravador' && vv.length === 1 && vv[0].status === 'pendente' && vv[0].role === 'desbravador' && vv[0].source === 'cadastro_escolheu_clube' && vinculos(n11.id, B).length === 0, JSON.stringify(vv))
+  const l11 = await nav4.c.auth.updateUser({ data: { entrada_clube_slug: null } })
+  const m11 = (await nav4.c.auth.getUser()).data.user.user_metadata
+  ok('updateUser({entrada_clube_slug: null}) remove a chave', !l11.error && !('entrada_clube_slug' in m11), JSON.stringify(m11))
+  const s11b = await nav4.c.rpc('entrada_solicitar_clube', { p_slug: 'hml-clube-a' })
+  ok('quem já tem pedido não repete: ja_era=true, ainda 1 vínculo', s11b.data?.ja_era === true && vinculos(n11.id, A).length === 1, JSON.stringify(s11b.data))
+  const n12 = await novaPessoa('n12', { entrada_clube_slug: 'clube-que-nao-existe' })
+  const s12 = await n12.c.rpc('entrada_solicitar_clube', { p_slug: 'clube-que-nao-existe' })
+  ok('slug inexistente: encontrado=false e nenhum vínculo (o app mostra mensagem amigável e limpa o metadado)', s12.data?.encontrado === false && vinculos(n12.id, A).length === 0 && vinculos(n12.id, B).length === 0, JSON.stringify(s12.data))
 }
 
 let erroFatal = null

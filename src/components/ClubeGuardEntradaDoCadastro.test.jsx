@@ -114,3 +114,58 @@ describe('ClubeGuard + user_metadata.entrada_codigo', () => {
     espioes.forEach((e) => e.mockRestore())
   })
 })
+
+describe('ClubeGuard + user_metadata.entrada_clube_slug (clube escolhido na lista)', () => {
+  const SLUG = 'clube-exemplo'
+  it('login sem estado do navegador: chama entrada_solicitar_clube só com o slug e limpa o metadado', async () => {
+    comSessao({ entrada_clube_slug: SLUG })
+    rpc.mockResolvedValue({ data: { encontrado: true, ok: true, ja_era: false, situacao: 'pendente', clube: 'Clube Exemplo' }, error: null })
+    montar()
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith('entrada_solicitar_clube', { p_slug: SLUG }))
+    expect(Object.keys(rpc.mock.calls[0][1])).toEqual(['p_slug'])
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ data: { entrada_clube_slug: null } }))
+    await waitFor(() => expect(recarregar).toHaveBeenCalled())
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+  it('clube inexistente/sem vitrine: mensagem amigável, limpa o metadado e cai no "Entrar com código"', async () => {
+    comSessao({ entrada_clube_slug: SLUG })
+    rpc.mockResolvedValue({ data: { encontrado: false }, error: null })
+    montar()
+    expect(await screen.findByTestId('aviso-entrada-codigo')).toHaveTextContent(/não está mais disponível/)
+    expect(screen.getByTestId('ir-entrar')).toBeInTheDocument()
+    expect(updateUser).toHaveBeenCalledWith({ data: { entrada_clube_slug: null } })
+    expect(recarregar).not.toHaveBeenCalled()
+  })
+  it('rede/limite: não limpa o metadado e não trava', async () => {
+    comSessao({ entrada_clube_slug: SLUG })
+    rpc.mockResolvedValue({ data: null, error: { message: 'Muitas tentativas.' } })
+    montar()
+    expect(await screen.findByTestId('ir-entrar')).toBeInTheDocument()
+    expect(updateUser).not.toHaveBeenCalled()
+  })
+  it('já com vínculo/pedido: ja_era, nada repete, metadado limpo', async () => {
+    comSessao({ entrada_clube_slug: SLUG })
+    semClube({ vinculos: [{ status: 'pendente', marca: { nome: 'Clube X' } }] })
+    rpc.mockResolvedValue({ data: { encontrado: true, ok: true, ja_era: true, situacao: 'pendente' }, error: null })
+    montar()
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ data: { entrada_clube_slug: null } }))
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+  it('slug fora do formato é ignorado (nada vai ao servidor)', async () => {
+    for (const ruim of ['Clube Exemplo', '../x', 'a', 'x'.repeat(200), '-abc', 'a--b;drop', 7]) {
+      rpc.mockReset(); comSessao({ entrada_clube_slug: ruim })
+      const { unmount } = montar()
+      expect(await screen.findByTestId('ir-entrar')).toBeInTheDocument()
+      expect(rpc).not.toHaveBeenCalled()
+      unmount()
+    }
+  })
+  it('código e slug juntos: só o código é aplicado e os DOIS são limpos', async () => {
+    comSessao({ entrada_codigo: CODIGO, entrada_clube_slug: SLUG })
+    rpc.mockResolvedValue({ data: { encontrado: true, ok: true, ja_era: false, situacao: 'pendente' }, error: null })
+    montar()
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ data: { entrada_codigo: null, entrada_clube_slug: null } }))
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('entrada_solicitar', { p_codigo: CODIGO })
+  })
+})

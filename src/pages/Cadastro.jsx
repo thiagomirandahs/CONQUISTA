@@ -2,7 +2,7 @@ import { useState, useEffect, useId } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { m as motion } from 'framer-motion'
-import { codigoDoRetorno, CHAVE_METADADO } from '../lib/entradaDoCadastro.js'
+import { codigoDoRetorno, CHAVE_METADADO, CHAVE_METADADO_CLUBE, slugValido } from '../lib/entradaDoCadastro.js'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import { clubesDaVitrine } from '../services/vitrine.js'
 import Logo from '../components/Logo.jsx'
@@ -77,6 +77,9 @@ export default function Cadastro() {
         // O código do link/QR vai junto da conta: a confirmação de e-mail pode abrir em OUTRO navegador,
         // onde `?proximo=`/sessionStorage não existem. Só o código (formato validado) — nunca papel/clube.
         ...(codigoDeEntrada ? { [CHAVE_METADADO]: codigoDeEntrada } : {}),
+        // Clube escolhido na lista: o pedido não sai sem sessão (confirmação de e-mail ligada), então o slug
+        // vai junto da conta. O código tem prioridade (e mostrarClubes só existe sem retorno de link).
+        ...(!codigoDeEntrada && mostrarClubes && !ehPai && slugValido(clube) ? { [CHAVE_METADADO_CLUBE]: slugValido(clube) } : {}),
       } },
     })
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { codigoDoMetadado } from '../lib/entradaDoCadastro.js'
-import { aplicarEntradaDoCadastro } from '../services/entrada.js'
+import { codigoDoMetadado, slugDoMetadado } from '../lib/entradaDoCadastro.js'
+import { aplicarEntradaDoCadastro, aplicarClubeEscolhidoNoCadastro } from '../services/entrada.js'
 import { souAdminPlataforma } from '../services/admin.js'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -26,23 +26,31 @@ export default function ClubeGuard({ children }) {
   const { carregando, erro, semVinculo, precisaEscolher, vinculos, recarregar, marca, trocarClube } = useClube()
   // Código do clube que veio junto da CONTA (cadastro confirmado em outro navegador): aplicado uma vez,
   // pelo mesmo pedido de entrada de sempre (o servidor valida; nasce PENDENTE; nunca ativa sozinho).
+  // O código tem prioridade sobre o clube escolhido na lista: nunca aplica os dois.
+  const slugDaConta = slugDoMetadado(session?.user)
   const codigoDaConta = codigoDoMetadado(session?.user)
+  const entradaDaConta = codigoDaConta || slugDaConta
   const [fase, setFase] = useState('ocioso')   // 'ocioso' | 'feito'
   const [avisoEntrada, setAvisoEntrada] = useState('')
   const rodou = useRef(false)
   const pronto = !carregando && !erro
   useEffect(() => {
-    if (!codigoDaConta || !pronto || rodou.current) return
+    if (!entradaDaConta || !pronto || rodou.current) return
     rodou.current = true
-    aplicarEntradaDoCadastro(codigoDaConta)
+    const aplicar = codigoDaConta
+      ? aplicarEntradaDoCadastro(codigoDaConta, { tambemClube: !!slugDaConta })
+      : aplicarClubeEscolhidoNoCadastro(slugDaConta)
+    aplicar
       .then(async (r) => {
-        if (r.estado === 'invalido') setAvisoEntrada('O código do clube que você usou ao se cadastrar não está mais valendo. Peça um código novo à liderança do seu clube e use "Entrar com código".')
+        if (r.estado === 'invalido') setAvisoEntrada(codigoDaConta
+          ? 'O código do clube que você usou ao se cadastrar não está mais valendo. Peça um código novo à liderança do seu clube e use "Entrar com código".'
+          : 'O clube que você escolheu ao se cadastrar não está mais disponível para pedidos. Peça o código de entrada à liderança do seu clube e use "Entrar com código".')
         else if (r.estado === 'erro') setAvisoEntrada('Não consegui enviar o seu pedido de entrada agora. Use "Entrar com código" ou abra o app de novo mais tarde.')
         else await recarregar()
       })
       .catch(() => {})
       .finally(() => setFase('feito'))
-  }, [codigoDaConta, pronto, recarregar])
+  }, [codigoDaConta, slugDaConta, entradaDaConta, pronto, recarregar])
   const { temEscopo, escopos, carregando: carregandoEscopo } = useEscopo()
   // Conta só de ADMIN da plataforma (sem clube): o lugar dela é o painel, não "entre num clube".
   const semClube = !carregando && !erro && semVinculo
@@ -72,7 +80,7 @@ export default function ClubeGuard({ children }) {
   }
 
   // Aplicando o código da conta: não mostra "Entrar com código" por um instante antes de o pedido sair.
-  if (codigoDaConta && fase !== 'feito') return <TelaDeAbertura />
+  if (entradaDaConta && fase !== 'feito') return <TelaDeAbertura />
 
   // O clube que esta aba usava deixou de valer — e a pessoa tem outros. Antes da fase 8.5 o app
   // escolhia um sozinho e seguia como se nada tivesse acontecido: a pessoa aparecia DENTRO de

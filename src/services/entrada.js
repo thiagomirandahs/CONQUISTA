@@ -41,13 +41,34 @@ export async function solicitarEntrada(codigo) {
 // cria o vínculo PENDENTE e decide o papel; o cliente só apresenta o segredo. Nunca ativa sozinho.
 //   'pedido'   pedido criado (pendente)      'ja_era'  já havia vínculo/pedido: nada novo
 //   'invalido' código vencido/revogado/errado  'erro'   falha (rede/limite): NÃO limpa o metadado
-export async function aplicarEntradaDoCadastro(codigo) {
+export async function aplicarEntradaDoCadastro(codigo, { tambemClube = false } = {}) {
   let r
   try { r = await solicitarEntrada(codigo) } catch { return { estado: 'erro' } }
-  // código resolvido (valendo ou não): o metadado cumpriu o papel e sai da conta
-  try { await supabase.auth.updateUser({ data: { entrada_codigo: null } }) } catch { /* limpa na próxima */ }
+  // código resolvido (valendo ou não): o metadado cumpriu o papel e sai da conta. O código tem
+  // prioridade: se a conta também guardava um clube escolhido na lista, ele sai junto (não aplica os dois).
+  await limparMetadado(tambemClube ? ['entrada_codigo', 'entrada_clube_slug'] : ['entrada_codigo'])
   if (!r) return { estado: 'invalido' }
   return { estado: r.ja_era ? 'ja_era' : 'pedido', situacao: r.situacao || null }
+}
+
+// Clube escolhido NA LISTA do cadastro (user_metadata.entrada_clube_slug): o cliente manda só o slug;
+// o servidor (entrada_solicitar_clube) confere vitrine, cria o vínculo PENDENTE e decide o papel.
+// Mesmos estados de aplicarEntradaDoCadastro; 'erro' (rede/limite) não limpa o metadado.
+export async function aplicarClubeEscolhidoNoCadastro(slug) {
+  let data
+  try {
+    const r = await supabase.rpc('entrada_solicitar_clube', { p_slug: slug })
+    if (r.error) throw r.error
+    data = r.data
+  } catch { return { estado: 'erro' } }
+  await limparMetadado(['entrada_clube_slug'])
+  if (!data?.encontrado) return { estado: 'invalido' }
+  return { estado: data.ja_era ? 'ja_era' : 'pedido', situacao: data.situacao || null }
+}
+
+async function limparMetadado(chaves) {
+  const data = Object.fromEntries(chaves.map((k) => [k, null]))
+  try { await supabase.auth.updateUser({ data }) } catch { /* limpa na próxima */ }
 }
 
 export async function abrirConvite(token) {
