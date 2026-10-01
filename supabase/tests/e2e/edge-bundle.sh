@@ -26,3 +26,11 @@ if docker run --rm -v "$WFDIR:/f:ro" "$IMG" bundle --entrypoint /f/sanear-imagen
 else
   echo "FALHOU — sanear-imagens não empacota (import do núcleo, pin quebrado ou código inválido)."; exit 1
 fi
+
+# storage-excluir (migration 532) também importa o núcleo puro de ../_compartilhado/ (mesma montagem).
+echo "==> empacotando storage-excluir (com _compartilhado) com $IMG"
+if docker run --rm -v "$WFDIR:/f:ro" "$IMG" bundle --entrypoint /f/storage-excluir/index.ts --output /tmp/storage-excluir.eszip -q; then
+  echo "OK — storage-excluir e o núcleo compartilhado resolvem e empacotam."
+else
+  echo "FALHOU — storage-excluir não empacota (import do núcleo, pin quebrado ou código inválido)."; exit 1
+fi

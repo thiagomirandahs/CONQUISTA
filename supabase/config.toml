@@ -404,6 +404,11 @@ verify_jwt = false
 [functions.sanear-imagens]
 verify_jwt = false
 
+# storage-excluir (migration 532) apaga do Storage só o que o banco devolver depois da carência; é chamada pelo banco (pg_cron + pg_net,
+# job nasce DESLIGADO) e se autentica pelo segredo STORAGE_EXCLUIR_SECRET (header x-storage-excluir-secret, tempo constante, falha fechada).
+[functions.storage-excluir]
+verify_jwt = false
+
 [functions.gerar-documento-pdf]
 verify_jwt = true
 
