@@ -77,7 +77,7 @@ function Item({ it, onFeito }) {
 
   async function avaliar(decisao) {
     if (decisao === 'correcao_solicitada' && !comentario.trim()) {
-      avisar.erro(new Error('Explique o que precisa ser corrigido antes de enviar.'))
+      avisar.erro(Object.assign(new Error('Explique o que precisa ser corrigido antes de enviar.'), { esperado: true }))
       return
     }
     setOcupado(true)
