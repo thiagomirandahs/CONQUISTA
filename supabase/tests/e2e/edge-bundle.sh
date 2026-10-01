@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prova que a Edge Function `enviar-push` (com as dependências FIXADAS em versão exata) resolve e empacota no edge-runtime de verdade
+# Prova que as Edge Functions `enviar-push` e `sanear-imagens` (com as dependências FIXADAS em versão exata) resolvem e empacotam no edge-runtime de verdade
 # (a mesma imagem Docker que o `supabase start` usa — só local; nada é publicado). Um pin inexistente/quebrado faz o bundle falhar.
 #
 #   npm run test:edge:bundle        (precisa do Docker e da imagem do edge-runtime; baixa os pacotes npm, sem tocar em Supabase remoto)
@@ -15,4 +15,14 @@ if docker run --rm -v "$WDIR:/f:ro" "$IMG" bundle --entrypoint /f/index.ts --out
   echo "OK — as dependências fixadas resolvem e a função empacota."
 else
   echo "FALHOU — a função não empacota (pin quebrado ou código inválido)."; exit 1
+fi
+
+# sanear-imagens importa o núcleo puro de ../_compartilhado/: por isso monta a pasta functions INTEIRA (somente leitura).
+FDIR="$ROOT/supabase/functions"
+WFDIR="$(cygpath -w "$FDIR" 2>/dev/null || echo "$FDIR")"
+echo "==> empacotando sanear-imagens (com _compartilhado) com $IMG"
+if docker run --rm -v "$WFDIR:/f:ro" "$IMG" bundle --entrypoint /f/sanear-imagens/index.ts --output /tmp/sanear-imagens.eszip -q; then
+  echo "OK — sanear-imagens e o núcleo compartilhado resolvem e empacotam."
+else
+  echo "FALHOU — sanear-imagens não empacota (import do núcleo, pin quebrado ou código inválido)."; exit 1
 fi

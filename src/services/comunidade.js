@@ -5,6 +5,7 @@
 // Aqui só chamamos as RPCs e cuidamos da foto: ela é SEMPRE redesenhada em canvas antes de subir
 // (limparFotoParaComunidade), o que descarta EXIF/GPS, e vai para o bucket PRIVADO 'comunidade'.
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { limparFotoParaComunidade } from '../lib/imagem.js'
 
@@ -71,6 +72,7 @@ export async function publicar({ legenda, file, clubeId, userId }) {
     path = `${clubeId}/${userId}/${novoId()}.${limpa.type === 'image/webp' ? 'webp' : 'jpg'}`
     const { error } = await supabase.storage.from(BUCKET).upload(path, limpa, { upsert: false, contentType: limpa.type })
     if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)
+    solicitarSaneamento(BUCKET, path)
   }
   let r
   try {

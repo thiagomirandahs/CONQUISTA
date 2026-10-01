@@ -10,6 +10,7 @@
 // Usado por: Cadastro, Perfil, Mural, Unidades (bucket 'imagens' — PRIVADO depois da migration 32; a exibição é por URL assinada, lib/imagens.js) e
 // Missões/Atividades (bucket PRIVADO 'comprovacoes' — Parte A).
 import { supabase } from './supabase.js'
+import { solicitarSaneamento } from './saneamentoImagem.js'
 import { comprimirImagem } from './imagem.js'
 
 // ---- Detecção por assinatura mágica (primeiros bytes do arquivo) ----
@@ -73,6 +74,7 @@ export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const path = `${pasta}/${nomeBase}.${ext}`
   const { error } = await supabase.storage.from('imagens').upload(path, pronta, { upsert: true })
   if (error) throw new Error('Não foi possível enviar: ' + error.message)
+  solicitarSaneamento('imagens', path) // best-effort: o servidor também tira EXIF/GPS (migration 529)
   return { path, url: supabase.storage.from('imagens').getPublicUrl(path).data.publicUrl }
 }
 
@@ -98,7 +100,7 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   // caminho começa com o auth.uid(): é isso que a política do Storage confere
   const path = `${userId}/${tipo}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from('comprovacoes').upload(path, pronta, { upsert: false })
-  if (!error) return path
+  if (!error) { solicitarSaneamento('comprovacoes', path); return path }
   // TRANSIÇÃO: se o bucket privado ainda NÃO EXISTE (o SQL storage-comprovacoes não rodou), cai no
   // bucket público antigo — o envio não quebra por causa da janela de deploy. Qualquer OUTRA falha
   // (permissão, tamanho, tipo, rede) NÃO pode mandar a foto de uma criança para um bucket público:
@@ -108,6 +110,7 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   const legacyPath = `${tipo}/${userId}-${Date.now()}.${ext}`
   const up2 = await supabase.storage.from('imagens').upload(legacyPath, pronta, { upsert: true })
   if (up2.error) throw new Error('Não foi possível enviar: ' + error.message)
+  solicitarSaneamento('imagens', legacyPath)
   return supabase.storage.from('imagens').getPublicUrl(legacyPath).data.publicUrl
 }
 

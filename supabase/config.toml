@@ -400,6 +400,10 @@ deno_version = 2
 [functions.enviar-push]
 verify_jwt = false
 
+# sanear-imagens (migration 529) é chamada pelo banco (pg_cron + pg_net) e se autentica pelo segredo SANEAMENTO_SECRET (comparação em tempo constante).
+[functions.sanear-imagens]
+verify_jwt = false
+
 [functions.gerar-documento-pdf]
 verify_jwt = true
 

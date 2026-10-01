@@ -1,6 +1,7 @@
 // Central de chamados (migration 290). Tudo passa por RPC security definer: o servidor decide quem vê
 // o quê (só o autor e a equipe da plataforma). Anexo: bucket PRIVADO 'suporte-anexos', pasta = uid.
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 
 export const CATEGORIAS = [
   ['duvida', 'Dúvida'], ['problema', 'Problema/erro'], ['pagamento', 'Pagamento/plano'],
@@ -62,6 +63,7 @@ export async function enviarAnexo(arquivo) {
   const caminho = `${uid}/${crypto.randomUUID()}.${TIPOS[arquivo.type]}`
   const { error } = await supabase.storage.from(BUCKET).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
   if (error) throw new Error(error.message)
+  solicitarSaneamento(BUCKET, caminho)
   return caminho
 }
 
