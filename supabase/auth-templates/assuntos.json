@@ -1,0 +1,7 @@
+{
+  "mailer_subjects_confirmation": "Confirme o seu e-mail — DesbravaClube",
+  "mailer_subjects_recovery": "Redefinir a sua senha — DesbravaClube",
+  "mailer_subjects_email_change": "Confirme o novo e-mail — DesbravaClube",
+  "mailer_subjects_invite": "Você foi convidado(a) — DesbravaClube",
+  "mailer_subjects_password_changed_notification": "Sua senha foi alterada — DesbravaClube"
+}
