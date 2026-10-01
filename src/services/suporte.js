@@ -2,6 +2,7 @@
 // o quê (só o autor e a equipe da plataforma). Anexo: bucket PRIVADO 'suporte-anexos', pasta = uid.
 import { supabase } from '../lib/supabase.js'
 import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
+import { comprimirImagem } from '../lib/imagem.js'
 
 export const CATEGORIAS = [
   ['duvida', 'Dúvida'], ['problema', 'Problema/erro'], ['pagamento', 'Pagamento/plano'],
@@ -60,8 +61,10 @@ export async function enviarAnexo(arquivo) {
   const { data: s } = await supabase.auth.getUser()
   const uid = s?.user?.id
   if (!uid) throw new Error('Entre na sua conta.')
-  const caminho = `${uid}/${crypto.randomUUID()}.${TIPOS[arquivo.type]}`
-  const { error } = await supabase.storage.from(BUCKET).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
+  // nunca sobe o original: foto de celular carrega EXIF/GPS. Redesenha (PNG continua PNG, o resto vira JPEG); se não der, falha.
+  const pronto = await comprimirImagem(arquivo, { semMetadados: true, manterPng: true, maxLado: 1600, qualidade: 0.82 })
+  const caminho = `${uid}/${crypto.randomUUID()}.${TIPOS[pronto.type] || TIPOS[arquivo.type]}`
+  const { error } = await supabase.storage.from(BUCKET).upload(caminho, pronto, { contentType: pronto.type || arquivo.type, upsert: false })
   if (error) throw new Error(error.message)
   solicitarSaneamento(BUCKET, caminho)
   return caminho

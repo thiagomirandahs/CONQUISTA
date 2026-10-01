@@ -203,7 +203,7 @@ export async function mudarUnidade(userId, unidadeId) {
 export async function atualizarFotoPerfil({ userId, file }) {
   await validarImagem(file) // tipo REAL + tamanho (hardening etapa 2)
   // avatar mínimo (rede DBV, 28/09): 256 px, ≤ 30 KB, WebP/JPEG; se o navegador não conseguir, a compressão de sempre
-  file = await otimizarFoto(file, FOTO_AVATAR).then((r) => r.arquivo).catch(() => comprimirImagem(file, { maxLado: 256 }))
+  file = await otimizarFoto(file, FOTO_AVATAR).then((r) => r.arquivo).catch(() => comprimirImagem(file, { maxLado: 256, semMetadados: true }))
   const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/webp' ? 'webp' : (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `perfis/${userId}-${Date.now()}.${ext}`
   const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })

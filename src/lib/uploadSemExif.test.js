@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const upload = vi.fn(async () => ({ error: null }))
-vi.mock('./supabase.js', () => ({ supabase: { storage: { from: () => ({ upload, getPublicUrl: () => ({ data: { publicUrl: 'x' } }) }) }, rpc: vi.fn(async () => ({ error: null })) } }))
+vi.mock('./supabase.js', () => ({ supabase: { storage: { from: () => ({ upload, getPublicUrl: () => ({ data: { publicUrl: 'x' } }) }) }, rpc: vi.fn(async () => ({ error: null })), auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } } }))
 vi.mock('./saneamentoImagem.js', () => ({ solicitarSaneamento: vi.fn() }))
 
 import { subirComprovacao, subirImagemPublica } from './upload.js'
@@ -42,5 +42,17 @@ describe('uploads de foto sem EXIF/GPS', () => {
     const original = jpegComExif()
     await subirImagemPublica({ file: original, pasta: 'perfis', nomeBase: 'u1' })
     expect(upload.mock.calls[0][1]).not.toBe(original)
+  })
+})
+
+// Suporte: o anexo do chamado também é redesenhado (nunca o original com EXIF/GPS); PNG continua PNG.
+describe('suporte — enviarAnexo', () => {
+  it('sobe o arquivo REDESENHADO, não o original', async () => {
+    vi.resetModules()
+    canvasQueNaoEncolhe()
+    const sup = await import('../services/suporte.js')
+    const orig = jpegComExif()
+    await sup.enviarAnexo(new File([orig], 'IMG_GPS.jpg', { type: 'image/jpeg' }))
+    expect(upload.mock.calls.at(-1)[1]).not.toBe(orig)
   })
 })

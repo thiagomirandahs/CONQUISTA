@@ -7,7 +7,7 @@
 // (GPS, modelo do aparelho, data); então a foto é SEMPRE redesenhada no canvas (que só tem pixels), mesmo quando o
 // resultado não fica menor, e se não der para redesenhar o envio FALHA em vez de mandar o original. GIF (sem EXIF/GPS)
 // e o que não é imagem seguem passando direto. Usado nos envios de comprovação, documento, mural e imagens públicas.
-export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72, semMetadados = false } = {}) {
+export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72, semMetadados = false, manterPng = false } = {}) {
   if (!file || !file.type || !file.type.startsWith('image/')) return file
   if (file.type === 'image/gif') return file
   try {
@@ -21,13 +21,15 @@ export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72, 
     const ctx = canvas.getContext('2d')
     ctx.drawImage(bitmap, 0, 0, w, h)
     bitmap.close?.()
-    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', qualidade))
+    // com `manterPng` (ex.: captura de tela no suporte) o PNG continua PNG (redesenhado, sem perda e sem eXIf/tEXt); sem ele, vira JPEG como sempre
+    const saida = semMetadados && manterPng && file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    const blob = await new Promise((res) => canvas.toBlob(res, saida, qualidade))
     if (!blob) throw new Error('sem blob')
     // Se não ficou menor (ex.: já era pequena), usa a original mesmo — salvo no modo sem metadados (o original tem EXIF)
     if (!semMetadados && blob.size >= file.size) return file
     // no modo sem metadados o nome do aparelho (IMG_0001…) também não vai junto
-    const nome = semMetadados ? 'foto.jpg' : (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg'
-    return new File([blob], nome, { type: 'image/jpeg' })
+    const nome = semMetadados ? (saida === 'image/png' ? 'foto.png' : 'foto.jpg') : (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg'
+    return new File([blob], nome, { type: saida })
   } catch {
     if (semMetadados) throw new Error('Não consegui preparar essa foto. Tente outra (JPG ou PNG). 🙂')
     return file

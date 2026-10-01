@@ -62,6 +62,11 @@ export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 60 } =
   return t // { midia, ext }
 }
 
+// Extensão do que vai de fato para o Storage: a da imagem JÁ PROCESSADA (jpg quando redesenhada em JPEG, png quando PNG foi mantido), nunca a do original.
+function extDaSaida(arquivo, extOriginal) {
+  return { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[arquivo?.type] || extOriginal
+}
+
 // ---- Uploads ----
 // Bucket 'imagens' (avatar, mural, emblema...): valida + comprime e devolve a URL guardada no banco — o formato de sempre
 // (…/object/public/imagens/<caminho>), que front/APK antigos entendem; o bucket é privado depois da migration 32 e quem EXIBE
@@ -70,7 +75,7 @@ export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const tipo = await validarImagem(file)
   const pronta = await comprimirImagem(file, { semMetadados: true })
   // extensão SEMPRE do tipo detectado (jpg se o compressor converteu)
-  const ext = pronta !== file ? 'jpg' : tipo.ext
+  const ext = extDaSaida(pronta, tipo.ext)
   const path = `${pasta}/${nomeBase}.${ext}`
   const { error } = await supabase.storage.from('imagens').upload(path, pronta, { upsert: true })
   if (error) throw new Error('Não foi possível enviar: ' + error.message)
@@ -95,7 +100,7 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   let ext = t.ext
   if (t.midia === 'imagem') {
     pronta = await comprimirImagem(file, { semMetadados: true })
-    if (pronta !== file) ext = 'jpg'
+    ext = extDaSaida(pronta, t.ext)
   }
   // caminho começa com o auth.uid(): é isso que a política do Storage confere
   const path = `${userId}/${tipo}/${Date.now()}.${ext}`

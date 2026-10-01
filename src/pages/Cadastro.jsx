@@ -96,7 +96,7 @@ export default function Cadastro() {
       if (foto && data?.session?.user) {
         const uid = data.session.user.id
         await validarImagem(foto) // tipo REAL + tamanho (hardening etapa 2)
-        const arquivo = await otimizarFoto(foto, FOTO_AVATAR).then((r) => r.arquivo).catch(() => comprimirImagem(foto, { maxLado: 256 }))
+        const arquivo = await otimizarFoto(foto, FOTO_AVATAR).then((r) => r.arquivo).catch(() => comprimirImagem(foto, { maxLado: 256, semMetadados: true }))
         const ext = arquivo.type === 'image/jpeg' ? 'jpg' : arquivo.type === 'image/webp' ? 'webp' : (arquivo.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `perfis/${uid}-${Date.now()}.${ext}`
         const { error: upErr } = await supabase.storage.from('imagens').upload(path, arquivo, { upsert: true })
