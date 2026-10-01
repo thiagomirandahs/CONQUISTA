@@ -13,19 +13,22 @@
 // `x-storage-excluir-secret`; também à mão (curl). "Verify JWT" desligado; a fechadura é o segredo STORAGE_EXCLUIR_SECRET
 // (comparação em tempo constante). Sem segredo configurado, ou errado: 401 e NADA é tocado (falha fechada).
 //
-// Secrets: STORAGE_EXCLUIR_SECRET (o mesmo valor do Vault 'storage_excluir_secret'). SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY vêm sozinhos.
+// Secrets: STORAGE_EXCLUIR_SECRET (o mesmo valor do Vault 'storage_excluir_secret'). SUPABASE_URL vem sozinha; a chave de serviço vem de ../_compartilhado/chaves.ts (secret nova, com fallback legacy).
 // Privacidade nos logs: só contagens; NUNCA caminho do objeto (tem o id da pessoa) nem mensagem de erro da API.
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 import { itemAceitavel, interpretarRemocao } from '../_compartilhado/storage-excluir.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
 const SEGREDO = Deno.env.get('STORAGE_EXCLUIR_SECRET') ?? ''
 
 const LOTE = 8                       // itens por chamada (o resto fica para o próximo ciclo)
 const ORCAMENTO_MS = 100_000         // pára de apagar item novo depois disso (a reserva dos demais expira e eles voltam)
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
+console.log('chaves', resumoDasChaves())
 
 async function igualSeguro(a: string, b: string): Promise<boolean> {
   if (!b) return false

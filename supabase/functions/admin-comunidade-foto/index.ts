@@ -8,14 +8,19 @@
 //   3. só então assina o caminho que a RPC devolveu, com a chave de serviço (o admin não tem leitura direta
 //      nesse bucket), e devolve a URL. A URL/token NUNCA são gravados em lugar nenhum.
 //
-// Segredos: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (injetados por padrão).
+// Chaves: lidas por ../_compartilhado/chaves.ts (SB_SECRET_KEY/SUPABASE_SECRET_KEYS e SB_PUBLISHABLE_KEY/SUPABASE_PUBLISHABLE_KEYS, com fallback
+// para SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY enquanto as legacy existirem). SUPABASE_URL é injetada. Ver EDGE-FUNCTIONS-CHAVES-AUDITORIA.md.
 // Versão do supabase-js FIXADA (função colada no painel, sem lockfile) — mesmo pin das funções de PDF.
 // Para atualizar: mude aqui e rode `npm run test:edge:bundle:pdf` (que empacota esta função também).
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, chavePublica, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave pública do cliente "como o usuário" (o JWT dele vai no Authorization): publishable com fallback anon — ver _compartilhado/chaves.ts
+const ANON_KEY = chavePublica().valor
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
+console.log('chaves', resumoDasChaves(undefined, true))
 
 const TTL_SEGUNDOS = 60
 const UUID_OK = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

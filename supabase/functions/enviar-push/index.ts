@@ -27,17 +27,19 @@
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PUSH_WEBHOOK_SECRET
 //   FCM_SERVICE_ACCOUNT  (JSON da conta de serviço do Firebase; SEM ele o envio nativo é
 //                         simplesmente pulado, e isso é registrado — a rota web continua)
-// (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já são injetados automaticamente.)
+// (SUPABASE_URL é injetada; a chave de serviço vem de ../_compartilhado/chaves.ts: SB_SECRET_KEY/SUPABASE_SECRET_KEYS, com fallback legacy.)
 
 // Versões EXATAS de propósito (a função é colada no painel, não há lockfile): o supabase-js é o mesmo
 // do package-lock do app (src/lib/pushEdgeContrato.test.js confere). Para atualizar: mude aqui, teste, e cole de novo.
 import webpush from 'npm:web-push@3.6.7'
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') ?? ''
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
 const WEBHOOK_SECRET = Deno.env.get('PUSH_WEBHOOK_SECRET') ?? ''
 const FCM_SERVICE_ACCOUNT = Deno.env.get('FCM_SERVICE_ACCOUNT') ?? ''
 
@@ -51,6 +53,7 @@ const TIMEOUT_MS = 10_000
 
 webpush.setVapidDetails('mailto:contato@filhosdaconquista.app', VAPID_PUBLIC, VAPID_PRIVATE)
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE)
+console.log('chaves', resumoDasChaves())
 
 // Comparação em tempo constante via digest SHA-256 (32 bytes fixos): não vaza
 // nem o conteúdo nem o TAMANHO do segredo pelo tempo de resposta.

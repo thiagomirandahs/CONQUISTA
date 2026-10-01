@@ -11,16 +11,19 @@
 // Sem ele (ou errado): 401 e nada é tocado.
 //
 // Secrets: REDE_LIMPEZA_SECRET (o mesmo valor do Vault 'rede_limpeza_secret').
-// SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são injetados automaticamente.
+// SUPABASE_URL é injetada; a chave de serviço vem de ../_compartilhado/chaves.ts (secret nova, com fallback legacy).
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
 const SEGREDO = Deno.env.get('REDE_LIMPEZA_SECRET') ?? ''
 const LOTE = 100          // a API remove até 100 caminhos por chamada com folga
 const MAX_POR_RODADA = 2000
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
+console.log('chaves', resumoDasChaves())
 
 async function igualSeguro(a: string, b: string): Promise<boolean> {
   if (!b) return false

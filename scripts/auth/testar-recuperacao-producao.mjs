@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { obterChavePublica } from '../lib/chaveServico.mjs'
 
 const RAIZ = resolve(import.meta.dirname, '..', '..')
 const linhas = readFileSync(join(homedir(), '.desbravaclube-prod.env'), 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/)
@@ -13,10 +14,9 @@ const env = Object.fromEntries(linhas.map((l) => l.replace(/^export\s+/, '')).fi
 const email = env.TESTE_EMAIL_CONTA
 if (!email) { console.error('Defina TESTE_EMAIL_CONTA (uma conta SUA já existente) no arquivo de ambiente.'); process.exit(2) }
 const REF = readFileSync(join(RAIZ, 'supabase', '.temp', 'project-ref'), 'utf8').trim()
-const resp = await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}` } })
-const keys = await resp.json()
-const anon = (Array.isArray(keys) ? keys : []).find((k) => k.name === 'anon')?.api_key
-if (!anon) { console.error('Não consegui obter a chave pública (anon).'); process.exit(2) }
+// chave PÚBLICA: publishable nova preferida; a anon legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
+let anon
+try { anon = (await obterChavePublica({ ref: REF, token: env.SUPABASE_ACCESS_TOKEN })).valor } catch (e) { console.error('Não consegui obter a chave pública:', e.message); process.exit(2) }
 const destino = encodeURIComponent('https://app.desbravaclube.com.br/nova-senha')
 const r = await fetch(`https://${REF}.supabase.co/auth/v1/recover?redirect_to=${destino}`, {
   method: 'POST', headers: { apikey: anon, 'content-type': 'application/json' }, body: JSON.stringify({ email }),

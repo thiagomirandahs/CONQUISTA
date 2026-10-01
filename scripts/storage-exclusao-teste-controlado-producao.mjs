@@ -10,6 +10,7 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
+import { obterChaveServico, cabecalhosServico } from './lib/chaveServico.mjs'
 
 const DB = process.env.DB_URL_PRODUCAO, TOKEN = process.env.SUPABASE_ACCESS_TOKEN, REF = process.env.PROJECT_REF, SEG_ARQ = process.env.STORAGE_EXCLUIR_SECRET_ARQUIVO
 if (!DB || !TOKEN || !REF || !SEG_ARQ) { console.error('Faltam: DB_URL_PRODUCAO, SUPABASE_ACCESS_TOKEN, PROJECT_REF, STORAGE_EXCLUIR_SECRET_ARQUIVO'); process.exit(2) }
@@ -25,9 +26,10 @@ function psql(sql, { avisos = false } = {}) {
 let ok = 0; const falhas = []
 const detalhado = process.argv.includes('--verbose')
 const t = (nome, cond, det = '') => { if (detalhado) console.log(`  ${cond ? 'ok    ' : 'FALHOU'} ${nome}`); if (cond) ok++; else { falhas.push(nome + (det ? ` [${det}]` : '')); console.log('  FALHOU:', nome, det) } }
-const chaves = await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${TOKEN}` } })).json()
-const SERVICO = chaves.find((k) => k.name === 'service_role')?.api_key
-const H = { Authorization: `Bearer ${SERVICO}`, apikey: SERVICO }
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
+let SERVICO
+try { SERVICO = await obterChaveServico({ ref: REF, token: TOKEN }) } catch (e) { console.error('Sem chave de serviço (somente leitura em memória):', e.message); process.exit(2) }
+const H = cabecalhosServico(SERVICO)
 const JPG = Buffer.concat([Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64'), Buffer.from([0xff, 0xd9])])
 const SYN = randomUUID()
 const criados = []

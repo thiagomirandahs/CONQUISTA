@@ -10,6 +10,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createHash } from 'node:crypto'
+import { obterChaveServico, cabecalhosServico } from './lib/chaveServico.mjs'
 
 const args = process.argv.slice(2)
 const val = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined }
@@ -26,10 +27,11 @@ function psql(sql, { avisos = false } = {}) {
   return avisos ? { linhas, notas: String(r.stderr || '').split(NL).map((l) => l.split(CR).join('')).filter((l) => l.includes('R|')).map((l) => l.slice(l.indexOf('R|') + 2)) } : linhas
 }
 const sha = (b) => createHash('sha256').update(b).digest('hex')
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
 let _k
-const chave = async () => (_k ??= (await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${TOKEN}` } })).json()).find((x) => x.name === 'service_role').api_key)
+const chave = async () => (_k ??= await obterChaveServico({ ref: REF, token: TOKEN }))
 const url = (b, n) => `https://${REF}.supabase.co/storage/v1/object/${encodeURIComponent(b)}/${n.split('/').map(encodeURIComponent).join('/')}`
-async function baixar(b, n) { const k = await chave(); const r = await fetch(url(b, n), { headers: { Authorization: `Bearer ${k}`, apikey: k } }); return r.ok ? Buffer.from(await r.arrayBuffer()) : null }
+async function baixar(b, n) { const k = await chave(); const r = await fetch(url(b, n), { headers: cabecalhosServico(k) }); return r.ok ? Buffer.from(await r.arrayBuffer()) : null }
 const mb = (n) => (n / 1048576).toFixed(1)
 
 const manifesto = JSON.parse(readFileSync(join(PASTA, 'manifesto-gc.json'), 'utf8')).itens
@@ -128,7 +130,7 @@ if (fase === 'lote') {
   const antes = estadoGlobal(); const qAntes = quebradas()
   const k = await chave(); const falhasApi = []
   for (const it of lote) {
-    const r = await fetch(url(it.bucket, it.caminho), { method: 'DELETE', headers: { Authorization: `Bearer ${k}`, apikey: k } })
+    const r = await fetch(url(it.bucket, it.caminho), { method: 'DELETE', headers: cabecalhosServico(k) })
     if (!r.ok) falhasApi.push(`${it.grupo}: HTTP ${r.status}`)
   }
   await new Promise((r) => setTimeout(r, 3000))

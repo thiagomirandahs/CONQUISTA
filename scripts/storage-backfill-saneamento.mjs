@@ -16,6 +16,7 @@ import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { createHash } from 'node:crypto'
 import { classificar, SUPORTADOS } from './lib/analisarImagem.mjs'
+import { obterChaveServico, cabecalhosServico } from './lib/chaveServico.mjs'
 
 const args = process.argv.slice(2)
 const val = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined }
@@ -36,17 +37,14 @@ function psqlSeguro(sql, { stderr = false } = {}) {
 const lin = (s) => (s ? s.split(String.fromCharCode(10)).map((l) => l.split(String.fromCharCode(13)).join('')).filter(Boolean).map((l) => l.split(String.fromCharCode(9))) : [])
 const q = (s) => String(s).replaceAll("'", "''")
 
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
 let _chave
 async function chaveServico() {
-  if (_chave) return _chave
-  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${TOKEN}` } })
-  _chave = (await r.json()).find((k) => k.name === 'service_role')?.api_key
-  if (!_chave) throw new Error('sem chave de serviço (leitura em memória)')
-  return _chave
+  return (_chave ??= await obterChaveServico({ ref: REF, token: TOKEN }))
 }
 async function baixar(bucket, nome) {
   const k = await chaveServico()
-  const r = await fetch(`${BASE}/storage/v1/object/${encodeURIComponent(bucket)}/${nome.split('/').map(encodeURIComponent).join('/')}`, { headers: { Authorization: `Bearer ${k}`, apikey: k } })
+  const r = await fetch(`${BASE}/storage/v1/object/${encodeURIComponent(bucket)}/${nome.split('/').map(encodeURIComponent).join('/')}`, { headers: cabecalhosServico(k) })
   return r.ok ? Buffer.from(await r.arrayBuffer()) : null
 }
 const sha = (b) => createHash('sha256').update(b).digest('hex')

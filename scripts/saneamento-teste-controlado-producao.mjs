@@ -12,6 +12,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { randomUUID, createHash } from 'node:crypto'
+import { obterChaveServico, cabecalhosServico } from './lib/chaveServico.mjs'
 
 const DB = process.env.DB_URL_PRODUCAO, TOKEN = process.env.SUPABASE_ACCESS_TOKEN, REF = process.env.PROJECT_REF
 const SEG_ARQ = process.env.SANEAMENTO_SECRET_ARQUIVO
@@ -26,10 +27,10 @@ function psqlSeguro(sql) {
 const psql = (q) => psqlSeguro(q)
 const psqlArq = (sql) => psqlSeguro(sql)
 
-const chaves = await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${TOKEN}` } })).json()
-const SERVICO = chaves.find((k) => k.name === 'service_role')?.api_key
-if (!SERVICO) { console.error('Sem chave de serviço (somente leitura em memória).'); process.exit(2) }
-const H = { Authorization: `Bearer ${SERVICO}`, apikey: SERVICO }
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
+let SERVICO
+try { SERVICO = await obterChaveServico({ ref: REF, token: TOKEN }) } catch (e) { console.error('Sem chave de serviço (somente leitura em memória):', e.message); process.exit(2) }
+const H = cabecalhosServico(SERVICO)
 
 let ok = 0; const falhas = []
 const t = (nome, cond, det = '') => { if (cond) ok++; else { falhas.push(nome + (det ? ` [${det}]` : '')); console.log('  FALHOU:', nome, det) } }
