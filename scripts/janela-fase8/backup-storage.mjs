@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process'
 const RAIZ = resolve(import.meta.dirname, '..', '..')
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
 const soListar = process.argv.includes('--so-listar')
-const linhas = readFileSync(join(homedir(), '.desbravaclube-prod.env'), 'utf8').replace(/^FEFF/, '').split(/\r?\n/)
+const linhas = readFileSync(join(homedir(), '.desbravaclube-prod.env'), 'utf8').replace(/^﻿/, '').split(/\r?\n/)
 const env = Object.fromEntries(linhas.map((l) => l.replace(/^export\s+/, '')).filter((l) => /^[A-Z_0-9]+=/.test(l))
   .map((l) => [l.split('=')[0], l.slice(l.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '')]))
 const REF = readFileSync(join(RAIZ, 'supabase', '.temp', 'project-ref'), 'utf8').trim()

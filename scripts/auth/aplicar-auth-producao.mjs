@@ -15,7 +15,7 @@ import { join, resolve } from 'node:path'
 
 const RAIZ = resolve(import.meta.dirname, '..', '..')
 const args = new Set(process.argv.slice(2))
-const linhas = readFileSync(join(homedir(), '.desbravaclube-prod.env'), 'utf8').replace(/^FEFF/, '').split(/\r?\n/)
+const linhas = readFileSync(join(homedir(), '.desbravaclube-prod.env'), 'utf8').replace(/^﻿/, '').split(/\r?\n/)
 const env = Object.fromEntries(linhas.map((l) => l.replace(/^export\s+/, '')).filter((l) => /^[A-Z_0-9]+=/.test(l))
   .map((l) => [l.split('=')[0], l.slice(l.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '')]))
 const TOKEN = env.SUPABASE_ACCESS_TOKEN
