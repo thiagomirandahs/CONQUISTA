@@ -19,18 +19,22 @@
 //      pós-assinatura), senão incrementa pdf_versao.
 //
 // Segredos necessários (painel Supabase -> Edge Functions -> Secrets):
-//   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (as três já injetadas por padrão).
+//   SUPABASE_URL (injetada); chaves lidas por ../_compartilhado/chaves.ts (secret/publishable novas, com fallback para service_role/anon legacy).
 //
 // Versões FIXADAS de propósito (função colada no painel, sem lockfile) — mesmo padrão de
 // enviar-push/index.ts. Para atualizar: mude aqui, rode supabase/tests/e2e/edge-bundle-pdf.sh,
 // cole de novo.
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, chavePublica, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1'
 import qrcodeGenerator from 'npm:qrcode-generator@1.5.0'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave pública do cliente "como o usuário" (o JWT dele vai no Authorization): publishable com fallback anon — ver _compartilhado/chaves.ts
+const ANON_KEY = chavePublica().valor
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
+console.log('chaves', resumoDasChaves(undefined, true))
 
 const TITULO_TIPO: Record<string, string> = {
   final: 'Documento Final de Classe',

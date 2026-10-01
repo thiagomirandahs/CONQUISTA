@@ -7,13 +7,15 @@
 // também pode ser chamada à mão (curl) com o mesmo header. "Verify JWT" desligado; a fechadura é o segredo SANEAMENTO_SECRET.
 // Sem o segredo configurado, ou errado: 401 e NADA é tocado (falha fechada).
 //
-// Secrets: SANEAMENTO_SECRET (o mesmo valor do Vault 'saneamento_secret'). SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY vêm sozinhos.
+// Secrets: SANEAMENTO_SECRET (o mesmo valor do Vault 'saneamento_secret'). SUPABASE_URL vem sozinha; a chave de serviço vem de ../_compartilhado/chaves.ts (secret nova, com fallback legacy).
 // Privacidade nos logs: só contagens e códigos de motivo; NUNCA caminho do objeto (tem o id da pessoa) nem conteúdo.
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
+import { chaveServico, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
 import { sanearImagem, MAX_BYTES_PADRAO } from '../_compartilhado/sanear-imagem.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const SUPABASE_URL = urlProjeto()
+// chave de serviço: secret nova (SB_SECRET_KEY / SUPABASE_SECRET_KEYS) com fallback legacy — ver _compartilhado/chaves.ts
+const SERVICE_ROLE = chaveServico().valor
 const SEGREDO = Deno.env.get('SANEAMENTO_SECRET') ?? ''
 
 const LOTE = 8                        // itens reservados por vez
@@ -23,6 +25,7 @@ const ORCAMENTO_BYTES = 24 * 1024 * 1024   // teto de bytes baixados por chamada
 const ORCAMENTO_MS = 100_000               // pára de pegar item novo depois disso
 
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
+console.log('chaves', resumoDasChaves())
 
 async function igualSeguro(a: string, b: string): Promise<boolean> {
   if (!b) return false
