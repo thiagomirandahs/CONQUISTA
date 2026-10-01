@@ -135,3 +135,24 @@ describe('metadados estáticos (index.html, robots, manifest) e URL canônica', 
     expect(vite).toMatch(/short_name: 'DesbravaClube'/)
   })
 })
+
+// SEO: canonical/og:url estáticos do index.html são do SITE; no domínio do app (app.*) o script do index.html os remove.
+describe('index.html: canonical só no site, não no domínio do app', () => {
+  const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8')
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1])
+  const rodar = (hostname) => {
+    document.head.innerHTML = '<link rel="canonical" href="https://desbravaclube.com.br/"><meta property="og:url" content="https://desbravaclube.com.br/">'
+    // eslint-disable-next-line no-new-func
+    for (const codigo of scripts) new Function('location', codigo)({ hostname })
+    return { canonical: !!document.head.querySelector('link[rel="canonical"]'), ogUrl: !!document.head.querySelector('meta[property="og:url"]') }
+  }
+  it('app.desbravaclube.com.br: sem canonical nem og:url', () => {
+    expect(rodar('app.desbravaclube.com.br')).toEqual({ canonical: false, ogUrl: false })
+    expect(rodar('APP.desbravaclube.com.br')).toEqual({ canonical: false, ogUrl: false })
+  })
+  it('site e dev: mantém', () => {
+    expect(rodar('desbravaclube.com.br')).toEqual({ canonical: true, ogUrl: true })
+    expect(rodar('www.desbravaclube.com.br')).toEqual({ canonical: true, ogUrl: true })
+    expect(rodar('localhost')).toEqual({ canonical: true, ogUrl: true })
+  })
+})

@@ -39,6 +39,14 @@
         if (esc) document.documentElement.style.fontSize = esc;
         if (a.alto_contraste === true) document.documentElement.setAttribute('data-contraste', 'alto');
       } catch (e) {}
+      // SEO: o canonical e o og:url estáticos abaixo são do SITE público (desbravaclube.com.br). No domínio do APLICATIVO
+      // (app.*) as páginas não são do site: tira os dois para não apontar o app para a home do site.
+      try {
+        if (/^app\./i.test(location.hostname)) {
+          var c = document.querySelector('link[rel="canonical"]'); if (c) c.remove();
+          var u = document.querySelector('meta[property="og:url"]'); if (u) u.remove();
+        }
+      } catch (e) {}
     </script>
   </head>
   <body>
