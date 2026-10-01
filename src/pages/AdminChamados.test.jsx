@@ -1,6 +1,6 @@
 // /admin → Chamados (migration 290): fila com filtros, detalhe com contexto, nota interna e status.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const f = {
@@ -49,6 +49,25 @@ describe('AdminChamados', () => {
     expect(f.adminChamadosListar).toHaveBeenLastCalledWith('aguardando')
     await u.click(screen.getByRole('button', { name: 'Meus' }))
     expect(f.adminChamadosListar).toHaveBeenLastCalledWith('meus')
+  })
+
+  it('anexo da resposta usa a ZonaUpload: envia o arquivo e limpa depois de responder', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:x'); URL.revokeObjectURL = vi.fn()
+    f.enviarAnexo.mockResolvedValue('u/print.png')
+    const u = userEvent.setup()
+    render(<AdminChamados aoMudarContagem={vi.fn()} />)
+    await u.click(await screen.findByTestId('chamado-item'))
+    await screen.findByText('/planos')
+    const input = screen.getByLabelText('Anexo (opcional)')
+    expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp')
+    const arq = new File(['x'], 'print.png', { type: 'image/png' })
+    fireEvent.change(input, { target: { files: [arq] } })
+    expect(screen.getByTestId('zona-upload-nome')).toHaveTextContent('print.png')
+    await u.type(screen.getByLabelText('Mensagem'), 'Segue o retorno.')
+    await u.click(screen.getByRole('button', { name: 'Enviar resposta' }))
+    expect(f.enviarAnexo).toHaveBeenCalledWith(arq)
+    expect(f.adminChamadoResponder).toHaveBeenCalledWith('c1', expect.objectContaining({ anexo: 'u/print.png' }))
+    expect(screen.getByTestId('zona-upload')).toHaveAttribute('data-estado', 'vazio')
   })
 
   it('detalhe: contexto, nota interna marcada, responder e mudar status', async () => {

@@ -1,7 +1,7 @@
 // Central de chamados (migration 290) — tela do usuário. O servidor decide o acesso; aqui garantimos o
 // fluxo: lista, abrir chamado (com contexto técnico sem segredo), conversa e reabrir.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
@@ -54,6 +54,24 @@ describe('Suporte (usuário)', () => {
     expect(arg).toMatchObject({ categoria: 'duvida', assunto: 'Dúvida X', prioridadeSugerida: null, anexo: null })
     expect(arg.contexto).toMatchObject({ clube: 'Clube Teste', papel: 'desbravador' })
     expect(JSON.stringify(arg.contexto)).not.toMatch(/token|senha|password/i)
+  })
+
+  it('anexo usa a ZonaUpload: tipo inválido avisa e não anexa; imagem válida entra', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:x'); URL.revokeObjectURL = vi.fn()
+    const { avisar } = await import('../ui/avisos.jsx')
+    f.meusChamados.mockResolvedValue([])
+    const u = userEvent.setup()
+    abrir()
+    await u.click(await screen.findByTestId('novo-chamado'))
+    const input = screen.getByLabelText(/Print \(opcional/)
+    expect(input).toHaveAttribute('type', 'file')
+    expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp')
+    fireEvent.change(input, { target: { files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] } })
+    expect(avisar.erro).toHaveBeenCalled()
+    expect(screen.getByTestId('zona-upload')).toHaveAttribute('data-estado', 'vazio')
+    fireEvent.change(input, { target: { files: [new File(['x'], 'tela.png', { type: 'image/png' })] } })
+    expect(screen.getByTestId('zona-upload')).toHaveAttribute('data-estado', 'selecionado')
+    expect(screen.getByTestId('zona-upload-nome')).toHaveTextContent('tela.png')
   })
 
   it('valida campos antes de enviar', async () => {

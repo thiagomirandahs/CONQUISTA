@@ -116,3 +116,31 @@ export function ZonaUpload({ arquivo = null, aoEscolher, aoRemover, estado, prog
     </div>
   )
 }
+
+/**
+ * Botão compacto de envio ("Trocar logo", "📷 Emblema"): a versão pequena da ZonaUpload, para trocar
+ * uma imagem que já aparece na tela. O `<input type="file">` fica sr-only (acessível por teclado e
+ * leitor de tela, ao contrário de `hidden`/display:none), o rótulo inteiro é o alvo de toque (≥ 44px)
+ * e o foco do input desenha o anel no botão (`focus-within`). Limpa o input depois de cada escolha,
+ * para o mesmo arquivo poder ser escolhido de novo.
+ *
+ * @param {object} p
+ * @param {Function} p.aoEscolher        recebe o `File`
+ * @param {import('react').ReactNode} p.children  texto/ícone do botão
+ * @param {string} [p.accept='image/*']
+ * @param {string} [p.capture]
+ * @param {string} [p.rotulo]            nome acessível do input (padrão: o texto do botão)
+ * @param {boolean} [p.desabilitado]
+ */
+export function BotaoUpload({ aoEscolher, children, accept = 'image/*', capture, rotulo, desabilitado = false, className }) {
+  return (
+    <label data-testid="botao-upload"
+      className={juntar('inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold transition',
+        'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
+        desabilitado ? 'pointer-events-none cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-[0.98]', className)}>
+      <input type="file" accept={accept} capture={capture} className="sr-only" disabled={desabilitado} aria-label={rotulo}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) aoEscolher?.(f); e.target.value = '' }} />
+      {children}
+    </label>
+  )
+}

@@ -4,19 +4,20 @@ import userEvent from '@testing-library/user-event'
 
 const rpc = vi.fn()
 vi.mock('../lib/supabase.js', () => ({ supabase: { rpc: (...a) => rpc(...a) } }))
-vi.mock('../services/admin.js', () => ({
-  clubesListar: () => Promise.resolve([
-    { club_id: 'a', nome: 'Clube A', status: 'ativo' },
-    { club_id: 'b', nome: 'Clube B', status: 'ativo' },
-    { club_id: 'c', nome: 'Clube Inativo', status: 'inativo' },
-  ]),
-}))
+const CLUBES = [
+  { club_id: 'a', nome: 'Clube A', status: 'ativo' },
+  { club_id: 'b', nome: 'Clube B', status: 'ativo' },
+  { club_id: 'c', nome: 'Clube Inativo', status: 'inativo' },
+]
+const listar = vi.fn()
+vi.mock('../services/admin.js', () => ({ clubesListar: (...a) => listar(...a) }))
 const confirmar = vi.fn()
 vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), erro: vi.fn(), info: vi.fn(), confirmar: (...a) => confirmar(...a) } }))
 const { default: Todos } = await import('./AdminRedeTodosClubes.jsx')
+const { avisar } = await import('../ui/avisos.jsx')
 
 describe('Admin: Rede DBV em todos os clubes', () => {
-  beforeEach(() => { confirmar.mockReset().mockResolvedValue(true) })
+  beforeEach(() => { confirmar.mockReset().mockResolvedValue(true); listar.mockReset().mockResolvedValue(CLUBES); avisar.erro.mockReset() })
 
   it('libera só nos clubes ativos e mostra quem ficou de fora com o motivo do servidor', async () => {
     rpc.mockReset()
@@ -42,5 +43,15 @@ describe('Admin: Rede DBV em todos os clubes', () => {
     expect(confirmar.mock.calls[0][0].titulo).toMatch(/Desligar/)
     expect(rpc).not.toHaveBeenCalled()
     expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('falha ao listar os clubes: avisa com mensagem humana, não confirma e não toca em nenhum clube', async () => {
+    rpc.mockReset().mockResolvedValue({ error: null })
+    listar.mockRejectedValueOnce(new Error('rede caiu'))
+    render(<Todos />)
+    await userEvent.click(screen.getByTestId('rede-liberar-todos'))
+    expect(avisar.erro).toHaveBeenCalledTimes(1)
+    expect(confirmar).not.toHaveBeenCalled()
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

@@ -8,7 +8,7 @@ import { subirComprovacao } from '../lib/upload.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
-import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -566,7 +566,7 @@ function NovaAtividadeModal({ onFechar, onSalvar, inicial }) {
 }
 
 /* ---------- Modal: entregar atividade ---------- */
-function EntregarModal({ atividade, onFechar, onConfirmar }) {
+export function EntregarModal({ atividade, onFechar, onConfirmar }) {
   const c = atividade.criterios || {}
   const [texto, setTexto] = useState('')
   const [foto, setFoto] = useState(null)
@@ -582,7 +582,7 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
       setFoto(null); setPrevia(null); return
     }
     setFoto(f || null)
-    setPrevia(f ? URL.createObjectURL(f) : null)
+    setPrevia(f?.type?.startsWith('video/') ? URL.createObjectURL(f) : null)
   }
 
   async function confirmar() {
@@ -613,12 +613,10 @@ function EntregarModal({ atividade, onFechar, onConfirmar }) {
           )}
           {(c.foto || c.arquivo) && (
             <Campo label={c.foto ? '📷 Foto ou 🎥 vídeo de comprovação' : '📎 Arquivo'}>
-              <input type="file" accept={c.foto ? 'image/*,video/*' : undefined} className="text-sm w-full" onChange={(e) => escolherFoto(e.target.files?.[0])} />
-              {previa && (previaEhVideo
-                ? <video src={previa} controls playsInline className="mt-2 w-full max-h-56 rounded-lg bg-black" />
-                : <img src={previa} alt="prévia" className="mt-2 w-full max-h-48 object-cover rounded-lg" />)}
-              {foto && !previa && <p className="text-xs text-green-600 mt-1">Anexado: {foto.name}</p>}
-              {c.foto && <p className="text-xs text-faint mt-1">Pode ser foto ou vídeo (até {MAX_MB}MB).</p>}
+              <ZonaUpload rotulo={c.foto ? 'Foto ou vídeo de comprovação' : 'Arquivo'} accept={c.foto ? 'image/*,video/*' : '*/*'}
+                ajuda={c.foto ? `Foto ou vídeo (até ${MAX_MB}MB)` : undefined} arquivo={foto} aoEscolher={escolherFoto}
+                aoRemover={() => escolherFoto(null)} />
+              {previa && previaEhVideo && <video src={previa} controls playsInline className="mt-2 w-full max-h-56 rounded-lg bg-black" />}
             </Campo>
           )}
           {erro && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{erro}</div>}

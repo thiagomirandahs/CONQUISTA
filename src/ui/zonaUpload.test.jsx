@@ -1,7 +1,7 @@
 // ZonaUpload (fase 6.3): os cinco estados, o input escondido mas acessível, remover/trocar.
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ZonaUpload } from './index.jsx'
+import { ZonaUpload, BotaoUpload } from './index.jsx'
 
 beforeAll(() => {
   // jsdom não tem createObjectURL
@@ -83,5 +83,32 @@ describe('ZonaUpload', () => {
     render(<ZonaUpload accept="application/pdf" rotulo="Documento" aoEscolher={() => {}} />)
     expect(screen.getByText('Adicionar arquivo')).toBeInTheDocument()
     expect(screen.getByLabelText('Documento')).toHaveAttribute('accept', 'application/pdf')
+  })
+})
+
+describe('BotaoUpload', () => {
+  it('input sr-only (não hidden), alvo >= 44px e chama aoEscolher com o File', () => {
+    const f = vi.fn()
+    render(<BotaoUpload rotulo="Trocar logo" aoEscolher={f}>Trocar logo</BotaoUpload>)
+    const input = screen.getByLabelText('Trocar logo')
+    expect(input.className).toContain('sr-only')
+    expect(input.className).not.toMatch(/(^|\s)hidden(\s|$)/)
+    expect(screen.getByTestId('botao-upload').className).toContain('min-h-[44px]')
+    const arq = foto()
+    fireEvent.change(input, { target: { files: [arq] } })
+    expect(f).toHaveBeenCalledWith(arq)
+  })
+
+  it('desabilitado trava o input e não aceita toque', () => {
+    render(<BotaoUpload rotulo="Logo" desabilitado aoEscolher={() => {}}>Logo</BotaoUpload>)
+    expect(screen.getByLabelText('Logo')).toBeDisabled()
+    expect(screen.getByTestId('botao-upload').className).toContain('pointer-events-none')
+  })
+
+  it('repassa accept e capture', () => {
+    render(<BotaoUpload rotulo="Foto" accept="image/png" capture="user" aoEscolher={() => {}}>Foto</BotaoUpload>)
+    const i = screen.getByLabelText('Foto')
+    expect(i).toHaveAttribute('accept', 'image/png')
+    expect(i).toHaveAttribute('capture', 'user')
   })
 })

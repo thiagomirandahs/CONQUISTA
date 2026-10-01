@@ -1013,7 +1013,7 @@ function Escolha({ r, podeEditar, onMudou }) {
             const viola = violacoes.has(o.id)
             return (
               <li key={o.id}>
-                <label className="flex items-start gap-2 min-h-[32px]">
+                <label className="flex items-start gap-2 min-h-[44px]">
                   <input type="checkbox" className="mt-0.5 w-5 h-5" aria-label={o.rotulo} checked={cumprida || marcadas.has(o.id)} disabled={cumprida || !podeEditar} onChange={() => alternar(o.id)} />
                   <span className={viola ? 'line-through' : ''}>{o.rotulo}</span>
                   {cumprida && <span className="text-green-700">✨ cumprida pelo seu histórico</span>}

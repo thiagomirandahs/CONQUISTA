@@ -155,16 +155,16 @@ export default function Conheca() {
           </div>
 
           {/* controles */}
-          <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
             <button type="button" onClick={anterior} disabled={atual === 0}
               className={`${BOTAO_NAV} border border-line bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed`}>
               <SetaEsq /> <span>Anterior</span>
             </button>
-            <ol aria-label="Progresso" className="flex items-center gap-1.5">
+            <ol aria-label="Progresso" className="order-last flex w-full items-center justify-center gap-0.5 sm:order-none sm:w-auto sm:gap-1.5">
               {ETAPAS.map((e, i) => (
                 <li key={e.id}>
                   <button type="button" onClick={() => irPara(i)} aria-label={`Ir para a etapa ${e.numero}`} aria-current={i === atual ? 'step' : undefined}
-                    className={`grid h-11 w-8 place-items-center ${FOCO} rounded-full`}>
+                    className={`grid h-11 w-8 place-items-center sm:w-11 ${FOCO} rounded-full`}>
                     <span className={`block rounded-full transition-all ${i === atual ? 'h-2.5 w-6 bg-gold' : 'h-2 w-2 bg-faint/40'}`} />
                   </button>
                 </li>

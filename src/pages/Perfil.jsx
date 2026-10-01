@@ -10,7 +10,7 @@ import EditarNascimento from '../components/EditarNascimento.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
 import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
 import { calcularNivel } from '../lib/nivel.js'
-import { Carregando as Esqueleto, mensagemDeErro, Aviso } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, Aviso, BotaoUpload } from '../ui/index.jsx'
 
 const CHAVE_NIVEL_VISTO = 'nivelVisto'
 
@@ -133,11 +133,10 @@ export default function Perfil() {
         <div className="text-sm text-faint mb-4">{rotuloPapel[meuPapel] || meuPapel}</div>
 
         <div className="flex gap-2 justify-center flex-wrap">
-          <label className={`inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold rounded-xl px-5 py-2.5 cursor-pointer ${enviando ? 'opacity-60 pointer-events-none' : ''}`}>
+          <BotaoUpload rotulo="Trocar foto" aoEscolher={escolher} desabilitado={enviando}
+            className="gap-2 bg-gradient-to-r from-brand to-brand2 shadow-glow text-white px-5">
             {enviando ? 'Enviando…' : '📷 Trocar foto'}
-            <input type="file" accept="image/*" className="hidden" disabled={enviando}
-              onChange={(e) => escolher(e.target.files?.[0])} />
-          </label>
+          </BotaoUpload>
           <button onClick={() => setPersonalizando(true)}
             className="inline-flex items-center gap-2 bg-gold/15 text-amber-700 font-semibold rounded-xl px-5 py-2.5">
             🧑‍🎨 Meu avatar

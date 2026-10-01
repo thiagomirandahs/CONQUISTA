@@ -13,7 +13,8 @@ export default function AdminRedeTodosClubes({ onFeito }) {
   const [resultado, setResultado] = useState(null) // { acao, ok, falhas: [{nome, motivo}] }
 
   async function aplicar(ligar) {
-    const clubes = (await clubesListar()).filter((c) => c.status === 'ativo')
+    let clubes
+    try { clubes = (await clubesListar()).filter((c) => c.status === 'ativo') } catch (e) { avisar.erro(e, 'Não consegui carregar a lista de clubes.'); return }
     const confirmou = await avisar.confirmar(ligar
       ? { titulo: `Liberar a Rede DBV para os ${clubes.length} clubes ativos?`,
           descricao: 'Cada desbravador ainda precisa da autorização do responsável para publicar. Clube cujo plano não inclui a Comunidade fica de fora.',

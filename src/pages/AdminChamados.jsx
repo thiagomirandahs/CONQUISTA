@@ -1,7 +1,7 @@
 // /admin → Chamados: fila da central de suporte (migration 290). NÃO é a aba "Suporte" (acesso de
 // suporte autorizado pelo clube). Toda RPC exige eh_admin_plataforma() no servidor e audita as ações.
 import { useCallback, useEffect, useState } from 'react'
-import { Botao, Aviso, Campo, Selecao } from '../ui/index.jsx'
+import { Botao, Aviso, Campo, Selecao, ZonaUpload } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { Chip, Painel, Linha, EstadoVazio, Esqueleto, FOCO, dataHoraBR } from '../components/admin/AdminUI.jsx'
 import { useTelaLarga } from '../components/admin/Tabela.jsx'
@@ -175,11 +175,8 @@ function DetalheChamado({ id, aoVoltar, aoMudar, doisPaineis = false }) {
                 <Selecao id="ch-status-resp" rotulo="Depois de enviar, status" value={statusResp} onChange={(e) => setStatusResp(e.target.value)}
                   opcoes={[['', 'Aguardando usuário (padrão)'], ['em_andamento', 'Em andamento'], ['resolvido', 'Resolvido']]} />
               )}
-              <div className="mb-3">
-                <label htmlFor="ch-anexo" className="block text-xs font-semibold text-muted mb-1">Anexo (opcional)</label>
-                <input id="ch-anexo" type="file" accept="image/jpeg,image/png,image/webp" className="block w-full min-h-[44px] text-sm"
-                  onChange={(e) => setArquivo(e.target.files?.[0] || null)} />
-              </div>
+              <ZonaUpload className="mb-3" rotulo="Anexo (opcional)" ajuda="Toque para anexar um print (opcional)"
+                accept="image/jpeg,image/png,image/webp" arquivo={arquivo} aoEscolher={setArquivo} aoRemover={() => setArquivo(null)} />
               <Botao tipo="submit" className="w-full" carregando={ocupado} desabilitado={ocupado || !texto.trim()}>
                 {interna ? 'Salvar nota' : 'Enviar resposta'}
               </Botao>

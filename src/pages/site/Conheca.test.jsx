@@ -168,3 +168,16 @@ describe('VideoCurto', () => {
     expect(document.querySelector('video')).toBeNull()
   })
 })
+
+describe('pontos de progresso (mobile, Fase 9)', () => {
+  it('cada ponto tem 44px de altura, quebra para a própria linha no celular e alarga em telas maiores', () => {
+    abrir()
+    const lista = screen.getByRole('list', { name: 'Progresso' })
+    expect(lista.className).toMatch(/\border-last\b/)
+    expect(lista.className).toMatch(/\bw-full\b/)
+    expect(lista.parentElement.className).toMatch(/\bflex-wrap\b/)
+    const pontos = within(lista).getAllByRole('button')
+    expect(pontos).toHaveLength(8)
+    pontos.forEach((b) => { expect(b.className).toMatch(/\bh-11\b/); expect(b.className).toMatch(/sm:w-11/) })
+  })
+})

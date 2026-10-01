@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { useAuth } from '../context/Auth.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
-import { Botao, Campo, Selecao, Aviso, Card, Carregando, Vazio, mensagemDeErro } from '../ui/index.jsx'
+import { Botao, Campo, Selecao, Aviso, Card, Carregando, Vazio, ZonaUpload, mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import {
   CATEGORIAS, ROTULO_CATEGORIA, ROTULO_STATUS_CHAMADO, PRIORIDADES,
@@ -76,17 +76,14 @@ export default function Suporte() {
 
 function CampoAnexo({ arquivo, aoMudar, id = 'anexo' }) {
   return (
-    <div className="mb-3">
-      <label htmlFor={id} className="block text-xs font-semibold text-muted mb-1">Print (opcional, até 3 MB)</label>
-      <input id={id} type="file" accept="image/jpeg,image/png,image/webp"
-        className="block w-full min-h-[44px] text-sm text-ink file:mr-3 file:min-h-[44px] file:rounded-xl file:border-0 file:bg-surface2 file:px-3 file:font-semibold"
-        onChange={(e) => {
-          const f = e.target.files?.[0] || null
+    <div className="mb-3" id={id}>
+      <ZonaUpload rotulo="Print (opcional, até 3 MB)" ajuda="Toque para escolher um print (opcional, até 3 MB)"
+        accept="image/jpeg,image/png,image/webp" arquivo={arquivo} aoRemover={() => aoMudar(null)}
+        aoEscolher={(f) => {
           const msg = validarAnexo(f)
-          if (msg) { avisar.erro(msg); e.target.value = ''; aoMudar(null); return }
+          if (msg) { avisar.erro(msg); aoMudar(null); return }
           aoMudar(f)
         }} />
-      {arquivo && <p className="mt-1 text-xs text-muted">📎 {arquivo.name}</p>}
     </div>
   )
 }

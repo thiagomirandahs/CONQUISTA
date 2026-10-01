@@ -13,7 +13,7 @@ import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, BotaoUpload } from '../ui/index.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -220,10 +220,10 @@ export default function Unidades() {
                       className="flex-1 text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl py-2.5 font-semibold">
                       🚩 Identidade
                     </button>
-                    <label className="flex-1 text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl py-2.5 font-semibold text-center cursor-pointer">
+                    <BotaoUpload rotulo="Emblema da unidade" aoEscolher={(f) => trocarImagem(sel, f)}
+                      className="flex-1 text-brand bg-brand/10 hover:bg-brand/20">
                       📷 Emblema
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && trocarImagem(sel, e.target.files[0])} />
-                    </label>
+                    </BotaoUpload>
                   </div>
                   {erroImagem && <p role="alert" className="text-xs text-rose-600 mb-2">{erroImagem}</p>}
                   {meuPapel === 'diretoria' && <button onClick={() => excluirUnidade(sel)}
@@ -401,10 +401,10 @@ function FormIdentidade({ unidade, onFechar, onSalvar, onTrocarBandeira }) {
           {unidade.bandeira
             ? <ImagemPrivada src={unidade.bandeira} alt="bandeira" className="w-24 h-14 rounded-lg object-cover shadow" />
             : <div className="w-24 h-14 rounded-lg bg-surface2 grid place-items-center text-faint text-2xl">🚩</div>}
-          <label className="text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl px-4 py-2 font-semibold cursor-pointer">
+          <BotaoUpload rotulo={`${unidade.bandeira ? 'Trocar' : 'Enviar'} bandeira`} aoEscolher={onTrocarBandeira}
+            className="text-brand bg-brand/10 hover:bg-brand/20">
             {unidade.bandeira ? 'Trocar' : 'Enviar'} bandeira
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onTrocarBandeira(e.target.files[0])} />
-          </label>
+          </BotaoUpload>
         </div>
 
         <div className="flex gap-2">

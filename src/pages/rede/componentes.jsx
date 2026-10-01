@@ -513,7 +513,7 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
       {post.status === 'em_analise' && <p className={`px-3 pb-1 text-xs ${TXT_SUAVE}`}>Sua foto aparece para todos assim que a diretoria do seu clube aprovar.</p>}
       {post.legenda && !soTexto && <Legenda nome={post.autor?.nome} texto={post.legenda} />}
       {noAr && post.comentarios > 0 && (
-        <button type="button" onClick={() => setComentariosAbertos(true)} className={`px-3 min-h-[36px] text-[13px] ${TXT_SUAVE}`}>
+        <button type="button" onClick={() => setComentariosAbertos(true)} className={`px-3 min-h-[44px] text-[13px] ${TXT_SUAVE}`}>
           Ver {post.comentarios === 1 ? 'o comentário' : `os ${post.comentarios} comentários`}
         </button>
       )}
