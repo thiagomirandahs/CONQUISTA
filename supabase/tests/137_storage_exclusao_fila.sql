@@ -34,6 +34,17 @@ create function t.existe(p_bucket text, p_nome text) returns boolean language sq
 create function t.proc(p_lim int default 20) returns text language sql as $$
   select coalesce(string_agg(bucket || '/' || caminho, ',' order by caminho), '') from public._storage_exclusao_processar(p_lim) $$;
 
+-- processa TUDO que está vencido em lotes (a política limita cada chamada a 8: decisão do dono, Fase 9)
+create function t.tudo() returns table (bucket text, caminho text) language plpgsql as $$
+declare n int; r record;
+begin
+  loop
+    n := 0;
+    for r in select * from public._storage_exclusao_processar(50) loop n := n + 1; bucket := r.bucket; caminho := r.caminho; return next; end loop;
+    exit when n = 0;
+  end loop;
+end $$;
+
 -- ---------- cenário 1: atividade apagada (cascade das entregas) ----------
 select t.obj('comprovacoes', t.id('membro_a') || '/atividades/1000.jpg');
 select t.obj('comprovacoes', t.id('membro_a2b') || '/atividades/2000.jpg');
@@ -258,8 +269,10 @@ update public.storage_exclusao_fila set processar_apos = now() - interval '1 min
 create table t.lote1 (bucket text, caminho text);
 grant all on t.lote1 to public;
 select t.como_service();
-insert into t.lote1 select bucket, caminho from public._storage_exclusao_processar(50);
+insert into t.lote1 select bucket, caminho from t.tudo();
 reset role;
+-- a política limita UMA chamada a no máximo 8 itens
+select t.ok('política: lote_maximo = 8', (public._storage_exclusao_politica() ->> 'lote_maximo')::int = 8);
 select t.eq('lote 1: devolve só o que passou em TUDO (2 da atividade, url+thumb da foto, avatar antigo, arquivo substituído na reenvio do membro_b)',
   (select coalesce(string_agg(bucket || '/' || caminho, ',' order by caminho), '') from t.lote1),
   (select string_agg(x, ',' order by x) from (values
@@ -290,7 +303,7 @@ select t.eq('...os 6 itens estão reservados (10 min)', (select count(*) from pu
 update public.storage_exclusao_fila set reservado_ate = now() - interval '1 minute' where estado = 'pendente' and reservado_ate is not null;
 select t.como_service();
 select t.eq('reserva EXPIRADA volta para o próximo processamento (Edge Function que morreu no meio)',
-  (select count(*) from public._storage_exclusao_processar(50))::text, '6');
+  (select count(*) from t.tudo())::text, '6');
 reset role;
 
 -- =============================================================================
@@ -319,13 +332,13 @@ reset role;
 select t.eq('...tentativas = 1, recuo de ~1h, sem reserva', (select tentativas = 1 and processar_apos > now() + interval '59 minutes' and processar_apos <= now() + interval '61 minutes' and reservado_ate is null
    from public.storage_exclusao_fila where caminho = (select caminho from t.alvo)), true);
 select t.eq('...a mensagem gravada NÃO contém o uuid da pessoa (sem dado pessoal)', (select ultima_mensagem not like '%' || t.id('membro_a')::text || '%' and ultima_mensagem like '%<id>%' from public.storage_exclusao_fila where caminho = (select caminho from t.alvo)), true);
-select t.eq('falha com a fila ainda dentro do recuo: o processador NÃO devolve o item (não martela a API)', (select count(*) from public._storage_exclusao_processar(50) where caminho = (select caminho from t.alvo)), 0::bigint);
+select t.eq('falha com a fila ainda dentro do recuo: o processador NÃO devolve o item (não martela a API)', (select count(*) from t.tudo() where caminho = (select caminho from t.alvo)), 0::bigint);
 -- falhas 2..5: cada uma precisa que o item seja reservado de novo (vence o recuo no teste)
 do $$ declare i int; v_r text;
 begin
   for i in 2 .. 5 loop
     update public.storage_exclusao_fila set processar_apos = now() - interval '1 minute' where caminho = (select caminho from t.alvo);
-    perform count(*) from public._storage_exclusao_processar(50);
+    perform count(*) from t.tudo();
     v_r := public._storage_exclusao_confirmar((select bucket from t.alvo), (select caminho from t.alvo), false, 'erro_api 500');
     insert into t.res (nome, ok, detalhe) values ('falha ' || i || ' -> ' || case when i < 5 then 'pendente' else 'falhou' end, v_r = case when i < 5 then 'pendente' else 'falhou' end, 'obtido=' || v_r);
   end loop;
@@ -336,7 +349,7 @@ select t.eq('...a falha final foi registrada em infra_falhas (não é escondida)
 select t.eq('...infra_falhas não guarda caminho nem uuid', (select count(*) from public.infra_falhas where origem = 'storage/exclusao' and (detalhe like '%perfis/%' or detalhe ~* '[0-9a-f]{8}-[0-9a-f]{4}-')), 0::bigint);
 select t.eq('...o arquivo continua existindo (falha não apaga)', t.existe('imagens', (select caminho from t.alvo)), true);
 select t.como_service();
-select t.eq('item "falhou" não é mais processado sozinho', (select count(*) from public._storage_exclusao_processar(50) where caminho = (select caminho from t.alvo)), 0::bigint);
+select t.eq('item "falhou" não é mais processado sozinho', (select count(*) from t.tudo() where caminho = (select caminho from t.alvo)), 0::bigint);
 select t.eq('confirmar sobre item "falhou" é idempotente (não ressuscita)', public._storage_exclusao_confirmar((select bucket from t.alvo), (select caminho from t.alvo), true, null), 'falhou');
 reset role;
 

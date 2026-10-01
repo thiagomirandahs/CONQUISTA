@@ -30,7 +30,7 @@ language sql immutable set search_path = '' as $$
     'carencia_dias', 7,                 -- tempo na fila antes de poder ser processado (nunca abaixo do mínimo do GC)
     'reserva_minutos', 10,              -- quanto tempo um lote reservado pela Edge Function fica "dela"
     'max_tentativas', 5,                -- falhas da API do Storage antes de virar 'falhou' (visível ao admin)
-    'lote_maximo', 20,
+    'lote_maximo', 8,
     'buckets_elegiveis', jsonb_build_array('imagens', 'comprovacoes', 'comunidade', 'suporte-anexos')
     -- NUNCA elegíveis: publico, parceiros, documentos-emitidos, assinaturas-desenhadas (documento emitido, assinatura, marca)
   );
