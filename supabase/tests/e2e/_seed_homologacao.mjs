@@ -63,8 +63,9 @@ function principal() {
       email_change_token_current, reauthentication_token, is_sso_user, is_anonymous)
     values ${inserts};
 
-    insert into public.profiles (id, nome, papel, status)
-    select id, raw_user_meta_data->>'nome', 'desbravador', 'ativo' from auth.users where email like 'hml-%@teste.local';
+    -- 519: sem nascimento a classe não inicia (idade não verificável). Nascimento de teste = 16 anos (qualquer classe pode ser iniciada).
+    insert into public.profiles (id, nome, papel, status, nascimento)
+    select id, raw_user_meta_data->>'nome', 'desbravador', 'ativo', (current_date - interval '16 years')::date from auth.users where email like 'hml-%@teste.local';
     update auth.users set raw_user_meta_data = jsonb_build_object('nome',
       case email
         ${PESSOAS.map(([k, nome]) => `when 'hml-${k}@teste.local' then '${nome}'`).join('\n        ')}

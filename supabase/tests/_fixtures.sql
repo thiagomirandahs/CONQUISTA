@@ -110,14 +110,14 @@ select t.mk2('suspenso_so_b', 'desbravador', 'suspenso', 'clube_b', 'B1');
 update public.profiles set teste = true
  where id in (t.id('multi_dois_papeis'), t.id('dir_a_membro_b'), t.id('instrutor_2clubes'), t.id('pais_2clubes'), t.id('suspenso_so_b'));
 
-select t.mk('lider_a',       'Lider A',       'diretoria',   'ativo', 'clube_a');
-select t.mk('instrutor_a',   'Instrutor A',   'instrutor',   'ativo', 'clube_a');
+select t.mk('lider_a',       'Lider A',       'diretoria',   'ativo', 'clube_a', null, date '1985-01-01');
+select t.mk('instrutor_a',   'Instrutor A',   'instrutor',   'ativo', 'clube_a', null, date '1985-01-01');
 select t.mk('tesoureiro_a',  'Tesoureiro A',  'tesoureiro',  'ativo', 'clube_a');
-select t.mk('conselheiro_a', 'Conselheiro A', 'conselheiro', 'ativo', 'clube_a', 'A1');
+select t.mk('conselheiro_a', 'Conselheiro A', 'conselheiro', 'ativo', 'clube_a', 'A1', date '1985-01-01');
 select t.mk('membro_a',      'Membro A',      'desbravador', 'ativo', 'clube_a', 'A1', date '2014-05-05');
 select t.mk('membro_a2',     'Membro A2',     'desbravador', 'ativo', 'clube_a', 'A2', date '2013-03-03');
 select t.mk('pais_a',        'Pais A',        'pais',        'ativo', 'clube_a');
-select t.mk('lider_b',       'Lider B',       'diretoria',   'ativo', 'clube_b');
+select t.mk('lider_b',       'Lider B',       'diretoria',   'ativo', 'clube_b', null, date '1985-01-01');
 select t.mk('membro_b',      'Membro B',      'desbravador', 'ativo', 'clube_b', 'B1', date '2014-06-06');
 select t.mk('pais_b',        'Pais B',        'pais',        'ativo', 'clube_b');
 

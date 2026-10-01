@@ -37,7 +37,7 @@ try {
   r = await rpc(tok, 'classe_iniciar', { p_class_id: por.Companheiro.class_id, p_idade: 11 })
   t('burlar: parâmetro extra (p_idade) não existe', r.status >= 400, JSON.stringify(r).slice(0, 120))
 } finally {
-  sql(`update public.profiles set nascimento = null where id = '${meu}'`)
+  sql(`update public.profiles set nascimento = (current_date - interval '16 years')::date where id = '${meu}'`)   // volta ao nascimento do seed (519: sem nascimento a classe não inicia)
 }
 console.log(`\n${ok}/${ok + bad} ok${bad ? ' — ' + bad + ' FALHA(S)' : ' — TUDO OK'}`)
 process.exit(bad ? 1 : 0)

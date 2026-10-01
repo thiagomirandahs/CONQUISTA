@@ -18,6 +18,8 @@ insert into t.ids (chave, id) values
   ('coord', 'e23459f8-deab-4a51-b6a3-f6317aed93a3');
 insert into t.ids (chave, id) select 'clube_b', id from public.organizational_units where slug = 'exercito-da-colina';
 insert into t.ids (chave, id) values ('mc_aluno', '685f0c8b-30dc-431e-b69e-de0b37e82b42');
+-- 519: sem data de nascimento a classe não inicia. Só DENTRO desta transação (rollback): completa quem não tem, para o smoke não depender disso.
+update public.profiles set nascimento = date '1985-01-01' where id in (select id from t.ids) and nascimento is null;
 create function t.req(p text) returns uuid language sql stable security definer as $$
   select r.id from public.class_requirements r join public.class_sections s on s.id = r.section_id join public.classes c on c.id = s.class_id
   join public.curriculum_versions v on v.id = c.curriculum_version_id where r.manifesto_id = p and v.origem = 'oficial' and v.status = 'publicado' $$;

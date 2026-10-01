@@ -3,7 +3,9 @@
 -- 518 só acrescenta a classes_disponiveis(): "bloqueio" ('idade'|'pre_requisito'|null) e "anterior" (true =
 -- a classe é de uma idade anterior à atual: idade_minima < maior idade_minima oficial já alcançada).
 -- Cobre também a segurança do caminho (RPC direto, outro clube, outro usuário, inativos) e o multiclube,
--- e CARACTERIZA (com comentário) comportamentos de hoje que viram decisão de produto (marcados CARACTERIZA).
+-- e CARACTERIZAVA (até a 518) comportamentos que viraram decisão do dono na migration 519 (ver 125_classes_conclusao_entre_clubes):
+--   sem nascimento não matricula; classe concluída em outro clube não é oferecida; iniciada só vale no clube atual.
+-- Este teste foi ajustado à regra nova: as fixtures dão nascimento adulto à liderança (em _fixtures.sql).
 begin;
 \ir _lib.sql
 \ir _curriculo_regular_2026.sql
@@ -80,13 +82,19 @@ select t.eq('B) 40 anos: nenhum teto — as 6 regulares elegíveis, 5 delas ante
 reset role;
 select t.nasce('membro_a', 14);
 
--- ==================== sem nascimento (lider_a): hoje NÃO há trava de idade (caracterização) ====================
+-- ==================== sem nascimento (lider_a): desde a 519 a idade não é verificável => bloqueio 'nascimento' ====================
+-- (antes da 519 era só caracterização: "sem nascimento, sem trava". Decisão do dono: sem data de nascimento não matricula.)
+update public.profiles set nascimento = null where id = t.id('lider_a');
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.eq('CARACTERIZA sem nascimento: Guia elegível, bloqueio nulo e anterior=false (não adivinha idade)', t.d('guia'), 'true|-|false');
-select t.eq('sem nascimento: Amigo elegível, anterior=false', t.d('amigo'), 'true|-|false');
-select t.eq('sem nascimento: a avançada ainda exige a regular (pre_requisito, anterior=false)', t.d('guia_de_exploracao'), 'false|pre_requisito|false');
+select t.eq('sem nascimento (519): Guia bloqueado por nascimento, anterior=false (não adivinha idade)', t.d('guia'), 'false|nascimento|false');
+select t.eq('sem nascimento (519): Amigo também bloqueado por nascimento, anterior=false', t.d('amigo'), 'false|nascimento|false');
+select t.eq('sem nascimento (519): a avançada mostra primeiro o nascimento (a idade vem antes da regular)', t.d('guia_de_exploracao'), 'false|nascimento|false');
 select t.eq('sem nascimento: NENHUMA classe marcada anterior', t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where (c->>'anterior')::boolean$q$), 0);
+select t.eq('sem nascimento (519): o motivo é o pedido amigável',
+  t.txt($q$select c->>'motivo_inelegivel' from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'amigo'$q$),
+  'Informe a data de nascimento para verificar quais classes estão disponíveis.');
 reset role;
+update public.profiles set nascimento = date '1985-01-01' where id = t.id('lider_a');
 
 -- ==================== C) 13 anos inicia Amigo (regular anterior) pelo RPC ====================
 select t.nasce('membro_a2', 13);
@@ -187,12 +195,12 @@ reset role;
 select t.eq('E) ...e a matrícula concluída e a conquista continuam byte a byte iguais (não reabriu)',
   (select md5(mc::text) from public.member_classes mc where mc.id = t.mc('membro_a', 'amigo', 'clube_a')) = (select mc from t.foto_e)
   and (select md5(a::text) from public.curriculum_achievements a where a.member_class_id = t.mc('membro_a', 'amigo', 'clube_a')) = (select ach from t.foto_e), true);
--- CARACTERIZA: conquista de OUTRO clube sem matrícula neste: a classe ainda é oferecida
+-- 519: conquista de OUTRO clube sem matrícula neste: a classe NÃO é mais oferecida (antes da 519: era, e caracterizava duplicar)
 insert into public.curriculum_achievements (usuario_id, tipo, classe_id, club_id_origem, concluida_em)
 values (t.id('membro_a'), 'classe', t.classe('companheiro'), t.id('clube_b'), now() - interval '1 year');
 select t.como('membro_a'); select t.pedir_clube('clube_a');
-select t.eq('CARACTERIZA: Companheiro já CONCLUÍDO em outro clube (só conquista, sem matrícula aqui) ainda é oferecido (o filtro é por matrícula do clube, não por conquista)',
-  t.d('companheiro'), 'true|-|true');
+select t.eq('519: Companheiro já CONCLUÍDO em outro clube (só conquista, sem matrícula aqui) NÃO é mais oferecido (o filtro olha a conquista da pessoa)',
+  t.d('companheiro'), '-');
 reset role;
 
 -- ==================== I) avançada anterior SEM a regular ====================
@@ -226,7 +234,7 @@ update public.profiles set nascimento = (current_date - interval '10 years' + in
 select t.como('conselheiro_a'); select t.pedir_clube('clube_a');
 select t.eq('D) faltando 1 dia para os 10 anos: Amigo ainda bloqueado por idade', t.d('amigo'), 'false|idade|false');
 reset role;
-update public.profiles set nascimento = null where id = t.id('conselheiro_a');
+update public.profiles set nascimento = date '1985-01-01' where id = t.id('conselheiro_a');   -- volta ao adulto da fixture
 
 -- ==================== J) burlar pelo RPC ====================
 select t.como('membro_a'); select t.pedir_clube('clube_a');
@@ -303,7 +311,7 @@ select t.throws('L) responsável (pais) não inicia classe', format($q$select pu
 select t.throws('L) ...nem atribui', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a'), t.classe('amigo')), 'Sem permissão');
 reset role;
 select t.como('instrutor_a'); select t.pedir_clube('clube_a');
-select t.permitido('L) o instrutor do MESMO clube atribui a membro do clube (controle positivo: conselheiro_a, sem nascimento)', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('conselheiro_a'), t.classe('amigo')), 1);
+select t.permitido('L) o instrutor do MESMO clube atribui a membro do clube (controle positivo: conselheiro_a, adulto da fixture)', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('conselheiro_a'), t.classe('amigo')), 1);
 reset role;
 select t.eq('L) ...a matrícula nasceu no clube A', (select count(*) from public.member_classes where usuario_id = t.id('conselheiro_a') and club_id = t.id('clube_a')), 1);
 
@@ -352,16 +360,15 @@ select t.eq('N) no clube B: minhas_classes = Amigo e Companheiro; Companheiro N�
 reset role;
 select t.eq('N) duas matrículas da MESMA Amigo (uma por clube), ids diferentes',
   (select count(distinct id) from public.member_classes where usuario_id = t.id('multi_dois_papeis') and class_id = t.classe('amigo')), 2);
--- CARACTERIZA (risco/decisão do dono, NÃO alterado aqui): a dependência 'iniciada_ou_concluida' da avançada olha
--- member_classes da PESSOA em QUALQUER clube (sem filtro por club_id) e a conclusão é por conquista da pessoa.
--- Logo: a regular iniciada só no clube B libera a avançada no clube A, onde a pessoa NÃO tem a regular ativa.
+-- 519 (decisão do dono): a regular apenas INICIADA no clube B NÃO libera a avançada no clube A (iniciada só vale no clube atual).
+-- Antes da 519 isto era CARACTERIZADO como liberado (dependência olhava member_classes da pessoa em qualquer clube).
 update public.member_classes set status = 'cancelada' where id = t.mc('multi_dois_papeis', 'amigo', 'clube_a');
 select t.como('multi_dois_papeis'); select t.pedir_clube('clube_a');
-select t.eq('CARACTERIZA N) sem Amigo ativa no A (cancelada), mas com Amigo iniciada no B, a avançada Amigo da Natureza está LIBERADA no A', t.d('amigo_da_natureza'), 'true|-|true');
-select t.permitido('CARACTERIZA N) ...e classe_iniciar a inicia no clube A', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo_da_natureza')), 1);
+select t.eq('519 N) sem Amigo ativa no A (cancelada), com Amigo iniciada só no B: a avançada NÃO está liberada no A', t.d('amigo_da_natureza'), 'false|pre_requisito|true');
+select t.throws('519 N) ...e classe_iniciar recusa a avançada no clube A', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo_da_natureza')), 'Comece a classe Amigo primeiro');
 reset role;
-select t.eq('CARACTERIZA N) a avançada ficou em_andamento no A sem regular ativa no A', (select count(*) from public.member_classes where usuario_id = t.id('multi_dois_papeis') and club_id = t.id('clube_a') and class_id = t.classe('amigo_da_natureza') and status = 'em_andamento'), 1);
-select t.eq('CARACTERIZA N) a regra de dependência não recebe club_id (assinatura: usuario, classe, modo)',
+select t.eq('519 N) ...e nenhuma avançada nasceu no A', (select count(*) from public.member_classes where usuario_id = t.id('multi_dois_papeis') and club_id = t.id('clube_a') and class_id = t.classe('amigo_da_natureza')), 0);
+select t.eq('N) a assinatura de 3 argumentos da regra de dependência foi mantida (usa o clube atual)',
   pg_get_function_identity_arguments('public._dependencia_de_classe_satisfeita(uuid,uuid,text)'::regprocedure), 'p_usuario_id uuid, p_depende_de_id uuid, p_modo text');
 select t.eq('518: os helpers não têm execute para anon nem authenticated',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in ('_classe_bloqueio_tipo', '_classe_eh_anterior')

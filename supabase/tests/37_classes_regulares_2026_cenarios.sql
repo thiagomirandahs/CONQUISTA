@@ -60,7 +60,15 @@ select t.eq('elegibilidade: idade_minima vem do manifesto (Amigo=10 … Guia=15;
 select t.throws('elegibilidade: membro_a (12) NÃO inicia Pioneiro (13)', format($q$select public.classe_iniciar(%L)$q$, t.classe('pioneiro')), 'a partir de 13 anos');
 select t.permitido('elegibilidade: membro_a inicia Amigo', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo')));
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.permitido('sem nascimento cadastrado NÃO há bloqueio (não inventa): lider_a inicia Guia', format($q$select public.classe_iniciar(%L)$q$, t.classe('guia')));
+-- 519: a fixture dá nascimento adulto (1985) à liderança; antes da 519 "sem nascimento" não travava, agora trava.
+select t.permitido('liderança adulta (nascimento 1985, sem limite máximo de idade) inicia Guia', format($q$select public.classe_iniciar(%L)$q$, t.classe('guia')));
+reset role;
+update public.profiles set nascimento = null where id = t.id('lider_a');
+select t.como('lider_a'); select t.pedir_clube('clube_a');
+select t.throws('519: SEM nascimento cadastrado a idade não é verificável: lider_a NÃO inicia Amigo', format($q$select public.classe_iniciar(%L)$q$, t.classe('amigo')), 'Informe a data de nascimento');
+reset role;
+update public.profiles set nascimento = date '1985-01-01' where id = t.id('lider_a');
+select t.como('lider_a'); select t.pedir_clube('clube_a');
 select t.throws('a liderança também não atribui classe abaixo da idade (membro_a → Excursionista)', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a'), t.classe('excursionista')), 'a partir de 14 anos');
 select t.throws('nem atribui o piloto', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a'), t.id('classe_piloto')), 'não encontrada');
 reset role;
