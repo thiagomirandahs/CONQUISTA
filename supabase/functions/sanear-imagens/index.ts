@@ -17,7 +17,7 @@ const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const SEGREDO = Deno.env.get('SANEAMENTO_SECRET') ?? ''
 
 const LOTE = 8                        // itens reservados por vez
-const MAX_LOTES = 5                   // até 40 itens por chamada; o resto fica para o próximo ciclo do cron
+const MAX_LOTES = 1                   // 1 lote por chamada = no máximo 8 itens a cada 10 min (decisão do dono, Fase 9); o resto fica para o próximo ciclo
 const MAX_BYTES_POR_ITEM = MAX_BYTES_PADRAO
 const ORCAMENTO_BYTES = 24 * 1024 * 1024   // teto de bytes baixados por chamada (CPU/memória da Edge Function)
 const ORCAMENTO_MS = 100_000               // pára de pegar item novo depois disso
