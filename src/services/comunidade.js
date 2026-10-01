@@ -106,6 +106,18 @@ export const responsavelImagem = (desbravadorId, desligar) =>
 // ---- plataforma ----
 export const adminPainel = () => rpc('admin_comunidade_painel')
 export const adminModerar = (tipo, id, acao, motivo = null) => rpc('admin_comunidade_moderar', { p_tipo: tipo, p_id: id, p_acao: acao, p_motivo: motivo })
+// Foto de um item da Comunidade para o admin da plataforma (migration 530): o admin NÃO lê o bucket direto. A Edge
+// Function admin-comunidade-foto pede autorização à RPC admin_comunidade_foto_assinar (que confere o contexto e grava
+// EXATAMENTE 1 linha de log por chamada) e só então assina uma URL de 60 s. Cada chamada = 1 registro: só chame no clique.
+export async function adminFotoUrl(tipo, id) {
+  const { data, error } = await supabase.functions.invoke('admin-comunidade-foto', { body: { tipo, id } })
+  if (error) {
+    const corpo = await error.context?.json?.().catch(() => null)
+    throw new Error(corpo?.erro || error.message)
+  }
+  if (!data?.url) throw new Error('Não foi possível abrir a foto agora.')
+  return data.url
+}
 export const adminTermos = () => rpc('admin_comunidade_termos')
 export const adminSalvarTermo = ({ termo, modo = 'exata', categoria = 'ofensa', ativo = true }) =>
   rpc('admin_comunidade_termo_salvar', { p_termo: termo, p_modo: modo, p_categoria: categoria, p_ativo: ativo })

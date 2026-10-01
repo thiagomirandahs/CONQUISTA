@@ -1,9 +1,31 @@
 import { useCallback, useEffect, useState } from 'react'
-import { adminPainel, adminModerar, adminTermos, adminSalvarTermo, adminRemoverTermo, tempoRelativo } from '../services/comunidade.js'
+import { adminPainel, adminModerar, adminTermos, adminSalvarTermo, adminRemoverTermo, adminFotoUrl, tempoRelativo } from '../services/comunidade.js'
 import { avisar } from '../ui/avisos.jsx'
 import { Aviso, Botao, Campo, Card, Carregando, Selecao, Selo, mensagemDeErro } from '../ui/index.jsx'
 import AdminDesafiosRede from './AdminDesafiosRede.jsx'
 import AdminRedeTodosClubes from './AdminRedeTodosClubes.jsx'
+
+// Foto do item: NUNCA carrega sozinha. Cada toque em "Ver foto" pede uma URL de 60 s ao servidor, que confere o contexto
+// (Comunidade em análise/denunciada) e registra EXATAMENTE 1 acesso no log da plataforma.
+function FotoDoItem({ item }) {
+  const [url, setUrl] = useState(null)
+  const [abrindo, setAbrindo] = useState(false)
+  async function ver() {
+    setAbrindo(true)
+    try { setUrl(await adminFotoUrl(item.tipo, item.id)) }
+    catch (err) { avisar.erro(err, 'Não consegui abrir a foto.') }
+    finally { setAbrindo(false) }
+  }
+  if (url) {
+    return (
+      <div className="mt-1">
+        <img src={url} alt="Foto em análise" className="max-h-64 rounded-lg" onError={() => setUrl(null)} />
+        <Botao variacao="discreto" aoTocar={() => setUrl(null)}>Fechar foto</Botao>
+      </div>
+    )
+  }
+  return <Botao variacao="discreto" aoTocar={ver} desabilitado={abrindo} data-testid={`ver-foto-${item.id}`}>{abrindo ? 'Abrindo…' : 'Ver foto (fica registrado)'}</Botao>
+}
 
 // Admin da PLATAFORMA → Comunidade: números, fila de todos os clubes (primeiro nome + clube), o que a
 // triagem bloqueou (dígitos mascarados) e a LISTA DE TERMOS editável. Tudo auditado no servidor.
@@ -65,6 +87,7 @@ export default function AdminComunidade() {
                 <p className="text-sm"><span className="font-bold text-ink">{i.autor}</span> <span className="text-muted">· {i.clube} · {tempoRelativo(i.criado_em)}</span></p>
                 {i.texto && <p className="text-sm text-ink break-words">{i.texto}</p>}
                 {i.denuncias > 0 && <Selo tom="perigo">🚩 {i.denuncias}</Selo>} {i.status === 'em_analise' && <Selo tom="atencao">Foto em análise</Selo>}
+                {i.foto && (i.tipo === 'post' || i.tipo === 'story') && <FotoDoItem item={i} />}
                 <div className="flex gap-2 mt-1">
                   {i.status === 'em_analise'
                     ? <><Botao variacao="secundario" aoTocar={() => decidir(i, 'aprovar_foto')}>Aprovar</Botao><Botao variacao="perigo" aoTocar={() => decidir(i, 'recusar_foto')}>Recusar</Botao></>
