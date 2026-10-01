@@ -3,6 +3,7 @@
 // suspensão, denúncia, foto só depois da diretoria). Aqui: chamadas às RPCs e a foto, que é SEMPRE
 // redesenhada e comprimida no aparelho (WebP/JPEG, ≤ 1080 px, alvo 150 KB, sem EXIF/GPS).
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { validarImagem as validarImagemReal } from '../lib/imagens/validar.js'
 import { PERFIS } from '../lib/imagens/perfis.js'
@@ -98,6 +99,7 @@ export async function publicarStory({ foto, texto, clubeId, userId }) {
   const path = `${clubeId}/${userId}/${novoId()}.${ext}`
   const { error } = await supabase.storage.from(BUCKET).upload(path, foto.arquivo, { upsert: false, contentType: foto.arquivo.type })
   if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)
+  solicitarSaneamento(BUCKET, path)
   let r
   try {
     r = await rpc('rede_story_publicar', { p_foto_path: path, p_texto: texto || null })
@@ -141,6 +143,7 @@ export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, alca
     path = `${clubeId}/${userId}/${novoId()}.${ext}`
     const { error } = await supabase.storage.from(BUCKET).upload(path, foto.arquivo, { upsert: false, contentType: foto.arquivo.type })
     if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)
+    solicitarSaneamento(BUCKET, path)
   }
   let r
   try {

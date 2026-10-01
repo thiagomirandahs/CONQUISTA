@@ -1,5 +1,6 @@
 // Serviço: mural — extraído de lib/dados.js (verbatim, sem mudar queries/regras).
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { comprimirImagem } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
 
@@ -39,6 +40,8 @@ export async function adicionarFoto({ file, evento, legenda, autorId }) {
     supabase.storage.from('imagens').upload(pathThumb, mini, { upsert: true }),
   ])
   if (upCheia.error) throw upCheia.error
+  solicitarSaneamento('imagens', pathCheia)
+  if (!upThumb.error) solicitarSaneamento('imagens', pathThumb)
 
   const url = supabase.storage.from('imagens').getPublicUrl(pathCheia).data.publicUrl
   // Se a miniatura falhar, o grid cai pra foto cheia (thumb = null) — não trava o envio.

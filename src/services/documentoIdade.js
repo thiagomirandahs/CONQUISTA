@@ -4,6 +4,7 @@
 //  * não entra no histórico de tentativas; só o dono e o avaliador do clube veem;
 //  * depois da aprovação o arquivo é APAGADO (por quem aprovou e, de reserva, pelo app do dono).
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { comprimirImagem } from '../lib/imagem.js'
 
@@ -31,6 +32,7 @@ export async function enviarDocumento({ requirementId, file, userId }) {
   const path = `${userId}/documentos/${Date.now()}.jpg`
   const { error } = await supabase.storage.from('comprovacoes').upload(path, pronta, { upsert: false, contentType: 'image/jpeg' })
   if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)
+  solicitarSaneamento('comprovacoes', path)
   let r
   try {
     r = await rpc('documento_enviar', { p_requirement_id: requirementId, p_path: path })

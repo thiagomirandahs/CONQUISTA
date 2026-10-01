@@ -1,5 +1,6 @@
 // Serviço: usuarios — extraído de lib/dados.js.
 import { supabase } from '../lib/supabase.js'
+import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { comprimirImagem, otimizarFoto, FOTO_AVATAR } from '../lib/imagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
@@ -207,6 +208,7 @@ export async function atualizarFotoPerfil({ userId, file }) {
   const path = `perfis/${userId}-${Date.now()}.${ext}`
   const { error: upErr } = await supabase.storage.from('imagens').upload(path, file, { upsert: true })
   if (upErr) throw new Error('Não foi possível enviar a foto: ' + upErr.message)
+  solicitarSaneamento('imagens', path)
   const { data: pub } = supabase.storage.from('imagens').getPublicUrl(path)
   const { data: sessao } = await supabase.auth.getSession()
   const { error } = sessao?.session?.user?.id === userId
