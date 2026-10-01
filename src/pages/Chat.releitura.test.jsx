@@ -66,6 +66,9 @@ afterEach(() => { vi.restoreAllMocks() })
 async function abrirChat() {
   render(<Chat />)
   await screen.findByText('primeira', {}, { timeout: 5000 })
+  // o texto já está na tela, mas o efeito que recria o relógio/ouvintes com o conversaId novo roda DEPOIS do commit: sem esta espera
+  // o teste pode disparar o relógio/foco ANTES (ainda com o conversaId nulo do primeiro render) e ver 0 chamadas — corrida do teste, vista sob CPU saturada
+  await act(async () => {})
 }
 
 describe('Chat: reforço do tempo real', () => {
