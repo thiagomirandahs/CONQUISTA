@@ -28,6 +28,10 @@
 #    bash supabase/tests/run-tests.sh 03_responsavel  # só o(s) teste(s) indicado(s)
 #
 #  Variáveis: SUPABASE_DB_CONTAINER (padrão supabase_db_CONQUISTA), REPLAY_DB (padrão replay_test)
+#
+#  ATENÇÃO — NÃO RODE ao mesmo tempo que `npm run test:edge:chaves-novas`: o clone derruba as conexões do
+#  banco "postgres" e invalida o E2E (e o E2E suja o modelo do clone). Rode UM de cada vez. Uma trava
+#  (supabase/tests/_trava-docker-local.sh) aborta com exit 4 se o outro estiver em andamento.
 # =============================================================================
 set -uo pipefail
 export MSYS_NO_PATHCONV=1   # Git Bash (Windows) não pode reescrever /tmp/... dos caminhos do container
@@ -45,7 +49,7 @@ while [ $# -gt 0 ]; do
     --keep) KEEP=1 ;;
     --upgrade) UPGRADE=1 ;;
     --db) DB="$2"; shift ;;
-    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,36p' "$0"; exit 0 ;;
     *) ONLY+=("$1") ;;
   esac
   shift
@@ -60,6 +64,11 @@ WROOT="$(cygpath -w "$ROOT" 2>/dev/null || echo "$ROOT")"   # docker cp (nativo 
 PSQL=(docker exec -i -e CQ_DIR="$CQ_DIR" -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U postgres -X -q -v ON_ERROR_STOP=1)
 ADMIN=(docker exec -i -e PGOPTIONS="-c client_min_messages=warning" "$CONT" psql -U supabase_admin -X -q -v ON_ERROR_STOP=1)  # superusuário local (derrubar sessões, clonar plataforma)
 
+# trava contra execução concorrente com o E2E de chaves (mesmo Supabase local)
+. "$ROOT/supabase/tests/_trava-docker-local.sh"
+travar_docker_local replay
+trap liberar_trava_docker_local EXIT
+
 docker inspect "$CONT" >/dev/null 2>&1 || { echo "ERRO: container '$CONT' não existe/roda. Suba o Supabase local (Docker) antes."; exit 2; }
 [ "$(docker inspect -f '{{.State.Running}}' "$CONT")" = "true" ] || { echo "ERRO: container '$CONT' parado."; exit 2; }
 
@@ -68,7 +77,7 @@ reabrir_postgres() { "${ADMIN[@]}" -d template1 -c "alter database postgres allo
 
 if [ "$REPLAY" = 1 ]; then
   echo "==> [1/4] Clonando a plataforma do Postgres local para o banco isolado '$DB'"
-  trap reabrir_postgres EXIT
+  trap 'reabrir_postgres; liberar_trava_docker_local' EXIT
   "${ADMIN[@]}" -d template1 >/dev/null <<SQL || { echo "ERRO ao clonar o banco"; exit 2; }
 alter database postgres allow_connections false;
 select pg_terminate_backend(pid) from pg_stat_activity
@@ -77,7 +86,7 @@ drop database if exists $DB with (force);
 create database $DB template postgres owner postgres;
 alter database postgres allow_connections true;
 SQL
-  trap - EXIT
+  trap liberar_trava_docker_local EXIT
 
   echo "==> [2/4] Limpando o clone (public vazio, ledger/auth/storage zerados)"
   "${ADMIN[@]}" -d "$DB" >/dev/null <<'SQL' || { echo "ERRO ao limpar o clone"; exit 2; }
