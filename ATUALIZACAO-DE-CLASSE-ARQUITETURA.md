@@ -128,3 +128,6 @@ Sem texto de evidência, comentário, nome de avaliador ou caminho de arquivo. A
 
 ## 7. Decisões que dependem do dono
 D1 quem pode solicitar/aceitar a atualização (só liderança, ou a própria pessoa também); D2 obrigatoriedade e prazo vindos do catálogo; D3 rascunho de requisito `refazer`; D4 quem classifica editorial/equivalente/material no manifesto (fonte oficial/OMD ou decisão registrada) antes de qualquer ação.
+
+## 5. Achado colateral CORRIGIDO (migration 523)
+A duplicidade do §4 (Amigo 2026.3 em andamento + início da 2026.4 no mesmo clube) foi fechada na 523: matrícula não cancelada de classe EQUIVALENTE (mesmo código oficial, qualquer versão) no MESMO clube bloqueia a oferta (`classes_disponiveis`) e o início/atribuição com mensagem clara. Não migra nada, não toca matrículas existentes; cancelada não bloqueia; outro clube não é afetado. Teste 129.
