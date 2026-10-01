@@ -5,6 +5,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { subirComprovacao } from '../lib/upload.js'
+import { registrarEntregaAtividade } from '../services/entregasAtividade.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
@@ -157,12 +158,9 @@ export default function Atividades() {
     if (dados.foto) {
       fotoUrl = await subirComprovacao({ file: dados.foto, tipo: 'atividades', userId: profile?.id, permitirVideo: true })
     }
-    // upsert: primeira entrega = insere; reenvio (após reprovar) = volta pra 'pendente'
-    const { error } = await supabase.from('entregas').upsert({
-      atividade_id: atividade.id, usuario_id: profile?.id,
-      texto: dados.texto || null, foto_url: fotoUrl, status: 'pendente', feedback: null,
-    }, { onConflict: 'atividade_id,usuario_id' })
-    if (error) throw new Error(error.message)
+    // Se o registro falhar, o arquivo recém-enviado é descartado (services/entregasAtividade.js): senão cada toque
+    // de "tentar de novo" deixava uma cópia órfã no Storage.
+    await registrarEntregaAtividade({ atividadeId: atividade.id, userId: profile?.id, texto: dados.texto, fotoUrl })
     setEntregando(null)
     carregar()
   }

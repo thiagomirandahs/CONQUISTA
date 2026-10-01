@@ -41,26 +41,128 @@ const CORRELACAO = correlacaoDaAba()
 export const idDeCorrelacao = () => CORRELACAO
 
 // Extrai um CÓDIGO curto e sem dado de ninguém a partir do erro. É a peça que decide o que sai
-// daqui: se não casar com um padrão conhecido, vai só o nome do tipo do erro — nunca o texto.
+// daqui: nada de texto livre — só código, nome de tipo, status HTTP, rótulo de uma lista fechada ou
+// uma impressão digital (hash) da mensagem.
+//
+// Por que existe tanta regra (investigação de 01/10/2026): 7 de 8 erros do dia chegaram como
+// "Desconhecido". Causas: (1) o erro de regra de negócio do servidor (RAISE EXCEPTION) vem com
+// SQLSTATE `P0001`, que NENHUM padrão antigo reconhecia (só 2xxxx/4xxxx/5xxxx); (2) `new Error('...')`
+// gerado na própria tela tem name 'Error'; (3) rejeições com valor que não é Error (string, objeto,
+// Event, undefined) e "Script error." de origem cruzada não têm nem name nem code.
 const PADROES = [
   /\b(PGRST\d{3})\b/,          // PostgREST
   /\b(2[0-9A-Z]{4})\b/,        // SQLSTATE (42501 = permissão negada, 23505 = duplicado...)
   /\b(4[0-9A-Z]{4})\b/,
   /\b(5[0-9A-Z]{4})\b/,
 ]
+// SQLSTATE completo: 5 caracteres [0-9A-Z]. Inclui P0001 (RAISE EXCEPTION), 22P02, 23505, 42501, 57014...
+const SQLSTATE = /^[0-9A-Z]{5}$/
+const PGRST = /^PGRST\d{3}$/
+
+// Rótulos de uma lista FECHADA para mensagens conhecidas e sem dado de pessoa.
+const ROTULOS = [
+  [/^Script error\.?$/i, 'ScriptErrorCrossOrigin'],
+  [/ResizeObserver loop/i, 'ResizeObserver'],
+  [/dynamically imported module|module script failed|ChunkLoadError|Loading chunk|CSS chunk|Importing a module script failed|error loading dynamically/i, 'ChunkLoad'],
+  [/failed to fetch|network ?error|load failed|network request failed|ERR_INTERNET_DISCONNECTED|ERR_NETWORK/i, 'RedeIndisponivel'],
+  [/timed? ?out|timeout/i, 'Timeout'],
+  [/aborted|AbortError/i, 'Abortado'],
+  [/QuotaExceeded/i, 'ArmazenamentoCheio'],
+  [/JWT|refresh token|not authenticated|session (expired|missing)/i, 'SessaoInvalida'],
+  [/permission denied|NotAllowedError|SecurityError/i, 'PermissaoNegada'],
+  [/Non-Error promise rejection/i, 'RejeicaoNaoError'],
+]
+// TypeError/ReferenceError do MOTOR JS: o texto cita nome de variável/propriedade, nunca valor. Só
+// formas conhecidas passam, e com o identificador limitado — o resto cai no hash.
+const MOTOR = [
+  [/Cannot read propert(?:y|ies) of (undefined|null) \(reading '([\w$]{1,30})'\)/, (m) => `leitura:${m[1]}.${m[2]}`],
+  [/Cannot set propert(?:y|ies) of (undefined|null) \(setting '([\w$]{1,30})'\)/, (m) => `escrita:${m[1]}.${m[2]}`],
+  [/(?:^|\s)([\w$.]{1,40}) is not a function/, (m) => `naofuncao:${m[1]}`],
+  [/(?:^|\s)([\w$.]{1,40}) is not defined/, (m) => `naodefinido:${m[1]}`],
+  [/(?:^|\s)([\w$.]{1,40}) is not iterable/, (m) => `naoiteravel:${m[1]}`],
+]
+
+// Impressão digital da mensagem (djb2, 6 hex): agrupa erros iguais e permite conferir contra uma
+// mensagem conhecida (quem tem o texto calcula o hash), sem gravar o texto. Dígitos e uuids
+// são normalizados antes: "linha 3" e "linha 7" são o mesmo erro.
+export function impressaoDaMensagem(texto) {
+  const norm = String(texto || '')
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '#')
+    .replace(/\d+/g, '#')
+    .slice(0, 300)
+  let h = 5381
+  for (let i = 0; i < norm.length; i++) h = ((h * 33) ^ norm.charCodeAt(i)) >>> 0
+  return h.toString(16).padStart(8, '0').slice(0, 6)
+}
+
+function rotuloDaMensagem(msg) {
+  for (const [re, rotulo] of ROTULOS) if (re.test(msg)) return rotulo
+  return ''
+}
+
 export function codigoDoErro(erro) {
-  if (!erro) return ''
-  const bruto = typeof erro === 'string' ? erro : (erro.code || erro.message || '')
+  if (erro === undefined || erro === null || erro === '') return 'SemDetalhe'
+  // 1) texto puro (ex.: `message` do window.onerror quando não há objeto de erro)
+  if (typeof erro === 'string') {
+    return rotuloDaMensagem(erro) || `Texto#${impressaoDaMensagem(erro)}`
+  }
+  // 2) valor que não é objeto (número, boolean, símbolo...): só o TIPO
+  if (typeof erro !== 'object' && typeof erro !== 'function') return `Rejeicao:${typeof erro}`
+  // 3) Event do DOM (falha de recurso, CloseEvent, ProgressEvent...): só o tipo do evento
+  if (typeof Event !== 'undefined' && erro instanceof Event) {
+    const alvo = erro.target?.tagName ? `:${String(erro.target.tagName).slice(0, 12)}` : ''
+    return `Evento:${String(erro.type || '?').slice(0, 20)}${alvo}`
+  }
+  // 4) código explícito do servidor (PostgREST / SQLSTATE) ou status HTTP
+  const code = typeof erro.code === 'string' ? erro.code.trim() : ''
+  if (PGRST.test(code) || SQLSTATE.test(code)) return code
+  const status = Number(erro.status ?? erro.statusCode ?? erro.context?.status)
+  const http = Number.isInteger(status) && status >= 100 && status <= 599 ? `HTTP${status}` : ''
+  const nome = typeof erro.name === 'string' ? erro.name.slice(0, 40) : ''
+  if (http) return nome && nome !== 'Error' ? `${nome}:${http}`.slice(0, 80) : http
+  const msg = typeof erro.message === 'string' ? erro.message : ''
+  // 5) o que o texto da mensagem entrega por FORMA
   for (const p of PADROES) {
-    const m = String(bruto).match(p)
+    const m = (code || msg).match(p)
     if (m) return m[1]
   }
-  // sem código reconhecido: o NOME do tipo (TypeError, NetworkError...). Nunca a mensagem —
-  // "duplicate key value violates unique constraint ... (email)=(alguem@x.com)" já vazaria.
-  const nome = (erro && erro.name) || ''
-  if (nome && nome !== 'Error') return String(nome).slice(0, 40)
-  if (/fetch|network|failed to fetch/i.test(String(bruto))) return 'RedeIndisponivel'
+  const rotulo = rotuloDaMensagem(msg)
+  if (rotulo) return nome && nome !== 'Error' && !rotulo.startsWith(nome) ? `${nome}:${rotulo}`.slice(0, 80) : rotulo
+  // 6) erro do motor JS, só em formas conhecidas
+  if (nome === 'TypeError' || nome === 'ReferenceError' || nome === 'RangeError') {
+    for (const [re, fmt] of MOTOR) {
+      const m = msg.match(re)
+      if (m) return `${nome}:${fmt(m)}`.slice(0, 80)
+    }
+    return msg ? `${nome}#${impressaoDaMensagem(msg)}` : nome
+  }
+  // 7) nome do tipo (NetworkError, StorageApiError...) — nunca a mensagem
+  if (nome && nome !== 'Error') return msg ? `${nome}#${impressaoDaMensagem(msg)}`.slice(0, 80) : nome
+  // 8) Error genérico (ex.: validação feita pela própria tela): impressão digital, não o texto
+  if (msg) return `Erro#${impressaoDaMensagem(msg)}`
   return 'Desconhecido'
+}
+
+// Onde o erro nasceu: `arquivo.js:linha:coluna` do primeiro quadro do stack (nomes de bundle têm hash
+// de build, o que de quebra identifica a VERSÃO). Sem URL, sem querystring, sem dado de pessoa.
+export function localDoErro(erro) {
+  const stack = typeof erro?.stack === 'string' ? erro.stack : ''
+  const m = stack.match(/([\w.-]{1,60}\.(?:m?js|jsx)):(\d+):(\d+)/)
+  return m ? `${m[1]}:${m[2]}:${m[3]}` : ''
+}
+
+// Versão do front que enviou o erro (data+sha do commit, a mesma do OTA). Vai junto do agente.
+function versaoDoFront() {
+  try { return typeof __OTA_VERSAO__ === 'string' ? __OTA_VERSAO__.slice(0, 20) : '' } catch { return '' } // eslint-disable-line no-undef
+}
+export function agenteComVersao(ua = '', versao = versaoDoFront()) {
+  const v = versao ? ` v${versao}` : ''
+  return `${String(ua || '').slice(0, 120 - v.length)}${v}`
+}
+
+function contextoComLocal(contexto, local) {
+  const base = String(contexto || '')
+  return (local ? `${base.slice(0, 200 - local.length - 4)} [${local}]` : base).slice(0, 200)
 }
 
 // A rota sem querystring nem fragmento: `/avaliar/uuid-de-alguem?foo=1` vira `/avaliar/uuid...`.
@@ -73,9 +175,10 @@ let ligado = false
 let enviando = 0
 const TETO_POR_CARGA = 20 // espelha o teto do servidor: um laço quebrado não vira mil chamadas
 
-// Envia sem nunca atrapalhar: falha de telemetria é engolida de propósito. O produto não pode
+// Envia sem nunca atrapalhar (erro com `esperado: true` — validação da própria tela — não é registrado): falha de telemetria é engolida de propósito. O produto não pode
 // quebrar porque o registro de erro não foi.
-export async function reportarErro(erro, { origem = 'ui', contexto = '' } = {}) {
+export async function reportarErro(erro, { origem = 'ui', contexto = '', local = '' } = {}) {
+  if (erro && typeof erro === 'object' && erro.esperado === true) return // validação da própria tela: não é falha
   if (enviando >= TETO_POR_CARGA) return
   enviando++
   try {
@@ -85,9 +188,9 @@ export async function reportarErro(erro, { origem = 'ui', contexto = '' } = {}) 
       p_origem: origem,
       p_correlacao: CORRELACAO,
       p_rota: rotaAtual(),
-      p_contexto: String(contexto || '').slice(0, 200),
+      p_contexto: contextoComLocal(contexto, origem === 'ui' ? '' : (local || localDoErro(erro))),
       p_codigo: codigoDoErro(erro),
-      p_agente: String(navigator.userAgent || '').slice(0, 120),
+      p_agente: agenteComVersao(navigator.userAgent),
     })
   } catch { /* telemetria nunca atrapalha o produto */ }
 }
@@ -104,7 +207,7 @@ export async function reportarArranque({ codigo, contexto }) {
     p_rota: '/abertura',
     p_contexto: String(contexto || '').slice(0, 200),
     p_codigo: String(codigo || '').slice(0, 80),
-    p_agente: String(navigator.userAgent || '').slice(0, 120),
+    p_agente: agenteComVersao(navigator.userAgent),
   })
   if (error) throw error
 }
@@ -114,7 +217,10 @@ export function ligarObservabilidade() {
   if (ligado || typeof window === 'undefined') return
   ligado = true
   window.addEventListener('error', (e) => {
-    reportarErro(e?.error || e?.message, { origem: 'janela', contexto: 'Erro não tratado na tela.' })
+    // sem objeto de erro (script de outra origem, falha de recurso) o `message` é o que sobra; o
+    // arquivo:linha:coluna do próprio evento diz onde foi.
+    const local = e?.filename ? `${String(e.filename).split('?')[0].split('/').pop().slice(0, 60)}:${e.lineno || 0}:${e.colno || 0}` : ''
+    reportarErro(e?.error || e?.message || e, { origem: 'janela', contexto: 'Erro não tratado na tela.', local })
   })
   window.addEventListener('unhandledrejection', (e) => {
     reportarErro(e?.reason, { origem: 'promessa', contexto: 'Operação falhou sem tratamento.' })
