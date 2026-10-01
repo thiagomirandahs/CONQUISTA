@@ -1,5 +1,5 @@
 // Pontos de envio ligados ao saneamento do servidor (migration 529): DEPOIS do upload, melhor-esforço, nunca bloqueiam.
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const upload = vi.fn(async () => ({ error: null }))
 const rpc = vi.fn(async () => ({ data: { ok: true }, error: null }))
@@ -50,6 +50,15 @@ describe('Rede: foto de post e de story pedem saneamento do arquivo que subiu', 
 })
 
 describe('Suporte: anexo', () => {
+  // o anexo agora é REDESENHADO antes de subir (nunca o original com EXIF/GPS): jsdom não tem canvas, então simulamos um
+  beforeEach(() => {
+    const criar = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation((tag) => (tag === 'canvas'
+      ? { width: 0, height: 0, getContext: () => ({ drawImage: vi.fn() }), toBlob: (cb, tipo) => cb(new Blob([new Uint8Array(8)], { type: tipo })) }
+      : criar(tag)))
+    globalThis.createImageBitmap = vi.fn(async () => ({ width: 10, height: 10, close: vi.fn() }))
+  })
+  afterEach(() => { vi.restoreAllMocks(); delete globalThis.createImageBitmap })
   it('enfileira <uid>/<uuid>.<ext> no bucket suporte-anexos e devolve o caminho', async () => {
     const caminho = await enviarAnexo(new File([new Uint8Array(20)], 'p.png', { type: 'image/png' }))
     const [c] = chamadasDeSaneamento()
