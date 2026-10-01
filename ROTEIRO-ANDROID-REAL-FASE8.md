@@ -78,3 +78,14 @@ Não há botão de atualizar matrícula nesta versão (parada consciente, ver `A
 
 ### K. Trilha
 Abra a **Trilha** (Rede/Jornada): carrega sem travar, sem rolagem lateral, sem tela branca ao voltar do segundo plano.
+
+### L. Inscrição com confirmação de e-mail em OUTRO navegador (correção nova — só dá para provar com e-mail real)
+1. No celular A, abra o link/QR de inscrição (`…/entrar?codigo=…`) → **Criar minha conta** (ou escolha o clube na lista do cadastro) → "confirme seu e-mail".
+2. Abra o e-mail de confirmação em OUTRO navegador/aparelho (B) e confirme.
+3. No aparelho B (ou A), entre pelo `/login` **sem** usar o link de novo: o app deve criar sozinho o pedido **PENDENTE** no clube certo (sem digitar o código) e mostrar "pedido enviado".
+4. Código vencido/clube indisponível: mensagem amigável e cai em "Entrar com código". Diretoria aprova em Aprovações; nunca ativo sozinho.
+5. Recuperar senha: o e-mail leva a `https://app.desbravaclube.com.br/nova-senha` e a troca funciona (depende da Redirect URL no painel — ver relatório).
+
+### M. Conclusão sem duplicidade
+Pessoa com matrícula em andamento no clube A e registro de conclusão anterior feito pelo clube B: ao investir no A aparece "Conclusão já reconhecida (registro anterior em <clube>, dd/mm/aaaa)" e **não** nasce segunda conquista (Minha Jornada mostra uma só).
+

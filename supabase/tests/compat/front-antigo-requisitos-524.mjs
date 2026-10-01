@@ -30,6 +30,9 @@ r = await rpc(ins, 'requisito_avaliar', { p_member_requirement_id: mrId, p_decis
 r = await rpc(kid, 'requisito_historico', { p_member_requirement_id: mrId }); t('front antigo: requisito_historico traz tentativas com as chaves antigas + relato', r.status === 200 && (r.corpo?.tentativas || []).length >= 1 && 'relato' in r.corpo.tentativas[0] && 'tentativa_numero' in r.corpo.tentativas[0], JSON.stringify(r).slice(0, 140))
 const mcId = sql(`select mc.id from public.member_classes mc join auth.users u on u.id = mc.usuario_id where u.email = 'hml-desbravador@teste.local' and mc.class_id = '${amigo}'`)
 r = await rpc(kid, 'minha_classe', { p_member_class_id: mcId }); t('front antigo: minha_classe responde (requisitos ganham relato)', r.status === 200, JSON.stringify(r).slice(0, 100))
+r = await rpc(kid, 'minhas_classes'); const mcs = Array.isArray(r.corpo) ? r.corpo : []
+t('front antigo: minhas_classes mantém as chaves antigas (525 só acrescenta conclusao_reconhecida/reconhecimento)', r.status === 200 && mcs.length > 0 && ['member_class_id', 'class_id', 'codigo', 'nome', 'status', 'iniciada_em', 'concluida_em', 'percentual'].every((k) => k in mcs[0]) && 'conclusao_reconhecida' in mcs[0], JSON.stringify(r).slice(0, 140))
+r = await rpc(kid, 'classe_conclusao_reconhecida', { p_member_class_id: mcId }); t('front novo: classe_conclusao_reconhecida responde (reconhecida:false sem conquista prévia)', r.status === 200 && r.corpo?.reconhecida === false, JSON.stringify(r).slice(0, 120))
 r = await rpc(kid, 'classes_disponiveis'); t('front antigo: classes_disponiveis responde', r.status === 200 && Array.isArray(r.corpo), '')
 sql(`delete from public.requirement_approvals where member_requirement_id = '${mrId}'`)
 console.log(`\n${ok}/${ok + bad} ok${bad ? ' — ' + bad + ' FALHA(S)' : ' — TUDO OK'}`)
