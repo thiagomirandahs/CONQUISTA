@@ -8,7 +8,7 @@
 //  - coresHardcoded: hex (#rrggbb) em className/style fora de src/lib e dos arquivos de tokens.
 //  - botoesGradienteAvulsos: `from-brand to-brand2` escrito à mão em vez de <Botao>.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative, sep } from 'node:path'
+import { join, sep } from 'node:path'
 
 export const RAIZ_SRC = 'src'
 
@@ -64,7 +64,7 @@ export function alvosPequenos(arquivos = listarFontes()) {
       if (!CLICAVEL.test(bruta) || /sr-only|min-h-\[44px\]|min-h-11|min-h-12|min-h-\[4[5-9]px\]|min-h-\[[5-9]\d+px\]/.test(bruta)) return
       // ícones/imagens dentro do botão (h-5 w-5) não são o alvo de toque
       const l = bruta.replace(/<(?:Icone|svg|img|Avatar[A-Za-z]*)\s[^>]*>/g, '')
-      const h = [...l.matchAll(/(?<![-\w])h-(\d+(?:\.\d+)?)(?![\d\w\[])/g)].map((m) => Number(m[1]) * 4)
+      const h = [...l.matchAll(/(?<![-\w])h-(\d+(?:\.\d+)?)(?![\d\w[])/g)].map((m) => Number(m[1]) * 4)
       const mh = [...l.matchAll(/min-h-\[(\d+)px\]/g)].map((m) => Number(m[1]))
       const pequeno = [...h, ...mh].filter((px) => px < 44)
       if (pequeno.length) achados.push({ arquivo: arq, linha: i + 1, px: Math.min(...pequeno) })
