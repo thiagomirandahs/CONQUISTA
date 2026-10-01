@@ -15,7 +15,7 @@ set -uo pipefail
 export MSYS_NO_PATHCONV=1
 N="${1:-}"
 ORDEM=(514 516 515 517 518 519 520 521 522 523 524 525 526 527)
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && (pwd -W 2>/dev/null || pwd))"
 LOGS="$HOME/.desbravaclube-backups/janela-fase8"; mkdir -p "$LOGS"
 [ -n "$N" ] || { echo "uso: aplicar-migration.sh <514|516|515|...|527>"; exit 2; }
 POS=-1; for i in "${!ORDEM[@]}"; do [ "${ORDEM[$i]}" = "$N" ] && POS=$i; done
@@ -48,6 +48,7 @@ done
 echo "== PRÉ: leitura geral + impressão digital do Tenant 001 (salvas em $LOGS)"
 P -f "$ROOT/scripts/janela-fase8/00-pre-leitura.sql" > "$LOGS/$N-pre-leitura.txt" 2>&1
 P -f "$ROOT/supabase/tests/e2e/_impressao_tenant001.sql" > "$LOGS/$N-tenant001-antes.txt" 2>&1
+grep -q "psql: erro" "$LOGS/$N-pre-leitura.txt" "$LOGS/$N-tenant001-antes.txt" && { echo "FALHA: leituras pré não rodaram (arquivo SQL ilegível). PARE antes de gravar."; exit 7; }
 wc -l "$LOGS/$N-pre-leitura.txt" "$LOGS/$N-tenant001-antes.txt" | sed 's/^/   /'
 
 if [ "${CONFIRMO_JANELA_FASE8:-}" != "SIM" ]; then
