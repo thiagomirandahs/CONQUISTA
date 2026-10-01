@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { m as motion } from 'framer-motion'
+import { ZonaUpload } from '../ui/index.jsx'
 import { codigoDoRetorno, CHAVE_METADADO, CHAVE_METADADO_CLUBE, slugValido } from '../lib/entradaDoCadastro.js'
 import { lerTokenConvite, limparConviteDaUrl } from '../lib/convite.js'
 import { clubesDaVitrine } from '../services/vitrine.js'
@@ -182,11 +183,9 @@ export default function Cadastro() {
         <form onSubmit={cadastrar} className="space-y-3.5">
           <Campo label="Nome completo" type="text" value={form.nome} onChange={(v) => set('nome', v)} placeholder={ehPai ? 'Seu nome (do responsável)' : 'Seu nome'} />
           <div>
-            <label htmlFor="cadastro-foto" className="block text-sm font-medium text-ink mb-1">Foto de perfil</label>
-            <input id="cadastro-foto" type="file" accept="image/*" onChange={(e) => setFoto(e.target.files?.[0] || null)} className="text-sm w-full text-muted" />
-            <p className="text-xs text-faint mt-1">
-              {foto ? `Selecionada: ${foto.name}` : 'Ajuda líderes e colegas a te reconhecerem 😊 (opcional)'}
-            </p>
+            <span className="block text-sm font-medium text-ink mb-1">Foto de perfil</span>
+            <ZonaUpload rotulo="Foto de perfil" ajuda="Ajuda líderes e colegas a te reconhecerem 😊 (opcional)"
+              arquivo={foto} aoEscolher={setFoto} aoRemover={() => setFoto(null)} />
           </div>
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
           <Campo label="Senha (mín. 8, com letras e números)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
