@@ -108,3 +108,68 @@ Todos recebem o caminho do próprio fluxo do app (não da fila) e dependem das p
 4. **Gatilho em mais tabelas** (ex.: `suporte_mensagens`, evidências em andamento): hoje só as 6 de arquivo "próprio e sem histórico".
 5. **Rechecagem final por item** antes do `remove()` (fecha a janela de segundos): aceitável hoje; opcional.
 6. **Chave de rotação do segredo** `STORAGE_EXCLUIR_SECRET`: seguir o padrão de `SEGURANCA-ROTACAO-DE-CHAVES.md`.
+
+## 9. Migration 533 — lacunas que a 532 não cobria (Fase 9, 01/10/2026, só local, NÃO publicada)
+
+Arquivo: `supabase/migrations/20260930000533_storage-exclusao-lacunas.sql`. **Aditiva**: não cria tabela, não altera nenhuma função/gatilho/RPC da 532 nem do app, não faz backfill, não apaga nada. Reutiliza a fila, a política (carência 7 dias, lote máximo 8, 4 buckets elegíveis), `_storage_exclusao_enfileirar`, `_storage_exclusao_processar` (revalida tudo, inclusive o histórico imutável) e `_storage_exclusao_confirmar`; a exclusão física continua só na Edge Function `storage-excluir`. O caminho vem sempre do valor OLD guardado no banco; não existe RPC de enfileiramento.
+
+### 9.1 Lacunas cobertas (cada uma comprovada no schema/RPC/front)
+
+| Tabela.coluna | Evento que deixa o arquivo órfão (evidência) | Gatilho 533 | Dono da linha |
+|---|---|---|---|
+| `member_requirements.evidencia_path` | `requisito_salvar` faz `evidencia_path = coalesce(p_evidencia_path, evidencia_path)` (troca a foto; `src/services/classes.js` envia foto nova a cada salvar); DELETE por cascata (matrícula/usuário/clube) | UPDATE OF + DELETE | `usuario_id` |
+| `member_requirements.rascunho_anexos` (jsonb `[{path,...}]`) | `requisito_relatorio_salvar` regrava a lista inteira (`rascunho_anexos = coalesce(p_anexos,'[]')`, migrations 510/514): anexo removido da lista fica órfão | UPDATE OF + DELETE | `usuario_id` |
+| `member_specialty_requirements.evidencia_path` / `rascunho_anexos` | idem, `especialidade_requisito_salvar` / `especialidade_requisito_relatorio_salvar` (511/514) | UPDATE OF + DELETE | `usuario_id` |
+| `experiences.imagem_path` | `experiencia_salvar` troca o caminho (`coalesce(...)`, 049); DELETE de experiência; `experiencia_nova_versao` copia o mesmo caminho (por isso o processador mantém o que a cópia ainda usa) | UPDATE OF + DELETE | `criado_por` |
+| `experience_submissions.arquivo_path` | **`experiencia_etapa_enviar` faz UPSERT** (`on conflict (participation_id, stage_id, ocorrencia) do update set arquivo_path = excluded.arquivo_path`, 049 linha 988): reenviar a etapa troca o arquivo; DELETE por cascata da experiência/participação | UPDATE OF + DELETE | `usuario_id` |
+| `suporte_mensagens.anexo_path` | **`suporte_rotina()` (cron `suporte-rotina`, ativo) apaga chamado `fechado` há 2+ anos** e as mensagens vão em cascata; exclusão de conta (`auth.users` cascade) também; o cabeçalho da 290 já avisava "o arquivo do anexo fica órfão" | só DELETE (mensagem nunca é editada) | `autor_id` |
+
+**Correção da análise anterior** (`FASE9-PRIVACIDADE-MIDIA-ANALISE.md` §9 dizia "nenhum update/delete" para `experience_submissions.arquivo_path` e `suporte_mensagens.anexo_path`): estava errada. A busca por `update` não enxergou o **upsert** de `experiencia_etapa_enviar`, e a busca por `delete` não enxergou o expurgo de `suporte_rotina()` nem a cascata de conta. Por isso as duas entraram (não é mecanismo hipotético: os dois fluxos existem hoje). Nada ficou em "SEM FLUXO ATUAL" por esse critério.
+
+### 9.2 Como funciona
+
+- Função nova `_storage_exclusao_gatilho_jsonb()` (a `_storage_exclusao_gatilho` publicada na 532 não foi tocada). Argumentos: coluna do dono + `'coluna:bucket'` (texto) ou `'coluna[]:bucket'` (array jsonb de `{path}`).
+- Enfileira só o que estava no OLD e **não está em nenhuma coluna vigiada da linha nova** (comparação por `bucket/caminho` normalizado: caminho puro e URL pública do mesmo arquivo são o mesmo arquivo); no DELETE, tudo que estava no OLD. O caminho **novo nunca entra**; a mesma foto regravada não enfileira; o mesmo arquivo nas duas colunas (foto + anexo) gera uma linha só; trocar de novo antes da carência cai no upsert da 532 (mesma linha, `processar_apos` nunca encurta).
+- Não faz a varredura "o valor ainda está em outra linha da tabela" que a 532 faz (seria seq scan numa tabela quente): essa checagem fica toda no processador, que consulta o catálogo (`_storage_referencias`) na hora de excluir. Efeito: mais itens entram na fila e viram `mantido:referenciado` (ex.: foto já ENVIADA que sai do rascunho, protegida pelo histórico `requirement_submissions`); nenhum é excluído por engano.
+- Gatilhos de UPDATE são `AFTER UPDATE OF <colunas> ... WHEN (old.col is distinct from new.col)`: o autosave que regrava o mesmo valor, e qualquer update de outra coluna, **nem executam a função**.
+- Falha para o lado seguro: dono nulo/diferente (`dono_confere = false`) = o processador mantém (`mantido:dono_diferente`). Imagem de experiência sem `criado_por`, ou criada por outra liderança que não o criador, fica órfã de propósito.
+- O gatilho nunca falha a operação do usuário (erro engolido + `infra_falhas`), como na 532.
+
+### 9.3 O que continua fora (monitorar)
+
+- Nenhuma coluna de arquivo conhecida ficou sem cobertura. Seguem fora, por desenho: `comprovacoes_documento.evidencia_path` (a foto do documento já é apagada pelo app depois da conferência, migration 380), `curriculum_achievements.comprovante_path` (histórico), buckets `publico`/`parceiros`/`documentos-emitidos`/`assinaturas-desenhadas` (protegidos) e os 88 órfãos antigos (GC existente).
+- **Monitorar**: se aparecer UI que grave `experiences.imagem_path` (hoje nenhuma tela do `src/` grava; só a RPC aceita o campo), definir a convenção de pasta `<uid>/experiencias/...` para o dono conferir; sem isso a maioria das imagens trocadas ficará `mantido:dono_diferente`.
+- `suporte_mensagens`: o primeiro expurgo real só ocorre 2 anos depois dos primeiros chamados fechados (central de chamados nasceu em 09/2026); a cobertura está pronta e testada com a rotina real.
+
+### 9.4 Ordem de publicação
+
+1. Aplicar a **migration 533** (única etapa). A Edge Function `storage-excluir`, o secret, o Vault e o cron já são os da 532; **nada mais para publicar**. Pré-condição: 532 aplicada (produção está nela). Sem 533, nada muda; com 533 e cron desligado, a fila só acumula itens (inofensivo).
+2. Ligar o cron continua sendo a decisão do dono (§8 item 2), agora cobrindo também essas tabelas.
+3. Front: nenhuma mudança (compatível com o front de HEAD e com o publicado 62c3665: nenhuma assinatura de RPC mudou; ver 9.6).
+
+### 9.5 Riscos e custo (medido, banco local, 2000 updates em `member_requirements`, transação com rollback)
+
+| Cenário (N = 2000) | com gatilho | sem gatilho | extra por update |
+|---|---|---|---|
+| autosave: rascunho muda, anexos/foto iguais (WHEN corta) | 113 ms | 184 ms | ~0 (ruído) |
+| update de coluna não vigiada (`updated_at`) | 569 ms | 622 ms | ~0 (ruído) |
+| **pior caso**: cada update troca a foto (enfileira o antigo) | 1344 ms | 339 ms | **+0,50 ms** |
+| cada update troca 1 de 2 anexos | 1482 ms | 504 ms | **+0,49 ms** |
+
+Leitura: o caso comum (salvar rascunho sem trocar arquivo) não paga nada; trocar arquivo custa ~0,5 ms por save (um upsert na fila). Em DELETE em cascata o custo é por linha apagada (limpeza de clube grande enfileira N linhas de uma vez; carência de 7 dias dilui o processamento). A fila cresce com itens `mantido`/`excluido` (linhas pequenas, sem dado pessoal); considerar purga de `excluido/mantido` antigos no futuro. Cada save de rascunho continua gravando `member_requirements` como já gravava (a 533 não adiciona escrita quando nada muda).
+
+Outros riscos: (a) o `UPDATE OF ... WHEN` depende de o app gravar a coluna; migrations futuras que tragam novas colunas de arquivo precisam do gatilho (o teste 135 já cobra o catálogo, a 138 conta os gatilhos); (b) volume de `mantido:referenciado` por fotos já enviadas — esperado.
+
+### 9.6 Testes e compatibilidade
+
+- SQL **138** (`supabase/tests/138_storage_exclusao_lacunas.sql`, 99 asserts, estável em 3 execuções seguidas; derrubar um gatilho faz ~51 asserts falharem): troca/remoção/DELETE por tabela, array jsonb (item removido, reordenado, trocado, esvaziado, não-array), mesma foto em URL, não duplica nem encurta, histórico imutável, voltou a ser referenciado (mesma linha e outra linha), forjado (arquivo de outro usuário, UUID inexistente, dono nulo), bucket protegido por URL, objeto ausente/novo, carência, lote máximo 8 (12 itens → 8 | 4 | 0), reserva sem duplicidade, idempotência, falha da Edge Function (recuo, 5ª = `falhou` + `infra_falhas`), gatilho que nunca derruba a operação, expurgo real do suporte (`suporte_rotina()`), upsert real de etapa de experiência. Foto trocada pela RPC real `requisito_salvar`.
+- E2E real local `npm run test:storage-exclusao-533:e2e` (28 verificações, função na porta 54397): arquivo antigo some fisicamente, novo permanece; voltou a ser referenciado / outra linha / tentativa enviada / forjado NÃO somem; DELETE da linha; limpeza final com 0 objetos, 0 fila e 0 `infra_falhas`. Os E2E 532 (34) e saneamento (45) seguem verdes.
+- Compatibilidade: a 533 só cria 2 funções internas novas e 9 gatilhos (nenhuma assinatura de RPC do app muda). `contrato-rpc-front.mjs` com o `src` de HEAD (338 RPCs) e com o front publicado 62c3665 (337 RPCs) contra o banco com 533: todas existem; `npm run test:compat:front-antigo` 11/11, 15/15, 12/12.
+
+### 9.7 Decisões do dono (533)
+
+1. Aprovar a 533 como está (cobre as 6 colunas acima) e a ordem "só migration".
+2. **Imagem de experiência**: aceitar o dono = `criado_por`, e definir a pasta `<uid>/experiencias/` quando houver tela de upload.
+3. **Suporte**: confirmar que o anexo deve sair junto com o expurgo de 2 anos (e na exclusão de conta); alternativa é manter o arquivo (sem gatilho).
+4. Aceitar que arquivo **enviado** (histórico) nunca é apagado pela fila, só o rascunho abandonado.
+5. Purga futura de linhas `excluido`/`mantido` da fila (hoje não há).
