@@ -8,7 +8,7 @@
 // banco — o que deixou de ser órfão no meio do caminho não é apagado.
 //
 // Uso (a chave de serviço vem do ambiente; nunca fica no repositório):
-//   SUPABASE_URL=https://xxx.supabase.co SERVICE_ROLE_KEY=... node scripts/limpar-comprovacoes-orfas.mjs
+//   SUPABASE_URL=https://xxx.supabase.co SB_SECRET_KEY=... node scripts/limpar-comprovacoes-orfas.mjs   (SERVICE_ROLE_KEY legacy ainda aceita)
 //   ... node scripts/limpar-comprovacoes-orfas.mjs --dias 14 --apagar
 import { createClient } from '@supabase/supabase-js'
 
@@ -17,9 +17,10 @@ const apagar = args.includes('--apagar')
 const iDias = args.indexOf('--dias')
 const dias = Math.max(7, iDias >= 0 ? Number(args[iDias + 1]) || 7 : 7)
 const url = process.env.SUPABASE_URL
-const chave = process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+// SB_SECRET_KEY (sb_secret_…, a chave nova) tem prioridade; as variáveis da service_role legacy continuam aceitas só como transição
+const chave = process.env.SB_SECRET_KEY || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!url || !chave) {
-  console.error('Defina SUPABASE_URL e SERVICE_ROLE_KEY no ambiente.')
+  console.error('Defina SUPABASE_URL e SB_SECRET_KEY (ou, na transição, SERVICE_ROLE_KEY) no ambiente.')
   process.exit(2)
 }
 const sb = createClient(url, chave, { auth: { persistSession: false } })
