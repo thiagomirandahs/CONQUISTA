@@ -409,6 +409,10 @@ verify_jwt = false
 [functions.storage-excluir]
 verify_jwt = false
 
+# Chamada pelo cron (pg_net) sem JWT de usuario: a fechadura e o segredo x-rede-limpeza-secret (REDE_LIMPEZA_SECRET); sem ele a funcao responde 401. NAO publicar antes da janela das Edge Functions/chaves.
+[functions.limpar-fotos-rede]
+verify_jwt = false
+
 [functions.gerar-documento-pdf]
 verify_jwt = true
 

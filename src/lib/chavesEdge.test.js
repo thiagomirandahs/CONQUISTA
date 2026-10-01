@@ -125,14 +125,27 @@ describe('as 7 Edge Functions leem chaves SÓ pelo helper (contrato)', () => {
       expect(src).toMatch(/createClient\(SUPABASE_URL, ANON_KEY, \{ global: \{ headers: \{ Authorization: auth \} \} \}\)/)
     }
   })
-  it('o verify_jwt de cada função no config.toml não mudou (enviar-push/sanear/storage-excluir = false; PDF e admin-comunidade-foto = true; limpar-fotos-rede segue o default da plataforma)', () => {
+  it('o verify_jwt de cada função no config.toml não mudou (enviar-push/sanear/storage-excluir = false; PDF e admin-comunidade-foto = true; limpar-fotos-rede = false, declarado de forma explicita: o cron chama sem JWT de usuario)', () => {
     const toml = readFileSync(join(__dirname, '../../supabase/config.toml'), 'utf8')
     const vj = (n) => (toml.match(new RegExp(`\\[functions\\.${n}\\]\\s*\\n\\s*verify_jwt\\s*=\\s*(true|false)`)) || [])[1]
     expect(vj('enviar-push')).toBe('false')
     expect(vj('sanear-imagens')).toBe('false')
     expect(vj('storage-excluir')).toBe('false')
+    expect(vj('limpar-fotos-rede')).toBe('false')
     expect(vj('gerar-documento-pdf')).toBe('true')
     expect(vj('gerar-documento-pdf-final')).toBe('true')
     expect(vj('admin-comunidade-foto')).toBe('true')
+  })
+  it('limpar-fotos-rede com verify_jwt=false NAO e endpoint publico: sem o segredo x-rede-limpeza-secret (comparacao em tempo constante) responde 401 antes de tocar em qualquer coisa', () => {
+    const src = readFileSync(join(__dirname, '../../supabase/functions/limpar-fotos-rede/index.ts'), 'utf8')
+    const posSegredo = src.indexOf("igualSeguro(req.headers.get('x-rede-limpeza-secret')")
+    const pos401 = src.indexOf("status: 401", posSegredo)
+    const posChave = src.search(/createClient\(|chaves\(|rpc\(|\.storage/)
+    expect(posSegredo).toBeGreaterThan(-1)
+    expect(pos401).toBeGreaterThan(posSegredo)
+    // a checagem do segredo vem antes de qualquer uso de cliente/RPC/Storage dentro do handler
+    const handler = src.slice(src.indexOf('Deno.serve'))
+    expect(handler.indexOf('x-rede-limpeza-secret')).toBeLessThan(handler.search(/createClient\(|\.rpc\(|\.storage/))
+    expect(posChave).toBeGreaterThan(-1)
   })
 })
