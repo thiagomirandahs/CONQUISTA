@@ -11,7 +11,7 @@ IMG="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -m1 'supabase/ed
 [ -n "$IMG" ] || { echo "ERRO: imagem do edge-runtime não encontrada (rode 'supabase start' uma vez)."; exit 2; }
 
 FALHOU=0
-for FUNCAO in gerar-documento-pdf gerar-documento-pdf-final; do
+for FUNCAO in gerar-documento-pdf gerar-documento-pdf-final admin-comunidade-foto; do
   DIR="$ROOT/supabase/functions/$FUNCAO"
   WDIR="$(cygpath -w "$DIR" 2>/dev/null || echo "$DIR")"
   echo "==> empacotando $FUNCAO com $IMG"

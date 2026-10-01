@@ -237,10 +237,13 @@ select t.eq('...o proprio perfil conta tudo o que publicou', t.txt($q$select pub
 select t.como('admin_122');
 select t.eq('admin nao le o log direto (sem grant)', t.nv($q$select count(*) from public.plataforma_acesso_log$q$), 0::bigint);
 select t.eq('admin NAO abre foto "clube" (Meu Clube) publicada', t.nv(format($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = %L$q$, t.cam('clube_a', 'lider_a', 'f2'))), 0::bigint);
-select t.eq('admin ABRE foto da Comunidade EM ANALISE', t.n(format($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = %L$q$, t.cam('clube_a', 'lider_a', 'f1'))), 1::bigint);
+-- 530: o admin NAO le mais pelo Storage (leitura/listagem direta fechada); a foto so abre pela RPC mediada, 1 log por assinatura
+select t.eq('admin NAO le a foto da Comunidade em analise direto no Storage (530: so pela RPC mediada)', t.nv(format($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = %L$q$, t.cam('clube_a', 'lider_a', 'f1'))), 0::bigint);
+select t.eq('...a RPC mediada devolve o caminho autorizado', t.txt(format($q$select public.admin_comunidade_foto_assinar('post', %L)->>'path'$q$, t.id('post_foto_com'))), t.cam('clube_a', 'lider_a', 'f1'));
 reset role;
-select t.eq('...e a leitura ficou registrada (quem, o que, item)', (select count(*) from public.plataforma_acesso_log
-  where admin_user_id = t.id('admin_122') and o_que = 'foto' and item_tipo = 'post' and item_id = t.id('post_foto_com') and item_club_id = t.id('clube_a')), 1::bigint);
+select t.eq('...e a assinatura ficou registrada (quem, o que, item, bucket, contexto)', (select count(*) from public.plataforma_acesso_log
+  where admin_user_id = t.id('admin_122') and o_que = 'foto_assinada' and item_tipo = 'post' and item_id = t.id('post_foto_com') and item_club_id = t.id('clube_a')
+    and bucket = 'comunidade' and contexto = 'em_analise'), 1::bigint);
 select t.throws('o log e append-only (update)', $q$update public.plataforma_acesso_log set o_que = 'x'$q$, 'não se altera');
 select t.throws('o log e append-only (delete)', $q$delete from public.plataforma_acesso_log$q$, 'não se altera');
 select t.throws('o log e append-only (truncate)', $q$truncate public.plataforma_acesso_log$q$, 'não se altera');
@@ -257,7 +260,7 @@ select t.eq('denuncia da foto na Comunidade (B denuncia o A)', t.txt(format($q$s
 select t.como('admin_122');
 select t.eq('painel: a denuncia da Comunidade aparece', t.n(format($q$select count(*) from jsonb_array_elements(public.admin_comunidade_painel()->'fila'->'denuncias') e where e->>'id' = %L$q$, t.id('post_foto_com'))), 1::bigint);
 select t.eq('painel: a denuncia do alcance clube NAO aparece', t.n(format($q$select count(*) from jsonb_array_elements(public.admin_comunidade_painel()->'fila'->'denuncias') e where e->>'id' = %L$q$, t.id('post_clube_a'))), 0::bigint);
-select t.eq('denunciada na Comunidade: admin volta a abrir a foto', t.n(format($q$select count(*) from storage.objects where bucket_id = 'comunidade' and name = %L$q$, t.cam('clube_a', 'lider_a', 'f1'))), 1::bigint);
+select t.eq('denunciada na Comunidade: admin volta a poder assinar a foto (pela RPC mediada)', t.txt(format($q$select public.admin_comunidade_foto_assinar('post', %L)->>'ok'$q$, t.id('post_foto_com'))), 'true');
 select t.throws('admin NAO modera conteudo do alcance clube (nem denunciado)', format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')$q$, t.id('post_clube_a')), 'não encontrado');
 select t.throws('...nem publicado e sem denuncia na Comunidade', format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')$q$, t.id('post_com_a')), 'não encontrado');
 select t.eq('admin modera o denunciado da Comunidade', t.txt(format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')->>'status'$q$, t.id('post_foto_com'))), 'removido');
