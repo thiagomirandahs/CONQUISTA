@@ -10,6 +10,10 @@ const sql = (q) => execFileSync('docker', ['exec', '-i', 'supabase_db_CONQUISTA'
 const clube = sql(`select id from public.organizational_units where nome = 'Hml Clube A'`)
 // pré-requisito (só local): Rede ligada no clube de teste; desfeito no fim
 sql(`insert into public.club_features (club_id, feature, enabled) values ('${clube}', 'comunidade', true) on conflict (club_id, feature) do update set enabled = true`)
+// higiene do banco de teste: conta recém-criada tem limite diário MENOR de publicações na Rede (e posts de execuções anteriores contam);
+// deixa as contas hml 'antigas' e zera as publicações delas para o teste não depender de quantas vezes já rodou hoje
+sql(`update public.profiles p set created_at = now() - interval '60 days' from auth.users u where u.id = p.id and u.email like 'hml-%@teste.local'`)
+sql(`delete from public.comunidade_posts where autor_id in (select id from auth.users where email like 'hml-%@teste.local')`)
 async function entrar(email) {
   const r = await fetch(`${URL_API}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: ANON, 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'senha-homologacao-123' }) })
   return (await r.json()).access_token
