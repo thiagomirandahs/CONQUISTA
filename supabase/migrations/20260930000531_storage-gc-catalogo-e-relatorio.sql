@@ -248,7 +248,10 @@ language sql immutable set search_path = '' as $$
     ('notificacoes', 'link', 'rota interna do app'),
     ('site_partners', 'link', 'link externo do parceiro'),
     ('club_showcase', 'link_inscricao', 'rota/URL de inscrição, não arquivo'),
-    ('desafios', 'pede_foto', 'booleano de regra')
+    ('desafios', 'pede_foto', 'booleano de regra'),
+    ('imagem_saneamento', 'bucket', 'fila de saneamento (529): aponta objeto já referenciado por outra tabela; não mantém objeto vivo'),
+    ('imagem_saneamento', 'caminho', 'fila de saneamento (529): aponta objeto já referenciado por outra tabela; não mantém objeto vivo'),
+    ('plataforma_acesso_log', 'bucket', 'nome do bucket no log de acesso do admin (530), não caminho; o log nunca guarda o caminho físico')
   ) v(tabela, coluna, motivo);
 $$;
 revoke all on function public._storage_referencias_excecoes() from public, anon, authenticated;
