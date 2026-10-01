@@ -17,6 +17,7 @@
     "test:db:compat": "bash supabase/tests/compat/compat-510-514.sh",
     "test:compat:front-antigo": "node supabase/tests/compat/front-antigo-rede-517.mjs && node supabase/tests/compat/front-classes-518.mjs && node supabase/tests/compat/front-antigo-requisitos-524.mjs",
     "test:db:upgrade": "bash supabase/tests/run-tests.sh --upgrade",
+    "test:db:ensaio-janela": "bash supabase/tests/compat/ensaio-janela-fase8.sh",
     "db:reset": "npx --yes supabase@2.117.0 db reset --local",
     "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay",
     "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
