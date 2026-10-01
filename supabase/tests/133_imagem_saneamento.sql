@@ -253,6 +253,9 @@ select public.imagem_saneamento_rotina();
 select t.eq('rotina sem Vault: 1 aviso (não 2) em infra_falhas', (select count(*) from public.infra_falhas where origem = 'imagens/saneamento'), 1::bigint);
 select t.eq('rotina não toca em objeto fora do escopo', (select count(*) from public.imagem_saneamento where bucket not in ('imagens', 'comprovacoes', 'comunidade', 'suporte-anexos')), 0::bigint);
 
+-- o cron nasce DESLIGADO (só liga depois de validar a Edge Function e configurar o Vault)
+select t.ok('cron "imagem-sanear" nasce inativo (quando há pg_cron)', not exists (select 1 from pg_extension where extname = 'pg_cron')
+  or exists (select 1 from cron.job where jobname = 'imagem-sanear' and not active));
 -- o cron do banco existe e é só do postgres
 select t.ok('cron "imagem-sanear" agendado (quando há pg_cron)', not exists (select 1 from pg_extension where extname = 'pg_cron')
   or exists (select 1 from cron.job where jobname = 'imagem-sanear' and command ilike '%imagem_saneamento_rotina%'));

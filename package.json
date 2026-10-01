@@ -23,6 +23,7 @@
     "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
     "test:rede:e2e": "node supabase/tests/e2e/rede-foto-avatar.mjs",
     "test:rede:admin-foto:e2e": "node supabase/tests/e2e/rede-admin-foto-storage.mjs",
+    "test:saneamento:e2e": "bash supabase/tests/e2e/saneamento-storage-real.sh",
     "test:classes:e2e": "node supabase/tests/e2e/classe-anterior-e-relato.mjs",
     "storage:fix-local": "bash supabase/tests/e2e/fix-storage-local.sh",
     "test:inscricao:e2e": "node supabase/tests/e2e/inscricao-por-codigo.mjs",

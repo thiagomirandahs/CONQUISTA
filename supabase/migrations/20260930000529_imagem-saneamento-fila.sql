@@ -279,6 +279,9 @@ begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     perform cron.unschedule(jobid) from cron.job where jobname = 'imagem-sanear';
     perform cron.schedule('imagem-sanear', '*/10 * * * *', 'select public.imagem_saneamento_rotina()');
+    -- NASCE DESLIGADO (decisão do dono, Fase 9): a Edge Function ainda não foi validada contra o Storage real e o Vault ainda não tem
+    -- saneamento_url/saneamento_secret. Ligar só depois: select cron.alter_job((select jobid from cron.job where jobname = 'imagem-sanear'), active := true);
+    perform cron.alter_job((select jobid from cron.job where jobname = 'imagem-sanear'), active := false);
   end if;
 end $$;
 
