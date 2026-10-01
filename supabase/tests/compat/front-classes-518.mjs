@@ -36,6 +36,17 @@ try {
   t('burlar: avançada sem a regular é RECUSADA pelo servidor', r.status >= 400, JSON.stringify(r).slice(0, 160))
   r = await rpc(tok, 'classe_iniciar', { p_class_id: por.Companheiro.class_id, p_idade: 11 })
   t('burlar: parâmetro extra (p_idade) não existe', r.status >= 400, JSON.stringify(r).slice(0, 120))
+  // 519: sem data de nascimento o servidor não matricula e devolve o motivo amigável (front novo mostra um aviso; front antigo mostra o texto)
+  sql(`update public.profiles set nascimento = null where id = '${meu}'`)
+  r = await rpc(tok, 'classes_disponiveis')
+  const semNasc = Array.isArray(r.corpo) ? r.corpo : []
+  t('519: sem nascimento TODAS as classes vêm bloqueadas com bloqueio=nascimento', semNasc.length > 0 && semNasc.every((c) => c.elegivel === false && c.bloqueio === 'nascimento'))
+  t('519: motivo amigável do servidor', semNasc.every((c) => c.motivo_inelegivel === 'Informe a data de nascimento para verificar quais classes estão disponíveis.'))
+  r = await rpc(tok, 'classe_iniciar', { p_class_id: semNasc[0].class_id })
+  t('519: burlar sem nascimento: classe_iniciar é RECUSADA pelo servidor', r.status >= 400 && /data de nascimento/.test(JSON.stringify(r.corpo)), JSON.stringify(r).slice(0, 160))
+  sql(`update public.profiles set nascimento = (current_date - interval '13 years 2 months')::date where id = '${meu}'`)
+  r = await rpc(tok, 'classes_concluidas_anteriormente')
+  t('519: classes_concluidas_anteriormente responde 200 com lista', r.status === 200 && Array.isArray(r.corpo), JSON.stringify(r).slice(0, 120))
 } finally {
   sql(`update public.profiles set nascimento = (current_date - interval '16 years')::date where id = '${meu}'`)   // volta ao nascimento do seed (519: sem nascimento a classe não inicia)
 }

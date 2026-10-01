@@ -43,6 +43,9 @@ function limparSql() {
     delete from public.organization_memberships where user_id in (select id from auth.users where email like 'hml-%@teste.local');
     delete from public.profiles where id in (select id from auth.users where email like 'hml-%@teste.local');
     delete from auth.users where email like 'hml-%@teste.local';
+    -- 519: conquista de classe (curriculum_achievements) não tem FK de usuário e, com ids determinísticos, sobrevivia entre execuções;
+    -- agora uma classe já concluída não é oferecida de novo, então o seed limpa as conquistas órfãs.
+    delete from public.curriculum_achievements where usuario_id not in (select id from auth.users);
     delete from public.organizational_units where slug like 'hml-%';
   `
 }

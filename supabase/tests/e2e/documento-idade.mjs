@@ -36,6 +36,8 @@ const desb = await logar('hml-desbravador@teste.local', clubeA)
 const instr = await logar('hml-instrutor@teste.local', clubeA)
 const cons = await logar('hml-conselheiro@teste.local', clubeA)
 
+// 519: classe já concluída não é oferecida de novo; conquistas que outro E2E (personas) deixou para o mesmo hml-desbravador não podem valer aqui
+sql(`delete from public.curriculum_achievements where usuario_id in (select id from auth.users where email like 'hml-%@teste.local')`)
 const amigo = sql(`select c.id from public.classes c join public.curriculum_versions v on v.id=c.curriculum_version_id where v.origem='oficial' and v.status='publicado' and c.manifesto_id='amigo';`)
 const reqIdade = sql(`select r.id from public.class_requirements r join public.class_sections s on s.id=r.section_id where s.class_id='${amigo}' and r.manifesto_id='amigo.I.1';`)
 ok('desbravador inicia Amigo', !(await desb.c.rpc('classe_iniciar', { p_class_id: amigo })).error)

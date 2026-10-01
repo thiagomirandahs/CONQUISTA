@@ -70,7 +70,7 @@ async function principal() {
       email_change_token_current, reauthentication_token, is_sso_user, is_anonymous)
     values ('00000000-0000-0000-0000-000000000000', '${idAv}', 'authenticated', 'authenticated', 'e2e-pdf-avaliador@teste.local',
       extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
-    insert into public.profiles (id, nome, papel, status) values ('${idLider}', 'E2E PDF Lider', 'diretoria', 'ativo'), ('${idAv}', 'E2E PDF Avaliador', 'diretoria', 'ativo');
+    insert into public.profiles (id, nome, papel, status, nascimento) values ('${idLider}', 'E2E PDF Lider', 'diretoria', 'ativo', date '1985-01-01'), ('${idAv}', 'E2E PDF Avaliador', 'diretoria', 'ativo', date '1985-01-01');  -- 519: sem nascimento a classe não inicia
     insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
     select u, id, 'diretoria', 'ativo' from public.organizational_units, unnest(array['${idLider}'::uuid, '${idAv}'::uuid]) u where slug='filhos-da-conquista';
     insert into public.dynamic_content_values (definicao_id, ano, valor, vigente_desde, vigente_ate, fonte_url, fonte_descricao)

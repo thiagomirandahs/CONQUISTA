@@ -65,10 +65,11 @@ async function principal() {
         extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false),
       ('00000000-0000-0000-0000-000000000000', '${idAv}', 'authenticated', 'authenticated', 'e2e-lote-avaliador@teste.local',
         extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
-    insert into public.profiles (id, nome, papel, status) values
-      ('${idAv}', 'E2E Lote Avaliador', 'diretoria', 'ativo'),
-      ('${idLider}', 'E2E Lote Lider', 'diretoria', 'ativo'),
-      ('${idMembro}', 'E2E Lote Membro', 'desbravador', 'ativo');
+    -- 519: sem data de nascimento a classe não inicia
+    insert into public.profiles (id, nome, papel, status, nascimento) values
+      ('${idAv}', 'E2E Lote Avaliador', 'diretoria', 'ativo', date '1985-01-01'),
+      ('${idLider}', 'E2E Lote Lider', 'diretoria', 'ativo', date '1985-01-01'),
+      ('${idMembro}', 'E2E Lote Membro', 'desbravador', 'ativo', (current_date - interval '16 years')::date);
     insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
     select u.id, o.id, u.role, 'ativo' from public.organizational_units o,
       (values ('${idLider}'::uuid, 'diretoria'), ('${idAv}'::uuid, 'diretoria'), ('${idMembro}'::uuid, 'desbravador')) u(id, role)
