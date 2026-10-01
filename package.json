@@ -25,6 +25,7 @@
     "test:classes:e2e": "node supabase/tests/e2e/classe-anterior-e-relato.mjs",
     "storage:fix-local": "bash supabase/tests/e2e/fix-storage-local.sh",
     "test:inscricao:e2e": "node supabase/tests/e2e/inscricao-por-codigo.mjs",
+    "test:inscricao:email:e2e": "node supabase/tests/e2e/inscricao-email-real.mjs",
     "test:contexto:e2e": "node supabase/tests/e2e/contexto-do-clube.mjs",
     "test:pdf:e2e": "node supabase/tests/e2e/pdf-ponta-a-ponta.mjs",
     "test:lote:e2e": "node supabase/tests/e2e/assinatura-lote-ponta-a-ponta.mjs",
