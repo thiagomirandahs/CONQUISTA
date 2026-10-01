@@ -49,3 +49,32 @@ Sem rolagem lateral, alvos ≥ 44 px e fonte ≥ 16 px em 360/390/430/768 nas te
 1. Minha Jornada: só os SEUS dados (Classes, Especialidades se ligadas, Investiduras, Leituras, Conquistas).
 2. Portfólio: só aprovados, sem foto; texto diz que não é o documento oficial; "Ver mais" funciona.
 3. Especialidades (só num clube de teste com o recurso ligado): abas Em andamento · Concluídas · Explorar; busca/filtro; detalhe com ícone + texto.
+
+### G. Inscrições no APK (BUG do localhost — prioridade alta)
+1. Gestão → **Inscrições** → gerar o código/link. Toque em **Copiar link** e cole num bloco de notas: o endereço começa com `https://app.desbravaclube.com.br/entrar?codigo=…` e **não contém** `localhost`, `127.0.0.1`, `capacitor://`, `ionic://` nem `file://`.
+2. **Compartilhar link** (menu do Android): a mensagem/pré-visualização traz o mesmo endereço.
+3. **QR Code:** abra o QR e leia com OUTRO celular: abre `app.desbravaclube.com.br/entrar?codigo=…` (não localhost).
+4. **Regerar** o código: o QR e o link mudam; o código antigo deixa de valer.
+5. Abra o link num navegador de OUTRO aparelho: vê o nome do clube → **Criar minha conta** → confirma o e-mail (se ligado) → volta para `/entrar?codigo=…` → aparece "pedido enviado" (**PENDENTE**, nunca ativo sozinho).
+6. **Login e retorno:** pessoa que já tem conta usa o link → entra → o pedido é criado sem digitar o código de novo. (Se confirmou o e-mail em OUTRO navegador e entrou pelo /login sem o link, o código se perde: anote se isso acontece com você.)
+7. Diretoria vê o pedido em **Aprovações** e aprova → a pessoa passa a ativa; um membro comum NÃO vê/aprova.
+8. Links de **convite de responsável**, **convite de coordenação**, **verificação de documento (QR do PDF)** e **recuperar senha** (e-mail): todos com `https://app.desbravaclube.com.br`, nunca localhost.
+
+### H. Comprovação em todo requisito, relatório, offline e conflito
+1. Abra um requisito **simples** (sem foto/formulário): aparece o bloco **Relato / comprovação (opcional)** com a frase "Conte ao instrutor como você cumpriu este requisito."; digite, toque **Salvar rascunho** (vira "Salvo"), **Enviar para avaliação**. Enviar SEM relato também funciona.
+2. Requisito com **foto**, **texto obrigatório** e **formulário estruturado** (ex.: lista de qualidades): o relato aparece junto, sem esconder nada; o formulário continua igual.
+3. **Offline:** modo avião → digite o relato → "Salvo neste aparelho" → feche e reabra o app (ainda offline): o texto continua → volte a internet: vira "Salvo" e nada foi enviado sozinho. (Foto/anexo offline continuam exigindo internet — limitação conhecida.)
+4. **Conflito:** escreva o relato no celular A, mude no celular B (mesma conta), edite no A em modo avião e volte a internet: aparece "Encontramos duas versões do seu relato" com horários e **Usar deste aparelho / Usar da nuvem**.
+5. **Devolução e reenvio:** a liderança devolve com comentário; você corrige o relato e reenvia: em **Ver histórico** aparecem as DUAS tentativas, cada uma com o seu relato (a 1ª não muda). A liderança vê o relato na fila de avaliação.
+
+### I. Registrar classe já concluída (diretoria/instrutor)
+1. Gestão → **Classes já concluídas** (ou link em Avaliar): escolha o membro → classe → data (ou **Não sei a data**) → observação obrigatória → comprovante opcional (**só foto**; PDF não é aceito) → tela **Confirme** ("Você está registrando que … já concluiu a classe …", data, impacto) → **Confirmar registro**.
+2. A classe aparece como **Concluída anteriormente · Registrada em dd/mm/aaaa** e **não** gera aprovações de requisitos nem documento; para o membro (Minha Classe) aparece em **Concluídas anteriormente**, sem botão Iniciar, e a avançada correspondente passa a ficar disponível.
+3. **Corrigir registro** (pede motivo ≥ 5 letras): o registro fica como corrigido (nunca some) e a classe volta a poder ser iniciada.
+4. Ninguém registra para si mesmo; um desbravador/conselheiro não vê o fluxo.
+
+### J. Atualização de matrícula (NÃO implementada)
+Não há botão de atualizar matrícula nesta versão (parada consciente, ver `ATUALIZACAO-DE-CLASSE-ARQUITETURA.md`). Teste só o que existe: quem já tem uma classe em andamento NÃO consegue iniciá-la de novo (mensagem "… em uma versão anterior do currículo. Peça à liderança a atualização da matrícula.").
+
+### K. Trilha
+Abra a **Trilha** (Rede/Jornada): carrega sem travar, sem rolagem lateral, sem tela branca ao voltar do segundo plano.

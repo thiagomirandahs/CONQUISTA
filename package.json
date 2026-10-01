@@ -15,7 +15,7 @@
     "cap:sync": "npm run build:cap && cap sync android",
     "test:db": "bash supabase/tests/run-tests.sh",
     "test:db:compat": "bash supabase/tests/compat/compat-510-514.sh",
-    "test:compat:front-antigo": "node supabase/tests/compat/front-antigo-rede-517.mjs && node supabase/tests/compat/front-classes-518.mjs",
+    "test:compat:front-antigo": "node supabase/tests/compat/front-antigo-rede-517.mjs && node supabase/tests/compat/front-classes-518.mjs && node supabase/tests/compat/front-antigo-requisitos-524.mjs",
     "test:db:upgrade": "bash supabase/tests/run-tests.sh --upgrade",
     "db:reset": "npx --yes supabase@2.117.0 db reset --local",
     "test:db:real": "npm run db:reset && bash supabase/tests/run-tests.sh --db postgres --no-replay",
