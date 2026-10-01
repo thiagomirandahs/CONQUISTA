@@ -248,8 +248,12 @@ Deno.serve(async (req) => {
         return true
       } catch (e: any) {
         // Inscrição expirada/cancelada -> remove do banco
+        // (404/410 = erro PERMANENTE: remove só ESTA inscrição, as outras da pessoa ficam. 400/401/403/413 também
+        //  são registrados com o status real — migration 534 — e quem nunca entrega é podado por
+        //  push_podar_inscricoes_mortas, nunca aqui: um 401/403 pode ser problema de chave do SERVIDOR.)
         if (e?.statusCode === 404 || e?.statusCode === 410) {
-          await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
+          const { error: erroRemocao } = await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
+          if (erroRemocao) await registrarFalha('push: não removeu inscrição expirada (' + e.statusCode + ')', clubeId)
         }
         resultados.push({
           id: s.tentativa_id, ok: false,
@@ -297,7 +301,10 @@ Deno.serve(async (req) => {
               if (resp.ok) return true
               // 404 = token não existe mais (app desinstalado); 403 = projeto errado.
               // Só o 404 significa "limpe este aparelho".
-              if (resp.status === 404) await sb.from('push_tokens').delete().eq('token', k.token)
+              if (resp.status === 404) {
+                const { error: erroRemocao } = await sb.from('push_tokens').delete().eq('token', k.token)
+                if (erroRemocao) await registrarFalha('push: não removeu token inválido (404)', clubeId)
+              }
               return false
             } catch (e: any) {
               resultados.push({
