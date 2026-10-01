@@ -14,6 +14,35 @@ const JWT_SERV = ['aaaa', 'bbbb', 'cccc'].join('.')   // três partes: parece um
 const JWT_ANON = ['dddd', 'eeee', 'ffff'].join('.')
 const env = (o) => (n) => o[n]
 
+describe('SB_SECRET_NOME (secret dedicada escolhida por nome no dicionário injetado)', () => {
+  const pacote = JSON.stringify({ default: SEC, 'infra-edge': SEC2 })
+  it('usa a secret do NOME indicado, e não a default; a origem mostra só o nome', () => {
+    const k = chaveServico(env({ SUPABASE_SECRET_KEYS: pacote, SB_SECRET_NOME: 'infra-edge' }))
+    expect(k.valor).toBe(SEC2)
+    expect(k).toMatchObject({ origem: 'nova', fonte: 'SUPABASE_SECRET_KEYS[infra-edge]' })
+    expect(JSON.stringify(k)).not.toContain(SEC2)
+  })
+  it('sem SB_SECRET_NOME continua usando a default', () => {
+    expect(chaveServico(env({ SUPABASE_SECRET_KEYS: pacote })).valor).toBe(SEC)
+  })
+  it('nome inexistente NÃO cai em outra secret: auto -> legacy; modo nova -> falha fechada', () => {
+    const base = { SUPABASE_SECRET_KEYS: pacote, SB_SECRET_NOME: 'nao-existe', SUPABASE_SERVICE_ROLE_KEY: JWT_SERV }
+    expect(chaveServico(env(base))).toMatchObject({ origem: 'legacy' })
+    expect(() => chaveServico(env({ ...base, CHAVES_MODO: 'nova' }))).toThrow(/indispon/i)
+  })
+  it('valor do nome com prefixo errado (ex. publishable) é ignorado; SB_SECRET_KEY continua tendo precedência; modo legacy ignora o nome', () => {
+    expect(() => chaveServico(env({ SUPABASE_SECRET_KEYS: JSON.stringify({ x: PUB }), SB_SECRET_NOME: 'x' }))).toThrow()
+    expect(chaveServico(env({ SB_SECRET_KEY: SEC, SUPABASE_SECRET_KEYS: pacote, SB_SECRET_NOME: 'infra-edge' })).valor).toBe(SEC)
+    expect(chaveServico(env({ SUPABASE_SECRET_KEYS: pacote, SB_SECRET_NOME: 'infra-edge', CHAVES_MODO: 'legacy', SUPABASE_SERVICE_ROLE_KEY: JWT_SERV })).origem).toBe('legacy')
+  })
+  it('nome não afeta a chave PÚBLICA e o resumo de log não mostra valor', () => {
+    expect(chavePublica(env({ SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: PUB }), SB_SECRET_NOME: 'infra-edge' })).valor).toBe(PUB)
+    const r = resumoDasChaves(env({ SUPABASE_SECRET_KEYS: pacote, SB_SECRET_NOME: 'infra-edge' }))
+    expect(r).toContain('SUPABASE_SECRET_KEYS[infra-edge]')
+    expect(r).not.toContain(SEC2)
+  })
+})
+
 describe('chaveServico', () => {
   it('prefere SB_SECRET_KEY, depois SUPABASE_SECRET_KEYS, depois a legacy', () => {
     const todas = { SB_SECRET_KEY: SEC, SUPABASE_SECRET_KEYS: JSON.stringify({ default: SEC2 }), SUPABASE_SERVICE_ROLE_KEY: JWT_SERV }

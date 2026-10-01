@@ -8,6 +8,8 @@
 //   chave de SERVIÇO (privilégio total; só no servidor):
 //     1. SB_SECRET_KEY                 secret NOSSA, configurada por função/ambiente (`sb_secret_…`)
 //     2. SUPABASE_SECRET_KEYS          JSON injetado pela plataforma: {"default":"sb_secret_…", …}  (usa "default" ou a primeira `sb_secret_`)
+//        (opcional) SB_SECRET_NOME=<nome>: em vez de "default", usa a secret desse NOME no dicionário injetado (ex. uma secret dedicada
+//        "infra-edge", criada no painel; o valor nunca sai da plataforma). Nome ausente do dicionário = essa origem é descartada (não cai em outra).
 //     3. SUPABASE_SERVICE_ROLE_KEY     LEGACY (transição) — origem 'legacy'
 //   chave PÚBLICA (cliente "como o usuário"; o JWT dele vai no Authorization):
 //     1. SB_PUBLISHABLE_KEY            (`sb_publishable_…`)
@@ -58,11 +60,18 @@ function modo(env: LeitorEnv): 'auto' | 'nova' | 'legacy' {
 }
 
 /** Extrai a chave de um JSON de chaves da plataforma. Aceita {"default":"sb_…"}, {"nome":{"api_key":"sb_…"}} ou ["sb_…"]. */
-function dePacote(bruto: string | undefined, prefixo: string): string {
+function dePacote(bruto: string | undefined, prefixo: string, nome = ''): string {
   const txt = limpo(bruto)
   if (!txt) return ''
   let j: unknown
   try { j = JSON.parse(txt) } catch { return '' }
+  if (nome) {
+    // chave escolhida POR NOME (ex.: a secret dedicada às Edge Functions): só ela serve; se o nome não existir, NÃO cai em outra chave do pacote
+    if (!j || typeof j !== 'object' || Array.isArray(j) || !Object.prototype.hasOwnProperty.call(j, nome)) return ''
+    const x = (j as Record<string, unknown>)[nome]
+    const v = typeof x === 'string' ? x.trim() : (x && typeof x === 'object' && typeof (x as Record<string, unknown>).api_key === 'string' ? ((x as Record<string, unknown>).api_key as string).trim() : '')
+    return v.startsWith(prefixo) ? v : ''
+  }
   const valorDe = (x: unknown): string => {
     if (typeof x === 'string') return x.trim()
     if (x && typeof x === 'object') {
@@ -92,13 +101,15 @@ function montar(valor: string, origem: Origem, fonte: string): ChaveResolvida {
   return r as unknown as ChaveResolvida
 }
 
-function resolver(env: LeitorEnv, p: { propria: string; pacote: string; legacy: string; prefixo: string }): ChaveResolvida {
+function resolver(env: LeitorEnv, p: { propria: string; pacote: string; legacy: string; prefixo: string; nomeVar?: string }): ChaveResolvida {
   const m = modo(env)
   if (m !== 'legacy') {
     const propria = limpo(env(p.propria))
     if (propria.startsWith(p.prefixo)) return montar(propria, 'nova', p.propria)
-    const doPacote = dePacote(env(p.pacote), p.prefixo)
-    if (doPacote) return montar(doPacote, 'nova', p.pacote)
+    const nome = p.nomeVar ? limpo(env(p.nomeVar)) : ''
+    const doPacote = dePacote(env(p.pacote), p.prefixo, nome)
+    // `fonte` leva o NOME da chave escolhida (nunca o valor): ex. SUPABASE_SECRET_KEYS[infra-edge]
+    if (doPacote) return montar(doPacote, 'nova', nome ? `${p.pacote}[${nome.replace(/[^\w.-]/g, '?').slice(0, 40)}]` : p.pacote)
   }
   if (m !== 'nova') {
     const legacy = limpo(env(p.legacy))
@@ -110,7 +121,7 @@ function resolver(env: LeitorEnv, p: { propria: string; pacote: string; legacy: 
 
 /** Chave de SERVIÇO (privilégio total). Só para operações que realmente exigem service role (Storage admin, RPC só-serviço). */
 export function chaveServico(env: LeitorEnv = leitorPadrao()): ChaveResolvida {
-  return resolver(env, { propria: 'SB_SECRET_KEY', pacote: 'SUPABASE_SECRET_KEYS', legacy: 'SUPABASE_SERVICE_ROLE_KEY', prefixo: PREFIXO_SERVICO })
+  return resolver(env, { propria: 'SB_SECRET_KEY', pacote: 'SUPABASE_SECRET_KEYS', legacy: 'SUPABASE_SERVICE_ROLE_KEY', prefixo: PREFIXO_SERVICO, nomeVar: 'SB_SECRET_NOME' })
 }
 
 /** Chave PÚBLICA (publishable/anon). Para o cliente "como o usuário": o JWT dele vai no header Authorization. */
