@@ -7,7 +7,8 @@ foto só depois da diretoria aprovar, três avisos, limites e recurso `comunidad
 ## Decisão do dono — 29/09/2026: publicação DIRETA com confirmação (migration 480)
 - Post com foto E story **publicam direto**, sem esperar a diretoria. Antes de enviar, o app pergunta:
   post: "Tem certeza que quer publicar? Fica visível para todos os clubes da Rede DBV." · story: "Tem certeza que
-  quer publicar este story? Ele fica visível para todos os clubes da Rede DBV por 24 horas." — botões **Publicar** e **Voltar**.
+  quer publicar este story? Ele fica visível só para o seu clube por 24 horas." — botões **Publicar** e **Voltar**.
+  (Texto original da 480 dizia "todos os clubes"; desde a 515 story é SÓ do clube — constraint `rede_stories_alcance_so_clube`.)
 - A moderação passa a ser **por denúncia** (esconde na hora e avisa a diretoria do clube de quem publicou) até existir
   IA de imagem. Continua tudo o resto: triagem de texto no servidor, bucket ≤ 300 KB, EXIF fora (foto redesenhada no
   aparelho), três avisos, limites, autorização de USO (pais) e de IMAGEM (foto de rosto só com o papel arquivado).
