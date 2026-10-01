@@ -16,7 +16,8 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const SEGREDO = Deno.env.get('SANEAMENTO_SECRET') ?? ''
 
-const LOTE = 8                        // itens reservados por chamada (a fila é drenada em chamadas seguidas do cron)
+const LOTE = 8                        // itens reservados por vez
+const MAX_LOTES = 5                   // até 40 itens por chamada; o resto fica para o próximo ciclo do cron
 const MAX_BYTES_POR_ITEM = MAX_BYTES_PADRAO
 const ORCAMENTO_BYTES = 24 * 1024 * 1024   // teto de bytes baixados por chamada (CPU/memória da Edge Function)
 const ORCAMENTO_MS = 100_000               // pára de pegar item novo depois disso
@@ -94,22 +95,32 @@ Deno.serve(async (req) => {
   }
 
   const inicio = Date.now()
-  const { data, error } = await sb.rpc('imagem_saneamento_pendentes', { p_limite: LOTE })
-  if (error) return Response.json({ ok: false, erro: 'fila_indisponivel' }, { status: 500 })
-  const pendentes = (data ?? []) as Pendente[]
-
   const c: Contagem = { ok: 0, saneadas: 0, ignoradas: 0, falhas: 0, mudou: 0, bytes_liberados: 0 }
+  let reservados = 0
   let baixados = 0
-  for (const p of pendentes) {
-    if (baixados >= ORCAMENTO_BYTES || Date.now() - inicio > ORCAMENTO_MS) break   // o resto da reserva expira e volta no próximo ciclo
-    try {
-      baixados += await processar(p, c)
-    } catch (e) {
-      // nunca derruba o lote por um item; o motivo vai por código, sem caminho nem conteúdo
-      console.error('sanear-imagens: item falhou', e instanceof Error ? e.name : 'erro')
-      await marcar(p, 'falhou', 'erro_inesperado'); c.falhas++
+  // Drena a fila em lotes pequenos até esgotar, estourar o orçamento de bytes/tempo ou o teto de lotes por chamada.
+  for (let lote = 0; lote < MAX_LOTES; lote++) {
+    if (baixados >= ORCAMENTO_BYTES || Date.now() - inicio > ORCAMENTO_MS) break
+    const { data, error } = await sb.rpc('imagem_saneamento_pendentes', { p_limite: LOTE })
+    if (error) {
+      if (lote === 0) return Response.json({ ok: false, erro: 'fila_indisponivel' }, { status: 500 })
+      break
     }
+    const pendentes = (data ?? []) as Pendente[]
+    if (pendentes.length === 0) break
+    reservados += pendentes.length
+    for (const p of pendentes) {
+      if (baixados >= ORCAMENTO_BYTES || Date.now() - inicio > ORCAMENTO_MS) break   // o resto da reserva expira e volta no próximo ciclo
+      try {
+        baixados += await processar(p, c)
+      } catch (e) {
+        // nunca derruba o lote por um item; o motivo vai por código, sem caminho nem conteúdo
+        console.error('sanear-imagens: item falhou', e instanceof Error ? e.name : 'erro')
+        await marcar(p, 'falhou', 'erro_inesperado'); c.falhas++
+      }
+    }
+    if (pendentes.length < LOTE) break
   }
-  console.log('sanear-imagens', JSON.stringify({ reservados: pendentes.length, ...c }))
-  return Response.json({ ok: true, reservados: pendentes.length, ...c })
+  console.log('sanear-imagens', JSON.stringify({ reservados, ...c }))
+  return Response.json({ ok: true, reservados, ...c })
 })
