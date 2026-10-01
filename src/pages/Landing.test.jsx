@@ -87,10 +87,11 @@ describe('Landing', () => {
     expect(container.querySelector('[data-testid="contato-whatsapp"]').getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5581989499469/)
   })
 
-  it('o FAQ é curto (6 perguntas)', () => {
+  it('o FAQ é curto (7 perguntas, com a da Rede DBV)', () => {
     renderT()
     const faq = document.getElementById('faq')
-    expect(faq.querySelectorAll('details')).toHaveLength(6)
+    expect(faq.querySelectorAll('details')).toHaveLength(7)
+    expect(within(faq).getByText(/É uma rede social aberta\?/)).toBeInTheDocument()
   })
 
   it('menu e rodapé levam às páginas da vitrine (Clubes e Parceiros)', () => {

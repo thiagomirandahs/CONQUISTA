@@ -69,3 +69,10 @@ const ROTAS_DO_SITE = [/^\/$/, /^\/planos\/?$/, /^\/adquirir\/?$/, /^\/verificar
 const SO_DO_SITE = [/^\/clubes(\/[a-z0-9-]+)?\/?$/i, /^\/parceiros\/?$/]
 export const rotaSoDoSite = (caminho) => SO_DO_SITE.some((r) => r.test(caminho))
 export const rotaDoSite = (caminho) => ROTAS_DO_SITE.some((r) => r.test(caminho))
+
+// ---- URL CANÔNICA DO SITE PÚBLICO (SEO e compartilhamento) -------------------------------------
+// Sempre https://desbravaclube.com.br: nunca a origem atual (localhost, *.vercel.app, www., app.).
+export const URL_PUBLICA_SITE = `https://${DOMINIO}`
+export const urlPublicaDoSite = (caminho = '/') => `${URL_PUBLICA_SITE}${caminho.startsWith('/') ? caminho : `/${caminho}`}`
+// Imagem de compartilhamento (1200x630) — URL absoluta, exigida pelo WhatsApp/Facebook/X.
+export const URL_IMAGEM_COMPARTILHAR = urlPublicaDoSite('/og-desbravaclube.png')

@@ -7,6 +7,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 vi.mock('../../services/comercial.js', async () => ({ ...(await vi.importActual('../../services/comercial.js')), carregarPlanos: async () => [] }))
 
 const { default: Conheca, VideoCurto } = await import('./Conheca.jsx')
+const { TELAS } = await import('../landing/telas.js')
 const { ETAPAS, ORIGEM_DO_PLAYER, urlDoVideo, indiceDoHash } = await import('../../lib/apresentacao/etapas.js')
 
 const abrir = (caminho = '/conheca') => render(
@@ -29,6 +30,11 @@ describe('conteúdo (src/lib/apresentacao/etapas.js)', () => {
       'O que é o DesbravaClube', 'Criando ou entrando em um clube', 'Área do Desbravador', 'Classes e requisitos',
       'Especialidades', 'Rede DBV', 'Gestão do clube', 'Coordenação e administração',
     ])
+  })
+  it('as telas citadas pelas etapas existem em telas.js', () => {
+    const chaves = ETAPAS.flatMap((e) => e.telas || [])
+    expect(chaves.length).toBeGreaterThan(0)
+    chaves.forEach((k) => expect(TELAS[k], k).toBeTruthy())
   })
   it('por enquanto nenhuma etapa tem vídeo (estrutura pronta, conteúdo depois)', () => {
     expect(ETAPAS.every((e) => e.video === undefined)).toBe(true)
@@ -119,6 +125,25 @@ describe('/conheca', () => {
     const ctas = screen.getAllByRole('link', { name: /Quero começar/ })
     expect(ctas.length).toBeGreaterThanOrEqual(1)
     ctas.forEach((l) => expect(l).toHaveAttribute('href', '/adquirir'))
+  })
+
+  it('etapas com tela real mostram o celular (alt, tamanho, lazy) e a canonical é /conheca; sem player vazio', async () => {
+    abrir('/conheca#etapa-4')
+    const imgs = within(screen.getByTestId('telas-da-etapa')).getAllByRole('img')
+    expect(imgs).toHaveLength(2)
+    for (const img of imgs) {
+      expect(img.getAttribute('alt').length).toBeGreaterThan(30)
+      expect(img.getAttribute('width')).toBeTruthy()
+      expect(img.getAttribute('height')).toBeTruthy()
+      expect(img.getAttribute('loading')).toBe('lazy')
+    }
+    expect(screen.queryByTestId('ilustracao-padrao')).toBeNull()
+    expect(document.querySelector('iframe')).toBeNull()
+    expect(document.querySelector('video')).toBeNull()
+    expect(document.head.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://desbravaclube.com.br/conheca')
+    await userEvent.click(screen.getByRole('button', { name: /^Etapa 5:/ }))
+    expect(screen.getByTestId('ilustracao-padrao')).toBeInTheDocument()
+    expect(within(palco()).getByText(/catálogo oficial ainda está em preparação/)).toBeInTheDocument()
   })
 
   it('o stepper leva direto a qualquer etapa', async () => {

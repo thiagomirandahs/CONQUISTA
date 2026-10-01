@@ -4,17 +4,18 @@ import SiteLayout, { BOTAO_PRIMARIO, CONTAINER, useMetaDaPagina } from './SiteLa
 import { CTA_FINAL, ETAPAS, indiceDoHash } from '../../lib/apresentacao/etapas.js'
 import { MARCA_PRODUTO } from '../../lib/marca.js'
 import VideoCurto from '../../components/VideoCurto.jsx'
+import { Celular } from '../landing/Celular.jsx'
+import { TELAS } from '../landing/telas.js'
 
-// /conheca: apresentação do produto em 8 etapas (Fase 6, item 7). Estrutura pronta para vídeo curto e
+// /conheca: demonstração guiada do produto em 8 etapas (Fase 6, item 7), com as telas REAIS do app (dados fictícios). Estrutura pronta para vídeo curto e
 // mockup por etapa; o conteúdo mora em src/lib/apresentacao/etapas.js.
 //   · uma etapa por vez, com Anterior/Próximo (≥ 44 px), pontos de progresso, setas do teclado e arrastar no celular;
 //   · link direto por `#etapa-N` (o hash acompanha a etapa em uso, sem empilhar histórico);
 //   · vídeo: só o poster + play; o iframe do youtube-nocookie nasce DEPOIS do toque — nunca toca sozinho;
-//   · sem imagem, a ilustração-padrão (número dourado + emblema do produto) ocupa o lugar, de propósito.
+//   · etapa com `telas`: celulares em CSS com as capturas reais; sem vídeo, sem player vazio e sem data prometida;
+//   · sem imagem nem telas, a ilustração-padrão (número dourado + emblema do produto) ocupa o lugar, de propósito.
 
-const NAVY = '#0b1b46'
-const DOURADO = '#f5b012'
-const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5b012] focus-visible:ring-offset-2'
+const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2'
 const BOTAO_NAV = `inline-flex items-center justify-center gap-2 min-h-[48px] px-5 rounded-xl font-bold transition-colors ${FOCO}`
 const ARRASTE_MINIMO = 48 // px: menos que isso é toque, não arrasto
 
@@ -43,20 +44,35 @@ export function IlustracaoPadrao({ numero, titulo }) {
 // Vídeo curto mora em src/components/VideoCurto.jsx (reusado no tutorial); re-exportado aqui por compatibilidade.
 export { VideoCurto }
 
+// Celular(es) com a tela real da etapa, sobre um painel claro (o mesmo fundo suave do app).
+function TelasDaEtapa({ chaves }) {
+  return (
+    <div data-testid="telas-da-etapa" className="flex items-start justify-center gap-3 rounded-2xl bg-surface2 px-4 py-6 ring-1 ring-line">
+      {chaves.map((k, i) => (
+        <div key={k} className={chaves.length > 1 ? 'w-[44%] max-w-[12rem]' : 'w-[62%] max-w-[15rem]'} style={chaves.length > 1 && i === 1 ? { marginTop: '1.5rem' } : undefined}>
+          <Celular tela={TELAS[k]} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Etapa({ etapa }) {
   return (
     <article id={`etapa-${etapa.numero}`} aria-labelledby={`titulo-etapa-${etapa.numero}`} className="grid gap-6 lg:grid-cols-2 lg:items-center">
       <div>
         {etapa.video
           ? <VideoCurto key={etapa.video.youtubeId} youtubeId={etapa.video.youtubeId} poster={etapa.video.poster} titulo={etapa.titulo} />
-          : etapa.imagem
-            ? <img src={etapa.imagem.src} alt={etapa.imagem.alt} className="w-full rounded-2xl object-cover shadow-md" />
-            : <IlustracaoPadrao numero={etapa.numero} titulo={etapa.titulo} />}
+          : etapa.telas
+            ? <TelasDaEtapa chaves={etapa.telas} />
+            : etapa.imagem
+              ? <img src={etapa.imagem.src} alt={etapa.imagem.alt} className="w-full rounded-2xl object-cover shadow-md" />
+              : <IlustracaoPadrao numero={etapa.numero} titulo={etapa.titulo} />}
       </div>
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: DOURADO }}>Etapa {pad(etapa.numero)} de {pad(ETAPAS.length)}</p>
-        <h2 id={`titulo-etapa-${etapa.numero}`} className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: NAVY }}>{etapa.titulo}</h2>
-        <p className="mt-3 text-base leading-relaxed text-slate-700">{etapa.descricao}</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-brand">Etapa {pad(etapa.numero)} de {pad(ETAPAS.length)}</p>
+        <h2 id={`titulo-etapa-${etapa.numero}`} className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">{etapa.titulo}</h2>
+        <p className="mt-3 text-base leading-relaxed text-muted">{etapa.descricao}</p>
         {etapa.cta && (
           <Link to={etapa.cta.para} className={`mt-6 ${BOTAO_PRIMARIO}`}>{etapa.cta.rotulo}</Link>
         )}
@@ -66,7 +82,7 @@ function Etapa({ etapa }) {
 }
 
 export default function Conheca() {
-  useMetaDaPagina('Conheça o DesbravaClube', 'Uma apresentação em 8 etapas: clube, desbravadores, classes, especialidades, Rede DBV, gestão e coordenação.')
+  useMetaDaPagina('Conheça o DesbravaClube', 'Demonstração guiada em 8 etapas, com telas reais do aplicativo: clube, desbravadores, classes, Rede DBV, gestão e coordenação.', '/conheca')
   const location = useLocation()
   const navigate = useNavigate()
   // A etapa em uso É o hash da URL (fonte única): link direto, voltar/avançar e os botões passam todos por aqui.
@@ -108,19 +124,19 @@ export default function Conheca() {
 
   return (
     <SiteLayout>
-      <section className="bg-[#0b1b46] text-white">
+      <section>
         <div className={`${CONTAINER} py-8 sm:py-12`}>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#f5b012]">Conheça</p>
-          <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">Conheça o DesbravaClube</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">Em 8 etapas curtas, o que o aplicativo faz por desbravadores, pais, liderança e coordenação.</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-brand">Demonstração guiada</p>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">Conheça o DesbravaClube</h1>
+          <p className="mt-3 max-w-2xl text-muted">Em 8 etapas curtas, o que o aplicativo faz por desbravadores, pais, liderança e coordenação. As telas são reais, com dados fictícios.</p>
           {/* stepper: uma parada por etapa */}
           <ol aria-label="Etapas" className="mt-6 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ scrollbarWidth: 'none' }}>
             {ETAPAS.map((e, i) => (
               <li key={e.id} className="shrink-0">
                 <button type="button" onClick={() => irPara(i)} aria-current={i === atual ? 'step' : undefined}
                   aria-label={`Etapa ${e.numero}: ${e.titulo}`}
-                  className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors ${FOCO} focus-visible:ring-offset-[#0b1b46] ${
-                    i === atual ? 'bg-[#f5b012] text-[#0b1b46]' : i < atual ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}>
+                  className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors ${FOCO} ${
+                    i === atual ? 'bg-gradient-to-r from-brand via-brand to-brand2 text-white shadow-glow' : 'border border-line bg-surface text-ink hover:bg-surface2'}`}>
                   <span className="tabular-nums">{pad(e.numero)}</span>
                   <span className="hidden md:inline">{e.titulo}</span>
                 </button>
@@ -133,15 +149,15 @@ export default function Conheca() {
       <div className={`${CONTAINER} py-8`}>
         <div ref={palco} tabIndex={-1} onKeyDown={aoTeclar} onTouchStart={aoTocar} onTouchEnd={aoSoltar}
           role="region" aria-roledescription="apresentação" aria-label={`Etapa ${etapa.numero} de ${total}`}
-          className={`rounded-3xl bg-white p-5 sm:p-8 shadow-sm ring-1 ring-slate-200 outline-none ${FOCO}`}>
+          className={`rounded-3xl border border-line bg-surface p-5 sm:p-8 shadow-soft outline-none ${FOCO}`}>
           <div key={etapa.id} className="motion-safe:animate-[conheca-entrar_.25s_ease-out]">
             <Etapa etapa={etapa} />
           </div>
 
           {/* controles */}
-          <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
             <button type="button" onClick={anterior} disabled={atual === 0}
-              className={`${BOTAO_NAV} border border-slate-300 bg-white text-[#0b1b46] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed`}>
+              className={`${BOTAO_NAV} border border-line bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed`}>
               <SetaEsq /> <span>Anterior</span>
             </button>
             <ol aria-label="Progresso" className="flex items-center gap-1.5">
@@ -149,16 +165,16 @@ export default function Conheca() {
                 <li key={e.id}>
                   <button type="button" onClick={() => irPara(i)} aria-label={`Ir para a etapa ${e.numero}`} aria-current={i === atual ? 'step' : undefined}
                     className={`grid h-11 w-8 place-items-center ${FOCO} rounded-full`}>
-                    <span className={`block rounded-full transition-all ${i === atual ? 'h-2.5 w-6 bg-[#f5b012]' : 'h-2 w-2 bg-slate-300'}`} />
+                    <span className={`block rounded-full transition-all ${i === atual ? 'h-2.5 w-6 bg-gold' : 'h-2 w-2 bg-faint/40'}`} />
                   </button>
                 </li>
               ))}
             </ol>
             {ultima
-              ? <Link to={CTA_FINAL.para} className={`${BOTAO_NAV} bg-[#f5b012] text-[#0b1b46] hover:bg-[#ffc23a]`}>{CTA_FINAL.rotulo} <SetaDir /></Link>
-              : <button type="button" onClick={proximo} className={`${BOTAO_NAV} bg-[#1d4ed8] text-white hover:bg-[#1e40af]`}><span>Próximo</span> <SetaDir /></button>}
+              ? <Link to={CTA_FINAL.para} className={`${BOTAO_NAV} bg-gradient-to-r from-brand via-brand to-brand2 text-white shadow-glow`}>{CTA_FINAL.rotulo} <SetaDir /></Link>
+              : <button type="button" onClick={proximo} className={`${BOTAO_NAV} bg-gradient-to-r from-brand via-brand to-brand2 text-white shadow-glow`}><span>Próximo</span> <SetaDir /></button>}
           </div>
-          <p className="mt-3 text-center text-xs text-slate-500">Use as setas do teclado ou arraste para o lado no celular.</p>
+          <p className="mt-3 text-center text-xs text-muted">Use as setas do teclado ou arraste para o lado no celular.</p>
         </div>
       </div>
       <style>{'@keyframes conheca-entrar{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'}</style>

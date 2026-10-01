@@ -17,7 +17,7 @@ export default function SiteCartaoClube() {
   const descricao = clube?.encontrado
     ? (clube.apresentacao || clube.lema || `${clube.nome}${clube.cidade ? ` em ${clube.cidade}` : ''}: fale com a diretoria e venha participar.`).slice(0, 160)
     : 'Cartão de visita dos Clubes de Desbravadores no DesbravaClube.'
-  useMetaDaPagina(titulo, descricao)
+  useMetaDaPagina(titulo, descricao, clube?.encontrado ? `/clubes/${encodeURIComponent(slug)}` : undefined)
 
   useEffect(() => {
     let vivo = true

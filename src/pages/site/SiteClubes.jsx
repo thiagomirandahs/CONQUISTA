@@ -12,7 +12,7 @@ export default function SiteClubes() {
   const [erro, setErro] = useState('')
   const [busca, setBusca] = useState('')
   useMetaDaPagina('Clubes que estão com a gente — DesbravaClube',
-    'Conheça os Clubes de Desbravadores que usam o DesbravaClube e fale com a diretoria para participar.')
+    'Conheça os Clubes de Desbravadores que usam o DesbravaClube e fale com a diretoria para participar.', '/clubes')
 
   useEffect(() => {
     let vivo = true

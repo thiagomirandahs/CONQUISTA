@@ -4,20 +4,24 @@ import { Link } from 'react-router-dom'
 import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 import { Icone } from './landing/Icones.jsx'
-import { NotebookPainel, CelularClasse, CardTentativas } from './landing/Mockups.jsx'
+import { Celular, EscudoClasse } from './landing/Celular.jsx'
+import { TELAS } from './landing/telas.js'
+import { META_LANDING, AREAS, CLASSES_ITENS, CLASSES_REGULARES, FAIXA, FLUXO, GESTAO_ITENS, PERGUNTAS, REDE_ITENS, REDE_NAO_E, SEGURANCA } from './landing/conteudo.js'
 import { MARCA_PRODUTO } from '../lib/marca.js'
+import { useMetaDaPagina } from '../lib/metaDaPagina.js'
 import FaixaParceiros from './site/FaixaParceiros.jsx'
 
-// Site comercial PÚBLICO da plataforma (a raiz "/" sem sessão). Não usa <Logo/> nem as cores
-// --c-brand de propósito: aqueles leem a marca do CLUBE em uso, e esta página é da PLATAFORMA.
+// Site comercial PÚBLICO da plataforma (a raiz "/" sem sessão). Não usa <Logo/> nem as cores do CLUBE
+// em uso: esta página é da PLATAFORMA. Visual = o do aplicativo (tokens de src/index.css: fundo em degradê
+// claro, cartões brancos arredondados com sombra suave, botão em degradê brand→brand2, dourado só de acento).
 // Preço e composição da licença vêm do banco (planos_disponiveis) — nada de preço hardcoded aqui.
-// Textos sobre responsáveis, documentos e hierarquia descrevem só o que o sistema faz hoje.
+// Texto e veracidade: src/pages/landing/conteudo.js e LANDING-VERACIDADE.md (só o que existe HOJE).
 
-const NAVY = 'text-[#0b1b46]'
 const CONTAINER = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8'
-const BOTAO_PRIMARIO = 'inline-flex items-center justify-center gap-2 min-h-[48px] px-6 rounded-xl bg-[#1d4ed8] hover:bg-[#1e40af] text-white font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5b012] focus-visible:ring-offset-2'
-const BOTAO_SECUNDARIO = 'inline-flex items-center justify-center gap-2 min-h-[48px] px-6 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-[#0b1b46] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d4ed8] focus-visible:ring-offset-2'
-const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d4ed8] focus-visible:ring-offset-2 rounded-md'
+const FOCO = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 rounded-md'
+const BOTAO_PRIMARIO = 'inline-flex items-center justify-center gap-2 min-h-[48px] px-6 rounded-2xl bg-gradient-to-r from-brand via-brand to-brand2 shadow-glow text-white font-bold transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2'
+const BOTAO_SECUNDARIO = 'inline-flex items-center justify-center gap-2 min-h-[48px] px-6 rounded-2xl border border-line bg-surface shadow-soft text-ink font-bold transition-colors hover:bg-surface2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2'
+const CARTAO = 'rounded-3xl border border-line bg-surface shadow-soft'
 
 const NAV = [
   { href: '#recursos', rotulo: 'Recursos' },
@@ -38,7 +42,7 @@ function Marca({ claro = false }) {
   return (
     <span className="flex items-center gap-2.5">
       <img src={MARCA_PRODUTO.logoUrl} alt="" width="36" height="36" className="w-9 h-9 rounded-xl" />
-      <span className={`text-lg font-extrabold tracking-tight ${claro ? 'text-white' : NAVY}`}>DesbravaClube</span>
+      <span className={`text-lg font-extrabold tracking-tight ${claro ? 'text-white' : 'text-ink'}`}>DesbravaClube</span>
     </span>
   )
 }
@@ -68,8 +72,9 @@ export function Cabecalho({ naLanding = true }) {
     history.pushState(null, '', href)
   }
 
+  const linkDesk = `inline-flex min-h-[44px] items-center text-sm font-semibold text-muted hover:text-ink ${FOCO}`
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur" style={{ paddingTop: 'var(--seguro-topo)' }}>
+    <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur" style={{ paddingTop: 'var(--seguro-topo)' }}>
       <div className={`${CONTAINER} flex h-16 items-center justify-between gap-4`}>
         {naLanding
           ? <a href="#inicio" className={`inline-flex min-h-[44px] items-center ${FOCO}`} aria-label="DesbravaClube — início"><Marca /></a>
@@ -77,21 +82,21 @@ export function Cabecalho({ naLanding = true }) {
         <nav aria-label="Principal" className="hidden lg:block">
           <ul className="flex items-center gap-7">
             {NAV.map((n) => (
-              <li key={n.href}><a href={naLanding ? n.href : `/${n.href}`} className={`inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 hover:text-[#0b1b46] ${FOCO}`}>{n.rotulo}</a></li>
+              <li key={n.href}><a href={naLanding ? n.href : `/${n.href}`} className={linkDesk}>{n.rotulo}</a></li>
             ))}
             {PAGINAS.map((n) => (
-              <li key={n.to}><Link to={n.to} className={`inline-flex min-h-[44px] items-center text-sm font-semibold text-slate-600 hover:text-[#0b1b46] ${FOCO}`}>{n.rotulo}</Link></li>
+              <li key={n.to}><Link to={n.to} className={linkDesk}>{n.rotulo}</Link></li>
             ))}
           </ul>
         </nav>
         <div className="hidden lg:flex items-center gap-3">
-          <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center text-sm font-bold ${NAVY} px-3 hover:underline ${FOCO}`}>Entrar</LinkApp>
-          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} min-h-[42px] px-5 text-sm`}>Criar meu clube</Link>
+          <LinkApp to="/login" className={`inline-flex min-h-[44px] items-center px-3 text-sm font-bold text-ink hover:underline ${FOCO}`}>Entrar</LinkApp>
+          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} min-h-[44px] px-5 text-sm`}>Criar meu clube</Link>
         </div>
         <button
           ref={botao}
           type="button"
-          className={`lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg border border-slate-200 ${NAVY} ${FOCO}`}
+          className={`lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl border border-line bg-surface text-ink ${FOCO}`}
           aria-expanded={aberto}
           aria-controls="menu-movel"
           aria-label={aberto ? 'Fechar menu' : 'Abrir menu'}
@@ -100,17 +105,17 @@ export function Cabecalho({ naLanding = true }) {
           <Icone nome={aberto ? 'fechar' : 'menu'} className="w-6 h-6" />
         </button>
       </div>
-      <div id="menu-movel" hidden={!aberto} className="lg:hidden border-t border-slate-200 bg-white">
+      <div id="menu-movel" hidden={!aberto} className="lg:hidden border-t border-line bg-white">
         <nav aria-label="Menu" className={`${CONTAINER} py-3`}>
           <ul className="flex flex-col">
             {NAV.map((n) => (
               <li key={n.href}>
-                <a href={naLanding ? n.href : `/${n.href}`} onClick={(e) => irPara(e, n.href)} className={`flex min-h-[48px] items-center text-base font-semibold ${NAVY} ${FOCO}`}>{n.rotulo}</a>
+                <a href={naLanding ? n.href : `/${n.href}`} onClick={(e) => irPara(e, n.href)} className={`flex min-h-[48px] items-center text-base font-semibold text-ink ${FOCO}`}>{n.rotulo}</a>
               </li>
             ))}
             {PAGINAS.map((n) => (
               <li key={n.to}>
-                <Link to={n.to} onClick={() => setAberto(false)} className={`flex min-h-[48px] items-center text-base font-semibold ${NAVY} ${FOCO}`}>{n.rotulo}</Link>
+                <Link to={n.to} onClick={() => setAberto(false)} className={`flex min-h-[48px] items-center text-base font-semibold text-ink ${FOCO}`}>{n.rotulo}</Link>
               </li>
             ))}
           </ul>
@@ -124,75 +129,37 @@ export function Cabecalho({ naLanding = true }) {
   )
 }
 
-function Hero() {
-  const selos = ['Feito para o seu celular', 'Seu clube isolado dos outros', 'Você combina o pagamento depois']
+// ---- blocos de apoio ------------------------------------------------------------------------------
+function Secao({ id, fundo = '', children, className = '' }) {
   return (
-    <section id="inicio" className="relative overflow-hidden bg-[#0b1b46] text-white">
-      {/* Fundo decorativo em CSS puro (sem imagem): brilho azul + trilha de estrelas. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -right-24 h-80 w-80 rounded-full bg-[#1d4ed8]/50 blur-3xl" />
-        <div className="absolute -bottom-40 -left-24 h-80 w-80 rounded-full bg-[#f5b012]/20 blur-3xl" />
-        <svg className="absolute inset-x-0 bottom-0 h-24 w-full text-white" viewBox="0 0 1440 96" preserveAspectRatio="none"><path fill="currentColor" d="M0 64c240 32 480 32 720 0s480-32 720 0v32H0Z" /></svg>
-      </div>
-      <div className={`${CONTAINER} relative grid items-center gap-10 pt-10 pb-28 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pb-36`}>
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs sm:text-sm font-semibold text-[#ffd873]">
-            <Icone nome="estrela" className="w-4 h-4" /> Para Clubes de Desbravadores
-          </p>
-          <h1 className="mt-5 text-[2.35rem] leading-[1.08] sm:text-5xl xl:text-6xl font-extrabold tracking-tight">
-            Seu clube na <span className="text-[#f5b012]">palma da mão</span>.
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-blue-100 leading-relaxed">
-            As classes, avaliações, documentos, mensalidades e avisos do seu clube num só app — no seu
-            celular, sem papelada e sem planilha espalhada.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Criar meu clube <Icone nome="seta" className="w-5 h-5" /></Link>
-            <Link to="/planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</Link>
-          </div>
-          <p className="mt-3 text-sm text-blue-100">
-            Você já usa o DesbravaClube? <LinkApp to="/login" className="inline-flex min-h-[44px] items-center font-bold text-white underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-md">Já tenho conta — entrar</LinkApp>
-          </p>
-          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
-            {selos.map((t) => (
-              <li key={t} className="flex items-center gap-2 text-sm font-semibold text-blue-50">
-                <span className="grid place-items-center w-5 h-5 rounded-full bg-emerald-400/20 text-emerald-300 shrink-0"><Icone nome="check" className="w-3.5 h-3.5" /></span>{t}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="relative mx-auto w-full max-w-xs sm:max-w-sm lg:max-w-md">
-          <CelularClasse className="mx-auto" />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function Secao({ id, fundo = 'bg-white', children, className = '' }) {
-  return (
-    <section id={id} tabIndex={-1} className={`${fundo} scroll-mt-16 py-14 sm:py-20 lg:py-24 focus:outline-none ${className}`}>
+    <section id={id} tabIndex={-1} className={`${fundo} scroll-mt-16 py-12 sm:py-16 lg:py-20 focus:outline-none ${className}`}>
       <div className={CONTAINER}>{children}</div>
     </section>
   )
 }
 
-function Titulo({ sobre, titulo, texto, claro = false, centro = true }) {
+function Titulo({ sobre, titulo, texto, centro = true, id }) {
   return (
     <div className={`${centro ? 'mx-auto text-center' : ''} max-w-3xl mb-8 lg:mb-12`}>
-      {sobre && <p className={`text-sm font-bold uppercase tracking-wider ${claro ? 'text-[#f5b012]' : 'text-[#1d4ed8]'}`}>{sobre}</p>}
-      <h2 className={`mt-2 text-[1.75rem] leading-tight sm:text-4xl font-extrabold tracking-tight ${claro ? 'text-white' : NAVY}`}>{titulo}</h2>
-      {texto && <p className={`mt-4 text-base sm:text-lg leading-relaxed ${claro ? 'text-blue-100' : 'text-slate-600'}`}>{texto}</p>}
+      {sobre && <p className="text-sm font-bold uppercase tracking-wider text-brand">{sobre}</p>}
+      <h2 id={id} className="mt-2 text-[1.75rem] leading-tight sm:text-4xl font-extrabold tracking-tight text-ink">{titulo}</h2>
+      {texto && <p className="mt-4 text-base sm:text-lg leading-relaxed text-muted">{texto}</p>}
     </div>
   )
 }
 
-function Lista({ itens, claro = false }) {
+function Chip({ children, ouro = false }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${ouro ? 'bg-gold/20 text-[#7a5200]' : 'bg-surface2 text-brand ring-1 ring-line'}`}>{children}</span>
+  )
+}
+
+function Lista({ itens }) {
   return (
     <ul className="space-y-3">
       {itens.map((t) => (
-        <li key={t} className={`flex gap-3 ${claro ? 'text-blue-50' : 'text-slate-700'}`}>
-          <span className={`mt-0.5 grid place-items-center w-6 h-6 rounded-full shrink-0 ${claro ? 'bg-[#f5b012]/20 text-[#f5b012]' : 'bg-[#e8efff] text-[#1d4ed8]'}`}><Icone nome="check" className="w-4 h-4" /></span>
+        <li key={t} className="flex gap-3 text-ink">
+          <span className="mt-0.5 grid place-items-center w-6 h-6 rounded-full shrink-0 bg-surface2 text-brand ring-1 ring-line"><Icone nome="check" className="w-4 h-4" /></span>
           <span>{t}</span>
         </li>
       ))}
@@ -200,117 +167,233 @@ function Lista({ itens, claro = false }) {
   )
 }
 
-const PROBLEMAS = [
-  ['papel', 'Papelada que se perde', 'Suas fichas, cartões e assinaturas espalhados em pastas e fotos no WhatsApp.', 'Você registra tudo no app, e o documento sai pronto.'],
-  ['classes', 'Classes difíceis de acompanhar', 'Você não sabe ao certo quem cumpriu qual requisito.', 'Você vê cada requisito, com comprovação e avaliação da sua liderança.'],
-  ['conversa', 'Comunicação desencontrada', 'Seu aviso importante some no meio do grupo.', 'Seus avisos, agenda e chat moderado dentro do seu clube.'],
-]
-
-function Problemas() {
+// ---- 1. HERO --------------------------------------------------------------------------------------
+function Hero() {
+  const selos = ['Feito para o seu celular', 'Cada clube com os dados separados', 'Você combina o pagamento depois']
   return (
-    <Secao id="problemas" fundo="bg-white">
-      <Titulo sobre="Por que o DesbravaClube" titulo="Menos planilha. Mais tempo com seus desbravadores." texto="O que hoje toma o seu fim de semana vira rotina simples no seu celular." />
-      <ul className="grid gap-4 md:grid-cols-3">
-        {PROBLEMAS.map(([icone, titulo, dor, solucao]) => (
-          <li key={titulo} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <span className="grid place-items-center w-11 h-11 rounded-xl bg-red-50 text-red-700"><Icone nome={icone} /></span>
-            <h3 className={`mt-4 text-lg font-bold ${NAVY}`}>{titulo}</h3>
-            <p className="mt-1 text-slate-600">{dor}</p>
-            <p className="mt-3 flex gap-2 font-semibold text-emerald-800">
-              <Icone nome="check" className="w-5 h-5 shrink-0 mt-0.5" />{solucao}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </Secao>
-  )
-}
-
-// Só recursos que existem HOJE no produto. Especialidades ficam de fora (fora do piloto).
-const RECURSOS = [
-  ['classes', 'Classes com requisitos oficiais', 'Seu desbravador vê cada requisito no celular e comprova com foto ou texto.'],
-  ['estrela', 'Classes avançadas', 'Você acompanha as classes avançadas junto com as regulares.'],
-  ['avaliacoes', 'Avaliação pela liderança', 'Você aprova ou pede correção numa fila só, com o histórico de cada tentativa.'],
-  ['documentos', 'Documentos e certificados', 'Você gera o PDF, assina, e qualquer pessoa confere pelo QR Code.'],
-  ['jogos', 'Jogos e ranking', 'Jogos, desafios e ranking por unidade para manter a sua turma engajada.'],
-  ['mensalidades', 'Mensalidades e controle', 'Você vê o que está pago e o que está pendente, com a chave Pix do seu clube.'],
-  ['qrcode', 'Inscrição por link ou QR', 'Quem quer entrar pede pelo link do seu clube, e você aprova.'],
-  ['camadas', 'Multiclube', 'Se você participa de mais de um clube, alterna entre eles com os dados separados.'],
-  ['mapa', 'Painel da coordenação', 'Se você é da coordenação, acompanha os clubes do seu distrito ou região.'],
-]
-
-function Recursos() {
-  return (
-    <Secao id="recursos" fundo="bg-slate-50">
-      <Titulo sobre="Recursos" titulo="Tudo o que o seu clube precisa, num lugar só" texto="Do requisito cumprido pelo seu desbravador ao certificado que você assina." />
-      <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {RECURSOS.map(([icone, titulo, texto]) => (
-          <li key={titulo} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_1px_2px_rgba(11,27,70,0.04)]">
-            <span className="grid place-items-center w-11 h-11 shrink-0 rounded-xl bg-[#e8efff] text-[#1d4ed8]"><Icone nome={icone} /></span>
-            <div>
-              <h3 className={`font-bold ${NAVY}`}>{titulo}</h3>
-              <p className="mt-1 text-sm text-slate-600 leading-relaxed">{texto}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Secao>
-  )
-}
-
-function Destaques() {
-  return (
-    <Secao id="para-clubes" fundo="bg-white">
-      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <section id="inicio" className="relative overflow-hidden">
+      <div className={`${CONTAINER} grid items-center gap-10 pt-8 pb-12 sm:pt-14 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-20`}>
         <div>
-          <Titulo centro={false} sobre="Para o desbravador" titulo="Seu desbravador acompanha a própria classe" texto="Pelo celular, ele vê o que falta, envia a comprovação na hora e recebe a correção explicada." />
-          <Lista itens={[
-            'Requisitos com status: a fazer, enviado, correção, aprovado',
-            'Comprovação com foto ou texto, direto na tela do requisito',
-            'Reenvio sem perder o histórico',
-          ]} />
+          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs sm:text-sm font-bold text-brand shadow-soft">
+            <span className="h-2 w-2 rounded-full bg-gold" aria-hidden="true" /> Para Clubes de Desbravadores
+          </p>
+          <h1 className="mt-5 text-[clamp(1.75rem,9.4vw,2.5rem)] leading-none sm:text-6xl xl:text-7xl font-black uppercase tracking-[0.04em] text-ink">DesbravaClube</h1>
+          <span className="mt-4 block h-1.5 w-16 rounded-full bg-gold" aria-hidden="true" />
+          <p className="mt-5 max-w-xl text-lg sm:text-xl leading-relaxed text-muted">
+            Uma plataforma para gestão, desenvolvimento e conexão dos Clubes de Desbravadores.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <Link to="/conheca" className={BOTAO_PRIMARIO}>Conhecer o DesbravaClube <Icone nome="seta" className="w-5 h-5" /></Link>
+            <Link to="/planos" className={BOTAO_SECUNDARIO}>Ver planos</Link>
+          </div>
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 text-sm text-muted">
+            <LinkApp to="/login" className="inline-flex min-h-[44px] items-center font-bold text-brand underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md">Já tenho conta — entrar</LinkApp>
+            <span aria-hidden="true">·</span>
+            <Link to="/adquirir" className="inline-flex min-h-[44px] items-center font-bold text-brand underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md">Criar meu clube</Link>
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+            {selos.map((t) => (
+              <li key={t} className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <span className="grid place-items-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 shrink-0"><Icone nome="check" className="w-3.5 h-3.5" /></span>{t}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="grid gap-6 justify-items-center"><CardTentativas /></div>
+        {/* Composição: no celular, UM aparelho grande (rolagem vertical rápida); de sm para cima, três sobrepostos. */}
+        <div className="relative mx-auto w-full max-w-[19rem] sm:max-w-md lg:max-w-lg">
+          <div className="relative z-10 mx-auto w-[78%] sm:w-[50%]">
+            <Celular tela={TELAS.inicio} prioridade />
+          </div>
+          <div className="absolute left-0 top-[9%] hidden w-[40%] sm:block"><Celular tela={TELAS.classe} /></div>
+          <div className="absolute right-0 top-[9%] hidden w-[40%] sm:block"><Celular tela={TELAS.rede} /></div>
+        </div>
       </div>
-      <div className="mt-16 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="order-2 lg:order-1"><NotebookPainel /></div>
-        <div className="order-1 lg:order-2">
-          <Titulo centro={false} sobre="Para a diretoria" titulo="Seu clube inteiro num painel" texto="Seus membros, unidades, presença, avaliações, mensalidades e documentos — com cada ação registrada." />
-          <Lista itens={[
-            'Você aprova a entrada e define o cargo de cada pessoa',
-            'Sua fila de avaliação num lugar só',
-            'Seus documentos com assinatura e QR Code de verificação',
-          ]} />
-        </div>
+    </section>
+  )
+}
+
+// ---- 2. CONHEÇA O APLICATIVO ----------------------------------------------------------------------
+function Aplicativo() {
+  return (
+    <Secao id="recursos" fundo="bg-white/60">
+      <Titulo sobre="Recursos" titulo="Conheça o aplicativo" texto="As áreas que o seu clube usa no dia a dia, do desbravador à coordenação." />
+      <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {AREAS.map((a) => (
+          <li key={a.id} className={`${CARTAO} flex gap-4 p-4 sm:p-5`}>
+            <span aria-hidden="true" className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-surface2 text-2xl ring-1 ring-line">{a.icone}</span>
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-ink">{a.titulo}</h3>
+              <p className="mt-1 text-[0.95rem] leading-relaxed text-muted">{a.texto}</p>
+              <p className="mt-2"><Chip>{a.onde}</Chip></p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Secao>
+  )
+}
+
+// ---- 3. VEJA COMO FUNCIONA (faixa de celulares) ---------------------------------------------------
+function ComoFunciona() {
+  return (
+    <Secao id="como-funciona">
+      <Titulo sobre="Como funciona" titulo="Veja como funciona" texto="Telas reais do aplicativo, com dados fictícios." />
+      {/* Rolagem horizontal CONTIDA no celular (a página não ganha barra); grade a partir do desktop. */}
+      <ul
+        role="list"
+        aria-label="Telas do aplicativo"
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible lg:px-0 lg:pb-0"
+        style={{ scrollbarWidth: 'thin' }}
+      >
+        {FAIXA.map((f) => (
+          <li key={f.tela} className="w-[62%] shrink-0 snap-center sm:w-[40%] md:w-[30%] lg:w-auto">
+            <Celular tela={TELAS[f.tela]} />
+            <h3 className="mt-4 font-extrabold text-ink">{f.titulo}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{f.legenda}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-8 text-center">
+        <Link to="/conheca" className={BOTAO_SECUNDARIO}>Ver a demonstração guiada <Icone nome="seta" className="w-5 h-5" /></Link>
       </div>
     </Secao>
   )
 }
 
-function ComoFunciona() {
-  const passos = [
-    ['bandeira', 'Crie o clube', 'Você se cadastra e cria o espaço do seu clube em poucos minutos.'],
-    ['qrcode', 'Convide a turma', 'Você compartilha o link ou o QR Code e aprova cada entrada.'],
-    ['celular', 'Use no dia a dia', 'Suas classes, avaliações, avisos e documentos no seu celular.'],
-  ]
+// ---- 4. FLUXO DO CLUBE ----------------------------------------------------------------------------
+function Fluxo() {
   return (
-    <Secao id="como-funciona" fundo="bg-[#0b1b46]">
-      <Titulo claro sobre="Como funciona" titulo="Em 3 passos, seu clube no app" />
-      <ol className="grid gap-4 md:grid-cols-3">
-        {passos.map(([icone, t, d], i) => (
-          <li key={t} className="relative rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="flex items-center gap-3">
-              <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#f5b012] text-[#0b1b46] font-extrabold" aria-hidden="true">{i + 1}</span>
-              <Icone nome={icone} className="w-6 h-6 text-[#ffd873]" />
-            </div>
-            <h3 className="mt-4 text-lg font-bold text-white"><span className="sr-only">Passo {i + 1}: </span>{t}</h3>
-            <p className="mt-1 text-blue-100">{d}</p>
+    <Secao id="fluxo" fundo="bg-white/60">
+      <Titulo sobre="Passo a passo" titulo="O fluxo do clube em 7 passos" texto="Da criação do clube à participação na Rede DBV." />
+      <ol className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {FLUXO.map((p, i) => (
+          <li key={p.titulo} className={`${CARTAO} relative p-5 ${i === FLUXO.length - 1 ? 'sm:col-span-2 lg:col-span-1' : ''}`}>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold text-lg font-extrabold text-[#07122f]" aria-hidden="true">{i + 1}</span>
+            <h3 className="mt-3 font-extrabold text-ink"><span className="sr-only">Passo {i + 1}: </span>{p.titulo}</h3>
+            <p className="mt-1 text-[0.95rem] leading-relaxed text-muted">{p.texto}</p>
           </li>
         ))}
       </ol>
-      <div className="mt-10 text-center">
-        <Link to="/conheca" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Conheça o DesbravaClube em 8 etapas <Icone nome="seta" className="w-5 h-5" /></Link>
+    </Secao>
+  )
+}
+
+// ---- 5. CLASSES -----------------------------------------------------------------------------------
+function Classes() {
+  return (
+    <Secao id="classes">
+      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="order-2 lg:order-1">
+          <Titulo centro={false} sobre="Classes" titulo="A classe do desbravador, do primeiro requisito ao documento" texto="O coração do aplicativo: cada requisito com comprovação, avaliação e histórico." />
+          <Lista itens={CLASSES_ITENS} />
+          <ul aria-label="Classes regulares" className="mt-8 flex flex-wrap gap-3">
+            {CLASSES_REGULARES.map((c) => (
+              <li key={c} className="flex w-[4.5rem] flex-col items-center gap-1 text-center">
+                <EscudoClasse nome={c} className="h-12 w-10" />
+                <span className="text-xs font-bold text-ink">{c}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-muted">Cada classe regular tem a sua versão avançada.</p>
+        </div>
+        <div className="order-1 lg:order-2">
+          <div className="relative mx-auto w-full max-w-[19rem] sm:max-w-md">
+            <div className="w-[62%]"><Celular tela={TELAS.classe} /></div>
+            <div className="absolute right-0 top-[12%] w-[56%]"><Celular tela={TELAS.requisitos} /></div>
+          </div>
+        </div>
       </div>
+    </Secao>
+  )
+}
+
+// ---- 6. REDE DBV ----------------------------------------------------------------------------------
+function Rede() {
+  return (
+    <Secao id="rede" fundo="bg-white/60">
+      <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+        <div className="mx-auto w-full max-w-[16rem] sm:max-w-xs"><Celular tela={TELAS.rede} /></div>
+        <div>
+          <Titulo centro={false} sobre="Rede DBV" titulo="Uma comunidade para os Clubes" texto="Os clubes se conhecem, se inspiram e celebram o que fazem, dentro de regras claras." />
+          <p className="mb-4 flex flex-wrap gap-2"><Chip ouro>Disponível para clubes habilitados</Chip><Chip>Liberada aos poucos, clube a clube</Chip></p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {REDE_ITENS.map(([t, d]) => (
+              <li key={t} className={`${CARTAO} p-4`}>
+                <h3 className="font-extrabold text-ink">{t}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{d}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5 rounded-3xl border border-line bg-surface2 p-5">
+            <h3 className="font-extrabold text-ink">Não é uma rede social aberta</h3>
+            <ul className="mt-3 space-y-2">
+              {REDE_NAO_E.map((t) => (
+                <li key={t} className="flex gap-2 text-[0.95rem] text-muted">
+                  <Icone nome="escudo" className="mt-0.5 h-5 w-5 shrink-0 text-brand" /><span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </Secao>
+  )
+}
+
+// ---- 7. GESTÃO ------------------------------------------------------------------------------------
+function Gestao() {
+  return (
+    <Secao id="gestao">
+      <Titulo sobre="Gestão" titulo="O clube inteiro, organizado" texto="As ferramentas da liderança, do pedido de entrada ao documento assinado." />
+      <div className="grid items-start gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:gap-16">
+        <ul className="order-2 grid gap-3 sm:grid-cols-2 lg:order-1">
+          {GESTAO_ITENS.map((g) => (
+            <li key={g.titulo} className={`${CARTAO} flex items-center gap-3 p-4`}>
+              <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-surface2 text-xl ring-1 ring-line">{g.icone}</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-extrabold text-ink">{g.titulo}</h3>
+                <p className="text-sm leading-snug text-muted">{g.texto}</p>
+              </div>
+              <span aria-hidden="true" className="text-xl text-faint">›</span>
+            </li>
+          ))}
+        </ul>
+        <div className="order-1 mx-auto w-full max-w-[16rem] sm:max-w-xs lg:order-2"><Celular tela={TELAS.gestao} /></div>
+      </div>
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted">
+        As mensalidades são um controle do clube, com a chave Pix do próprio clube. O pagamento acontece fora do aplicativo.
+      </p>
+    </Secao>
+  )
+}
+
+// ---- 8. ADMINISTRAÇÃO CENTRALIZADA (uma frase, sem detalhes) ---------------------------------------
+function Administracao() {
+  return (
+    <section aria-label="Administração da plataforma" className="py-2">
+      <p className={`${CONTAINER} text-center text-sm sm:text-base font-semibold text-muted`}>
+        A plataforma tem administração centralizada, que mantém o serviço no ar e atende os clubes.
+      </p>
+    </section>
+  )
+}
+
+// ---- 9. SEGURANÇA, PLANOS, FAQ, CTA FINAL -------------------------------------------------------
+function Seguranca() {
+  return (
+    <Secao id="seguranca" fundo="bg-white/60">
+      <Titulo sobre="Segurança e privacidade" titulo="Cuidado de verdade com os dados do seu clube" texto="Pensado desde o início para proteger os dados das suas crianças e adolescentes." />
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {SEGURANCA.map(([icone, t, d]) => (
+          <li key={t} className={`${CARTAO} flex gap-4 p-5`}>
+            <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#0b1b46] text-gold shrink-0"><Icone nome={icone} /></span>
+            <div>
+              <h3 className="font-extrabold text-ink">{t}</h3>
+              <p className="mt-1 text-sm text-muted">{d}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </Secao>
   )
 }
@@ -326,13 +409,13 @@ function Planos() {
   }, [])
 
   return (
-    <Secao id="planos" fundo="bg-white">
+    <Secao id="planos">
       <Titulo sobre="Planos" titulo="Uma licença, tudo incluso" texto="Uma licença anual para o seu clube — não é mensalidade." />
-      {planos === null && !erro && <p role="status" className="text-center text-slate-500">Carregando a oferta vigente…</p>}
+      {planos === null && !erro && <p role="status" className="text-center text-muted">Carregando a oferta vigente…</p>}
       {(erro || (planos && planos.length === 0)) && (
         <div className="text-center">
-          <p className="text-slate-600">Não conseguimos carregar a oferta agora.</p>
-          <Link to="/adquirir" className={`mt-4 ${BOTAO_PRIMARIO}`}>Ver planos</Link>
+          <p className="text-muted">Não conseguimos carregar a oferta agora.</p>
+          <Link to="/adquirir" className={`mt-4 ${BOTAO_PRIMARIO}`}>Ver a licença</Link>
         </div>
       )}
       {planos && planos.length > 0 && (
@@ -340,7 +423,7 @@ function Planos() {
           {planos.map((p) => <CartaoPlano key={p.chave} plano={p} />)}
         </ul>
       )}
-      <p className="mx-auto mt-6 max-w-xl text-center text-sm text-slate-500">
+      <p className="mx-auto mt-6 max-w-xl text-center text-sm text-muted">
         Você cria a sua conta e o seu clube normalmente, e combina o pagamento direto com a gente.
       </p>
     </Secao>
@@ -360,16 +443,16 @@ function CartaoPlano({ plano }) {
   ].filter(Boolean)
   const destino = `/criar-clube?plano=${encodeURIComponent(plano.chave)}${preco ? `&ciclo=${encodeURIComponent(preco.ciclo)}` : ''}`
   return (
-    <li className="rounded-3xl border-2 border-[#1d4ed8] bg-white p-6 sm:p-8 shadow-[0_30px_60px_-40px_rgba(29,78,216,0.6)]">
-      {meta.campanha && <p className="inline-block rounded-full bg-[#fff3d6] px-3 py-1 text-xs font-bold text-[#7a5200]">{meta.campanha}</p>}
-      <h3 className={`mt-3 text-2xl font-extrabold ${NAVY}`}>{plano.nome}</h3>
-      {plano.descricao && <p className="mt-2 text-slate-600">{plano.descricao}</p>}
+    <li className="rounded-3xl border border-line bg-surface p-6 sm:p-8 shadow-soft ring-2 ring-brand/30">
+      {meta.campanha && <p className="inline-block rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-[#7a5200]">{meta.campanha}</p>}
+      <h3 className="mt-3 text-2xl font-extrabold text-ink">{plano.nome}</h3>
+      {plano.descricao && <p className="mt-2 text-muted">{plano.descricao}</p>}
       {preco && (
         <div className="mt-6">
-          <div className={`text-4xl font-extrabold ${NAVY}`}>{formatarPreco(preco.valor_centavos, preco.moeda)}</div>
-          <div className="text-sm text-slate-500">{preco.ciclo === 'anual' ? 'por ano, no cartão' : 'por mês'}</div>
+          <div className="text-4xl font-extrabold text-ink">{formatarPreco(preco.valor_centavos, preco.moeda)}</div>
+          <div className="text-sm text-muted">{preco.ciclo === 'anual' ? 'por ano, no cartão' : 'por mês'}</div>
           {(meta.parcelas_cartao && meta.parcela_centavos) || meta.pix_centavos ? (
-            <div className="mt-4 space-y-1 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="mt-4 space-y-1 rounded-2xl bg-surface2 p-4 text-sm text-ink">
               {meta.parcelas_cartao && meta.parcela_centavos && <p>Até {meta.parcelas_cartao}x de {formatarPreco(meta.parcela_centavos, preco.moeda)} sem juros para o clube</p>}
               {meta.pix_centavos && <p>{formatarPreco(meta.pix_centavos, preco.moeda)} no Pix</p>}
             </div>
@@ -382,54 +465,18 @@ function CartaoPlano({ plano }) {
   )
 }
 
-function Seguranca() {
-  const itens = [
-    ['escudo', 'Dados das crianças protegidos', 'As fotos, evidências e dados dos seus membros não ficam públicos.'],
-    ['camadas', 'Cada clube isolado', 'Os dados do seu clube não aparecem para nenhum outro.'],
-    ['usuario', 'Acesso por cargo', 'Cada pessoa do seu clube vê e faz só o que o cargo dela permite.'],
-    ['responsaveis', 'Responsáveis confirmados', 'O vínculo com o filho só vale depois que você confirma.'],
-    ['historico', 'Histórico de ações', 'Suas aprovações, assinaturas e revogações ficam registradas.'],
-    ['cadeado', 'Consentimento registrado', 'O responsável concede ou revoga o consentimento, com registro.'],
-  ]
-  return (
-    <Secao id="seguranca" fundo="bg-slate-50">
-      <Titulo sobre="Segurança e privacidade" titulo="Cuidado de verdade com os dados do seu clube" texto="Pensado desde o início para proteger os dados das suas crianças e adolescentes." />
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {itens.map(([icone, t, d]) => (
-          <li key={t} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5">
-            <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#0b1b46] text-[#f5b012] shrink-0"><Icone nome={icone} /></span>
-            <div>
-              <h3 className={`font-bold ${NAVY}`}>{t}</h3>
-              <p className="mt-1 text-sm text-slate-600">{d}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Secao>
-  )
-}
-
-const PERGUNTAS = [
-  ['Funciona no celular?', 'Sim. O DesbravaClube foi feito primeiro para o seu celular e também funciona no computador e no tablet. Você não precisa instalar: abre pelo navegador e pode adicionar à tela inicial.'],
-  ['Como funcionam as Classes?', 'Seu desbravador vê os requisitos e envia a comprovação com foto ou texto. Você avalia: aprova ou pede correção com um comentário. Cada tentativa fica no histórico.'],
-  ['O que os responsáveis veem?', 'Depois que a diretoria confirma o vínculo, o responsável acompanha pontos, presenças e faltas e a mensalidade pendente, e registra o consentimento do filho.'],
-  ['Como os membros entram no meu clube?', 'Você compartilha o link ou o QR Code do seu clube; quem acessa pede a entrada e você aprova.'],
-  ['Existe acesso para a coordenação?', 'Sim. Coordenação distrital e regional tem um painel próprio com a visão que o seu papel permite. Os dados privados de cada clube continuam sob a gestão do clube.'],
-  ['Como funciona a licença?', 'É uma licença anual para o seu clube, não uma mensalidade. Você vê os valores em Planos e, por enquanto, combina o pagamento direto com a gente.'],
-]
-
 function Faq() {
   return (
-    <Secao id="faq" fundo="bg-white">
+    <Secao id="faq" fundo="bg-white/60">
       <Titulo sobre="FAQ" titulo="Perguntas frequentes" />
-      <div className="mx-auto max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200">
+      <div className="mx-auto max-w-3xl divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface shadow-soft">
         {PERGUNTAS.map(([p, r]) => (
           <details key={p} className="group">
-            <summary className={`flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold ${NAVY} [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1d4ed8]`}>
+            <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-ink [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand">
               {p}
-              <Icone nome="mais" className="w-5 h-5 shrink-0 text-[#1d4ed8] transition-transform group-open:rotate-45" />
+              <Icone nome="mais" className="w-5 h-5 shrink-0 text-brand motion-safe:transition-transform group-open:rotate-45" />
             </summary>
-            <p className="px-5 pb-5 text-slate-600 leading-relaxed">{r}</p>
+            <p className="px-5 pb-5 leading-relaxed text-muted">{r}</p>
           </details>
         ))}
       </div>
@@ -440,12 +487,12 @@ function Faq() {
 function ChamadaFinal() {
   return (
     <section className="bg-[#0b1b46]">
-      <div className={`${CONTAINER} py-16 sm:py-20 text-center`}>
+      <div className={`${CONTAINER} py-14 sm:py-20 text-center`}>
         <h2 className="mx-auto max-w-3xl text-3xl sm:text-4xl font-extrabold tracking-tight text-white">Leve o seu clube para a palma da mão.</h2>
         <p className="mx-auto mt-3 max-w-xl text-blue-100">Crie o seu clube agora e combine o pagamento depois.</p>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
-          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} bg-[#f5b012] hover:bg-[#ffc23a] text-[#0b1b46] focus-visible:ring-white focus-visible:ring-offset-[#0b1b46]`}>Quero criar meu clube</Link>
-          <a href="#planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</a>
+          <Link to="/adquirir" className={`${BOTAO_PRIMARIO} focus-visible:ring-offset-[#0b1b46]`}>Quero criar meu clube</Link>
+          <Link to="/planos" className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-2xl border border-white/30 text-white font-bold hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Ver planos</Link>
         </div>
       </div>
     </section>
@@ -456,6 +503,7 @@ export function Rodape({ naLanding = true }) {
   const ancora = (h) => (naLanding ? h : `/${h}`)
   const WHATSAPP = 'https://wa.me/5581989499469?text=' + encodeURIComponent('Olá! Vim pelo site do DesbravaClube e quero saber mais.')
   const emBreve = 'text-slate-400 cursor-default'
+  const link = 'inline-flex min-h-[44px] items-center hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded'
   return (
     <footer className="bg-[#07122f] text-slate-300">
       <div className={`${CONTAINER} grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4`}>
@@ -466,12 +514,13 @@ export function Rodape({ naLanding = true }) {
         <nav aria-label="Produto">
           <h2 className="text-sm font-bold text-white">Produto</h2>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><a href={ancora('#recursos')} className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Recursos</a></li>
-            <li><a href={ancora('#planos')} className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Planos</a></li>
-            <li><Link to="/clubes" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Clubes</Link></li>
-            <li><Link to="/parceiros" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Parceiros</Link></li>
-            <li><Link to="/ajuda" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Como usar</Link></li>
-            <li><LinkApp to="/login" className="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Entrar</LinkApp></li>
+            <li><a href={ancora('#recursos')} className={link}>Recursos</a></li>
+            <li><a href={ancora('#planos')} className={link}>Planos</a></li>
+            <li><Link to="/conheca" className={link}>Conheça</Link></li>
+            <li><Link to="/clubes" className={link}>Clubes</Link></li>
+            <li><Link to="/parceiros" className={link}>Parceiros</Link></li>
+            <li><Link to="/ajuda" className={link}>Como usar</Link></li>
+            <li><LinkApp to="/login" className={link}>Entrar</LinkApp></li>
           </ul>
         </nav>
         <div>
@@ -506,21 +555,20 @@ export function Rodape({ naLanding = true }) {
 }
 
 export default function Landing() {
-  useEffect(() => {
-    const antes = document.title
-    document.title = `${MARCA_PRODUTO.nome} — ${MARCA_PRODUTO.lema.toLowerCase()}`
-    return () => { document.title = antes }
-  }, [])
+  useMetaDaPagina(META_LANDING.titulo, META_LANDING.descricao, '/')
   return (
-    <div className="min-h-full bg-white text-slate-800">
+    <div className="min-h-full text-ink">
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[#0b1b46] focus:shadow">Pular para o conteúdo</a>
       <Cabecalho />
       <main id="conteudo">
         <Hero />
-        <Problemas />
-        <Recursos />
-        <Destaques />
+        <Aplicativo />
         <ComoFunciona />
+        <Fluxo />
+        <Classes />
+        <Rede />
+        <Gestao />
+        <Administracao />
         <Seguranca />
         <Planos />
         <Faq />

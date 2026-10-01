@@ -34,7 +34,7 @@ export function CartaoParceiro({ p }) {
 export default function SiteParceiros() {
   const [parceiros, setParceiros] = useState(null)
   const [erro, setErro] = useState('')
-  useMetaDaPagina('Nossos parceiros — DesbravaClube', 'Empresas e serviços que apoiam o DesbravaClube e os Clubes de Desbravadores.')
+  useMetaDaPagina('Nossos parceiros — DesbravaClube', 'Empresas e serviços que apoiam o DesbravaClube e os Clubes de Desbravadores.', '/parceiros')
 
   useEffect(() => {
     let vivo = true

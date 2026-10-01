@@ -1,9 +1,10 @@
 import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import LinkApp from '../components/LinkApp.jsx'
 import { carregarPlanos, formatarPreco } from '../services/comercial.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import SiteLayout, { useMetaDaPagina } from './site/SiteLayout.jsx'
 
 // Catálogo público de planos + entrada do fluxo de aquisição (item 4). PÚBLICA de propósito — quem
 // está decidindo se assina ainda não tem conta. Preço, nome e composição vêm do banco
@@ -20,6 +21,8 @@ const RECURSO_NOME = {
 export default function Adquirir() {
   const [planos, setPlanos] = useState(null)
   const [erro, setErro] = useState('')
+  const { pathname } = useLocation()
+  useMetaDaPagina('Planos e licença — DesbravaClube', 'Licença anual para o seu clube de Desbravadores, com teste grátis para começar. Veja o que está incluso e combine o pagamento direto.', pathname === '/planos' ? '/planos' : '/adquirir')
 
   useEffect(() => {
     let vivo = true
@@ -28,13 +31,14 @@ export default function Adquirir() {
   }, [])
 
   return (
+    <SiteLayout>
     <div className="max-w-2xl mx-auto px-4 py-8">
       <header className="mb-5 text-center">
-        <h1 className="text-2xl font-extrabold text-ink">A licença do seu clube</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">A licença do seu clube</h1>
         <p className="text-sm text-muted mt-1">Licença anual — não é mensalidade. Comece agora, combine o pagamento depois.</p>
       </header>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 mb-5 leading-snug">
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 mb-5 leading-snug">
         <strong>Pagamento online ainda não integrado.</strong> Você cria a conta e o clube normalmente;
         a cobrança será combinada diretamente com a administração da plataforma.
       </div>
@@ -47,7 +51,7 @@ export default function Adquirir() {
           const preco = (p.precos || [])[0]
           const meta = preco?.metadata || {}
           return (
-            <li key={`${p.chave}-${p.versao}`} className="bg-surface rounded-2xl p-4 shadow-soft">
+            <li key={`${p.chave}-${p.versao}`} className="bg-surface rounded-3xl border border-line p-5 shadow-soft">
               {meta.campanha && (
                 <div className="inline-block bg-gold/20 text-amber-800 text-xs font-bold rounded-full px-3 py-1 mb-2">
                   🏆 {meta.campanha}
@@ -80,7 +84,7 @@ export default function Adquirir() {
               </p>
               {p.provisorio && <p className="text-xs text-amber-700 mt-1">Preço e composição provisórios.</p>}
               <LinkApp to={`/criar-clube?plano=${encodeURIComponent(p.chave)}${preco ? `&ciclo=${encodeURIComponent(preco.ciclo)}` : ''}`}
-                className="block text-center mt-3 min-h-[44px] leading-[44px] rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold">
+                className="block text-center mt-4 min-h-[48px] leading-[48px] rounded-2xl bg-gradient-to-r from-brand via-brand to-brand2 shadow-glow text-white font-bold">
                 Quero este plano
               </LinkApp>
             </li>
@@ -93,8 +97,9 @@ export default function Adquirir() {
       )}
 
       <p className="text-center text-sm mt-6">
-        <Link to="/" className="text-brand font-semibold underline">Voltar</Link>
+        <Link to="/" className="inline-flex min-h-[44px] items-center text-brand font-semibold underline">Voltar</Link>
       </p>
     </div>
+    </SiteLayout>
   )
 }

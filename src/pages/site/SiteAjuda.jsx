@@ -5,7 +5,7 @@ import GuiaDeUso from '../../components/tutorial/GuiaDeUso.jsx'
 // /ajuda no SITE: o mesmo conteúdo do app em modo "conhecer" — sem atalho para tela logada, sem
 // recursos que ainda estão fora do piloto; o convite é criar o clube.
 export default function SiteAjuda() {
-  useMetaDaPagina('Como usar o DesbravaClube', 'Tutorial do DesbravaClube: passo a passo para desbravadores, pais, conselheiros, instrutores, diretoria e coordenação.')
+  useMetaDaPagina('Como usar o DesbravaClube', 'Tutorial do DesbravaClube: passo a passo para desbravadores, pais, conselheiros, instrutores, diretoria e coordenação.', '/ajuda')
   return (
     <SiteLayout>
       <TopoDaPagina sobre="Ajuda" titulo="Como usar o DesbravaClube"

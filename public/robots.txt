@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /$
+Allow: /conheca
+Allow: /planos
 Allow: /adquirir
+Allow: /clubes
+Allow: /parceiros
+Allow: /ajuda
+Allow: /og-desbravaclube.png
+Allow: /landing/
 Disallow: /

@@ -46,6 +46,17 @@ describe('Adquirir', () => {
     expect(screen.queryByText(/no Pix/)).not.toBeInTheDocument()
   })
 
+  it('é página pública: moldura do site, um h1, título e canonical próprios, preço intacto', async () => {
+    carregarPlanos.mockResolvedValue([PLANO])
+    render(<MemoryRouter initialEntries={['/planos']}><Adquirir /></MemoryRouter>)
+    await screen.findByText('Licença Anual')
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
+    expect(document.title).toMatch(/Planos e licença/)
+    expect(document.head.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://desbravaclube.com.br/planos')
+    expect(screen.getByText('R$ 229,90')).toBeInTheDocument()
+  })
+
   it('catálogo vazio não quebra a tela', async () => {
     carregarPlanos.mockResolvedValue([])
     render(<MemoryRouter><Adquirir /></MemoryRouter>)
