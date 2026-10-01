@@ -16,6 +16,8 @@ const { default: Cadastro } = await import('./Cadastro.jsx')
 const CODIGO = 'AB12CD34EF56AB78'
 const q = (volta) => `?proximo=${encodeURIComponent(volta)}`
 
+// sem atraso entre teclas: com a CPU cheia (suíte inteira) digitar com o atraso padrão estourava o tempo do teste
+const u = userEvent.setup({ delay: null })
 async function enviar(inicio, { sessao = false } = {}) {
   signUp.mockResolvedValue({ data: { session: sessao ? { user: { id: 'u1' } } : null }, error: null })
   render(
@@ -26,12 +28,12 @@ async function enviar(inicio, { sessao = false } = {}) {
       </Routes>
     </MemoryRouter>,
   )
-  await userEvent.type(screen.getByLabelText('Nome completo'), 'Ana Nova')
-  await userEvent.type(screen.getByLabelText('E-mail'), 'ana@x.com')
-  await userEvent.type(screen.getByLabelText(/Senha/), 'segredo123')
+  await u.type(screen.getByLabelText('Nome completo'), 'Ana Nova')
+  await u.type(screen.getByLabelText('E-mail'), 'ana@x.com')
+  await u.type(screen.getByLabelText(/Senha/), 'segredo123')
   const nasc = screen.queryByLabelText('Data de nascimento')   // coordenação não pede
-  if (nasc) await userEvent.type(nasc, '2013-05-05')
-  await userEvent.click(screen.getByRole('button', { name: /Enviar cadastro|Criar conta/ }))
+  if (nasc) await u.type(nasc, '2013-05-05')
+  await u.click(screen.getByRole('button', { name: /Enviar cadastro|Criar conta/ }))
   await vi.waitFor(() => expect(signUp).toHaveBeenCalled())
   return signUp.mock.calls[0][0].options.data
 }

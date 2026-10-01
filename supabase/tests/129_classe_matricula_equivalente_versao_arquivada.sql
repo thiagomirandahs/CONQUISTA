@@ -19,14 +19,14 @@ select t.antes() as foto \gset
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('Amigo 2026.4 NÃO é oferecida a quem já tem a Amigo 2026.3 em andamento neste clube',
   t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'amigo' and c->>'nome' = 'Amigo'$q$), 0::bigint);
-select t.throws('classe_iniciar da Amigo 2026.4 é recusada (versão anterior em andamento)', format($q$select public.classe_iniciar(%L)$q$, t.classe('2026.4', 'amigo')), 'versão anterior');
+select t.throws('classe_iniciar da Amigo 2026.4 é recusada (versão anterior em andamento)', format($q$select public.classe_iniciar(%L)$q$, t.classe('2026.4', 'amigo')), 'em andamento neste clube');
 select t.eq('...outra classe (Companheiro) continua oferecida', t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'companheiro'$q$), 1::bigint);
 select t.permitido('...e pode ser iniciada', format($q$select public.classe_iniciar(%L)$q$, t.classe('2026.4', 'companheiro')));
 reset role;
 
 -- atribuição pela liderança: mesma recusa
 select t.como('lider_a'); select t.pedir_clube('clube_a');
-select t.throws('classe_atribuir da Amigo 2026.4 para quem tem a 2026.3 é recusada', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a'), t.classe('2026.4', 'amigo')), 'versão anterior');
+select t.throws('classe_atribuir da Amigo 2026.4 para quem tem a 2026.3 é recusada', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a'), t.classe('2026.4', 'amigo')), 'em andamento neste clube');
 select t.permitido('...mas atribuir a Amigo a OUTRO membro (sem matrícula) funciona', format($q$select public.classe_atribuir(%L, %L)$q$, t.id('membro_a2'), t.classe('2026.4', 'amigo')));
 reset role;
 

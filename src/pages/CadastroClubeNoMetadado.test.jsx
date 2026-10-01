@@ -12,18 +12,20 @@ let lista = [{ slug: 'clube-exemplo', nome: 'Clube Exemplo', cidade: 'Recife' }]
 vi.mock('../services/vitrine.js', () => ({ clubesDaVitrine: () => Promise.resolve(lista) }))
 const { default: Cadastro } = await import('./Cadastro.jsx')
 
+// sem atraso entre teclas: com a CPU cheia (suíte inteira) digitar com o atraso padrão estourava o tempo do teste
+const u = userEvent.setup({ delay: null })
 async function enviar({ escolher = true } = {}) {
   signUp.mockResolvedValue({ data: { session: null }, error: null })
   render(<MemoryRouter initialEntries={['/cadastro']}><Routes><Route path="/cadastro" element={<Cadastro />} /></Routes></MemoryRouter>)
-  await userEvent.type(screen.getByLabelText('Nome completo'), 'Ana Nova')
-  await userEvent.type(screen.getByLabelText('E-mail'), 'ana@x.com')
-  await userEvent.type(screen.getByLabelText(/Senha/), 'segredo123')
-  await userEvent.type(screen.getByLabelText('Data de nascimento'), '2013-05-05')
+  await u.type(screen.getByLabelText('Nome completo'), 'Ana Nova')
+  await u.type(screen.getByLabelText('E-mail'), 'ana@x.com')
+  await u.type(screen.getByLabelText(/Senha/), 'segredo123')
+  await u.type(screen.getByLabelText('Data de nascimento'), '2013-05-05')
   if (escolher) {
-    await userEvent.type(await screen.findByTestId('cadastro-clube'), 'exemplo')
-    await userEvent.click(await screen.findByRole('option', { name: /Clube Exemplo/ }))
+    await u.type(await screen.findByTestId('cadastro-clube'), 'exemplo')
+    await u.click(await screen.findByRole('option', { name: /Clube Exemplo/ }))
   }
-  await userEvent.click(screen.getByRole('button', { name: 'Enviar cadastro' }))
+  await u.click(screen.getByRole('button', { name: 'Enviar cadastro' }))
   await vi.waitFor(() => expect(signUp).toHaveBeenCalled())
   return signUp.mock.calls[0][0].options.data
 }

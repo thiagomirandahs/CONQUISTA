@@ -1,3 +1,4 @@
+import ConclusaoReconhecida from '../components/classes/ConclusaoReconhecida.jsx'
 import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
 import { hrefExterno } from '../lib/urlSegura.js'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -578,6 +579,7 @@ function Progresso({ dados, formularios = {}, userId, onMudou }) {
             🏅 Investido(a) nesta classe{conclusao?.investidura?.data ? ` em ${fmtData(conclusao.investidura.data)}` : ''}!
           </div>
         )}
+        <ConclusaoReconhecida memberClassId={mc.id} ativo={mc.status === 'investida'} />
         {['aguardando_revisao', 'apto_investidura', 'investida'].includes(mc.status) && <CaminhoDoCartao memberClassId={mc.id} status={mc.status} />}
         {conclusao?.snapshot && <BotaoDocumento memberClassId={mc.id} ehFinal={mc.status === 'investida'} />}
         </div>
