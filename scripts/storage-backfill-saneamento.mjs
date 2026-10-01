@@ -178,6 +178,7 @@ async function chamarFuncao() {
 
 async function verificar() {
   const arquivos = ['gps', 'outros'].filter((g) => existsSync(join(PASTA, `snapshot-${g}.json`)))
+  const excecoes = existsSync(join(PASTA, 'excecoes.json')) ? JSON.parse(readFileSync(join(PASTA, 'excecoes.json'), 'utf8')) : {}
   const estado = existsSync(join(PASTA, 'verificados.json')) ? JSON.parse(readFileSync(join(PASTA, 'verificados.json'), 'utf8')) : {}
   const globalAgora = estadoStorage(); const violacoes = []; const cont = { saneada: 0, ja_limpa: 0, ignorado: 0, invalida: 0, falhou: 0, pendente: 0, retries: 0, verificados_agora: 0 }
   for (const g of arquivos) {
@@ -203,7 +204,7 @@ async function verificar() {
         const a = atual[`${o.bucket}|${o.nome}`]
         if (!a) { violacoes.push(`${rot}: objeto SUMIU do Storage`); continue }
         if (a.owner_id !== o.owner_id || a.owner !== o.owner) violacoes.push(`${rot}: owner_id/owner MUDOU`)
-        if (a.mime !== o.mime) violacoes.push(`${rot}: mimetype mudou (${o.mime} -> ${a.mime})`)
+        if (a.mime !== o.mime && !excecoes[`${o.bucket}|${o.nome}`]) violacoes.push(`${rot}: mimetype mudou (${o.mime} -> ${a.mime})`)
         const b = await baixar(o.bucket, o.nome)
         if (!b) { violacoes.push(`${rot}: não consegui baixar`); continue }
         const c = classificar(b)

@@ -81,7 +81,9 @@ async function processar(p: Pendente, c: Contagem): Promise<number> {
   if (eConf) { await marcar(p, 'falhou', 'erro_conferir'); c.falhas++; return original.length }
   if (!igual) { c.mudou++; return original.length }   // fica reservado; volta ao lote quando a reserva expirar e o app/varredura reenfileirar
   // 5) regrava no MESMO caminho
-  const { error: eUp } = await sb.storage.from(p.bucket).upload(p.caminho, r.bytes, { upsert: true, contentType: MIME[r.formato] ?? 'application/octet-stream' })
+  // PRESERVA o mimetype que o objeto já tinha (ex.: arquivo JPEG enviado com rótulo image/png continua com o rótulo dele); só cai no do formato detectado se o original não era imagem
+  const mimeOriginal = typeof blob.type === 'string' && blob.type.toLowerCase().startsWith('image/') ? blob.type.toLowerCase() : null
+  const { error: eUp } = await sb.storage.from(p.bucket).upload(p.caminho, r.bytes, { upsert: true, contentType: mimeOriginal ?? MIME[r.formato] ?? 'application/octet-stream' })
   if (eUp) { await marcar(p, 'falhou', 'erro_upload'); c.falhas++; return original.length }
   const s = await marcar(p, 'ok', 'saneada', { antes: original.length, depois: r.bytes.length, reescrito: true })
   if (s === 'ok') { c.saneadas++; c.bytes_liberados += original.length - r.bytes.length } else c.mudou++

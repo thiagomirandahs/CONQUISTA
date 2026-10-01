@@ -181,6 +181,19 @@ async function main() {
   await chamarFuncao(SEGREDO)
   t('HEIC fica "ignorado" e o arquivo NÃO é alterado', sql(`select estado from public.imagem_saneamento where caminho='${caminhoH}'`) === 'ignorado' && linhaObj('comprovacoes', caminhoH) === antesH)
 
+  // --- 10b) rótulo divergente: bytes JPEG enviados com mimetype image/png (acontece em fotos antigas) — o mimetype ORIGINAL é preservado
+  const caminhoM = `${ids.a}/requisitos/${randomUUID()}.png`
+  const upM = await A.storage.from('comprovacoes').upload(caminhoM, jpegComExif(), { contentType: 'image/png', upsert: false })
+  t('A sobe JPEG com mimetype image/png (rótulo divergente)', !upM.error, upM.error?.message); objetos.push(['comprovacoes', caminhoM])
+  await A.rpc('imagem_saneamento_enfileirar', { p_bucket: 'comprovacoes', p_caminho: caminhoM })
+  const antesM = linhaObj('comprovacoes', caminhoM)
+  await chamarFuncao(SEGREDO)
+  const depoisM = linhaObj('comprovacoes', caminhoM)
+  const baixaM = Buffer.from(await (await dl(A, 'comprovacoes', caminhoM)).data.arrayBuffer())
+  t('rótulo divergente: EXIF removido', !temExif(baixaM))
+  t('rótulo divergente: mimetype ORIGINAL preservado (image/png)', antesM.split('|')[3] === 'image/png' && depoisM.split('|')[3] === 'image/png', `${antesM.split('|')[3]} -> ${depoisM.split('|')[3]}`)
+  t('rótulo divergente: owner_id preservado', depoisM.split('|')[0] === antesM.split('|')[0] && depoisM.startsWith(ids.a + '|'))
+
   // --- 11) a fila não vaza para o app: authenticated não lê a tabela ---
   const lerFila = await A.from('imagem_saneamento').select('*').limit(1)
   t('authenticated NÃO lê a tabela da fila', !!lerFila.error || (lerFila.data ?? []).length === 0)
