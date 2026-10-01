@@ -1,7 +1,7 @@
 // Vitrine do site: /clubes (opt-in), /clubes/:slug (cartão de visita), /parceiros (links patrocinados)
 // e o editor do cartão nas Configurações do clube (pré-visualização = só o que é publicado).
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 
@@ -58,8 +58,9 @@ describe('/clubes/:slug', () => {
     expect(screen.getByRole('link', { name: /chamar no whatsapp/i }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5581999998888\?text=/)
     // sem link de inscrição publicado, "Quero participar" cai no WhatsApp
     expect(screen.getByRole('link', { name: /quero participar/i }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\//)
-    expect(document.title).toBe('Clube X — Clube de Desbravadores')
-    expect(document.querySelector('meta[name="description"]').getAttribute('content')).toBe('Venha conhecer!')
+    // o título/meta são definidos num efeito (roda depois do commit): espera em vez de ler na hora (corrida vista com a CPU cheia)
+    await waitFor(() => expect(document.title).toBe('Clube X — Clube de Desbravadores'))
+    await waitFor(() => expect(document.querySelector('meta[name="description"]').getAttribute('content')).toBe('Venha conhecer!'))
   })
 
   it('link de inscrição publicado vira o destino de "Quero participar"; javascript: é ignorado', async () => {
