@@ -27,7 +27,7 @@ export async function carregarFotos() {
 // pro grid/capa) — assim as listas gastam pouca internet.
 export async function adicionarFoto({ file, evento, legenda, autorId }) {
   await validarImagem(file) // tipo REAL + tamanho (hardening etapa 2)
-  const cheia = await comprimirImagem(file)
+  const cheia = await comprimirImagem(file, { semMetadados: true })
   const mini = await comprimirImagem(cheia, { maxLado: 400, qualidade: 0.6 })
   const stamp = `mural/${autorId}-${Date.now()}`
   const extC = (cheia.name.split('.').pop() || 'jpg').toLowerCase()

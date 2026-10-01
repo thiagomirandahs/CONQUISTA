@@ -112,3 +112,33 @@ describe('comprimirImagem (por que não serve para a Comunidade)', () => {
     expect(await comprimirImagem(original)).toBe(original)
   })
 })
+
+// Fase 9 — comprimirImagem com `semMetadados`: nunca devolve o original (que carrega EXIF/GPS).
+describe('comprimirImagem — modo semMetadados (comprovação, documento, mural, imagens públicas)', () => {
+  it('padrão (sem a opção) mantém o comportamento antigo: devolve o ORIGINAL quando o resultado não fica menor', async () => {
+    simularCanvas({ blobMaior: true })
+    const original = fotoComExif()
+    expect(await comprimirImagem(original)).toBe(original)
+  })
+
+  it('com semMetadados devolve SEMPRE um arquivo novo, mesmo quando não fica menor, sem o nome do aparelho', async () => {
+    simularCanvas({ blobMaior: true })
+    const original = fotoComExif()
+    const limpa = await comprimirImagem(original, { semMetadados: true })
+    expect(limpa).not.toBe(original)
+    expect(limpa.type).toBe('image/jpeg')
+    expect(limpa.name).toBe('foto.jpg')
+  })
+
+  it('com semMetadados FALHA em vez de mandar o original quando não consegue redesenhar', async () => {
+    globalThis.createImageBitmap = vi.fn(async () => { throw new Error('formato') })
+    await expect(comprimirImagem(fotoComExif(), { semMetadados: true })).rejects.toThrow(/Não consegui preparar/)
+  })
+
+  it('GIF (sem EXIF/GPS) e o que não é imagem seguem passando direto', async () => {
+    const gif = new File([new Uint8Array(20)], 'a.gif', { type: 'image/gif' })
+    const txt = new File(['x'], 'a.txt', { type: 'text/plain' })
+    expect(await comprimirImagem(gif, { semMetadados: true })).toBe(gif)
+    expect(await comprimirImagem(txt, { semMetadados: true })).toBe(txt)
+  })
+})

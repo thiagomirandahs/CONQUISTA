@@ -28,7 +28,7 @@ export const documentoDoRequisito = (memberRequirementId) =>
 
 export async function enviarDocumento({ requirementId, file, userId }) {
   await validarImagem(file)
-  const pronta = await comprimirImagem(file)
+  const pronta = await comprimirImagem(file, { semMetadados: true })
   const path = `${userId}/documentos/${Date.now()}.jpg`
   const { error } = await supabase.storage.from('comprovacoes').upload(path, pronta, { upsert: false, contentType: 'image/jpeg' })
   if (error) throw new Error('Não foi possível enviar a foto: ' + error.message)

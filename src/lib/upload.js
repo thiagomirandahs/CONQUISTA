@@ -68,7 +68,7 @@ export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 60 } =
 // troca por URL assinada (lib/imagens.js). Só os caminhos perfis/, mural/ e unidades/ (com o id certo) passam na policy de envio.
 export async function subirImagemPublica({ file, pasta, nomeBase }) {
   const tipo = await validarImagem(file)
-  const pronta = await comprimirImagem(file)
+  const pronta = await comprimirImagem(file, { semMetadados: true })
   // extensão SEMPRE do tipo detectado (jpg se o compressor converteu)
   const ext = pronta !== file ? 'jpg' : tipo.ext
   const path = `${pasta}/${nomeBase}.${ext}`
@@ -94,7 +94,7 @@ export async function subirComprovacao({ file, tipo, userId, permitirVideo = fal
   let pronta = file
   let ext = t.ext
   if (t.midia === 'imagem') {
-    pronta = await comprimirImagem(file)
+    pronta = await comprimirImagem(file, { semMetadados: true })
     if (pronta !== file) ext = 'jpg'
   }
   // caminho começa com o auth.uid(): é isso que a política do Storage confere

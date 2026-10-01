@@ -2,7 +2,12 @@
 // Supabase e deixa tudo rápido no 3G. Vídeos e arquivos não-imagem passam
 // direto (sem mexer). GIF é preservado pra não perder a animação.
 // Em qualquer erro, devolve o arquivo original — nunca atrapalha o envio.
-export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72 } = {}) {
+//
+// EXCEÇÃO (Fase 9): com `semMetadados: true` a imagem NUNCA volta como o original. O original do celular carrega EXIF
+// (GPS, modelo do aparelho, data); então a foto é SEMPRE redesenhada no canvas (que só tem pixels), mesmo quando o
+// resultado não fica menor, e se não der para redesenhar o envio FALHA em vez de mandar o original. GIF (sem EXIF/GPS)
+// e o que não é imagem seguem passando direto. Usado nos envios de comprovação, documento, mural e imagens públicas.
+export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72, semMetadados = false } = {}) {
   if (!file || !file.type || !file.type.startsWith('image/')) return file
   if (file.type === 'image/gif') return file
   try {
@@ -17,11 +22,14 @@ export async function comprimirImagem(file, { maxLado = 1080, qualidade = 0.72 }
     ctx.drawImage(bitmap, 0, 0, w, h)
     bitmap.close?.()
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', qualidade))
-    // Se não ficou menor (ex.: já era pequena), usa a original mesmo
-    if (!blob || blob.size >= file.size) return file
-    const nome = (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg'
+    if (!blob) throw new Error('sem blob')
+    // Se não ficou menor (ex.: já era pequena), usa a original mesmo — salvo no modo sem metadados (o original tem EXIF)
+    if (!semMetadados && blob.size >= file.size) return file
+    // no modo sem metadados o nome do aparelho (IMG_0001…) também não vai junto
+    const nome = semMetadados ? 'foto.jpg' : (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg'
     return new File([blob], nome, { type: 'image/jpeg' })
   } catch {
+    if (semMetadados) throw new Error('Não consegui preparar essa foto. Tente outra (JPG ou PNG). 🙂')
     return file
   }
 }
