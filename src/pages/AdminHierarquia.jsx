@@ -7,6 +7,7 @@ import {
   coordenadorDecidir, coordenadorRemover, conviteGerar, conviteRevogar, conviteApagar, convitesLimparInativos,
   TIPO_ROTULO, PAPEIS_COORDENACAO, rotuloPapel, montarLinkCoordenacao,
 } from '../services/hierarquia.js'
+import { origemPublicaDoApp } from '../lib/dominios.js'
 import { NIVEL, RAIZ, podeSoltar, frasesDoMovimento } from '../lib/arrastarHierarquia.js'
 
 // Aba "Hierarquia" do /admin (migration 130). Mobile-first e clean: caixas claras, botões ≥44px,
@@ -348,7 +349,7 @@ function Convites({ convites, arquivados, ativas, ocupado, rodar }) {
       papel, unidadeId: modo === 'fixo' ? unidade || null : null, dias: Number(dias), maxUsos: Number(usos),
       rotulo: modo === 'fixo' && u ? `${rotuloPapel(papel)} — ${u.nome}` : `${rotuloPapel(papel)} (escolhe a unidade)`,
     }), 'Link gerado. Copie agora: ele não aparece de novo.')
-    if (r?.token) setLink(montarLinkCoordenacao(window.location.origin, r.token))
+    if (r?.token) setLink(montarLinkCoordenacao(origemPublicaDoApp(), r.token))
   }
   const copiar = async () => {
     try { await navigator.clipboard.writeText(link); avisar.sucesso('Link copiado.') } catch { avisar.info('Selecione e copie o link.') }

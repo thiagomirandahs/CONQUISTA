@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { conteudoDocumento } from '../services/documentos.js'
 import { qrSvg } from '../lib/qr.js'
+import { urlPublicaDoApp } from '../lib/dominios.js'
 
 // Representação imprimível do documento (dono/liderança). É função pura do snapshot (via
 // documento_conteudo) — regenerável: mesmo token ⇒ mesmo documento. O PDF sai da impressão do
@@ -43,7 +44,7 @@ export default function DocumentoClasse() {
   }
 
   const doc = dados.documento || {}
-  const urlVerificacao = `${window.location.origin}/verificar/${token}`
+  const urlVerificacao = urlPublicaDoApp(`/verificar/${token}`)
   const ehAcomp = doc.tipo !== 'final'
 
   return (

@@ -16,6 +16,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
+import { urlPublicaDoApp } from '../lib/dominios.js'
 import { supabase } from '../lib/supabase.js'
 import { MARCA_PRODUTO } from '../lib/marca.js'
 import { Botao, Campo, Aviso, mensagemDeErro } from '../ui/index.jsx'
@@ -50,7 +51,7 @@ export default function Recuperar() {
     setErro('')
     setCarregando(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/nova-senha`,
+      redirectTo: urlPublicaDoApp('/nova-senha'),
     })
     setCarregando(false)
     // Só erro de REDE/limite aparece. "Conta não existe" nunca vira mensagem: a resposta é

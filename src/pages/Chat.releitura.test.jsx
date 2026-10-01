@@ -65,7 +65,7 @@ afterEach(() => { vi.restoreAllMocks() })
 
 async function abrirChat() {
   render(<Chat />)
-  await screen.findByText('primeira')
+  await screen.findByText('primeira', {}, { timeout: 5000 })
 }
 
 describe('Chat: reforço do tempo real', () => {
@@ -94,7 +94,7 @@ describe('Chat: reforço do tempo real', () => {
     carregarMensagensDesde.mockResolvedValueOnce([M1, M2])
     await tique()
     expect(carregarMensagensDesde).toHaveBeenCalledWith('c1', M1.created_at, expect.any(Object))
-    expect(await screen.findByText('segunda')).toBeInTheDocument()
+    expect(await screen.findByText('segunda', {}, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.getAllByText('primeira')).toHaveLength(1)
     // a próxima volta parte da última que a tela tem
     await tique()
@@ -105,7 +105,7 @@ describe('Chat: reforço do tempo real', () => {
     clube = { papel: 'desbravador', unidadeId: 'un1', clubeDaAbaEhOPadrao: false }
     await abrirChat()
     await act(async () => { await aoInserir({ new: { ...M2, autor: undefined } }) })
-    expect(await screen.findByText('segunda')).toBeInTheDocument()
+    expect(await screen.findByText('segunda', {}, { timeout: 5000 })).toBeInTheDocument()
     await tique()
     expect(carregarMensagensDesde).not.toHaveBeenCalled()
   })

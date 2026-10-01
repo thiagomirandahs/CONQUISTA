@@ -9,6 +9,7 @@ import {
 } from '../lib/dados.js'
 import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
 import { avisar } from '../ui/avisos.jsx'
+import { origemPublicaDoApp } from '../lib/dominios.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const PODE_GERIR = ['diretoria']   // migration 210: vínculos de responsáveis são só da diretoria
@@ -117,7 +118,7 @@ function ConvitesResponsavel() {
     setCriando(true); setErro(''); setCopiado(false)
     try {
       const c = await criarConviteResponsavel()
-      const link = montarLinkConvite(window.location.origin, c.token)
+      const link = montarLinkConvite(origemPublicaDoApp(), c.token)
       setLinkNovo(link)
       try { await navigator.clipboard?.writeText(link); setCopiado(true) } catch { /* sem permissão: o link segue na tela */ }
       await carregar()

@@ -35,6 +35,32 @@ export function urlDoSite(caminho, loc = globalThis.location) {
   return montar(loc, base === DOMINIO ? DOMINIO : `site.${base}`, caminho)
 }
 
+// ---- URL PÚBLICA COMPARTILHÁVEL (única fonte para link/QR/WhatsApp/e-mail) ----------------------
+// Nunca use `window.location.origin` para montar link que SAI do aparelho: no APK (Capacitor) a
+// origem é `http://localhost` e o link chegava quebrado a quem recebia. O app público é sempre
+// app.desbravaclube.com.br (rotas /entrar, /cadastro, /coordenacao, /nova-senha, /verificar).
+export const URL_PUBLICA_APP = `https://app.${DOMINIO}`
+
+function baseConfigurada() {
+  let v = ''
+  try { v = String(import.meta.env?.VITE_URL_PUBLICA_APP || '').trim().replace(/\/+$/, '') } catch { /* sem env */ }
+  return /^https:\/\/[^\s/]+$/i.test(v) ? v : URL_PUBLICA_APP
+}
+
+export function urlPublicaDoApp(caminho = '/', loc = globalThis.location) {
+  const cam = caminho.startsWith('/') ? caminho : `/${caminho}`
+  const host = String(loc?.hostname || '').toLowerCase()
+  const http = /^https?:$/.test(loc?.protocol || '')
+  // APK, esquema não-http (capacitor://, ionic://, file://) ou site público → app de produção.
+  if (ehApkNativo() || !http || modoDoHost(host) === 'site') return `${baseConfigurada()}${cam}`
+  // Web/PWA (app.desbravaclube.com.br), dev (localhost, app.localhost) e preview Vercel: origem atual.
+  if (host === '') return `${baseConfigurada()}${cam}`
+  return `${loc.protocol}//${loc.host || host}${cam}`
+}
+
+// Só a origem (sem barra final), para os montadores que recebem `origin`.
+export const origemPublicaDoApp = (loc = globalThis.location) => urlPublicaDoApp('/', loc).replace(/\/$/, '')
+
 // Rotas que o site público serve; o resto pertence ao aplicativo.
 // /clubes, /clubes/:slug e /parceiros são a VITRINE: só existem no site (nunca dentro do app).
 const ROTAS_DO_SITE = [/^\/$/, /^\/planos\/?$/, /^\/adquirir\/?$/, /^\/verificar\/[^/]+\/?$/,

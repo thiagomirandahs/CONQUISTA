@@ -113,4 +113,26 @@ describe('GestaoInscricoes: nome do clube, link completo e compartilhar', () => 
     expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: link, title: 'Inscrição no Clube Águia' }))
     delete navigator.share
   })
+
+  it('no APK (host localhost): link, QR e compartilhar usam o app público; regerar mantém o fluxo', async () => {
+    globalThis.Capacitor = { isNativePlatform: () => true }
+    const share = vi.fn().mockResolvedValue()
+    Object.assign(navigator, { share })
+    gerarCodigo.mockResolvedValueOnce({ codigo: 'AB12CD34EF56AB78', prefixo: 'AB12', expira_em: null })
+    gerarCodigo.mockResolvedValueOnce({ codigo: 'ZZ99CD34EF56AB78', prefixo: 'ZZ99', expira_em: null })
+    render(<GestaoInscricoes />)
+    await userEvent.click(await screen.findByRole('button', { name: /Gerar código/ }))
+    const l1 = 'https://app.desbravaclube.com.br/entrar?codigo=AB12CD34EF56AB78'
+    expect(await screen.findByTestId('link-completo')).toHaveTextContent(l1)
+    await userEvent.click(screen.getByTestId('compartilhar-link'))
+    expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: l1 }))
+    expect(screen.getByTestId('link-completo').textContent).not.toMatch(/localhost/)
+    const novoBotao = screen.queryByRole('button', { name: /Gerar (novo )?código|Regerar/i })
+    if (novoBotao) {
+      await userEvent.click(novoBotao)
+      expect(await screen.findByTestId('link-completo')).toHaveTextContent('https://app.desbravaclube.com.br/entrar?codigo=')
+    }
+    delete navigator.share
+    delete globalThis.Capacitor
+  })
 })

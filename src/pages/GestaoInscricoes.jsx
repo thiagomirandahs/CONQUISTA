@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { codigoAtual, gerarCodigo, revogarCodigo } from '../services/entrada.js'
 import { qrSvg } from '../lib/qr.js'
+import { urlPublicaDoApp } from '../lib/dominios.js'
 import { Card, Botao, Cabecalho, mensagemDeErro, Aviso } from '../ui/index.jsx'
 import SolicitacoesPendentes from '../components/SolicitacoesPendentes.jsx'
 import { avisar } from '../ui/avisos.jsx'
@@ -51,7 +52,7 @@ export default function GestaoInscricoes() {
     )
   }
 
-  const linkDe = (codigo) => `${window.location.origin}/entrar?codigo=${encodeURIComponent(codigo)}`
+  const linkDe = (codigo) => urlPublicaDoApp(`/entrar?codigo=${encodeURIComponent(codigo)}`)
 
   async function gerar() {
     setErro(''); setOcupado(true)
