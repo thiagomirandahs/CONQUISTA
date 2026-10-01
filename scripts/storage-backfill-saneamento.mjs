@@ -10,11 +10,11 @@
 //
 // NUNCA imprime coordenadas, caminhos completos, URL do banco, senha, token nem chave. Variáveis (NOMES): DB_URL_PRODUCAO, SUPABASE_ACCESS_TOKEN, PROJECT_REF.
 // Saída local (fora do Git): ~/.desbravaclube-backups/backfill-AAAA-MM-DD/
-import { execFileSync, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { classificar, SUPORTADOS } from './lib/analisarImagem.mjs'
 
 const args = process.argv.slice(2)
