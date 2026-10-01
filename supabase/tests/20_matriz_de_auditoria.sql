@@ -40,6 +40,7 @@ insert into t.excecoes values
   ('specialty_requirement_groups', 'grupos N-de-M do catálogo de especialidades da PLATAFORMA (migration 511): só o catálogo, nunca dado de pessoa'),
   ('leitura_materiais',        'catálogo de leitura da PLATAFORMA (migration 514): material e links oficiais, sem dado de pessoa; só o admin da plataforma edita'),
   ('leitura_auditoria',        'auditoria das mudanças do catálogo de leitura (migration 514): ator é da plataforma, sem dado de clube'),
+  ('class_requirement_equivalencias', 'mapa EXPLÍCITO de requisito entre versões do currículo (migration 522): catálogo GLOBAL, imutável, sem dado de pessoa, sem acesso pela API'),
   ('requisito_modelos',        'modelos de formulário/relatório dos requisitos de Classe (migration 510/512): catálogo GLOBAL, imutável, sem dado de pessoa'),
   ('curriculum_dependencies',  'dependência declarativa entre itens do CATÁLOGO (classe/especialidade concluída); a satisfação é checada por pessoa via curriculum_achievements (histórico portátil, fase 2.6), nunca a declaração em si'),
   ('dynamic_content_definitions', 'catálogo de conteúdo anual/dinâmico da PLATAFORMA (o "slot": ex. curso de leitura do ano) — fase 2.6; o valor vigente é resolvido por período (data), nunca por clube'),
