@@ -106,7 +106,8 @@ insert into t.excecoes values
   ('mestrado_especialidades',     'quais especialidades contam para cada mestrado (migration 460); mesmo escopo de especialidades_catalogo'),
   ('rede_desafios',               'DESAFIOS DA REDE DBV (migration 471): da PLATAFORMA, os mesmos para todos os clubes da rede (a rede é entre clubes); sem dado de pessoa; só o admin da plataforma cria/edita por RPC. A PARTICIPAÇÃO (rede_desafio_participacoes) tem club_id'),
   ('plataforma_acesso_log',       'LOG APPEND-ONLY dos acessos/ações do admin da plataforma na Comunidade (migration 515): quem, o quê, item, quando. É da PLATAFORMA, não de um clube: o clube do item vai em item_club_id (proveniência, sem FK para o log sobreviver ao clube); sem acesso de usuário'),
-  ('rede_limpeza_log',            'LOG DAS RODADAS de limpeza de fotos da rede (migration 472): da plataforma (uma rodada cobre todos os clubes), só contagens de arquivos/bytes, sem dado de pessoa; sem acesso de usuário');
+  ('rede_limpeza_log',            'LOG DAS RODADAS de limpeza de fotos da rede (migration 472): da plataforma (uma rodada cobre todos os clubes), só contagens de arquivos/bytes, sem dado de pessoa; sem acesso de usuário'),
+  ('imagem_saneamento', 'FILA TÉCNICA de saneamento de imagens (migration 529): uma linha por objeto de Storage (bucket+caminho) nos 4 buckets do escopo; club_id é informativo e anulável porque caminhos legados (avatar, comprovação antiga) não têm clube; só estado/bytes/datas, nenhum conteúdo; sem acesso de usuário (RLS sem policy), só as RPCs do dono do objeto (enfileirar/estado) e service_role');
 select t.eq('TODA tabela do public tem club_id obrigatório OU está declarada como exceção (tabelas que precisam decidir):',
   (select count(*) from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
       and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'club_id' and a.attnotnull and not a.attisdropped)
