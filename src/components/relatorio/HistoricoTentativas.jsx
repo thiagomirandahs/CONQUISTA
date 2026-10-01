@@ -2,6 +2,7 @@
 // (conteúdo enviado → anexos → data → avaliador → decisão → comentário). A tela SÓ LÊ — nada aqui
 // sobrescreve tentativa anterior. Tentativa sem `conteudo` (requisito antigo) mostra texto/foto de antes.
 import RelatorioLeitura from './RelatorioLeitura.jsx'
+import RelatoDoMembro from './RelatoDoMembro.jsx'
 import { rotuloDaDecisao } from '../HistoricoDeTentativas.jsx'
 import { fmtDataBR, schemaDoModelo } from '../../lib/relatorio/conteudo.js'
 
@@ -18,6 +19,7 @@ export default function HistoricoTentativas({ tentativas = [], modelo = null, mo
           </div>
           <RelatorioLeitura schema={tt.conteudo ? schema : null} conteudo={tt.conteudo} anexos={tt.anexos || []}
             evidenciaTexto={tt.evidencia_texto} evidenciaPath={tt.evidencia_path} className="mb-1.5" />
+          <RelatoDoMembro relato={tt.relato} className="mb-1.5" />
           <div className="font-semibold text-ink">
             {rotuloDaDecisao(tt.decisao)}
             {mostrarAvaliador && tt.decisao && tt.avaliado_por_nome && (

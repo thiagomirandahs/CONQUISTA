@@ -34,7 +34,7 @@ export default function FormularioRelatorio({
   schema, valorInicial, desativado = false, comentarioDevolucao = '',
   onSalvarRascunho, onEnviar, subirAnexo,
   rotuloEnviar = 'Enviar para avaliação', enviarDesativado = false, descricaoEnviarId,
-  autosaveMs = 1500, chaveLocal = null, carregarServidor, className,
+  autosaveMs = 1500, chaveLocal = null, carregarServidor, className, blocoExtra = null,
 }) {
   const base = useId()
   const campos = useMemo(() => schema?.campos || [], [schema])
@@ -99,6 +99,8 @@ export default function FormularioRelatorio({
 
       <Campos campos={campos} dados={conteudo} aoMudar={mudar} erros={erros} base={base} desativado={desativado || rasc.encerrado}
         anexosProps={{ anexos, aoMudar: mudarAnexos, subirAnexo, erros }} />
+
+      {blocoExtra /* ex.: relato complementar (520) — junto do formulário, sem esconder nada */}
 
       {erros.length > 0 && (
         <div ref={resumoRef} tabIndex={-1} role="alert" data-testid="erros-formulario"

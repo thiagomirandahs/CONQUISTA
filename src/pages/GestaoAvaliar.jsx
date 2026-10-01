@@ -15,6 +15,9 @@ export default function GestaoAvaliar() {
       <Link to="/gestao/avaliacoes" className="block w-full text-center text-sm font-semibold text-brand underline mt-2">
         Ver Classes + Especialidades juntas, com histórico
       </Link>
+      <Link to="/gestao/classe-anterior" className="block w-full text-center text-sm font-semibold text-brand underline mt-2 min-h-[44px] leading-[44px]">
+        Registrar classe já concluída (antes do app)
+      </Link>
     </div>
   )
 }

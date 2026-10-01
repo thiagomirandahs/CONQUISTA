@@ -1,4 +1,5 @@
 import Comprovacao from './Comprovacao.jsx'
+import RelatoDoMembro from './relatorio/RelatoDoMembro.jsx'
 
 // Lista das TENTATIVAS de um requisito (requisito_historico, migration 87), usada pela criança
 // (MinhaClasse) e pela liderança (AvaliarClasse, GestaoAvaliacoes). Cada tentativa mostra a foto
@@ -35,6 +36,7 @@ export default function HistoricoDeTentativas({ tentativas = [], mostrarAvaliado
                 classImg="w-full max-h-48 object-contain bg-black/5 rounded-lg" classVideo="w-full max-h-48 rounded-lg" />
             </div>
           )}
+          <RelatoDoMembro relato={tt.relato} className="mb-1.5" />
           <div className="font-semibold text-ink">
             {rotuloDaDecisao(tt.decisao)}
             {mostrarAvaliador && tt.decisao && tt.avaliado_por_nome && (

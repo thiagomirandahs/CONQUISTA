@@ -1,6 +1,7 @@
 // Serviço: motor de Especialidades (fase 2 do motor curricular — mesma filosofia de classes.js).
 // Requisitos vêm sempre do currículo versionado (especialidades_disponiveis/minha_especialidade) —
 // nada hardcoded aqui nem na tela. Percentual vem pronto do servidor.
+import { RelatoIndisponivel, ehRelatoIndisponivel } from '../lib/relatorio/relato.js'
 import { supabase } from '../lib/supabase.js'
 import { subirComprovacao, comComprovacao } from '../lib/upload.js'
 
@@ -105,5 +106,12 @@ export async function salvarRelatorioEspecialidade({ requirementId, conteudo, an
 export async function carregarHistoricoEspecialidade(memberSpecialtyRequirementId) {
   const { data, error } = await supabase.rpc('especialidade_historico', { p_member_specialty_requirement_id: memberSpecialtyRequirementId })
   if (error) throw new Error(error.message)
+  return data
+}
+
+// Relato / comprovação complementar (migration 520) — mesmo contrato de Classes.
+export async function salvarRelatoEspecialidade({ requirementId, relato }) {
+  const { data, error } = await supabase.rpc('especialidade_requisito_relato_salvar', { p_specialty_requirement_id: requirementId, p_relato: relato || null })
+  if (error) { if (ehRelatoIndisponivel(error)) throw new RelatoIndisponivel(); throw new Error(error.message) }
   return data
 }

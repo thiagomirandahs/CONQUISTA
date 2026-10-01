@@ -8,6 +8,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import RelatorioLeitura from '../components/relatorio/RelatorioLeitura.jsx'
+import RelatoDoMembro from '../components/relatorio/RelatoDoMembro.jsx'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
 import { schemaDoModelo } from '../lib/relatorio/conteudo.js'
 import { mensagemDeErro, Aviso } from '../ui/index.jsx'
@@ -189,6 +190,7 @@ function Item({ it, onFeito }) {
           )}
         </>
       )}
+      <RelatoDoMembro relato={it.relato} className="mb-2" />
       {(it.tentativa_numero > 1 || schema) && (
         <button type="button" onClick={verHistorico} data-testid="ver-historico"
           className="mb-1 inline-flex min-h-[44px] items-center text-sm font-semibold text-brand underline">

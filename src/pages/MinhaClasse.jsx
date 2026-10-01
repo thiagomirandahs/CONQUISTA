@@ -1,15 +1,18 @@
 import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
 import { hrefExterno } from '../lib/urlSegura.js'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import EmblemaDaClasse from '../components/EmblemaDaClasse.jsx'
 import {
   carregarMinhaClasse, carregarMinhasClasses, carregarClassesDisponiveis, carregarClassesConcluidasAnteriormente, iniciarClasse,
   salvarRequisito, enviarRequisito, escolherOpcoesRequisito, carregarOrigemRequisito, emitirDocumento,
   carregarHistoricoRequisito, cancelarClasse, carregarHistoricoDoCartao,
-  carregarFormulariosDaClasse, carregarFormularioRequisito, salvarRelatorioRequisito, subirAnexoDeRelatorio,
+  carregarFormulariosDaClasse, carregarFormularioRequisito, salvarRelatorioRequisito, subirAnexoDeRelatorio, salvarRelatoRequisito,
 } from '../lib/dados.js'
 import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
+import RelatoComplementar from '../components/relatorio/RelatoComplementar.jsx'
+import RelatoDoMembro from '../components/relatorio/RelatoDoMembro.jsx'
+import { temRelato } from '../lib/relatorio/relato.js'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
 import AvisoCopiaDeSeguranca from '../components/relatorio/AvisoCopiaDeSeguranca.jsx'
 import { chaveLocalDe } from '../lib/relatorio/rascunhoLocal.js'
@@ -326,11 +329,17 @@ export function ConcluidasAnteriormente({ itens }) {
   return (
     <section aria-labelledby="secao-classes-concluidas-antes" data-testid="secao-concluidas-anteriormente">
       <h3 id="secao-classes-concluidas-antes" className="text-sm font-extrabold uppercase tracking-wide text-muted">Concluídas anteriormente</h3>
-      <p className="mt-0.5 text-sm text-muted">Você já concluiu estas classes em outro clube. Elas valem aqui.</p>
+      <p className="mt-0.5 text-sm text-muted">
+        {lista.every((c) => c.origem !== 'registro_anterior_neste_clube')
+          ? 'Você já concluiu estas classes em outro clube. Elas valem aqui.'
+          : 'Você já concluiu estas classes antes. Elas valem aqui.'}
+      </p>
       <ul className="mt-2 space-y-2">
         {lista.map((c) => {
           const cor = corDaClasse(c.nome)
           const data = fmtData(c.concluida_em)
+          const registro = c.origem === 'registro_anterior_neste_clube'
+          const registrada = fmtData(c.registrada_em)
           return (
             <li key={c.class_id} className="bg-surface rounded-2xl p-3 shadow-soft flex items-center gap-3"
               style={cor ? { borderLeft: `8px solid ${cor.hex}` } : undefined}>
@@ -342,6 +351,8 @@ export function ConcluidasAnteriormente({ itens }) {
                     {data && <>Concluída em {data}</>}{data && c.origem_clube_nome && ' '}{c.origem_clube_nome && <>no clube {c.origem_clube_nome}</>}
                   </div>
                 )}
+                {registro && !data && c.data_desconhecida && <div className="text-xs text-muted">Data da conclusão desconhecida</div>}
+                {registro && registrada && <div className="text-xs text-muted">Registrada em {registrada}</div>}
               </div>
             </li>
           )
@@ -664,7 +675,8 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
   async function salvar() {
     setOcupado(true); setErro('')
     try {
-      await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
+      if (precisaTexto || precisaFoto) await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
+      await relatoRef.current?.salvarAgora()
       descartarRascunho()
       await onMudou()
     } catch (e) {
@@ -680,14 +692,17 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
     if (documento && !documento.documento?.evidencia_path) { setErro('Envie a foto do documento antes de enviar para avaliação.'); return }
     setOcupado(true)
     try {
+      await relatoRef.current?.preparar() // o relato digitado vai ao servidor ANTES do envio (o envio congela esse texto)
       if ((precisaTexto && texto.trim()) || (precisaFoto && foto)) {
         await salvarRequisito({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
       }
       await enviarRequisito(r.id)
+      relatoRef.current?.aoEnviado()
       descartarRascunho()
       festa()
       await onMudou()
     } catch (e) {
+      relatoRef.current?.retomar()
       setErro(mensagemDeErro(e, 'Não consegui enviar para avaliação.')); setOcupado(false)
     }
   }
@@ -696,13 +711,29 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
   const salvarFormulario = (conteudo, anexos) => salvarRelatorioRequisito({ requirementId: r.id, conteudo, anexos })
   async function enviarFormulario(conteudo, anexos) {
     if (documento && !documento.documento?.evidencia_path) throw new Error('Envie a foto do documento antes de enviar para avaliação.')
-    await salvarFormulario(conteudo, anexos)
-    await enviarRequisito(r.id)
+    await relatoRef.current?.preparar()
+    try {
+      await salvarFormulario(conteudo, anexos)
+      await enviarRequisito(r.id)
+    } catch (e) { relatoRef.current?.retomar(); throw e }
+    relatoRef.current?.aoEnviado()
     festa()
     await onMudou()
   }
   const usaFormulario = podeEditar && !!form
   const chaveLocal = chaveLocalDe(userId, 'classe', r.id)
+  // relato complementar (520): bloco em TODO requisito editável; some se o banco não tem a 520 (payload sem `relato`)
+  const relatoRef = useRef(null)
+  const relatoDisponivel = temRelato(r)
+  const carregarRelatoServidor = async () => {
+    const f = await carregarFormularioRequisito(r.id)
+    return { relato: f?.relato, rascunhoEm: f?.rascunho_em ?? null, editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(f?.status) }
+  }
+  const blocoRelato = podeEditar && relatoDisponivel ? (
+    <RelatoComplementar key={`relato-${r.id}`} ref={relatoRef} requirementId={r.id} chaveLocal={chaveLocalDe(userId, 'classe-relato', r.id)}
+      relatoInicial={r.relato} rascunhoEm={r.rascunho_em ?? null} exigeTexto={precisaTexto && obrigatoria}
+      salvarRelato={(t) => salvarRelatoRequisito({ requirementId: r.id, relato: t })} carregarServidor={carregarRelatoServidor} />
+  ) : null
   // releitura do servidor (só quando um rascunho local pendente volta a rede): conferir antes de empurrar
   const carregarServidor = async () => {
     const f = await carregarFormularioRequisito(r.id)
@@ -789,7 +820,7 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
                 valorInicial={{ conteudo: form.rascunho || {}, anexos: form.anexos || [], rascunhoEm: form.rascunho_em ?? null }}
                 comentarioDevolucao={r.status === 'correcao_solicitada' ? comentarioDaCorrecao : ''}
                 onSalvarRascunho={salvarFormulario} onEnviar={enviarFormulario}
-                chaveLocal={chaveLocal} carregarServidor={carregarServidor}
+                chaveLocal={chaveLocal} carregarServidor={carregarServidor} blocoExtra={blocoRelato}
                 subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
                 enviarDesativado={!podeEnviar} descricaoEnviarId={idBloqueios}
                 rotuloEnviar={soConfirmacao(form.modelo.schema) ? 'Marcar como feito' : undefined} />
@@ -818,6 +849,7 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
                   : undefined} />
             </div>
           )}
+          {!usaFormulario && blocoRelato}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
           {/* Hierarquia: UM botão principal, largo e alto; o rascunho é discreto. */}
           {!usaFormulario && (
@@ -826,7 +858,7 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
               data-testid="botao-enviar" className="w-full" style={cor ? { background: cor.hex, color: cor.texto, backgroundImage: 'none' } : undefined}>
               {!podeEnviar ? '🔒 Enviar para avaliação' : 'Enviar para avaliação'}
             </Botao>
-            {(precisaTexto || precisaFoto) && (
+            {(precisaTexto || precisaFoto || relatoDisponivel) && (
               <Botao variacao="discreto" aoTocar={salvar} desabilitado={ocupado} className="w-full text-muted">
                 Salvar rascunho
               </Botao>
@@ -838,6 +870,8 @@ function Requisito({ r, secao = null, classeManifesto = null, formulario = null,
         <p className="text-xs text-faint mt-1">⏳ Aguardando a liderança avaliar.</p>
       )}
       {!podeEditar && <AvisoCopiaDeSeguranca chaveLocal={chaveLocal} />}
+      {!podeEditar && <RelatoDoMembro relato={r.relato} titulo="Seu relato" className="mt-2" />}
+      {!podeEditar && relatoDisponivel && <AvisoCopiaDeSeguranca chaveLocal={chaveLocalDe(userId, 'classe-relato', r.id)} />}
       {(r.avaliacoes || []).length > 0 && r.member_requirement_id && (
         <button type="button" onClick={() => setMostrarHistorico((v) => !v)} aria-expanded={mostrarHistorico} data-testid="alternar-historico"
           className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-muted underline">

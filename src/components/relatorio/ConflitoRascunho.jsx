@@ -13,10 +13,10 @@ function Versao({ titulo, em, conteudo, testid }) {
   )
 }
 
-export default function ConflitoRascunho({ conflito, aoEscolher }) {
+export default function ConflitoRascunho({ conflito, aoEscolher, assunto = 'deste relatório' }) {
   return (
     <div data-testid="conflito-rascunho" role="group" aria-labelledby="conflito-titulo" className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-      <p id="conflito-titulo" className="font-bold"><span aria-hidden="true">⚠ </span>Encontramos duas versões deste relatório.</p>
+      <p id="conflito-titulo" className="font-bold"><span aria-hidden="true">⚠ </span>Encontramos duas versões {assunto}.</p>
       <p className="mt-1">Nada foi sobrescrito. Escolha qual usar; a outra fica guardada neste aparelho e dá para recuperar.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <Versao testid="versao-aparelho" titulo="Versão deste aparelho" em={conflito.local.em} conteudo={conflito.local.conteudo} />

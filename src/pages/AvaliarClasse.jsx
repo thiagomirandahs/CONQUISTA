@@ -5,6 +5,7 @@ import { carregarAvaliacoesPendentesDeClasse, avaliarRequisito, carregarHistoric
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import RelatorioLeitura from '../components/relatorio/RelatorioLeitura.jsx'
+import RelatoDoMembro from '../components/relatorio/RelatoDoMembro.jsx'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
 import { schemaDoModelo } from '../lib/relatorio/conteudo.js'
 import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
@@ -140,6 +141,7 @@ function Item({ it, onFeito }) {
           )}
         </>
       )}
+      <RelatoDoMembro relato={it.relato} className="mb-2" />
       {bloqueios.length > 0 && (
         <ul id={idBloq} className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-2 space-y-0.5">
           <li className="font-semibold">Não dá pra aprovar ainda:</li>

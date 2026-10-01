@@ -67,6 +67,7 @@ const MinhaJornada = lazy(() => import('./pages/MinhaJornada.jsx'))
 const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
 const CatalogoEspecialidades = lazy(() => import('./pages/CatalogoEspecialidades.jsx'))
 const AvaliarClasse = lazy(() => import('./pages/AvaliarClasse.jsx'))
+const ClasseConcluidaAnterior = lazy(() => import('./pages/ClasseConcluidaAnterior.jsx'))
 const Investiduras = lazy(() => import('./pages/Investiduras.jsx'))
 const VerificarDocumento = lazy(() => import('./pages/VerificarDocumento.jsx'))
 const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx'))
@@ -377,6 +378,7 @@ export default function App() {
           <Route path="/gestao/avaliar" element={<RotaRestrita><GestaoAvaliar /></RotaRestrita>} />
           <Route path="/gestao/avaliacoes" element={<RotaRestrita><GestaoAvaliacoes /></RotaRestrita>} />
           <Route path="/gestao/inscricoes" element={<RotaRestrita><GestaoInscricoes /></RotaRestrita>} />
+          <Route path="/gestao/classe-anterior" element={<RotaRestrita><ClasseConcluidaAnterior /></RotaRestrita>} />
           <Route path="/gestao/documentos" element={<RotaRestrita><GestaoDocumentos /></RotaRestrita>} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/meu-filho" element={<MeuFilho />} />

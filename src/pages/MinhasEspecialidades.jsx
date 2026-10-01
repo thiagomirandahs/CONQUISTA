@@ -1,15 +1,18 @@
 import { Carregando as Esqueleto, Aviso } from '../ui/index.jsx'
 import ListaEspecialidades from '../components/especialidades/ListaEspecialidades.jsx'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../context/Auth.jsx'
 import {
   carregarMinhaEspecialidade, buscarEspecialidades, iniciarEspecialidade,
   salvarRequisitoEspecialidade, enviarRequisitoEspecialidade,
-  salvarRelatorioEspecialidade, carregarHistoricoEspecialidade, subirAnexoDeRelatorio,
+  salvarRelatorioEspecialidade, carregarHistoricoEspecialidade, subirAnexoDeRelatorio, salvarRelatoEspecialidade,
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import FormularioRelatorio from '../components/relatorio/FormularioRelatorio.jsx'
 import HistoricoTentativas from '../components/relatorio/HistoricoTentativas.jsx'
+import RelatoComplementar from '../components/relatorio/RelatoComplementar.jsx'
+import RelatoDoMembro from '../components/relatorio/RelatoDoMembro.jsx'
+import { temRelato } from '../lib/relatorio/relato.js'
 import AvisoCopiaDeSeguranca from '../components/relatorio/AvisoCopiaDeSeguranca.jsx'
 import { chaveLocalDe } from '../lib/relatorio/rascunhoLocal.js'
 import { schemaDoModelo, fmtDataBR } from '../lib/relatorio/conteudo.js'
@@ -177,7 +180,8 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
   async function salvar() {
     setOcupado(true); setErro('')
     try {
-      await salvarRequisitoEspecialidade({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
+      if (precisaTexto || precisaFoto) await salvarRequisitoEspecialidade({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
+      await relatoRef.current?.salvarAgora()
       await onMudou()
     } catch (e) {
       setErro(mensagemDeErro(e, 'Não consegui salvar o requisito.')); setOcupado(false)
@@ -187,13 +191,16 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
   async function enviar() {
     setOcupado(true); setErro('')
     try {
+      await relatoRef.current?.preparar() // o relato digitado vai ao servidor ANTES do envio (o envio congela esse texto)
       if ((precisaTexto && texto.trim()) || (precisaFoto && foto)) {
         await salvarRequisitoEspecialidade({ requirementId: r.id, texto: precisaTexto ? texto : null, foto: precisaFoto ? foto : null, userId })
       }
       await enviarRequisitoEspecialidade(r.id)
+      relatoRef.current?.aoEnviado()
       festa()
       await onMudou()
     } catch (e) {
+      relatoRef.current?.retomar()
       setErro(mensagemDeErro(e, 'Não consegui enviar o requisito.')); setOcupado(false)
     }
   }
@@ -208,10 +215,27 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
     const q = (d?.requisitos || []).find((x) => x.id === r.id)
     return { conteudo: q?.rascunho || {}, anexos: q?.anexos || [], rascunhoEm: q?.rascunho_em ?? null, editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(q?.status) }
   }
+  // relato complementar (520): bloco em TODO requisito editável; some se o banco não tem a 520 (payload sem `relato`)
+  const relatoRef = useRef(null)
+  const relatoDisponivel = temRelato(r)
+  const carregarRelatoServidor = async () => {
+    const d = await carregarMinhaEspecialidade(memberSpecialtyId)
+    const q = (d?.requisitos || []).find((x) => x.id === r.id)
+    return { relato: q?.relato, rascunhoEm: q?.rascunho_em ?? null, editavel: ['nao_iniciado', 'em_andamento', 'correcao_solicitada'].includes(q?.status) }
+  }
+  const blocoRelato = podeEditar && relatoDisponivel ? (
+    <RelatoComplementar key={`relato-${r.id}`} ref={relatoRef} requirementId={r.id} chaveLocal={chaveLocalDe(userId, 'especialidade-relato', r.id)}
+      relatoInicial={r.relato} rascunhoEm={r.rascunho_em ?? null} exigeTexto={precisaTexto}
+      salvarRelato={(t) => salvarRelatoEspecialidade({ requirementId: r.id, relato: t })} carregarServidor={carregarRelatoServidor} />
+  ) : null
   const salvarForm = (conteudo, anexos) => salvarRelatorioEspecialidade({ requirementId: r.id, conteudo, anexos })
   async function enviarForm(conteudo, anexos) {
-    await salvarForm(conteudo, anexos)
-    await enviarRequisitoEspecialidade(r.id)
+    await relatoRef.current?.preparar()
+    try {
+      await salvarForm(conteudo, anexos)
+      await enviarRequisitoEspecialidade(r.id)
+    } catch (e) { relatoRef.current?.retomar(); throw e }
+    relatoRef.current?.aoEnviado()
     festa()
     await onMudou()
   }
@@ -246,7 +270,7 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
             <FormularioRelatorio key={r.id} schema={schema}
               valorInicial={{ conteudo: r.rascunho || {}, anexos: r.anexos || [], rascunhoEm: r.rascunho_em ?? null }}
               comentarioDevolucao={comentarioDaCorrecao}
-              onSalvarRascunho={salvarForm} onEnviar={enviarForm} chaveLocal={chaveLocal} carregarServidor={carregarServidor}
+              onSalvarRascunho={salvarForm} onEnviar={enviarForm} chaveLocal={chaveLocal} carregarServidor={carregarServidor} blocoExtra={blocoRelato}
               subirAnexo={(file) => subirAnexoDeRelatorio(file, userId)}
               enviarDesativado={bloqueios.length > 0} descricaoEnviarId={idBloqueios} />
           )}
@@ -268,10 +292,11 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
                 ? <Comprovacao valor={r.evidencia_path} alt="evidência salva" classImg="max-h-48 w-auto rounded-xl object-contain shadow-soft" />
                 : undefined} />
           )}
+          {!schema && blocoRelato}
           {erro && <Aviso tom="erro">{erro}</Aviso>}
           {!schema && (
           <div className="flex gap-2">
-            {(precisaTexto || precisaFoto) && (
+            {(precisaTexto || precisaFoto || relatoDisponivel) && (
               <button onClick={salvar} disabled={ocupado} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted disabled:opacity-60">
                 Salvar rascunho
               </button>
@@ -286,6 +311,8 @@ function Requisito({ r, userId, memberSpecialtyId, onMudou }) {
         <p className="text-xs text-faint mt-1">Aguardando a liderança avaliar.</p>
       )}
       {!podeEditar && <AvisoCopiaDeSeguranca chaveLocal={chaveLocal} />}
+      {!podeEditar && <RelatoDoMembro relato={r.relato} titulo="Seu relato" className="mt-2" />}
+      {!podeEditar && relatoDisponivel && <AvisoCopiaDeSeguranca chaveLocal={chaveLocalDe(userId, 'especialidade-relato', r.id)} />}
 
       {schema && r.tentativas > 0 && r.member_specialty_requirement_id && (
         <div className="mt-2">

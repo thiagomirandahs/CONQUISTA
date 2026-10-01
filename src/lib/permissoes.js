@@ -43,6 +43,7 @@ export const FERRAMENTAS = [
   { to: '/planos', icon: '💳', titulo: 'Plano do clube', desc: 'O que está incluído e quanto já está sendo usado', papeis: SO_DIRETORIA, grupo: 'clube', contextual: true },
   { to: '/experiencias/novo', icon: '🛠️', titulo: 'Montar experiências', desc: 'Desafios, campanhas e temporadas, sem programar', papeis: ['diretoria', 'instrutor'], recurso: 'experiencias' , grupo: 'conteudo', contextual: true },
   { to: '/avaliar-classe', icon: '🎖️', titulo: 'Avaliar classes', desc: 'Aprovar ou pedir correção dos requisitos enviados', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
+  { to: '/gestao/classe-anterior', icon: '📜', titulo: 'Classes já concluídas', desc: 'Registrar classe que o membro concluiu antes do app', papeis: ['diretoria', 'instrutor'], recurso: 'classes', grupo: 'avaliar', contextual: true },
   { to: '/investiduras', icon: '🏅', titulo: 'Revisão final e investidura', desc: 'Revisar conclusões de classe e registrar investiduras', papeis: ['diretoria', 'instrutor'], recurso: 'classes' , grupo: 'avaliar', contextual: true },
   // Especialidades têm recurso PRÓPRIO, separado de `classes` (fase 9, item 9): o catálogo de especialidades ainda é de teste
   // e fica fora do piloto. Com `classes` ligado e `especialidades` desligado, este card some e a rota não abre.

@@ -8,6 +8,7 @@ import {
 } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
+import RelatoDoMembro from '../components/relatorio/RelatoDoMembro.jsx'
 import { DocumentoParaConferir } from '../components/DocumentoDaIdade.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { fmtData } from './MinhaClasse.jsx'
@@ -133,6 +134,7 @@ function ItemFila({ it, onFeito }) {
       <p className="text-sm text-ink mb-1">{it.titulo} — {it.subtitulo}</p>
       <p className="text-xs text-faint mb-2">{it.unidade_nome || 'sem unidade'} · enviado em {fmtData(it.enviado_em)}</p>
       {ehClasse && <DocumentoParaConferir memberRequirementId={it.item_id} />}
+      <RelatoDoMembro relato={it.relato} className="mb-2" />
 
       {ehClasse && it.tentativa_numero > 1 && (
         <button type="button" onClick={verHistorico} className="text-xs font-semibold text-brand mb-2 underline">

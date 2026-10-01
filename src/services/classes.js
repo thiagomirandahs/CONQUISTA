@@ -5,6 +5,7 @@
 import { supabase } from '../lib/supabase.js'
 import { apagarDocumentoConferido } from './documentoIdade.js'
 import { subirComprovacao, comComprovacao } from '../lib/upload.js'
+import { RelatoIndisponivel, ehRelatoIndisponivel } from '../lib/relatorio/relato.js'
 
 // Classes publicadas que a pessoa ainda não iniciou no clube em uso.
 export async function carregarClassesDisponiveis() {
@@ -103,6 +104,14 @@ export async function salvarRelatorioRequisito({ requirementId, conteudo, anexos
     p_requirement_id: requirementId, p_conteudo: conteudo ?? {}, p_anexos: anexos ?? [],
   })
   if (error) throw new Error(error.message)
+}
+
+// Relato / comprovação complementar em texto livre (migration 520; vale para TODO requisito, ≤ 2000 caracteres).
+// Texto vazio apaga o relato. Banco SEM a 520: a RPC não existe → `RelatoIndisponivel` (a tela esconde o bloco).
+export async function salvarRelatoRequisito({ requirementId, relato }) {
+  const { data, error } = await supabase.rpc('requisito_relato_salvar', { p_requirement_id: requirementId, p_relato: relato || null })
+  if (error) { if (ehRelatoIndisponivel(error)) throw new RelatoIndisponivel(); throw new Error(error.message) }
+  return data
 }
 
 // Upload de um anexo do formulário: MESMO bucket privado e mesma pasta ('requisitos', a única que a
