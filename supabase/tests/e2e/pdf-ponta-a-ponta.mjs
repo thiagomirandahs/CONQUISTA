@@ -31,6 +31,18 @@ function sql(texto) {
 }
 const uid = (k) => sql(`select md5('e2e-pdf:${k}')::uuid;`)
 
+// FUNCOES_BASE (opcional): em vez do runtime de funções do `supabase start`, chama as funções em outro edge-runtime local
+// (ex.: o ambiente SÓ com chaves novas de edge-chaves-novas.mjs). Mesma requisição que o supabase-js faz: JWT do usuário + apikey.
+const FUNCOES_BASE = process.env.FUNCOES_BASE
+async function invocar(cli, nome, corpo) {
+  if (!FUNCOES_BASE) return cli.functions.invoke(nome, { body: corpo })
+  if (!/^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test(FUNCOES_BASE)) throw new Error('FUNCOES_BASE só pode ser local')
+  const { data: { session } } = await cli.auth.getSession()
+  const r = await fetch(`${FUNCOES_BASE}/${nome}`, { method: 'POST', headers: { authorization: `Bearer ${session.access_token}`, apikey: ANON, 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
+  const txt = await r.text(); let json = null; try { json = JSON.parse(txt) } catch { /* texto puro */ }
+  return r.ok ? { data: json, error: null } : { data: null, error: new Error(`HTTP ${r.status}: ${txt.slice(0, 120)}`) }
+}
+
 function limpar() {
   sql(`
     set session_replication_role = replica;
@@ -39,6 +51,8 @@ function limpar() {
     delete from public.workflow_stage_decisions where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from public.investiture_workflow_runs where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from public.class_investitures where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
+    -- 519: a conquista da classe sobrevive ao resto (e ao usuário) e bloquearia a próxima execução; por isso apaga pelo id determinístico, não pelo e-mail
+    delete from public.curriculum_achievements where usuario_id in (md5('e2e-pdf:lider')::uuid, md5('e2e-pdf:avaliador')::uuid, md5('e2e-pdf:fora')::uuid);
     delete from public.investiture_reviews where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from public.class_completion_snapshots where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from public.member_requirements where usuario_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
@@ -46,6 +60,7 @@ function limpar() {
     delete from public.organization_memberships where user_id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from public.profiles where id in (select id from auth.users where email like 'e2e-pdf-%@teste.local');
     delete from auth.users where email like 'e2e-pdf-%@teste.local';
+    delete from public.organizational_units where slug = 'e2e-pdf-clube-fora';
     delete from public.dynamic_content_values where fonte_descricao like 'FIXTURE DE TESTE E2E-PDF%';
   `)
 }
@@ -130,7 +145,7 @@ async function principal() {
   if (!doc?.token) { console.log('\nABORTADO: documento não foi emitido (ver falhas acima) — rode com DEBUG=1 pra ver o motivo de cada requisito.'); limpar(); process.exitCode = 1; return }
 
   console.log('\n== Etapa 3: PDF real via Edge Function ==')
-  const { data: pdfResp, error: errPdf } = await c.functions.invoke('gerar-documento-pdf', { body: { token: doc.token } })
+  const { data: pdfResp, error: errPdf } = await invocar(c, 'gerar-documento-pdf', { token: doc.token })
   ok('gerar-documento-pdf respondeu ok', !errPdf && pdfResp?.ok, errPdf?.message)
   if (errPdf) { console.log(`   → confira: stack local no ar, npm run storage:fix-local aplicado, Edge Function servindo (supabase functions serve)`); process.exitCode = reprovados > 0 ? 1 : 0; limpar(); return }
 
@@ -144,6 +159,28 @@ async function principal() {
 
   const { data: reg } = await c.from('class_documents').select('id, pdf_hash, pdf_storage_path, pdf_versao').eq('token_publico', doc.token).single()
   ok('class_documents.pdf_hash bate com o arquivo real', reg.pdf_hash === hashBaixado)
+
+  // multiclube: alguém de OUTRO clube, com sessão válida, não consegue gerar o PDF deste documento (a RPC "como o usuário" nega)
+  const idFora = uid('fora')
+  sql(`
+    set session_replication_role = replica;
+    insert into public.organizational_units (type, nome, slug, pais, timezone, metadata) values ('clube', 'E2E PDF Clube Fora', 'e2e-pdf-clube-fora', 'BR', 'America/Recife', '{"test_only":true}');
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+      created_at, updated_at, confirmation_token, recovery_token, email_change_token_new, email_change, phone_change, phone_change_token,
+      email_change_token_current, reauthentication_token, is_sso_user, is_anonymous)
+    values ('00000000-0000-0000-0000-000000000000', '${idFora}', 'authenticated', 'authenticated', 'e2e-pdf-fora@teste.local',
+      extensions.crypt('${SENHA}', extensions.gen_salt('bf')), now(), '{}'::jsonb, '{}'::jsonb, now(), now(), '', '', '', '', '', '', '', '', false, false);
+    insert into public.profiles (id, nome, papel, status, nascimento) values ('${idFora}', 'E2E PDF Fora', 'diretoria', 'ativo', date '1985-01-01');
+    insert into public.organization_memberships (user_id, organizational_unit_id, role, status)
+    select '${idFora}', id, 'diretoria', 'ativo' from public.organizational_units where slug = 'e2e-pdf-clube-fora';
+  `)
+  const cFora = createClient(API_URL, ANON, { auth: { persistSession: false } })
+  const { error: errLoginFora } = await cFora.auth.signInWithPassword({ email: 'e2e-pdf-fora@teste.local', password: SENHA })
+  ok('login de usuário de OUTRO clube', !errLoginFora, errLoginFora?.message)
+  const { data: dadosFora, error: errFora } = await invocar(cFora, 'gerar-documento-pdf', { token: doc.token })
+  ok('multiclube: usuário de OUTRO clube NÃO gera o PDF deste documento', !!errFora && !dadosFora?.ok, errFora?.message)
+  const { data: dadosForaH2, error: errForaH2 } = await invocar(cFora, 'gerar-documento-pdf-final', { token: doc.token })
+  ok('multiclube: usuário de OUTRO clube NÃO gera o PDF final deste documento', !!errForaH2 && !dadosForaH2?.ok, errForaH2?.message)
 
   console.log('\n== Etapa 4: privacidade dos BYTES reais do PDF (não documento_conteudo) ==')
   const raw = buf.toString('latin1')
@@ -200,7 +237,7 @@ async function principal() {
   ok('upload em path de documento inexistente/outro é recusado', !!errUploadRuim, errUploadRuim ? 'recusado corretamente' : 'DEVERIA TER RECUSADO')
 
   console.log('\n== H2: representação final assinada, Edge Function real ==')
-  const { data: h2Resp, error: errH2 } = await c.functions.invoke('gerar-documento-pdf-final', { body: { token: doc.token } })
+  const { data: h2Resp, error: errH2 } = await invocar(c, 'gerar-documento-pdf-final', { token: doc.token })
   ok('gerar-documento-pdf-final respondeu ok, gerado_agora=true (1ª vez)', !errH2 && h2Resp?.ok && h2Resp?.gerado_agora === true, errH2?.message)
   if (h2Resp?.ok) {
     const { data: h2Signed, error: errH2Signed } = await c.storage.from('documentos-emitidos').createSignedUrl(h2Resp.storage_path, 60)
@@ -212,7 +249,7 @@ async function principal() {
     ok('H2 tem hash DIFERENTE de H1 — não é o mesmo arquivo, não é circular', h2Resp.hash !== reg.pdf_hash)
 
     // idempotência real: chamar de novo pro MESMO estado de assinaturas devolve o MESMO hash/path, gerado_agora=false
-    const { data: h2Resp2, error: errH2b } = await c.functions.invoke('gerar-documento-pdf-final', { body: { token: doc.token } })
+    const { data: h2Resp2, error: errH2b } = await invocar(c, 'gerar-documento-pdf-final', { token: doc.token })
     ok('chamar de novo (mesmo estado): gerado_agora=false', !errH2b && h2Resp2?.ok && h2Resp2?.gerado_agora === false, errH2b?.message)
     ok('...e devolve o MESMO hash/path (idempotência real, não regenerou nada)', h2Resp2?.hash === h2Resp.hash && h2Resp2?.storage_path === h2Resp.storage_path)
 
