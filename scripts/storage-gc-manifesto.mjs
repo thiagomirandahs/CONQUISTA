@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { createHash } from 'node:crypto'
+import { obterChaveServico, cabecalhosServico } from './lib/chaveServico.mjs'
 
 const DB = process.env.DB_URL_PRODUCAO, TOKEN = process.env.SUPABASE_ACCESS_TOKEN, REF = process.env.PROJECT_REF
 if (!DB || !TOKEN || !REF) { console.error('faltam DB_URL_PRODUCAO, SUPABASE_ACCESS_TOKEN, PROJECT_REF'); process.exit(2) }
@@ -53,10 +54,11 @@ from x order by 1, 2;`
 
 const linhas = psql(SQL).map(([bucket, nome, bytes, criado, idade, cls]) => { const [classe, grupo, motivo] = cls.split('|'); return { bucket, nome, bytes: Number(bytes), criado, idade: Number(idade), classe, grupo, motivo } })
 const [[ts]] = psql("select to_char(now() at time zone 'utc','YYYY-MM-DD HH24:MI:SS')")
-const k = (await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${TOKEN}` } })).json()).find((x) => x.name === 'service_role').api_key
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
+const k = await obterChaveServico({ ref: REF, token: TOKEN })
 const itens = []
 for (const l of linhas) {
-  const r = await fetch(`https://${REF}.supabase.co/storage/v1/object/${encodeURIComponent(l.bucket)}/${l.nome.split('/').map(encodeURIComponent).join('/')}`, { headers: { Authorization: `Bearer ${k}`, apikey: k } })
+  const r = await fetch(`https://${REF}.supabase.co/storage/v1/object/${encodeURIComponent(l.bucket)}/${l.nome.split('/').map(encodeURIComponent).join('/')}`, { headers: cabecalhosServico(k) })
   const b = r.ok ? Buffer.from(await r.arrayBuffer()) : null
   if (b && l.classe === 'A') { const dst = join(PASTA, l.bucket, ...l.nome.split('/')); mkdirSync(dirname(dst), { recursive: true }); writeFileSync(dst, b) }
   itens.push({ id: createHash('md5').update(`${l.bucket}|${l.nome}`).digest('hex'), bucket: l.bucket, caminho_sha256: sha(Buffer.from(l.nome)), caminho: l.nome, bytes: l.bytes, sha256: b ? sha(b) : null, bytes_baixados: b ? b.length : null, criado_em: l.criado, idade_dias: l.idade, classe: l.classe, grupo: l.grupo, motivo: l.motivo })

@@ -2,6 +2,8 @@
 // scripts/lib/chaveServico.mjs: prefere a chave NOVA (secret/publishable) e só cai na legacy com aviso; nunca vaza o valor.
 // A Management API é SIMULADA (fetch injetado): nenhum teste fala com a rede. Valores fictícios, montados em tempo de execução.
 import { describe, it, expect, vi } from 'vitest'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { escolherChave, obterChaveServico, obterChavePublica, cabecalhosServico, API_GESTAO } from '../../scripts/lib/chaveServico.mjs'
 
 const SEC = 'sb_' + 'secret_' + 'ficticiaAAAA1111'
@@ -114,5 +116,36 @@ describe('o valor nunca vaza e os cabeçalhos seguem o tipo da chave', () => {
     expect(cabecalhosServico(escolherChave(tudo, 'servico').chave, { 'content-type': 'x' })).toEqual({ apikey: SEC, 'content-type': 'x' })
     const leg = escolherChave(tudo.filter((k) => k.type !== 'secret'), 'servico').chave
     expect(cabecalhosServico(leg)).toEqual({ apikey: JWT('dddddddd'), Authorization: `Bearer ${JWT('dddddddd')}` })
+  })
+})
+
+// ---------------------------------------------------------------- contrato: nenhum script volta a buscar a chave legacy por conta própria
+function mjsDe(dir) {
+  const out = []
+  for (const n of readdirSync(dir)) {
+    const p = join(dir, n)
+    if (statSync(p).isDirectory()) out.push(...mjsDe(p))
+    else if (n.endsWith('.mjs')) out.push(p)
+  }
+  return out
+}
+
+describe('scripts/ não buscam service_role/anon legacy fora do helper (contrato)', () => {
+  const raiz = join(__dirname, '../../scripts')
+  const arquivos = mjsDe(raiz).filter((p) => !p.endsWith('chaveServico.mjs'))
+  it('nenhum script usa a rota api-keys nem procura name === service_role/anon por conta própria', () => {
+    for (const p of arquivos) {
+      const src = readFileSync(p, 'utf8')
+      expect(src, p).not.toMatch(/\/api-keys/)
+      expect(src, p).not.toMatch(/name\s*===\s*['"](service_role|anon)['"]/)
+    }
+  })
+  it('os scripts de manutenção/teste que usam a chave de serviço importam o helper', () => {
+    for (const n of ['janela-fase8/backup-storage.mjs', 'saneamento-teste-controlado-producao.mjs', 'storage-backfill-saneamento.mjs', 'storage-exclusao-teste-controlado-producao.mjs', 'storage-gc-excluir-lote.mjs', 'storage-gc-manifesto.mjs']) {
+      const src = readFileSync(join(raiz, n), 'utf8')
+      expect(src, n).toMatch(/obterChaveServico/)
+      expect(src, n).toMatch(/cabecalhosServico/)
+    }
+    expect(readFileSync(join(raiz, 'auth/testar-recuperacao-producao.mjs'), 'utf8')).toMatch(/obterChavePublica/)
   })
 })

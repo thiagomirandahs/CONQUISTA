@@ -10,6 +10,7 @@ import { homedir } from 'node:os'
 import { join, dirname, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { obterChaveServico, cabecalhosServico } from '../lib/chaveServico.mjs'
 
 const RAIZ = resolve(import.meta.dirname, '..', '..')
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
@@ -26,16 +27,16 @@ const total = objetos.reduce((a, o) => a + o.bytes, 0)
 console.log(`${objetos.length} objetos, ${(total / 1048576).toFixed(1)} MB no banco${filtro ? ' (' + arg('bucket') + ')' : ''}`)
 if (soListar) process.exit(0)
 
-const keys = await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys`, { headers: { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}` } })).json()
-const chave = (Array.isArray(keys) ? keys : []).find((k) => k.name === 'service_role')?.api_key
-if (!chave) { console.error('Não consegui obter a chave de serviço (somente leitura em memória).'); process.exit(2) }
+// secret nova (sb_secret_) preferida; a service_role legacy só como fallback com aviso — ver scripts/lib/chaveServico.mjs
+let chave
+try { chave = await obterChaveServico({ ref: REF, token: env.SUPABASE_ACCESS_TOKEN }) } catch (e) { console.error('Não consegui obter a chave de serviço (somente leitura em memória):', e.message); process.exit(2) }
 const base = `https://${REF}.supabase.co/storage/v1/object`
 const pasta = join(homedir(), '.desbravaclube-backups', `storage-${new Date().toISOString().slice(0, 10)}${filtro ? '-' + arg('bucket') : ''}`)
 mkdirSync(pasta, { recursive: true })
 const manifesto = join(pasta, 'MANIFESTO.tsv'); writeFileSync(manifesto, 'bucket\tcaminho\tbytes\tsha256\n')
 let ok = 0, falhas = 0, bytes = 0
 for (const o of objetos) {
-  const r = await fetch(`${base}/${encodeURIComponent(o.bucket)}/${o.nome.split('/').map(encodeURIComponent).join('/')}`, { headers: { Authorization: `Bearer ${chave}`, apikey: chave } })
+  const r = await fetch(`${base}/${encodeURIComponent(o.bucket)}/${o.nome.split('/').map(encodeURIComponent).join('/')}`, { headers: cabecalhosServico(chave) })
   if (!r.ok) { falhas++; console.error(`falhou (${r.status}): ${o.bucket}/${o.nome.slice(0, 24)}…`); continue }
   const buf = Buffer.from(await r.arrayBuffer())
   const destino = join(pasta, o.bucket, ...o.nome.split('/'))

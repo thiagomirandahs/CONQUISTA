@@ -582,6 +582,28 @@ async function principal() {
     }
   }
 
+  if (so('scripts')) {
+    console.log('\n== 5a) as MESMAS chamadas dos scripts de manutenção (Storage GET/DELETE/list e RPC) com cabecalhosServico() da chave nova ==')
+    const { obterChaveServico, cabecalhosServico } = await import('../../../scripts/lib/chaveServico.mjs')
+    const k = await obterChaveServico({ ref: 'abcdefghijklmnopqrst', token: 'nao-usado', env: { SB_SECRET_KEY: SEC }, fetchImpl: () => { throw new Error('não deveria chamar a Management API') } })
+    const H = cabecalhosServico(k)
+    reg('scripts', 'cabecalhosServico(chave nova) manda SÓ apikey (sem Authorization)', Object.keys(H).join() === 'apikey')
+    const caminho = `${PREFIXO}-scripts/${randomUUID()}.jpg`
+    const up = await admin.storage.from('comunidade').upload(caminho, JPG, { contentType: 'image/jpeg' })
+    objetosStorage.push(['comunidade', caminho])
+    reg('scripts', '(harness) objeto de teste sobe', !up.error, up.error?.message)
+    const g = await fetch(`${API}/storage/v1/object/comunidade/${caminho.split('/').map(encodeURIComponent).join('/')}`, { headers: H })
+    reg('scripts', 'GET de objeto (backup-storage, backfill, gc-manifesto) funciona só com apikey nova', g.status === 200 && Buffer.from(await g.arrayBuffer()).equals(JPG), String(g.status))
+    const l = await fetch(`${API}/storage/v1/object/list/comunidade`, { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ prefix: `${PREFIXO}-scripts`, limit: 10 }) })
+    reg('scripts', 'list de objetos (gc-listar-api) funciona', l.status === 200 && (await l.json()).length === 1, String(l.status))
+    const r = await fetch(`${API}/rest/v1/rpc/rede_fotos_pendentes`, { method: 'POST', headers: { ...H, 'content-type': 'application/json' }, body: '{"p_limite":1}' })
+    reg('scripts', 'RPC só-service_role (limpar-comprovacoes-orfas e afins) funciona', r.status === 200, String(r.status))
+    const d = await fetch(`${API}/storage/v1/object/comunidade/${caminho.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE', headers: H })
+    reg('scripts', 'DELETE de objeto (gc-excluir-lote, testes controlados) funciona', d.status === 200 && sql(`select count(*) from storage.objects where bucket_id='comunidade' and name='${caminho}'`) === '0', String(d.status))
+    const so1 = await fetch(`${API}/storage/v1/bucket`, { headers: { apikey: PUB } })
+    reg('scripts', 'a mesma chamada com a chave PÚBLICA não enxerga os buckets privados (a secret é que dá o privilégio)', so1.status === 200 && !/comprovacoes/.test(await so1.text()))
+  }
+
   if (so('falha')) {
     console.log('\n== 5b) SUPABASE/STORAGE INDISPONÍVEL (chaves novas válidas, porta fechada): falha limpa, sem 200 e sem vazar nada ==')
     const I = cs.indisp
@@ -606,7 +628,7 @@ async function principal() {
   console.log('\n== 6) de onde veio cada chave (log de boot das funções; só origem e NOME da variável) ==')
   const origens = { plataforma: origemNosLogs(cs.plataforma), sb: origemNosLogs(cs.sb), legacy: origemNosLogs(cs.legacy) }
   const esperado = { plataforma: [/nova:SUPABASE_SECRET_KEYS/], sb: [/nova:SB_SECRET_KEY/], legacy: [/legacy:SUPABASE_SERVICE_ROLE_KEY/] }
-  for (const perfil of Object.keys(origens)) {
+  for (const perfil of Object.keys(origens).filter(() => !process.env.KFN_SO || (so('smoke') && so('limpar')))) {   // em execução parcial (KFN_SO) nem toda função foi chamada
     reg('chaves', `[${perfil}] log de boot das funções registra a origem esperada (${esperado[perfil][0].source})`, origens[perfil].length > 0 && origens[perfil].every((l) => esperado[perfil][0].test(l)), origens[perfil].slice(0, 2).join(' '))
     info(`[${perfil}] ${[...new Set(origens[perfil])].join(' | ')}`)
     if (!origens[perfil].length && process.env.KFN_LOGS) console.log(logsDe(cs[perfil]).split('\n').filter((l) => !VALORES_SECRETOS.some((v) => l.includes(v))).slice(-40).join('\n'))
@@ -667,6 +689,7 @@ for (const fn of Object.keys(FUNCOES)) {
   const classe = r.falhas.length ? 'FALHOU' : r.checks === 0 ? 'NÃO EXECUTADA' : LIMITES[fn] ? 'PROVADA PARCIALMENTE' : 'PROVADA COM CHAVES NOVAS'
   console.log(`   ${classe.padEnd(26)} ${fn.padEnd(28)} ${r.ok}/${r.checks}${LIMITES[fn] ? '  — ' + LIMITES[fn] : ''}`)
 }
+if (porFuncao.scripts) console.log(`   ${(porFuncao.scripts.falhas.length ? 'FALHOU' : 'PROVADA COM CHAVES NOVAS').padEnd(26)} ${'(scripts: chamadas REST/Storage)'.padEnd(28)} ${porFuncao.scripts.ok}/${porFuncao.scripts.checks}`)
 console.log(`\n${total - falhas.length}/${total} checagens ok${falhas.length ? ` — ${falhas.length} FALHA(S):` : ' — TUDO OK'}`)
 for (const f of falhas) console.log('   * ' + f)
 await encerrar(falhas.length ? 1 : 0)
