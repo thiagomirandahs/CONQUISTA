@@ -1,15 +1,19 @@
 // E2E do ADMIN DA PLATAFORMA x FOTO da Comunidade (LOCAL, nunca produção): prova contra o Storage REAL
 // (bucket privado 'comunidade', policy "quem pode ver le" -> _comunidade_pode_ver_foto, migration 515/D4) que:
 //   1. o admin da plataforma NÃO abre foto de post 'clube', nem de Comunidade publicado sem denúncia/análise;
-//   2. abre SOMENTE foto de Comunidade em análise/denunciado, e cada leitura vira linha em plataforma_acesso_log
-//      (append-only; UPDATE/DELETE/TRUNCATE falham), com quem/o_que/item e SEM URL assinada/token/caminho;
+//   2. (migration 530) o admin NÃO lê o bucket direto; assina SOMENTE foto de Comunidade em análise/denunciado pela
+//      RPC mediada admin_comunidade_foto_assinar (a mesma que a Edge Function admin-comunidade-foto chama com o JWT
+//      do admin); cada ASSINATURA vira exatamente 1 linha em plataforma_acesso_log (append-only; UPDATE/DELETE/TRUNCATE
+//      falham), com quem/o_que/item/bucket/contexto e SEM URL assinada/token/caminho; listar o bucket não registra nada;
 //   3. o que o OUTRO clube realmente enxerga (antes e depois da aprovação);
 //   4. usuário comum / desbravador / diretoria de outro clube não ganham acesso administrativo;
 //   5. caminho forjado (../, outro clube, UUID inexistente, objeto de outro bucket) recusado;
 //   6. saiu do contexto (aprovado/removido/resolvido) -> o admin perde o acesso (nada permanente);
 //   7. anon nada; modo manutenção; log que falha => negado (fail-closed).
 //
-//   npm run test:rede:admin-foto:e2e     (precisa do Supabase local no ar; usa só 127.0.0.1)
+//   npm run test:rede:admin-foto:e2e     (precisa do Supabase local no ar COM a migration 530; usa só 127.0.0.1)
+//   A assinatura final (Edge Function) é simulada aqui com a chave de serviço local sobre o caminho que a RPC autorizou
+//   (a função em si só é empacotada em test:edge:bundle:pdf; o runtime de funções não é exercitado por este script).
 //
 // Dados de teste com prefixo "e2e-radm-"; limpa banco E objetos do Storage no fim (mesmo se falhar).
 import { execFileSync } from 'node:child_process'
@@ -141,7 +145,17 @@ async function acessa(c, caminho, bucket = 'comunidade') {
 const abriu = (r) => r.assina && r.lote && r.baixa
 const fechado = (r) => !r.assinou && !r.lote && !r.baixa
 
-const logLinhas = (admId, postId) => Number(sql(`select count(*) from public.plataforma_acesso_log where admin_user_id = '${admId}' and o_que = 'foto' and item_id = '${postId}';`))
+const logLinhas = (admId, postId) => Number(sql(`select count(*) from public.plataforma_acesso_log where admin_user_id = '${admId}' and o_que = 'foto_assinada' and item_id = '${postId}';`))
+// o caminho do admin (530): RPC mediada (confere contexto + 1 log) e, só então, a URL assinada com a chave de serviço (papel da Edge Function)
+async function assinaMediado(cli, servico, tipo, id) {
+  const r = await cli.rpc('admin_comunidade_foto_assinar', { p_tipo: tipo, p_id: id })
+  if (r.error || !r.data?.ok) return { ok: false, erro: r.error?.message || 'sem retorno', abre: false }
+  const a = await servico.storage.from(r.data.bucket).createSignedUrl(r.data.path, 60)
+  let status = null
+  if (a.data?.signedUrl) { try { status = (await fetch(a.data.signedUrl)).status } catch { status = -1 } }
+  return { ok: true, path: r.data.path, contexto: r.data.contexto, url: a.data?.signedUrl || null, abre: status === 200 }
+}
+const negado = (r) => !r.ok && /não encontrado|Sem permiss/i.test(r.erro || '')
 const criadosStorage = []
 
 async function principal() {
@@ -207,28 +221,38 @@ async function principal() {
   ok('admin NÃO modera post denunciado de alcance clube ("Conteúdo não encontrado")', !!modA.erro && /não encontrado/i.test(modA.erro), modA.erro)
   const modB = await rpc(c.adm, 'admin_comunidade_moderar', { p_tipo: 'post', p_id: P.pub.id, p_acao: 'remover' })
   ok('admin NÃO modera Comunidade publicada sem denúncia', !!modB.erro && /não encontrado/i.test(modB.erro), modB.erro)
+  for (const [nome, p] of [['post clube (publicado)', P.clube], ['post clube DENUNCIADO', P.clubeDen], ['Comunidade publicada sem denúncia (pub)', P.pub]]) {
+    const rm = await assinaMediado(c.adm, servico, 'post', p.id)
+    ok(`admin: RPC mediada também NEGA ${nome}`, negado(rm), rm.erro)
+  }
   ok('...nada disso gerou linha em plataforma_acesso_log (acesso negado não é acesso)',
     Number(sql(`select count(*) from public.plataforma_acesso_log where admin_user_id = '${ID.adm}';`)) === 0)
 
-  console.log('\n== 2. admin abre SÓ o que está em análise/denunciado na Comunidade, e cada leitura é registrada ==')
+  console.log('\n== 2. admin assina SÓ o que está em análise/denunciado na Comunidade (RPC mediada), 1 log por assinatura ==')
   const rAn = await acessa(c.adm, P.analise.caminho)
-  ok('admin: Comunidade EM ANÁLISE (analise) -> assina, lote, baixa e a URL assinada abre (200)', abriu(rAn), rAn.resumo)
-  const urlAdm = rAn.urlAnalise = rAn.urlAssinada
-  ok('log: 1 linha (foto/post/analise) apesar de 3 leituras seguidas (dedupe de 1 min)', logLinhas(ID.adm, P.analise.id) === 1, String(logLinhas(ID.adm, P.analise.id)))
-  const linha = JSON.parse(sql(`select coalesce(json_agg(l), '[]') from (select * from public.plataforma_acesso_log where admin_user_id = '${ID.adm}' and item_id = '${P.analise.id}') l;`))[0] || {}
-  ok('log identifica quem (admin), o_que=foto, item_tipo=post, item_id, clube de origem e quando',
-    linha.admin_user_id === ID.adm && linha.o_que === 'foto' && linha.item_tipo === 'post' && linha.item_id === P.analise.id && linha.item_club_id === clubeA && !!linha.quando, JSON.stringify(linha))
-  ok('log tem só as colunas previstas (sem campo para URL/token/caminho)', Object.keys(linha).sort().join(',') === 'admin_user_id,id,item_club_id,item_id,item_tipo,o_que,quando', Object.keys(linha).join(','))
+  ok('admin: Comunidade EM ANÁLISE -> leitura DIRETA no Storage fechada (assinar/lote/baixar)', fechado(rAn), rAn.resumo)
+  ok('log: nenhuma linha por tentar ler direto (nada foi assinado pela RPC ainda)', logLinhas(ID.adm, P.analise.id) === 0)
+  const m1 = await assinaMediado(c.adm, servico, 'post', P.analise.id)
+  ok('admin: RPC mediada autoriza (contexto em_analise) e a URL assinada abre (200)', m1.ok && m1.contexto === 'em_analise' && m1.abre && m1.path === P.analise.caminho, JSON.stringify({ ...m1, url: undefined }))
+  ok('log: 1 linha (foto_assinada/post/analise)', logLinhas(ID.adm, P.analise.id) === 1, String(logLinhas(ID.adm, P.analise.id)))
+  const m1b = await assinaMediado(c.adm, servico, 'post', P.analise.id)
+  ok('2ª assinatura do mesmo item = 2ª linha (1 por assinatura, sem dedupe)', m1b.ok && logLinhas(ID.adm, P.analise.id) === 2, String(logLinhas(ID.adm, P.analise.id)))
+  const urlAdm = m1.url || ''
+  const linha = JSON.parse(sql(`select coalesce(json_agg(l order by quando), '[]') from (select * from public.plataforma_acesso_log where admin_user_id = '${ID.adm}' and item_id = '${P.analise.id}') l;`))[0] || {}
+  ok('log identifica quem (admin), o_que=foto_assinada, item_tipo=post, item_id, clube de origem, bucket, contexto e quando',
+    linha.admin_user_id === ID.adm && linha.o_que === 'foto_assinada' && linha.item_tipo === 'post' && linha.item_id === P.analise.id && linha.item_club_id === clubeA
+      && linha.bucket === 'comunidade' && linha.contexto === 'em_analise' && !!linha.quando, JSON.stringify(linha))
+  ok('log tem só as colunas previstas (sem campo para URL/token/caminho)', Object.keys(linha).sort().join(',') === 'admin_user_id,bucket,contexto,id,item_club_id,item_id,item_tipo,o_que,quando', Object.keys(linha).join(','))
   const tokenDaUrl = (urlAdm.match(/token=([^&]+)/) || [])[1] || '@@'
   const logTudo = sql(`select coalesce(string_agg(l::text, ' '), '') from public.plataforma_acesso_log l where admin_user_id = '${ID.adm}';`)
   ok('log NÃO contém URL assinada, token, JWT nem o caminho do arquivo',
     !logTudo.includes(tokenDaUrl) && !/eyJ[A-Za-z0-9_-]{10,}/.test(logTudo) && !logTudo.includes('object/sign') && !logTudo.includes(P.analise.caminho), logTudo.slice(0, 200))
-  const rFim = await acessa(c.adm, P.fim.caminho)
-  ok('admin: outra foto EM ANÁLISE (fim) também abre', abriu(rFim), rFim.resumo)
-  const rDen = await acessa(c.adm, P.den.caminho)
+  const mFim = await assinaMediado(c.adm, servico, 'post', P.fim.id)
+  ok('admin: outra foto EM ANÁLISE (fim) também assina', mFim.ok && mFim.abre, JSON.stringify({ ...mFim, url: undefined }))
+  const mDen = await assinaMediado(c.adm, servico, 'post', P.den.id)
   const stDen = st(P.den)
-  ok(`admin: Comunidade DENUNCIADA (den, status=${stDen}) abre`, abriu(rDen), rDen.resumo)
-  ok('log: linhas para analise, fim e den (itens distintos)', logLinhas(ID.adm, P.fim.id) === 1 && logLinhas(ID.adm, P.den.id) === 1)
+  ok(`admin: Comunidade DENUNCIADA (den, status=${stDen}) assina`, mDen.ok && mDen.abre, JSON.stringify({ ...mDen, url: undefined }))
+  ok('log: linhas para fim e den (itens distintos), 1 cada', logLinhas(ID.adm, P.fim.id) === 1 && logLinhas(ID.adm, P.den.id) === 1)
   const porQuem = sql(`select count(*) from public.plataforma_acesso_log where admin_user_id <> '${ID.adm}' and item_club_id in ('${clubeA}', '${clubeB}');`)
   ok('nenhum não-admin aparece no log até aqui', Number(porQuem) === 0, porQuem)
 
@@ -249,7 +273,7 @@ async function principal() {
     const ins = await cli.from('plataforma_acesso_log').insert({ admin_user_id: ID.adm, o_que: 'forjado' })
     ok(`${n} NÃO insere no log pela API`, !!ins.error, ins.error?.message)
   }
-  ok('linhas do admin continuam intactas após as tentativas', logLinhas(ID.adm, P.analise.id) === 1)
+  ok('linhas do admin continuam intactas após as tentativas', logLinhas(ID.adm, P.analise.id) === 2)
 
   console.log('\n== 3. OUTRO clube (B): o que a regra do feed realmente dá ==')
   for (const [n, cli] of [['dirB (diretoria B)', c.dirB], ['desbB (desbravador B)', c.desbB]]) {
@@ -278,6 +302,8 @@ async function principal() {
   for (const [n, cli] of [['usuário comum (sem vínculo)', c.comum], ['desbravador B', c.desbB], ['diretoria B', c.dirB], ['diretoria A', c.dirA], ['instrutor A', c.instrA]]) {
     const pn = await rpc(cli, 'admin_comunidade_painel')
     ok(`${n}: admin_comunidade_painel negado`, !!pn.erro && /permiss/i.test(pn.erro), pn.erro)
+    const fo = await rpc(cli, 'admin_comunidade_foto_assinar', { p_tipo: 'post', p_id: P.analise.id })
+    ok(`${n}: admin_comunidade_foto_assinar negado`, !!fo.erro && /permiss/i.test(fo.erro), fo.erro)
     const md = await rpc(cli, 'admin_comunidade_moderar', { p_tipo: 'post', p_id: P.analise.id, p_acao: 'remover' })
     ok(`${n}: admin_comunidade_moderar negado`, !!md.erro && /permiss/i.test(md.erro), md.erro)
   }
@@ -334,17 +360,19 @@ async function principal() {
 
   console.log('\n== 6. SAIU DO CONTEXTO: o admin perde o acesso (nada permanente) ==')
   // 6a. aprovado
-  const pre = await c.adm.storage.from('comunidade').createSignedUrl(P.analise.caminho, 600)
+  const pre = await assinaMediado(c.adm, servico, 'post', P.analise.id)   // URL emitida enquanto ainda estava em análise
   const apr = await aprova(P.analise)
   ok('diretoria A aprova a foto "analise"', apr.data?.status === 'publicado', JSON.stringify(apr))
   let r = await acessa(c.adm, P.analise.caminho)
-  ok('6a. APROVADO (publicado, sem denúncia): admin perde o acesso', fechado(r), r.resumo)
+  ok('6a. APROVADO (publicado, sem denúncia): admin perde o acesso (Storage direto fechado)', fechado(r), r.resumo)
+  const m6a = await assinaMediado(c.adm, servico, 'post', P.analise.id)
+  ok('6a. ...e a RPC mediada passa a NEGAR (saiu do contexto)', negado(m6a), m6a.erro)
   r = await acessa(c.dirB, P.analise.caminho)
   ok('6a. ...e o outro clube (B) GANHA acesso só porque agora é Comunidade publicada (regra do feed)', abriu(r), r.resumo)
-  const preAbre = pre.data?.signedUrl ? (await fetch(pre.data.signedUrl)).status : 0
-  info(`URL assinada emitida ANTES da aprovação ${preAbre === 200 ? 'ainda abre' : 'não abre mais'} (status ${preAbre}) — validade do token (120-600 s), igual ao achado do avatar`)
+  const preAbre = pre.url ? (await fetch(pre.url)).status : 0
+  info(`URL assinada emitida ANTES da aprovação ${preAbre === 200 ? 'ainda abre' : 'não abre mais'} (status ${preAbre}) — validade curta do token (60 s)`)
   // 6b. removido pelo próprio admin (gera log de moderação)
-  const preFim = await c.adm.storage.from('comunidade').createSignedUrl(P.fim.caminho, 600)
+  const preFim = await assinaMediado(c.adm, servico, 'post', P.fim.id)
   const rem = await rpc(c.adm, 'admin_comunidade_moderar', { p_tipo: 'post', p_id: P.fim.id, p_acao: 'remover', p_motivo: 'e2e' })
   ok('6b. admin remove o item em análise (contexto de moderação)', rem.data?.status === 'removido', JSON.stringify(rem))
   ok('...gera linha moderar_remover em plataforma_acesso_log',
@@ -353,32 +381,34 @@ async function principal() {
     Number(sql(`select count(*) from public.platform_admin_audit where admin_user_id = '${ID.adm}' and acao = 'comunidade_moderar' and alvo_id = '${P.fim.id}';`)) === 1)
   r = await acessa(c.adm, P.fim.caminho)
   ok('6b. REMOVIDO: admin perde o acesso à foto', fechado(r), r.resumo)
+  const m6b = await assinaMediado(c.adm, servico, 'post', P.fim.id)
+  ok('6b. ...a RPC mediada também NEGA o removido', negado(m6b), m6b.erro)
   r = await acessa(c.dirB, P.fim.caminho)
   ok('6b. REMOVIDO: outro clube também sem acesso', fechado(r), r.resumo)
   const remDeNovo = await rpc(c.adm, 'admin_comunidade_moderar', { p_tipo: 'post', p_id: P.fim.id, p_acao: 'restaurar' })
   ok('6b. admin não consegue "restaurar" o que saiu do contexto', !!remDeNovo.erro, remDeNovo.erro)
-  const preFimStatus = preFim.data?.signedUrl ? (await fetch(preFim.data.signedUrl)).status : 0
+  const preFimStatus = preFim.url ? (await fetch(preFim.url)).status : 0
   info(`URL assinada emitida antes da remoção ${preFimStatus === 200 ? 'ainda abre' : 'não abre mais'} (status ${preFimStatus})`)
   // 6c. denúncia resolvida (restaurar) / oculto
   if (st(P.den) === 'publicado') {
     const oc = await rpc(c.dirA, 'comunidade_moderar', { p_tipo: 'post', p_id: P.den.id, p_acao: 'ocultar' })
     ok('6c. diretoria A oculta o denunciado', oc.data?.status === 'oculto_denuncia', JSON.stringify(oc))
   }
-  r = await acessa(c.adm, P.den.caminho)
-  ok('6c. OCULTO por denúncia pendente: admin ainda abre (continua no contexto)', abriu(r), r.resumo)
+  const m6c = await assinaMediado(c.adm, servico, 'post', P.den.id)
+  ok('6c. OCULTO por denúncia pendente: admin ainda assina (continua no contexto)', m6c.ok && m6c.abre, JSON.stringify({ ...m6c, url: undefined }))
   r = await acessa(c.dirB, P.den.caminho)
   ok('6c. ...e o outro clube NÃO abre item oculto', fechado(r), r.resumo)
   const rest = await rpc(c.dirA, 'comunidade_moderar', { p_tipo: 'post', p_id: P.den.id, p_acao: 'restaurar' })
   ok('6c. diretoria A restaura (denúncia improcedente = resolvida)', rest.data?.status === 'publicado', JSON.stringify(rest))
-  r = await acessa(c.adm, P.den.caminho)
-  ok('6c. DENÚNCIA RESOLVIDA: admin perde o acesso', fechado(r), r.resumo)
+  const m6c2 = await assinaMediado(c.adm, servico, 'post', P.den.id)
+  ok('6c. DENÚNCIA RESOLVIDA: admin perde o acesso (RPC mediada nega)', negado(m6c2), m6c2.erro)
   const ctxRestante = Number(sql(`select count(*) from public.comunidade_posts p where p.id in ('${P.analise.id}','${P.fim.id}','${P.den.id}') and p.status in ('em_analise','oculto_denuncia');`))
   ok('nenhum dos 3 itens segue em análise/oculto', ctxRestante === 0, String(ctxRestante))
   // nova denúncia (de outro denunciante) traz o item de volta ao contexto: acesso é por estado, não por histórico
   const denDeNovo = await rpc(c.desbB, 'comunidade_denunciar', { p_tipo: 'post', p_id: P.den.id, p_motivo: 'outro' })
   ok('6d. nova denúncia pendente', denDeNovo.data?.ok === true, JSON.stringify(denDeNovo))
-  r = await acessa(c.adm, P.den.caminho)
-  ok('6d. o acesso do admin volta ENQUANTO houver denúncia pendente (segue o estado atual, não o histórico)', abriu(r), r.resumo)
+  const m6d = await assinaMediado(c.adm, servico, 'post', P.den.id)
+  ok('6d. o acesso do admin volta ENQUANTO houver denúncia pendente (segue o estado atual, não o histórico)', m6d.ok && m6d.abre, JSON.stringify({ ...m6d, url: undefined }))
 
   console.log('\n== 7. anon ==')
   for (const [n, p] of [['em análise', P.fim], ['publicada', P.pub], ['clube', P.clube]]) {
@@ -389,6 +419,8 @@ async function principal() {
   }
   const anonList = await anon.storage.from('comunidade').list(`${clubeA}/${ID.dirA}`)
   ok('anon: list() vazio', (anonList.data || []).length === 0, JSON.stringify(anonList.error?.message))
+  const anonFoto = await rpc(anon, 'admin_comunidade_foto_assinar', { p_tipo: 'post', p_id: P.fim.id })
+  ok('anon: admin_comunidade_foto_assinar negado', !!anonFoto.erro, anonFoto.erro)
   const anonRpc = await rpc(anon, 'admin_comunidade_painel')
   ok('anon: admin_comunidade_painel negado', !!anonRpc.erro)
 
@@ -396,9 +428,9 @@ async function principal() {
   const manutAntes = sql(`select ativo from public.plataforma_manutencao where id = 1;`)
   try {
     sql(`update public.plataforma_manutencao set ativo = true where id = 1;`)
-    const rm = await acessa(c.adm, P.manut.caminho)
-    ok('manutenção ON: admin (isento da guarda) ainda abre item em análise da Comunidade', abriu(rm), rm.resumo)
-    ok('manutenção ON: ...e a leitura foi registrada (a guarda não bloqueou o INSERT do admin)', logLinhas(ID.adm, P.manut.id) === 1, String(logLinhas(ID.adm, P.manut.id)))
+    const rm = await assinaMediado(c.adm, servico, 'post', P.manut.id)
+    ok('manutenção ON: admin (isento da guarda) ainda assina item em análise da Comunidade', rm.ok && rm.abre, JSON.stringify({ ...rm, url: undefined }))
+    ok('manutenção ON: ...e a assinatura foi registrada (a guarda não bloqueou o INSERT do admin)', logLinhas(ID.adm, P.manut.id) === 1, String(logLinhas(ID.adm, P.manut.id)))
     const rmd = await acessa(c.dirB, P.manut.caminho)
     ok('manutenção ON: autor (dirB) continua abrindo a própria foto (leitura)', abriu(rmd), rmd.resumo)
     const rmb = await acessa(c.desbA, P.pub.caminho)
@@ -408,14 +440,14 @@ async function principal() {
   } finally {
     sql(`update public.plataforma_manutencao set ativo = ${manutAntes === 't' ? 'true' : 'false'} where id = 1;`)
   }
-  // fail-closed: se o INSERT no log falhar, a policy nega (função devolve false). Simula com um gatilho temporário.
+  // fail-closed: se o INSERT no log falhar, a RPC falha e nada é autorizado. Simula com um gatilho temporário.
   try {
     sql(`
       create or replace function public._e2e_radm_falha_log() returns trigger language plpgsql as $f$ begin raise exception 'e2e: log indisponível'; end $f$;
       drop trigger if exists e2e_radm_falha_log on public.plataforma_acesso_log;
       create trigger e2e_radm_falha_log before insert on public.plataforma_acesso_log for each row execute function public._e2e_radm_falha_log();`)
-    const rf = await acessa(c.adm, P.falha.caminho)
-    ok('log indisponível: admin é NEGADO na foto em análise (fail-closed, sem leitura sem registro)', fechado(rf), rf.resumo)
+    const rf = await assinaMediado(c.adm, servico, 'post', P.falha.id)
+    ok('log indisponível: admin é NEGADO na foto em análise (fail-closed, sem assinatura sem registro)', !rf.ok && !rf.abre, rf.erro)
     ok('...e nenhuma linha foi gravada', logLinhas(ID.adm, P.falha.id) === 0)
     const pf = await rpc(c.adm, 'admin_comunidade_painel')
     ok('log indisponível: admin_comunidade_painel também falha fechado', !!pf.erro && /registrar o acesso/i.test(pf.erro), pf.erro)
@@ -424,18 +456,20 @@ async function principal() {
   } finally {
     sql(`drop trigger if exists e2e_radm_falha_log on public.plataforma_acesso_log; drop function if exists public._e2e_radm_falha_log();`)
   }
-  const rvolta = await acessa(c.adm, P.falha.caminho)
-  ok('log restabelecido: admin volta a abrir o item em contexto e grava a linha', abriu(rvolta) && logLinhas(ID.adm, P.falha.id) === 1, rvolta.resumo)
-  console.log('\n== 9. list() do admin (achado: registro colateral) ==')
+  const rvolta = await assinaMediado(c.adm, servico, 'post', P.falha.id)
+  ok('log restabelecido: admin volta a assinar o item em contexto e grava a linha', rvolta.ok && rvolta.abre && logLinhas(ID.adm, P.falha.id) === 1, rvolta.erro || '')
+  console.log('\n== 9. list() do admin NÃO registra (achado da Fase 8 corrigido pela 530) ==')
   const extra = await postar('instrB', clubeB, 'comunidade', 'extra')
   ok('preparo: item "extra" em análise, ainda sem nenhum acesso registrado', logLinhas(ID.adm, extra.id) === 0)
+  const totalAntes = Number(sql(`select count(*) from public.plataforma_acesso_log where admin_user_id = '${ID.adm}';`))
   const lista = await c.adm.storage.from('comunidade').list(`${clubeA}/${ID.dirA}`)
-  const nomes = (lista.data || []).map((x) => x.name)
-  ok('list() do admin numa pasta SEM item em contexto não devolve nenhum arquivo', nomes.length === 0, JSON.stringify(nomes))
+  ok('list() do admin numa pasta de item em contexto não devolve nenhum arquivo', (lista.data || []).length === 0, JSON.stringify((lista.data || []).map((x) => x.name)))
   const lista2 = await c.adm.storage.from('comunidade').list(`${clubeB}/${ID.instrB}`)
-  ok('list() do admin na pasta com item em análise mostra só esse arquivo', (lista2.data || []).length === 1 && lista2.data[0].name === extra.caminho.split('/').pop(), JSON.stringify((lista2.data || []).map((x) => x.name)))
-  const colateral = logLinhas(ID.adm, extra.id)
-  info(`ACHADO (auditoria imprecisa): list() de OUTRA pasta (${clubeA}/<dirA>) ${colateral ? 'registrou' : 'não registrou'} leitura do item "extra" (linhas=${colateral}); o servidor avalia a policy em todo item do bucket`)
+  ok('list() do admin na pasta do item em análise também não devolve nada (sem leitura direta)', (lista2.data || []).length === 0, JSON.stringify((lista2.data || []).map((x) => x.name)))
+  const totalDepois = Number(sql(`select count(*) from public.plataforma_acesso_log where admin_user_id = '${ID.adm}';`))
+  ok('listar NÃO gerou nenhuma linha no log (nem para "extra" nem para outro item)', logLinhas(ID.adm, extra.id) === 0 && totalDepois === totalAntes, `${totalAntes} -> ${totalDepois}`)
+  const mExtra = await assinaMediado(c.adm, servico, 'post', extra.id)
+  ok('só assinar registra: 1 linha para "extra"', mExtra.ok && mExtra.abre && logLinhas(ID.adm, extra.id) === 1, mExtra.erro || '')
 }
 
 let saiu = 0
