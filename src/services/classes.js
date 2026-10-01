@@ -56,6 +56,18 @@ export async function carregarMinhasClasses() {
   return data || []
 }
 
+// Reconhecimento da conclusão (migration 525): { reconhecida:false } ou { reconhecida:true, origem, clube_nome, concluida_em,
+// data_desconhecida, texto }. Sem acesso devolve null (sem oráculo). minhas_classes() também traz 'reconhecimento'.
+export async function carregarConclusaoReconhecida(memberClassId) {
+  try {
+    const { data, error } = await supabase.rpc('classe_conclusao_reconhecida', { p_member_class_id: memberClassId })
+    if (error) return null
+    return data || null
+  } catch {
+    return null
+  }
+}
+
 // "Origem do requisito": proveniência até o manifesto/OMD/página oficial (auditoria/administração —
 // não aparece em todo card; só quando alguém pede).
 export async function carregarOrigemRequisito(requirementId) {
