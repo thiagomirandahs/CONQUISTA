@@ -46,3 +46,18 @@ describe('AdminVitrine › apagar parceiro', () => {
     expect(f.adminParceiroApagar).toHaveBeenCalledWith('p1')
   })
 })
+
+describe('AdminVitrine › logo do parceiro (BotaoUpload)', () => {
+  it('input acessível (sr-only), só jpeg/png/webp, envia o arquivo e troca o rótulo para "Trocar logo"', async () => {
+    f.subirLogoDoParceiro.mockResolvedValue('https://cdn/logo.png')
+    render(<AdminVitrine />)
+    await userEvent.click(await screen.findByText('Editar'))
+    const input = await screen.findByLabelText('Enviar logo')
+    expect(input.className).toContain('sr-only')
+    expect(input).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp')
+    const arq = new File(['x'], 'logo.png', { type: 'image/png' })
+    await userEvent.upload(input, arq)
+    expect(f.subirLogoDoParceiro).toHaveBeenCalledWith(arq)
+    expect(await screen.findByLabelText('Trocar logo')).toBeInTheDocument()
+  })
+})

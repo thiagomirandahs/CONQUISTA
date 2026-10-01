@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoUpload } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -138,11 +138,10 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
       <div>
         <span className="block text-sm font-medium text-ink mb-1">Logo</span>
         <div className="flex items-center gap-2">
-          <label className={`text-sm text-brand bg-brand/10 hover:bg-brand/20 rounded-xl px-4 py-2 font-semibold cursor-pointer ${enviandoLogo ? 'opacity-60 pointer-events-none' : ''}`}>
+          <BotaoUpload rotulo={form.logoUrl ? 'Trocar logo' : 'Enviar logo'} accept="image/jpeg,image/png,image/webp,image/gif"
+            desabilitado={enviandoLogo} aoEscolher={trocarLogo} className="text-brand bg-brand/10 hover:bg-brand/20">
             {enviandoLogo ? 'Enviando…' : form.logoUrl ? 'Trocar logo' : 'Enviar logo'}
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" disabled={enviandoLogo}
-              onChange={(e) => { trocarLogo(e.target.files?.[0]); e.target.value = '' }} />
-          </label>
+          </BotaoUpload>
           {form.logoUrl && <button type="button" onClick={() => mudar('logoUrl')('')} className="text-xs text-muted font-semibold px-2">Remover</button>}
         </div>
         <span className="block text-xs text-faint mt-1">JPG, PNG, WebP ou GIF, até 5 MB. Fica pública (aparece na tela de entrada).</span>

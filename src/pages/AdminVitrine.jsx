@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Card, Botao, Aviso, Campo } from '../ui/index.jsx'
+import { Card, Botao, Aviso, Campo, BotaoUpload } from '../ui/index.jsx'
 import {
   adminParceirosListar, adminParceiroSalvar, adminParceiroApagar, subirLogoDoParceiro,
   adminCartoesListar, adminCartaoModerar,
@@ -140,10 +140,10 @@ function FormParceiro({ inicial, aoFechar, aoSalvar }) {
       </div>
       <div className="flex items-center gap-2 mb-3">
         {f.logo_url && <img src={f.logo_url} alt="" className="w-12 h-12 rounded-lg object-contain border border-line bg-white" />}
-        <label className={`inline-flex min-h-[44px] items-center text-sm text-brand bg-brand/10 rounded-xl px-4 font-semibold cursor-pointer ${enviando ? 'opacity-60 pointer-events-none' : ''}`}>
+        <BotaoUpload rotulo={f.logo_url ? 'Trocar logo' : 'Enviar logo'} accept="image/jpeg,image/png,image/webp"
+          desabilitado={enviando} aoEscolher={trocarLogo} className="text-brand bg-brand/10">
           {enviando ? 'Enviando…' : f.logo_url ? 'Trocar logo' : 'Enviar logo'}
-          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { trocarLogo(e.target.files?.[0]); e.target.value = '' }} />
-        </label>
+        </BotaoUpload>
         {f.logo_url && <button type="button" className="min-h-[44px] px-2 text-xs text-muted font-semibold" onClick={() => setF((x) => ({ ...x, logo_url: '' }))}>Remover</button>}
       </div>
       <p className="text-xs text-faint mb-3">Logo: JPG, PNG ou WebP até 2 MB (fica pública).</p>
