@@ -47,8 +47,11 @@ select t.eq('minha_classe da matrícula 2026.3 continua abrindo NA 2026.3 (25 re
   '2026.3|25');
 select t.eq('classes_disponiveis agora libera Amigo da Natureza (Amigo em andamento na 2026.3 conta)',
   t.txt($q$select (c->>'elegivel') || '|' || coalesce(c->>'motivo_inelegivel', '-') from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'amigo_da_natureza'$q$), 'true|-');
-select t.eq('...e ainda oferece a Amigo 2026.4 (outro class_id) — a pessoa não é empurrada de versão',
-  t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'amigo'$q$), 1);
+-- 523 (achado da auditoria de versionamento): com a Amigo 2026.3 em andamento NESTE clube, a Amigo 2026.4 NÃO é mais oferecida
+-- (antes era, e a pessoa podia acabar com DUAS matrículas ativas da mesma classe). A pessoa continua NÃO sendo empurrada de versão:
+-- a matrícula 2026.3 segue aberta na 2026.3 (assert acima) e a atualização para a vigente é um passo futuro, explícito e da liderança.
+select t.eq('...e NÃO oferece a Amigo 2026.4 enquanto a 2026.3 está em andamento (sem duas matrículas da mesma classe; sem empurrar de versão)',
+  t.n($q$select count(*) from json_array_elements(public.classes_disponiveis()) c where c->>'codigo' = 'amigo'$q$), 0);
 select t.permitido('membro_a inicia Amigo da Natureza (feita junto com a regular)', format($q$select public.classe_iniciar(%L)$q$, t.classe('2026.4', 'amigo_da_natureza')));
 select t.eq('minhas_classes lista as duas: Amigo (2026.3) e Amigo da Natureza (2026.4)',
   t.txt($q$select string_agg(x->>'codigo', ',' order by x->>'codigo') from json_array_elements(public.minhas_classes()) x$q$), 'amigo,amigo_da_natureza');
