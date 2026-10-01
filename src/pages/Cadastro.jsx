@@ -255,7 +255,7 @@ function EscolherClube({ clubes, valor, aoEscolher }) {
       {escolhido ? (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-brand bg-surface2 px-3 py-2.5" data-testid="clube-escolhido">
           <span className="min-w-0 truncate font-semibold text-ink">🏕️ {escolhido.nome}{escolhido.cidade ? ` — ${escolhido.cidade}` : ''}</span>
-          <button type="button" onClick={() => { aoEscolher(''); setBusca('') }} className="shrink-0 min-h-[40px] px-2 text-sm font-semibold text-brand">Trocar</button>
+          <button type="button" onClick={() => { aoEscolher(''); setBusca('') }} className="shrink-0 min-h-[44px] px-2 text-sm font-semibold text-brand">Trocar</button>
         </div>
       ) : (
         <>

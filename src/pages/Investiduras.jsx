@@ -169,7 +169,7 @@ function Conclusao({ it, onMudou }) {
               <ul className="mt-1 space-y-1 max-h-60 overflow-y-auto">
                 {(it.requisitos || []).map((r) => (
                   <li key={r.member_requirement_id}>
-                    <label className="flex items-start gap-2 min-h-[32px]">
+                    <label className="flex items-start gap-2 min-h-[44px]">
                       <input type="checkbox" className="mt-0.5 w-5 h-5" aria-label={`${r.secao}.${r.codigo} ${r.descricao}`} checked={marcados.has(r.member_requirement_id)} onChange={() => alternar(r.member_requirement_id)} />
                       <span>{r.secao}.{r.codigo} {r.descricao}{r.aprovado_por ? <span className="text-faint"> · aprovado por {r.aprovado_por}</span> : null}</span>
                     </label>

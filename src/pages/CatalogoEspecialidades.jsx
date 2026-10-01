@@ -74,7 +74,7 @@ export default function CatalogoEspecialidades() {
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted" aria-live="polite">{lista.length} encontrada(s)</p>
             {(area || busca) && (
-              <button type="button" onClick={() => { setArea(''); buscar('') }} className="min-h-[40px] px-2 text-xs font-bold text-brand">Limpar filtros</button>
+              <button type="button" onClick={() => { setArea(''); buscar('') }} className="min-h-[44px] px-2 text-xs font-bold text-brand">Limpar filtros</button>
             )}
           </div>
           <ul className="space-y-2">
@@ -127,7 +127,7 @@ function Mestrado({ m, porCodigo }) {
         <div className="mt-2 space-y-2">
           <ul className="grid gap-1">
             {itens.map((e) => (
-              <li key={e.codigo}><a href={e.url} target="_blank" rel="noopener noreferrer" className="flex min-h-[40px] items-center justify-between rounded-lg px-2 text-sm text-ink hover:bg-surface2">
+              <li key={e.codigo}><a href={e.url} target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] items-center justify-between rounded-lg px-2 text-sm text-ink hover:bg-surface2">
                 <span>{e.nome}</span><span className="text-xs text-muted">{e.codigo}</span></a></li>
             ))}
           </ul>

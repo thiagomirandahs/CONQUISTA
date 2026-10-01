@@ -252,7 +252,7 @@ function Etapa({ s, podeEnviar, valor, setValor, ocupado, onEnviar, setErro }) {
             <fieldset key={qi} className="border border-line rounded-xl p-3">
               <legend className="text-xs text-ink px-1">{q.texto}</legend>
               {(q.opcoes || []).map((o, oi) => (
-                <label key={oi} className="flex items-center gap-2 min-h-[36px] text-sm text-ink">
+                <label key={oi} className="flex items-center gap-2 min-h-[44px] text-sm text-ink">
                   <input type="radio" name={`q-${s.id}-${qi}`} value={oi}
                     checked={String(valor.respostas?.[qi]) === String(oi)}
                     onChange={() => setValor({ ...valor, respostas: { ...(valor.respostas || {}), [qi]: oi } })} />
