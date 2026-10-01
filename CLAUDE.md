@@ -45,6 +45,7 @@ supabase/functions/    Edge Functions
 - **Cargos de unidade** (migration 230) são organizacionais, não dão acesso.
 - **Hierarquia**: clube → distrito → região → campo/associação → união → divisão (`organizational_units.parent_id`). Coordenadores veem clubes abaixo pela árvore, **só números agregados** (nunca fotos, chat, financeiro, dados de criança), exceto dentro da etapa de aprovação de investidura.
 - **Entrada em clube**: link/QR/código, convite ou escolher o clube no cadastro → vínculo **PENDENTE** → diretoria aprova. Papel sempre decidido pelo servidor. Nome de clube é único (migration 205).
+- **Matrícula e versão** (decisão 01/10/2026): matrícula iniciada permanece na versão em que começou (sem migração automática); a versão nova vale para matrículas novas; ver `ATUALIZACAO-DE-CLASSE-ARQUITETURA.md`.
 - **Currículo**: versão publicada é imutável; mudou o manifesto → versão nova (hoje **2026.4**, 6 regulares + 6 avançadas). Comprovação por texto/foto (`tipo_evidencia`). Avançada exige a regular iniciada.
 - **Investidura** (migration 330): clube → distrito → região → apto (pula nível inexistente; devolver marca requisitos para correção).
 - **Foto de documento** (migration 380): requisitos de idade pedem foto do documento; fica fora do histórico imutável, só dono e avaliador do clube veem, e é APAGADA (API do Storage) depois da aprovação — fica só "conferido por".

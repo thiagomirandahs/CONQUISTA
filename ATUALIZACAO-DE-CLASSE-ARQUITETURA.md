@@ -1,3 +1,19 @@
+# DECISÃO DO DONO (01/10/2026) — versão da matrícula
+
+**Uma matrícula já iniciada PERMANECE vinculada à versão curricular em que foi iniciada. Não haverá migração automática obrigatória para uma versão nova.**
+
+- Matrícula iniciada → continua na versão original (requisitos, aprovações, tentativas, relatos, anexos, documentos e conquista ficam como nasceram).
+- A versão nova vale para **novas matrículas** (`classes_disponiveis` só oferece a versão publicada; `classe_iniciar`/`classe_atribuir` só aceitam classe publicada).
+- Nada é copiado artificialmente: não se cria aprovação "herdada", não se reapontam ids (`member_classes.class_id`, `member_requirements.requirement_id`), não se apaga progresso.
+- A migration 523 mantém a consequência lógica: enquanto houver matrícula **não cancelada** da mesma classe (mesmo código oficial, qualquer versão) no clube, a versão vigente não é oferecida de novo para a mesma pessoa nesse clube (evita duas matrículas da mesma classe). A matrícula antiga continua e conclui na versão dela.
+- `classe_atualizacao_previa(member_class_id)` (522) fica **somente como ferramenta informativa** (leitura): mostra o que mudaria entre a versão da matrícula e a vigente, sem alterar nada, sem botão de atualizar.
+- A tabela `class_requirement_equivalencias` (522) fica **preparada e vazia** para uso futuro (equivalência explícita editorial/equivalente/material, vinda de manifesto/migration).
+- **Migração assistida de matrículas fica para outra fase**, que exigirá o desenho do §3 deste documento (estado terminal da matrícula antiga, vínculo antiga→nova, representação de "cumprido na versão anterior" sem aprovação falsa, leitura de proveniência em percentual/PDF/investidura/portfólio).
+
+Impacto medido em produção (somente leitura, 01/10/2026, agregado): 1 matrícula em versão arquivada (Guia 2026.2, Tenant 001, em andamento); ela continua na 2026.2 e conclui nela.
+
+---
+
 # Atualizar matrícula de Classe para a versão vigente — auditoria de arquitetura
 
 Base: `f59aa51` + migration `20260930000522` (esta entrega). Banco local lido em modo somente leitura (migração 519).
