@@ -22,6 +22,7 @@ import { mkdtempSync, writeFileSync, rmSync, copyFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createServer } from 'node:http'
 import { createClient } from '@supabase/supabase-js'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
@@ -92,7 +93,7 @@ const FUNCOES = {
   'enviar-push': { verifyJWT: false, env: { PUSH_WEBHOOK_SECRET: SEG.PUSH_WEBHOOK_SECRET, VAPID_PUBLIC_KEY: VAPID.pub, VAPID_PRIVATE_KEY: VAPID.priv } },
   'sanear-imagens': { verifyJWT: false, env: { SANEAMENTO_SECRET: SEG.SANEAMENTO_SECRET } },
   'storage-excluir': { verifyJWT: false, env: { STORAGE_EXCLUIR_SECRET: SEG.STORAGE_EXCLUIR_SECRET } },
-  // limpar-fotos-rede NÃO está no config.toml (o painel/--no-verify-jwt a deixa sem JWT em produção); aqui espelha produção: sem JWT
+  // limpar-fotos-rede: verify_jwt=false (declarado no config.toml; o cron chama sem JWT de usuário). O valor do config.toml tem precedência (ver subir())
   'limpar-fotos-rede': { verifyJWT: false, env: { REDE_LIMPEZA_SECRET: SEG.REDE_LIMPEZA_SECRET } },
   'gerar-documento-pdf': { verifyJWT: true, env: {} },
   'gerar-documento-pdf-final': { verifyJWT: true, env: {} },
@@ -118,18 +119,19 @@ function subir({ nome, porta, perfil }) {
   }
   const linhas = [
     // 'indisp': Supabase/Storage INDISPONÍVEL (porta fechada), com as chaves novas válidas — prova a falha limpa de cada função
-    'SUPABASE_URL=' + (perfil === 'indisp' ? 'http://127.0.0.1:9' : 'http://' + CONT_KONG + ':8000'),
+    // 'contador': SUPABASE_URL aponta para um servidor do harness que SÓ CONTA requisições (PostgREST/Storage/Auth falsos, respondem 503)
+    'SUPABASE_URL=' + (perfil === 'indisp' ? 'http://127.0.0.1:9' : perfil === 'contador' ? `http://host.docker.internal:${PORTA_CONTADOR}` : 'http://' + CONT_KONG + ':8000'),
     `SUPABASE_INTERNAL_HOST_PORT=${porta}`,
     `SUPABASE_INTERNAL_JWT_SECRET=${JWT_SECRET}`,
     `SUPABASE_JWKS=${JWKS}`,
     `SUPABASE_INTERNAL_FUNCTIONS_CONFIG=${JSON.stringify(cfg)}`,
   ]
-  if (perfil === 'plataforma' || perfil === 'indisp') linhas.push(`SUPABASE_INTERNAL_PUBLISHABLE_KEY=${PUB}`, `SUPABASE_INTERNAL_SECRET_KEY=${SEC}`)
+  if (perfil === 'plataforma' || perfil === 'indisp' || perfil === 'contador') linhas.push(`SUPABASE_INTERNAL_PUBLISHABLE_KEY=${PUB}`, `SUPABASE_INTERNAL_SECRET_KEY=${SEC}`)
   if (perfil === 'legacy' || perfil === 'modo-nova') linhas.push(`SUPABASE_SERVICE_ROLE_KEY=${LEG_SERVICE}`, `SUPABASE_ANON_KEY=${LEG_ANON}`)
   const envf = join(TMP, `${nome}.env`)
   writeFileSync(envf, linhas.join('\n') + '\n', { mode: 0o600 })
   try { docker('rm', '-f', nome) } catch { /* não existia */ }
-  docker('run', '-d', '--name', nome, '--network', NET, '-p', `${porta}:9000`, '--env-file', envf, '-w', '/app',
+  docker('run', '-d', '--name', nome, '--network', NET, '-p', `${porta}:9000`, '--env-file', envf, '--add-host', 'host.docker.internal:host-gateway', '-w', '/app',
     '-v', `${join(RAIZ, 'supabase/functions')}:/app/supabase/functions:ro`, '-v', `${mainWrapper}:/root/index.ts:ro`, '-v', `${VOLUME}:/root/.cache/deno`,
     IMG, 'start', '--main-service=/root', '--port=9000', '--policy=per_worker')
   rmSync(envf, { force: true })
@@ -335,6 +337,53 @@ async function suiteLimparFotos(c, completa) {
   }
 }
 
+// ---------------------------------------------------------------- limpar-fotos-rede: a fechadura (segredo) vem ANTES de qualquer acesso
+// Servidor do harness que SÓ CONTA as requisições que a função faz ao "Supabase" (PostgREST/Storage/Auth). Guarda só o caminho (nunca cabeçalhos).
+const PORTA_CONTADOR = 54417
+const contador = { n: 0, caminhos: [], servidor: null }
+function iniciarContador() {
+  return new Promise((ok, falha) => {
+    contador.servidor = createServer((req, res) => {
+      contador.n++; contador.caminhos.push(String(req.url).split('?')[0])
+      req.resume(); res.writeHead(503, { 'content-type': 'application/json' }); res.end('{"message":"contador do harness"}')
+    })
+    contador.servidor.once('error', falha)
+    contador.servidor.listen(PORTA_CONTADOR, '0.0.0.0', ok)
+  })
+}
+async function suiteLimparFotosFechadura(c) {
+  const fn = 'limpar-fotos-rede'
+  const H = 'x-rede-limpeza-secret'
+  const R = SEG.REDE_LIMPEZA_SECRET
+  const base = contador.n
+  reg(fn, '[contador] o boot da função (createClient, chaves) não fez NENHUMA requisição ao Supabase', base === 0, `n=${base}`)
+  const casos = [
+    ['sem x-rede-limpeza-secret', {}],
+    ['x-rede-limpeza-secret vazio', { [H]: '' }],
+    ['segredo incorreto', { [H]: 'segredo-errado' }],
+    ['segredo correto com 1 caractere a menos (prefixo)', { [H]: R.slice(0, -1) }],
+    ['segredo correto com 1 caractere a mais', { [H]: R + 'x' }],
+    ['segredo de OUTRA função (x-saneamento-secret no header certo)', { [H]: SEG.SANEAMENTO_SECRET }],
+    ['só Authorization: Bearer <JWT legacy service_role>', { authorization: `Bearer ${LEG_SERVICE}` }],
+    ['só Authorization: Bearer <JWT legacy anon>', { authorization: `Bearer ${LEG_ANON}` }],
+    ['só Authorization: Bearer <secret nova> + apikey', { authorization: `Bearer ${SEC}`, apikey: SEC }],
+    ['só Authorization: Bearer <publishable> + apikey', { authorization: `Bearer ${PUB}`, apikey: PUB }],
+    ['JWT legacy no Authorization e o segredo no header ERRADO', { authorization: `Bearer ${LEG_SERVICE}`, [H]: 'segredo-errado' }],
+    ['outros headers de segredo (saneamento/storage/push) sem o da limpeza', { 'x-saneamento-secret': SEG.SANEAMENTO_SECRET, 'x-storage-excluir-secret': SEG.STORAGE_EXCLUIR_SECRET, 'x-push-webhook-secret': SEG.PUSH_WEBHOOK_SECRET }],
+  ]
+  for (const [rotulo, headers] of casos) {
+    const r = await chamar(c, fn, { headers })
+    reg(fn, `[contador] ${rotulo} -> 401`, r.status === 401, String(r.status))
+  }
+  const g = await chamar(c, fn, { metodo: 'GET', headers: { [H]: R } })
+  reg(fn, '[contador] GET (mesmo com o segredo certo) -> 405', g.status === 405, String(g.status))
+  reg(fn, `[contador] ZERO requisições ao PostgREST/Storage/Auth antes da validação (${casos.length} tentativas negadas + GET)`, contador.n === base, `n=${contador.n - base} ${contador.caminhos.slice(base, base + 3).join(',')}`)
+  const ok = await chamar(c, fn, { headers: { [H]: R } })
+  reg(fn, '[contador] segredo CORRETO passa da fechadura (não é 401) e só então toca o banco (500 controlado: o "Supabase" do contador responde 503)', ok.status === 500 && ok.json?.ok === false, `${ok.status} ${ok.txt.slice(0, 80)}`)
+  reg(fn, '[contador] com o segredo correto a PRIMEIRA requisição é a RPC rede_fotos_pendentes (nenhum Storage antes dela)', contador.n > base && /^\/rest\/v1\/rpc\/rede_fotos_pendentes$/.test(contador.caminhos[base] ?? ''), contador.caminhos.slice(base, base + 3).join(','))
+  reg(fn, '[contador] sem fila lida, nada foi removido do Storage (nenhuma chamada /storage/ no contador)', !contador.caminhos.some((p) => p.startsWith('/storage/')))
+}
+
 // ---------------------------------------------------------------- admin-comunidade-foto
 async function suiteAdminFoto(c, completa) {
   const fn = 'admin-comunidade-foto'
@@ -521,7 +570,7 @@ function rodarSub(fn, script, env) {
 }
 
 // ---------------------------------------------------------------- principal
-const PORTAS = { plataforma: 54401, sb: 54402, legacy: 54403, semchave: 54404, 'modo-nova': 54405, indisp: 54406 }
+const PORTAS = { plataforma: 54401, sb: 54402, legacy: 54403, semchave: 54404, 'modo-nova': 54405, indisp: 54406, contador: 54407 }
 async function principal() {
   console.log(`== edge-chaves-novas · imagem ${IMG} · rede ${NET}`)
   docker('cp', `${CONT_FN}:/root/index.ts`, mainWrapper)
@@ -530,7 +579,8 @@ async function principal() {
 
   console.log('\n== 1) containers kfn_* (ambiente SÓ com chaves novas) ==')
   const cs = {}
-  for (const perfil of ['plataforma', 'sb', 'legacy', 'semchave', 'modo-nova', 'indisp']) cs[perfil] = subir({ nome: `kfn_${perfil.replace('-', '_')}`, porta: PORTAS[perfil], perfil })
+  await iniciarContador()
+  for (const perfil of ['plataforma', 'sb', 'legacy', 'semchave', 'modo-nova', 'indisp', 'contador']) cs[perfil] = subir({ nome: `kfn_${perfil.replace('-', '_')}`, porta: PORTAS[perfil], perfil })
   for (const c of Object.values(cs)) reg('ambiente', `[${c.perfil}] container sobe e o main service responde /_internal/health`, await esperarSaude(c))
   provarAmbiente(cs.plataforma, true); provarAmbiente(cs.sb, true); provarAmbiente(cs.legacy, false); provarAmbiente(cs.semchave, true); provarAmbiente(cs['modo-nova'], false)
   const nomesPlat = docker('exec', cs.plataforma.nome, 'printenv').split('\n').map((l) => l.split('=')[0])
@@ -540,6 +590,7 @@ async function principal() {
   const P = cs.plataforma
   if (so('rpc')) await suiteRpcDeServico(true)
   if (so('limpar')) await suiteLimparFotos(P, true)
+  if (so('limpar')) await suiteLimparFotosFechadura(cs.contador)
   if (so('admin')) await suiteAdminFoto(P, true)
   if (so('push')) await suitePush(P, true)
   if (so('pdf')) await suitePdfLeve(P, true)
@@ -646,6 +697,7 @@ async function principal() {
 }
 
 function limparTudo() {
+  try { contador.servidor?.close(); contador.servidor?.closeAllConnections?.() } catch { /* já fechou */ }
   for (const n of subidos) { try { docker('rm', '-f', n) } catch { /* já foi */ } }
   try { docker('volume', 'rm', '-f', VOLUME) } catch { /* em uso/ausente */ }
   rmSync(TMP, { recursive: true, force: true })
