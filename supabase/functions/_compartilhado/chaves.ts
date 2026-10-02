@@ -111,6 +111,13 @@ function resolver(env: LeitorEnv, p: { propria: string; pacote: string; legacy: 
     // `fonte` leva o NOME da chave escolhida (nunca o valor): ex. SUPABASE_SECRET_KEYS[infra-edge]
     if (doPacote) return montar(doPacote, 'nova', nome ? `${p.pacote}[${nome.replace(/[^\w.-]/g, '?').slice(0, 40)}]` : p.pacote)
   }
+  // HOSPEDADO (provado em produção em 02/10/2026, comparando só os digests dos secrets): a plataforma injeta na variável de NOME
+  // legado (SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY) a chave NOVA (sb_secret_… / sb_publishable_…). É uma chave nova válida:
+  // vale em qualquer modo (a 1ª versão exigia JWT aqui e derrubava o worker no modo `legacy`), e a origem informada é 'nova'.
+  // Exceção: com SB_SECRET_NOME definido o dono pediu UMA chave específica — o apelido genérico não a substitui fora do modo legacy.
+  const apelido = limpo(env(p.legacy))
+  const nomePedido = p.nomeVar ? limpo(env(p.nomeVar)) : ''
+  if (apelido.startsWith(p.prefixo) && (m === 'legacy' || !nomePedido)) return montar(apelido, 'nova', p.legacy)
   if (m !== 'nova') {
     const legacy = limpo(env(p.legacy))
     // a legacy é JWT (três partes separadas por ponto); qualquer outra coisa é configuração errada e é ignorada

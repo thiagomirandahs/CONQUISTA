@@ -14,6 +14,39 @@ const JWT_SERV = ['aaaa', 'bbbb', 'cccc'].join('.')   // três partes: parece um
 const JWT_ANON = ['dddd', 'eeee', 'ffff'].join('.')
 const env = (o) => (n) => o[n]
 
+describe('ambiente HOSPEDADO real: a variável de nome legado carrega a chave NOVA (incidente de 02/10/2026)', () => {
+  // produção: SUPABASE_SERVICE_ROLE_KEY = sb_secret_… (default), SUPABASE_ANON_KEY = sb_publishable_…, e os pacotes {"default": "…"}
+  const hospedado = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: SEC, SUPABASE_ANON_KEY: PUB,
+    SUPABASE_SECRET_KEYS: JSON.stringify({ default: SEC }), SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: PUB }) }
+  it('CHAVES_MODO=legacy NÃO derruba a função: usa a chave da variável legada e informa origem nova', () => {
+    const k = chaveServico(env({ ...hospedado, CHAVES_MODO: 'legacy' }))
+    expect(k.valor).toBe(SEC)
+    expect(k).toMatchObject({ origem: 'nova', fonte: 'SUPABASE_SERVICE_ROLE_KEY' })
+    expect(chavePublica(env({ ...hospedado, CHAVES_MODO: 'legacy' }))).toMatchObject({ origem: 'nova', fonte: 'SUPABASE_ANON_KEY' })
+    expect(resumoDasChaves(env({ ...hospedado, CHAVES_MODO: 'legacy' }), true)).toBe('{"servico":"nova:SUPABASE_SERVICE_ROLE_KEY","publica":"nova:SUPABASE_ANON_KEY","modo":"legacy"}')
+  })
+  it('auto e nova continuam preferindo o pacote; só com as variáveis legadas (sem pacote) também funciona, nos três modos', () => {
+    expect(chaveServico(env(hospedado))).toMatchObject({ origem: 'nova', fonte: 'SUPABASE_SECRET_KEYS' })
+    expect(chaveServico(env({ ...hospedado, CHAVES_MODO: 'nova' }))).toMatchObject({ origem: 'nova', fonte: 'SUPABASE_SECRET_KEYS' })
+    const soApelido = { SUPABASE_SERVICE_ROLE_KEY: SEC, SUPABASE_ANON_KEY: PUB }
+    for (const modo of [undefined, 'auto', 'nova', 'legacy']) {
+      expect(chaveServico(env({ ...soApelido, CHAVES_MODO: modo })).valor).toBe(SEC)
+      expect(chavePublica(env({ ...soApelido, CHAVES_MODO: modo })).valor).toBe(PUB)
+    }
+  })
+  it('prefixo trocado não passa (publishable na variável de serviço; secret na pública) e o valor nunca aparece', () => {
+    expect(() => chaveServico(env({ SUPABASE_SERVICE_ROLE_KEY: PUB }))).toThrow(/indispon/i)
+    expect(() => chavePublica(env({ SUPABASE_ANON_KEY: SEC }))).toThrow(/indispon/i)
+    expect(JSON.stringify(chaveServico(env(hospedado))) + resumoDasChaves(env(hospedado), true)).not.toContain(SEC)
+  })
+  it('com SB_SECRET_NOME pedido e ausente do pacote, o apelido genérico NÃO substitui a chave pedida (auto/nova falham fechado; legacy usa o apelido)', () => {
+    const base = { ...hospedado, SB_SECRET_NOME: 'infra-edge' }
+    expect(() => chaveServico(env(base))).toThrow(/indispon/i)
+    expect(() => chaveServico(env({ ...base, CHAVES_MODO: 'nova' }))).toThrow(/indispon/i)
+    expect(chaveServico(env({ ...base, CHAVES_MODO: 'legacy' })).valor).toBe(SEC)
+  })
+})
+
 describe('SB_SECRET_NOME (secret dedicada escolhida por nome no dicionário injetado)', () => {
   const pacote = JSON.stringify({ default: SEC, 'infra-edge': SEC2 })
   it('usa a secret do NOME indicado, e não a default; a origem mostra só o nome', () => {
