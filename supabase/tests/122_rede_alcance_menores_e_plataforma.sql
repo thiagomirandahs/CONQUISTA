@@ -67,8 +67,18 @@ select t.eq('posts: alcance NOT NULL, padrao clube, so clube|comunidade',
       and column_name = 'alcance' and is_nullable = 'NO' and column_default like '%clube%'), 1::bigint);
 select t.throws('alcance inventado e recusado pelo banco', format($q$insert into public.comunidade_posts (club_id, autor_id, autor_papel, legenda, status, alcance)
   values (%L, %L, 'diretoria', 'x', 'publicado', 'mundo')$q$, t.id('clube_a'), t.id('lider_a')), 'alcance_valido');
-select t.throws('story nasce SO clube: alcance comunidade e impossivel', format($q$insert into public.rede_stories (club_id, autor_id, autor_papel, foto_path, status, alcance)
-  values (%L, %L, 'diretoria', 'x/y/z.webp', 'publicado', 'comunidade')$q$, t.id('clube_a'), t.id('lider_a')), 'so_clube');
+-- 535 (AJUSTE DE REGRA, decisao do dono de 02/10/2026): story passa a aceitar alcance 'comunidade' (stories para todos na Comunidade).
+-- O contrato fica MAIS estrito: so 'clube' | 'comunidade' (qualquer outro valor e recusado), padrao 'clube', NOT NULL, e a chamada
+-- antiga da RPC continua criando 'clube'. O detalhe do alcance comunidade esta no teste 141.
+select t.throws('story: alcance inventado e recusado pelo banco (so clube|comunidade)', format($q$insert into public.rede_stories (club_id, autor_id, autor_papel, foto_path, status, alcance)
+  values (%L, %L, 'diretoria', 'x/y/z.webp', 'publicado', 'mundo')$q$, t.id('clube_a'), t.id('lider_a')), 'rede_stories_alcance_valido');
+select t.throws('story: alcance nulo e recusado', format($q$insert into public.rede_stories (club_id, autor_id, autor_papel, foto_path, status, alcance)
+  values (%L, %L, 'diretoria', 'x/y/z.webp', 'publicado', null)$q$, t.id('clube_a'), t.id('lider_a')), 'alcance');
+select t.eq('story: alcance NOT NULL, padrao clube',
+  (select count(*) from information_schema.columns where table_schema = 'public' and table_name = 'rede_stories'
+      and column_name = 'alcance' and is_nullable = 'NO' and column_default like '%clube%'), 1::bigint);
+select t.eq('story: a UNICA constraint de alcance e a de dois valores',
+  (select string_agg(conname, ',') from pg_constraint where conrelid = 'public.rede_stories'::regclass and conname like '%alcance%'), 'rede_stories_alcance_valido');
 select t.eq('plataforma_acesso_log: RLS ligado, sem grant para anon/authenticated, com a guarda de manutencao',
   (select count(*) from pg_class c where c.oid = 'public.plataforma_acesso_log'::regclass and c.relrowsecurity
       and not exists (select 1 from information_schema.role_table_grants g where g.table_schema = 'public' and g.table_name = c.relname
