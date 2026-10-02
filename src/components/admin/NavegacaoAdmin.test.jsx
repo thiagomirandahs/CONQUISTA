@@ -1,4 +1,4 @@
-// Navegação do /admin (Fase 6, 5.2): barra lateral ≥ lg e gaveta < lg com as 14 seções.
+// Navegação do /admin (Fase 6, 5.2): barra lateral ≥ lg e gaveta < lg com as 15 seções.
 import { useCallback, useRef, useState } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
@@ -7,7 +7,7 @@ import { SidebarAdmin, GavetaAdmin, BotaoMenuAdmin } from './NavegacaoAdmin.jsx'
 import { SECOES } from '../../pages/Admin.jsx'
 
 const ROTULOS = ['Visão geral', 'Clubes', 'Planos', 'Assinaturas', 'Armazenamento', 'Onboarding', 'Provisionamento',
-  'Hierarquia', 'Recursos', 'Rede DBV', 'Suporte', 'Auditoria', 'Manutenção', 'Lixeira']
+  'Hierarquia', 'Recursos', 'Rede DBV', 'Suporte', 'Auditoria', 'Aviso geral', 'Manutenção', 'Lixeira']
 
 function Movel({ aoTrocar }) {
   const [aberto, setAberto] = useState(false)
@@ -25,11 +25,11 @@ function Movel({ aoTrocar }) {
 }
 
 describe('SidebarAdmin', () => {
-  it('lista as 14 seções na ordem; a ativa é marcada e tocar chama aoTrocar', async () => {
+  it('lista as 15 seções na ordem; a ativa é marcada e tocar chama aoTrocar', async () => {
     const aoTrocar = vi.fn()
     render(<SidebarAdmin secoes={SECOES} ativa="clubes" aoTrocar={aoTrocar} contadores={{ provisionamento: 4 }} />)
     const abas = within(screen.getByTestId('admin-sidebar')).getAllByRole('tab')
-    expect(abas).toHaveLength(14)
+    expect(abas).toHaveLength(15)
     abas.forEach((a, i) => expect(a).toHaveTextContent(ROTULOS[i]))
     // A navegação é um tablist: a seção ativa vai por aria-selected (equivalente ao aria-current do padrão tab)
     expect(abas.filter((a) => a.getAttribute('aria-selected') === 'true')).toEqual([abas[1]])
@@ -48,7 +48,7 @@ describe('GavetaAdmin (< lg)', () => {
     await userEvent.click(botao)
     const gaveta = screen.getByRole('dialog', { name: 'Seções da administração' })
     expect(botao).toHaveAttribute('aria-expanded', 'true')
-    expect(within(gaveta).getAllByRole('tab')).toHaveLength(14)
+    expect(within(gaveta).getAllByRole('tab')).toHaveLength(15)
     // o foco entra na seção ativa
     expect(document.activeElement).toBe(within(gaveta).getByRole('tab', { name: /Visão geral/ }))
     // Suporte soma chamados + suporte

@@ -5,6 +5,7 @@ import { carregarResumoCoordenador, carregarInvestidurasDoEscopo } from '../serv
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import { entrarNaRedeComoCoordenacao } from '../lib/redeModo.js'
 import { Aviso, Carregando, Vazio, mensagemDeErro } from '../ui/index.jsx'
+import AvisoInstitucional from '../components/AvisoInstitucional.jsx'
 import {
   PERIODOS, dataBR, estaParado, fraseAvanco, fraseVisita, gerarCSV, gerarHTMLImpressao, gerarTextoWhatsApp,
   linkAjudaWhatsApp, pctTexto,
@@ -167,6 +168,8 @@ export default function PainelCoordenador() {
                   ))}
                 </section>
               )}
+
+              <div className="mb-4"><AvisoInstitucional /></div>
 
               <section aria-label="Relatórios" className="mb-5">
                 <h2 className="text-lg font-extrabold text-ink mb-2">Relatórios</h2>
