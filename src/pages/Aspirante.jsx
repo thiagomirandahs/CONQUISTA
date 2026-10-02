@@ -124,7 +124,7 @@ export default function Aspirante() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🧭" titulo="Trilha do Aspirante" descricao="O caminho de quem entrou agora no clube até a cerimônia do lenço" />
+      <Cabecalho icone="🧭" titulo="Trilha do Aspirante" descricao="10 lições e o checklist do lenço: o caminho de quem entrou agora no clube" />
       <Card className="mb-4">
         <Progresso valor={feitas} total={LICOES.length} rotulo={`${feitas} de ${LICOES.length} lições concluídas`} />
       </Card>
