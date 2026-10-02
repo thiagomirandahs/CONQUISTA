@@ -4,8 +4,9 @@
 import { embaralhar } from '../utils/comum.js'
 import { HISTORIA } from './historia.js'
 import { MANUAL } from './manual.js'
+import { SIMBOLOS } from './simbolos.js'
 
-const FATOS_TEXTO = [...HISTORIA, ...MANUAL]
+const FATOS_TEXTO = [...HISTORIA, ...MANUAL, ...SIMBOLOS]
 
 // Ordem por idade mínima. `livro` = "livro da classe" (requisito I.5 do manifesto).
 export const CLASSES = [

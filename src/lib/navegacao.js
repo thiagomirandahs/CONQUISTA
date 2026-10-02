@@ -27,6 +27,7 @@ export const DESTINO = {
 // ---------------------------------------------------------------- o que vive em cada hub
 // `recurso` = feature flag do clube (mesma fonte de sempre). Sem recurso = tela do núcleo.
 export const HUB_JORNADA = [
+  { to: '/aspirante', label: 'Trilha do Aspirante', icon: '🧭', desc: 'Para quem entrou agora: aprenda e chegue ao lenço', recurso: 'classes' },
   { to: '/minha-classe', label: 'Minha Classe', icon: '🎖️', desc: 'Os requisitos da sua classe', recurso: 'classes' },
   // recurso PRÓPRIO (fase 9, item 9): com as Classes oficiais ligadas, as especialidades de teste continuam de fora
   { to: '/jornada/minha', label: 'Minha Jornada', icon: '🧭', desc: 'Seu caminho: classes, conquistas e leituras', recurso: 'classes' },

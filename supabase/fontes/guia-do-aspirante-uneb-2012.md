@@ -25,3 +25,8 @@
 - **Nossa história (resumo do manual):** 1920 Elder C. Lester (primeiros manuais e 16 honras), 1922 Spalding e Holt (primeira ideia),
   década de 30 Santa Ana/Califórnia, 1946 Riverside (John H. Hancock, que desenhou o triângulo), líderes mundiais L. Skinner (1950–1963) e Hancock (1963–1970).
 - Observação: o manual cita como "Henrry Bergh"/"D.P. Araújo" no hino e traz grafias irregulares; usamos só o que está legível e coerente.
+
+## Segunda fonte: página Símbolos (adventistas.org/pt/desbravadores/simbolos/, Alberto Souza, 21/12/2017)
+- Significado de cada parte do Voto e da Lei; Alvo, Lema, Objetivo e Voto de Fidelidade à Bíblia; triângulo invertido (servir), três lados
+  (Trindade + físico/mental/espiritual), escudo (Gn 15:1; Ef 6:16), espada (Ef 6:17), cores; hino em posição de sentido; bandeira projetada em 1948;
+  emblemas mundiais x uniforme definido por cada Divisão; uniformes de atividades sem estampa militar. Perguntas em `src/features/jogos/conteudo/simbolos.js`.

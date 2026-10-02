@@ -99,6 +99,7 @@ export const RECURSO_POR_ROTA = Object.freeze({
   '/experiencias': 'experiencias',
   '/minha-classe': 'classes',
   '/leituras': 'classes',
+  '/aspirante': 'classes',
   '/jornada/minha': 'classes',
   '/jornada/portfolio': 'classes',
   '/minhas-especialidades': 'especialidades',   // não 'classes': ligar as Classes oficiais não pode abrir as especialidades de teste
