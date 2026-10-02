@@ -270,6 +270,31 @@ select t.eq('poda do clube A remove 1 (a do A) e NÃO toca a do clube B',
 reset role;
 select t.eq('...a inscrição morta do clube B segue lá', t.n($q$select count(*) from public.push_subscriptions where endpoint like '%/b1-morto'$q$), 1);
 
+-- ---------------------------------------------------------------- 5b) COMPATIBILIDADE com o front atual e o antigo
+-- O front só toca push por (a) upsert/delete/select em push_subscriptions e push_tokens como a PRÓPRIA pessoa (RLS) e (b) a RPC
+-- push_aparelho_registrar(uuid, text, text). Nada disso pode ter mudado de forma, assinatura ou permissão.
+select t.eq('push_aparelho_registrar mantém a assinatura (uuid, text, text) e continua executável por authenticated',
+  t.n($q$select count(*) from pg_proc p where p.proname = 'push_aparelho_registrar' and pg_get_function_identity_arguments(p.oid) = 'p_dispositivo_id uuid, p_endpoint text, p_token text'
+          and has_function_privilege('authenticated', p.oid, 'execute') and not has_function_privilege('anon', p.oid, 'execute')$q$), 1);
+select t.como('membro_a');
+-- exatamente o que o PostgREST faz no `upsert(..., { onConflict: 'endpoint' })` do front (sem registrada_em, que o front nem conhece)
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (t.id('membro_a'), 'https://fcm.googleapis.com/wp/compat1', 'k', 'a')
+  on conflict (endpoint) do update set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth;
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (t.id('membro_a'), 'https://fcm.googleapis.com/wp/compat1', 'k', 'a')
+  on conflict (endpoint) do update set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth;
+select public.push_aparelho_registrar(md5('compat1')::uuid, 'https://fcm.googleapis.com/wp/compat1', null);
+insert into public.push_tokens (token, user_id, plataforma) values ('tokcompat', t.id('membro_a'), 'android')
+  on conflict (token) do update set user_id = excluded.user_id, plataforma = excluded.plataforma;
+select public.push_aparelho_registrar(md5('compat2')::uuid, null, 'tokcompat');
+select t.eq('o upsert do front (2x, idempotente) deixa 1 inscrição e o aparelho carimbado', t.n($q$select count(*) from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/wp/compat1' and dispositivo_id = md5('compat1')::uuid$q$), 1);
+select t.eq('o token do APK idem', t.n($q$select count(*) from public.push_tokens where token = 'tokcompat' and dispositivo_id = md5('compat2')::uuid$q$), 1);
+select t.eq('a pessoa ainda lê as próprias inscrições (e só as dela)', t.n($q$select count(*) from public.push_subscriptions$q$), t.n($q$select count(*) from public.push_subscriptions where user_id = t.id('membro_a')$q$));
+select t.bloqueado('...mas NÃO consegue ler a tabela de tentativas', $q$select * from public.push_tentativas$q$);
+delete from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/wp/compat1';
+delete from public.push_tokens where token = 'tokcompat';
+reset role;
+select t.eq('o delete do front (logout/desinscrever) segue funcionando', t.n($q$select count(*) from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/wp/compat1'$q$), 0);
+
 -- ---------------------------------------------------------------- 6) a poda não roda sozinha; permissões e hardening
 select t.eq('NENHUM agendamento (pg_cron) chama poda/lista de inscrições',
   t.n($q$select count(*) from cron.job where command ilike '%push_podar%' or command ilike '%push_inscricoes_mortas%' or command ilike '%push_remover%'$q$), 0);
