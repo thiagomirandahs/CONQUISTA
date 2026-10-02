@@ -61,6 +61,19 @@ export function criarAtualizador(deps) {
     const d = decidir({ manifesto, versaoAtual: deps.versaoAtual, versaoNativa, pendente })
     if (d.acao !== 'aplicar') return d
 
+    // Já baixada numa abertura anterior e ainda não aplicada: NÃO baixa de novo nem rearma nada. Achado de 02/10/2026: o app
+    // baixava a MESMA versão a cada abertura e, com a condição "só ao matar o app" sendo rearmada toda vez, a atualização
+    // nunca chegava a valer. Aqui só garante que ela continua marcada como a próxima.
+    try {
+      const lista = await deps.plugin.list?.()
+      const existente = (lista?.bundles || []).find((b) => b?.version === manifesto.versao && b?.status === 'pending')
+      if (existente) {
+        try { await deps.plugin.next({ id: existente.id }) } catch { /* já estava marcada */ }
+        pendente = manifesto.versao
+        return { acao: 'ignorar', motivo: 'ja-baixada', versao: manifesto.versao }
+      }
+    } catch { /* sem list(): segue e baixa */ }
+
     let bundle
     try {
       bundle = await deps.plugin.download({ url: manifesto.url, version: manifesto.versao, checksum: manifesto.sha256.toLowerCase() })
@@ -73,9 +86,9 @@ export function criarAtualizador(deps) {
       return { acao: 'ignorar', motivo: 'sha-errado' }
     }
     try {
-      await deps.plugin.next({ id: bundle.id }) // só na próxima abertura/volta; nada de set() agora
-      // `next` já aplica ao ir para o segundo plano; 'kill' segura até o app ser fechado de vez
-      try { await deps.plugin.setMultiDelay?.({ delayConditions: [{ kind: 'kill' }] }) } catch { /* versão sem delay: aplica ao sair */ }
+      // Marca como a PRÓXIMA: o plugin aplica quando o app vai para o segundo plano ou é fechado e reaberto; nada de set() agora.
+      // Sem setMultiDelay: a condição 'kill' era rearmada a cada abertura e travava a troca (ver acima).
+      await deps.plugin.next({ id: bundle.id })
     } catch {
       return { acao: 'ignorar', motivo: 'falha-ao-marcar' }
     }
@@ -89,10 +102,21 @@ export function criarAtualizador(deps) {
       const t = agora()
       if (t - ultima < INTERVALO_MS) return { acao: 'ignorar', motivo: 'intervalo' }
       ultima = t
-      rodando = executar().catch(() => ({ acao: 'ignorar', motivo: 'erro' })).finally(() => { rodando = null })
+      rodando = executar().catch(() => ({ acao: 'ignorar', motivo: 'erro' }))
+        .then((r) => { try { deps.registrar?.(r) } catch { /* diagnóstico nunca atrapalha */ } return r })
+        .finally(() => { rodando = null })
       return rodando
     },
   }
+}
+
+// Diagnóstico para a tela de Ajuda: o resultado da última checagem fica no aparelho (localStorage).
+const CHAVE_DIAG = 'dbv:ota:ultima'
+export function registrarDiagnostico(r, extra = {}) {
+  try { globalThis.localStorage?.setItem(CHAVE_DIAG, JSON.stringify({ quando: new Date().toISOString(), acao: r?.acao, motivo: r?.motivo, versao: r?.versao, ...extra })) } catch { /* sem storage */ }
+}
+export function lerDiagnostico() {
+  try { const d = JSON.parse(globalThis.localStorage?.getItem(CHAVE_DIAG) || 'null'); return d && typeof d === 'object' ? d : null } catch { return null }
 }
 
 // Liga tudo no aparelho. Chamado por iniciarNativo() (só no APK).
@@ -107,6 +131,11 @@ export async function iniciarAtualizacaoOta() {
     await CapacitorUpdater.notifyAppReady().catch(() => {})
     const atualizador = criarAtualizador({
       plugin: CapacitorUpdater,
+      registrar: async (r) => {
+        let nativo = ''
+        try { nativo = (await CapacitorUpdater.current())?.native || '' } catch { /* ok */ }
+        registrarDiagnostico(r, { nativo })
+      },
       versaoAtual: typeof __OTA_VERSAO__ === 'string' ? __OTA_VERSAO__ : 'dev', // eslint-disable-line no-undef
       // Pedido NATIVO (não passa por CSP/CORS da WebView, que roda em https://localhost)
       buscarManifesto: async (url) => {

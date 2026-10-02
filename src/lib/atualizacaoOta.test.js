@@ -53,7 +53,7 @@ function montar({ manifestoPublicado = manifesto(), checksum = SHA, rede = true 
     next: vi.fn(async () => ({})),
     set: vi.fn(),
     delete: vi.fn(async () => {}),
-    setMultiDelay: vi.fn(async () => {}),
+    list: vi.fn(async () => ({ bundles: [] })),
   }
   const buscarManifesto = vi.fn(async () => { if (!rede) throw new Error('offline'); return manifestoPublicado })
   const a = criarAtualizador({ plugin, buscarManifesto, versaoAtual: '202609281000-0000000', agora: () => t })
@@ -67,6 +67,35 @@ describe('OTA: atualizador', () => {
     expect(plugin.download).toHaveBeenCalledWith(expect.objectContaining({ checksum: SHA, version: manifesto().versao }))
     expect(plugin.next).toHaveBeenCalledWith({ id: 'b1' })
     expect(plugin.set).not.toHaveBeenCalled()
+  })
+  it('NÃO usa setMultiDelay (a condição "kill" rearmada a cada abertura travava a troca)', async () => {
+    const { a, plugin } = montar()
+    plugin.setMultiDelay = vi.fn()
+    await a.verificar()
+    expect(plugin.setMultiDelay).not.toHaveBeenCalled()
+  })
+  it('já baixada em abertura anterior (pending) → não baixa de novo, só mantém marcada como próxima', async () => {
+    const { a, plugin } = montar()
+    plugin.list.mockResolvedValue({ bundles: [{ id: 'b9', version: manifesto().versao, status: 'pending' }] })
+    const r = await a.verificar()
+    expect(r.motivo).toBe('ja-baixada')
+    expect(plugin.download).not.toHaveBeenCalled()
+    expect(plugin.next).toHaveBeenCalledWith({ id: 'b9' })
+  })
+  it('bundle da mesma versão com erro (não pending) → baixa de novo', async () => {
+    const { a, plugin } = montar()
+    plugin.list.mockResolvedValue({ bundles: [{ id: 'b8', version: manifesto().versao, status: 'error' }] })
+    expect((await a.verificar()).acao).toBe('aplicar')
+    expect(plugin.download).toHaveBeenCalled()
+  })
+  it('registra o resultado para o diagnóstico (e erro no registro não atrapalha)', async () => {
+    const registrar = vi.fn(() => { throw new Error('storage cheio') })
+    let t = 1_000_000
+    const plugin = { current: async () => ({ native: '1.3.0' }), download: async () => ({ id: 'b1', checksum: SHA }), next: async () => ({}), list: async () => ({ bundles: [] }), delete: async () => {} }
+    const a = criarAtualizador({ plugin, buscarManifesto: async () => manifesto(), versaoAtual: 'x', agora: () => t, registrar })
+    expect((await a.verificar()).acao).toBe('aplicar')
+    expect(registrar).toHaveBeenCalledWith(expect.objectContaining({ acao: 'aplicar' }))
+    void t
   })
   it('sha errado → apaga o baixado e não marca', async () => {
     const { a, plugin } = montar({ checksum: 'b'.repeat(64) })
