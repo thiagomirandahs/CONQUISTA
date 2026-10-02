@@ -41,6 +41,7 @@
     "test:edge:bundle": "bash supabase/tests/e2e/edge-bundle.sh",
     "test:edge:bundle:pdf": "bash supabase/tests/e2e/edge-bundle-pdf.sh",
     "test:edge:chaves-novas": "bash supabase/tests/e2e/edge-chaves-novas.sh",
+    "test:push:e2e": "bash supabase/tests/e2e/push-erro-permanente.sh",
     "curriculo:validar": "node supabase/curriculo-manifesto/validar.mjs",
     "curriculo:autoteste": "node supabase/curriculo-manifesto/validar.autoteste.mjs",
     "curriculo:importacao:gerar": "node supabase/curriculo-manifesto/gerar-importacao.mjs",

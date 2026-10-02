@@ -2,8 +2,9 @@
 -- Prova: (1) o status real (400/401/403/413/502/504) passa a ser gravado, e o que está fora da lista continua 'desconhecido';
 -- (2) a lista de candidatas só pega aparelho que NUNCA entregou, com >= 3 falhas permanentes em >= 2 dias, E só quando o provedor
 -- funciona para outros aparelhos (entrega nos últimos 7 dias no mesmo host) — jamais por falha temporária (rede/timeout/5xx);
--- (3) quem já entregou alguma vez, quem falhou pouco, quem está num host sem prova de saúde e aparelho de OUTRO usuário nunca entram;
+-- (3) quem já entregou desde o registro, quem falhou pouco, quem está num host sem prova de saúde e aparelho de OUTRO usuário nunca entram;
 -- (4) o padrão da poda é ENSAIO (não apaga nada); com p_aplicar apaga SÓ as candidatas e preserva as demais inscrições da MESMA pessoa;
+-- (4b) 'desconhecido', 400 genérico e 413 NÃO são prova de morte (nem temporários: rede/timeout/5xx);
 -- (5) a lista é anonimizada (hash curto, sem endpoint) e nenhuma das funções é executável por anon/authenticated.
 begin;
 \ir _lib.sql
@@ -16,7 +17,7 @@ values (md5('ev139')::uuid, 'teste:139', t.id('clube_a'), 2);
 insert into public.push_evento_destinatarios (id, evento_id, user_id)
 values (913901, md5('ev139')::uuid, t.id('membro_a')), (913902, md5('ev139')::uuid, t.id('membro_a2'));
 
--- aparelhos do membro A: um MORTO (desconhecido x3 em 3 dias), um SAUDÁVEL (entrega recente), um que já entregou e depois falhou,
+-- aparelhos do membro A: um MORTO (403/403/401 em 3 dias), um SAUDÁVEL (entrega recente), um que já entregou e depois falhou,
 -- um com falhas só TEMPORÁRIAS, um com 1 falha só. Membro A2: um morto (para provar que a poda não olha só o dono).
 insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values
   (t.id('membro_a'),  'https://fcm.googleapis.com/wp/morto-a',  'k', 'a'),
@@ -28,6 +29,10 @@ insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values
   (t.id('membro_a2'), 'https://fcm.googleapis.com/wp/morto-a2', 'k', 'a');
 -- identidade alternativa: dispositivo_id carimbado pelo cliente (o histórico foi gravado com ele)
 update public.push_subscriptions set dispositivo_id = md5('aparelho139:a2')::uuid where endpoint = 'https://fcm.googleapis.com/wp/morto-a2';
+-- as inscrições "existem há 30 dias" (o trigger carimba registrada_em = agora; o histórico do teste é anterior)
+set session_replication_role = replica;
+update public.push_subscriptions set registrada_em = now() - interval '30 days' where endpoint like '%/wp/%';
+reset session_replication_role;
 
 create function t.falha(p_endpoint text, p_codigo text, p_dias_atras int, p_dest bigint default 913901, p_disp uuid default null) returns void
 language plpgsql security definer set search_path = '' as $$
@@ -42,11 +47,11 @@ begin
   values (913901, md5(p_endpoint)::uuid, 'web', 'entregue', '201', now() - make_interval(days => p_dias_atras));
 end $$;
 
-select t.falha('https://fcm.googleapis.com/wp/morto-a', 'desconhecido', 3);
+select t.falha('https://fcm.googleapis.com/wp/morto-a', '403', 3);
 select t.falha('https://fcm.googleapis.com/wp/morto-a', '403', 2);
 select t.falha('https://fcm.googleapis.com/wp/morto-a', '401', 0);
 
-select t.entrega('https://fcm.googleapis.com/wp/saudavel', 1);
+select t.entrega('https://fcm.googleapis.com/wp/saudavel', 0);
 
 select t.entrega('https://fcm.googleapis.com/wp/ja-entregou', 20);
 select t.falha('https://fcm.googleapis.com/wp/ja-entregou', '403', 3);
@@ -65,14 +70,17 @@ select t.falha('https://web.push.apple.com/wp/morto-sem-par', '403', 2);
 select t.falha('https://web.push.apple.com/wp/morto-sem-par', '403', 1);
 
 -- o morto do membro A2 foi gravado com o dispositivo_id carimbado (não o md5 do endpoint)
-select t.falha('x', 'desconhecido', 3, 913902, md5('aparelho139:a2')::uuid);
-select t.falha('x', '400', 2, 913902, md5('aparelho139:a2')::uuid);
+select t.falha('x', '403', 3, 913902, md5('aparelho139:a2')::uuid);
+select t.falha('x', 'sub_invalida', 2, 913902, md5('aparelho139:a2')::uuid);
+select t.falha('x', '401', 1, 913902, md5('aparelho139:a2')::uuid);
+-- ruído que NÃO é prova de morte, no mesmo aparelho morto-a2 (não pode somar)
 select t.falha('x', '413', 1, 913902, md5('aparelho139:a2')::uuid);
+select t.falha('x', 'desconhecido', 1, 913902, md5('aparelho139:a2')::uuid);
 \o
 
 -- ---------------------------------------------------------------- 1) vocabulário
-select t.ok('o vocabulário aceita os status novos (400/401/403/413/502/504)',
-  t.n($q$select count(*) from public.push_tentativas where codigo in ('401', '403', '413', '504')$q$) > 0);
+select t.ok('o vocabulário aceita os status novos (400/401/403/408/413/502/504/sub_invalida)',
+  t.n($q$select count(*) from public.push_tentativas where codigo in ('401', '403', '413', '504', 'sub_invalida')$q$) > 0);
 select t.throws('um status fora do vocabulário continua barrado pela constraint',
   $q$insert into public.push_tentativas (destinatario_id, dispositivo_id, canal, estado, codigo) values (913901, md5('z')::uuid, 'web', 'falhou', '418')$q$);
 
@@ -113,7 +121,7 @@ select t.eq('os limites são ajustáveis, mas nunca abaixo de 2 falhas/2 dias (m
   t.n($q$select count(*) from public.push_inscricoes_mortas(1, 1) where ref = left(md5('https://fcm.googleapis.com/wp/pouca-falha'), 8)$q$), 0);
 select t.ok('a lista é anonimizada: ref de 8 caracteres e nenhuma coluna com endpoint/token/credencial',
   t.n($q$select count(*) from public.push_inscricoes_mortas() where length(ref) = 8$q$) = 2
-  and pg_get_function_result('public.push_inscricoes_mortas(integer,integer)'::regprocedure) !~* 'endpoint|token|credencial');
+  and pg_get_function_result('public.push_inscricoes_mortas(integer,integer,uuid)'::regprocedure) !~* 'endpoint|token|credencial');
 reset role;
 
 -- ---------------------------------------------------------------- 3) poda
@@ -145,11 +153,14 @@ select t.ok('o histórico de tentativas é preservado (a poda não apaga auditor
 \o /dev/null
 insert into public.push_tokens (token, user_id, plataforma) values
   ('tok139-morto', t.id('membro_a'), 'android'), ('tok139-vivo', t.id('membro_a2'), 'android');
+set session_replication_role = replica;
+update public.push_tokens set registrada_em = now() - interval '30 days' where token like 'tok139-%';
+reset session_replication_role;
 insert into public.push_tentativas (destinatario_id, dispositivo_id, canal, estado, codigo, quando) values
   (913901, md5('tok139-morto')::uuid, 'fcm', 'falhou', '404', now() - interval '3 days'),
-  (913901, md5('tok139-morto')::uuid, 'fcm', 'falhou', 'desconhecido', now() - interval '2 days'),
+  (913901, md5('tok139-morto')::uuid, 'fcm', 'falhou', '401', now() - interval '2 days'),
   (913901, md5('tok139-morto')::uuid, 'fcm', 'falhou', '403', now() - interval '1 day'),
-  (913901, md5('tok139-vivo')::uuid, 'fcm', 'entregue', '200', now() - interval '1 day');
+  (913901, md5('tok139-vivo')::uuid, 'fcm', 'entregue', '200', now() - interval '12 hours');
 \o
 select t.como_service();
 select t.eq('token FCM morto (nunca entregou, 3 falhas permanentes, canal saudável) é candidato',

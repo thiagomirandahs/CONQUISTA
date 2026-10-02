@@ -66,8 +66,9 @@ describe('Edge Function enviar-push: destinatários sempre por clube', () => {
     expect(fonte).not.toMatch(/new Response\('erro: ' \+/)
   })
 
-  it('continua removendo inscrições expiradas (só delete, sem select amplo)', () => {
-    expect(fonte).toMatch(/from\('push_subscriptions'\)\.delete\(\)\.eq\('endpoint'/)
+  it('continua removendo inscrições expiradas — agora pela RPC atômica push_remover_inscricao (534), só quando a classificação diz "remover"', () => {
+    expect(fonte).toMatch(/rpc\('push_remover_inscricao', \{ p_tentativa_id: tentativaId, p_credencial: credencial \}\)/)
+    expect(fonte).toMatch(/if \(c\.remover\) await remover\(s\.tentativa_id, s\.endpoint/)
   })
 
   it('mantém a fechadura do webhook (segredo) e o link interno seguro', () => {
@@ -129,8 +130,9 @@ describe('Edge Function enviar-push: rota nativa (APK/FCM)', () => {
     expect(fonte).toMatch(/FCM_SERVICE_ACCOUNT/)
   })
 
-  it('só apaga o token quando o FCM diz que ele não existe mais (404)', () => {
-    expect(fonte).toMatch(/resp\.status === 404.*push_tokens.*delete/s)
+  it('só apaga o token quando o FCM prova que ele não existe mais (404 UNREGISTERED / token malformado), nunca por 401/403', () => {
+    expect(fonte).toMatch(/classificarFalha\('fcm', resp\.status, corpoErro/)
+    expect(fonte).toMatch(/if \(c\.remover\) await remover\(k\.tentativa_id, k\.token/)
   })
 
   it('falta de configuração do FCM é REGISTRADA, não engolida — e não cala a rota web', () => {
