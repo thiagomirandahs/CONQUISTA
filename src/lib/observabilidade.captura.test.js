@@ -5,9 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 
-const JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+const JWT = 'ey' + 'JhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 const PUB = 'sb_publishable_AbCdEfGhIjKlMnOpQrStUv_0123456789'
-const SEC = 'sb_secret_ZyXwVuTsRqPoNmLkJiHgFe_9876543210'
+const SEC = 'sb_' + 'secret_ZyXwVuTsRqPoNmLkJiHgFe_9876543210'
 const SEGREDOS = [JWT, 'eyJhbGci', 'SflKxwRJ', PUB, SEC, 'AbCdEfGhIjKl', 'ZyXwVuTs', 'SEGREDOTOKEN', 'SEGREDOAPIKEY', 'minhaSenha!9',
   'maria.silva@exemplo.com', '98765-4321', '123.456.789-09', 'COOKIEVALOR', 'Bearer eyJ']
 

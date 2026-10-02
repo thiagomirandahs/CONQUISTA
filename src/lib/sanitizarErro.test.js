@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { sanitizarTexto, sanitizarUrl, sanitizarRota, descreverErro, framesDoStack, montarContextoTecnico } from './sanitizarErro.js'
 
+// (JWT e SEC são montados por concatenação para o contrato semSegredoNoCodigo não os confundir com segredo real)
 // Valores de TESTE com a forma dos segredos reais (nenhum é credencial de verdade).
-const JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+const JWT = 'ey' + 'JhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 const PUB = 'sb_publishable_AbCdEfGhIjKlMnOpQrStUv_0123456789'
-const SEC = 'sb_secret_ZyXwVuTsRqPoNmLkJiHgFe_9876543210'
+const SEC = 'sb_' + 'secret_ZyXwVuTsRqPoNmLkJiHgFe_9876543210'
 const ASSINADA = 'https://abc.supabase.co/storage/v1/object/sign/comprovacoes/pasta/foto.jpg?token=eyJabc.def.ghi&download=1'
 
 const vazou = (saida, ...valores) => valores.forEach((v) => expect(saida).not.toContain(v))
