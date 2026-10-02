@@ -246,7 +246,10 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
   // Portal no <body>: aberta de dentro do cabeçalho "glass" (backdrop-filter), a folha ficava presa
   // ao cabeçalho — `fixed` passa a medir pela caixa do ancestral com filtro — e aparecia cortada no topo.
   return createPortal(
-    <div className={`fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
+  // z-[80]: a folha (confirmações, denúncia, comentários, menu) TEM de ficar acima dos visualizadores/criadores de story em tela cheia
+  // (z-[70] em pages/rede/Stories.jsx). Com z-50 ela abria POR TRÁS deles: o botão "Publicar para todos os clubes" aparecia no DOM mas o clique
+  // real caía no overlay do story (o clique via DOM/element.click() ignora a sobreposição e escondia o defeito). Contrato em src/ui/camadas.test.jsx.
+    <div className={`fixed inset-0 z-[80] flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
       <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={-1}
         className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div ref={caixa} tabIndex={-1} role="dialog" aria-modal="true" aria-label={titulo}
