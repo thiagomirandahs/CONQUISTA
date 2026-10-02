@@ -8,16 +8,19 @@
 // os dois handlers globais), cobre-se o produto inteiro sem espalhar try/catch por 35 telas.
 //
 // O QUE É ENVIADO, e só isto:
-//   origem, rota (sem querystring), a frase humana da tela, um CÓDIGO técnico curto, um id de
-//   correlação aleatório por aba e o agente do navegador truncado.
+//   origem, rota (sem querystring), a frase humana da tela + nome/mensagem/causa/local (arquivo:linha:coluna
+//   do stack) do erro JÁ SANITIZADOS por padrão (lib/sanitizarErro.js) nos 200 caracteres do `contexto`,
+//   um CÓDIGO técnico curto, um id de correlação aleatório por aba e o agente (com a versão do front).
 //
 // O QUE NUNCA É ENVIADO:
-//   a mensagem crua do servidor (carrega nome de coluna, valor, às vezes e-mail), token, senha,
+//   a mensagem CRUA (passa pelo mascaramento: JWT, Bearer, sb_*, ?token=, cookies, e-mail, telefone,
+//   CPF, uuid e valores citados somem), token, senha,
 //   conteúdo de chat, evidência, foto, nome ou qualquer dado de pessoa. O público é
 //   majoritariamente menor de idade — telemetria que grava demais é vazamento esperando acontecer.
 //   O `user_id` e o clube são preenchidos pelo SERVIDOR a partir do JWT e do header, nunca pelo
 //   cliente: assim ninguém consegue registrar erro em nome de outra pessoa.
 import { supabase } from './supabase.js'
+import { descreverErro, montarContextoTecnico, sanitizarRota, sanitizarTexto } from './sanitizarErro.js'
 
 // Id de correlação: aleatório, por aba, sem relação com a identidade. Serve para juntar os erros
 // de uma mesma sessão de uso ("tentou três vezes seguidas") sem precisar saber quem é.
@@ -101,6 +104,11 @@ function rotuloDaMensagem(msg) {
 }
 
 export function codigoDoErro(erro) {
+  // o valor lançado pode ser qualquer coisa (Proxy, getter que explode): telemetria nunca lança
+  try { return codigoDoErroBruto(erro) } catch { return 'Desconhecido' }
+}
+
+function codigoDoErroBruto(erro) {
   if (erro === undefined || erro === null || erro === '') return 'SemDetalhe'
   // 1) texto puro (ex.: `message` do window.onerror quando não há objeto de erro)
   if (typeof erro === 'string') {
@@ -118,7 +126,9 @@ export function codigoDoErro(erro) {
   if (PGRST.test(code) || SQLSTATE.test(code)) return code
   const status = Number(erro.status ?? erro.statusCode ?? erro.context?.status)
   const http = Number.isInteger(status) && status >= 100 && status <= 599 ? `HTTP${status}` : ''
-  const nome = typeof erro.name === 'string' ? erro.name.slice(0, 40) : ''
+  // `name` é livre (quem lança escolhe): só entra se tiver a forma de um identificador. Truncar sem validar
+  // deixaria o começo de um segredo escapar (achado da auditoria de 02/10).
+  const nome = typeof erro.name === 'string' && /^[\w$.-]{1,40}$/.test(erro.name) ? erro.name : ''
   if (http) return nome && nome !== 'Error' ? `${nome}:${http}`.slice(0, 80) : http
   const msg = typeof erro.message === 'string' ? erro.message : ''
   // 5) o que o texto da mensagem entrega por FORMA
@@ -146,7 +156,8 @@ export function codigoDoErro(erro) {
 // Onde o erro nasceu: `arquivo.js:linha:coluna` do primeiro quadro do stack (nomes de bundle têm hash
 // de build, o que de quebra identifica a VERSÃO). Sem URL, sem querystring, sem dado de pessoa.
 export function localDoErro(erro) {
-  const stack = typeof erro?.stack === 'string' ? erro.stack : ''
+  let stack = ''
+  try { stack = typeof erro?.stack === 'string' ? erro.stack : '' } catch { /* getter que explode */ }
   const m = stack.match(/([\w.-]{1,60}\.(?:m?js|jsx)):(\d+):(\d+)/)
   return m ? `${m[1]}:${m[2]}:${m[3]}` : ''
 }
@@ -160,15 +171,18 @@ export function agenteComVersao(ua = '', versao = versaoDoFront()) {
   return `${String(ua || '').slice(0, 120 - v.length)}${v}`
 }
 
-function contextoComLocal(contexto, local) {
-  const base = String(contexto || '')
-  return (local ? `${base.slice(0, 200 - local.length - 4)} [${local}]` : base).slice(0, 200)
+// Contexto técnico do registro: frase da tela + Nome: mensagem (sanitizados) + causa + onde nasceu.
+// `local` (arquivo:linha:coluna do evento `error` da janela) cobre erro sem stack (script de outra origem).
+export function contextoDoErro(erro, contexto, local = '') {
+  const d = descreverErro(erro)
+  if (local && !d.frames.length) d.frames = [sanitizarTexto(local, 80)]
+  return montarContextoTecnico(contexto, d)
 }
 
 // A rota sem querystring nem fragmento: `/avaliar/uuid-de-alguem?foo=1` vira `/avaliar/uuid...`.
 // O id na rota é aceitável (é o que permite reproduzir); a query não, porque é onde tokens andam.
 function rotaAtual() {
-  try { return (window.location.pathname || '').slice(0, 120) } catch { return '' }
+  try { return sanitizarRota(window.location.pathname || '') } catch { return '' }
 }
 
 let ligado = false
@@ -178,7 +192,7 @@ const TETO_POR_CARGA = 20 // espelha o teto do servidor: um laço quebrado não 
 // Envia sem nunca atrapalhar (erro com `esperado: true` — validação da própria tela — não é registrado): falha de telemetria é engolida de propósito. O produto não pode
 // quebrar porque o registro de erro não foi.
 export async function reportarErro(erro, { origem = 'ui', contexto = '', local = '' } = {}) {
-  if (erro && typeof erro === 'object' && erro.esperado === true) return // validação da própria tela: não é falha
+  try { if (erro && typeof erro === 'object' && erro.esperado === true) return } catch { /* getter que explode: registra */ } // validação da própria tela: não é falha
   if (enviando >= TETO_POR_CARGA) return
   enviando++
   try {
@@ -188,7 +202,7 @@ export async function reportarErro(erro, { origem = 'ui', contexto = '', local =
       p_origem: origem,
       p_correlacao: CORRELACAO,
       p_rota: rotaAtual(),
-      p_contexto: contextoComLocal(contexto, origem === 'ui' ? '' : (local || localDoErro(erro))),
+      p_contexto: contextoDoErro(erro, contexto, local),
       p_codigo: codigoDoErro(erro),
       p_agente: agenteComVersao(navigator.userAgent),
     })
