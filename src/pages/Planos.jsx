@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { carregarPlanos, carregarAssinaturaDoClube, formatarPreco, ROTULO_STATUS } from '../services/comercial.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import PagarLicenca from '../components/PagarLicenca.jsx'
 
 // Planos e assinatura do clube (fase 5). Tudo que aparece aqui — nome, composição e PREÇO — vem do
 // catálogo versionado do banco. Nada de valor escrito no React: mudar preço é publicar uma versão
@@ -63,6 +64,7 @@ export default function Planos() {
       </div>
 
       {assinatura && <SituacaoAtual a={assinatura} />}
+      {assinatura?.tem_assinatura && <PagarLicenca assinatura={assinatura} />}
 
       <h2 className="text-sm font-extrabold text-ink mb-2 mt-6">Planos</h2>
       <ul className="space-y-3">

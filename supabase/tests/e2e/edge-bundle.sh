@@ -14,7 +14,7 @@ IMG="$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -m1 'supabase/ed
 FDIR="$ROOT/supabase/functions"
 WFDIR="$(cygpath -w "$FDIR" 2>/dev/null || echo "$FDIR")"
 FALHOU=0
-for FUNCAO in enviar-push sanear-imagens limpar-fotos-rede storage-excluir; do
+for FUNCAO in enviar-push sanear-imagens limpar-fotos-rede storage-excluir pagamento-checkout pagamento-webhook; do
   echo "==> empacotando $FUNCAO (com _compartilhado) com $IMG"
   if docker run --rm -v "$WFDIR:/f:ro" "$IMG" bundle --entrypoint "/f/$FUNCAO/index.ts" --output "/tmp/$FUNCAO.eszip" -q; then
     echo "OK — $FUNCAO: dependências fixadas e imports compartilhados resolvem e a função empacota."

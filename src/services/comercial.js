@@ -78,3 +78,33 @@ export const ROTULO_STATUS = {
   suspensa: 'Suspensa',
   cancelada: 'Cancelada',
 }
+
+// ---------------------------------------------------------------- PAGAMENTO (migration 540; guia: supabase/PAGAMENTOS-COMO-PLUGAR-GATEWAY.md)
+// O front NUNCA decide valor nem fala com o gateway: pede à Edge Function `pagamento-checkout`, que abre a fatura no banco (valor do
+// catálogo), cria a cobrança no gateway do ambiente e devolve só o link / Pix copia-e-cola.
+
+// O botão "Pagar" só aparece se algum provedor foi habilitado no banco.
+export async function pagamentoDisponivel() {
+  const { data, error } = await supabase.rpc('pagamento_disponivel')
+  if (error) throw new Error(error.message)
+  return data === true
+}
+
+// Faturas do clube em uso (só a diretoria; os demais recebem "Sem permissão").
+export async function faturasDoClube() {
+  const { data, error } = await supabase.rpc('faturas_do_clube')
+  if (error) throw new Error(error.message)
+  return Array.isArray(data) ? data : []
+}
+
+// forma: 'pix' | 'cartao'. Devolve { fatura_id, checkout_url, pix_copia_cola, vence_em, valor_centavos }.
+export async function iniciarPagamento(forma = 'pix') {
+  const { data, error } = await supabase.functions.invoke('pagamento-checkout', { body: { forma } })
+  if (error) {
+    const corpo = await error.context?.json?.().catch(() => null)
+    throw new Error(corpo?.erro || error.message)
+  }
+  return data
+}
+
+export const ROTULO_FATURA = { aberta: 'Aguardando pagamento', paga: 'Paga', vencida: 'Vencida', cancelada: 'Cancelada', reembolsada: 'Reembolsada' }

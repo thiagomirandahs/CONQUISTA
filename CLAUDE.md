@@ -94,6 +94,8 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Produção: ledger **538**, main/OTA em `e201f48` ou mais novo. Jogos de perguntas DBV (`quizdbv`, `vfdbv`, `classedbv`) entram **desligados** em
   todos os clubes (migration 538); conteúdo em `src/features/jogos/conteudo/` conferido contra o manifesto e as fontes do dono
   (`supabase/fontes/`). Trilha do Aspirante em `/aspirante` (progresso só no aparelho). OTA do APK corrigido — ver `android/OTA.md`.
+- **Pagamentos (migration 540, local; produção só com janela):** base para qualquer gateway, DESLIGADA. Plugar = 1 arquivo de adaptador + chaves; guia em
+  `supabase/PAGAMENTOS-COMO-PLUGAR-GATEWAY.md` (Edge `pagamento-checkout` e `pagamento-webhook`, adaptadores em `_compartilhado/pagamento/`).
 - Regra nova: **nada de fato oficial DBV sem fonte do dono** (Lei, hino, história, manuais); o teste `dbv.test.js` confere o que é do manifesto.
 
 ## Pendências conhecidas (28/09)
