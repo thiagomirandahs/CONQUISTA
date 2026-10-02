@@ -29,6 +29,16 @@ Mudou código nativo, plugin Capacitor, ícone/splash, permissões ou `capacitor
 2. empurre a tag `v1.4.0` (o workflow `android.yml` monta e assina). A tag tem de ser ≥ `otaMinimoNativo`.
 O primeiro APK com OTA é o **v1.3.0** (APKs 1.2.x carregam o site direto e não precisam disso).
 
+## Armadilhas e diagnóstico (aprendido em 02/10/2026)
+- **versionName do APK tem de ser numérico.** O workflow `android.yml` usa a tag (`v1.3.8`) ou, no "Run workflow", `<otaMinimoNativo>-ci<execução>`
+  (ex.: `1.3.0-ci21`). Antes saía "main" e o app recusava toda atualização (`nativo-antigo`). `decidir()` também não trava por versão ilegível.
+- **Não use `setMultiDelay([{kind:'kill'}])`** nem baixe de novo uma versão que já está `pending`: a condição era rearmada a cada abertura
+  e a troca nunca valia. O app só chama `next()`; se o plugin já tem o bundle da versão (`pending`), apenas reafirma o `next`.
+- **Diagnóstico no aparelho:** Ajuda → fim da tela mostra "Versão das telas", "APK x.y.z" e "Última checagem de atualização"
+  (`mesma-versao`, `ja-baixada`, `versao-nova`, `rede`, `nativo-antigo`, `sha-errado`…). Um APK recém-montado diz `mesma-versao` até haver publicação nova.
+- **Entregar um APK:** `gh workflow run android.yml --ref main` → `gh run download <id>` → conferir `aapt2 dump badging` (versionName/versionCode) → enviar. Não commitar o `.apk`.
+- Efeito no uso: fechar o app por completo e abrir (1–2 vezes) aplica a versão nova.
+
 ## Reverter
 - Telas com defeito que abrem: reverta o commit na `main` → a Vercel publica versão nova (com o código antigo)
   e os aparelhos pegam na próxima abertura.

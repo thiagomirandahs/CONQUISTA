@@ -90,6 +90,12 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
   automática (203). Runner zera policies de Storage no clone.
 - Banco LOCAL de trabalho (Docker `postgres`) está na 360.
 
+## Atualização de 02/10/2026 (noite)
+- Produção: ledger **538**, main/OTA em `e201f48` ou mais novo. Jogos de perguntas DBV (`quizdbv`, `vfdbv`, `classedbv`) entram **desligados** em
+  todos os clubes (migration 538); conteúdo em `src/features/jogos/conteudo/` conferido contra o manifesto e as fontes do dono
+  (`supabase/fontes/`). Trilha do Aspirante em `/aspirante` (progresso só no aparelho). OTA do APK corrigido — ver `android/OTA.md`.
+- Regra nova: **nada de fato oficial DBV sem fonte do dono** (Lei, hino, história, manuais); o teste `dbv.test.js` confere o que é do manifesto.
+
 ## Pendências conhecidas (28/09)
 - **Rede DBV NO AR (29/09, 470–481):** estilo Instagram em /rede, stories 24 h, publicação direta com confirmação, busca; recurso "comunidade" liberado clube a clube no /admin. Limpeza de fotos ATIVA (Edge Function limpar-fotos-rede + Vault, 29/09). Coordenação na Rede (490) e autorização dos pais no papel (491) no ar. Ver supabase/REDE-DBV.md e android/OTA.md.
 - **NO AR desde 29/09 (main 6393807 + banco 460):** 370 audiolivros, 380 documento da idade, 390 painel do coordenador, 400 manutenção, 410 painéis por plano, 420 acessibilidade, 430–432 comunidade, 450 guarda da manutenção na comunidade, 460 catálogo de especialidades/mestrados (MDA Wiki, só dados de catálogo; tela /catalogo-especialidades), e a hierarquia por arrastar. Gates: SQL 101/101, upgrade 120, vitest 986, check ok. Script único: `scripts/aplicar-370-a-460-producao.sql` (idempotente, testado 2x numa cópia na 360).
