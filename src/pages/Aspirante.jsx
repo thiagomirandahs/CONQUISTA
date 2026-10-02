@@ -163,7 +163,7 @@ export default function Aspirante() {
             ))}
           </ul>
         </Card>
-        <p className="text-xs text-faint mt-3">Fonte: Guia do Aspirante (Ministério Jovem, União Nordeste Brasileira, 2012). Seu progresso fica salvo neste aparelho.</p>
+        <p className="text-xs text-faint mt-3">Fonte: Guia do Aspirante (Ministério Jovem, União Nordeste Brasileira, 2012). Seu progresso fica salvo neste aparelho. Conteúdo atualizado em 02/10/2026.</p>
       </section>
     </div>
   )
