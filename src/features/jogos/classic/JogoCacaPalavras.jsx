@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import * as juice from '../../../lib/juice.js'
 import { embaralhar } from '../utils/comum.js'
+import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 
 // ===================== Caça-palavras =====================
 // Monta um quadro NxN com as palavras escondidas e preenche o resto com
@@ -8,8 +9,7 @@ import { embaralhar } from '../utils/comum.js'
 function gerarCaca() {
   const N = 8
   // sorteia 6 do vocabulário do clube (campo + símbolos e ordem unida)
-  const alvos = embaralhar(['FOGO', 'TENDA', 'MAPA', 'MATA', 'TROPA', 'NORTE',
-    'LEI', 'VOTO', 'ALVO', 'LEMA', 'HINO', 'LENCO', 'FILA', 'TESTA', 'CAUDA', 'ORDEM', 'CLASSE', 'UNIDADE', 'ESCUDO', 'ESPADA']).slice(0, 6)
+  const alvos = embaralhar(palavrasDoClube(3, 7)).slice(0, 6)
   const grid = Array(N * N).fill('')
   const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]] // →  ↓  ↘  ↙
   const colocadas = []

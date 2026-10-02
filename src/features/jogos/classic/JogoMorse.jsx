@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { embaralhar } from '../utils/comum.js'
 import * as juice from '../../../lib/juice.js'
 
@@ -9,8 +10,8 @@ const MORSE = {
   J: '·–––', K: '–·–', L: '·–··', M: '––', N: '–·', O: '–––', P: '·––·', Q: '––·–', R: '·–·',
   S: '···', T: '–', U: '··–', V: '···–', W: '·––', X: '–··–', Y: '–·––', Z: '––··',
 }
-const PALAVRAS_MORSE = ['FOGO', 'MATA', 'NORTE', 'TENDA', 'MAPA', 'CORDA', 'SOL', 'LUA', 'NO', 'SUL',
-  'LEI', 'VOTO', 'ALVO', 'LEMA', 'HINO', 'LENCO', 'FILA', 'TESTA', 'CAUDA', 'ORDEM', 'CLASSE']
+const PALAVRAS_MORSE = palavrasDoClube(3, 7, ['FOGO', 'MATA', 'NORTE', 'TENDA', 'MAPA', 'CORDA', 'SOL', 'LUA', 'NO', 'SUL',
+  'LEI', 'VOTO', 'ALVO', 'LEMA', 'HINO', 'LENCO', 'FILA', 'TESTA', 'CAUDA', 'ORDEM', 'CLASSE'])
 
 export default function JogoMorse({ onTerminar, onCancelar }) {
   const [palavras] = useState(() => embaralhar(PALAVRAS_MORSE).slice(0, 3))

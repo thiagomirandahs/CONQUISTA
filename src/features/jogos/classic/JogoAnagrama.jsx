@@ -1,15 +1,16 @@
 import { useState } from 'react'
+import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { embaralhar } from '../utils/comum.js'
 import * as juice from '../../../lib/juice.js'
 import { PedirAjuda } from '../../../components/Ajuda.jsx'
 
 // ===================== 🔤 Anagrama =====================
-const PALAVRAS_ANAGRAMA = [
+const PALAVRAS_ANAGRAMA = palavrasDoClube(6, 13, [
   'ACAMPAMENTO', 'FOGUEIRA', 'BUSSOLA', 'MOCHILA', 'BARRACA',
   'UNIFORME', 'LANTERNA', 'BANDEIRA', 'CAMINHADA', 'CANIVETE',
   'PIONEIRO', 'COMPANHEIRO', 'PESQUISADOR', 'EXCURSIONISTA',
   'MARANATA', 'UNIDADE', 'CAPITAO', 'TRIANGULO', 'EMBLEMA', 'LEALDADE', 'DEVOCAO', 'CAMPORI',
-]
+])
 function embaralharPalavra(p) {
   let s = embaralhar(p.split('')).join('')
   // garante que não saiu igual à original

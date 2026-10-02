@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import * as juice from '../../../lib/juice.js'
 import { PedirAjuda } from '../../../components/Ajuda.jsx'
 
 // ===================== 🟩 Termo do Clube (lógica) =====================
 // Estilo Termo/Wordle: 5 letras, 6 tentativas, palavras do mundo desbravador
 // (sem acento/ç: LENÇO = LENCO). Verde = certa no lugar; amarelo = existe.
-const PALAVRAS_TERMO = ['TENDA', 'CORDA', 'LENCO', 'TRIBO', 'JESUS', 'GRACA', 'ANJOS', 'AMIGO',
+const PALAVRAS_TERMO = palavrasDoClube(5, 5, ['TENDA', 'CORDA', 'LENCO', 'TRIBO', 'JESUS', 'GRACA', 'ANJOS', 'AMIGO',
   'UNIAO', 'HONRA', 'SERVO', 'TERRA', 'MUNDO', 'CANTO', 'AGUIA', 'FESTA',
-  'LIVRO', 'SALMO', 'FRUTO', 'LIDER', 'TESTA', 'CAUDA', 'ORDEM']
+  'LIVRO', 'SALMO', 'FRUTO', 'LIDER', 'TESTA', 'CAUDA', 'ORDEM'])
 const TECLADO_TERMO = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 
 function avaliarTermo(tent, alvo) {

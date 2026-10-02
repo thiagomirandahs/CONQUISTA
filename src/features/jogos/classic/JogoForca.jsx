@@ -1,16 +1,17 @@
 import { useState } from 'react'
+import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { m as motion } from 'framer-motion'
 import * as juice from '../../../lib/juice.js'
 import { PedirAjuda } from '../../../components/Ajuda.jsx'
 
 // ===================== 🎯 Forca =====================
-const PALAVRAS_FORCA = [
+const PALAVRAS_FORCA = palavrasDoClube(6, 14, [
   'ACAMPAMENTO', 'DESBRAVADOR', 'BUSSOLA', 'FOGUEIRA', 'UNIFORME',
   'ESPECIALIDADE', 'LANTERNA', 'MOCHILA', 'BARRACA', 'CANIVETE',
   'CANTINA', 'BANDEIRA', 'CONSELHEIRO', 'INVESTIDURA', 'CAMINHADA',
   'PIONEIRO', 'COMPANHEIRO', 'PESQUISADOR', 'EXCURSIONISTA',
   'MARANATA', 'UNIDADE', 'CAPITAO', 'TRIANGULO', 'EMBLEMA', 'LEALDADE', 'DEVOCAO', 'CAMPORI', 'ESCUDO', 'ESPADA',
-]
+])
 const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export default function JogoForca({ onTerminar, onCancelar }) {
