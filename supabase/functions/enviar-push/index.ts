@@ -34,6 +34,7 @@
 import webpush from 'npm:web-push@3.6.7'
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 import { chaveServico, urlProjeto, resumoDasChaves } from '../_compartilhado/chaves.ts'
+import { classificarFalha, rotuloErroFcm } from '../_compartilhado/push-erro.ts'
 
 const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY') ?? ''
 const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
@@ -232,7 +233,17 @@ Deno.serve(async (req) => {
     // eventos legítimos e distintos (dois lances seguidos) virar duas tarjas idênticas na mão
     // de quem está olhando.
     const tag = `cq-${eventoId.slice(0, 8)}`
-    const resultados: Array<{ id: number; ok: boolean; codigo: string; ms: number }> = []
+    const resultados: Array<{ id: number; ok: boolean; codigo: string; ms: number; retry_s?: number }> = []
+    // 400/401/403/413 que NÃO apagam: contados por canal+código para UM registro agregado no fim (sem endpoint/token)
+    const semRemocao = new Map<string, number>()
+    const contarSemRemocao = (canal: string, c: { codigo: string; credencial: boolean }) => {
+      if (c.credencial) semRemocao.set(`${canal} ${c.codigo}`, (semRemocao.get(`${canal} ${c.codigo}`) ?? 0) + 1)
+    }
+    // Remoção ATÔMICA e à prova de corrida (migration 534): só apaga se a inscrição não foi re-registrada depois da tentativa.
+    const remover = async (tentativaId: number, credencial: string, rotulo: string) => {
+      const { error } = await sb.rpc('push_remover_inscricao', { p_tentativa_id: tentativaId, p_credencial: credencial })
+      if (error) await registrarFalha('push: não removeu credencial inválida (' + rotulo + ')', clubeId)
+    }
 
     const subs = entregas.filter((e) => e.canal === 'web')
     const tokens = entregas.filter((e) => e.canal === 'fcm')
@@ -243,23 +254,19 @@ Deno.serve(async (req) => {
       try {
         await comPrazo(webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ titulo, corpo, link, tag })), TIMEOUT_MS)
+          JSON.stringify({ titulo, corpo, link, tag }), { timeout: TIMEOUT_MS }), TIMEOUT_MS)
         resultados.push({ id: s.tentativa_id, ok: true, codigo: '200', ms: Date.now() - t0 })
         return true
       } catch (e: any) {
-        // Inscrição expirada/cancelada -> remove do banco
-        // (404/410 = erro PERMANENTE: remove só ESTA inscrição, as outras da pessoa ficam. 400/401/403/413 também
-        //  são registrados com o status real — migration 534 — e quem nunca entrega é podado por
-        //  push_podar_inscricoes_mortas, nunca aqui: um 401/403 pode ser problema de chave do SERVIDOR.)
-        if (e?.statusCode === 404 || e?.statusCode === 410) {
-          const { error: erroRemocao } = await sb.from('push_subscriptions').delete().eq('endpoint', s.endpoint)
-          if (erroRemocao) await registrarFalha('push: não removeu inscrição expirada (' + e.statusCode + ')', clubeId)
-        }
-        resultados.push({
-          id: s.tentativa_id, ok: false,
-          codigo: String(e?.statusCode ?? (e?.message === 'timeout' ? 'timeout' : 'rede')),
-          ms: Date.now() - t0,
-        })
+        // Só erro PERMANENTE COMPROVADO da inscrição remove (404/410 e 400 que prova inscrição inválida), e só ESTA inscrição.
+        // 401/403 (VAPID/credencial), 400 de payload, 413, 408, 429, 5xx, timeout e rede NUNCA apagam: ficam registrados com o
+        // código real e a poda (push_podar_inscricoes_mortas) só age com evidência acumulada. Ver _compartilhado/push-erro.ts.
+        const status = typeof e?.statusCode === 'number' ? e.statusCode : null
+        const c = classificarFalha('web', status, String(e?.body ?? ''), e?.headers?.['retry-after'] ?? null,
+          /timeout|timed out/i.test(String(e?.message ?? '')) ? 'timeout' : 'rede')
+        if (c.remover) await remover(s.tentativa_id, s.endpoint, `web ${c.codigo}`)
+        contarSemRemocao('web', c)
+        resultados.push({ id: s.tentativa_id, ok: false, codigo: c.codigo, ms: Date.now() - t0, ...(c.retryS ? { retry_s: c.retryS } : {}) })
         return false
       }
     })
@@ -297,28 +304,40 @@ Deno.serve(async (req) => {
                   },
                 }),
               }), TIMEOUT_MS)
-              resultados.push({ id: k.tentativa_id, ok: resp.ok, codigo: String(resp.status), ms: Date.now() - t0 })
-              if (resp.ok) return true
-              // 404 = token não existe mais (app desinstalado); 403 = projeto errado.
-              // Só o 404 significa "limpe este aparelho".
-              if (resp.status === 404) {
-                const { error: erroRemocao } = await sb.from('push_tokens').delete().eq('token', k.token)
-                if (erroRemocao) await registrarFalha('push: não removeu token inválido (404)', clubeId)
+              if (resp.ok) {
+                resultados.push({ id: k.tentativa_id, ok: true, codigo: String(resp.status), ms: Date.now() - t0 })
+                return true
               }
+              // O corpo só serve para CLASSIFICAR (errorCode/campo inválido); nunca é gravado nem logado.
+              const corpoErro = await comPrazo(resp.text(), 3000).catch(() => '')
+              const c = classificarFalha('fcm', resp.status, corpoErro, resp.headers.get('retry-after'))
+              // Só UNREGISTERED (404) e INVALID_ARGUMENT de TOKEN malformado removem. 401/403 (credencial/projeto), 400 de payload,
+              // 429 e 5xx não removem.
+              if (c.remover) await remover(k.tentativa_id, k.token, `fcm ${c.codigo}`)
+              contarSemRemocao('fcm', c)
+              resultados.push({ id: k.tentativa_id, ok: false, codigo: c.codigo, ms: Date.now() - t0, ...(c.retryS ? { retry_s: c.retryS } : {}) })
               return false
             } catch (e: any) {
-              resultados.push({
-                id: k.tentativa_id, ok: false,
-                codigo: e?.message === 'timeout' ? 'timeout' : 'rede', ms: Date.now() - t0,
-              })
+              const c = classificarFalha('fcm', null, '', null, /timeout|timed out/i.test(String(e?.message ?? '')) ? 'timeout' : 'rede')
+              resultados.push({ id: k.tentativa_id, ok: false, codigo: c.codigo, ms: Date.now() - t0 })
               return false
             }
           })
         } catch (e: any) {
-          await registrarFalha('FCM: ' + (e?.message ?? e), clubeId)
+          // sem repassar a mensagem crua (um JSON.parse da conta de serviço pode ecoar pedaço do segredo)
+          await registrarFalha('FCM: ' + rotuloErroFcm(e?.message), clubeId)
           for (const k of tokens) resultados.push({ id: k.tentativa_id, ok: false, codigo: 'oauth', ms: 0 })
         }
       }
+    }
+
+    // Observável sem ruído: se TODOS os aparelhos de um canal (>= 3) falharam com o mesmo 401/403/400/413, o problema é quase certo
+    // do SERVIDOR (credencial VAPID/FCM, payload) — um registro agregado em infra_falhas (só código e contagem). Um aparelho isolado
+    // com 403 fica só em push_tentativas (push_resumo_erros / push_inscricoes_mortas).
+    for (const [chave, n] of semRemocao) {
+      const canal = chave.split(' ')[0]
+      const totalCanal = canal === 'web' ? subs.length : tokens.length
+      if (totalCanal >= 3 && n === totalCanal) await registrarFalha(`push: ${chave} em todos os ${n} aparelhos do lote (credencial/payload do servidor?)`, clubeId)
     }
 
     // Fecha o ciclo. Toda tentativa reservada precisa terminar com um estado: o que ficar em
