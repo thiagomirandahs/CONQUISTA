@@ -8,7 +8,8 @@ foto só depois da diretoria aprovar, três avisos, limites e recurso `comunidad
 - Post com foto E story **publicam direto**, sem esperar a diretoria. Antes de enviar, o app pergunta:
   post: "Tem certeza que quer publicar? Fica visível para todos os clubes da Rede DBV." · story: "Tem certeza que
   quer publicar este story? Ele fica visível só para o seu clube por 24 horas." — botões **Publicar** e **Voltar**.
-  (Texto original da 480 dizia "todos os clubes"; desde a 515 story é SÓ do clube — constraint `rede_stories_alcance_so_clube`.)
+  (Texto original da 480 dizia "todos os clubes"; a 515 congelou story em 'clube'; desde a **535** o story tem alcance
+  `clube` OU `comunidade` — ver "Stories para todos na Comunidade" abaixo.)
 - A moderação passa a ser **por denúncia** (esconde na hora e avisa a diretoria do clube de quem publicou) até existir
   IA de imagem. Continua tudo o resto: triagem de texto no servidor, bucket ≤ 300 KB, EXIF fora (foto redesenhada no
   aparelho), três avisos, limites, autorização de USO (pais) e de IMAGEM (foto de rosto só com o papel arquivado).
@@ -41,6 +42,33 @@ foto só depois da diretoria aprovar, três avisos, limites e recurso `comunidad
 - Arquivos no bucket `comunidade`, mesmo caminho dos posts. Fora do ar (apagado/removido/recusado) entra na fila de
   apagar NA HORA; expirado entra na marcação diária (motivo `story`); a Edge Function `limpar-fotos-rede` apaga e
   `rede_fotos_confirmar` marca `foto_apagada_em`. Arquivo de story nunca é tratado como órfão.
+
+## Stories para todos na Comunidade (migration 535 — decisão do dono, 02/10/2026, definitiva)
+- **Regra**: qualquer participante elegível da Rede (vínculo ativo, recurso ligado, criança com a autorização dos pais
+  da 491, não suspenso, não responsável) publica um story com alcance **`comunidade`**: todos os clubes da Rede veem
+  por 24 h. **Não existe** módulo de amigos, "seguir" nem aprovação prévia (nem diretoria, nem plataforma); a
+  moderação é POSTERIOR (denúncia esconde na hora) — teste 141 prova "sem módulo de amigos" (nenhuma tabela/RPC).
+- **Banco**: `rede_stories.alcance in ('clube','comunidade')` (constraint `rede_stories_alcance_valido`); stories
+  antigos continuam `clube`. `rede_story_publicar(p_foto_path, p_texto, p_alcance default 'clube')` — a chamada
+  antiga (2 argumentos) é idêntica. `rede_stories(p_alcance default 'clube')`: `'clube'` = exatamente o de antes (só o
+  meu clube/área, inclusive os de alcance comunidade de gente do meu clube); `'comunidade'` = só alcance comunidade, de
+  todos os clubes com a Rede ligada, pela MESMA função central dos posts (`_rede_item_visivel`). Cada story devolve
+  `alcance`. Limite 60 pessoas, 2/min e 10/dia somando os dois alcances; mesma triagem de texto; só foto.
+- **Mídia**: mesmo bucket privado `comunidade`, mesmo caminho, mesmo saneamento (529), mesma fila de apagar
+  (gatilho + marcação diária) e mesmo catálogo do GC (531). A policy de leitura (`_comunidade_pode_ver_foto`) usa o
+  alcance do story: outro clube elegível assina a URL do story de alcance comunidade e NUNCA a do de alcance clube;
+  expirado/apagado/removido deixam de ser assináveis.
+- **Menor**: visto de outro clube chega reduzido (`_comunidade_autor_json`: 1º nome + inicial, sem unidade, sem foto
+  de rosto). A FOTO DO STORY em si é o conteúdo publicado pela criança para toda a Rede (risco assumido pelo dono).
+- **Denúncia/moderação**: quem pode ver denuncia (inclusive de outro clube); a denúncia vai para a fila do clube DO
+  AUTOR; diretoria de outro clube NÃO modera; a plataforma modera story de alcance comunidade denunciado/em análise
+  (`_plataforma_pode_item`, tudo em `plataforma_acesso_log`). Só o autor apaga (`rede_story_apagar`).
+  A 535 também fecha uma brecha: story já escondido por denúncia só aceita nova denúncia de quem poderia vê-lo.
+- **App**: aba Comunidade ganha a faixa "Seu story + demais (avatar, nome, clube)"; o "+" dali publica com alcance
+  comunidade depois da confirmação "Todos os clubes da Rede vão ver por 24 horas"; viewer é o mesmo (mostra
+  "· Todos os clubes"). A faixa da Comunidade é pedida só quando a aba abre; mídia assinada sob demanda (story aberto +
+  pré-carga do próximo). Front novo com banco sem a 535: a faixa da Comunidade some (serviço devolve `null`) e o resto
+  da aba funciona; front antigo (5cb14a5) com banco 535: chama `rede_stories()`/`rede_story_publicar(2 args)` e segue igual.
 
 ## Buscar (migration 481)
 - `/rede/buscar` → `rede_buscar(termo, clube)`: pessoas pelo NOME PÚBLICO (nome + sobrenome) ou pelo clube, e clubes
