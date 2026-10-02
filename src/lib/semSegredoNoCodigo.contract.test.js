@@ -161,15 +161,34 @@ function gravarDiagnostico(achados, arquivosLidos, ilegiveis) {
   return destino
 }
 
+const PRAZO_VARREDURA_MS = 120_000
+const LIMIAR_LENTO_MS = 2_000
+/** Varredura lenta não é falha, mas é o sinal que antecede o estouro de prazo: fica registrada (só tempos, nenhum conteúdo). */
+function registrarLentidao(tempos) {
+  if (tempos.listarMs + tempos.lerEVarrerMs < LIMIAR_LENTO_MS) return
+  const reg = { quando: new Date().toISOString(), pid: process.pid, worker: process.env.VITEST_WORKER_ID ?? null, cwd: process.cwd(), raiz: RAIZ, ...tempos }
+  try {
+    mkdirSync(PASTA_DIAGNOSTICO, { recursive: true })
+    writeFileSync(join(PASTA_DIAGNOSTICO, `lento-${reg.quando.replace(/[:.]/g, '-')}-pid${process.pid}.json`), JSON.stringify(reg, null, 2))
+  } catch { /* diagnóstico nunca derruba o teste */ }
+  console.warn(`[sem-segredo] varredura LENTA: listar=${tempos.listarMs} ms, ler+varrer=${tempos.lerEVarrerMs} ms, ${tempos.arquivos} arquivos (disco frio/antivírus?)`)
+}
+
 function arquivosDoEscopo() {
   const lista = execFileSync('git', ['ls-files', '-z', '--', ...ESCOPO], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\0').filter(Boolean)
   return lista.filter((f) => EXTENSOES.test(f) || /(^|\/)(Dockerfile|\.env[^/]*)$/.test(f))
 }
 
 describe('varredura contra segredo no código versionado', () => {
-  it('nenhum arquivo versionado do escopo contém segredo literal (relatório sem o valor)', () => {
+  // PRAZO: esta varredura LÊ ~900 arquivos. Com o disco "frio" (checkout/merge recém-feito, primeira leitura do dia, antivírus
+  // conferindo cada arquivo na 1ª abertura) ela leva 6–7 s em vez de ~0,1 s e estourava o prazo padrão de 5 s do Vitest — a falha
+  // intermitente de 01/10/2026 (reproduzida em 02/10 num worktree recém-criado: "Test timed out in 5000ms"). O prazo maior não
+  // afrouxa nada: a asserção é a mesma. Varredura lenta (> 2 s) deixa registro em PASTA_DIAGNOSTICO (lento-*.json).
+  it('nenhum arquivo versionado do escopo contém segredo literal (relatório sem o valor)', { timeout: PRAZO_VARREDURA_MS }, () => {
     const achados = [], ilegiveis = []
+    const t0 = performance.now()
     const arquivos = arquivosDoEscopo()
+    const tListou = performance.now()
     expect(arquivos.length).toBeGreaterThan(200)   // a varredura realmente leu o repositório
     for (const f of arquivos) {
       let texto
@@ -180,12 +199,13 @@ describe('varredura contra segredo no código versionado', () => {
       if (f === ARQUIVO_DO_DETECTOR) a = a.filter((x) => REGRAS_DURAS.includes(x.regra.split(':')[0]))
       achados.push(...a)
     }
+    registrarLentidao({ listarMs: Math.round(tListou - t0), lerEVarrerMs: Math.round(performance.now() - tListou), arquivos: arquivos.length })
     const relatorio = achados.map((a) => `${a.caminho}:${a.linha} [${a.regra}] ${a.trecho}`)
     const diagnostico = achados.length ? gravarDiagnostico(achados, arquivos.length, ilegiveis) : null
     expect(relatorio, diagnostico ? `diagnóstico (sem valores) gravado em ${diagnostico}` : undefined).toEqual([])
   })
 
-  it('o escopo cobre os diretórios que importam (functions, scripts, src, workflows, config.toml, vercel.json, package.json)', () => {
+  it('o escopo cobre os diretórios que importam (functions, scripts, src, workflows, config.toml, vercel.json, package.json)', { timeout: PRAZO_VARREDURA_MS }, () => {
     const f = arquivosDoEscopo()
     for (const p of ['supabase/functions/_compartilhado/chaves.ts', 'scripts/lib/hospedado.mjs', 'src/lib/supabase.js', 'supabase/config.toml', 'vercel.json', 'package.json']) expect(f).toContain(p)
     expect(f.some((x) => x.startsWith('.github/workflows/'))).toBe(true)
