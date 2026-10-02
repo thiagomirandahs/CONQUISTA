@@ -17,7 +17,8 @@ const val = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : un
 const fase = val('--fase'); const N = Math.min(8, Math.max(1, Number(val('--n') || 8)))
 const DB = process.env.DB_URL_PRODUCAO, TOKEN = process.env.SUPABASE_ACCESS_TOKEN, REF = process.env.PROJECT_REF
 if (!fase || !DB || !TOKEN || !REF) { console.error('uso: --fase revalidar|lote; env: DB_URL_PRODUCAO, SUPABASE_ACCESS_TOKEN, PROJECT_REF'); process.exit(2) }
-const PASTA = join(homedir(), '.desbravaclube-backups', 'gc-recuperacao-2026-10-01')
+// GC_PASTA: outra pasta de manifesto + cópias de recuperação (ex.: uma rodada nova com 1 item autorizado pelo dono)
+const PASTA = process.env.GC_PASTA || join(homedir(), '.desbravaclube-backups', 'gc-recuperacao-2026-10-01')
 const NL = String.fromCharCode(10), CR = String.fromCharCode(13), TAB = String.fromCharCode(9)
 const q = (s) => String(s).replaceAll("'", "''")
 function psql(sql, { avisos = false } = {}) {
