@@ -24,6 +24,11 @@ export function compararVersaoNativa(a, b) {
 
 const SHA256 = /^[0-9a-f]{64}$/i
 
+// "1.3.0", "v1.3.8", "1.3.0-ci41" são versões numéricas. "main", "dev", "0" e vazio NÃO dizem nada sobre o APK: um APK montado
+// pelo "Run workflow" chegou a sair com versionName "main" e o OTA o tratava como "nativo antigo" para sempre (02/10/2026).
+// Versão ilegível não bloqueia: o bloqueio existe só para APK ANTIGO conhecido (ex.: 1.2.x) não receber tela que exige nativo novo.
+export const versaoNativaLegivel = (v) => /^v?[1-9]\d*\.\d+/i.test(String(v || '').trim())
+
 // Decisão pura: aplicar ou ignorar o manifesto publicado.
 export function decidir({ manifesto, versaoAtual, versaoNativa, pendente }) {
   const m = manifesto
@@ -32,7 +37,7 @@ export function decidir({ manifesto, versaoAtual, versaoNativa, pendente }) {
   if (!/^https:\/\//.test(m.url)) return { acao: 'ignorar', motivo: 'manifesto-invalido' }
   if (m.versao === versaoAtual) return { acao: 'ignorar', motivo: 'mesma-versao' }
   if (pendente && m.versao === pendente) return { acao: 'ignorar', motivo: 'ja-baixada' }
-  if (compararVersaoNativa(versaoNativa, m.minimoNativo) < 0) return { acao: 'ignorar', motivo: 'nativo-antigo' }
+  if (versaoNativaLegivel(versaoNativa) && compararVersaoNativa(versaoNativa, m.minimoNativo) < 0) return { acao: 'ignorar', motivo: 'nativo-antigo' }
   return { acao: 'aplicar', motivo: 'versao-nova' }
 }
 

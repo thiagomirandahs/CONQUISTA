@@ -50,13 +50,23 @@ jobs:
       - name: Preparar a chave de assinatura
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/conquista.keystore"
 
+      # versionName do APK. Em tag (v1.3.8) é a própria tag. No "Run workflow" (sem tag) o ref_name é "main": esse nome
+      # virava versão nativa "0" no app e o OTA recusava TODA atualização ("precisa APK novo") — achado de 02/10/2026.
+      # Aqui o nome vira <otaMinimoNativo>-ci<execução> (ex.: 1.3.0-ci41), sempre numérico e >= ao mínimo do OTA.
+      - name: Definir a versão do APK
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="$GITHUB_REF_NAME"; else V="$(node -p "require('./package.json').desbravaclube.otaMinimoNativo")-ci${GITHUB_RUN_NUMBER}"; fi
+          echo "nome=$V" >> "$GITHUB_OUTPUT"
+          echo "versionName do APK: $V"
+
       - name: Montar o APK (assinado)
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace \
             -PappVersionCode=${{ github.run_number }} \
-            -PappVersionName=${{ github.ref_name }}
+            -PappVersionName=${{ steps.ver.outputs.nome }}
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/conquista.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { decidir, criarAtualizador, compararVersaoNativa, INTERVALO_MS } from './atualizacaoOta.js'
+import { decidir, criarAtualizador, compararVersaoNativa, versaoNativaLegivel, INTERVALO_MS } from './atualizacaoOta.js'
 
 const SHA = 'a'.repeat(64)
 const manifesto = (extra = {}) => ({ versao: '202609291200-abc1234', url: 'https://app.desbravaclube.com.br/ota/bundle-x.zip', sha256: SHA, minimoNativo: '1.3.0', ...extra })
@@ -17,6 +17,19 @@ describe('OTA: decidir', () => {
   it('nativo mais antigo que o mínimo → ignorar (precisa APK novo)', () => {
     expect(decidir({ ...base, versaoNativa: '1.2.9', manifesto: manifesto() }).motivo).toBe('nativo-antigo')
     expect(decidir({ ...base, versaoNativa: '1.10.0', manifesto: manifesto() }).acao).toBe('aplicar')
+  })
+  it('versionName ilegível ("main", "dev", "0", vazio) NÃO trava o OTA; numérico antigo continua travando', () => {
+    for (const v of ['main', 'dev', '0', '', undefined]) expect(decidir({ ...base, versaoNativa: v, manifesto: manifesto() }).acao, String(v)).toBe('aplicar')
+    for (const v of ['1.3.0-ci41', 'v1.3.8', '1.4.0']) expect(decidir({ ...base, versaoNativa: v, manifesto: manifesto() }).acao, v).toBe('aplicar')
+    for (const v of ['1.2.9', 'v1.0', '1.2.0-ci3']) expect(decidir({ ...base, versaoNativa: v, manifesto: manifesto() }).motivo, v).toBe('nativo-antigo')
+    expect(['1.3.0', 'v2.0.1', '1.3.0-ci7'].every(versaoNativaLegivel)).toBe(true)
+    expect(['main', '0', '', 'abc'].some(versaoNativaLegivel)).toBe(false)
+  })
+  it('o workflow do APK nunca usa ref_name solto como versionName (sem tag vira numérico)', () => {
+    const wf = readFileSync(join(__dirname, '..', '..', '.github', 'workflows', 'android.yml'), 'utf8')
+    expect(wf).not.toMatch(/appVersionName=\$\{\{\s*github\.ref_name/)
+    expect(wf).toMatch(/appVersionName=\$\{\{\s*steps\.ver\.outputs\.nome/)
+    expect(wf).toMatch(/otaMinimoNativo/)
   })
   it('já baixada e pendente → não baixa de novo', () => {
     expect(decidir({ ...base, pendente: manifesto().versao, manifesto: manifesto() }).motivo).toBe('ja-baixada')
