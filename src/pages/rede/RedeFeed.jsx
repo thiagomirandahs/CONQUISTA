@@ -13,9 +13,19 @@ import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
 // Coordenação (490): "Meu clube" vira "Minha área" — posts dos clubes da coordenação (o servidor filtra).
 // Duas abas (515): "Meu Clube" (padrão) e "Comunidade" (publicações de liderança de todos os clubes).
 // Organização (517): "Meu Clube" = conversa interna (feed, stories, desafios); "Comunidade" = conteúdo interclubes
-// (conquistas, atividades, eventos, avisos, fotos permitidas), SEM stories nem desafios. Uma só Comunidade.
+// (conquistas, atividades, eventos, avisos, fotos permitidas), sem desafios. Uma só Comunidade.
+// Stories para todos na Comunidade (535, decisão do dono de 02/10/2026): a aba Comunidade ganha a MESMA faixa de
+// stories no topo, com os stories de alcance 'comunidade' de todos os clubes; o "+" dali publica para todos os clubes
+// (confirmação explícita). Não existe amigos/seguir nem aprovação prévia. A faixa do Meu Clube continua igual.
+// Cada aba faz UMA chamada (a da Comunidade só quando a aba é aberta); as fotos são assinadas pelo viewer, sob demanda.
 const abasDoFeed = (coordenacao) => [['meu_clube', coordenacao ? 'Minha área' : 'Meu Clube'], ['comunidade', 'Comunidade']]
 const SUBTITULO = { meu_clube: 'Só o seu clube vê', comunidade: 'Todos os clubes da Rede' }
+const ALCANCE_DA_ABA = { meu_clube: 'clube', comunidade: 'comunidade' }
+const marcarVisto = (gs, id) => (Array.isArray(gs) ? gs.map((g) => {
+  if (!g.stories.some((s) => s.id === id)) return g
+  const stories = g.stories.map((s) => (s.id === id ? { ...s, visto: true } : s))
+  return { ...g, stories, todos_vistos: g.meu || stories.every((s) => s.visto) }
+}) : gs)
 
 export default function RedeFeed() {
   const { profile } = useAuth()
@@ -28,9 +38,11 @@ export default function RedeFeed() {
   const [carregando, setCarregando] = useState(true)
   const [mais, setMais] = useState(false)
   const [erro, setErro] = useState(null)
-  const [grupos, setGrupos] = useState(null)      // null = ainda carregando (fileira-esqueleto)
-  const [aberto, setAberto] = useState(null)       // índice do grupo no viewer
-  const [arquivoStory, setArquivoStory] = useState(null)
+  const [grupos, setGrupos] = useState(null)      // Meu Clube: null = ainda carregando (fileira-esqueleto)
+  // Comunidade: undefined = ainda não pedida; null = carregando; false = o servidor ainda não oferece (sem a faixa)
+  const [gruposCom, setGruposCom] = useState(undefined)
+  const [aberto, setAberto] = useState(null)       // { alcance, indice } do grupo no viewer
+  const [arquivoStory, setArquivoStory] = useState(null)   // { arquivo, alcance }
   const inputStory = useRef(null)
 
   const carregar = useCallback(async (f) => {
@@ -48,6 +60,20 @@ export default function RedeFeed() {
   }, [])
   useEffect(() => { recarregarStories() }, [recarregarStories, clubeId])
 
+  const recarregarStoriesCom = useCallback(async () => {
+    try {
+      const r = await carregarStories('comunidade')
+      setGruposCom(r === null ? false : (r || []))   // null = banco ainda sem a 535: a aba fica sem a faixa
+    } catch { setGruposCom([]) }
+  }, [])
+  // trocou de clube: a faixa da Comunidade é pedida de novo quando a aba abrir
+  useEffect(() => { setGruposCom(undefined) }, [clubeId])
+  useEffect(() => {
+    if (filtro !== 'comunidade' || gruposCom !== undefined) return
+    setGruposCom(null)
+    recarregarStoriesCom()
+  }, [filtro, gruposCom, recarregarStoriesCom])
+
   async function carregarMais() {
     if (!proximo || mais) return
     setMais(true)
@@ -61,13 +87,19 @@ export default function RedeFeed() {
   // o viewer avisa: visto (anel fica cinza) / removido (recarrega ao fechar)
   const mudouStory = useCallback(({ tipo, id }) => {
     if (tipo !== 'visto') return
-    setGrupos((gs) => (gs || []).map((g) => {
-      if (!g.stories.some((s) => s.id === id)) return g
-      const stories = g.stories.map((s) => (s.id === id ? { ...s, visto: true } : s))
-      return { ...g, stories, todos_vistos: g.meu || stories.every((s) => s.visto) }
-    }))
+    setGrupos((gs) => marcarVisto(gs || [], id))
+    setGruposCom((gs) => marcarVisto(gs, id))
   }, [])
-  const fecharViewer = useCallback(() => { setAberto(null); recarregarStories() }, [recarregarStories])
+  // o story de alcance comunidade de alguém do meu clube aparece nas duas faixas: recarrega a que já foi pedida
+  const comPedida = Array.isArray(gruposCom)
+  const recarregarFaixas = useCallback(() => {
+    recarregarStories()
+    if (comPedida) recarregarStoriesCom()
+  }, [recarregarStories, recarregarStoriesCom, comPedida])
+  const fecharViewer = useCallback(() => { setAberto(null); recarregarFaixas() }, [recarregarFaixas])
+  const alcanceDaAba = ALCANCE_DA_ABA[filtro]
+  const gruposDoViewer = aberto ? (aberto.alcance === 'comunidade' ? gruposCom : grupos) : null
+  const euNaFaixa = eu || { id: profile?.id, nome: profile?.nome }
 
   return (
     <div>
@@ -96,13 +128,20 @@ export default function RedeFeed() {
 
       <p data-testid="subtitulo-aba" className={`px-3 pt-2 text-xs font-semibold ${TXT_SUAVE}`}>{SUBTITULO[filtro]}</p>
 
+      {/* um só seletor de foto para as duas faixas; o alcance é o da aba em que o "+" foi tocado */}
+      <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
+      <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory({ arquivo: f, alcance: alcanceDaAba }); e.target.value = '' }} />
+
+      {filtro === 'comunidade' && gruposCom !== false && (
+        <FileiraStories alcance="comunidade" grupos={gruposCom || null} eu={euNaFaixa} podePublicar={!!status?.pode_publicar}
+          aoAbrir={(i) => setAberto({ alcance: 'comunidade', indice: i })} aoNovo={() => inputStory.current?.click()} />
+      )}
+
       {filtro === 'meu_clube' && (
         <>
-          <FileiraStories grupos={grupos} eu={eu || { id: profile?.id, nome: profile?.nome }} podePublicar={!!status?.pode_publicar}
-            aoAbrir={(i) => setAberto(i)} aoNovo={() => inputStory.current?.click()} />
-          <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
-          <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory(f); e.target.value = '' }} />
+          <FileiraStories grupos={grupos} eu={euNaFaixa} podePublicar={!!status?.pode_publicar}
+            aoAbrir={(i) => setAberto({ alcance: 'clube', indice: i })} aoNovo={() => inputStory.current?.click()} />
 
           <Link to="/rede/desafios" data-testid="atalho-desafios"
             className="mx-3 mb-2 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 flex items-center gap-2 text-sm font-semibold text-[var(--rede-ink)] no-underline">
@@ -122,17 +161,17 @@ export default function RedeFeed() {
           <ListaDePosts itens={itens} setItens={setItens} proximo={proximo} carregarMais={carregarMais} maisCarregando={mais}
             status={status} clubeId={clubeId}
             vazio={<VazioRede titulo={filtro === 'comunidade' ? 'Ainda não há publicações na Comunidade' : 'Ainda não há publicações'} acao={status?.pode_publicar ? { rotulo: 'Publicar', para: '/rede/publicar' } : null}>
-              {filtro === 'comunidade' ? 'A Comunidade mostra o que a liderança dos clubes compartilha com todos.'
+              {filtro === 'comunidade' ? 'Aqui ficam as publicações que a liderança dos clubes compartilha com todos. Os stories de todos os clubes aparecem nas bolinhas lá em cima.'
                 : status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
             </VazioRede>} />
         )}
 
-      {aberto !== null && grupos?.[aberto] && (
-        <ViewerStories grupos={grupos} inicio={aberto} aoFechar={fecharViewer} aoMudar={mudouStory} />
+      {aberto !== null && Array.isArray(gruposDoViewer) && gruposDoViewer[aberto.indice] && (
+        <ViewerStories key={aberto.alcance} grupos={gruposDoViewer} inicio={aberto.indice} aoFechar={fecharViewer} aoMudar={mudouStory} />
       )}
       {arquivoStory && (
-        <NovoStory arquivo={arquivoStory} clubeId={clubeId} userId={profile?.id}
-          aoFechar={() => setArquivoStory(null)} aoPublicado={() => { setArquivoStory(null); recarregarStories() }} />
+        <NovoStory arquivo={arquivoStory.arquivo} alcance={arquivoStory.alcance} clubeId={clubeId} userId={profile?.id}
+          aoFechar={() => setArquivoStory(null)} aoPublicado={() => { setArquivoStory(null); recarregarFaixas() }} />
       )}
     </div>
   )

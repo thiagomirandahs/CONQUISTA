@@ -481,7 +481,7 @@ export const TOPICOS = [
     rota: '/rede', recurso: 'comunidade', soNoApp: true,
     passos: [
       'Abra a Rede DBV. No feed aparecem as publicações dos clubes da Rede; dá para filtrar “Todos” ou “Meu clube”.',
-      'As bolinhas no topo são os stories: cada um fica no ar por 24 horas.',
+      'As bolinhas no topo são os stories: cada um fica no ar por 24 horas. Na aba “Meu Clube”, só o seu clube vê. Na aba “Comunidade” aparecem os stories de todos os clubes, e o “+” dali publica o seu para todos os clubes da Rede (o app avisa antes de enviar).',
       'Para publicar, toque em ➕. Antes de enviar, o app pergunta se você tem certeza — o app mostra quem vai ver: só o seu clube, ou todos os clubes da Rede quando a liderança publica na Comunidade. Toque em “Publicar” ou em “Voltar”.',
       'Viu algo errado? Toque em ⋮ → Denunciar. O conteúdo some na hora e a diretoria do clube de quem publicou é avisada.',
       'Para sair da Rede, abra o seu perfil, toque em ☰ e escolha “Sair da rede”.',

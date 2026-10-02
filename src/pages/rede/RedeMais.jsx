@@ -64,6 +64,7 @@ export default function RedeMais() {
           <li>Respeito sempre. Palavrão, ofensa e deboche não passam.</li>
           <li>Nada de telefone, @, links, e-mail, endereço ou escola. Não existe mensagem privada.</li>
           <li>Antes de publicar, o app pergunta se você tem certeza: em “Só meu clube” só o seu clube vê; em “Comunidade” (só diretoria e instrutor publicam) todos os clubes da Rede veem. Fotos saem daqui em 90 dias; stories, em 24 horas.</li>
+          <li>Story: na aba “Meu Clube” só o seu clube vê; na aba “Comunidade” qualquer participante publica e todos os clubes da Rede veem por 24 horas. Não existe lista de amigos nem “seguir”.</li>
           <li>Viu algo errado? Toque em ⋮ → Denunciar (no story, na bandeira): o conteúdo some na hora e a diretoria revisa.</li>
           <li>Três avisos em 30 dias pausam a sua rede por alguns dias.</li>
         </ul>

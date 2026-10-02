@@ -23,6 +23,7 @@
     "test:storage:e2e": "node supabase/tests/e2e/storage-imagens.mjs",
     "test:rede:e2e": "node supabase/tests/e2e/rede-foto-avatar.mjs",
     "test:rede:admin-foto:e2e": "node supabase/tests/e2e/rede-admin-foto-storage.mjs",
+    "test:rede:stories:e2e": "node supabase/tests/e2e/rede-stories-comunidade.mjs",
     "test:saneamento:e2e": "bash supabase/tests/e2e/saneamento-storage-real.sh",
     "test:storage-exclusao:e2e": "bash supabase/tests/e2e/storage-exclusao-real.sh",
     "test:storage-exclusao-533:e2e": "bash supabase/tests/e2e/storage-exclusao-533-real.sh",

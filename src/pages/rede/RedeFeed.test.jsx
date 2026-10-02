@@ -74,18 +74,28 @@ describe('Rede DBV — feed', () => {
     expect(screen.getByText('Seu story')).toBeInTheDocument()
   })
 
-  // 517: Meu Clube = feed + stories + desafios; Comunidade = só conteúdo interclubes (sem stories/desafios).
-  it('Meu Clube mostra stories e atalho de Desafios; Comunidade não (subtítulos diferenciam as abas)', async () => {
+  // 517: Meu Clube = feed + stories + desafios; Comunidade = conteúdo interclubes, sem desafios.
+  // MUDANÇA DE REGRA (535, decisão do dono de 02/10/2026): a Comunidade PASSA a ter a faixa de stories (stories para
+  // todos, alcance 'comunidade'). O teste antigo exigia "Comunidade sem stories"; agora exige, de forma mais estrita:
+  // cada aba mostra SÓ a própria faixa (a do clube nunca aparece na Comunidade e vice-versa), cada uma pedida ao
+  // servidor com o próprio alcance, e a faixa do Meu Clube continua sendo pedida sem argumento (como o app antigo).
+  it('Meu Clube mostra a faixa do clube e o atalho de Desafios; Comunidade mostra a faixa da Comunidade, sem Desafios', async () => {
     const u = userEvent.setup()
     renderRede(<RedeFeed />)
-    expect(await screen.findByTestId('fileira-stories')).toBeInTheDocument()
+    expect(await screen.findByTestId('fileira-stories')).toHaveAttribute('data-alcance', 'clube')
     expect(screen.getByTestId('atalho-desafios')).toHaveAttribute('href', '/rede/desafios')
     expect(screen.getByTestId('subtitulo-aba')).toHaveTextContent('Só o seu clube vê')
+    expect(f.carregarStories.mock.calls).toEqual([[]])   // só a faixa do clube, sem argumento; a da Comunidade ainda não foi pedida
     await u.click(screen.getByRole('tab', { name: 'Comunidade' }))
-    expect(screen.queryByTestId('fileira-stories')).toBeNull()
+    expect(await screen.findByTestId('fileira-stories')).toHaveAttribute('data-alcance', 'comunidade')
+    expect(screen.getAllByTestId('fileira-stories')).toHaveLength(1)
+    expect(screen.getByRole('list', { name: 'Stories da Comunidade' })).toBeInTheDocument()
     expect(screen.queryByTestId('atalho-desafios')).toBeNull()
-    expect(screen.queryByText('Seu story')).toBeNull()
+    expect(screen.getByText('Seu story')).toBeInTheDocument()
     expect(screen.getByTestId('subtitulo-aba')).toHaveTextContent('Todos os clubes da Rede')
+    expect(f.carregarStories.mock.calls).toEqual([[], ['comunidade']])
+    await u.click(screen.getByRole('tab', { name: 'Meu Clube' }))
+    expect(screen.getByTestId('fileira-stories')).toHaveAttribute('data-alcance', 'clube')
   })
 
   it('responsável (não publica): sem "Seu story"', async () => {

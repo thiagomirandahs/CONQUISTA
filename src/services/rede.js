@@ -80,7 +80,33 @@ export const CONFIRMAR_STORY = {
   descricao: 'Ele fica visível só para o seu clube por 24 horas.',
   rotulo: 'Publicar', cancelar: 'Voltar', perigo: false,
 }
-export const carregarStories = () => rpc('rede_stories')
+// Stories para todos na Comunidade (migration 535, decisão do dono de 02/10/2026): qualquer participante publica um
+// story para todos os clubes da Rede; sem amigos/seguir e sem aprovação prévia (moderação por denúncia).
+export const CONFIRMAR_STORY_COMUNIDADE = {
+  titulo: 'Publicar este story na Comunidade?',
+  descricao: 'Todos os clubes da Rede vão ver por 24 horas.',
+  rotulo: 'Publicar para todos os clubes', cancelar: 'Voltar', perigo: false,
+}
+export const confirmacaoDeStory = (alcance) => (alcance === 'comunidade' ? CONFIRMAR_STORY_COMUNIDADE : CONFIRMAR_STORY)
+export const QUEM_VE_STORY = Object.freeze({ clube: 'Só o seu clube vê por 24 horas', comunidade: 'Todos os clubes da Rede vão ver por 24 horas' })
+export const STORY_COMUNIDADE_INDISPONIVEL = 'Os stories da Comunidade ainda não estão disponíveis. Por enquanto, publique no Meu Clube 🙂'
+
+// O banco ainda sem a 535 não conhece o parâmetro p_alcance: o PostgREST responde "função não encontrada".
+const semAlcanceNoBanco = (error) => error?.code === 'PGRST202' || /could not find the function/i.test(error?.message || '')
+
+// Faixa de stories, UMA chamada por aba (o servidor limita a 60 pessoas e devolve só caminhos; a foto de cada story é
+// assinada sob demanda pelo viewer). 'clube' chama sem argumento — idêntico ao app antigo e compatível com o banco sem
+// a 535. 'comunidade' devolve null quando o banco ainda não tem a 535 (a tela só não mostra a faixa).
+export async function carregarStories(alcance = 'clube') {
+  if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')
+  if (alcance === 'clube') return rpc('rede_stories')
+  const { data, error } = await supabase.rpc('rede_stories', { p_alcance: alcance })
+  if (error) {
+    if (semAlcanceNoBanco(error)) return null
+    throw new Error(error.message)
+  }
+  return data
+}
 export const marcarStoryVisto = (id) => rpc('rede_story_visto', { p_story: id })
 export const apagarStory = (id) => rpc('rede_story_apagar', { p_story: id })
 export const buscarNaRede = (termo, clubeId = null) => rpc('rede_buscar', { p_termo: termo || null, p_clube: clubeId })
@@ -93,7 +119,9 @@ export async function prepararFotoStory(file) {
 }
 
 // Sobe a foto do story e publica; se o servidor recusar, apaga o arquivo que subiu.
-export async function publicarStory({ foto, texto, clubeId, userId }) {
+// `alcance`: 'clube' (padrão; a chamada vai SEM p_alcance, como sempre foi) ou 'comunidade' (todos os clubes da Rede).
+export async function publicarStory({ foto, texto, clubeId, userId, alcance = 'clube' }) {
+  if (!ALCANCES.includes(alcance)) throw new Error('Alcance inválido.')
   exigirDono(clubeId, userId)
   const ext = foto.arquivo.type === 'image/webp' ? 'webp' : 'jpg'
   const path = `${clubeId}/${userId}/${novoId()}.${ext}`
@@ -102,7 +130,11 @@ export async function publicarStory({ foto, texto, clubeId, userId }) {
   solicitarSaneamento(BUCKET, path)
   let r
   try {
-    r = await rpc('rede_story_publicar', { p_foto_path: path, p_texto: texto || null })
+    const args = { p_foto_path: path, p_texto: texto || null }
+    if (alcance === 'comunidade') args.p_alcance = 'comunidade'
+    const { data, error } = await supabase.rpc('rede_story_publicar', args)
+    if (error) throw new Error(alcance === 'comunidade' && semAlcanceNoBanco(error) ? STORY_COMUNIDADE_INDISPONIVEL : error.message)
+    r = data
   } catch (e) {
     await apagarArquivo(path)
     throw e

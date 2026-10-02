@@ -27,8 +27,8 @@ export const TOURS = {
   rede: {
     titulo: 'Rede DBV',
     passos: [
-      { icone: '📰', titulo: 'Feed', texto: 'Duas abas: Meu Clube (só o seu clube vê, com stories e desafios) e Comunidade (o que a liderança publica para todos os clubes da Rede).' },
-      { icone: '⭕', titulo: 'Stories', texto: 'As bolinhas no topo são stories: ficam no ar por 24 horas.' },
+      { icone: '📰', titulo: 'Feed', texto: 'Duas abas: Meu Clube (só o seu clube vê, com stories e desafios) e Comunidade (stories de todos os clubes e o que a liderança publica para toda a Rede).' },
+      { icone: '⭕', titulo: 'Stories', texto: 'As bolinhas no topo são stories: ficam no ar por 24 horas. Na aba Meu Clube, só o seu clube vê; na aba Comunidade, o “+” publica para todos os clubes da Rede (o app avisa antes).' },
       { icone: '➕', titulo: 'Publicar', texto: 'Toque em ➕ para publicar. Antes de enviar, o app pergunta se você tem certeza: fica visível só para o seu clube (ou para a Rede, quando a liderança publica na Comunidade).' },
       { icone: '🚩', titulo: 'Denunciar', texto: 'Viu algo errado? Toque em ⋮ → Denunciar. O conteúdo some na hora e a diretoria do clube é avisada.' },
       { icone: '🖼️', titulo: 'Autorização de imagem', texto: 'A foto de rosto só aparece com a autorização de imagem arquivada pela diretoria. Sem ela, aparecem as iniciais.' },

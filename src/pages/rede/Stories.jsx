@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  apagarStory, marcarStoryVisto, prepararFotoStory, publicarStory, urlDaFoto, tempoRelativo, CONFIRMAR_STORY,
+  apagarStory, marcarStoryVisto, prepararFotoStory, publicarStory, urlDaFoto, tempoRelativo, confirmacaoDeStory, QUEM_VE_STORY,
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
 import { avisar } from '../../ui/avisos.jsx'
@@ -13,6 +13,9 @@ import { AnelStory, AvatarRede, Denuncia, EsqueletoStories, Icone, PILL, SeloCoo
 //  Regra de hoje (decisão do dono, 29/09/2026): publica direto depois da confirmação; dura 24 h.
 //  Visual (Fase 6): anel dourado→âmbar = story novo; anel na cor de linha = visto; "+" marinho.
 //  Enquanto os grupos não chegam (`grupos` = null), uma fileira de 5 bolinhas-esqueleto.
+//  Stories para todos na Comunidade (535): a MESMA fileira/viewer/envio servem às duas abas; `alcance` diz qual
+//  ('clube' = só o seu clube; 'comunidade' = todos os clubes da Rede, com o nome do clube embaixo de cada pessoa).
+//  Mídia sob demanda: a fileira só traz caminhos; o viewer assina a foto do story aberto e pré-carrega só o próximo.
 // =============================================================================
 
 export const DURACAO_STORY_MS = 5000
@@ -21,25 +24,26 @@ const PASSO_MS = 50
 const primeiroNome = (nome) => String(nome || '').split(/\s+/)[0] || 'Membro'
 
 // ---------------------------------------------------------------- fileira
-export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
+export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo, alcance = 'clube' }) {
   if (!grupos) return <EsqueletoStories />
   const meu = grupos.find((g) => g.meu)
   const outros = grupos.filter((g) => !g.meu)
+  const naComunidade = alcance === 'comunidade'
   return (
-    <div role="list" aria-label="Stories" data-testid="fileira-stories"
+    <div role="list" aria-label={naComunidade ? 'Stories da Comunidade' : 'Stories'} data-testid="fileira-stories" data-alcance={alcance}
       className="flex gap-3 overflow-x-auto overscroll-x-contain px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {(podePublicar || meu) && (
         <div role="listitem" className="shrink-0 w-[72px] flex flex-col items-center gap-1">
           <div className="relative">
             <button type="button" onClick={() => (meu ? aoAbrir(grupos.indexOf(meu)) : aoNovo())}
-              aria-label={meu ? 'Ver o seu story' : 'Criar o seu story'} className="rounded-full">
+              aria-label={meu ? 'Ver o seu story' : naComunidade ? 'Criar o seu story para a Comunidade' : 'Criar o seu story'} className="rounded-full">
               <AnelStory estado={meu ? 'novo' : 'nenhum'}>
                 {/* `eu` vem de rede_perfil() (gateado), nunca do profile do Auth: a mesma cara que os outros veem */}
                 <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho={meu ? 'w-[60px] h-[60px]' : 'w-[66px] h-[66px]'} texto="text-base" />
               </AnelStory>
             </button>
             {podePublicar && (
-              <button type="button" onClick={aoNovo} aria-label="Adicionar story"
+              <button type="button" onClick={aoNovo} aria-label={naComunidade ? 'Adicionar story na Comunidade' : 'Adicionar story'}
                 className="alvo-livre absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] grid place-items-center ring-[3px] ring-[var(--rede-bg)]">
                 <Icone nome="mais" className="w-4 h-4" traco={2.6} />
               </button>
@@ -51,12 +55,15 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo }) {
       {outros.map((g) => (
         <div role="listitem" key={g.autor?.id} className="shrink-0 w-[72px] flex flex-col items-center gap-1">
           <button type="button" onClick={() => aoAbrir(grupos.indexOf(g))} className="rounded-full"
-            aria-label={`Story de ${g.autor?.nome}${g.todos_vistos ? ' (visto)' : ''}`} data-visto={g.todos_vistos ? 'sim' : 'nao'}>
+            aria-label={`Story de ${g.autor?.nome}${naComunidade && g.autor?.clube ? `, ${g.autor.clube}` : ''}${g.todos_vistos ? ' (visto)' : ''}`} data-visto={g.todos_vistos ? 'sim' : 'nao'}>
             <AnelStory estado={g.todos_vistos ? 'visto' : 'novo'}>
               <AvatarRede nome={g.autor?.nome} foto={g.autor?.foto} avatarPersonagem={avatarPersonagemDe(g.autor)} tamanho="w-[60px] h-[60px]" texto="text-base" />
             </AnelStory>
           </button>
           <span className={`text-[11px] ${TXT} truncate max-w-full`}>{primeiroNome(g.autor?.nome)}</span>
+          {naComunidade && g.autor?.clube && (
+            <span data-testid="clube-do-story" className={`-mt-1 text-[10px] leading-tight ${TXT_SUAVE} truncate max-w-full`}>{g.autor.clube}</span>
+          )}
         </div>
       ))}
     </div>
@@ -74,6 +81,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
   const [denuncia, setDenuncia] = useState(false)
   const [url, setUrl] = useState(null)
   const toque = useRef({ em: 0, y: 0, duracao: 0 })
+  const assinadas = useRef(new Map())   // caminho -> promessa da URL assinada (só o story aberto e o próximo)
   const grupo = grupos[gi]
   const story = grupo?.stories?.[si]
   const pausado = segurando || denuncia || !url
@@ -91,15 +99,32 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
     if (gi > 0) { const g = grupos[gi - 1]; setGi(gi - 1); setSi(Math.max(0, (g?.stories?.length || 1) - 1)) }
   }, [si, gi, grupos])
 
-  // foto do story (URL assinada curta)
+  // foto do story (URL assinada curta), SOB DEMANDA: nada é assinado/baixado antes de o story abrir.
+  const assinar = useCallback((caminho) => {
+    const mapa = assinadas.current
+    if (!mapa.has(caminho)) mapa.set(caminho, Promise.resolve().then(() => urlDaFoto(caminho)).catch(() => null))
+    return mapa.get(caminho)
+  }, [])
   const fotoAtual = story?.foto
+  // o próximo na ordem (mesma pessoa ou a primeira da próxima): o único que é pré-carregado
+  const fotoSeguinte = (grupo?.stories?.[si + 1] || grupos[gi + 1]?.stories?.[0])?.foto || null
   useEffect(() => {
     if (!fotoAtual) return undefined
     let vivo = true
     setUrl(null)
-    urlDaFoto(fotoAtual).then((u) => { if (vivo) setUrl(u || 'indisponivel') }).catch(() => { if (vivo) setUrl('indisponivel') })
+    assinar(fotoAtual).then((u) => {
+      if (!vivo) return
+      setUrl(u || 'indisponivel')
+      if (!u || !fotoSeguinte) return
+      assinar(fotoSeguinte).then((prox) => {
+        if (!vivo || !prox || typeof Image === 'undefined') return
+        const img = new Image()
+        img.decoding = 'async'
+        img.src = prox
+      })
+    })
     return () => { vivo = false }
-  }, [fotoAtual])
+  }, [fotoAtual, fotoSeguinte, assinar])
 
   // marca visto (o meu não conta)
   const idAtual = story?.id
@@ -182,7 +207,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
             <AvatarRede nome={grupo.autor?.nome} foto={grupo.autor?.foto} avatarPersonagem={avatarPersonagemDe(grupo.autor)} tamanho="w-8 h-8" texto="text-[10px]" />
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold truncate">{grupo.autor?.nome}{grupo.autor?.coordenacao && <SeloCoordenacao />} <span className="font-normal text-white/75">· {tempoRelativo(story.criado_em)}</span></p>
-              <p className="text-[11px] text-white/75 truncate">{grupo.autor?.clube}</p>
+              <p className="text-[11px] text-white/75 truncate">{grupo.autor?.clube}{story.alcance === 'comunidade' && <span data-testid="alcance-story"> · Todos os clubes</span>}</p>
             </div>
             {story.status === 'em_analise' && <span className="text-[11px] font-semibold bg-amber-400 text-black rounded-full px-2 py-0.5">Em análise</span>}
             {grupo.meu
@@ -206,7 +231,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
 }
 
 // ---------------------------------------------------------------- story novo (prévia + confirmação)
-export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
+export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado, alcance = 'clube' }) {
   const [foto, setFoto] = useState(null)
   const [previa, setPrevia] = useState(null)
   const [erro, setErro] = useState('')
@@ -226,20 +251,20 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
 
   async function publicar() {
     if (!foto || enviando) return
-    if (!(await avisar.confirmar(CONFIRMAR_STORY))) return
+    if (!(await avisar.confirmar(confirmacaoDeStory(alcance)))) return
     setEnviando(true); setErro('')
     try {
-      const r = await publicarStory({ foto, texto: texto.trim(), clubeId, userId })
+      const r = await publicarStory({ foto, texto: texto.trim(), clubeId, userId, alcance })
       if (r?.ok) { avisar.sucesso(r.mensagem); aoPublicado?.() } else setErro(r?.mensagem || 'Não foi possível publicar.')
     } catch (e) { setErro(textoDoErro(e, 'Não consegui publicar o story.')) }
     setEnviando(false)
   }
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label="Novo story" className="fixed inset-0 z-[70] bg-black text-white flex flex-col">
+    <div role="dialog" aria-modal="true" aria-label={alcance === 'comunidade' ? 'Novo story na Comunidade' : 'Novo story'} data-alcance={alcance} className="fixed inset-0 z-[70] bg-black text-white flex flex-col">
       <div className="flex items-center justify-between px-2 pt-[max(8px,var(--seguro-topo))]">
         <button type="button" onClick={aoFechar} aria-label="Voltar" className="w-11 h-11 grid place-items-center"><Icone nome="voltar" /></button>
-        <p className="font-semibold">Novo story</p>
+        <p className="font-semibold">{alcance === 'comunidade' ? 'Novo story · Comunidade' : 'Novo story'}</p>
         <span className="w-11" />
       </div>
       <div className="relative flex-1 min-h-0 mx-auto w-full max-w-[480px]">
@@ -247,6 +272,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado }) {
           : !erro && <p className="absolute inset-0 grid place-items-center text-sm text-white/70">Otimizando a foto…</p>}
       </div>
       <div className="mx-auto w-full max-w-[480px] px-3 pb-[max(12px,var(--seguro-baixo))] pt-2 space-y-2">
+        <p data-testid="quem-ve-story" className="text-[13px] font-semibold text-white">{QUEM_VE_STORY[alcance] || QUEM_VE_STORY.clube}</p>
         {foto && <p className="text-[11px] text-white/70" data-testid="tamanho-story">Foto otimizada: {tamanhoLegivel(foto.antes)} → {tamanhoLegivel(foto.depois)} · localização removida</p>}
         <label htmlFor="story-texto" className="sr-only">Texto do story (opcional)</label>
         <input id="story-texto" value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 120))} maxLength={120}
