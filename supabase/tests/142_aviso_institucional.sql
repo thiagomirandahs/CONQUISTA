@@ -98,6 +98,8 @@ select t.throws('anon não executa o alcance', $$select public.aviso_institucion
 reset role;
 
 -- ==================== plataforma ====================
+-- (achado de produção: a conta de admin da plataforma pode NÃO ter perfil em profiles — o envio tem de funcionar assim mesmo)
+delete from public.profiles where id = t.id('adm142');
 select t.como('adm142');
 select set_config('t142.al', public.aviso_institucional_alcance(true)::text, true) is not null;
 reset role;
@@ -109,6 +111,7 @@ select t.ok('plataforma: enviou para todos os clubes ativos, 0 falhas',
   (current_setting('t142.p')::json ->> 'clubes')::int = (select count(*) from public.organizational_units where type = 'clube' and status = 'ativo') and (current_setting('t142.p')::json ->> 'falhas')::int = 0);
 select t.eq('plataforma: chegou ao clube A para TODOS os membros', (select para from public.notificacoes where club_id = t.id('clube_a') and titulo = '📣 DesbravaClube: Manutenção geral'), 'todos');
 select t.eq('plataforma: chegou ao clube B', t.avisos142('clube_b', '📣 DesbravaClube: Manutenção geral'), 1::bigint);
+select t.ok('plataforma: sem perfil, o aviso fica sem autor (criado_por nulo) e mesmo assim chegou', (select criado_por is null from public.notificacoes where club_id = t.id('clube_a') and titulo = '📣 DesbravaClube: Manutenção geral'));
 select t.eq('plataforma: auditado como plataforma', (select (detalhe->>'plataforma') from public.auditoria_operacoes where operacao = 'aviso_institucional' and ator = t.id('adm142') order by id desc limit 1), 'true');
 
 -- ==================== limite diário (5 por pessoa; o distrital já enviou 2 + 1 recusado conta zero) ====================
