@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -35,6 +35,12 @@ export default function Trilha() {
   // Rodízio 🥇 Jogos do Dia: { hoje: [chaves], liberados: [chaves], proximos: [{chave,data}] }.
   // null = SQL do rodízio ainda não rodou → todos os jogos abertos (como antes).
   const [rodizio, setRodizio] = useState(null)
+  // Trava de reentrada do fim de partida. O jogo chama onTerminar de novo quando a criança toca
+  // várias vezes em "Concluir" (a rede é lenta e o botão só some depois da resposta) ou quando o
+  // evento de fim dispara em duplicidade: o servidor aceita só o primeiro registro (1 por dia) e as
+  // cópias viravam "erro" na tela da criança mesmo com o resultado já salvo. Achado de 02/10/2026:
+  // todos os 9 erros 'ui' de /trilha na telemetria vieram 1–7 s depois de um registro bem-sucedido.
+  const terminando = useRef(false)
 
   // Quais jogos a liderança deixou ativos (só os que o app conhece aparecem).
   // Se a busca DER CERTO, vale a lista de verdade — mesmo vazia (a tela avisa).
@@ -55,6 +61,7 @@ export default function Trilha() {
   // registrar_jogo/recorde levam esse id e o banco valida duração/validade.
   // Se a RPC falhar (offline/SQL antigo), o jogo abre normal mesmo assim.
   function abrirJogo(chave) {
+    terminando.current = false // partida nova: libera o próximo registro
     setJogoAtual(chave); setJogando(true); setResultado(null)
     iniciarPartida(chave).catch(() => {})
   }
@@ -94,6 +101,8 @@ export default function Trilha() {
   }, [aba, prog.passos])
 
   async function aoTerminar(estrelas) {
+    if (terminando.current) return
+    terminando.current = true
     try {
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
       if (r?.guardado) {
