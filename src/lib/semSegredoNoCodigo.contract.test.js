@@ -23,7 +23,8 @@
 //   * EXCECOES_LITERAIS  literais exatos plantados DE PROPÓSITO (controle negativo de um detector).
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -47,7 +48,8 @@ const ARQUIVO_DO_DETECTOR = 'src/lib/semSegredoNoCodigo.contract.test.js'
 const REGRAS_DURAS = ['jwt', 'sb_secret', 'sbp']
 
 const b64uJson = (s) => { try { return JSON.parse(Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')) } catch { return null } }
-const mascara = (s) => `${s.slice(0, 6)}…(${s.length} car.)`
+// NENHUM caractere do valor entra no relatório (nem o começo): só o tamanho. A regra já diz o tipo do segredo.
+const mascara = (s) => `‹${s.length} car.›`
 
 const RE_JWT = /eyJ[A-Za-z0-9_-]{6,}\.eyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}/g
 const RE_SB_SECRET = /sb_secret_[A-Za-z0-9_-]{16,}/g
@@ -64,7 +66,9 @@ const SENHA_PLACEHOLDER = /^(senha|password|usuario|user|x|y|postgres|test|\*+|x
 export function varrer(texto, caminho) {
   const out = []
   const linhaDe = (idx) => texto.slice(0, idx).split('\n').length
-  const add = (regra, idx, valor) => out.push({ regra, caminho, linha: linhaDe(idx), trecho: mascara(valor) })
+  const colunaDe = (idx) => idx - (texto.lastIndexOf('\n', idx - 1) + 1) + 1
+  // `vao` = tamanho do casamento inteiro a partir de idx (o valor pode ser só um grupo dele): é o que o diagnóstico apaga da linha
+  const add = (regra, idx, valor, vao = valor.length) => out.push({ regra, caminho, linha: linhaDe(idx), coluna: colunaDe(idx), tamanho: valor.length, vao, trecho: mascara(valor) })
   const literalPermitido = (valor) => EXCECOES_LITERAIS.some((e) => e.caminho === caminho && valor.endsWith(e.contem))
 
   for (const m of texto.matchAll(RE_JWT)) {
@@ -78,15 +82,83 @@ export function varrer(texto, caminho) {
   for (const m of texto.matchAll(RE_SB_SECRET)) add('sb_secret', m.index, m[0])
   for (const m of texto.matchAll(RE_SBP)) add('sbp', m.index, m[0])
   for (const m of texto.matchAll(RE_SERVICE_ROLE_VALOR)) add('service_role-como-valor', m.index, m[0])
-  for (const m of texto.matchAll(RE_SERVICE_ROLE_LITERAL)) add('service_role-literal', m.index, m[1])
-  for (const m of texto.matchAll(RE_BEARER)) { if (!literalPermitido(m[1])) add('bearer', m.index, m[1]) }
-  for (const m of texto.matchAll(RE_QUERY)) add('querystring', m.index, m[1])
+  for (const m of texto.matchAll(RE_SERVICE_ROLE_LITERAL)) add('service_role-literal', m.index, m[1], m[0].length)
+  for (const m of texto.matchAll(RE_BEARER)) { if (!literalPermitido(m[1])) add('bearer', m.index, m[1], m[0].length) }
+  for (const m of texto.matchAll(RE_QUERY)) add('querystring', m.index, m[1], m[0].length)
   for (const m of texto.matchAll(RE_DBURL)) {
     const [, , senha, host] = m
     const placeholder = SENHA_PLACEHOLDER.test(senha) && (senha.toLowerCase() !== 'postgres' || HOST_LOCAL.test(host))
-    if (!placeholder) add('dburl', m.index, senha)
+    if (!placeholder) add('dburl', m.index, senha, m[0].length)
   }
   return out
+}
+
+// ---------------------------------------------------------------- DIAGNÓSTICO (só quando a varredura FALHA)
+// Em 01/10/2026 este teste falhou UMA vez e a saída foi perdida (NÃO EXPLICADO; não reproduziu em 60+ execuções). Para a próxima
+// falha não se perder, o teste grava um arquivo em node_modules/.cache/sem-segredo-diagnostico/ (fora do Git) com: quando, PID,
+// worker do Vitest, diretório, HEAD, e por achado: arquivo, linha/coluna, regra, tamanho do casamento, sha256/tamanho/mtime do
+// arquivo lido, se o conteúdo difere do HEAD, se o achado PERSISTE numa releitura 150 ms depois (arquivo sendo escrito?) e a
+// linha com TODO trecho longo trocado por ‹n› — o valor encontrado NUNCA é gravado nem impresso.
+const PASTA_DIAGNOSTICO = join(RAIZ, 'node_modules', '.cache', 'sem-segredo-diagnostico')
+const sha256 = (b) => createHash('sha256').update(b).digest('hex')
+const dormir = (ms) => { try { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms) } catch { /* sem espera */ } }
+const git = (...args) => { try { return execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim() } catch (e) { return `erro:${e?.status ?? e?.code ?? '?'}` } }
+
+/** Linha do achado sem nenhum valor: primeiro apaga o casamento inteiro (coluna + vão); depois todo trecho de 8+ caracteres
+ *  "de chave" que sobrar vira ‹n›; corta em 240. */
+export function contextoSemValor(texto, { linha, coluna, vao }) {
+  let l = (texto.split('\n')[linha - 1] ?? '').replace(/\r$/, '')
+  if (coluna && vao) l = l.slice(0, coluna - 1) + `‹${vao}›` + l.slice(coluna - 1 + vao)
+  return l.replace(/[A-Za-z0-9._~+/=%_-]{8,}/g, (m) => `‹${m.length}›`).slice(0, 240)
+}
+
+/** Monta o registro de diagnóstico (objeto serializável, sem valores). `ler` devolve o Buffer do arquivo (injetável no teste). */
+export function montarDiagnostico(achados, { ler, extra = {} } = {}) {
+  const porArquivo = new Map()
+  for (const a of achados) { if (!porArquivo.has(a.caminho)) porArquivo.set(a.caminho, []); porArquivo.get(a.caminho).push(a) }
+  const arquivos = []
+  for (const [caminho, lista] of porArquivo) {
+    let buf = null, erroLeitura = null
+    try { buf = ler(caminho) } catch (e) { erroLeitura = String(e?.code ?? e?.name ?? 'erro') }
+    const texto = buf ? buf.toString('utf8') : ''
+    arquivos.push({
+      caminho, erroLeitura, bytes: buf?.length ?? null, sha256: buf ? sha256(buf) : null,
+      temCRLF: /\r\n/.test(texto), temBOM: texto.charCodeAt(0) === 0xfeff,
+      achados: lista.map((a) => ({ regra: a.regra, linha: a.linha, coluna: a.coluna, tamanho: a.tamanho, contexto: contextoSemValor(texto, a) })),
+    })
+  }
+  return { quando: new Date().toISOString(), pid: process.pid, ppid: process.ppid, node: process.version, plataforma: process.platform,
+    worker: process.env.VITEST_WORKER_ID ?? null, pool: process.env.VITEST_POOL_ID ?? null, cwd: process.cwd(), totalAchados: achados.length, ...extra, arquivos }
+}
+
+function gravarDiagnostico(achados, arquivosLidos, ilegiveis) {
+  const ler = (c) => readFileSync(join(RAIZ, c))
+  const d = montarDiagnostico(achados, { ler, extra: { raiz: RAIZ, head: git('rev-parse', 'HEAD'), ramo: git('rev-parse', '--abbrev-ref', 'HEAD'), arquivosVarridos: arquivosLidos, ilegiveis } })
+  for (const a of d.arquivos) {
+    let mtime = null; try { mtime = statSync(join(RAIZ, a.caminho)).mtime.toISOString() } catch { /* sumiu */ }
+    a.mtime = mtime
+    a.statusGit = git('status', '--porcelain', '--', a.caminho) || 'limpo'
+    a.sha256NoHead = (() => { try { return sha256(execFileSync('git', ['show', `HEAD:${a.caminho}`], { cwd: RAIZ, maxBuffer: 64 * 1024 * 1024 })) } catch { return null } })()
+  }
+  // releitura: o achado continua lá 150 ms depois? (arquivo pela metade, escrita concorrente, antivírus, checkout em andamento)
+  dormir(150)
+  for (const a of d.arquivos) {
+    try {
+      const b = readFileSync(join(RAIZ, a.caminho)); const de = varrer(b.toString('utf8'), a.caminho)
+      a.releitura = { sha256: sha256(b), mudou: sha256(b) !== a.sha256, achados: de.length, regras: [...new Set(de.map((x) => x.regra))] }
+    } catch (e) { a.releitura = { erro: String(e?.code ?? 'erro') } }
+  }
+  let destino = null
+  try {
+    mkdirSync(PASTA_DIAGNOSTICO, { recursive: true })
+    destino = join(PASTA_DIAGNOSTICO, `${d.quando.replace(/[:.]/g, '-')}-pid${process.pid}.json`)
+    writeFileSync(destino, JSON.stringify(d, null, 2))
+  } catch (e) { destino = `(não gravou: ${e?.code ?? 'erro'})` }
+  // stdout e stderr também recebem o resumo (sem valores), para sobrar em qualquer log que capture só um dos dois
+  const resumo = `[sem-segredo] FALHA ${d.quando} pid=${d.pid} worker=${d.worker} achados=${d.totalAchados} diagnostico=${destino}`
+  console.error(resumo); console.log(resumo)
+  for (const a of d.arquivos) for (const x of a.achados) console.error(`[sem-segredo] ${a.caminho}:${x.linha}:${x.coluna} [${x.regra}] ‹${x.tamanho} car.› sha256=${a.sha256?.slice(0, 16)} status=${a.statusGit} persiste=${a.releitura?.achados ?? '?'} :: ${x.contexto}`)
+  return destino
 }
 
 function arquivosDoEscopo() {
@@ -96,12 +168,12 @@ function arquivosDoEscopo() {
 
 describe('varredura contra segredo no código versionado', () => {
   it('nenhum arquivo versionado do escopo contém segredo literal (relatório sem o valor)', () => {
-    const achados = []
+    const achados = [], ilegiveis = []
     const arquivos = arquivosDoEscopo()
     expect(arquivos.length).toBeGreaterThan(200)   // a varredura realmente leu o repositório
     for (const f of arquivos) {
       let texto
-      try { texto = readFileSync(join(RAIZ, f), 'utf8') } catch { continue }
+      try { texto = readFileSync(join(RAIZ, f), 'utf8') } catch (e) { ilegiveis.push(`${f}:${e?.code ?? 'erro'}`); continue }
       let a = varrer(texto, f)
       // ESTE arquivo guarda, como fixture do detector, exemplos de service_role/Bearer/URL/query montados em texto: só as regras DURAS
       // (jwt, sb_secret, sbp) valem para ele — e valem de verdade (nada de chave real aqui).
@@ -109,7 +181,8 @@ describe('varredura contra segredo no código versionado', () => {
       achados.push(...a)
     }
     const relatorio = achados.map((a) => `${a.caminho}:${a.linha} [${a.regra}] ${a.trecho}`)
-    expect(relatorio).toEqual([])
+    const diagnostico = achados.length ? gravarDiagnostico(achados, arquivos.length, ilegiveis) : null
+    expect(relatorio, diagnostico ? `diagnóstico (sem valores) gravado em ${diagnostico}` : undefined).toEqual([])
   })
 
   it('o escopo cobre os diretórios que importam (functions, scripts, src, workflows, config.toml, vercel.json, package.json)', () => {
@@ -132,6 +205,33 @@ describe('o detector acha o que deve (controles negativos) e não acusa o que n�
     expect(JSON.stringify(r)).not.toContain(j)
     expect(varrer(`'${jwt({ role: 'authenticated', sub: 'x' })}'`, 'src/a.js')[0].regra).toBe('jwt')
     expect(varrer(`'${'eyJ' + 'hbGciOi'}.${'eyJ' + 'zZXJ2aWNl'}.xxxxxxxx'`, 'src/a.js')[0].regra).toBe('jwt:payload-ilegivel')
+  })
+
+  it('o relatório e o DIAGNÓSTICO nunca carregam o valor achado (nem um pedaço): só regra, posição, tamanho e hash do arquivo', () => {
+    const sec = 'sb_' + 'secret_' + 'A1b2C3d4E5f6G7h8I9j0K1'
+    const j = jwt({ role: 'service_role', iss: 'supabase', ref: 'abcdefghijklmnopqrst' })
+    const senha = 'S3nh4' + 'Real9xyz'
+    const texto = `// cabecalho\r\nconst a = '${sec}'\r\n  const b = "${j}" // fim\r\nconst u = 'postgresql://postgres:${senha}@db.abcdefg.supabase.co:5432/postgres'\r\n`
+    const achados = varrer(texto, 'scripts/x.mjs')
+    expect(achados.map((a) => a.regra).sort()).toEqual(['dburl', 'jwt:service_role', 'sb_secret'])
+    expect(achados.find((a) => a.regra === 'sb_secret')).toMatchObject({ linha: 2, coluna: 12, tamanho: sec.length, trecho: `‹${sec.length} car.›` })
+    const d = montarDiagnostico(achados, { ler: () => Buffer.from(texto, 'utf8') })
+    const s = JSON.stringify(d) + JSON.stringify(achados)
+    expect(s).not.toContain(sec)
+    // (o nome da regra 'sb_secret' é público; o que não pode aparecer é a parte SECRETA da chave)
+    for (const valor of [sec.slice('sb_secret_'.length), j, senha]) {
+      expect(s).not.toContain(valor)
+      for (let i = 0; i + 8 <= valor.length; i++) expect(s, 'pedaço do valor no diagnóstico').not.toContain(valor.slice(i, i + 8))
+    }
+    expect(d.arquivos).toHaveLength(1)
+    expect(d.arquivos[0]).toMatchObject({ caminho: 'scripts/x.mjs', bytes: Buffer.byteLength(texto), temCRLF: true, temBOM: false })
+    expect(d.arquivos[0].sha256).toMatch(/^[0-9a-f]{64}$/)
+    expect(d.arquivos[0].achados.find((x) => x.regra === 'sb_secret').contexto).toBe(`const a = '‹${sec.length}›'`)
+    expect(d).toMatchObject({ pid: process.pid, totalAchados: 3 })
+    expect(d.quando).toMatch(/^\d{4}-\d\d-\d\dT/)
+    // arquivo que some entre a varredura e o diagnóstico não derruba o diagnóstico
+    const sumiu = montarDiagnostico(achados, { ler: () => { const e = new Error('x'); e.code = 'ENOENT'; throw e } })
+    expect(sumiu.arquivos[0]).toMatchObject({ erroLeitura: 'ENOENT', sha256: null })
   })
 
   it('a chave DEMO só passa nos caminhos de teste/staging locais, com iss, exp e role exatos', () => {
