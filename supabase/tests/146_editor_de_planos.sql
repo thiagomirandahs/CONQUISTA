@@ -98,5 +98,23 @@ reset role;
 select t.como('adm146');
 select t.ok('admin_planos_listar traz o metadata do preço (Pix/parcelas)', (select bool_or((pr ->> 'metadata') like '%pix_centavos%') from json_array_elements(public.admin_planos_listar()) p, json_array_elements(p -> 'precos') pr));
 reset role;
+-- ==================== excluir de verdade (só quem nunca teve assinatura) ====================
+\o /dev/null
+insert into public.billing_plans (id, chave, versao, nome, status, publico, recursos) values (public.curriculo_uuid('t146:nunca'), 'nunca-usado-146', 1, 'Nunca usado 146', 'publicado', false, array['agenda']);
+insert into public.billing_prices (plan_id, ciclo, valor_centavos) values (public.curriculo_uuid('t146:nunca'), 'mensal', 1000);
+create function t.nunca146() returns uuid language sql security definer set search_path = '' as $$ select public.curriculo_uuid('t146:nunca') $$;
+grant execute on function t.nunca146() to public;
+\o
+select t.como('lider_a');
+select t.throws('diretoria de clube NÃO exclui plano', format($q$select public.admin_plano_excluir(%L)$q$, t.nunca146()), 'Sem permissão');
+select t.como('adm146');
+select t.throws('versão que já teve assinatura NÃO se exclui (só arquiva)', format($q$select public.admin_plano_excluir(%L)$q$, t.p146('anual', 1)), 'já teve');
+select t.throws('legado-fundador nunca é excluído', format($q$select public.admin_plano_excluir(%L)$q$, (select id from public.billing_plans where chave = 'legado-fundador' order by versao desc limit 1)), 'fundador');
+select t.throws('plano inexistente', $$select public.admin_plano_excluir(gen_random_uuid())$$, 'não encontrado');
+select t.ok('a listagem informa assinaturas_total (0 para o nunca usado)', (select (p ->> 'assinaturas_total')::int = 0 from json_array_elements(public.admin_planos_listar()) p where (p ->> 'chave') = 'nunca-usado-146'));
+select public.admin_plano_excluir(t.nunca146(), 'teste') is not null;
+reset role;
+select t.eq('plano nunca usado foi apagado, com os preços', (select count(*) from public.billing_plans where chave = 'nunca-usado-146') + (select count(*) from public.billing_prices where plan_id = t.nunca146()), 0::bigint);
+select t.eq('...e a exclusão ficou na auditoria', (select count(*) from public.platform_admin_audit where acao = 'plano_excluir' and alvo_id = t.nunca146()), 1::bigint);
 select t.fim();
 rollback;

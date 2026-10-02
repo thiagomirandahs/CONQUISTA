@@ -16,6 +16,7 @@
 --    admin_plano_rascunho_descartar(plano_id)                                       apaga o rascunho (nunca uma versão publicada)
 --    admin_plano_visibilidade_definir(plano_id, publico)                            mostra/oculta na vitrine (não muda preço)
 --    admin_plano_arquivar(plano_id, motivo)                                         tira de circulação (só sem assinatura viva; nunca o legado-fundador)
+--    admin_plano_excluir(plano_id, motivo)                                          apaga DE VERDADE uma versão que nunca teve assinatura
 --    admin_planos_listar()                                                          agora também devolve o metadata dos preços (Pix, parcelas)
 --  Nenhuma tabela nova (nada para a guarda de manutenção).
 -- =============================================================================
@@ -93,6 +94,7 @@ begin
       'publico', p.publico, 'status', p.status, 'ativo', p.ativo, 'provisorio', p.provisorio,
       'recursos', p.recursos, 'limites', p.limites, 'criado_em', p.created_at,
       'assinaturas', (select count(*) from public.subscriptions s where s.plan_id = p.id and s.status <> 'cancelada'),
+      'assinaturas_total', (select count(*) from public.subscriptions s where s.plan_id = p.id),
       'precos', coalesce((select json_agg(json_build_object('ciclo', pr.ciclo, 'moeda', pr.moeda, 'valor_centavos', pr.valor_centavos,
                                           'ativo', pr.ativo, 'provisorio', pr.provisorio, 'vigente_de', pr.vigente_de,
                                           'vigente_ate', pr.vigente_ate, 'metadata', pr.metadata) order by pr.ciclo, pr.vigente_de desc)
@@ -230,5 +232,30 @@ end;
 $$;
 revoke all on function public.admin_plano_arquivar(uuid, text) from public, anon;
 grant execute on function public.admin_plano_arquivar(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------- excluir DEFINITIVAMENTE (só plano que NUNCA teve assinatura)
+-- Versão que já teve assinatura (mesmo cancelada) nunca se apaga: histórico, faturas e auditoria apontam para ela. Só arquiva.
+create or replace function public.admin_plano_excluir(p_plano_id uuid, p_motivo text default null) returns json
+language plpgsql security definer set search_path = '' as $$
+declare v_pl public.billing_plans; v_hist int;
+begin
+  perform public._exigir_admin_plataforma();
+  select * into v_pl from public.billing_plans where id = p_plano_id for update;
+  if not found then raise exception 'Plano não encontrado.'; end if;
+  if v_pl.chave = 'legado-fundador' then raise exception 'O plano do clube fundador não é editável por aqui.'; end if;
+  if v_pl.status = 'rascunho' then raise exception 'Rascunho se descarta, não se exclui.'; end if;
+  select count(*) into v_hist from public.subscriptions where plan_id = v_pl.id;
+  if v_hist > 0 then
+    raise exception 'Esta versão já teve % assinatura(s) e não pode ser excluída (o histórico depende dela). Arquive-a.', v_hist;
+  end if;
+  perform public._admin_auditar('plano_excluir', 'plano', v_pl.id,
+    jsonb_build_object('chave', v_pl.chave, 'versao', v_pl.versao, 'nome', v_pl.nome, 'motivo', left(coalesce(p_motivo, ''), 300)));
+  delete from public.billing_prices where plan_id = v_pl.id;
+  delete from public.billing_plans where id = v_pl.id;
+  return public.admin_planos_listar();
+end;
+$$;
+revoke all on function public.admin_plano_excluir(uuid, text) from public, anon;
+grant execute on function public.admin_plano_excluir(uuid, text) to authenticated;
 
 notify pgrst, 'reload schema';

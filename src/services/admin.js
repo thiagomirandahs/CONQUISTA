@@ -52,6 +52,7 @@ export const planoRascunhoSalvar = ({ chave, nome, descricao, publico, limites, 
 export const planoPublicar = (planoId, motivo = null) => rpcAdmin('admin_plano_publicar', { p_plano_id: planoId, p_motivo: motivo })
 export const planoRascunhoDescartar = (planoId) => rpcAdmin('admin_plano_rascunho_descartar', { p_plano_id: planoId })
 export const planoVisibilidadeDefinir = (planoId, publico) => rpcAdmin('admin_plano_visibilidade_definir', { p_plano_id: planoId, p_publico: publico })
+export const planoExcluir = (planoId, motivo = null) => rpcAdmin('admin_plano_excluir', { p_plano_id: planoId, p_motivo: motivo })
 export const planoArquivar = (planoId, motivo = null) => rpcAdmin('admin_plano_arquivar', { p_plano_id: planoId, p_motivo: motivo })
 export const assinaturasListar = async () => (await rpcAdmin('admin_assinaturas_listar')) || []
 export const onboardingListar = async () => (await rpcAdmin('admin_onboarding_listar')) || []

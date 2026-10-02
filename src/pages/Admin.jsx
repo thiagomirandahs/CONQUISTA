@@ -9,7 +9,7 @@ import {
   onboardingListar, planoMudar, provisionamentoPendencias, provisionamentoReexecutar,
   assinaturaTransicionar, suporteListar, suporteRevogar, auditoriaListar,
   trialPadrao, trialPadraoDefinir, trialEstender, trialEncerrar,
-  planoPublicar, planoRascunhoDescartar, planoVisibilidadeDefinir, planoArquivar,
+  planoPublicar, planoRascunhoDescartar, planoVisibilidadeDefinir, planoArquivar, planoExcluir,
 } from '../services/admin.js'
 import EditorDePlano from '../components/admin/EditorDePlano.jsx'
 import { hierarquiaAdmin, TIPO_ROTULO } from '../services/hierarquia.js'
@@ -1057,6 +1057,10 @@ function Planos() {
     const ok = await avisar.confirmar({ titulo: `Arquivar “${p.nome}” v${p.versao}?`, descricao: 'Sai de circulação e da vitrine. Só funciona se nenhuma assinatura estiver nesta versão.', rotulo: 'Arquivar', cancelar: 'Voltar', perigo: true })
     if (ok) agir(() => planoArquivar(p.id), 'Plano arquivado.')
   }
+  async function excluir(p) {
+    const ok = await avisar.confirmar({ titulo: `Excluir “${p.nome}” v${p.versao} para sempre?`, descricao: 'Esta versão nunca teve assinatura. Ela e os preços dela serão apagados e não dá para desfazer.', rotulo: 'Excluir definitivamente', cancelar: 'Voltar', perigo: true })
+    if (ok) agir(() => planoExcluir(p.id), 'Plano excluído.')
+  }
   return (
     <div className="space-y-4">
       <TrialPadrao />
@@ -1113,6 +1117,7 @@ function Planos() {
                           </Botao>
                         )}
                         {p.status === 'publicado' && <Botao variacao="discreto" aoTocar={() => arquivar(p)}>Arquivar</Botao>}
+                        {(p.assinaturas_total ?? 1) === 0 && <Botao variacao="perigo" aoTocar={() => excluir(p)}>Excluir definitivamente</Botao>}
                       </>
                     )}
                   </div>

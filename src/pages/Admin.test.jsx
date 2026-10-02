@@ -12,7 +12,7 @@ const f = {
   provisionamentoPendencias: vi.fn(), provisionamentoReexecutar: vi.fn(), assinaturaTransicionar: vi.fn(),
   suporteListar: vi.fn(), suporteRevogar: vi.fn(), auditoriaListar: vi.fn(),
   trialPadrao: vi.fn(), trialPadraoDefinir: vi.fn(), trialEstender: vi.fn(), trialEncerrar: vi.fn(),
-  planoPublicar: vi.fn(), planoRascunhoDescartar: vi.fn(), planoVisibilidadeDefinir: vi.fn(), planoArquivar: vi.fn(), planoRascunhoSalvar: vi.fn(),
+  planoExcluir: vi.fn(), planoPublicar: vi.fn(), planoRascunhoDescartar: vi.fn(), planoVisibilidadeDefinir: vi.fn(), planoArquivar: vi.fn(), planoRascunhoSalvar: vi.fn(),
 }
 vi.mock('../services/admin.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
 // "Precisa da sua atenção" conta as pendências de hierarquia — nunca ir à rede no teste.
@@ -150,6 +150,21 @@ describe('Admin: seção ⇄ URL (?aba=)', () => {
     // já existe rascunho de "anual": a versão publicada dela NÃO oferece criar outro rascunho
     const anual = itens.find((li) => within(li).queryByText('Licença Anual') && !within(li).queryByText('Licença Anual 2027'))
     expect(within(anual).queryByRole('button', { name: 'Nova versão' })).not.toBeInTheDocument()
+  })
+
+  it('Planos: "Excluir definitivamente" só aparece em versão que nunca teve assinatura, com confirmação', async () => {
+    const NUNCA = { id: 'p9', chave: 'extra', versao: 1, nome: 'Plano extra', publico: false, status: 'publicado', ativo: true, provisorio: false, limites: {}, recursos: ['chat'], assinaturas: 0, assinaturas_total: 0, precos: [] }
+    const USADO = { id: 'p8', chave: 'usado', versao: 1, nome: 'Plano usado', publico: false, status: 'publicado', ativo: true, provisorio: false, limites: {}, recursos: ['chat'], assinaturas: 0, assinaturas_total: 2, precos: [] }
+    f.planosAdminListar.mockResolvedValue([NUNCA, USADO])
+    f.planoExcluir.mockResolvedValue([])
+    await abrirComoAdmin('/admin?aba=planos')
+    const itens = await screen.findAllByTestId('plano-item')
+    const nunca = itens.find((li) => within(li).queryByText('Plano extra'))
+    const usado = itens.find((li) => within(li).queryByText('Plano usado'))
+    expect(within(usado).queryByRole('button', { name: 'Excluir definitivamente' })).not.toBeInTheDocument()
+    await userEvent.click(within(nunca).getByRole('button', { name: 'Excluir definitivamente' }))
+    expect(confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: expect.stringContaining('para sempre'), perigo: true }))
+    await waitFor(() => expect(f.planoExcluir).toHaveBeenCalledWith('p9'))
   })
 
   it('Planos: "Novo plano" abre o editor e cancelar fecha', async () => {
