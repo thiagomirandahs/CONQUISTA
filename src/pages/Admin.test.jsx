@@ -19,12 +19,16 @@ vi.mock('../services/hierarquia.js', async (original) => ({
   ...(await original()),
   hierarquiaAdmin: () => Promise.resolve({ pedidos_clube: [], coordenadores_pendentes: [] }),
 }))
+vi.mock('../services/avisoInstitucional.js', () => ({
+  alcanceAvisoInstitucional: () => Promise.resolve({ pode: true, clubes: 4, origem: 'DesbravaClube', plataforma: true }),
+  enviarAvisoInstitucional: vi.fn(),
+}))
 // Decisões destrutivas passam pelo modal de confirmação (avisar.confirmar); sem provider ele responde
 // `false`, então o teste controla a resposta aqui e nunca chega numa RPC sem confirmação explícita.
 const confirmar = vi.fn()
 vi.mock('../ui/avisos.jsx', () => ({ avisar: { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: (...a) => confirmar(...a) } }))
 
-const { default: Admin, formatarBytes, diasRestantes, diasParado } = await import('./Admin.jsx')
+const { default: Admin, formatarBytes, diasRestantes, diasParado, ABAS, SECOES } = await import('./Admin.jsx')
 
 // A seção do painel vive na URL (?aba=) — o Admin precisa de um Router. `UrlAtual` expõe a URL do
 // MemoryRouter para o teste ler.
@@ -112,6 +116,18 @@ describe('Admin: seção ⇄ URL (?aba=)', () => {
     await abrirComoAdmin('/admin?aba=planos')
     expect(await screen.findAllByTestId('plano-item')).toHaveLength(2)
     expect(screen.getByTestId('admin-menu')).toHaveTextContent('Planos')
+  })
+
+  it('TODA aba de TODA seção é reconhecida pela página (achado de 02/10/2026: "Aviso geral" estava no menu e voltava para a Visão geral)', () => {
+    const chaves = new Set(ABAS.map((a) => a.chave))
+    for (const s of SECOES) for (const a of s.abas) expect(chaves.has(a), `aba "${a}" da seção "${s.chave}" não existe em ABAS`).toBe(true)
+  })
+
+  it('link direto para ?aba=avisos abre o formulário do Aviso geral da plataforma', async () => {
+    await abrirComoAdmin('/admin?aba=avisos')
+    expect(await screen.findByText(/Aviso geral da plataforma/)).toBeInTheDocument()
+    expect(screen.queryByTestId('visao-clubes')).not.toBeInTheDocument()
+    expect(screen.getByText('Chega em 4 clubes ativos.')).toBeInTheDocument()
   })
 
   it('aba desconhecida cai na Visão geral', async () => {

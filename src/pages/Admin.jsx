@@ -44,7 +44,7 @@ import { ZonaDePerigoClube, LixeiraDeClubes } from './AdminExcluirClube.jsx'
 // agrupam telas em sub-abas (Planos = catálogo + painéis + cortesias; Recursos = vitrine + audiolivros;
 // Suporte = chamados + acessos). A tela aberta continua sendo `?aba=<chave>` na URL — as 18 chaves
 // antigas valem (o link da notificação de chamado é ?aba=chamados&chamado=<id>).
-const ABAS = [
+export const ABAS = [
   { chave: 'visao', rotulo: 'Visão geral', icone: '📊' },
   { chave: 'clubes', rotulo: 'Clubes', icone: '🏕️' },
   { chave: 'planos', rotulo: 'Catálogo', icone: '💳' },
@@ -63,6 +63,7 @@ const ABAS = [
   { chave: 'chamados', rotulo: 'Chamados', icone: '📨' },
   { chave: 'suporte', rotulo: 'Acessos de suporte', icone: '🛟' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜' },
+  { chave: 'avisos', rotulo: 'Aviso geral', icone: '📣' },
   { chave: 'manutencao', rotulo: 'Manutenção', icone: '🛠️' },
   { chave: 'lixeira-clubes', rotulo: 'Lixeira de clubes', icone: '🗑️' },
 ]
