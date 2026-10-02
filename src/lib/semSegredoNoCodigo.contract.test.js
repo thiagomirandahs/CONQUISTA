@@ -162,7 +162,7 @@ function gravarDiagnostico(achados, arquivosLidos, ilegiveis) {
 }
 
 const PRAZO_VARREDURA_MS = 120_000
-const LIMIAR_LENTO_MS = 2_000
+const LIMIAR_LENTO_MS = Number(process.env.SEM_SEGREDO_LIMIAR_LENTO_MS ?? 2_000)   // a variável só serve para exercitar o registro
 /** Varredura lenta não é falha, mas é o sinal que antecede o estouro de prazo: fica registrada (só tempos, nenhum conteúdo). */
 function registrarLentidao(tempos) {
   if (tempos.listarMs + tempos.lerEVarrerMs < LIMIAR_LENTO_MS) return
@@ -170,7 +170,7 @@ function registrarLentidao(tempos) {
   try {
     mkdirSync(PASTA_DIAGNOSTICO, { recursive: true })
     writeFileSync(join(PASTA_DIAGNOSTICO, `lento-${reg.quando.replace(/[:.]/g, '-')}-pid${process.pid}.json`), JSON.stringify(reg, null, 2))
-  } catch { /* diagnóstico nunca derruba o teste */ }
+  } catch (e) { console.warn(`[sem-segredo] não gravou o registro de lentidão: ${e?.code ?? e?.name ?? 'erro'}`) }   // diagnóstico nunca derruba o teste
   console.warn(`[sem-segredo] varredura LENTA: listar=${tempos.listarMs} ms, ler+varrer=${tempos.lerEVarrerMs} ms, ${tempos.arquivos} arquivos (disco frio/antivírus?)`)
 }
 
