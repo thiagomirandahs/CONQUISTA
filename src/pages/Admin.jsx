@@ -9,7 +9,9 @@ import {
   onboardingListar, planoMudar, provisionamentoPendencias, provisionamentoReexecutar,
   assinaturaTransicionar, suporteListar, suporteRevogar, auditoriaListar,
   trialPadrao, trialPadraoDefinir, trialEstender, trialEncerrar,
+  planoPublicar, planoRascunhoDescartar, planoVisibilidadeDefinir, planoArquivar,
 } from '../services/admin.js'
+import EditorDePlano from '../components/admin/EditorDePlano.jsx'
 import { hierarquiaAdmin, TIPO_ROTULO } from '../services/hierarquia.js'
 import { avisar } from '../ui/avisos.jsx'
 import { MARCA_PRODUTO } from '../lib/marca.js'
@@ -1027,13 +1029,44 @@ function MudarPlano({ assinaturaId, atual, onFeito }) {
 // ---------------------------------------------------------------- Planos (todas as versões)
 // O padrão de teste gratuito dos clubes novos mora aqui (é regra de plano, não métrica).
 function Planos() {
-  const { dados, erro } = useFonte(planosAdminListar)
+  const { dados, erro, recarregar } = useFonte(planosAdminListar)
+  const [editando, setEditando] = useState(undefined) // undefined = fechado · null = plano novo · objeto = versão de partida
+  // versão VIGENTE na vitrine de cada plano = a publicada e pública mais nova
+  const vigente = useMemo(() => {
+    const m = {}
+    for (const p of dados || []) if (p.status === 'publicado' && p.publico && p.ativo && (!m[p.chave] || p.versao > m[p.chave])) m[p.chave] = p.versao
+    return m
+  }, [dados])
+  async function agir(fn, ok) {
+    try { await fn(); avisar.sucesso(ok); recarregar() } catch (e) { avisar.erro(e) }
+  }
+  async function publicar(p) {
+    const outras = (dados || []).filter((x) => x.chave === p.chave && x.id !== p.id).reduce((n, x) => n + (x.assinaturas || 0), 0)
+    const ok = await avisar.confirmar({
+      titulo: `Publicar a versão ${p.versao} de “${p.nome}”?`,
+      descricao: `Ela passa a ser a oferecida para NOVAS contratações. ${outras} assinatura(s) nas versões anteriores continuam como estão, com o preço e os limites de quando assinaram.`,
+      rotulo: 'Publicar', cancelar: 'Voltar', perigo: false,
+    })
+    if (ok) agir(() => planoPublicar(p.id), 'Plano publicado.')
+  }
+  async function descartar(p) {
+    const ok = await avisar.confirmar({ titulo: 'Descartar este rascunho?', descricao: 'O rascunho é apagado. Nenhuma versão publicada é afetada.', rotulo: 'Descartar', cancelar: 'Voltar', perigo: true })
+    if (ok) agir(() => planoRascunhoDescartar(p.id), 'Rascunho descartado.')
+  }
+  async function arquivar(p) {
+    const ok = await avisar.confirmar({ titulo: `Arquivar “${p.nome}” v${p.versao}?`, descricao: 'Sai de circulação e da vitrine. Só funciona se nenhuma assinatura estiver nesta versão.', rotulo: 'Arquivar', cancelar: 'Voltar', perigo: true })
+    if (ok) agir(() => planoArquivar(p.id), 'Plano arquivado.')
+  }
   return (
     <div className="space-y-4">
       <TrialPadrao />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted leading-snug max-w-xl">Edite aqui o nome, os preços e os limites. Cada mudança vira uma <b>versão nova (rascunho)</b>: quem já assinou não muda. Os painéis de cada plano se escolhem em “Painéis do plano”.</p>
+        <Botao aoTocar={() => setEditando(null)}>➕ Novo plano</Botao>
+      </div>
+      {editando !== undefined && <EditorDePlano plano={editando} aoFechar={() => setEditando(undefined)} aoSalvar={() => { setEditando(undefined); recarregar() }} />}
       <Estado erro={erro} dados={dados} vazio={<EstadoVazio icone="💳" titulo="Nenhum plano no catálogo" />}>
         <div className="space-y-3">
-          <Nota icone="🔒">Preço e limites: somente leitura (cada versão é histórica). Os painéis que cada plano libera se escolhem em “Painéis do plano”.</Nota>
           <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {(dados || []).map((p) => (
               <li key={p.id} data-testid="plano-item" className="rounded-2xl border border-line bg-surface p-4">
@@ -1048,6 +1081,7 @@ function Planos() {
                   <Chip tom={p.publico ? 'ok' : 'neutro'} ponto>{p.publico ? 'Na vitrine' : 'Fora da vitrine'}</Chip>
                   <Chip tom={p.ativo && p.status === 'publicado' ? 'marca' : 'perigo'}>{p.status}{p.ativo ? '' : ' · inativo'}</Chip>
                   {p.provisorio && <Chip tom="atencao">Provisório</Chip>}
+                  {vigente[p.chave] === p.versao && <Chip tom="marca" ponto>Vigente para novas contratações</Chip>}
                 </div>
                 <div className="mt-3 space-y-0.5 border-t border-line pt-2 text-sm text-ink">
                   {(p.precos || []).length === 0
@@ -1060,6 +1094,29 @@ function Planos() {
                   <span className="text-faint">Limites:</span> {Object.keys(p.limites || {}).length === 0 ? 'sem limite' : Object.entries(p.limites).map(([k, v]) => `${k} ${v}`).join(' · ')}
                 </p>
                 <p className="text-xs text-muted"><span className="text-faint">Recursos:</span> {p.recursos ? p.recursos.join(', ') : 'todos'}</p>
+                {p.chave !== 'legado-fundador' && (
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3" data-testid="plano-acoes">
+                    {p.status === 'rascunho' ? (
+                      <>
+                        <Botao variacao="secundario" aoTocar={() => setEditando(p)}>Editar rascunho</Botao>
+                        <Botao aoTocar={() => publicar(p)}>Publicar</Botao>
+                        <Botao variacao="perigo" aoTocar={() => descartar(p)}>Descartar</Botao>
+                      </>
+                    ) : (
+                      <>
+                        {p.status === 'publicado' && !(dados || []).some((x) => x.chave === p.chave && x.status === 'rascunho') && (
+                          <Botao variacao="secundario" aoTocar={() => setEditando(p)}>Nova versão</Botao>
+                        )}
+                        {p.status === 'publicado' && (
+                          <Botao variacao="discreto" aoTocar={() => agir(() => planoVisibilidadeDefinir(p.id, !p.publico), p.publico ? 'Oculto da vitrine.' : 'Agora na vitrine.')}>
+                            {p.publico ? 'Ocultar da vitrine' : 'Mostrar na vitrine'}
+                          </Botao>
+                        )}
+                        {p.status === 'publicado' && <Botao variacao="discreto" aoTocar={() => arquivar(p)}>Arquivar</Botao>}
+                      </>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

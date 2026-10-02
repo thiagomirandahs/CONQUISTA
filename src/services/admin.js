@@ -46,6 +46,13 @@ export const visaoGeral = () => rpcAdmin('admin_visao_geral')
 export const clubesListar = async () => (await rpcAdmin('admin_clubes_listar')) || []
 export const clubeDetalhe = (clubId) => rpcAdmin('admin_clube_detalhe', { p_club_id: clubId })
 export const planosAdminListar = async () => (await rpcAdmin('admin_planos_listar')) || []
+// Editor de planos (migration 540): rascunho -> publicar versão. Quem já assinou continua na versão antiga; tudo auditado no servidor.
+export const planoRascunhoSalvar = ({ chave, nome, descricao, publico, limites, precos }) =>
+  rpcAdmin('admin_plano_rascunho_salvar', { p_chave: chave, p_nome: nome, p_descricao: descricao, p_publico: publico, p_limites: limites, p_precos: precos })
+export const planoPublicar = (planoId, motivo = null) => rpcAdmin('admin_plano_publicar', { p_plano_id: planoId, p_motivo: motivo })
+export const planoRascunhoDescartar = (planoId) => rpcAdmin('admin_plano_rascunho_descartar', { p_plano_id: planoId })
+export const planoVisibilidadeDefinir = (planoId, publico) => rpcAdmin('admin_plano_visibilidade_definir', { p_plano_id: planoId, p_publico: publico })
+export const planoArquivar = (planoId, motivo = null) => rpcAdmin('admin_plano_arquivar', { p_plano_id: planoId, p_motivo: motivo })
 export const assinaturasListar = async () => (await rpcAdmin('admin_assinaturas_listar')) || []
 export const onboardingListar = async () => (await rpcAdmin('admin_onboarding_listar')) || []
 

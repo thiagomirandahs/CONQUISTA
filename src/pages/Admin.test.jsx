@@ -2,7 +2,7 @@
 // testes garantem que o FRONT nunca desenha o painel antes da confirmação, que a visão é por CLUBE
 // (inclusive o fundador, sem conta comercial) e que as ações chamam as RPCs auditadas.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 
@@ -12,6 +12,7 @@ const f = {
   provisionamentoPendencias: vi.fn(), provisionamentoReexecutar: vi.fn(), assinaturaTransicionar: vi.fn(),
   suporteListar: vi.fn(), suporteRevogar: vi.fn(), auditoriaListar: vi.fn(),
   trialPadrao: vi.fn(), trialPadraoDefinir: vi.fn(), trialEstender: vi.fn(), trialEncerrar: vi.fn(),
+  planoPublicar: vi.fn(), planoRascunhoDescartar: vi.fn(), planoVisibilidadeDefinir: vi.fn(), planoArquivar: vi.fn(), planoRascunhoSalvar: vi.fn(),
 }
 vi.mock('../services/admin.js', () => Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])))
 // "Precisa da sua atenção" conta as pendências de hierarquia — nunca ir à rede no teste.
@@ -128,6 +129,35 @@ describe('Admin: seção ⇄ URL (?aba=)', () => {
     expect(await screen.findByText(/Aviso geral da plataforma/)).toBeInTheDocument()
     expect(screen.queryByTestId('visao-clubes')).not.toBeInTheDocument()
     expect(screen.getByText('Chega em 4 clubes ativos.')).toBeInTheDocument()
+  })
+
+  it('Planos: rascunho tem Publicar/Descartar com confirmação; publicado tem Nova versão e Arquivar; legado-fundador não tem ação nenhuma', async () => {
+    const RASC = { id: 'p3', chave: 'anual', versao: 2, nome: 'Licença Anual 2027', publico: true, status: 'rascunho', ativo: true, provisorio: true, limites: {}, recursos: null, assinaturas: 0, precos: [] }
+    const LEG = { id: 'p4', chave: 'legado-fundador', versao: 1, nome: 'Fundador', publico: false, status: 'publicado', ativo: true, provisorio: false, limites: {}, recursos: null, assinaturas: 1, precos: [] }
+    f.planosAdminListar.mockResolvedValue([RASC, ...PLANOS, LEG])
+    f.planoPublicar.mockResolvedValue({ ok: true })
+    await abrirComoAdmin('/admin?aba=planos')
+    const itens = await screen.findAllByTestId('plano-item')
+    const rasc = itens.find((li) => within(li).queryByText('Licença Anual 2027'))
+    await userEvent.click(within(rasc).getByRole('button', { name: 'Publicar' }))
+    expect(confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: expect.stringContaining('Publicar a versão 2') }))
+    await waitFor(() => expect(f.planoPublicar).toHaveBeenCalledWith('p3'))
+    const leg = itens.find((li) => within(li).queryByText('Fundador'))
+    expect(within(leg).queryByTestId('plano-acoes')).not.toBeInTheDocument()
+    const pub = itens.find((li) => within(li).queryByText('Gratuito'))
+    expect(within(pub).getByRole('button', { name: 'Arquivar' })).toBeInTheDocument()
+    expect(within(pub).queryByRole('button', { name: 'Publicar' })).not.toBeInTheDocument()
+    // já existe rascunho de "anual": a versão publicada dela NÃO oferece criar outro rascunho
+    const anual = itens.find((li) => within(li).queryByText('Licença Anual') && !within(li).queryByText('Licença Anual 2027'))
+    expect(within(anual).queryByRole('button', { name: 'Nova versão' })).not.toBeInTheDocument()
+  })
+
+  it('Planos: "Novo plano" abre o editor e cancelar fecha', async () => {
+    await abrirComoAdmin('/admin?aba=planos')
+    await userEvent.click(await screen.findByRole('button', { name: /Novo plano/ }))
+    expect(await screen.findByLabelText('Nome do plano')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByLabelText('Nome do plano')).not.toBeInTheDocument())
   })
 
   it('aba desconhecida cai na Visão geral', async () => {

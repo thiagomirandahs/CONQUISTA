@@ -94,6 +94,8 @@ Para testes SQL em paralelo, use `REPLAY_DB=<nome_proprio>`.
 - Produção: ledger **538**, main/OTA em `e201f48` ou mais novo. Jogos de perguntas DBV (`quizdbv`, `vfdbv`, `classedbv`) entram **desligados** em
   todos os clubes (migration 538); conteúdo em `src/features/jogos/conteudo/` conferido contra o manifesto e as fontes do dono
   (`supabase/fontes/`). Trilha do Aspirante em `/aspirante` (progresso só no aparelho). OTA do APK corrigido — ver `android/OTA.md`.
+- **Editor de planos (migration 540, /admin → Planos):** a administração edita nome, preços (cheio, Pix, parcelas) e limites num RASCUNHO (versão nova) e publica;
+  quem já assinou fica na versão antiga; versão publicada não se edita. Painéis seguem em "Painéis do plano".
 - Regra nova: **nada de fato oficial DBV sem fonte do dono** (Lei, hino, história, manuais); o teste `dbv.test.js` confere o que é do manifesto.
 
 ## Pendências conhecidas (28/09)
