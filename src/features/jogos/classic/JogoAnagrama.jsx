@@ -7,6 +7,7 @@ import { PedirAjuda } from '../../../components/Ajuda.jsx'
 const PALAVRAS_ANAGRAMA = [
   'ACAMPAMENTO', 'FOGUEIRA', 'BUSSOLA', 'MOCHILA', 'BARRACA',
   'UNIFORME', 'LANTERNA', 'BANDEIRA', 'CAMINHADA', 'CANIVETE',
+  'PIONEIRO', 'COMPANHEIRO', 'PESQUISADOR', 'EXCURSIONISTA',
 ]
 function embaralharPalavra(p) {
   let s = embaralhar(p.split('')).join('')

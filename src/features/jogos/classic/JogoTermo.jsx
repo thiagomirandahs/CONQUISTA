@@ -6,7 +6,8 @@ import { PedirAjuda } from '../../../components/Ajuda.jsx'
 // Estilo Termo/Wordle: 5 letras, 6 tentativas, palavras do mundo desbravador
 // (sem acento/ç: LENÇO = LENCO). Verde = certa no lugar; amarelo = existe.
 const PALAVRAS_TERMO = ['TENDA', 'CORDA', 'LENCO', 'TRIBO', 'JESUS', 'GRACA', 'ANJOS', 'AMIGO',
-  'UNIAO', 'HONRA', 'SERVO', 'TERRA', 'MUNDO', 'CANTO', 'AGUIA', 'FESTA']
+  'UNIAO', 'HONRA', 'SERVO', 'TERRA', 'MUNDO', 'CANTO', 'AGUIA', 'FESTA',
+  'LIVRO', 'SALMO', 'FRUTO', 'LIDER']
 const TECLADO_TERMO = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 
 function avaliarTermo(tent, alvo) {

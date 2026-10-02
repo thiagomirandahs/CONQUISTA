@@ -21,6 +21,7 @@ import JogoTermo from './classic/JogoTermo.jsx'
 import JogoProximo from './classic/JogoProximo.jsx'
 import JogoVelha from './classic/JogoVelha.jsx'
 import JogoSocorro from './classic/JogoSocorro.jsx'
+import { JogoQuizDbv, JogoVerdadeiroFalsoDbv, JogoQualClasseDbv } from './classic/JogoPerguntasDbv.jsx'
 import JogoCarrinho from './classic/JogoCarrinho.jsx'
 import JogoCorrida from './classic/JogoCorrida.jsx'
 import JogoReflexo from './classic/JogoReflexo.jsx'
@@ -64,6 +65,9 @@ export const JOGOS = {
   proximo: { nome: 'Qual é o Próximo?', curto: 'Próximo', emoji: '➡️', desc: 'Complete a sequência lógica', Comp: JogoProximo },
   velha: { nome: 'Jogo da Velha', curto: 'Velha', emoji: '⭕', desc: 'Melhor de 3 contra o app — você é o ❌', Comp: JogoVelha },
   socorro: { nome: 'Primeiros Socorros', curto: 'Socorros', emoji: '🚑', desc: 'O que fazer primeiro? Aprenda socorrendo de verdade', Comp: JogoSocorro },
+  quizdbv: { nome: 'Quiz DBV', curto: 'Quiz DBV', emoji: '🧭', desc: 'Classes, idades, livros e memorizações: quanto você sabe do clube?', Comp: JogoQuizDbv },
+  vfdbv: { nome: 'Verdadeiro ou Falso DBV', curto: 'V ou F', emoji: '⚖️', desc: 'Leia a afirmação e decida: é verdade ou é mentira?', Comp: JogoVerdadeiroFalsoDbv },
+  classedbv: { nome: 'Qual é a Classe?', curto: 'Qual Classe', emoji: '🎖️', desc: 'Descubra a classe pelo requisito que ela pede', Comp: JogoQualClasseDbv },
   carrinho: { nome: 'Carrinho na Estrada', curto: 'Carrinho', emoji: '🚗', desc: 'Arraste pra pegar os itens bons e desviar dos perigos!', Comp: TEM_WEBGL ? JogoCarrinhoPhaser : JogoCarrinho },
   reflexo: { nome: 'Reflexo', curto: 'Reflexo', emoji: '⚡', desc: 'SEM LIMITE! Acelera a cada nível — o recorde da semana vale +20', Comp: TEM_WEBGL ? JogoReflexoPhaser : JogoReflexo },
   corrida: { nome: 'Corrida do Acampamento', curto: 'Corrida', emoji: '🏕️', desc: 'Corra e pule os obstáculos! O recorde da semana vale +20', Comp: TEM_WEBGL ? JogoCorridaPhaser : JogoCorrida },
