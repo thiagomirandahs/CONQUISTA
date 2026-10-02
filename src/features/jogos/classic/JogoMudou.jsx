@@ -3,7 +3,7 @@ import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
 import * as juice from '../../../lib/juice.js'
 
-const POOL_MUDOU = ['🔥', '⛺', '🧭', '🪢', '📖', '🥾', '🎒', '🔦', '🍎', '🌲', '🐍', '🦅', '⭐', '🌙', '☀️', '🚩', '🛶', '🪓', '🧣', '💧']
+const POOL_MUDOU = ['🔥', '⛺', '🧭', '🪢', '📖', '🥾', '🎒', '🔦', '🍎', '🌲', '🐍', '🦅', '⭐', '🌙', '☀️', '🚩', '🛶', '🪓', '🧣', '💧', '🔺', '🎵', '🛡️', '🗡️']
 const TAMANHOS_MUDOU = [4, 6, 6, 8, 9]
 const COLS_MUDOU = { 4: 2, 6: 3, 8: 4, 9: 3 }
 

@@ -3,10 +3,12 @@ import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
 import * as juice from '../../../lib/juice.js'
 
-const PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺']
+// 12 símbolos do clube; cada partida sorteia 6 pares
+const PARES_POR_PARTIDA = 6
+const POOL_PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺', '🚩', '🔺', '🎵', '🛡️', '🗡️', '⛰️']
 
 export default function JogoMemoria({ onTerminar, onCancelar }) {
-  const [cartas] = useState(() => embaralhar(PARES.flatMap((e, i) => [{ id: i + '-a', emoji: e }, { id: i + '-b', emoji: e }])))
+  const [cartas] = useState(() => embaralhar(embaralhar(POOL_PARES).slice(0, PARES_POR_PARTIDA).flatMap((e, i) => [{ id: i + '-a', emoji: e }, { id: i + '-b', emoji: e }])))
   const [viradas, setViradas] = useState([])
   const [achadas, setAchadas] = useState([])
   const [jogadas, setJogadas] = useState(0)
@@ -28,7 +30,7 @@ export default function JogoMemoria({ onTerminar, onCancelar }) {
           setAchadas(novoAchadas)
           setViradas([])
           setBloqueado(false)
-          if (novoAchadas.length === PARES.length) {
+          if (novoAchadas.length === PARES_POR_PARTIDA) {
             const estrelas = total <= 8 ? 3 : total <= 11 ? 2 : 1
             setTimeout(() => onTerminar(estrelas), 400)
           }

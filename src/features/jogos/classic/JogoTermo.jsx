@@ -7,7 +7,7 @@ import { PedirAjuda } from '../../../components/Ajuda.jsx'
 // (sem acento/ç: LENÇO = LENCO). Verde = certa no lugar; amarelo = existe.
 const PALAVRAS_TERMO = ['TENDA', 'CORDA', 'LENCO', 'TRIBO', 'JESUS', 'GRACA', 'ANJOS', 'AMIGO',
   'UNIAO', 'HONRA', 'SERVO', 'TERRA', 'MUNDO', 'CANTO', 'AGUIA', 'FESTA',
-  'LIVRO', 'SALMO', 'FRUTO', 'LIDER']
+  'LIVRO', 'SALMO', 'FRUTO', 'LIDER', 'TESTA', 'CAUDA', 'ORDEM']
 const TECLADO_TERMO = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM']
 
 function avaliarTermo(tent, alvo) {

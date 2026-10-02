@@ -17,6 +17,11 @@ const SEQS_PROXIMO = [
   { s: '⭐ ⭐ 🔥 ⭐ ⭐ 🔥 ⭐ ⭐ …', o: ['⭐', '🔥', '🌙', '☀️'], c: 1 },
   { s: '🌱 🌿 🌳 🌱 🌿 …', o: ['🌱', '🌿', '🌳', '🍂'], c: 2 },
   { s: '🌞 🌙 🌞 🌙 🌞 …', o: ['🌞', '🌙', '⭐', '☁️'], c: 1 },
+  { s: 'Idades das classes: 10, 11, 12, 13, …', o: ['13', '14', '15', '16'], c: 1 },
+  { s: 'Idades das classes, de trás para frente: 15, 14, 13, 12, …', o: ['10', '11', '9', '13'], c: 1 },
+  { s: 'Amigo, Companheiro, Pesquisador, Pioneiro, …', o: ['Guia', 'Excursionista', 'Amigo', 'Líder'], c: 1 },
+  { s: 'Companheiro, Pesquisador, Pioneiro, Excursionista, …', o: ['Amigo', 'Guia', 'Líder Máster', 'Companheiro'], c: 1 },
+  { s: '🔺 🛡️ 🗡️ 🔺 🛡️ …', o: ['🔺', '🛡️', '🗡️', '🚩'], c: 2 },
 ]
 
 export default function JogoProximo({ onTerminar, onCancelar }) {
