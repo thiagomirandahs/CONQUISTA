@@ -2,6 +2,10 @@
 // supabase/curriculo-manifesto/classes/*.json). O teste dbv.test.js confere cada fato contra o manifesto:
 // se o manifesto mudar (versão nova de classe), o teste acusa e a pergunta é revista, nunca inventada.
 import { embaralhar } from '../utils/comum.js'
+import { HISTORIA } from './historia.js'
+import { MANUAL } from './manual.js'
+
+const FATOS_TEXTO = [...HISTORIA, ...MANUAL]
 
 // Ordem por idade mínima. `livro` = "livro da classe" (requisito I.5 do manifesto).
 export const CLASSES = [
@@ -78,6 +82,7 @@ export function perguntasQuiz() {
     const certa = String(x.n)
     qs.push(mc(`Quantos ${x.sobre}?`, certa, outras(certa, NUMS_FALSOS.map(String)), `São ${x.n}.`))
   }
+  for (const h of FATOS_TEXTO) qs.push(mc(h.q, h.certa, h.errados, h.e))
   qs.push(mc('Quantas são as classes regulares dos Desbravadores no app?', '6', ['4', '5', '8'], 'Amigo, Companheiro, Pesquisador, Pioneiro, Excursionista e Guia.'))
   qs.push(mc('Qual classe regular vem logo DEPOIS do Pioneiro?', 'Excursionista', ['Guia', 'Pesquisador', 'Amigo'], 'A ordem é Amigo, Companheiro, Pesquisador, Pioneiro, Excursionista, Guia.'))
   qs.push(mc('Qual é a última classe regular, para quem tem 15 anos?', 'Guia', ['Amigo', 'Pioneiro', 'Excursionista'], 'O Guia fecha as classes regulares.'))
@@ -102,6 +107,11 @@ export function afirmacoesVF() {
     const base = minuscula(x.pista)
     out.push(vf(`Na classe ${cl.nome} você precisa: ${base}.`, true, `Isso mesmo, é requisito do ${cl.nome}.`))
     out.push(vf(`Na classe ${outro.nome} você precisa: ${base}.`, false, `Esse requisito é da classe ${cl.nome}, não do ${outro.nome}.`))
+  }
+  for (const h of FATOS_TEXTO) {
+    const falso = um(h.errados)
+    out.push(vf(h.t.replace('{}', h.certa), true, h.e))
+    out.push(vf(h.t.replace('{}', falso), false, h.e))
   }
   for (const x of NUMEROS) {
     const falso = um(NUMS_FALSOS.filter((n) => n !== x.n))

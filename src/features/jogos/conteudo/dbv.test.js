@@ -2,6 +2,8 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { HISTORIA } from './historia.js'
+import { MANUAL } from './manual.js'
 import { CLASSES, PISTAS, NUMEROS, perguntasQuiz, afirmacoesVF, pistasDeClasse } from './dbv.js'
 
 const DIR = join(__dirname, '..', '..', '..', '..', 'supabase', 'curriculo-manifesto', 'classes')
@@ -35,6 +37,15 @@ describe('banco de perguntas DBV x manifesto', () => {
   })
   it.each(NUMEROS)('contagem está no texto da classe: $busca', (x) => {
     expect(manifesto[x.classe].textos.some((t) => t.includes(x.busca)), x.busca).toBe(true)
+  })
+})
+
+describe('história e manual', () => {
+  it.each([...HISTORIA, ...MANUAL])('$q', (h) => {
+    expect(h.errados).toHaveLength(3)
+    expect(new Set([h.certa, ...h.errados]).size).toBe(4)
+    expect(h.t.split('{}')).toHaveLength(2)
+    expect(h.e.length).toBeGreaterThan(5)
   })
 })
 
