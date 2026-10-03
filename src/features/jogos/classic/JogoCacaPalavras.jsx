@@ -84,19 +84,20 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
   }
 
   return (
-    <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md">
+    <div className="min-w-0 w-full bg-surface rounded-3xl p-4 sm:p-5 shadow-md">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-muted">{achadas.length}/{palavras.length} achadas</span>
         <button onClick={onCancelar} className="text-xs text-faint p-3 -m-3">Cancelar</button>
       </div>
       <p className="text-xs text-faint mb-3">{fim ? 'Achou todas! 🎉' : 'Toque na 1ª e na última letra da palavra.'}</p>
-      <div className="grid gap-1 mx-auto max-w-[320px]" style={{ gridTemplateColumns: `repeat(${N}, 1fr)` }}>
+      {/* As células dividem a largura disponível; 44px por célula não cabe em telas pequenas. */}
+      <div className="grid w-full min-w-0 gap-1 mx-auto max-w-[320px]" style={{ gridTemplateColumns: `repeat(${N}, minmax(0, 1fr))` }}>
         {grid.map((ch, i) => {
           const achada = celulas.has(i)
           const sela = sel === i
           return (
             <button key={i} onClick={() => tocar(i)} disabled={fim}
-              className={`aspect-square rounded-md text-xs sm:text-sm font-extrabold grid place-items-center transition-colors ${
+              className={`alvo-livre min-w-0 min-h-0 w-full p-0 aspect-square rounded-md text-xs sm:text-sm font-extrabold grid place-items-center transition-colors ${
                 achada ? 'bg-green-500 text-white' : sela ? 'bg-brand text-white' : 'bg-surface2 text-ink'
               }`}>
               {ch}
