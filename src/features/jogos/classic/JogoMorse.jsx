@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { embaralhar } from '../utils/comum.js'
@@ -14,6 +15,7 @@ const PALAVRAS_MORSE = palavrasDoClube(3, 7, ['FOGO', 'MATA', 'NORTE', 'TENDA', 
   'LEI', 'VOTO', 'ALVO', 'LEMA', 'HINO', 'LENCO', 'FILA', 'TESTA', 'CAUDA', 'ORDEM', 'CLASSE'])
 
 export default function JogoMorse({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [palavras] = useState(() => embaralhar(PALAVRAS_MORSE).slice(0, 3))
   const [i, setI] = useState(0)
   const [resp, setResp] = useState('')
@@ -29,7 +31,7 @@ export default function JogoMorse({ onTerminar, onCancelar }) {
     const totalErros = erros + (acertou ? 0 : 1)
     if (acertou) juice.acerto(); else { setErros(totalErros); juice.erro() }
     setAviso(acertou ? 'Acertou! ✅' : `Era ${palavra}`)
-    setTimeout(() => {
+    agendar(() => {
       setAviso(''); setResp('')
       if (i + 1 >= palavras.length) {
         setFim(true)
@@ -55,9 +57,9 @@ export default function JogoMorse({ onTerminar, onCancelar }) {
       <form onSubmit={conferir} className="flex gap-2 mb-3">
         <input value={resp} onChange={(e) => setResp(e.target.value)} disabled={!!aviso || fim}
           placeholder="Qual é a palavra?" autoCapitalize="characters"
-          className="flex-1 rounded-lg border border-line px-3 py-2.5 text-sm uppercase outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
+          className="min-w-0 flex-1 rounded-lg border border-line px-3 py-2.5 text-sm uppercase outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
         <button type="submit" disabled={!resp.trim() || !!aviso || fim}
-          className="rounded-xl bg-brand text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
+          className="shrink-0 rounded-xl bg-brand text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
       </form>
       {aviso && <p className={`text-sm font-bold text-center mb-2 ${aviso.startsWith('Acertou') ? 'text-green-600' : 'text-amber-600'}`}>{aviso}</p>}
 

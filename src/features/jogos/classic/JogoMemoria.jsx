@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
@@ -8,6 +9,7 @@ const PARES_POR_PARTIDA = 6
 const POOL_PARES = ['🧭', '🧣', '🪢', '🔥', '📖', '⛺', '🚩', '🔺', '🎵', '🛡️', '🗡️', '⛰️']
 
 export default function JogoMemoria({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [cartas] = useState(() => embaralhar(embaralhar(POOL_PARES).slice(0, PARES_POR_PARTIDA).flatMap((e, i) => [{ id: i + '-a', emoji: e }, { id: i + '-b', emoji: e }])))
   const [viradas, setViradas] = useState([])
   const [achadas, setAchadas] = useState([])
@@ -26,18 +28,18 @@ export default function JogoMemoria({ onTerminar, onCancelar }) {
       if (cartas[a].emoji === cartas[b].emoji) {
         const novoAchadas = [...achadas, cartas[a].emoji]
         juice.acerto(achadas.length)
-        setTimeout(() => {
+        agendar(() => {
           setAchadas(novoAchadas)
           setViradas([])
           setBloqueado(false)
           if (novoAchadas.length === PARES_POR_PARTIDA) {
             const estrelas = total <= 8 ? 3 : total <= 11 ? 2 : 1
-            setTimeout(() => onTerminar(estrelas), 400)
+            agendar(() => onTerminar(estrelas), 400)
           }
         }, 500)
       } else {
         juice.erro()
-        setTimeout(() => { setViradas([]); setBloqueado(false) }, 800)
+        agendar(() => { setViradas([]); setBloqueado(false) }, 800)
       }
     }
   }

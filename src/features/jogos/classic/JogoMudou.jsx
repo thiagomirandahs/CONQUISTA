@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
@@ -15,6 +16,7 @@ function rodadaMudou(n) {
 }
 
 export default function JogoMudou({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [n, setN] = useState(0)
   const [rod, setRod] = useState(() => rodadaMudou(TAMANHOS_MUDOU[0]))
   const [fase, setFase] = useState('olhar') // olhar | responder
@@ -24,9 +26,9 @@ export default function JogoMudou({ onTerminar, onCancelar }) {
   // Tempo de memorizar cresce um pouco com o tamanho da grade
   useEffect(() => {
     if (fase !== 'olhar') return
-    const t = setTimeout(() => setFase('responder'), 2500 + rod.itens.length * 250)
+    const t = agendar(() => setFase('responder'), 2500 + rod.itens.length * 250)
     return () => clearTimeout(t)
-  }, [fase, rod])
+  }, [fase, rod, agendar])
 
   function responder(op) {
     if (fase !== 'responder' || aviso) return
@@ -35,7 +37,7 @@ export default function JogoMudou({ onTerminar, onCancelar }) {
     const tot = acertos + (ok ? 1 : 0)
     if (ok) { setAcertos(tot); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Boa memória! ✅' : `Era ${certo}`)
-    setTimeout(() => {
+    agendar(() => {
       setAviso('')
       if (n + 1 >= TAMANHOS_MUDOU.length) {
         onTerminar(tot >= 5 ? 3 : tot >= 3 ? 2 : 1)

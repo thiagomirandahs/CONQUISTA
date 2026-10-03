@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 // ===================== 🐍 Cobrinha — versão PHASER (motor 2D) =====================
 // Mesma regra da Cobrinha antiga (atravessa as paredes, morre só em si mesma,
 // +1 por maçã, estrelas: 15→3, 8→2, senão 1), mas com visual neon, MOVIMENTO
@@ -155,6 +156,7 @@ class CobraScene extends Phaser.Scene {
 }
 
 export default function CobrinhaPhaser({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [fase, setFase] = useState('pronto') // pronto | jogando | fim
   const [pontos, setPontos] = useState(0)
 
@@ -162,7 +164,7 @@ export default function CobrinhaPhaser({ onTerminar, onCancelar }) {
     { width: W, height: H, backgroundColor: '#04220f', banner: false, fps: { target: 60 }, scene: CobraScene },
     {
       'cobra:pontos': (n) => setPontos(n),
-      'cobra:fim': (n) => { setPontos(n); setFase('fim'); setTimeout(() => onTerminar(n >= 15 ? 3 : n >= 8 ? 2 : 1), 1100) },
+      'cobra:fim': (n) => { setPontos(n); setFase('fim'); agendar(() => onTerminar(n >= 15 ? 3 : n >= 8 ? 2 : 1), 1100) },
     },
   )
 

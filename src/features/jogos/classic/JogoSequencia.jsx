@@ -1,9 +1,11 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import * as juice from '../../../lib/juice.js'
 
 // Siga a Sequência (Gênius): os itens piscam numa ordem que cresce; repita.
 export default function JogoSequencia({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const SIMBOLOS = [
     { e: '🔥', cor: '#ef4444' },
     { e: '🧭', cor: '#3b82f6' },
@@ -37,32 +39,32 @@ export default function JogoSequencia({ onTerminar, onCancelar }) {
     const passo = () => {
       if (i >= s.length) { setAceso(-1); setMostrando(false); return }
       setAceso(s[i])
-      setTimeout(() => {
+      agendar(() => {
         setAceso(-1)
         i++
-        setTimeout(passo, 220)
+        agendar(passo, 220)
       }, 520)
     }
-    setTimeout(passo, 600)
+    agendar(passo, 600)
   }
 
   function encerrar(rodadasCompletas) {
     setFim(true)
     const estrelas = rodadasCompletas >= 7 ? 3 : rodadasCompletas >= 4 ? 2 : 1
-    setTimeout(() => onTerminar(estrelas), 500)
+    agendar(() => onTerminar(estrelas), 500)
   }
 
   function tocar(idx) {
     if (mostrando || fim) return
     setAceso(idx)
-    setTimeout(() => setAceso((a) => (a === idx ? -1 : a)), 180)
+    agendar(() => setAceso((a) => (a === idx ? -1 : a)), 180)
     if (idx !== seq[pos]) { juice.erro(); encerrar(seq.length - 1); return } // errou
     juice.acerto(pos)
     const novaPos = pos + 1
     if (novaPos === seq.length) {
       if (seq.length >= 15) { encerrar(15); return } // venceu
       setMostrando(true) // trava toques durante a pausa até a próxima demonstração
-      setTimeout(() => proximaRodada(seq), 650)
+      agendar(() => proximaRodada(seq), 650)
     } else {
       setPos(novaPos)
     }

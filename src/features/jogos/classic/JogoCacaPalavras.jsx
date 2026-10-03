@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import * as juice from '../../../lib/juice.js'
 import { embaralhar } from '../utils/comum.js'
@@ -38,6 +39,7 @@ function gerarCaca() {
 }
 
 function JogoCacaPalavras({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [jogo] = useState(gerarCaca)
   const { N, grid, palavras } = jogo
   const [sel, setSel] = useState(-1)
@@ -74,7 +76,7 @@ function JogoCacaPalavras({ onTerminar, onCancelar }) {
       if (novas.length === palavras.length) {
         setFim(true)
         const est = erros <= 2 ? 3 : erros <= 5 ? 2 : 1
-        setTimeout(() => onTerminar(est), 700)
+        agendar(() => onTerminar(est), 700)
       }
     } else {
       juice.erro()

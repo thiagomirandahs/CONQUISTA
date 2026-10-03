@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import * as juice from '../../../lib/juice.js'
 
@@ -33,6 +34,7 @@ function gerarMinas(evitar) {
 }
 
 function JogoCampoMinado({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [minas, setMinas] = useState(null) // só nascem no 1º toque
   const [abertas, setAbertas] = useState(() => new Set())
   const [bandeiras, setBandeiras] = useState(() => new Set())
@@ -63,7 +65,7 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
       setAbertas((a) => new Set([...a, i]))
       setFim('perdeu')
       juice.colisao()
-      setTimeout(() => onTerminar(1), 1600)
+      agendar(() => onTerminar(1), 1600)
       return
     }
 
@@ -72,11 +74,11 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
     const fila = [i]
     while (fila.length) {
       const c = fila.pop()
-      if (novas.has(c)) continue
+      if (novas.has(c) || bandeiras.has(c)) continue
       novas.add(c)
       if (contar(c, ms) === 0) {
         for (const v of vizinhosMinado(c)) {
-          if (!novas.has(v) && !ms.has(v)) fila.push(v)
+          if (!novas.has(v) && !ms.has(v) && !bandeiras.has(v)) fila.push(v)
         }
       }
     }
@@ -86,12 +88,12 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
     if (novas.size === N_MINADO * N_MINADO - MINAS_TOTAL) {
       setFim('ganhou')
       const seg = (Date.now() - t0) / 1000
-      setTimeout(() => onTerminar(seg <= 90 ? 3 : 2), 1000)
+      agendar(() => onTerminar(seg <= 90 ? 3 : 2), 1000)
     }
   }
 
   return (
-    <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
+    <div className="min-w-0 w-full bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-extrabold text-muted">🚩 {MINAS_TOTAL - bandeiras.size}</span>
         {fim && (
@@ -103,7 +105,7 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
       </div>
 
       <div className="bg-surface2 rounded-2xl p-1.5 mx-auto max-w-[320px] mb-3 select-none">
-        <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${N_MINADO}, 1fr)` }}>
+        <div className="grid w-full min-w-0 gap-0.5" style={{ gridTemplateColumns: `repeat(${N_MINADO}, minmax(0, 1fr))` }}>
           {Array.from({ length: N_MINADO * N_MINADO }, (_, i) => {
             const aberta = abertas.has(i)
             const bandeira = bandeiras.has(i)
@@ -112,7 +114,7 @@ function JogoCampoMinado({ onTerminar, onCancelar }) {
             const mostraMina = fim === 'perdeu' && mina
             return (
               <button key={i} onClick={() => tocar(i)} disabled={!!fim}
-                className={`aspect-square rounded-[4px] grid place-items-center text-xs sm:text-sm font-extrabold ${
+                className={`alvo-livre min-w-0 min-h-0 w-full p-0 aspect-square rounded-[4px] grid place-items-center text-xs sm:text-sm font-extrabold ${
                   mostraMina ? (aberta ? 'bg-red-500' : 'bg-red-200')
                   : aberta ? 'bg-surface2'
                   : 'bg-gradient-to-br from-slate-400 to-slate-500 active:from-slate-500'

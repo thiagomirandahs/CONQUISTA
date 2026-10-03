@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { m as motion } from 'framer-motion'
 
@@ -30,6 +31,7 @@ function embaralharDesl(N) {
 }
 
 export default function JogoDeslizante({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const N = 3
   const [tabu, setTabu] = useState(() => embaralharDesl(N))
   const [mov, setMov] = useState(0)
@@ -47,7 +49,7 @@ export default function JogoDeslizante({ onTerminar, onCancelar }) {
     if (resolvidoDesl(novo)) {
       setFim(true)
       const est = m <= 30 ? 3 : m <= 60 ? 2 : 1
-      setTimeout(() => onTerminar(est), 700)
+      agendar(() => onTerminar(est), 700)
     }
   }
 
