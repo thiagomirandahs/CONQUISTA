@@ -46,6 +46,16 @@ beforeEach(() => {
 })
 
 describe('Planos', () => {
+  it('licença anual definitiva mostra ano, Pix e parcelas sem aviso de rascunho', async () => {
+    carregarPlanos.mockResolvedValue([{ chave: 'anual', versao: 2, nome: 'Licença Anual', provisorio: false, recursos: null,
+      precos: [{ ciclo: 'anual', valor_centavos: 25000, metadata: { pix_centavos: 22000, parcelas_cartao: 12 } }] }])
+    renderT()
+    expect(await screen.findByText('R$ 250,00')).toBeInTheDocument()
+    expect(screen.getByText('por ano no cartão')).toBeInTheDocument()
+    expect(screen.getByText('R$ 220,00 no Pix à vista')).toBeInTheDocument()
+    expect(screen.getByText(/12x de aproximadamente R\$ 20,83/)).toBeInTheDocument()
+    expect(screen.queryByText(/Valores provisórios/)).not.toBeInTheDocument()
+  })
   it('mostra o preço que veio do banco, formatado — e nenhum valor fixo de tela', async () => {
     renderT()
     expect(await screen.findByText(/Inclui: Agenda/)).toBeInTheDocument()

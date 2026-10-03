@@ -35,12 +35,12 @@ export default function Adquirir() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <header className="mb-5 text-center">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-ink">A licença do seu clube</h1>
-        <p className="text-sm text-muted mt-1">Licença anual — não é mensalidade. Comece agora, combine o pagamento depois.</p>
+        <p className="text-sm text-muted mt-1">Licença anual — não é mensalidade. Crie seu clube e acompanhe a licença pelo aplicativo.</p>
       </header>
 
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 mb-5 leading-snug">
-        <strong>Pagamento online ainda não integrado.</strong> Você cria a conta e o clube normalmente;
-        a cobrança será combinada diretamente com a administração da plataforma.
+        <strong>Comece criando seu clube.</strong> As opções de pagamento disponíveis aparecem na área
+        Plano do clube para o responsável financeiro. Se o pagamento online estiver indisponível, fale com a administração da plataforma.
       </div>
 
       {erro && <div role="alert" className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 mb-4">{erro}</div>}
@@ -69,8 +69,8 @@ export default function Adquirir() {
               </div>
               {preco && (meta.parcelas_cartao || meta.pix_centavos) && (
                 <div className="mt-2 bg-surface2 rounded-xl p-3 text-xs text-muted space-y-0.5">
-                  {meta.parcelas_cartao && meta.parcela_centavos && (
-                    <p>💳 Até {meta.parcelas_cartao}x de {formatarPreco(meta.parcela_centavos, preco.moeda)} sem juros para o clube</p>
+                  {meta.parcelas_cartao > 1 && (
+                    <p>💳 Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao), preco.moeda)} sem juros para o clube</p>
                   )}
                   {meta.pix_centavos && (
                     <p>💰 {formatarPreco(meta.pix_centavos, preco.moeda)} no Pix</p>

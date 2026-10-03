@@ -597,8 +597,8 @@ select t.eq('...mesma regra pros planos',
 select t.throws('um plano não pode citar módulo que o app não tem',
   $q$insert into public.billing_plans (chave, versao, nome, recursos) values ('inventado', 1, 'Inventado', array['teletransporte'])$q$,
   'não existe no catálogo');
-select t.eq('nenhum gateway real foi integrado: o único provedor é o mock local',
-  t.txt($q$select string_agg(chave, ',' order by chave) from public.billing_providers$q$), 'mock');
+select t.eq('adaptador InfinitePay registrado sem remover o mock de testes',
+  t.txt($q$select string_agg(chave, ',' order by chave) from public.billing_providers$q$), 'infinitepay,mock');
 
 -- =============================================================================
 -- 14) VITRINE mostra só a versão VIGENTE de cada plano (item 6 da rodada de fechamento) — publica
@@ -608,15 +608,15 @@ select t.eq('nenhum gateway real foi integrado: o único provedor é o mock loca
 -- =============================================================================
 \o /dev/null
 insert into public.billing_plans (chave, versao, nome, descricao, publico, status, ativo, recursos, limites, provisorio)
-select 'anual', 2, nome, 'Versão de teste [TESTE] — só pra provar o dedup da vitrine.', publico, status, ativo, recursos, limites, provisorio
+select 'anual', (select max(versao) + 1 from public.billing_plans where chave = 'anual'), nome, 'Versão de teste [TESTE] — só pra provar o dedup da vitrine.', publico, status, ativo, recursos, limites, provisorio
   from public.billing_plans where chave = 'anual' and versao = 1;
 insert into public.billing_prices (plan_id, ciclo, valor_centavos, provisorio, metadata)
-select p.id, 'anual', 23990, false, '{}'::jsonb from public.billing_plans p where p.chave = 'anual' and p.versao = 2;
+select p.id, 'anual', 23990, false, '{}'::jsonb from public.billing_plans p where p.chave = 'anual' and p.versao = (select max(versao) from public.billing_plans where chave = 'anual');
 \o
 select t.eq('billing_plans REALMENTE tem 2 versões publicadas de "anual" (o cenário existe de verdade, não é hipotético)',
-  t.n($q$select count(*) from public.billing_plans where chave = 'anual' and publico and ativo and status = 'publicado'$q$), 2);
+  t.n($q$select count(*) from public.billing_plans where chave = 'anual' and publico and ativo and status = 'publicado'$q$) >= 2, true);
 select t.eq('a vitrine (planos_disponiveis) mostra a versão MAIS RECENTE (2)',
-  t.txt($q$select (j ->> 'versao') from json_array_elements(public.planos_disponiveis()) j where j ->> 'chave' = 'anual'$q$), '2');
+  t.txt($q$select (j ->> 'versao') from json_array_elements(public.planos_disponiveis()) j where j ->> 'chave' = 'anual'$q$), t.txt($q$select max(versao)::text from public.billing_plans where chave='anual'$q$));
 select t.eq('...nenhuma chave aparece duas vezes na vitrine',
   t.n($q$select count(*) from (
     select (j ->> 'chave') as chave, count(*) from json_array_elements(public.planos_disponiveis()) j

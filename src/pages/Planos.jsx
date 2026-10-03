@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { carregarPlanos, carregarAssinaturaDoClube, formatarPreco, ROTULO_STATUS } from '../services/comercial.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import PagamentoLicenca from '../components/PagamentoLicenca.jsx'
 
 // Planos e assinatura do clube (fase 5). Tudo que aparece aqui — nome, composição e PREÇO — vem do
 // catálogo versionado do banco. Nada de valor escrito no React: mudar preço é publicar uma versão
@@ -57,12 +58,13 @@ export default function Planos() {
         <p className="text-sm text-muted">O que está incluído e quanto do plano já está sendo usado</p>
       </header>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 mb-5 leading-snug">
+      {planos.some(p => p.provisorio) && <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 mb-5 leading-snug">
         <strong>Valores provisórios.</strong> O DesbravaClube ainda não fechou os preços: o que aparece
         aqui é um rascunho do catálogo, para testar o sistema. Nada está sendo cobrado.
-      </div>
+      </div>}
 
       {assinatura && <SituacaoAtual a={assinatura} />}
+      {assinatura?.tem_assinatura && assinatura?.plano?.chave === 'anual' && <PagamentoLicenca aoConfirmar={async () => setAssinatura(await carregarAssinaturaDoClube())} />}
 
       <h2 className="text-sm font-extrabold text-ink mb-2 mt-6">Planos</h2>
       <ul className="space-y-3">
@@ -137,7 +139,8 @@ function SituacaoAtual({ a }) {
 }
 
 function CardPlano({ p, atual }) {
-  const mensal = (p.precos || []).find((x) => x.ciclo === 'mensal')
+  const preco = (p.precos || []).find((x) => x.ciclo === 'anual') || (p.precos || []).find((x) => x.ciclo === 'mensal')
+  const meta = preco?.metadata || {}
   const recursos = p.recursos === null ? null : (p.recursos || [])
   return (
     <li className={`bg-surface rounded-2xl p-4 shadow-soft ${atual ? 'ring-2 ring-brand' : ''}`}>
@@ -147,10 +150,12 @@ function CardPlano({ p, atual }) {
           <p className="text-xs text-muted leading-snug mt-0.5">{p.descricao}</p>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-extrabold text-ink">{mensal ? formatarPreco(mensal.valor_centavos, mensal.moeda) : '—'}</div>
-          <div className="text-xs text-faint">por mês</div>
+          <div className="font-extrabold text-ink">{preco ? formatarPreco(preco.valor_centavos, preco.moeda) : '—'}</div>
+          <div className="text-xs text-faint">{preco?.ciclo === 'anual' ? 'por ano no cartão' : 'por mês'}</div>
         </div>
       </div>
+      {meta.pix_centavos != null && <p className="text-sm text-muted mt-2">{formatarPreco(meta.pix_centavos)} no Pix à vista</p>}
+      {meta.parcelas_cartao > 1 && <p className="text-xs text-muted mt-1">Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao))} sem juros para o clube</p>}
       <p className="text-xs text-faint mt-2 leading-snug">
         {recursos === null
           ? 'Inclui todos os recursos do DesbravaClube.'

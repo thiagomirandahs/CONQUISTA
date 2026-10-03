@@ -166,13 +166,13 @@ describe('o valor da chave nunca vaza', () => {
   })
 })
 
-describe('as 7 Edge Functions leem chaves SÓ pelo helper (contrato)', () => {
+describe('as 8 Edge Functions leem chaves SÓ pelo helper (contrato)', () => {
   const raiz = join(__dirname, '../../supabase/functions')
   const funcoes = readdirSync(raiz).filter((d) => d !== '_compartilhado' && statSync(join(raiz, d)).isDirectory())
-  it('existem as 7 funções esperadas', () => {
-    expect(funcoes.sort()).toEqual(['admin-comunidade-foto', 'enviar-push', 'gerar-documento-pdf', 'gerar-documento-pdf-final', 'limpar-fotos-rede', 'sanear-imagens', 'storage-excluir'])
+  it('existem as 8 funções esperadas', () => {
+    expect(funcoes.sort()).toEqual(['admin-comunidade-foto', 'enviar-push', 'gerar-documento-pdf', 'gerar-documento-pdf-final', 'licenca-infinitepay', 'limpar-fotos-rede', 'sanear-imagens', 'storage-excluir'])
   })
-  for (const f of ['admin-comunidade-foto', 'enviar-push', 'gerar-documento-pdf', 'gerar-documento-pdf-final', 'limpar-fotos-rede', 'sanear-imagens', 'storage-excluir']) {
+  for (const f of ['admin-comunidade-foto', 'enviar-push', 'gerar-documento-pdf', 'gerar-documento-pdf-final', 'licenca-infinitepay', 'limpar-fotos-rede', 'sanear-imagens', 'storage-excluir']) {
     it(`${f}: nenhum Deno.env.get de chave/URL do Supabase direto no index.ts`, () => {
       const src = readFileSync(join(raiz, f, 'index.ts'), 'utf8')
       expect(src).not.toMatch(/Deno\.env\.get\(\s*['"]SUPABASE_(SERVICE_ROLE_KEY|ANON_KEY|URL|SECRET_KEYS|PUBLISHABLE_KEYS)['"]/)
@@ -197,6 +197,7 @@ describe('as 7 Edge Functions leem chaves SÓ pelo helper (contrato)', () => {
     expect(vj('gerar-documento-pdf')).toBe('true')
     expect(vj('gerar-documento-pdf-final')).toBe('true')
     expect(vj('admin-comunidade-foto')).toBe('true')
+    expect(vj('licenca-infinitepay')).toBe('false')
   })
   it('limpar-fotos-rede com verify_jwt=false NAO e endpoint publico: sem o segredo x-rede-limpeza-secret (comparacao em tempo constante) responde 401 antes de tocar em qualquer coisa', () => {
     const src = readFileSync(join(__dirname, '../../supabase/functions/limpar-fotos-rede/index.ts'), 'utf8')
