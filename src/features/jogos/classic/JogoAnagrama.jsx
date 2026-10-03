@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { embaralhar } from '../utils/comum.js'
@@ -19,6 +20,7 @@ function embaralharPalavra(p) {
 }
 
 export default function JogoAnagrama({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [rodadas] = useState(() => embaralhar(PALAVRAS_ANAGRAMA).slice(0, 3).map((p) => ({
     palavra: p, embaralhada: embaralharPalavra(p),
   })))
@@ -36,7 +38,7 @@ export default function JogoAnagrama({ onTerminar, onCancelar }) {
     const total = erros + (ok ? 0 : 1)
     if (ok) juice.acerto(); else { setErros(total); juice.erro() }
     setAviso(ok ? 'Acertou! ✅' : `Era ${q.palavra}`)
-    setTimeout(() => {
+    agendar(() => {
       setAviso(''); setResp('')
       if (i + 1 >= rodadas.length) {
         setFim(true)
@@ -47,7 +49,7 @@ export default function JogoAnagrama({ onTerminar, onCancelar }) {
   function ajudado(r) {
     if (fim || aviso) return
     setFim(true); setAviso(`Um amigo te ajudou! Era ${r || q.palavra} 🤝`)
-    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
+    agendar(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
   }
 
   return (
@@ -67,9 +69,9 @@ export default function JogoAnagrama({ onTerminar, onCancelar }) {
       <form onSubmit={conferir} className="flex gap-2">
         <input value={resp} onChange={(e) => setResp(e.target.value)} disabled={!!aviso || fim}
           placeholder="Qual é a palavra?" autoCapitalize="characters"
-          className="flex-1 rounded-lg border border-line px-3 py-2.5 text-sm uppercase outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
+          className="min-w-0 flex-1 rounded-lg border border-line px-3 py-2.5 text-sm uppercase outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
         <button type="submit" disabled={!resp.trim() || !!aviso || fim}
-          className="rounded-xl bg-brand text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
+          className="shrink-0 rounded-xl bg-brand text-white font-bold px-4 text-sm disabled:opacity-50">Conferir</button>
       </form>
       {!fim && !aviso && (
         <div className="mt-3">

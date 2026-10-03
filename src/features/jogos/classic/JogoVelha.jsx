@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import * as juice from '../../../lib/juice.js'
@@ -32,6 +33,7 @@ function jogadaApp(b) {
 }
 
 export default function JogoVelha({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [tab, setTab] = useState(() => Array(9).fill(null))
   const [partida, setPartida] = useState(1)          // 1..3 (quem começa alterna)
   const [placar, setPlacar] = useState({ v: 0, e: 0, d: 0 })
@@ -42,7 +44,7 @@ export default function JogoVelha({ onTerminar, onCancelar }) {
   // Vez do app: joga com um delay pra dar sensação de "pensar"
   useEffect(() => {
     if (vez !== 'O' || fimPartida || fim) return
-    const t = setTimeout(() => {
+    const t = agendar(() => {
       setTab((b) => {
         if (vencedorVelha(b)) return b
         const i = jogadaApp(b)
@@ -66,9 +68,9 @@ export default function JogoVelha({ onTerminar, onCancelar }) {
     if (partida >= 3) {
       setFim(true)
       const pts = novo.v * 2 + novo.e
-      setTimeout(() => onTerminar(pts >= 4 ? 3 : pts >= 2 ? 2 : 1), 1500)
+      agendar(() => onTerminar(pts >= 4 ? 3 : pts >= 2 ? 2 : 1), 1500)
     } else {
-      setTimeout(() => {
+      agendar(() => {
         setTab(Array(9).fill(null))
         setFimPartida(null)
         const prox = partida + 1

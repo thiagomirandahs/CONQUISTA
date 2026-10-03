@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
@@ -28,6 +29,7 @@ const PERGUNTAS_NOS = [
 ]
 
 function JogoNos({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   // Sorteia 6 perguntas e embaralha as opções de cada uma (a certa muda de lugar)
   const [rodadas] = useState(() => embaralhar(PERGUNTAS_NOS).slice(0, 6).map((q) => {
     const certa = q.o[q.c]
@@ -45,7 +47,7 @@ function JogoNos({ onTerminar, onCancelar }) {
     const total = acertos + (ok ? 1 : 0)
     if (ok) { setAcertos(total); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era: ${q.certa}`)
-    setTimeout(() => {
+    agendar(() => {
       setAviso('')
       if (n + 1 >= rodadas.length) {
         setFim(true)

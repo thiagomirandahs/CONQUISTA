@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import * as juice from '../../../lib/juice.js'
 
@@ -9,6 +10,7 @@ const HANOI_MINIMO = 15
 const HANOI_COR = ['', 'bg-red-400', 'bg-amber-400', 'bg-green-500', 'bg-brand']
 
 export default function JogoHanoi({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [pinos, setPinos] = useState(() => [[4, 3, 2, 1], [], []]) // fim do array = topo
   const [sel, setSel] = useState(null)
   const [mov, setMov] = useState(0)
@@ -28,7 +30,7 @@ export default function JogoHanoi({ onTerminar, onCancelar }) {
       // não pode: grande sobre pequeno (pisca em vermelho)
       juice.erro()
       setErro(true)
-      setTimeout(() => setErro(false), 450)
+      agendar(() => setErro(false), 450)
       setSel(null)
       return
     }
@@ -41,7 +43,7 @@ export default function JogoHanoi({ onTerminar, onCancelar }) {
     setSel(null)
     if (novo[2].length === HANOI_DISCOS) {
       setFim(true)
-      setTimeout(() => onTerminar(m <= HANOI_MINIMO ? 3 : m <= 22 ? 2 : 1), 1000)
+      agendar(() => onTerminar(m <= HANOI_MINIMO ? 3 : m <= 22 ? 2 : 1), 1000)
     }
   }
 
@@ -58,7 +60,7 @@ export default function JogoHanoi({ onTerminar, onCancelar }) {
       <div className="flex items-end justify-center gap-2 select-none mb-1">
         {pinos.map((pino, p) => (
           <button key={p} onClick={() => tocar(p)}
-            className={`relative flex-1 max-w-[110px] h-36 flex flex-col-reverse items-center pb-1 rounded-xl transition-colors ${
+            className={`relative min-w-0 flex-1 max-w-[110px] h-36 flex flex-col-reverse items-center pb-1 rounded-xl transition-colors ${
               sel === p ? 'bg-brand/10 ring-2 ring-brand' : 'bg-surface2'
             }`}>
             <div className="absolute bottom-1 top-4 left-1/2 -ml-[3px] w-1.5 bg-surface2 rounded-full" />
@@ -67,7 +69,7 @@ export default function JogoHanoi({ onTerminar, onCancelar }) {
                 className={`relative z-10 h-4 rounded-full mb-0.5 shadow-sm ${HANOI_COR[d]} ${
                   sel === p && i === pino.length - 1 ? 'ring-2 ring-white -translate-y-0.5' : ''
                 }`}
-                style={{ width: `${26 + d * 16}px` }} />
+                style={{ width: `${26 + d * 16}px`, maxWidth: '90%' }} />
             ))}
           </button>
         ))}

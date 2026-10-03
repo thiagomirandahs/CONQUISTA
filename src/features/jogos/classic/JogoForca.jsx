@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import { m as motion } from 'framer-motion'
@@ -15,6 +16,7 @@ const PALAVRAS_FORCA = palavrasDoClube(6, 14, [
 const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export default function JogoForca({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const VIDAS = 6
   const [palavra] = useState(() => PALAVRAS_FORCA[Math.floor(Math.random() * PALAVRAS_FORCA.length)])
   const [usadas, setUsadas] = useState([])
@@ -34,20 +36,20 @@ export default function JogoForca({ onTerminar, onCancelar }) {
     const ganhou = palavra.split('').every((x) => novas.includes(x))
     if (ganhou) {
       setFim(true); setMsg('Você descobriu! 🎉')
-      setTimeout(() => onTerminar(err <= 1 ? 3 : err <= 3 ? 2 : 1), 900)
+      agendar(() => onTerminar(err <= 1 ? 3 : err <= 3 ? 2 : 1), 900)
     } else if (err >= VIDAS) {
       setFim(true); setMsg(`Acabaram as vidas! Era ${palavra}`)
-      setTimeout(() => onTerminar(1), 1400)
+      agendar(() => onTerminar(1), 1400)
     }
   }
   function ajudado(resp) {
     if (fim) return
     setFim(true); setMsg(`Um amigo te ajudou! Era ${resp || palavra} 🤝`)
-    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
+    agendar(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
   }
 
   return (
-    <div className="bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
+    <div className="min-w-0 w-full bg-surface rounded-3xl p-4 sm:p-5 shadow-md text-center">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-muted">
           {'❤️'.repeat(Math.max(0, vidas))}{'🖤'.repeat(Math.min(VIDAS, erradas.length))}
@@ -85,7 +87,7 @@ export default function JogoForca({ onTerminar, onCancelar }) {
           const certa = usada && palavra.includes(l)
           return (
             <button key={l} onClick={() => tentar(l)} disabled={usada || fim}
-              className={`aspect-square rounded-lg text-sm font-extrabold ${
+              className={`alvo-livre min-w-0 min-h-0 w-full p-0 aspect-square rounded-lg text-sm font-extrabold ${
                 !usada ? 'bg-surface2 text-ink' : certa ? 'bg-green-500 text-white' : 'bg-surface2 text-white'
               } disabled:opacity-70`}>
               {l}

@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
@@ -47,6 +48,7 @@ function RosaDosVentos({ de }) {
 }
 
 export default function JogoBussola({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const TOTAL = 6
   const [q, setQ] = useState(() => novaBussola())
   const [n, setN] = useState(1)
@@ -60,7 +62,7 @@ export default function JogoBussola({ onTerminar, onCancelar }) {
     const total = acertos + (ok ? 1 : 0)
     if (ok) { setAcertos(total); juice.acerto(acertos) } else juice.erro()
     setAviso(ok ? 'Isso! ✅' : `Era ${NOME_DIR[q.certa]}`)
-    setTimeout(() => {
+    agendar(() => {
       setAviso('')
       if (n >= TOTAL) {
         setFim(true)

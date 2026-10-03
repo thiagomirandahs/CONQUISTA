@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { embaralhar } from '../utils/comum.js'
@@ -20,6 +21,7 @@ function novaConta() {
 }
 
 export default function JogoContas({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const SEGUNDOS = 30
   const [q, setQ] = useState(() => novaConta())
   const [acertos, setAcertos] = useState(0)
@@ -30,10 +32,10 @@ export default function JogoContas({ onTerminar, onCancelar }) {
     if (fim) return
     if (tempo <= 0) {
       setFim(true)
-      setTimeout(() => onTerminar(acertos >= 12 ? 3 : acertos >= 7 ? 2 : 1), 700)
+      agendar(() => onTerminar(acertos >= 12 ? 3 : acertos >= 7 ? 2 : 1), 700)
       return
     }
-    const t = setTimeout(() => setTempo((s) => s - 1), 1000)
+    const t = agendar(() => setTempo((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [tempo, fim]) // eslint-disable-line
 

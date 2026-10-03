@@ -1,3 +1,4 @@
+import { useGameTimeout } from '../hooks/useGameTimeout.js'
 import { useState } from 'react'
 import { palavras as palavrasDoClube } from '../conteudo/vocabulario.js'
 import * as juice from '../../../lib/juice.js'
@@ -30,6 +31,7 @@ const COR_TERMO = {
 }
 
 export default function JogoTermo({ onTerminar, onCancelar }) {
+  const agendar = useGameTimeout()
   const [alvo] = useState(() => PALAVRAS_TERMO[Math.floor(Math.random() * PALAVRAS_TERMO.length)])
   const [linhas, setLinhas] = useState([])
   const [atual, setAtual] = useState('')
@@ -40,18 +42,18 @@ export default function JogoTermo({ onTerminar, onCancelar }) {
     if (fim) return
     if (k === '⌫') { setAtual((a) => a.slice(0, -1)); return }
     if (k === 'OK') {
-      if (atual.length < 5) { setAviso('Complete as 5 letras'); setTimeout(() => setAviso(''), 900); return }
+      if (atual.length < 5) { setAviso('Complete as 5 letras'); agendar(() => setAviso(''), 900); return }
       const res = avaliarTermo(atual, alvo)
       const novas = [...linhas, { tent: atual, res }]
       setLinhas(novas)
       setAtual('')
       if (atual === alvo) {
         setFim('ganhou')
-        setTimeout(() => onTerminar(novas.length <= 3 ? 3 : 2), 1200)
+        agendar(() => onTerminar(novas.length <= 3 ? 3 : 2), 1200)
       } else if (novas.length >= 6) {
         setFim('perdeu')
         juice.erro()
-        setTimeout(() => onTerminar(1), 1800)
+        agendar(() => onTerminar(1), 1800)
       }
       return
     }
@@ -60,7 +62,7 @@ export default function JogoTermo({ onTerminar, onCancelar }) {
   function ajudado() {
     if (fim) return
     setFim('ajudado') // revela a palavra no topo
-    setTimeout(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
+    agendar(() => onTerminar(1), 1600) // usou ajuda = 1 estrela
   }
 
   // Cor de cada tecla = melhor resultado que aquela letra já teve
@@ -117,7 +119,7 @@ export default function JogoTermo({ onTerminar, onCancelar }) {
             )}
             {row.split('').map((k) => (
               <button key={k} onClick={() => tecla(k)}
-                className={`rounded-lg w-[8.2%] min-w-6 h-11 text-sm font-extrabold ${
+                className={`rounded-lg w-[8.2%] min-w-0 shrink h-11 text-sm font-extrabold ${
                   corTecla[k] ? COR_TERMO[corTecla[k]] : 'bg-surface2 text-ink'
                 }`}>
                 {k}
