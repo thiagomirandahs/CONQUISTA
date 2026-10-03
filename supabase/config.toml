@@ -422,6 +422,10 @@ verify_jwt = true
 [functions.admin-comunidade-foto]
 verify_jwt = true
 
+# getUser para compras; payment_check para notificações públicas da InfinitePay.
+[functions.licenca-infinitepay]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

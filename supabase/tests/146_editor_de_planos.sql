@@ -6,12 +6,14 @@ begin;
 \o /dev/null
 select t.signup('adm146', '{"tipo":"fundador","nome":"Admin 146"}'::jsonb);
 insert into public.platform_admins (user_id, papel) values (t.id('adm146'), 'operacao');
+select set_config('t146.base', (select max(versao)::text from public.billing_plans where chave = 'anual'), true);
+select set_config('t146.preco', (select valor_centavos::text from public.billing_prices where plan_id = (select id from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int) and ciclo = 'anual' limit 1), true);
 -- uma assinatura viva no plano 'anual' v1 (para provar que ela NÃO muda quando sai a v2)
 insert into public.billing_accounts (id, nome, status) values (public.curriculo_uuid('t146:conta'), 'Conta 146 [TESTE]', 'ativa');
 insert into public.subscriptions (id, billing_account_id, plan_id, status, ciclo)
   values (public.curriculo_uuid('t146:assin'), public.curriculo_uuid('t146:conta'),
-          (select id from public.billing_plans where chave = 'anual' and versao = 1), 'ativa', 'anual');
-create function t.p146(p_chave text, p_versao int) returns uuid language sql as $$ select id from public.billing_plans where chave = p_chave and versao = p_versao $$;
+          (select id from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int), 'ativa', 'anual');
+create function t.p146(p_chave text, p_versao int) returns uuid language sql as $$ select id from public.billing_plans where chave = p_chave and versao = p_versao + case when p_chave = 'anual' then current_setting('t146.base')::int - 1 else 0 end $$;
 grant execute on function t.p146(text, int) to public;
 \o
 
@@ -28,13 +30,13 @@ select public.admin_plano_rascunho_salvar('anual', 'Licença Anual 2027', 'Reaju
   '{"membros": 400, "administradores": 25, "fotos": null}',
   '[{"ciclo":"anual","valor_centavos":25990,"pix_centavos":22990,"parcelas_cartao":12,"parcela_centavos":2166}]') is not null;
 reset role;
-select t.eq('criou a v2 como RASCUNHO do plano anual', (select status from public.billing_plans where chave = 'anual' and versao = 2), 'rascunho');
-select t.eq('a v2 herdou os painéis da v1 (recursos copiados)', (select recursos is not distinct from (select recursos from public.billing_plans where chave = 'anual' and versao = 1) from public.billing_plans where chave = 'anual' and versao = 2)::text, 'true');
-select t.eq('limites normalizados (vazio = ilimitado some do JSON)', (select limites::text from public.billing_plans where chave = 'anual' and versao = 2), '{"membros": 400, "administradores": 25}');
+select t.eq('criou a v2 como RASCUNHO do plano anual', (select status from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int + 1), 'rascunho');
+select t.eq('a v2 herdou os painéis da v1 (recursos copiados)', (select recursos is not distinct from (select recursos from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int) from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int + 1)::text, 'true');
+select t.eq('limites normalizados (vazio = ilimitado some do JSON)', (select limites::text from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int + 1), '{"membros": 400, "administradores": 25}');
 select t.eq('preço e metadata do Pix/parcelas gravados',
   (select valor_centavos || '|' || (metadata ->> 'pix_centavos') || '|' || (metadata ->> 'parcelas_cartao') from public.billing_prices where plan_id = t.p146('anual', 2)), '25990|22990|12');
-select t.eq('a vitrine AINDA mostra a v1 (rascunho não aparece)', (select (public.planos_disponiveis() -> 0 ->> 'versao')) , '1');
-select t.eq('a v1 continua intacta', (select valor_centavos from public.billing_prices where plan_id = t.p146('anual', 1) and ciclo = 'anual'), 22990::bigint);
+select t.eq('a vitrine AINDA mostra a v1 (rascunho não aparece)', (select (public.planos_disponiveis() -> 0 ->> 'versao')) , current_setting('t146.base'));
+select t.eq('a v1 continua intacta', (select valor_centavos from public.billing_prices where plan_id = t.p146('anual', 1) and ciclo = 'anual'), current_setting('t146.preco')::bigint);
 
 -- salvar de novo atualiza o MESMO rascunho (sem criar v3) e troca os preços
 select t.como('adm146');
@@ -65,12 +67,12 @@ select t.como('adm146');
 select t.throws('versão publicada não é publicada de novo', format($q$select public.admin_plano_publicar(%L)$q$, t.p146('anual', 1)), 'Só um rascunho');
 select set_config('t146.pub', public.admin_plano_publicar(t.p146('anual', 2), 'reajuste 2027')::text, true) is not null;
 reset role;
-select t.eq('v2 publicada', (select status from public.billing_plans where chave = 'anual' and versao = 2), 'publicado');
+select t.eq('v2 publicada', (select status from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int + 1), 'publicado');
 select t.eq('...informando quantas assinaturas ficam na versão anterior', (current_setting('t146.pub')::json ->> 'ficam_na_versao_anterior')::int >= 1, true);
-select t.eq('a vitrine passa a mostrar a v2 (nova contratação)', (public.planos_disponiveis() -> 0 ->> 'versao'), '2');
+select t.eq('a vitrine passa a mostrar a v2 (nova contratação)', (public.planos_disponiveis() -> 0 ->> 'versao'), (current_setting('t146.base')::int + 1)::text);
 select t.eq('a assinatura existente CONTINUA na v1', (select plan_id from public.subscriptions where id = public.curriculo_uuid('t146:assin')), t.p146('anual', 1));
-select t.eq('a v1 continua publicada (histórico)', (select status from public.billing_plans where chave = 'anual' and versao = 1), 'publicado');
-select t.eq('o preço da v1 NÃO mudou', (select valor_centavos from public.billing_prices where plan_id = t.p146('anual', 1) and ciclo = 'anual'), 22990::bigint);
+select t.eq('a v1 continua publicada (histórico)', (select status from public.billing_plans where chave = 'anual' and versao = current_setting('t146.base')::int), 'publicado');
+select t.eq('o preço da v1 NÃO mudou', (select valor_centavos from public.billing_prices where plan_id = t.p146('anual', 1) and ciclo = 'anual'), current_setting('t146.preco')::bigint);
 select t.eq('auditoria do salvar e do publicar', (select count(*) from public.platform_admin_audit where acao in ('plano_rascunho_salvar', 'plano_publicar') and alvo_id = t.p146('anual', 2)), 3::bigint);
 
 -- ==================== plano novo, painéis obrigatórios, descartar ====================
@@ -86,7 +88,7 @@ select t.throws('versão publicada nunca se descarta', format($q$select public.a
 -- ==================== vitrine e arquivar ====================
 select public.admin_plano_visibilidade_definir(t.p146('anual', 2), false) is not null;
 reset role;
-select t.eq('oculto na vitrine não aparece', (select count(*) from public.billing_plans p where p.chave = 'anual' and p.versao = 2 and p.publico), 0::bigint);
+select t.eq('oculto na vitrine não aparece', (select count(*) from public.billing_plans p where p.chave = 'anual' and p.versao = current_setting('t146.base')::int + 1 and p.publico), 0::bigint);
 select t.como('adm146');
 select public.admin_plano_visibilidade_definir(t.p146('anual', 2), true) is not null;
 select t.throws('não arquiva versão com assinatura viva', format($q$select public.admin_plano_arquivar(%L)$q$, t.p146('anual', 1)), 'assinatura');
