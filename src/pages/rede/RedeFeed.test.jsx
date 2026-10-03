@@ -342,3 +342,24 @@ describe('Rede DBV — fileira de stories', () => {
     expect(f.marcarStoryVisto).toHaveBeenCalledWith('s1')
   })
 })
+
+
+describe('541 — comentários para todos os participantes', () => {
+  it.each(['pais', 'tesoureiro', 'desbravador', 'diretoria', 'instrutor', 'conselheiro', 'coordenador'])('permite %s comentar em post visível de outro clube', async (papel) => {
+    const u = userEvent.setup()
+    const { Comentarios } = await import('./componentes.jsx')
+    f.comentar.mockResolvedValue({ ok: true, comentario: { id: 'c1', texto: 'Parabéns!', autor: { nome: 'Eu' }, meu: true } })
+    renderRede(<Comentarios aberta aoFechar={() => {}} post={post({ alcance: 'comunidade' })}
+      status={{ pode_ver: true, pode_publicar: papel !== 'pais', pode_comentar: true, papel }} aoContar={() => {}} />)
+    await u.type(screen.getByLabelText('Escreva um comentário'), 'Parabéns!')
+    await u.click(screen.getByRole('button', { name: 'Comentar', exact: true }))
+    expect(f.comentar).toHaveBeenCalledWith('p1', 'Parabéns!')
+    expect(await screen.findByText('Parabéns!')).toBeInTheDocument()
+  })
+  it('oculta envio quando o servidor não autoriza comentar', async () => {
+    const { Comentarios } = await import('./componentes.jsx')
+    renderRede(<Comentarios aberta aoFechar={() => {}} post={post()}
+      status={{ pode_ver: true, pode_publicar: true, pode_comentar: false }} aoContar={() => {}} />)
+    expect(screen.queryByLabelText('Escreva um comentário')).toBeNull()
+  })
+})

@@ -369,12 +369,12 @@ select t.eq('instrutor comenta na Comunidade', t.txt(format($q$select public.com
 select t.como('conselheiro_a');
 select t.eq('conselheiro comenta na Comunidade', t.txt(format($q$select public.comunidade_comentar(%L, 'A unidade vai!')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.como('tesoureiro_a');
-select t.throws('tesoureiro NAO comenta na Comunidade', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'Na Comunidade comentam');
+select t.eq('541: tesoureiro comenta na Comunidade', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.eq('...mas tesoureiro ainda comenta no Meu Clube (alcance clube)', t.txt(format($q$select public.comunidade_comentar(%L, 'Parabens!')->>'ok'$q$, t.id('post_clube_a'))), 'true');
 select t.como('pais_a');
-select t.throws('responsavel NAO comenta', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'não publicam');
+select t.eq('541: responsavel comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.como('coord_123');
-select t.throws('coordenacao institucional (so por cargo) NAO comenta na Comunidade', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'Na Comunidade comentam');
+select t.eq('541: coordenacao institucional (so por cargo) comenta na Comunidade', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.como('admin_123');
 select t.throws('admin da plataforma (sem vinculo) NAO comenta', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'clube');
 select t.como('susp_dir_a');
@@ -382,7 +382,7 @@ select t.throws('diretoria com vinculo suspenso NAO comenta', format($q$select p
 select t.como('enc_inst_a');
 select t.throws('instrutor com vinculo encerrado NAO comenta', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'Entre num clube');
 select t.como('membro_b');
-select t.throws('desbravador de OUTRO clube NAO comenta (regra de 515 mantida)', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')), 'seu clube');
+select t.eq('541: desbravador de OUTRO clube comenta (regra de 515 mantida)', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.eq('...mas pode curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'eu_curti'$q$, t.id('post_com_a'))), 'true');
 select t.como('membro_a');
 select t.eq('desbravador comenta na Comunidade do PROPRIO clube (regra de 515 mantida)', t.txt(format($q$select public.comunidade_comentar(%L, 'Vou sim!')->>'ok'$q$, t.id('post_com_a'))), 'true');
@@ -392,19 +392,19 @@ select t.pedir_clube('clube_b');
 select t.eq('conselheiro no B (desbravador no A): comenta na Comunidade do A pelo papel do B', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi do B!')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.como('dir_a_membro_b');
 select t.pedir_clube('clube_b');
-select t.throws('diretoria no A mas desbravador no B: no contexto B NAO comenta conteudo do A', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_a')));
+select t.eq('541: diretoria no A mas desbravador no B: no contexto B comenta conteudo do A', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.pedir_clube('clube_a');
 select t.eq('...no contexto A (diretoria) comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi da diretoria')->>'ok'$q$, t.id('post_com_a'))), 'true');
 select t.como('suspenso_so_b');
 select t.pedir_clube('clube_b');
-select t.throws('vinculo SUSPENSO no B: nao comenta no B (cai no A, onde e desbravador de outro clube)', format($q$select public.comunidade_comentar(%L, 'Oi')$q$, t.id('post_com_b')));
+select t.eq('541: vinculo SUSPENSO no B: nao comenta no B (cai no A, onde e desbravador de outro clube)', t.txt(format($q$select public.comunidade_comentar(%L, 'Oi')->>'ok'$q$, t.id('post_com_b'))), 'true');
 reset role;
-select t.eq('...e nenhum comentario dele existe', (select count(*) from public.comunidade_comentarios where autor_id = t.id('suspenso_so_b')), 0::bigint);
+select t.eq('541: comenta pelo vínculo ativo no A, não pelo suspenso no B', (select count(*) from public.comunidade_comentarios where autor_id = t.id('suspenso_so_b')), 1::bigint);
 select t.eq('comentarios gravados: so de quem pode (lider_b, instrutor_a, conselheiro_a, membro_a, multi, dir_a_membro_b) + 1 do tesoureiro no Meu Clube',
-  (select count(*) from public.comunidade_comentarios where post_id = t.id('post_com_a')), 6::bigint);
-select t.eq('...nenhum na Comunidade de tesoureiro/pais/coord/admin/suspenso/encerrado/desbravador de fora',
+  (select count(*) from public.comunidade_comentarios where post_id = t.id('post_com_a')), 11::bigint);
+select t.eq('541: tesoureiro, pais, coordenação e membro de fora comentam; sem vínculo continua bloqueado',
   (select count(*) from public.comunidade_comentarios where post_id = t.id('post_com_a')
-      and autor_id in (t.id('tesoureiro_a'), t.id('pais_a'), t.id('coord_123'), t.id('admin_123'), t.id('susp_dir_a'), t.id('enc_inst_a'), t.id('membro_b'), t.id('suspenso_so_b'))), 0::bigint);
+      and autor_id in (t.id('tesoureiro_a'), t.id('pais_a'), t.id('coord_123'), t.id('admin_123'), t.id('susp_dir_a'), t.id('enc_inst_a'), t.id('membro_b'), t.id('suspenso_so_b'))), 4::bigint);
 
 -- =============================================================================
 --  6. Foto na Comunidade: analise -> aprovacao -> publicacao (inalterado); platform admin so modera o que lhe cabe

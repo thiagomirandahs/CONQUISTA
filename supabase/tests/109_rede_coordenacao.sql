@@ -161,15 +161,13 @@ reset role;
 -- regras de comentar/curtir entre áreas (a coordenação só comenta em criança da sua área; adulto de outro clube não comenta).
 update public.comunidade_posts set alcance = 'comunidade' where id in (t.id('post_crianca'), t.id('post_coord'));
 select t.como('c109_outro');
--- 517: na Comunidade (alcance 'comunidade') a coordenação por cargo não comenta (só adulto com papel de clube); a regra de área segue para o alcance 'clube'
-select t.throws('NÃO comenta em post de criança de clube fora da sua área (nem na Comunidade: 517)',
-  $q$select public.comunidade_comentar((select id from t.ids where chave = 'post_crianca'), 'Muito bem!')$q$, 'Na Comunidade comentam');
+-- 541: coordenação também comenta na Comunidade; alcance privado continua respeitado.
+select t.eq('541: coordenação comenta em post público de outra área', t.txt($q$select public.comunidade_comentar((select id from t.ids where chave = 'post_crianca'), 'Muito bem!')->>'ok'$q$), 'true');
 select t.eq('...mas curte', t.txt($q$select public.comunidade_curtir((select id from t.ids where chave = 'post_crianca'), true)->>'eu_curti'$q$), 'true');
-select t.throws('coordenação NÃO comenta nem em post de adulto da Comunidade (517: só por cargo não comenta lá)', $q$select public.comunidade_comentar((select id from t.ids where chave = 'post_coord'), 'Bom dia!')$q$, 'Na Comunidade comentam');
+select t.eq('541: coordenação comenta em post de adulto da Comunidade', t.txt($q$select public.comunidade_comentar((select id from t.ids where chave = 'post_coord'), 'Bom dia!')->>'ok'$q$), 'true');
 select t.eq('"Minha área" não traz clube de outro distrito', t.n($q$select count(*) from jsonb_array_elements(public.rede_feed('meu_clube')->'itens') e where e->>'id' = (select id::text from t.ids where chave = 'post_crianca')$q$), 0::bigint);
 select t.como('lider_b');
-select t.throws('adulto de outro CLUBE continua sem comentar em post de criança',
-  $q$select public.comunidade_comentar((select id from t.ids where chave = 'post_crianca'), 'Legal!')$q$, 'outro clube');
+select t.eq('541: adulto de outro clube comenta em post público de criança', t.txt($q$select public.comunidade_comentar((select id from t.ids where chave = 'post_crianca'), 'Legal!')->>'ok'$q$), 'true');
 reset role;
 
 -- =============================================================================

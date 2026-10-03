@@ -28,11 +28,11 @@ export const LINHA = 'border-[var(--rede-linha)]'
 
 // Erro que o servidor escreveu PARA a pessoa (regras da Comunidade): mostramos como veio.
 const ERRO_DA_REDE = /Comunidade|Rede DBV|responsável|pausada|Adultos de outro clube|não está disponível|não publicam|denunciar o que|limite|Espere|Escreva|legenda|texto pode|texto do story|comentário pode|Foto inválida|foto|story|desafio|conquista|descrição|Descreva|Escolha|Alcance|Tipo de publicação|Só a diretoria|Compartilhar|perfil|salvos|ocultar|restaurar|clube|aviso|evento|instrutor|diretoria|comentar/i
-// Regras por papel (517): aviso/evento/Comunidade só liderança; comentar na Comunidade só quem o servidor permite.
+// Regras por papel (517): aviso/evento/Comunidade só liderança; comentários liberados para participantes autorizados (541).
 // Se o servidor devolver a recusa crua (permissão/RLS/"not allowed"), traduzimos; se já vier em português, mostramos como veio.
 const RECUSA_POR_PAPEL = [
   [/(aviso|evento).*(diretoria|instrutor|lideran)|(diretoria|instrutor|lideran).*(aviso|evento)/i, 'Avisos e eventos são publicados só pela diretoria e pelos instrutores do clube. Você pode publicar uma foto ou atividade no Meu Clube 🙂'],
-  [/(coment).*(comunidade|permiss|autoriz)|(comunidade).*(coment)/i, 'Você não pode comentar nesta publicação da Comunidade. Nos posts do seu clube você comenta normalmente 🙂'],
+  [/(coment).*(comunidade|permiss|autoriz)|(comunidade).*(coment)/i, 'Não foi possível comentar. Confira sua autorização na Rede e tente novamente.'],
   [/(permission denied|not allowed|row-level security|violates row|forbidden|42501)/i, 'Você não tem permissão para fazer isso na Rede DBV. Se acha que é um engano, fale com a diretoria do seu clube.'],
 ]
 export const textoDoErro = (e, contexto) => {
@@ -286,17 +286,15 @@ export function Denuncia({ aberta, aoFechar, tipo, id, aoOcultar }) {
 }
 
 // ---------------------------------------------------------------- comentários (folha que sobe de baixo)
-export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar }) {
+export function Comentarios({ aberta, aoFechar, post, status, aoContar }) {
   const [itens, setItens] = useState(null)
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [recusa, setRecusa] = useState('')
   const [denunciarId, setDenunciarId] = useState(null)
-  // adulto de OUTRO clube não comenta em publicação de criança (o servidor recusa de qualquer jeito).
-  // Coordenação (490) pode, se o clube da criança está na área dela — só o servidor sabe a árvore,
-  // então aqui não se esconde a caixa; fora da área, o servidor recusa com a explicação.
-  const bloqueadoPorRegra = post.crianca && status?.papel !== 'desbravador' && post.clube_id !== clubeId && !status?.coordenacao
-  const podeComentar = !!status?.pode_publicar && !bloqueadoPorRegra
+  // 541: comentar é independente de publicar (responsáveis também comentam).
+  // Fallback para banco anterior: o servidor continua sendo a autoridade.
+  const podeComentar = status?.pode_comentar ?? (!!status?.pode_ver && !status?.suspenso_ate)
 
   useEffect(() => {
     if (!aberta) return undefined
@@ -348,7 +346,6 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
         </form>
       )}
       {recusa && <p role="alert" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-2 mt-2">{recusa}</p>}
-      {bloqueadoPorRegra && <p className={`text-xs ${TXT_SUAVE} mt-3`}>Adultos de outro clube não comentam em publicações de desbravadores. Você pode curtir 🙂</p>}
       <Denuncia aberta={!!denunciarId} aoFechar={() => setDenunciarId(null)} tipo="comentario" id={denunciarId}
         aoOcultar={() => { const n = (itens || []).filter((c) => c.id !== denunciarId); setItens(n); aoContar(n.length) }} />
     </Folha>

@@ -139,8 +139,8 @@ select t.eq('...+ nome do clube', t.txt($q$select public.comunidade_feed()->'ite
 select t.ok('...e NUNCA o nome completo, nascimento ou e-mail', t.txt($q$select public.comunidade_feed()::text$q$) !~ '(Souza|2014|teste\.local|nascimento|email)');
 select t.eq('curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
 select t.eq('curtir de novo não duplica', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '1');
--- 515 (G4): antes "criança de outro clube comenta" = true; agora desbravador só comenta no PRÓPRIO clube.
-select t.throws('criança de outro clube NÃO comenta (só curte)', format($q$select public.comunidade_comentar(%L, 'Que legal!')$q$, t.id('post_a')), 'seu clube');
+-- 541: desbravador autorizado comenta em qualquer publicação visível.
+select t.eq('541: criança autorizada de outro clube comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'Que legal!')->>'ok'$q$, t.id('post_a'))), 'true');
 select t.eq('compartilhar DENTRO do app (repost)', t.txt(format($q$select public.comunidade_publicar(null, null, %L)->>'ok'$q$, t.id('post_a'))), 'true');
 -- 515: o "comentário de B" que as seções seguintes denunciam agora é num post do PRÓPRIO clube B (G4)
 select public.comunidade_publicar('Nossa unidade B está pronta!');
@@ -152,7 +152,7 @@ select t.como('membro_b');
 select t.eq('criança comenta no post do PRÓPRIO clube', t.txt(format($q$select public.comunidade_comentar(%L, 'Que legal!')->>'ok'$q$, t.id('post_b'))), 'true');
 reset role;
 select t.como('lider_b');
-select t.throws('adulto de OUTRO clube NÃO comenta em post de criança', format($q$select public.comunidade_comentar(%L, 'Parabéns!')$q$, t.id('post_a')), 'Adultos de outro clube');
+select t.eq('541: adulto de OUTRO clube comenta em post de criança', t.txt(format($q$select public.comunidade_comentar(%L, 'Parabéns!')->>'ok'$q$, t.id('post_a'))), 'true');
 select t.eq('...mas pode curtir', t.txt(format($q$select public.comunidade_curtir(%L, true)->>'curtidas'$q$, t.id('post_a'))), '2');
 select t.eq('repost de repost aponta para o ORIGINAL', t.txt(format($q$select public.comunidade_publicar(null, null, %L)->'post'->'repost'->>'id'$q$, t.id('repost_b'))), t.id('post_a')::text);
 select t.como('lider_a');
@@ -160,9 +160,9 @@ select t.eq('adulto do MESMO clube comenta no post da criança', t.txt(format($q
 select t.como('pais_a');
 select t.ok('responsável acompanha o feed', t.n($q$select jsonb_array_length(public.comunidade_feed()->'itens')$q$) >= 1);
 select t.throws('responsável NÃO publica', $q$select public.comunidade_publicar('oi')$q$, 'não publicam');
-select t.throws('responsável NÃO comenta', format($q$select public.comunidade_comentar(%L, 'oi')$q$, t.id('post_a')), 'não publicam');
+select t.eq('541: responsável comenta', t.txt(format($q$select public.comunidade_comentar(%L, 'oi')->>'ok'$q$, t.id('post_a'))), 'true');
 select t.como('membro_b');
-select t.eq('comentários listados com primeiro nome', t.n(format($q$select jsonb_array_length(public.comunidade_comentarios(%L)->'itens')$q$, t.id('post_a'))), 1::bigint);   -- 515: era 2 (a criança de B comentava)
+select t.eq('comentários listados com primeiro nome', t.n(format($q$select jsonb_array_length(public.comunidade_comentarios(%L)->'itens')$q$, t.id('post_a'))), 4::bigint); -- 541: criança B, adulto B, adulto A e pais A
 reset role;
 
 -- =============================================================================
