@@ -7,5 +7,7 @@ Allow: /clubes
 Allow: /parceiros
 Allow: /ajuda
 Allow: /og-desbravaclube.png
+Allow: /logo.png
+Allow: /apple-touch-icon.png
 Allow: /landing/
 Disallow: /
