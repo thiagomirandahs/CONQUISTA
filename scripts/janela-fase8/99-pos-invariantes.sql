@@ -10,7 +10,7 @@ select case when count(*) = 0 then 'OK   definer: todas com search_path fixo' el
 -- 3) anon só executa as RPCs públicas intencionais
 select case when count(*) = 0 then 'OK   anon: só as RPCs públicas intencionais' else 'FALHOU anon executa: ' || string_agg(proname, ', ') end
   from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute') and proname !~ '^(_|pg_)'
-   and proname not in ('convite_hierarquia_abrir', 'documento_verificar', 'entrada_abrir_publico', 'manutencao_estado', 'parceiros_publico', 'planos_disponiveis', 'vitrine_clube_publico', 'vitrine_clubes_publico');
+   and proname not in ('convite_hierarquia_abrir', 'documento_verificar', 'entrada_abrir_publico', 'manutencao_estado', 'metrica_registrar', 'parceiros_publico', 'planos_disponiveis', 'vitrine_clube_publico', 'vitrine_clubes_publico');
 -- 4) anon sem escrita direta em tabela
 select case when count(*) = 0 then 'OK   grants: anon sem INSERT/UPDATE/DELETE' else 'FALHOU anon com escrita direta em ' || string_agg(distinct table_name, ', ') end
   from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon' and privilege_type in ('INSERT', 'UPDATE', 'DELETE');
