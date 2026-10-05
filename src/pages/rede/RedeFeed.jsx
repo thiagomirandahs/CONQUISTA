@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
 import { carregarFeed, carregarStories } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
+import { Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
 import { EsqueletoFeed, Icone, ListaDePosts, PILL_CLARA, TXT, TXT_SUAVE, VazioRede, textoDoErro } from './componentes.jsx'
 import { FileiraStories, NovoStory, ViewerStories } from './Stories.jsx'
@@ -43,7 +44,10 @@ export default function RedeFeed() {
   const [gruposCom, setGruposCom] = useState(undefined)
   const [aberto, setAberto] = useState(null)       // { alcance, indice } do grupo no viewer
   const [arquivoStory, setArquivoStory] = useState(null)   // { arquivo, alcance }
-  const inputStory = useRef(null)
+  const [escolhaStory, setEscolhaStory] = useState(null)     // alcance do "+" tocado, enquanto a folha Câmera/Galeria está aberta
+  const inputCamera = useRef(null)
+  const inputSelfie = useRef(null)
+  const inputGaleria = useRef(null)
 
   const carregar = useCallback(async (f) => {
     setCarregando(true); setErro(null)
@@ -128,20 +132,33 @@ export default function RedeFeed() {
 
       <p data-testid="subtitulo-aba" className={`px-3 pt-2 text-xs font-semibold ${TXT_SUAVE}`}>{SUBTITULO[filtro]}</p>
 
-      {/* um só seletor de foto para as duas faixas; o alcance é o da aba em que o "+" foi tocado */}
-      <label htmlFor="rede-story-foto" className="sr-only">Foto do story</label>
-      <input ref={inputStory} id="rede-story-foto" type="file" accept="image/*" className="sr-only"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory({ arquivo: f, alcance: alcanceDaAba }); e.target.value = '' }} />
+      {/* três entradas de foto para as duas faixas (câmera de trás, selfie e galeria); o alcance é o da aba em que o "+" foi tocado.
+          `capture` abre a câmera do aparelho direto; no APK o Android pede a permissão da câmera na hora (AndroidManifest CAMERA). */}
+      {[['rede-story-camera', inputCamera, 'environment', 'Foto do story (câmera)'], ['rede-story-selfie', inputSelfie, 'user', 'Foto do story (selfie)'], ['rede-story-foto', inputGaleria, undefined, 'Foto do story (galeria)']].map(([id, ref, capture, rotulo]) => (
+        <span key={id}>
+          <label htmlFor={id} className="sr-only">{rotulo}</label>
+          <input ref={ref} id={id} type="file" accept="image/*" capture={capture} className="sr-only"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory({ arquivo: f, alcance: escolhaStory || alcanceDaAba }); e.target.value = ''; setEscolhaStory(null) }} />
+        </span>
+      ))}
+      <Folha aberta={escolhaStory !== null} aoFechar={() => setEscolhaStory(null)} titulo="Novo story">
+        <div className="space-y-2" data-testid="escolha-story">
+          <button type="button" onClick={() => inputCamera.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>📷 Tirar foto agora</button>
+          <button type="button" onClick={() => inputSelfie.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>🤳 Tirar selfie</button>
+          <button type="button" onClick={() => inputGaleria.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>🖼️ Escolher da galeria</button>
+          <p className="text-xs text-muted leading-snug">Na primeira vez, o celular pede a permissão para usar a câmera. A localização da foto é removida antes de publicar.</p>
+        </div>
+      </Folha>
 
       {filtro === 'comunidade' && gruposCom !== false && (
         <FileiraStories alcance="comunidade" grupos={gruposCom || null} eu={euNaFaixa} podePublicar={!!status?.pode_publicar}
-          aoAbrir={(i) => setAberto({ alcance: 'comunidade', indice: i })} aoNovo={() => inputStory.current?.click()} />
+          aoAbrir={(i) => setAberto({ alcance: 'comunidade', indice: i })} aoNovo={() => setEscolhaStory(alcanceDaAba)} />
       )}
 
       {filtro === 'meu_clube' && (
         <>
           <FileiraStories grupos={grupos} eu={euNaFaixa} podePublicar={!!status?.pode_publicar}
-            aoAbrir={(i) => setAberto({ alcance: 'clube', indice: i })} aoNovo={() => inputStory.current?.click()} />
+            aoAbrir={(i) => setAberto({ alcance: 'clube', indice: i })} aoNovo={() => setEscolhaStory(alcanceDaAba)} />
 
           <Link to="/rede/desafios" data-testid="atalho-desafios"
             className="mx-3 mb-2 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 flex items-center gap-2 text-sm font-semibold text-[var(--rede-ink)] no-underline">

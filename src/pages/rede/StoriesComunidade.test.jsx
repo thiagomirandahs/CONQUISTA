@@ -167,7 +167,7 @@ describe('Stories para todos na Comunidade — faixa na aba Comunidade', () => {
 
 describe('Stories para todos na Comunidade — publicar', () => {
   const pronta = { arquivo: new File(['x'], 'foto.webp', { type: 'image/webp' }), antes: 4_000_000, depois: 140_000 }
-  const escolherFoto = () => fireEvent.change(screen.getByLabelText('Foto do story'), { target: { files: [new File(['y'], 'IMG.jpg', { type: 'image/jpeg' })] } })
+  const escolherFoto = () => fireEvent.change(screen.getByLabelText('Foto do story (galeria)'), { target: { files: [new File(['y'], 'IMG.jpg', { type: 'image/jpeg' })] } })
 
   it('textos: "Só o seu clube vê" × "Todos os clubes da Rede vão ver por 24 horas"', () => {
     expect(CONFIRMAR_STORY.descricao).toBe('Ele fica visível só para o seu clube por 24 horas.')
@@ -178,6 +178,24 @@ describe('Stories para todos na Comunidade — publicar', () => {
     expect(confirmacaoDeStory(undefined)).toBe(CONFIRMAR_STORY)
     expect(QUEM_VE_STORY.comunidade).toMatch(/Todos os clubes da Rede/)
     expect(QUEM_VE_STORY.clube).toMatch(/Só o seu clube/)
+  })
+
+  it('o "+" abre a folha Câmera / Selfie / Galeria; os três campos de foto têm o capture certo; tirar foto abre o story com o alcance da aba', async () => {
+    const u = userEvent.setup()
+    f.prepararFotoStory.mockResolvedValue(pronta)
+    f.carregarStories.mockImplementation(async (a) => porAlcance(a).filter((g) => !g.meu))
+    const fileira = await abrirComunidade(u)
+    expect(screen.getByLabelText('Foto do story (câmera)')).toHaveAttribute('capture', 'environment')
+    expect(screen.getByLabelText('Foto do story (selfie)')).toHaveAttribute('capture', 'user')
+    expect(screen.getByLabelText('Foto do story (galeria)')).not.toHaveAttribute('capture')
+    await u.click(within(fileira).getByRole('button', { name: 'Adicionar story na Comunidade' }))
+    const folha = await screen.findByTestId('escolha-story')
+    expect(within(folha).getByRole('button', { name: /Tirar foto agora/ })).toBeInTheDocument()
+    expect(within(folha).getByRole('button', { name: /Tirar selfie/ })).toBeInTheDocument()
+    expect(within(folha).getByRole('button', { name: /Escolher da galeria/ })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Foto do story (câmera)'), { target: { files: [new File(['c'], 'CAM.jpg', { type: 'image/jpeg' })] } })
+    const dialogo = await screen.findByRole('dialog', { name: 'Novo story na Comunidade' })
+    expect(within(dialogo).getByTestId('quem-ve-story')).toHaveTextContent('Todos os clubes da Rede')
   })
 
   it('o "+" da aba Comunidade publica com alcance comunidade, depois da confirmação clara; recarrega as duas faixas', async () => {

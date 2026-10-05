@@ -34,4 +34,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+: sem isto o pedido de permissão de notificação é negado na hora (push nativo nunca registrava) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Stories da Rede DBV: foto direto da câmera (input capture). O Android pede a permissão na primeira vez. A câmera não é obrigatória para instalar. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
 </manifest>
