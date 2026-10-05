@@ -48,7 +48,7 @@ Deno.serve(async req => {
           redirect_url: 'https://app.desbravaclube.com.br/planos',
           webhook_url: `${urlProjeto()}/functions/v1/licenca-infinitepay?webhook=1` })
         const url = checkoutSeguro(d.url)
-        const { error: gravar } = await servico.from('licenca_pedidos').update({ checkout_url: url }).eq('id', o.id).eq('status', 'pendente')
+        const { error: gravar } = await servico.from('licenca_pedidos').update({ onde_pagar: url }).eq('id', o.id).eq('status', 'pendente')
         if (gravar) throw new Error('Não foi possível salvar a cobrança. Tente novamente.')
         return responder({ url })
       }
