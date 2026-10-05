@@ -7,6 +7,7 @@
 import { ehNativo } from './nativo.js'
 import { supabase } from './supabase.js'
 import { rpcInexistente } from '../services/config.js'
+import { anunciarAvisoTocado } from './avisoTocado.js'
 
 let _uid = null
 let _token = null
@@ -44,6 +45,11 @@ async function registrar(userId, pedir) {
         try { await salvarToken(token.value); _aguardando?.resolve({ ok: true }) }
         catch (e) { _aguardando?.resolve({ ok: false, motivo: 'erro', detalhe: e?.message }) }
         _aguardando = null
+      })
+      // Tocou na notificação na bandeja: abre o popup com o aviso inteiro.
+      PushNotifications.addListener('pushNotificationActionPerformed', (acao) => {
+        const n = acao?.notification
+        anunciarAvisoTocado({ titulo: n?.title, corpo: n?.body, link: n?.data?.link })
       })
       PushNotifications.addListener('registrationError', (e) => {
         _aguardando?.resolve({ ok: false, motivo: 'erro', detalhe: e?.error || 'registro no Firebase falhou' })

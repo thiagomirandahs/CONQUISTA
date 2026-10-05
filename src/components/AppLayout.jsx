@@ -10,6 +10,7 @@ import { FilaDePopupsProvider } from '../ui/popups.jsx'
 const DevocionalPopup = lazy(() => import('./DevocionalPopup.jsx'))
 const AvisosPopup = lazy(() => import('./AvisosPopup.jsx'))
 const ProximoEventoPopup = lazy(() => import('./ProximoEventoPopup.jsx'))
+const AvisoTocado = lazy(() => import('./AvisoTocado.jsx'))
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { useEscopo } from '../context/Escopo.jsx'
@@ -63,6 +64,7 @@ export default function AppLayout() {
         {!ehPai && <DevocionalPopup />}
         <AvisosPopup />
         <ProximoEventoPopup />
+        <AvisoTocado />
       </Suspense>
 
       {/* ===== Menu lateral (PC) — tudo, agrupado por hub ===== */}

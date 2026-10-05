@@ -12,6 +12,7 @@ vi.mock('./Notificacoes.jsx', () => ({ default: () => null }))
 vi.mock('./PreferenciasAcessibilidade.jsx', () => ({ default: () => null }))
 vi.mock('./DevocionalPopup.jsx', () => ({ default: () => null }))
 vi.mock('./AvisosPopup.jsx', () => ({ default: () => null }))
+vi.mock('./AvisoTocado.jsx', () => ({ default: () => null }))
 vi.mock('./ProximoEventoPopup.jsx', () => ({ default: () => null }))
 const { default: AppLayout } = await import('./AppLayout.jsx')
 

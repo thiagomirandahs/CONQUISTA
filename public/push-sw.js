@@ -34,7 +34,7 @@ self.addEventListener('push', (event) => {
     body: data.corpo || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
-    data: { link: linkSeguro(data.link) },
+    data: { link: linkSeguro(data.link), titulo: titulo, corpo: data.corpo || '' },
     // Vibra o aparelho ao chegar (Android; iOS ignora, não tem suporte).
     vibrate: [300, 100, 300, 100, 300],
     // Sem isto o navegador pode empilhar avisos calados — "silent: false"
@@ -53,18 +53,32 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(titulo, opcoes))
 })
 
+/* Toque na notificação: o app abre com um POPUP do aviso inteiro (a bandeja corta o texto).
+   Guardamos o último toque para entregar a um app aberto a frio, que avisa "pronto" ao carregar. */
+var avisoPendente = null
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.tipo === 'pronto' && avisoPendente && event.source) {
+    event.source.postMessage(avisoPendente)
+    avisoPendente = null
+  }
+})
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const link = linkSeguro(event.notification.data && event.notification.data.link)
+  const d = event.notification.data || {}
+  const link = linkSeguro(d.link)
+  const msg = { tipo: 'aviso-tocado', titulo: d.titulo || '', corpo: d.corpo || '', link: link }
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
       for (const c of janelas) {
         if ('focus' in c) {
-          if ('navigate' in c) c.navigate(link)
+          c.postMessage(msg)
           return c.focus()
         }
       }
-      if (self.clients.openWindow) return self.clients.openWindow(link)
+      avisoPendente = msg
+      if (self.clients.openWindow) return self.clients.openWindow('/')
     })
   )
 })
