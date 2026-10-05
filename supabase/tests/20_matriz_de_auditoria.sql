@@ -71,6 +71,7 @@ insert into t.excecoes values
   ('subscriptions',              'ASSINATURA da conta comercial (fase 5): pertence à conta, não a um clube; os clubes cobertos ficam em subscription_clubs'),
   ('subscription_events',        'histórico das transições comerciais de uma assinatura (fase 5): auditoria da conta, não do clube'),
   ('billing_invoices',           'COBRANÇA de uma assinatura (fase 5): da conta comercial; nenhum dado operacional de clube passa por aqui'),
+  ('licenca_pedidos',            'PEDIDO de licença da conta comercial (checkout InfinitePay, migration 543): pertence à assinatura da plataforma, não a um clube; só service_role escreve'),
   ('billing_providers',          'interface de PROVEDOR de pagamento (fase 5): catálogo da plataforma; hoje só o mock local'),
   ('billing_events',             'eventos de WEBHOOK recebidos (fase 5): idempotentes por unique (provider, evento_externo_id); operação interna — nem o contato da conta lê'),
   ('platform_admins',            'ADMINISTRAÇÃO DA PLATAFORMA (fase 5): papel de operação do produto, deliberadamente FORA de organization_memberships — não é autoridade eclesiástica e não ganha policy nenhuma sobre dado de clube (teste 43)'),

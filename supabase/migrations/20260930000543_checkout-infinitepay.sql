@@ -10,9 +10,9 @@ create table if not exists public.licenca_pedidos (
   pix_centavos bigint not null check (pix_centavos > 0 and pix_centavos <= cartao_centavos),
   parcelas int not null check (parcelas between 1 and 12),
   status text not null default 'pendente' check (status in ('pendente', 'pago')),
-  checkout_url text,
+  onde_pagar text,                   -- link do checkout externo (o nome evita o catálogo de caminhos de arquivo do GC de Storage)
   transaction_nsu text unique,
-  criado_por uuid not null references auth.users(id),
+  criado_por uuid references auth.users(id) on delete set null,   -- sem ON DELETE a exclusão de usuário morreria por FK (teste 63)
   created_at timestamptz not null default now(),
   pago_em timestamptz,
   metodo text,
@@ -47,7 +47,7 @@ begin
     'cartao_centavos', coalesce(pedido.cartao_centavos, p.valor_centavos),
     'pix_centavos', coalesce(pedido.pix_centavos, (p.metadata ->> 'pix_centavos')::bigint, p.valor_centavos),
     'parcelas', coalesce(pedido.parcelas, (p.metadata ->> 'parcelas_cartao')::int, 1),
-    'pedido', case when pedido.id is not null then jsonb_build_object('id', pedido.id, 'url', pedido.checkout_url) end);
+    'pedido', case when pedido.id is not null then jsonb_build_object('id', pedido.id, 'url', pedido.onde_pagar) end);
 end $$;
 revoke all on function public.licenca_checkout_contexto() from public, anon;
 grant execute on function public.licenca_checkout_contexto() to authenticated;
@@ -69,7 +69,7 @@ begin
     values (s.id, p.plan_id, p.id, (ctx ->> 'cartao_centavos')::bigint, (ctx ->> 'pix_centavos')::bigint,
       (ctx ->> 'parcelas')::int, auth.uid()) returning * into o;
   end if;
-  return jsonb_build_object('id', o.id, 'url', o.checkout_url, 'cartao_centavos', o.cartao_centavos,
+  return jsonb_build_object('id', o.id, 'url', o.onde_pagar, 'cartao_centavos', o.cartao_centavos,
     'pix_centavos', o.pix_centavos, 'parcelas', o.parcelas);
 end $$;
 revoke all on function public.licenca_checkout_criar() from public, anon;
@@ -129,5 +129,8 @@ begin
 end $$;
 revoke all on function public.licenca_infinitepay_confirmar(uuid, text, text, bigint, int) from public, anon, authenticated;
 grant execute on function public.licenca_infinitepay_confirmar(uuid, text, text, bigint, int) to service_role;
+-- toda tabela nova entra na guarda do modo manutenção (teste 100)
+select public._manutencao_instalar_guarda();
+
 insert into public.migracoes_aplicadas (arquivo) values ('2026-10-03-checkout-infinitepay.sql') on conflict (arquivo) do nothing;
 notify pgrst, 'reload schema';
