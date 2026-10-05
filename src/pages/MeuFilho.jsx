@@ -3,9 +3,10 @@ import { useAuth } from '../context/Auth.jsx'
 import Avatar from '../components/Avatar.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import AutorizacaoComunidade from '../components/AutorizacaoComunidade.jsx'
-import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPix, concederConsentimento, revogarConsentimento } from '../lib/dados.js'
+import { carregarMeusFilhos, meusPedidosVinculo, pedirVinculo, lerPagamentoDoClube, concederConsentimento, revogarConsentimento } from '../lib/dados.js'
 import { Carregando as Esqueleto, Cabecalho, Card, Botao, Campo, Aviso, mensagemDeErro } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
+import { TIPOS_FORMA, linkHttpsSeguro, dinheiroBR } from '../lib/formasPagamento.js'
 
 const MESES = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
@@ -17,7 +18,7 @@ export default function MeuFilho() {
   const { profile } = useAuth()
   const [filhos, setFilhos] = useState([])
   const [pedidos, setPedidos] = useState([])
-  const [pix, setPix] = useState('')
+  const [pagto, setPagto] = useState({ formas: [], valor: null })
   const [carregando, setCarregando] = useState(true)
   const [nome, setNome] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -28,8 +29,8 @@ export default function MeuFilho() {
     setCarregando(true)
     try {
       // lerPix é um extra: se ele falhar, a lista de filhos NÃO some (antes aparecia "Vincular seu filho" e convidava a duplicar o pedido)
-      const [f, p, px] = await Promise.all([carregarMeusFilhos(), meusPedidosVinculo(), lerPix().catch(() => null)])
-      setFilhos(f); setPedidos(p); setPix(px)
+      const [f, p, px] = await Promise.all([carregarMeusFilhos(), meusPedidosVinculo(), lerPagamentoDoClube().catch(() => null)])
+      setFilhos(f); setPedidos(p); if (px) setPagto(px)
     } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar os dados do seu filho.')) }
     setCarregando(false)
   }
@@ -64,8 +65,9 @@ export default function MeuFilho() {
     setConsentindo(null)
   }
 
-  function copiarPix() {
-    try { navigator.clipboard?.writeText(pix); avisar.sucesso('Chave PIX copiada!'); setMsg('Chave PIX copiada! 📋') } catch { /* sem clipboard */ }
+  async function copiar(texto, o_que) {
+    try { await navigator.clipboard.writeText(texto); avisar.sucesso(`${o_que} copiado!`) }
+    catch { avisar.info('Não consegui copiar. Segure o texto para copiar.') }
   }
 
   const pendentes = pedidos.filter((p) => p.status === 'pendente')
@@ -99,11 +101,34 @@ export default function MeuFilho() {
               <p className="text-xs text-amber-700 mt-0.5">
                 {c.mensalidades_pendentes.map((m) => `${MESES[m.mes] || m.mes}/${String(m.ano).slice(2)}`).join(' · ')}
               </p>
-              {pix ? (
-                <div className="mt-2 bg-surface rounded-xl p-3">
-                  <p className="text-xs text-faint mb-0.5">Chave PIX do clube (toque pra copiar)</p>
-                  <button type="button" onClick={copiarPix} aria-label={`Copiar a chave PIX ${pix}`}
-                    className="min-h-[44px] text-sm font-bold text-brand break-all text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{pix}</button>
+              {pagto.valor && (
+                <p className="text-sm text-amber-800 mt-1" data-testid="valor-mensalidade">
+                  Valor: <strong>{dinheiroBR(pagto.valor)}</strong> por mês{c.mensalidades_pendentes.length > 1 ? ` (${c.mensalidades_pendentes.length} meses pendentes)` : ''}
+                </p>
+              )}
+              {pagto.formas.length > 0 ? (
+                <div className="mt-2 space-y-2" data-testid="formas-pagamento">
+                  <p className="text-xs font-semibold text-amber-800">Como pagar</p>
+                  {pagto.formas.map((f, i) => {
+                    const t = TIPOS_FORMA[f.tipo]
+                    const url = f.tipo === 'link' ? linkHttpsSeguro(f.detalhe) : null
+                    return (
+                      <div key={i} className="bg-surface rounded-xl p-3">
+                        <p className="text-xs text-faint mb-0.5">{t.icone} {t.rotulo}{f.rotulo ? ` — ${f.rotulo}` : ''}</p>
+                        {url ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center min-h-[44px] text-sm font-bold text-brand underline">Abrir link de pagamento ↗</a>
+                        ) : t.copiavel ? (
+                          <button type="button" onClick={() => copiar(f.detalhe, t.rotulo)} aria-label={`Copiar ${t.rotulo}: ${f.detalhe}`}
+                            className="min-h-[44px] text-sm font-bold text-brand break-all text-left w-full whitespace-pre-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                            {f.detalhe} <span className="text-xs font-normal text-faint">(toque para copiar)</span>
+                          </button>
+                        ) : (
+                          <p className="text-sm text-ink whitespace-pre-line break-words">{f.detalhe}</p>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-amber-600 mt-1">Fale com a tesouraria pra acertar o pagamento.</p>

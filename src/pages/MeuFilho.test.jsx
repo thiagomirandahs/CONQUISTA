@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event'
 const carregarMeusFilhos = vi.fn()
 const meusPedidosVinculo = vi.fn()
 const pedirVinculo = vi.fn()
-const lerPix = vi.fn()
+const lerPagamentoDoClube = vi.fn()
 const concederConsentimento = vi.fn()
 const revogarConsentimento = vi.fn()
 vi.mock('../lib/dados.js', async (importOriginal) => {
@@ -19,7 +19,7 @@ vi.mock('../lib/dados.js', async (importOriginal) => {
     carregarMeusFilhos: (...a) => carregarMeusFilhos(...a),
     meusPedidosVinculo: (...a) => meusPedidosVinculo(...a),
     pedirVinculo: (...a) => pedirVinculo(...a),
-    lerPix: (...a) => lerPix(...a),
+    lerPagamentoDoClube: (...a) => lerPagamentoDoClube(...a),
     concederConsentimento: (...a) => concederConsentimento(...a),
     revogarConsentimento: (...a) => revogarConsentimento(...a),
   }
@@ -45,8 +45,42 @@ const COM_CONSENTIMENTO = { ...SEM_CONSENTIMENTO, id: 'filho-2', vinculo_id: 'vi
 beforeEach(() => {
   vi.clearAllMocks()
   meusPedidosVinculo.mockResolvedValue([])
-  lerPix.mockResolvedValue('')
+  lerPagamentoDoClube.mockResolvedValue({ formas: [], valor: null })
   confirmar.mockResolvedValue(true)
+})
+
+const PENDENTE = { ...SEM_CONSENTIMENTO, mensalidades_pendentes: [{ mes: 9, ano: 2026 }, { mes: 10, ano: 2026 }] }
+
+describe('MeuFilho — mensalidade e formas de pagamento', () => {
+  it('mostra o valor, os meses e TODAS as formas: PIX copiável, dinheiro como texto, link https abre em aba nova', async () => {
+    carregarMeusFilhos.mockResolvedValue([PENDENTE])
+    lerPagamentoDoClube.mockResolvedValue({ valor: 30, formas: [
+      { tipo: 'pix', rotulo: 'até dia 10', detalhe: '12.345.678/0001-90' },
+      { tipo: 'dinheiro', rotulo: '', detalhe: 'Entregar ao tesoureiro' },
+      { tipo: 'link', rotulo: '', detalhe: 'https://pague.exemplo.com/clube' },
+    ] })
+    render(<MeuFilho />)
+    expect(await screen.findByTestId('valor-mensalidade')).toHaveTextContent('R$ 30 por mês (2 meses pendentes)')
+    const formas = screen.getByTestId('formas-pagamento')
+    expect(within(formas).getByRole('button', { name: /Copiar PIX: 12\.345/ })).toBeInTheDocument()
+    expect(within(formas).getByText('Entregar ao tesoureiro')).toBeInTheDocument()
+    const link = within(formas).getByRole('link', { name: /Abrir link de pagamento/ })
+    expect(link).toHaveAttribute('href', 'https://pague.exemplo.com/clube')
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
+  })
+  it('sem nenhuma forma cadastrada: manda falar com a tesouraria; sem pendência, nada de pagamento', async () => {
+    carregarMeusFilhos.mockResolvedValue([PENDENTE, { ...SEM_CONSENTIMENTO, id: 'f9', nome: 'Em Dia' }])
+    render(<MeuFilho />)
+    expect(await screen.findByText(/Fale com a tesouraria/)).toBeInTheDocument()
+    expect(screen.queryByTestId('formas-pagamento')).not.toBeInTheDocument()
+  })
+  it('falha ao ler as formas não derruba a lista de filhos', async () => {
+    carregarMeusFilhos.mockResolvedValue([PENDENTE])
+    lerPagamentoDoClube.mockRejectedValue(new Error('offline'))
+    render(<MeuFilho />)
+    expect(await screen.findByText('Fulano')).toBeInTheDocument()
+    expect(screen.getByText(/Fale com a tesouraria/)).toBeInTheDocument()
+  })
 })
 
 describe('MeuFilho — consentimento', () => {

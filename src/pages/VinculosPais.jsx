@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
+import FormasPagamentoConfig from '../components/FormasPagamentoConfig.jsx'
 import {
-  carregarVinculosPendentes, buscarDesbravadores, aprovarVinculo, rejeitarVinculo, lerPix, salvarPix,
+  carregarVinculosPendentes, buscarDesbravadores, aprovarVinculo, rejeitarVinculo, 
   criarConviteResponsavel, listarConvitesResponsavel, revogarConviteResponsavel,
 } from '../lib/dados.js'
 import { montarLinkConvite, STATUS_CONVITE } from '../lib/convite.js'
@@ -59,7 +60,7 @@ export default function VinculosPais() {
 
       {ehDiretoria && <ConvitesResponsavel />}
 
-      <PixConfig ehDiretoria={ehDiretoria} />
+      {ehDiretoria && <FormasPagamentoConfig />}
 
       <h3 className="text-xs font-bold text-faint uppercase tracking-wide mb-2 mt-5">Pedidos aguardando</h3>
       {carregando ? (
@@ -250,37 +251,5 @@ function ModalAprovar({ pedido, onFechar, onAprovado }) {
         <button onClick={onFechar} disabled={salvando} className="w-full mt-4 rounded-xl bg-surface2 text-ink font-semibold py-2.5 disabled:opacity-60">Cancelar</button>
       </motion.div>
     </motion.div>
-  )
-}
-
-// Chave PIX do clube (aparece pros pais na cobrança). Todos da liderança editam.
-function PixConfig({ ehDiretoria }) {
-  const [pix, setPix] = useState('')
-  const [editando, setEditando] = useState('')
-  const [salvando, setSalvando] = useState(false)
-  const [ok, setOk] = useState(false)
-
-  useEffect(() => { lerPix().then((v) => { setPix(v); setEditando(v) }).catch(() => {}) }, [])
-
-  async function salvar() {
-    setSalvando(true); setOk(false)
-    try { await salvarPix(editando); setPix(editando.trim()); setOk(true) } catch (e) { avisar.erro(e) }
-    setSalvando(false)
-  }
-
-  return (
-    <div className="bg-surface rounded-2xl shadow-soft p-4">
-      <p className="font-bold text-ink mb-1">💰 Chave PIX do clube</p>
-      <p className="text-xs text-faint mb-2">Aparece pros pais quando a mensalidade está pendente.</p>
-      <div className="flex gap-2">
-        <input value={editando} onChange={(e) => { setEditando(e.target.value); setOk(false) }}
-          placeholder="chave PIX (CNPJ, telefone, e-mail...)"
-          className="flex-1 rounded-lg bg-surface2 border border-line px-3 py-2.5 text-sm text-ink placeholder:text-faint outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
-        <button onClick={salvar} disabled={salvando || editando.trim() === pix}
-          className="rounded-xl bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-bold px-4 text-sm disabled:opacity-50">
-          {salvando ? '...' : ok ? '✓' : 'Salvar'}
-        </button>
-      </div>
-    </div>
   )
 }

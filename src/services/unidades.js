@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase.js'
 import { gravarConfig } from './config.js'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from './membros.js'
+import { lerFormas, serializarFormas } from '../lib/formasPagamento.js'
 
 // PIX do clube (config_clube, POR CLUBE). Todos do clube leem; liderança salva.
 export async function lerPix() {
@@ -233,4 +234,17 @@ export async function carregarHistoricoAcampamento() {
   const { data: us } = await supabase.from('unidades').select('id,nome,cor').in('id', unidadeIds)
   const uniPorId = Object.fromEntries((us || []).map((u) => [u.id, u]))
   return (ps || []).map((p) => ({ ...p, unidade: uniPorId[p.unidade_id] || { nome: '?' } }))
+}
+
+// Formas de pagamento + valor da mensalidade (ver lib/formasPagamento.js). Todos do clube leem; diretoria grava.
+export async function lerPagamentoDoClube() {
+  const { data, error } = await supabase.from('config_clube').select('chave,valor').in('chave', ['formas_pagamento', 'mensalidade_valor', 'pix'])
+  if (error) throw new Error(error.message)
+  return lerFormas(Object.fromEntries((data || []).map((l) => [l.chave, l.valor])))
+}
+
+export async function salvarPagamentoDoClube(dados) {
+  const r = serializarFormas(dados)
+  if (r.erro) throw new Error(r.erro)
+  await gravarConfig(r.linhas)
 }

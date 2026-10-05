@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link, useInRouterContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
+import { lerPagamentoDoClube } from '../services/unidades.js'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { hojeLocalISO } from '../lib/data.js'
@@ -17,6 +19,7 @@ const agora = new Date()
 export default function Mensalidades() {
   const { profile } = useAuth()
   const { papel: meuPapel } = useClube()
+  const emRouter = useInRouterContext()
   const { sucesso, erro: avisarErro, confirmar } = useAvisos()
   const podeVer = FINANCEIRO.includes(meuPapel)
   const [desbravadores, setDesbravadores] = useState([])
@@ -24,6 +27,8 @@ export default function Mensalidades() {
   const [mes, setMes] = useState(agora.getMonth() + 1)
   const [ano, setAno] = useState(agora.getFullYear())
   const [valor, setValor] = useState(30)
+  // Valor da mensalidade cadastrado pela diretoria vira o padrão (sem config, continua 30).
+  useEffect(() => { if (podeVer) lerPagamentoDoClube().then((r) => { if (r.valor) setValor(r.valor) }).catch(() => {}) }, [podeVer])
   const [carregando, setCarregando] = useState(true)
   // Falha de consulta NÃO pode virar "todos pendentes" (o tesoureiro marcaria pagamento por cima do que já existe): aviso + tentar de novo
   const [falhaMes, setFalhaMes] = useState(false)
@@ -136,6 +141,11 @@ export default function Mensalidades() {
       ) : (
         <>
           <Card className="mb-4">
+            {meuPapel === 'diretoria' && emRouter && (
+              <Link to="/vinculos-pais" className="block text-xs font-semibold text-brand underline min-h-[44px] leading-[44px]" data-testid="link-formas-pagamento">
+                💳 Cadastrar valor e formas de pagamento (os pais veem)
+              </Link>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3">
               <Selecao id="m-mes" rotulo="Mês" value={mes} onChange={(e) => setMes(Number(e.target.value))}
                 opcoes={meses.map((m, i) => [i + 1, m])} />
