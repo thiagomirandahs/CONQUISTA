@@ -18,6 +18,7 @@ const inputClass =
   'w-full rounded-lg border border-line bg-surface2 px-3 py-2.5 text-ink outline-none transition placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/30'
 
 export default function Cadastro() {
+  const [verSenha, setVerSenha] = useState(false)
   const navigate = useNavigate()
   const { search } = useLocation()
   // veio do link de inscrição de um clube: depois de criar a conta, volta para pedir a entrada nele
@@ -189,7 +190,8 @@ export default function Cadastro() {
               arquivo={foto} aoEscolher={setFoto} aoRemover={() => setFoto(null)} />
           </div>
           <Campo label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} placeholder="voce@email.com" />
-          <Campo label="Senha (mín. 8, com letras e números)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
+          <Campo label="Senha (mín. 8, com letras e números)" type={verSenha ? 'text' : 'password'} value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" autoComplete="new-password" />
+          <label className="flex items-center gap-2 min-h-[44px] text-sm text-muted -mt-1 mb-2"><input type="checkbox" className="h-5 w-5" checked={verSenha} onChange={(e) => setVerSenha(e.target.checked)} /> Mostrar senha</label>
           {!ehPai && !ehCoordenacao && (
             <>
               <Campo label="Data de nascimento" type="date" max={hojeLocalISO()} value={form.nascimento} onChange={(v) => set('nascimento', v)} />

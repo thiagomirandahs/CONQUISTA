@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarAvaliacoesPendentes } from '../services/inicio.js'
+import { entradasPendentes } from '../services/entrada.js'
 import { FERRAMENTAS, GRUPOS_GESTAO } from '../lib/permissoes.js'
 import { rotaLiberada } from '../lib/navegacao.js'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
@@ -21,11 +22,33 @@ export default function Gestao() {
   const disponivel = (f) => f.papeis.includes(meuPapel) && (!f.recurso || temRecurso(f.recurso))
   const minhas = FERRAMENTAS.filter(disponivel)
   const { profile } = useAuth() || {}
+  // Cadastros esperando a diretoria (auditoria de 05/10/2026: a Gestão só contava a fila de avaliação, e criança aprovada demorava a entrar).
+  // Só a diretoria aprova; falha de rede não mostra número nenhum (nunca "0").
+  const [pendentes, setPendentes] = useState(null)
+  useEffect(() => {
+    if (meuPapel !== 'diretoria') return undefined
+    let vivo = true
+    entradasPendentes().then((l) => { if (vivo) setPendentes(Array.isArray(l) ? l.length : null) }).catch(() => {})
+    return () => { vivo = false }
+  }, [meuPapel])
 
   return (
     <div className="max-w-2xl mx-auto">
       <TourDaArea id="gestao" uid={profile?.id} papel={meuPapel} />
       <Cabecalho icone="⚙️" titulo="Gestão" descricao="As ferramentas da liderança" acao={<BotaoAjuda topico="gestao" />} />
+
+      {meuPapel === 'diretoria' && pendentes > 0 && (
+        <CardAcao para="/gestao/inscricoes" data-testid="aviso-cadastros-pendentes" className="mb-4 border-2 border-amber-300 bg-amber-50">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl" aria-hidden="true">🙋</span>
+            <span className="min-w-0">
+              <span className="block font-extrabold text-ink text-sm">{pendentes === 1 ? '1 cadastro esperando aprovação' : `${pendentes} cadastros esperando aprovação`}</span>
+              <span className="block text-xs text-muted">Toque para aprovar ou recusar</span>
+            </span>
+            <span className="ml-auto text-faint shrink-0" aria-hidden="true">›</span>
+          </div>
+        </CardAcao>
+      )}
 
       {ehAdmin && <FilaDeAvaliacao />}
 

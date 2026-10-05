@@ -3,6 +3,7 @@
 // real: o label era um <div> irmão solto, sem htmlFor nem id no input.
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../lib/supabase.js', () => ({ supabase: { auth: { signInWithPassword: vi.fn() } } }))
@@ -15,5 +16,18 @@ describe('Login — acessibilidade', () => {
     render(<MemoryRouter><Login /></MemoryRouter>)
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
+  })
+})
+
+describe('Login — mostrar senha', () => {
+  it('a senha começa escondida e o "Mostrar senha" revela e esconde de novo', async () => {
+    const u = userEvent.setup()
+    render(<MemoryRouter><Login /></MemoryRouter>)
+    const campo = screen.getByLabelText('Senha')
+    expect(campo).toHaveAttribute('type', 'password')
+    await u.click(screen.getByRole('checkbox', { name: /Mostrar senha/ }))
+    expect(campo).toHaveAttribute('type', 'text')
+    await u.click(screen.getByRole('checkbox', { name: /Mostrar senha/ }))
+    expect(campo).toHaveAttribute('type', 'password')
   })
 })

@@ -19,6 +19,7 @@ export default function Login() {
   // Tela GLOBAL: sempre a identidade DesbravaClube (o clube só aparece depois de entrar)
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [verSenha, setVerSenha] = useState(false)   // "Mostrar senha": criança erra muito a senha no celular
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const session = useAuth()?.session
@@ -87,8 +88,9 @@ export default function Login() {
           </div>
           <div>
             <label htmlFor="login-senha" className="block text-sm font-medium text-ink mb-1">Senha</label>
-            <input id="login-senha" type="password" required value={senha} onChange={(e) => setSenha(e.target.value)}
-              placeholder="••••••••" className={inputClass} />
+            <input id="login-senha" type={verSenha ? 'text' : 'password'} required value={senha} onChange={(e) => setSenha(e.target.value)}
+              autoComplete="current-password" placeholder="••••••••" className={inputClass} />
+            <label className="flex items-center gap-2 min-h-[44px] text-sm text-muted -mt-1 mb-2"><input type="checkbox" className="h-5 w-5" checked={verSenha} onChange={(e) => setVerSenha(e.target.checked)} /> Mostrar senha</label>
           </div>
 
           {erro && (

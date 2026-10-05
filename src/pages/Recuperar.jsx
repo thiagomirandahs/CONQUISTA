@@ -104,6 +104,7 @@ export function NovaSenha() {
   const navigate = useNavigate()
   const [pronto, setPronto] = useState(false)   // a sessão de recuperação chegou?
   const [senha, setSenha] = useState('')
+  const [verSenha, setVerSenha] = useState(false)
   const [repete, setRepete] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -158,11 +159,12 @@ export function NovaSenha() {
     <Moldura titulo="Criar senha nova">
       <BotaoVoltar para="/login" rotulo="o login" />
       <form onSubmit={trocar} className="space-y-4">
-        <Campo id="senha-nova" rotulo="Senha nova" tipo="password" required minLength={8}
+        <Campo id="senha-nova" rotulo="Senha nova" tipo={verSenha ? 'text' : 'password'} required minLength={8}
           value={senha} onChange={(e) => setSenha(e.target.value)}
           ajuda="Pelo menos 8 caracteres, com letras e números." autoComplete="new-password" />
-        <Campo id="senha-repete" rotulo="Repita a senha" tipo="password" required minLength={8}
+        <Campo id="senha-repete" rotulo="Repita a senha" tipo={verSenha ? 'text' : 'password'} required minLength={8}
           value={repete} onChange={(e) => setRepete(e.target.value)} autoComplete="new-password" />
+        <label className="flex items-center gap-2 min-h-[44px] text-sm text-muted -mt-1 mb-2"><input type="checkbox" className="h-5 w-5" checked={verSenha} onChange={(e) => setVerSenha(e.target.checked)} /> Mostrar senha</label>
         {erro && <Aviso tom="erro" titulo="Não deu certo">{erro}</Aviso>}
         <Botao tipo="submit" carregando={carregando}>Salvar a senha nova</Botao>
       </form>
