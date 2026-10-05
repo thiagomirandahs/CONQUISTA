@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { definirNascimento, nascimentoDoMembro, validarNascimento } from '../services/usuarios.js'
 import { mensagemDeErro } from '../ui/index.jsx'
+import { hojeLocalISO } from '../lib/data.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 
 const fmt = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '')
@@ -76,7 +77,7 @@ export default function EditarNascimento({ usuarioId, nome, proprio = false, val
           <>
             <label htmlFor="campo-nascimento" className="block text-xs font-semibold text-muted mb-1">Nova data</label>
             <input id="campo-nascimento" type="date" value={data} onChange={(e) => setData(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
+              max={hojeLocalISO()}
               className="w-full min-h-[48px] rounded-xl border border-line bg-surface2 text-ink px-3 text-base mb-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30" />
             {erro && <p role="alert" className="text-sm text-red-700 mb-3">{erro}</p>}
             <div className="flex gap-2">

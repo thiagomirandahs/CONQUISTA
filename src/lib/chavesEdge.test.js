@@ -187,6 +187,16 @@ describe('as 8 Edge Functions leem chaves SÓ pelo helper (contrato)', () => {
       expect(src).toMatch(/createClient\(SUPABASE_URL, ANON_KEY, \{ global: \{ headers: \{ Authorization: auth \} \} \}\)/)
     }
   })
+  it('CORS: toda função chamada pelo navegador libera os cabeçalhos que o app manda em TODO fetch (x-clube-atual, x-escopo-atual, x-rede-como — src/lib/supabase.js); sem isso o preflight bloqueia (auditoria 05/10/2026)', () => {
+    const doNavegador = ['admin-comunidade-foto', 'gerar-documento-pdf', 'gerar-documento-pdf-final', 'licenca-infinitepay']
+    for (const f of doNavegador) {
+      const src = readFileSync(join(raiz, f, 'index.ts'), 'utf8')
+      const m = src.match(/Access-Control-Allow-Headers['"]:\s*['"]([^'"]+)['"]/)
+      expect(m, f).not.toBeNull()
+      const lista = m[1].split(',').map((x) => x.trim().toLowerCase())
+      for (const h of ['authorization', 'apikey', 'content-type', 'x-client-info', 'x-clube-atual', 'x-escopo-atual', 'x-rede-como']) expect(lista, `${f}: ${h}`).toContain(h)
+    }
+  })
   it('o verify_jwt de cada função no config.toml não mudou (enviar-push/sanear/storage-excluir = false; PDF e admin-comunidade-foto = true; limpar-fotos-rede = false, declarado de forma explicita: o cron chama sem JWT de usuario)', () => {
     const toml = readFileSync(join(__dirname, '../../supabase/config.toml'), 'utf8')
     const vj = (n) => (toml.match(new RegExp(`\\[functions\\.${n}\\]\\s*\\n\\s*verify_jwt\\s*=\\s*(true|false)`)) || [])[1]

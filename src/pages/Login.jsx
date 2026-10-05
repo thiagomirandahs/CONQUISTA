@@ -23,7 +23,7 @@ export default function Login() {
   const [carregando, setCarregando] = useState(false)
   const session = useAuth()?.session
   // Já logado e caiu no /login (ex.: apertou VOLTAR): não mostra o login de novo, vai pro destino.
-  const destinoLogado = session ? (lerRetorno() || retornoDaUrl(search) || '/ranking') : null
+  const destinoLogado = session ? (lerRetorno() || retornoDaUrl(search) || '/') : null
   useEffect(() => { if (destinoLogado) { limparRetorno(); marcarInicioDaNavegacao() } }, [destinoLogado])
 
   async function entrar(e) {
@@ -52,7 +52,7 @@ export default function Login() {
     if (retorno) { limparRetorno(); navigate(retorno, { replace: true }); marcarInicioDaNavegacao(); return }
     // Conta de ADMIN da plataforma entra direto no painel (sem digitar /admin); as demais, no app.
     const ehAdmin = await souAdminPlataforma().catch(() => false)
-    navigate(ehAdmin ? '/admin' : '/ranking', { replace: true })
+    navigate(ehAdmin ? '/admin' : '/', { replace: true })  // '/' = Início contextual (tour de primeiros passos)
     marcarInicioDaNavegacao()
   }
 

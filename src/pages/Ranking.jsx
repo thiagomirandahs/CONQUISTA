@@ -25,12 +25,15 @@ export default function Ranking() {
   const [card, setCard] = useState(null)
   const [dados, setDados] = useState({ unidades: [], individual: [] })
   const [carregando, setCarregando] = useState(true)
+  const [falha, setFalha] = useState(false)   // erro de rede não pode virar "Ranking ainda vazio"
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
+    setCarregando(true); setFalha(false)
     carregarRanking()
       .then((d) => { setDados(d); setCarregando(false) })
-      .catch(() => setCarregando(false)) // não trava em "Carregando..." se a busca falhar
-  }, [])
+      .catch(() => { setFalha(true); setCarregando(false) }) // não trava em "Carregando..." nem vira "vazio"
+  }, [tentativa])
 
   const ehUnidade = aba === 'unidades'
   const lista = ehUnidade ? dados.unidades : dados.individual
@@ -72,6 +75,11 @@ export default function Ranking() {
 
       {carregando ? (
         <Esqueleto />
+      ) : falha ? (
+        <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+          <p className="font-semibold text-amber-900">Não consegui carregar o ranking.</p>
+          <button type="button" onClick={() => setTentativa((n) => n + 1)} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+        </div>
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏁</div>

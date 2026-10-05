@@ -25,6 +25,10 @@ export default function Mensalidades() {
   const [ano, setAno] = useState(agora.getFullYear())
   const [valor, setValor] = useState(30)
   const [carregando, setCarregando] = useState(true)
+  // Falha de consulta NÃO pode virar "todos pendentes" (o tesoureiro marcaria pagamento por cima do que já existe): aviso + tentar de novo
+  const [falhaMes, setFalhaMes] = useState(false)
+  const [falhaAno, setFalhaAno] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
   const [aba, setAba] = useState('mes') // mes | ano
   const [anual, setAnual] = useState({}) // { desbravador_id: { mes: status } }
   const [carregandoAnual, setCarregandoAnual] = useState(false)
@@ -46,16 +50,17 @@ export default function Mensalidades() {
       } catch (e) {
         if (vivo) avisarErro(e, 'Não consegui carregar quem paga mensalidade.')
       }
-      const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
+      const { data: ms, error: erroMs } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
       if (!vivo) return
       setDesbravadores(ds)
+      setFalhaMes(!!erroMs)
       const map = {}
       ;(ms || []).forEach((m) => { map[m.desbravador_id] = m })
       setPagamentos(map)
       setCarregando(false)
     })()
     return () => { vivo = false }
-  }, [mes, ano, podeVer]) // eslint-disable-line
+  }, [mes, ano, podeVer, tentativa]) // eslint-disable-line
 
   // Carrega o ANO inteiro quando a aba "Ano" abre
   useEffect(() => {
@@ -67,15 +72,16 @@ export default function Mensalidades() {
       // Medido na fase 8.2: com 110 membros a consulta antiga pedia 1.320 linhas e o PostgREST
       // devolvia 1.000 com HTTP 200 — sem erro, sem aviso. A tela mostrava 320 pagamentos como
       // NAO PAGOS. Erro de dinheiro, silencioso, na tela que justifica a mensalidade do produto.
-      const { data } = await supabase.rpc('mensalidades_ano', { p_ano: ano })
+      const { data, error: erroAno } = await supabase.rpc('mensalidades_ano', { p_ano: ano })
       if (!vivo) return
+      setFalhaAno(!!erroAno)
       const map = {}
       ;(data || []).forEach((r) => { map[r.desbravador_id] = r.meses || {} })
       setAnual(map)
       setCarregandoAnual(false)
     })()
     return () => { vivo = false }
-  }, [aba, ano, podeVer])
+  }, [aba, ano, podeVer, tentativa])
 
   async function recarregarMes() {
     const { data: ms } = await supabase.from('mensalidades').select('desbravador_id,status,valor').eq('mes', mes).eq('ano', ano)
@@ -85,6 +91,7 @@ export default function Mensalidades() {
   }
 
   async function alternar(d) {
+    if (falhaMes) return   // sem saber o estado real, não grava por cima
     const pago = pagamentos[d.id]?.status === 'pago'
     const primeiroNome = (d.nome || 'esta pessoa').split(' ')[0]
     if (pago) {
@@ -125,7 +132,7 @@ export default function Mensalidades() {
         abas={[{ chave: 'mes', icone: '📅', rotulo: 'Por mês' }, { chave: 'ano', icone: '🗓️', rotulo: 'Ano inteiro' }]} />
 
       {aba === 'ano' ? (
-        <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} />
+        falhaAno ? <FalhaMensalidades aoTentar={() => setTentativa((n) => n + 1)} /> : <AnualView desbravadores={desbravadores} anual={anual} carregando={carregandoAnual} ano={ano} setAno={setAno} anos={anos} />
       ) : (
         <>
           <Card className="mb-4">
@@ -139,6 +146,7 @@ export default function Mensalidades() {
             </div>
           </Card>
 
+          {falhaMes ? <FalhaMensalidades aoTentar={() => setTentativa((n) => n + 1)} /> : (<>
           <div className="grid grid-cols-3 gap-2 mb-4">
             <Resumo rotulo="Pagos" valor={`${qtdPagos}/${desbravadores.length}`} cor="text-emerald-600" />
             <Resumo rotulo="Pendentes" valor={desbravadores.length - qtdPagos} cor="text-amber-600" />
@@ -169,8 +177,19 @@ export default function Mensalidades() {
                 })}
               </ul>
             )}
+          </>)}
         </>
       )}
+    </div>
+  )
+}
+
+function FalhaMensalidades({ aoTentar }) {
+  return (
+    <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center" data-testid="falha-mensalidades">
+      <p className="font-semibold text-amber-900">Não consegui carregar os pagamentos.</p>
+      <p className="text-sm text-amber-800 mt-1">Por segurança, nada é marcado enquanto a lista não carregar. Confira a conexão e tente de novo.</p>
+      <button type="button" onClick={aoTentar} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
     </div>
   )
 }

@@ -24,15 +24,16 @@ export default function Missoes() {
   const [foto, setFoto] = useState(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
+  const [falhaCarga, setFalhaCarga] = useState(false)
 
   useEffect(() => { if (profile?.id) recarregar() }, [profile?.id]) // eslint-disable-line
   async function recarregar() {
-    setCarregando(true)
+    setCarregando(true); setFalhaCarga(false)
     try {
       const d = await carregarMissao()
       setMissao(d.missao)
       setResumo(d.resumo)
-    } finally {
+    } catch { setFalhaCarga(true) } finally {
       setCarregando(false)
     }
   }
@@ -83,11 +84,17 @@ export default function Missoes() {
 
       {carregando ? (
         <p className="text-faint text-sm">Carregando missão...</p>
+      ) : falhaCarga ? (
+        <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+          <p className="font-semibold text-amber-900">Não consegui carregar a missão de hoje.</p>
+          <p className="text-sm text-amber-800 mt-1">Confira a conexão e tente de novo.</p>
+          <button type="button" onClick={recarregar} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+        </div>
       ) : !missao ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎯</div>
           <p className="font-semibold text-ink">Missões chegando!</p>
-          <p className="text-sm text-faint">A liderança ainda vai cadastrar as missões (rode o SQL).</p>
+          <p className="text-sm text-faint">A liderança ainda vai cadastrar as missões.</p>
         </div>
       ) : resumo.feito ? (
         <div className="bg-surface rounded-2xl p-6 shadow-soft text-center">

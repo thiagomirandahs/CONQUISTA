@@ -36,7 +36,7 @@ const ORIGENS = new Set([
 
 function corsPara(origem: string | null): Record<string, string> {
   const h: Record<string, string> = {
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-clube-atual, x-escopo-atual, x-rede-como',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
   }

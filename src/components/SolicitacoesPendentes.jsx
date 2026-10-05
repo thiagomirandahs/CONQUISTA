@@ -16,14 +16,15 @@ export default function SolicitacoesPendentes({ onContagem }) {
   const { clubeId } = useClube()
   const [pendentes, setPendentes] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [falhou, setFalhou] = useState(false)   // erro de rede NÃO pode virar "Tudo em dia! Nenhum cadastro pendente"
 
   async function carregar() {
-    setCarregando(true)
+    setCarregando(true); setFalhou(false)
     try {
       const d = await entradasPendentes()
       setPendentes(d)
       onContagem?.(d.length)
-    } catch { setPendentes([]) }
+    } catch { setFalhou(true) }
     setCarregando(false)
   }
 
@@ -40,6 +41,15 @@ export default function SolicitacoesPendentes({ onContagem }) {
   }
 
   if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
+  if (falhou) {
+    return (
+      <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+        <p className="font-semibold text-amber-900">Não consegui carregar os cadastros pendentes.</p>
+        <p className="text-sm text-amber-800 mt-1">Pode ter gente esperando aprovação. Confira sua conexão e tente de novo.</p>
+        <button type="button" onClick={carregar} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+      </div>
+    )
+  }
   if (pendentes.length === 0) {
     return (
       <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">

@@ -41,6 +41,7 @@ describe('Eu', () => {
 
   it('diretoria vê Configurações do clube; coordenador vê o portal', () => {
     clube.temGestao = true
+    clube.papel = 'diretoria'
     escopo = { temEscopo: true, escopos: [{ nome: 'Distrito Central' }] }
     r()
     expect(screen.getByRole('link', { name: /Configurações do clube/ })).toHaveAttribute('href', '/clube')

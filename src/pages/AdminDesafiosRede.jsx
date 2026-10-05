@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminDesafios, adminSalvarDesafio, adminArmazenamento } from '../services/rede.js'
 import { tamanhoLegivel } from '../lib/imagem.js'
 import { avisar } from '../ui/avisos.jsx'
+import { hojeLocalISO, hojeMaisDiasLocalISO, dataLocalISO } from '../lib/data.js'
 import { Botao, Campo, Card, Carregando, Selo } from '../ui/index.jsx'
 
 // Admin da PLATAFORMA → Comunidade → Desafios da Rede DBV (migration 471): cadastro simples
 // (título, descrição, pontos, início, fim, ativo). Só a plataforma cria; o servidor audita.
 // Também mostra quanto a limpeza de fotos (migration 472) já liberou.
-const hoje = () => new Date().toISOString().slice(0, 10)
-const emDias = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10)
+const hoje = () => hojeLocalISO()
+const emDias = (n) => hojeMaisDiasLocalISO(n)
 const VAZIO = { id: null, titulo: '', descricao: '', pontos: 10, inicio: hoje(), fim: emDias(7), ativo: true }
 // início às 00:00 e fim às 23:59 no horário de Brasília
 const inicioDoDia = (d) => `${d}T00:00:00-03:00`
@@ -37,7 +38,7 @@ export default function AdminDesafiosRede() {
     setSalvando(false)
   }
   const editar = (d) => setForm({ id: d.id, titulo: d.titulo, descricao: d.descricao || '', pontos: d.pontos,
-    inicio: String(d.inicio).slice(0, 10), fim: String(d.fim).slice(0, 10), ativo: d.ativo })
+    inicio: dataLocalISO(d.inicio), fim: dataLocalISO(d.fim), ativo: d.ativo })
 
   return (
     <Card>

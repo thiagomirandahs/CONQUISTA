@@ -7,6 +7,7 @@ import {
   iniciarLeituraBiblia, confirmarLeituraBiblia, minhaLeituraBiblia,
 } from '../lib/dados.js'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
+import { avisar } from '../ui/avisos.jsx'
 
 // Quantos capítulos a criança já leu neste livro (pra pintar na lista).
 function progressoDoLivro(progresso, abrev) {
@@ -19,6 +20,7 @@ export default function Biblia() {
   const [livros, setLivros] = useState([])
   const [progresso, setProgresso] = useState(null)
   const [carregando, setCarregando] = useState(true)
+  const [falhaCarga, setFalhaCarga] = useState(false)
   const [livroSel, setLivroSel] = useState(null)
   const [capituloSel, setCapituloSel] = useState(null)
   const [versiculos, setVersiculos] = useState([])
@@ -44,12 +46,12 @@ export default function Biblia() {
   useEffect(() => () => pararTimer(), [])
 
   async function carregar() {
-    setCarregando(true)
+    setCarregando(true); setFalhaCarga(false)
     try {
       const [ls, p] = await Promise.all([carregarLivrosBiblia(), minhaLeituraBiblia()])
       setLivros(ls)
       setProgresso(p)
-    } catch { /* mostra a tela vazia se falhar */ }
+    } catch { setFalhaCarga(true) }   // erro de rede NÃO é "a Bíblia não foi carregada" (auditoria de 05/10/2026)
     setCarregando(false)
   }
   useEffect(() => { carregar() }, [])
@@ -97,7 +99,10 @@ export default function Biblia() {
         }, espera)
       }
       // 'invalido' (abriu outro capítulo depois): ignora em silêncio.
-    } catch { /* mantém a leitura na tela, sem pontuar */ }
+    } catch {
+      // Sem rede a leitura segue na tela, mas a criança precisa saber que o ponto NÃO foi registrado (antes falhava em silêncio)
+      avisar.info('Sem conexão: sua leitura ainda não foi registrada. Quando a internet voltar, abra o capítulo de novo para pontuar.')
+    }
   }
 
   async function abrirCapitulo(livro, cap) {
@@ -276,9 +281,15 @@ export default function Biblia() {
         <p className="text-muted text-sm">Almeida Corrigida Fiel</p>
       </div>
 
-      {!carregando && livros.length === 0 ? (
+      {!carregando && falhaCarga ? (
+        <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-5 text-center">
+          <p className="font-semibold">Não consegui carregar a Bíblia.</p>
+          <p className="text-sm mt-1">Confira a conexão e tente de novo.</p>
+          <button type="button" onClick={carregar} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+        </div>
+      ) : !carregando && livros.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">
-          A Bíblia ainda não foi carregada no app. Peça pra liderança rodar o SQL. 🙂
+          A Bíblia ainda não foi carregada no app. Fale com a liderança do clube. 🙂
         </div>
       ) : (
         <>

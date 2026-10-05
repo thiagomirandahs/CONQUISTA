@@ -58,7 +58,7 @@ describe('permissoesDoPapel: a fonte única dos grupos que as telas repetiam', (
     expect(rotaInicial('pais')).toBe('/meu-filho')
     for (const papel of PAPEIS.filter((p) => p !== 'pais')) expect(rotaInicial(papel)).toBe('/inicio')
     // fase 7: o responsável ganhou o destino "Eu" (perfil, tema, sair) — e continua fora da administração
-    expect(CAMINHOS_DO_RESPONSAVEL).toEqual(['/meu-filho', '/perfil', '/eu'])
+    expect(CAMINHOS_DO_RESPONSAVEL).toEqual(['/meu-filho', '/perfil', '/eu', '/trocar-senha', '/ajuda', '/suporte'])
   })
 })
 

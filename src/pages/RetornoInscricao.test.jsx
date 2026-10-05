@@ -24,7 +24,7 @@ function montar(inicio) {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/entrar" element={<p>pedido-de-entrada</p>} />
-        <Route path="/ranking" element={<p>ranking</p>} />
+        <Route path="/" element={<p>ranking</p>} />   {/* o destino padrão do login agora é "/" (Início contextual) */}
       </Routes>
     </MemoryRouter>,
   )

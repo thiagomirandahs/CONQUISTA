@@ -133,7 +133,7 @@ export default function Trilha() {
   // Jogo ARCADE ativo = a lista nunca "fecha" (ele é rejogável sem limite)
   const semJogos = !jogosAtivos.some((c) => ARCADE.has(c))
     && (servidorAntigo || jogosAtivos.every((c) => jogadosHoje.includes(c)))
-  const ehAdmin = ['instrutor', 'diretoria'].includes(meuPapel)
+  const soDiretoria = meuPapel === 'diretoria'   // liberar/trancar jogo é só da diretoria no servidor (migration 212)
   // Rodízio: um jogo comum só está aberto no SEU dia (ou liberado pela liderança).
   // rodizio === null (SQL não rodou) OU ativo === false (interruptor da liderança
   // desligado em Gestão → 🎮) = tudo aberto, sem cadeados.
@@ -355,11 +355,11 @@ export default function Trilha() {
                           ? <span className="text-faint font-extrabold shrink-0 text-base">🔒</span>
                           : <span className="bg-brand text-white font-extrabold shrink-0 text-xs rounded-full px-2.5 py-1.5">⭐ 10-30</span>}
                       </motion.button>
-                      {ehAdmin && rodizio && !aberto && (
+                      {soDiretoria && rodizio && !aberto && (
                         <button onClick={() => alternarLiberacao(chave, true)}
                           className="absolute -top-2 -right-2 z-10 text-xs font-extrabold bg-gold text-ink rounded-full px-3 py-2 shadow">🔓 Liberar hoje</button>
                       )}
-                      {ehAdmin && liberado && (
+                      {soDiretoria && liberado && (
                         <button onClick={() => alternarLiberacao(chave, false)}
                           className="absolute -top-2 -right-2 z-10 text-xs font-extrabold bg-surface border border-line text-muted rounded-full px-3 py-2 shadow">🔒 Trancar</button>
                       )}

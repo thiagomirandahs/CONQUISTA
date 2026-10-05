@@ -17,6 +17,8 @@
 //   confirmacao                 (marcar "fiz isto"; quem CONFIRMA é a avaliação, com auditoria)      → true
 //   anexos                      {min, max, tipos:['imagem'|'arquivo']}  (valor vai em `anexos`, não em `conteudo`)
 
+import { hojeLocalISO } from '../data.js'
+
 export const TIPOS = ['texto_curto', 'texto_longo', 'numero', 'data', 'selecao', 'checklist', 'lista', 'entradas', 'escolha', 'confirmacao', 'anexos']
 export const LIMITES = Object.freeze({ curto: 200, longo: 2000, longoMax: 4000, lista: 30, entradas: 31, anexos: 10, campos: 40, total: 40000, chave: 40 })
 const CHAVE = /^[a-z][a-z0-9_]{0,39}$/
@@ -25,7 +27,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/
 const obrigatorio = (c) => c.obrigatorio === true
 const ehTexto = (v) => typeof v === 'string'
 const vazio = (v) => v == null || (typeof v === 'string' && v.trim() === '')
-const hoje = () => new Date().toISOString().slice(0, 10)
+const hoje = () => hojeLocalISO()
 
 // ---------------------------------------------------------------- validação do MODELO (schema)
 export function validarModelo(schema) {

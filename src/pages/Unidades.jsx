@@ -24,6 +24,7 @@ export default function Unidades() {
   // Cantinho da unidade: a diretoria abre o de qualquer unidade; os outros, o da própria (o servidor confere)
   const abreCantinho = (u) => temRecurso?.('cantinho_unidade') === true && (meuPapel === 'diretoria' || u?.id === minhaUnidade)
   const ehAdmin = PODE_GERIR.includes(meuPapel)
+  const soDiretoria = meuPapel === 'diretoria'   // lançar pontos é só da diretoria no servidor (migration 212): o instrutor não vê o botão que o servidor recusaria
   const [unidades, setUnidades] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [sel, setSel] = useState(null)
@@ -209,7 +210,7 @@ export default function Unidades() {
                   </div>
                 ))}
               </div>
-              {ehAdmin && (
+              {soDiretoria && (
                 <div className="p-3 border-t border-line space-y-2 shrink-0">
                   <button onClick={() => setPontosPara(sel)}
                     className="w-full text-sm text-white bg-gradient-to-r from-brand to-brand2 shadow-glow rounded-xl py-2.5 font-semibold">

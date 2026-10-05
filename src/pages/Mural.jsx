@@ -32,6 +32,8 @@ export default function Mural() {
   const { papel: meuPapel } = useClube()
   const [fotos, setFotos] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [falha, setFalha] = useState(false)   // falha de rede não pode travar em "Carregando fotos…" nem virar "álbum vazio"
+  const [tentativa, setTentativa] = useState(0)
   const [categoria, setCategoria] = useState(null) // categoria aberta (álbum)
   const [lightbox, setLightbox] = useState(null)   // foto ampliada
   const [upload, setUpload] = useState(false)      // modal de envio
@@ -39,9 +41,11 @@ export default function Mural() {
 
   useEffect(() => {
     let vivo = true
+    setCarregando(true); setFalha(false)
     carregarFotos().then((d) => { if (vivo) { setFotos(d); setCarregando(false) } })
+      .catch(() => { if (vivo) { setFalha(true); setCarregando(false) } })
     return () => { vivo = false }
-  }, [])
+  }, [tentativa])
 
   const ehLideranca = ['instrutor', 'diretoria'].includes(meuPapel)
   const podeExcluir = (f) => f && (f.autor_id === profile?.id || ehLideranca)
@@ -88,6 +92,11 @@ export default function Mural() {
 
             {carregando ? (
               <p className="text-faint text-sm">Carregando fotos...</p>
+            ) : falha ? (
+              <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+                <p className="font-semibold text-amber-900">Não consegui carregar as fotos.</p>
+                <button type="button" onClick={() => setTentativa((n) => n + 1)} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Tentar de novo</button>
+              </div>
             ) : fotosDe(categoria.nome).length === 0 ? (
               <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
                 <div className="text-4xl mb-2">{categoria.icon}</div>
@@ -167,10 +176,10 @@ export default function Mural() {
             {lightbox.legenda && <p className="text-white text-center mt-4 max-w-md px-4">{lightbox.legenda}</p>}
             <div className="flex items-center gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
               {podeExcluir(lightbox) && (
-                <button onClick={() => aoExcluir(lightbox).catch((err) => avisar.erro(err,
+                <button onClick={async () => { if (!(await avisar.confirmar({ titulo: 'Excluir esta foto?', descricao: 'Ela some do mural e não dá para desfazer.', rotulo: 'Excluir', cancelar: 'Voltar', perigo: true }))) return; aoExcluir(lightbox).catch((err) => avisar.erro(err,
                   err?.message === 'SEM_PERMISSAO'
                     ? 'Você não tem permissão para excluir esta foto.'
-                    : 'Não consegui excluir a foto.'))}
+                    : 'Não consegui excluir a foto.')) }}
                   className="bg-red-500/90 text-white text-sm font-semibold rounded-xl px-4 py-2">🗑️ Excluir</button>
               )}
               <button onClick={() => setLightbox(null)} className="bg-white/20 text-white text-sm font-semibold rounded-xl px-4 py-2">Fechar</button>

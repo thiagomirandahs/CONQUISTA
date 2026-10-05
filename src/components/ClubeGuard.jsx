@@ -54,6 +54,23 @@ export default function ClubeGuard({ children }) {
   const { temEscopo, escopos, carregando: carregandoEscopo } = useEscopo()
   // Conta só de ADMIN da plataforma (sem clube): o lugar dela é o painel, não "entre num clube".
   const semClube = !carregando && !erro && semVinculo
+  // Cadastro pendente: quando a diretoria aprova, a criança precisa VER isso sem sair do app (auditoria de 05/10/2026: ficava presa em
+  // "aguarda aprovação" até recarregar). Relê o contexto ao voltar para o app (visibilitychange/focus), no máximo a cada 20 s.
+  const pendenteDeAprovacao = semClube && vinculos.some((v) => v.status === 'pendente')
+  useEffect(() => {
+    if (!pendenteDeAprovacao) return undefined
+    let ultimo = 0
+    const reler = () => {
+      if (document.visibilityState === 'hidden') return
+      const agora = Date.now()
+      if (agora - ultimo < 20000) return
+      ultimo = agora
+      recarregar()
+    }
+    document.addEventListener('visibilitychange', reler)
+    window.addEventListener('focus', reler)
+    return () => { document.removeEventListener('visibilitychange', reler); window.removeEventListener('focus', reler) }
+  }, [pendenteDeAprovacao, recarregar])
   const [ehAdmin, setEhAdmin] = useState(null)
   useEffect(() => {
     if (!semClube) return undefined
@@ -119,8 +136,9 @@ export default function ClubeGuard({ children }) {
             A liderança de {vinculos.find((v) => v.status === 'pendente')?.marca?.nome || marca.nome} ainda
             vai liberar o seu acesso. Assim que liberar, é só entrar de novo.
           </p>
-          <button onClick={sair} className="w-full min-h-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow"
-            style={{ color: 'var(--marca-1-texto, #fff)' }}>Sair</button>
+          <button onClick={recarregar} data-testid="ja-fui-aprovado" className="w-full min-h-[48px] bg-gradient-to-r from-brand to-brand2 font-extrabold rounded-2xl shadow-glow mb-2"
+            style={{ color: 'var(--marca-1-texto, #fff)' }}>Já fui aprovado — atualizar</button>
+          <button onClick={sair} className="w-full min-h-[44px] text-sm text-muted font-semibold">Sair</button>
           {/* Desde que o Login deixou de barrar pelo espelho profiles.status, é aqui que a pessoa
               pendente chega — e um pedido pendente num clube não pode trancá-la para fora de
               outro: quem tem o código de outro clube continua podendo usá-lo. */}

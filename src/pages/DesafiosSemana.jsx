@@ -8,7 +8,6 @@ import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } fro
 import { avisar } from '../ui/avisos.jsx'
 import { Carregando as Esqueleto } from '../ui/index.jsx'
 
-const PODE_GERIR = ['instrutor', 'diretoria']
 
 // "Semana de 08/07 a 14/07" — inicio é a segunda; fim = +6 dias.
 // Formata SEMPRE no fuso de Brasília (o banco define a semana lá), pra o rótulo
@@ -24,7 +23,7 @@ function fmtSemana(inicio) {
 export default function DesafiosSemana() {
   const { profile } = useAuth()
   const { papel: meuPapel } = useClube()
-  const ehAdmin = PODE_GERIR.includes(meuPapel)
+  const soDiretoria = meuPapel === 'diretoria'   // premiar lança pontos: só a diretoria (migration 212)
   const [dados, setDados] = useState({ inicio: null, unidades: [] })
   const [cartela, setCartela] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -140,7 +139,7 @@ export default function DesafiosSemana() {
           </motion.div>
         )}
 
-        {ehAdmin && top && top.pontos > 0 && (
+        {soDiretoria && top && top.pontos > 0 && (
           <button onClick={() => setPremiando(true)}
             className="w-full mt-4 bg-gold text-ink font-bold rounded-xl py-2.5 text-sm shadow-soft">
             🏆 Premiar o time da semana ({top.nome})

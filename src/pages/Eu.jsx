@@ -14,7 +14,7 @@ import { MeusConvites } from '../components/ConvitesDeEquipe.jsx'
 // por aqui — nunca criando outra conta.
 export default function Eu() {
   const { profile, sair } = useAuth()
-  const { vinculos, clubeId, trocarClube, marca, papel, temGestao } = useClube()
+  const { vinculos, clubeId, trocarClube, marca, papel } = useClube()
   const { temEscopo, escopos } = useEscopo()
   const navigate = useNavigate()
 
@@ -56,9 +56,9 @@ export default function Eu() {
         <ItemLista to="/trocar-senha" icone="🔑" titulo="Trocar senha" descricao="Confirme a senha atual e crie uma nova" testid="ir-trocar-senha" />
       </GrupoLista>
 
-      {(temGestao || temEscopo) && (
+      {(papel === 'diretoria' || temEscopo) && (
         <GrupoLista titulo="Clube">
-          {temGestao && <ItemLista to="/clube" icone="🎨" titulo="Configurações do clube" descricao="Identidade, recursos e plano" />}
+          {papel === 'diretoria' && <ItemLista to="/clube" icone="🎨" titulo="Configurações do clube" descricao="Identidade, recursos e plano" />}
           {temEscopo && (
             <ItemLista to="/institucional" icone="🏛️" titulo="Portal institucional" testid="ir-portal"
               descricao={escopos.length === 1 ? escopos[0].nome : `${escopos.length} escopos`} />

@@ -10,7 +10,7 @@ const origens = new Set(['https://app.desbravaclube.com.br', 'https://desbravacl
 Deno.serve(async req => {
   const origem = req.headers.get('origin')
   const headers: Record<string, string> = { 'content-type': 'application/json', 'cache-control': 'no-store', 'Vary': 'Origin',
-    'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-clube-atual', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
+    'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-clube-atual, x-escopo-atual, x-rede-como', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
   if (origem && origens.has(origem)) headers['Access-Control-Allow-Origin'] = origem
   const responder = (d: unknown, status = 200) => new Response(JSON.stringify(d), { status, headers })
   if (req.method === 'OPTIONS') return responder({})

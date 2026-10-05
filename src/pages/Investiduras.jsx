@@ -1,4 +1,5 @@
 import { mensagemDeErro } from '../ui/index.jsx'
+import { hojeLocalISO } from '../lib/data.js'
 import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarRevisoesPendentes, solicitarRevisaoFinal, decidirRevisaoFinal, registrarInvestidura, emitirDocumento } from '../lib/dados.js'
@@ -21,7 +22,7 @@ const fmtData = (iso) => {
   const so = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
   return so ? `${so[3]}/${so[2]}/${so[1]}` : new Date(iso).toLocaleDateString('pt-BR')
 }
-const hoje = () => new Date().toISOString().slice(0, 10)
+const hoje = () => hojeLocalISO()
 
 export default function Investiduras() {
   const { papel: meuPapel } = useClube()

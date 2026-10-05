@@ -6,10 +6,12 @@ import { caminhoDaImagem, resolverImagem } from '../lib/imagens.js'
 
 // Missão do dia (devocional OU desafio da classe) + resumo (feito/sequência).
 export async function carregarMissao() {
-  const [{ data: m }, { data: resumo }] = await Promise.all([
+  const [{ data: m, error: erroM }, { data: resumo, error: erroR }] = await Promise.all([
     supabase.rpc('missao_do_dia'),
     supabase.rpc('meu_resumo_missoes'),
   ])
+  // falha de rede/servidor NÃO é "a liderança ainda não cadastrou missões" (auditoria de 05/10/2026): sobe o erro para a tela avisar
+  if (erroM || erroR) throw new Error((erroM || erroR).message || 'Não consegui carregar a missão.')
   const missao = Array.isArray(m) ? m[0] : m
   return { missao: missao || null, resumo: resumo || { feito: false, sequencia: 0, foto: null } }
 }

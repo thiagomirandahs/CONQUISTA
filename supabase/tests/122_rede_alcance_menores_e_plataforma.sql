@@ -273,6 +273,10 @@ select t.eq('painel: a denuncia do alcance clube NAO aparece', t.n(format($q$sel
 select t.eq('denunciada na Comunidade: admin volta a poder assinar a foto (pela RPC mediada)', t.txt(format($q$select public.admin_comunidade_foto_assinar('post', %L)->>'ok'$q$, t.id('post_foto_com'))), 'true');
 select t.throws('admin NAO modera conteudo do alcance clube (nem denunciado)', format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')$q$, t.id('post_clube_a')), 'não encontrado');
 select t.throws('...nem publicado e sem denuncia na Comunidade', format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')$q$, t.id('post_com_a')), 'não encontrado');
+-- auditoria 05/10/2026 (migration 544): a conta de admin da plataforma NÃO tem perfil; moderar não pode depender disso
+reset role;
+delete from public.profiles where id = t.id('admin_122');
+select t.como('admin_122');
 select t.eq('admin modera o denunciado da Comunidade', t.txt(format($q$select public.admin_comunidade_moderar('post', %L, 'remover', 'teste')->>'status'$q$, t.id('post_foto_com'))), 'removido');
 reset role;
 select t.ok('painel registrado no log', (select count(*) from public.plataforma_acesso_log where admin_user_id = t.id('admin_122') and o_que = 'painel_comunidade') >= 1);

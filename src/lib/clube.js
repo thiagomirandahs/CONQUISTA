@@ -49,7 +49,8 @@ export function permissoesDoPapel(papel) {
 // Para onde a pessoa vai ao entrar: o responsável só tem o portal do filho; os demais, o ranking.
 // Fase 7: quem não é responsável entra no INÍCIO contextual, não mais num placar.
 export function rotaInicial(papel) { return papel === 'pais' ? '/meu-filho' : '/inicio' }
-export const CAMINHOS_DO_RESPONSAVEL = ['/meu-filho', '/perfil', '/eu']
+// O Eu do responsável aponta para Trocar senha, Ajuda e Suporte: se estas rotas não estivessem aqui, o toque voltaria para /meu-filho sem explicar.
+export const CAMINHOS_DO_RESPONSAVEL = ['/meu-filho', '/perfil', '/eu', '/trocar-senha', '/ajuda', '/suporte']
 
 // ---- normalização da resposta de `meu_contexto()` ----
 export function normalizarVinculo(v) {
