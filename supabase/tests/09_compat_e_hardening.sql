@@ -52,11 +52,15 @@ reset role;
 -- manutencao_estado (migration 400): a tela de login/abertura precisa saber se a plataforma está em
 -- manutenção ANTES de haver sessão. Só lê 1 linha fixa (ligada, mensagens, horário do aviso); não expõe quem
 -- ligou, não escreve nada, sem parâmetro (não é oráculo de nada). Decisão de produto (modo manutenção, 28/09).
+-- metrica_registrar (migration 545): o contador anônimo de uso (site/app) também conta quem ainda não entrou.
+-- Só ESCREVE em metricas_sessoes (tabela fechada): código aleatório da sessão, origem, dia, nº de páginas e
+-- "logado sim/não" — sem user_id, IP, clube ou caminho; limite por sessão e teto global; não devolve nada.
+-- Decisão de produto (dono, 05/10/2026).
 select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos, a inscrição pelo link, a vitrine do site e o estado da manutenção)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
       and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir',
-                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico', 'manutencao_estado')), 0);
+                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico', 'manutencao_estado', 'metrica_registrar')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções

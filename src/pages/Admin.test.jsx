@@ -20,6 +20,8 @@ vi.mock('../services/hierarquia.js', async (original) => ({
   ...(await original()),
   hierarquiaAdmin: () => Promise.resolve({ pedidos_clube: [], coordenadores_pendentes: [] }),
 }))
+// o painel de uso (métricas anônimas) tem teste próprio — aqui nunca vai à rede
+vi.mock('../services/metricas.js', () => ({ metricasDeUso: () => new Promise(() => {}) }))
 vi.mock('../services/avisoInstitucional.js', () => ({
   alcanceAvisoInstitucional: () => Promise.resolve({ pode: true, clubes: 4, origem: 'DesbravaClube', plataforma: true }),
   enviarAvisoInstitucional: vi.fn(),

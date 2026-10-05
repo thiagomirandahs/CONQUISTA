@@ -223,11 +223,15 @@ select t.eq('nenhuma superfície de clube é legível por ANÔNIMO',
 -- manutencao_estado (migration 400): a tela de login/abertura precisa saber se a plataforma está em
 -- manutenção ANTES de haver sessão. Só lê 1 linha fixa (ligada, mensagens, horário do aviso); não expõe quem
 -- ligou, não escreve nada, sem parâmetro (não é oráculo de nada). Decisão de produto (modo manutenção, 28/09).
+-- metrica_registrar (migration 545): o contador anônimo de uso (site/app) também conta quem ainda não entrou.
+-- Só ESCREVE em metricas_sessoes (tabela fechada): código aleatório da sessão, origem, dia, nº de páginas e
+-- "logado sim/não" — sem user_id, IP, clube ou caminho; limite por sessão e teto global; não devolve nada.
+-- Decisão de produto (dono, 05/10/2026).
 select t.eq('as únicas funções que ANÔNIMO executa são as públicas por desenho',
   t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
              from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
             where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico manutencao_estado parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
+  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico manutencao_estado metrica_registrar parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'

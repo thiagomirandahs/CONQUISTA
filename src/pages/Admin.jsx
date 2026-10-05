@@ -21,6 +21,7 @@ import {
 } from '../components/admin/AdminUI.jsx'
 import { Tabela, Paginacao, Filtros, useOrdenacao, usePaginacao, useTelaLarga, contem } from '../components/admin/Tabela.jsx'
 import { SidebarAdmin, GavetaAdmin, BotaoMenuAdmin } from '../components/admin/NavegacaoAdmin.jsx'
+import PainelDeUso from '../components/admin/PainelDeUso.jsx'
 import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
@@ -324,6 +325,7 @@ function VisaoGeral({ irPara, aoAbrirClube, chamadosAbertos }) {
     <Estado erro={erro} dados={v} esqueleto={<EsqueletoKpis />}>
       {v && (
         <div className="space-y-4">
+          <PainelDeUso />
           <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
             {tem(v.clubes_total) && <Kpi icone="🏕️" valor={v.clubes_total} rotulo="Clubes" detalhe={`${v.clubes_ativos} ativo(s) · ${v.clubes_inativos} inativo(s)`} testid="visao-clubes" aoTocar={() => irPara('clubes')} />}
             {tem(v.clubes_ativos) && <Kpi icone="✅" tom="ok" valor={v.clubes_ativos} rotulo="Clubes ativos" testid="visao-ativos" aoTocar={() => irPara('clubes')} />}
