@@ -230,7 +230,11 @@ select t.eq('toda RPC security definer aberta a authenticated que recebe uuid te
          -- mudou entre a v1 e a v2?" não dependem de quem pergunta. Revogá-las foi tentado nesta
          -- fase e derrubou nove arquivos de teste: são API documentada (33, 34, 37, 38, 39).
          'classe_esta_publicada', 'especialidade_esta_publicada',
-         'comparar_versoes_curriculares', 'requisito_origem'
+         'comparar_versoes_curriculares', 'requisito_origem',
+         -- CONTADOR ANÔNIMO de uso (migration 545): o uuid é um código aleatório de SESSÃO gerado no aparelho,
+         -- não aponta para clube, pessoa nem registro nenhum; a função só escreve na tabela fechada metricas_sessoes
+         -- e não devolve nada. Não há tenant para proteger aqui (teste 147 prova o que ela grava).
+         'metrica_registrar'
        )
   $q$), 0);
 
