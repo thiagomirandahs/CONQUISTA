@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ErroDeCarga, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -75,23 +75,7 @@ export default function ModoAcampamento() {
   if (carregando) return <EsqueletoTela cabecalho={false} cartoes={2} />
 
   if (erro) {
-    const faltaSQL = /does not exist|schema cache|could not find the (table|relation)/i.test(erro)
-    return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
-        {faltaSQL ? (
-          <>
-            <p className="font-semibold mb-1">Modo Acampamento ainda não configurado</p>
-            <p className="text-xs">Rode <code className="bg-amber-100 rounded px-1">supabase/2026-08-24-modo-acampamento.sql</code> no Supabase.</p>
-          </>
-        ) : (
-          <>
-            <p className="font-semibold mb-1">Não deu pra carregar</p>
-            <p className="text-xs mb-3">{erro}</p>
-            <button onClick={carregar} className="bg-amber-600 text-white font-bold rounded-xl px-4 py-2 text-xs">Tentar de novo</button>
-          </>
-        )}
-      </div>
-    )
+    return <ErroDeCarga titulo="Não consegui carregar o Modo Acampamento." detalhe={erro} aoTentar={carregar} />
   }
 
   // Quem já está em qual colocação (pra impedir 2 unidades na mesma)
@@ -175,6 +159,7 @@ export default function ModoAcampamento() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🏕️ Modo Acampamento</h2>
         <p className="text-sm text-muted">Lance a colocação das unidades em cada prova/atividade — pode usar quantas vezes quiser.</p>

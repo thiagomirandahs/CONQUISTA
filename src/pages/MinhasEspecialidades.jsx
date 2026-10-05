@@ -1,4 +1,4 @@
-import { Carregando as Esqueleto, Aviso } from '../ui/index.jsx'
+import { Carregando as Esqueleto, Aviso, BotaoVoltar } from '../ui/index.jsx'
 import ListaEspecialidades from '../components/especialidades/ListaEspecialidades.jsx'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../context/Auth.jsx'
@@ -85,6 +85,7 @@ export default function MinhasEspecialidades() {
 
   return (
     <div className="space-y-4">
+      <div className="mb-1"><BotaoVoltar para="/jornada" rotulo="a Jornada" /></div>
       <div>
         <h2 className="text-2xl font-extrabold text-ink">🏅 Especialidades</h2>
         <p className="text-sm text-muted">Acompanhe as suas ou explore para começar uma nova</p>

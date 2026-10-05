@@ -27,7 +27,8 @@ export default function MeuFilho() {
   async function carregar() {
     setCarregando(true)
     try {
-      const [f, p, px] = await Promise.all([carregarMeusFilhos(), meusPedidosVinculo(), lerPix()])
+      // lerPix é um extra: se ele falhar, a lista de filhos NÃO some (antes aparecia "Vincular seu filho" e convidava a duplicar o pedido)
+      const [f, p, px] = await Promise.all([carregarMeusFilhos(), meusPedidosVinculo(), lerPix().catch(() => null)])
       setFilhos(f); setPedidos(p); setPix(px)
     } catch (e) { setErro(mensagemDeErro(e, 'Não consegui carregar os dados do seu filho.')) }
     setCarregando(false)

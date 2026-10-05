@@ -22,7 +22,7 @@ import { etapaAtual, linhaDoHistorico, rotuloDaEtapa } from '../lib/fluxoInvesti
 import Comprovacao from '../components/Comprovacao.jsx'
 import HistoricoDeTentativas from '../components/HistoricoDeTentativas.jsx'
 import { vitoria as festa } from '../lib/juice.js'
-import { mensagemDeErro, Botao, Aviso, Folha, Carregando, ZonaUpload, MenuAcoes } from '../ui/index.jsx'
+import { mensagemDeErro, Botao, Aviso, Folha, Carregando, ZonaUpload, MenuAcoes, BotaoVoltar } from '../ui/index.jsx'
 import { useRascunho } from '../lib/rascunhos.js'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
@@ -165,6 +165,7 @@ export default function MinhaClasse() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jornada" rotulo="a Jornada" /></div>
       <TourDaArea id="classes" uid={profile?.id} />
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">

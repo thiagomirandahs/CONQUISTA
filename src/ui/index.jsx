@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { BotaoVoltar } from './botaoVoltar.jsx'
+import { useFechavel } from '../lib/useFechavel.js'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { EsqueletoTela } from './carregamento.jsx'
 export { TelaDeAbertura, EsqueletoTela } from './carregamento.jsx'
+export { ErroDeCarga } from './erroDeCarga.jsx'
+export { BotaoVoltar } from './botaoVoltar.jsx'
 
 // =============================================================================
 //  Design system do DesbravaClube (fase 7).
@@ -22,10 +26,13 @@ export { TelaDeAbertura, EsqueletoTela } from './carregamento.jsx'
 const juntar = (...c) => c.filter(Boolean).join(' ')
 
 // ---------------------------------------------------------------- Cabeçalho
-export function Cabecalho({ icone, titulo, descricao, acao }) {
+export function Cabecalho({ icone, titulo, descricao, acao, voltar }) {
+  // `voltar` = { para, rotulo } (ou só o caminho): mostra a seta padrão acima do título (src/ui/botaoVoltar.jsx)
+  const v = typeof voltar === 'string' ? { para: voltar } : voltar
   return (
     <header className="mb-4 flex items-start justify-between gap-3">
       <div className="min-w-0">
+        {v ? <div className="mb-1"><BotaoVoltar para={v.para} rotulo={v.rotulo} aoVoltar={v.aoVoltar} /></div> : null}
         <h1 className="text-2xl font-extrabold text-ink leading-tight">
           {icone && <span aria-hidden="true">{icone} </span>}{titulo}
         </h1>
@@ -208,6 +215,7 @@ export function Abas({ abas = [], ativa, aoTrocar, rotulo = 'Seções' }) {
 // Entra subindo e sai descendo (CSS, 200ms/160ms — sem o motor do framer-motion); com movimento
 // reduzido, a regra global do index.css zera as durações e ela aparece/some na hora.
 export function Folha({ aberta, aoFechar, titulo, children }) {
+  useFechavel(aberta, aoFechar)   // botão físico de voltar do Android fecha a folha (auditoria de navegação 05/10/2026)
   const caixa = useRef(null)
   const [montada, setMontada] = useState(aberta)
   const [saindo, setSaindo] = useState(false)

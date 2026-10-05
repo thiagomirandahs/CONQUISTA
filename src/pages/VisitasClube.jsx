@@ -24,7 +24,7 @@ export default function VisitasClube() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="📅" titulo="Visitas da coordenação" descricao="Visitas do distrito, da região ou da associação ao clube" />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="📅" titulo="Visitas da coordenação" descricao="Visitas do distrito, da região ou da associação ao clube" />
       {erro ? <Aviso tom="erro" titulo="Não deu pra carregar">{erro}</Aviso>
         : lista === null ? <Carregando />
           : lista.length === 0 ? <Vazio icone="📅" titulo="Nenhuma visita agendada">Quando a coordenação agendar uma visita, ela aparece aqui.</Vazio>

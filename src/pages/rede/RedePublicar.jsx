@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { BotaoVoltar } from '../../ui/botaoVoltar.jsx'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/Auth.jsx'
 import { carregarDesafios, prepararFoto, publicarNaRede, publicarConquista, listarConquistasPublicaveis, confirmacaoDePublicar } from '../../services/rede.js'
@@ -133,9 +134,7 @@ export default function RedePublicar() {
   return (
     <div>
       <div className="sticky top-[calc(3.5rem+var(--seguro-topo))] z-20 px-2 py-1.5 bg-[var(--rede-bg)] border-b border-[var(--rede-linha)] flex items-center justify-between gap-2">
-        <button type="button" onClick={() => navigate(-1)} aria-label="Voltar à tela anterior" className={`min-h-[44px] min-w-[44px] rounded-full grid place-items-center ${TXT}`}>
-          <Icone nome="voltar" />
-        </button>
+        <BotaoVoltar variacao="icone" para="/rede" rotulo="a Rede" className={TXT} />
         <h1 className={`font-bold text-[17px] ${TXT}`}>Nova publicação</h1>
         {tipo === 'conquista'
           ? <span className="min-w-[44px]" aria-hidden="true" />   // na conquista o "Publicar" fica no preview seguro

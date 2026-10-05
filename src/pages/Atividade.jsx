@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ErroDeCarga, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -14,13 +14,15 @@ export default function Atividade() {
   const [d, setD] = useState(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
+    setCarregando(true); setErro('')
     atividadeJogos()
       .then((r) => { setD(r); setCarregando(false) })
       .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar a atividade.')); setCarregando(false) })
-  }, [ehAdmin])
+  }, [ehAdmin, tentativa])
 
   if (!ehAdmin) {
     return (
@@ -33,6 +35,7 @@ export default function Atividade() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">📊 Atividade dos jogos</h2>
         <p className="text-sm text-muted">Quem está jogando e quem sumiu</p>
@@ -41,11 +44,7 @@ export default function Atividade() {
       {carregando ? (
         <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
-          <p className="font-semibold mb-1">Não consegui carregar</p>
-          <p className="text-xs mb-1">{erro}</p>
-          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-08-06-lembrete-ausencia-e-atividade.sql</code> no Supabase.</p>
-        </div>
+        <ErroDeCarga titulo="Não consegui carregar a atividade." detalhe={erro} aoTentar={() => setTentativa((n) => n + 1)} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">

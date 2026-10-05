@@ -45,7 +45,7 @@ export default function MinhaJornada() {
 
   return (
     <div className="mx-auto max-w-2xl pb-8" data-testid="pagina-minha-jornada">
-      <Cabecalho icone="🧭" titulo="Minha Jornada" descricao="Tudo o que você já começou e conquistou, em um só lugar." />
+      <Cabecalho voltar={{ para: '/jornada', rotulo: 'a Jornada' }} icone="🧭" titulo="Minha Jornada" descricao="Tudo o que você já começou e conquistou, em um só lugar." />
       <Link to="/jornada/portfolio" className="mb-4 inline-flex min-h-[44px] items-center rounded-xl border-2 border-[#0b1f4d] px-4 text-base font-bold text-[#0b1f4d]">Ver meu Portfólio</Link>
       {erro ? (
         <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-base text-rose-800">

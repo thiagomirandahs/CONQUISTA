@@ -1,4 +1,4 @@
-import { mensagemDeErro, BotaoUpload } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoUpload, BotaoVoltar } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -27,6 +27,7 @@ export default function ClubeConfig() {
 
   return (
     <div className="space-y-8">
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div>
         <h2 className="text-2xl font-extrabold text-ink">🎨 Identidade e recursos</h2>
         <p className="text-sm text-muted">Como o clube aparece no app e o que ele usa. Vale só para este clube.</p>

@@ -126,7 +126,7 @@ export default function Mensalidades() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="💰" titulo="Mensalidades" descricao="Pagamentos dos desbravadores e conselheiros" />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="💰" titulo="Mensalidades" descricao="Pagamentos dos desbravadores e conselheiros" />
 
       <Abas rotulo="Ver por" ativa={aba} aoTrocar={setAba}
         abas={[{ chave: 'mes', icone: '📅', rotulo: 'Por mês' }, { chave: 'ano', icone: '🗓️', rotulo: 'Ano inteiro' }]} />

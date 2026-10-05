@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect, useRef } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
@@ -276,6 +276,7 @@ export default function Biblia() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jornada" rotulo="a Jornada" /></div>
       <div className="mb-4">
         <h1 className="text-xl font-extrabold text-brand">📖 Bíblia</h1>
         <p className="text-muted text-sm">Almeida Corrigida Fiel</p>

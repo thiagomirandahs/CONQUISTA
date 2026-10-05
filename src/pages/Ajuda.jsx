@@ -24,7 +24,7 @@ export default function Ajuda() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Cabecalho icone="❓" titulo="Ajuda / Como usar" descricao="Passo a passo de cada parte do app, para desbravadores, pais e liderança." />
+      <Cabecalho voltar={{ para: '/eu', rotulo: 'o Eu' }} icone="❓" titulo="Ajuda / Como usar" descricao="Passo a passo de cada parte do app, para desbravadores, pais e liderança." />
       <nav aria-labelledby="rever-tour-titulo" className="mb-5">
         <h2 id="rever-tour-titulo" className="mb-2 text-sm font-bold text-ink">🧭 Rever tour</h2>
         <ul className="flex flex-wrap gap-2">

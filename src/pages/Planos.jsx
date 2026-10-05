@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { carregarPlanos, carregarAssinaturaDoClube, formatarPreco, ROTULO_STATUS } from '../services/comercial.js'
@@ -53,6 +53,7 @@ export default function Planos() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <header className="mb-4">
         <h1 className="text-2xl font-extrabold text-ink">💳 Plano do clube</h1>
         <p className="text-sm text-muted">O que está incluído e quanto do plano já está sendo usado</p>

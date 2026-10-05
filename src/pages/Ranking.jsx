@@ -5,7 +5,7 @@ import Contador from '../components/Contador.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
 import { carregarRanking } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 
 // Lista longa (ranking individual passa de 100 linhas): só as primeiras entram animadas em cascata —
 // com stagger de 40 ms, a 100ª linha levava ~4 s para aparecer e o celular simples engasgava.
@@ -54,6 +54,7 @@ export default function Ranking() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/meu-clube" rotulo="o Clube" /></div>
       <AvisoOffline />
       <div className="mb-4 flex items-center justify-between">
         <div>

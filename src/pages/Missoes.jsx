@@ -1,4 +1,4 @@
-import { mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
+import { mensagemDeErro, ZonaUpload, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -64,6 +64,7 @@ export default function Missoes() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jornada" rotulo="a Jornada" /></div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">🎯 Missões</h2>

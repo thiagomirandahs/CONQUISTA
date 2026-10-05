@@ -281,7 +281,13 @@ function Thread({ tipo, unidadeId, conversaIdInicial, destinatario, meuId }) {
     }
   }, [reler, clubeDaAbaEhOPadrao])
 
-  useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
+  // rola SÓ a lista de mensagens (scrollIntoView rolava a página inteira e escondia o cabeçalho — auditoria de 05/10/2026)
+  useEffect(() => {
+    const lista = fimRef.current?.parentElement
+    if (!lista) return
+    if (typeof lista.scrollTo === 'function') lista.scrollTo({ top: lista.scrollHeight, behavior: 'smooth' })
+    else lista.scrollTop = lista.scrollHeight
+  }, [mensagens.length])
 
   async function enviar() {
     const v = texto.trim()

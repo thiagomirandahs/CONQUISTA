@@ -29,7 +29,7 @@ export default function Portfolio() {
 
   return (
     <div className="mx-auto max-w-2xl pb-8" data-testid="pagina-portfolio">
-      <Cabecalho icone="🗂️" titulo="Portfólio" descricao="Os requisitos que você cumpriu e que foram aprovados." />
+      <Cabecalho voltar={{ para: '/jornada', rotulo: 'a Jornada' }} icone="🗂️" titulo="Portfólio" descricao="Os requisitos que você cumpriu e que foram aprovados." />
       <p className="mb-4 rounded-2xl bg-surface2 p-4 text-base text-ink">
         O Portfólio é o seu registro de atividades e é separado do cartão oficial da Classe. Ele mostra só um resumo curto do que você entregou, sem fotos.
       </p>

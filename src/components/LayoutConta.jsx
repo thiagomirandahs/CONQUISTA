@@ -5,6 +5,7 @@ import { useEscopo } from '../context/Escopo.jsx'
 import { atualizarFotoPerfil } from '../services/usuarios.js'
 import { entrarNaRedeComoCoordenacao } from '../lib/redeModo.js'
 import { avisar } from '../ui/avisos.jsx'
+import { BotaoVoltar } from '../ui/botaoVoltar.jsx'
 import Logo from './Logo.jsx'
 import Avatar from './Avatar.jsx'
 import { PainelAcessibilidade } from './PreferenciasAcessibilidade.jsx'
@@ -86,7 +87,10 @@ export default function LayoutConta({ children }) {
           </div>
         )}
       </header>
-      <main className="mx-auto max-w-2xl px-4 py-4">{children}</main>
+      <main className="mx-auto max-w-2xl px-4 py-4">
+        {pathname.startsWith('/conta') && <BotaoVoltar para="/institucional" rotulo="o portal" />}
+        {children}
+      </main>
     </div>
   )
 }

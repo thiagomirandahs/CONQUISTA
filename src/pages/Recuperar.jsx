@@ -14,6 +14,7 @@
 // encontrado", viraria um jeito de descobrir quem tem conta no clube — e as contas aqui são de
 // menores de idade.
 import { useEffect, useState } from 'react'
+import { BotaoVoltar } from '../ui/botaoVoltar.jsx'
 import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
 import { urlPublicaDoApp } from '../lib/dominios.js'
@@ -155,6 +156,7 @@ export function NovaSenha() {
 
   return (
     <Moldura titulo="Criar senha nova">
+      <BotaoVoltar para="/login" rotulo="o login" />
       <form onSubmit={trocar} className="space-y-4">
         <Campo id="senha-nova" rotulo="Senha nova" tipo="password" required minLength={8}
           value={senha} onChange={(e) => setSenha(e.target.value)}

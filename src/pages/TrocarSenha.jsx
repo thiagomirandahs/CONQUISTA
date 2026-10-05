@@ -1,3 +1,4 @@
+import { BotaoVoltar } from '../ui/index.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
@@ -43,7 +44,7 @@ export default function TrocarSenha() {
       const { error } = await supabase.auth.updateUser({ password: nova })
       if (error) { setErro(traduzErro(error.message)); setOcupado(false); return }
       avisar.sucesso('Senha trocada! Use a nova senha na próxima vez que entrar.')
-      if (window.location.pathname.startsWith('/conta')) navigate(-1); else navigate('/eu', { replace: true })
+      if (window.location.pathname.startsWith('/conta')) { if (window.history.length > 1) navigate(-1); else navigate('/institucional', { replace: true }) } else navigate('/eu', { replace: true })
     } catch (e2) {
       setErro(traduzErro(e2?.message || String(e2)))
       setOcupado(false)
@@ -52,6 +53,7 @@ export default function TrocarSenha() {
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="mb-1"><BotaoVoltar para={window.location.pathname.startsWith('/conta') ? '/institucional' : '/eu'} rotulo={window.location.pathname.startsWith('/conta') ? 'o portal' : 'o Eu'} /></div>
       <h1 className="text-xl font-extrabold text-ink">🔑 Trocar senha</h1>
       <p className="text-sm text-muted mt-1 mb-5">Por segurança, confirme a sua senha atual antes de criar a nova.</p>
       <form onSubmit={trocar} className="space-y-4 rounded-2xl border border-line bg-surface p-4">

@@ -7,6 +7,7 @@ import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import { carregarFotos, adicionarFoto, excluirFoto } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
+import { useFechavel } from '../lib/useFechavel.js'
 
 // Categorias (álbuns) do mural. O nome é gravado na coluna "evento" de cada foto.
 const CATEGORIAS = [
@@ -38,6 +39,7 @@ export default function Mural() {
   const [lightbox, setLightbox] = useState(null)   // foto ampliada
   const [upload, setUpload] = useState(false)      // modal de envio
   const [desenhando, setDesenhando] = useState(false) // ateliê de desenho
+  useFechavel(!!lightbox, () => setLightbox(null))   // botão físico de voltar fecha a foto ampliada
 
   useEffect(() => {
     let vivo = true

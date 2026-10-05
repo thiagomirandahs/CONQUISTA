@@ -1,3 +1,4 @@
+import { BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -49,6 +50,7 @@ export default function Avisos() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">📣 Enviar aviso</h2>
         <p className="text-sm text-muted">Um recado pra todo mundo (ou só pra liderança)</p>

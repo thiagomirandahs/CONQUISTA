@@ -1,4 +1,5 @@
 import { mensagemDeErro } from '../ui/index.jsx'
+import { BotaoVoltar } from '../ui/botaoVoltar.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
@@ -90,6 +91,7 @@ export default function Onboarding() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6">
+      <BotaoVoltar para="/" rotulo="o início" />
       <header className="mb-4">
         <h1 className="text-2xl font-extrabold text-ink">🏕️ Criar meu clube</h1>
         <p className="text-sm text-muted">Dá pra parar e continuar depois: nada se perde.</p>

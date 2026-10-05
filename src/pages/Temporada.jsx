@@ -4,7 +4,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarRanking, carregarTemporadas, iniciarNovaTemporada } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 
 const fmtData = (iso) => {
   if (!iso) return ''
@@ -66,6 +66,7 @@ export default function Temporada() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🏁 Temporadas</h2>
         <p className="text-sm text-muted">Zere o ranking pra recomeçar — sem perder o histórico</p>

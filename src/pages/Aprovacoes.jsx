@@ -1,3 +1,4 @@
+import { BotaoVoltar } from '../ui/index.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { Link } from 'react-router-dom'
 import SolicitacoesPendentes from '../components/SolicitacoesPendentes.jsx'
@@ -20,6 +21,7 @@ export default function Aprovacoes() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-5">
         <h2 className="text-2xl font-extrabold text-ink">✅ Aprovações</h2>
         <p className="text-sm text-muted">Quem pediu para entrar neste clube</p>

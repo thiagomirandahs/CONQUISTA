@@ -1,4 +1,4 @@
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -16,7 +16,7 @@ import { avisar } from '../ui/avisos.jsx'
 import { ConvidarEquipe } from '../components/ConvitesDeEquipe.jsx'
 import EditarNascimento from '../components/EditarNascimento.jsx'
 import { carregarClassesDoMembro, cancelarClasse } from '../services/classes.js'
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ErroDeCarga } from '../ui/index.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
 
@@ -56,6 +56,7 @@ export default function Usuarios() {
   const [nascimentoDe, setNascimentoDe] = useState(null) // corrigir a data de nascimento (migration 170)
   const [classesDe, setClassesDe] = useState(null) // classes do membro, para cancelar (migration 171)
   const [erroCarregar, setErroCarregar] = useState('')
+  const [tentativaCarga, setTentativaCarga] = useState(0)
   const [cargosUni, setCargosUni] = useState({}) // { [user_id]: { unidade_id, cargo } }
   const ehDiretoria = meuPapel === 'diretoria'
   // promover a diretoria/instrutor/tesoureiro (ou mexer em quem já tem esses cargos) é só da DIRETORIA
@@ -149,6 +150,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
+    setCarregando(true); setErroCarregar('')
     carregarUsuarios()
       .then((us) => {
         setUsuarios(us)
@@ -158,7 +160,7 @@ export default function Usuarios() {
         carregarCargosDeUnidade().then(setCargosUni).catch(() => {})
       })
       .catch((e) => { setErroCarregar(mensagemDeErro(e, 'Não consegui carregar os membros.')); setCarregando(false) })
-  }, [ehAdmin])
+  }, [ehAdmin, tentativaCarga])
 
   if (!ehAdmin) {
     return (
@@ -177,6 +179,7 @@ export default function Usuarios() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-2xl font-extrabold text-ink">👥 Usuários</h2>
@@ -203,12 +206,7 @@ export default function Usuarios() {
       {carregando ? (
         <Esqueleto />
       ) : erroCarregar ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
-          <p className="font-semibold mb-1">Não consegui carregar os usuários</p>
-          <p className="text-xs mb-2">{erroCarregar}</p>
-          <p className="text-xs">Se a página é nova, falta rodar o SQL no Supabase (SQL Editor):
-            <code className="bg-amber-100 rounded px-1 ml-1">supabase/2026-06-29-usuarios-reset-sql.sql</code></p>
-        </div>
+        <ErroDeCarga titulo="Não consegui carregar os usuários." detalhe={erroCarregar} aoTentar={() => setTentativaCarga((n) => n + 1)} />
       ) : lista.length === 0 ? (
         <p className="text-faint text-sm">{filtro === 'inativos' ? 'Ninguém inativo no clube.' : 'Nenhum usuário encontrado.'}</p>
       ) : (

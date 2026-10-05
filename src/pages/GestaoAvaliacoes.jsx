@@ -49,7 +49,7 @@ export default function GestaoAvaliacoes() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🔎" titulo="Avaliações" descricao="Classes e Especialidades aguardando avaliação, num lugar só" />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="🔎" titulo="Avaliações" descricao="Classes e Especialidades aguardando avaliação, num lugar só" />
 
       <div className="flex flex-wrap gap-2 mb-4">
         <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="text-sm rounded-lg border border-line px-2 py-1.5">

@@ -4,6 +4,7 @@ import {
   apagarStory, marcarStoryVisto, prepararFotoStory, publicarStory, urlDaFoto, tempoRelativo, confirmacaoDeStory, QUEM_VE_STORY,
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
+import { useFechavel } from '../../lib/useFechavel.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { AnelStory, AvatarRede, Denuncia, EsqueletoStories, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 
@@ -74,6 +75,7 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo, alca
 // Barras de progresso no topo; avança sozinho em 5 s; toque à direita avança, à esquerda volta;
 // segurar pausa; arrastar para baixo (ou ✕ / Esc) fecha. Nome + clube + tempo no topo; denunciar.
 export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
+  useFechavel(true, aoFechar)   // o botão físico de voltar do Android fecha o story (auditoria de navegação 05/10/2026)
   const [gi, setGi] = useState(inicio)
   const [si, setSi] = useState(() => Math.max(0, (grupos[inicio]?.stories || []).findIndex((s) => !s.visto && !grupos[inicio]?.meu)))
   const [decorrido, setDecorrido] = useState(0)
@@ -232,6 +234,7 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
 
 // ---------------------------------------------------------------- story novo (prévia + confirmação)
 export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado, alcance = 'clube' }) {
+  useFechavel(true, aoFechar)
   const [foto, setFoto] = useState(null)
   const [previa, setPrevia] = useState(null)
   const [erro, setErro] = useState('')
@@ -263,7 +266,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado, alc
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={alcance === 'comunidade' ? 'Novo story na Comunidade' : 'Novo story'} data-alcance={alcance} className="fixed inset-0 z-[70] bg-black text-white flex flex-col">
       <div className="flex items-center justify-between px-2 pt-[max(8px,var(--seguro-topo))]">
-        <button type="button" onClick={aoFechar} aria-label="Voltar" className="w-11 h-11 grid place-items-center"><Icone nome="voltar" /></button>
+        <button type="button" onClick={aoFechar} aria-label="Fechar" className="w-11 h-11 grid place-items-center"><Icone nome="voltar" /></button>
         <p className="font-semibold">{alcance === 'comunidade' ? 'Novo story · Comunidade' : 'Novo story'}</p>
         <span className="w-11" />
       </div>

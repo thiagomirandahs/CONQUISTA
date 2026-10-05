@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { BotaoVoltar } from '../ui/botaoVoltar.jsx'
 import { useParams } from 'react-router-dom'
 import { conteudoDocumento } from '../services/documentos.js'
 import { qrSvg } from '../lib/qr.js'
@@ -52,6 +53,7 @@ export default function DocumentoClasse() {
       <style>{CSS_DOC}</style>
 
       <div className="doc-toolbar no-print">
+        <BotaoVoltar para="/minha-classe" rotulo="Minha Classe" />
         <div className="text-sm text-muted">Pré-visualização — use “Imprimir” e salve como PDF (A4).</div>
         <button onClick={() => window.print()} className="rounded-xl bg-gradient-to-r from-brand to-brand2 text-white font-bold text-sm px-4 py-2 shadow-glow">
           🖨️ Imprimir / Salvar PDF

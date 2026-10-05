@@ -6,7 +6,7 @@ import { CaixaAjuda } from '../components/Ajuda.jsx'
 import FeedbackJogo from '../components/FeedbackJogo.jsx'
 import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos, statusJogosDoDia, liberarJogo, trancarJogo, iniciarPartida } from '../lib/dados.js'
 import * as juice from '../lib/juice.js'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 // Registro dos jogos, error boundary e fallback WebGL — agora em features/jogos.
 import { JOGOS, ARCADE, RESERVAS, JogoBoundary, JogoMemoria } from '../features/jogos/registry.jsx'
 import ResultadoCard from '../features/jogos/ResultadoCard.jsx'
@@ -166,6 +166,7 @@ export default function Trilha() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jogos" rotulo="os Jogos" /></div>
       <FeedbackJogo />
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos</h2>

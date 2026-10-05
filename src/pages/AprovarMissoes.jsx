@@ -3,7 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarMissoesPendentes, avaliarMissao } from '../lib/dados.js'
 import Comprovacao from '../components/Comprovacao.jsx'
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ErroDeCarga, BotaoVoltar } from '../ui/index.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 
@@ -17,13 +17,15 @@ export default function AprovarMissoes() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [ampliar, setAmpliar] = useState(null)
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
+    setCarregando(true); setErro('')
     carregarMissoesPendentes()
       .then((d) => { setLista(d); setCarregando(false) })
       .catch((e) => { setErro(mensagemDeErro(e, 'Não consegui carregar as missões.')); setCarregando(false) })
-  }, [ehAdmin])
+  }, [ehAdmin, tentativa])
 
   if (!ehAdmin) {
     return (
@@ -46,6 +48,7 @@ export default function AprovarMissoes() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎯 Aprovar missões</h2>
         <p className="text-sm text-muted">Missões de foto aguardando sua aprovação</p>
@@ -54,11 +57,7 @@ export default function AprovarMissoes() {
       {carregando ? (
         <EsqueletoTela cabecalho={false} cartoes={2} />
       ) : erro ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
-          <p className="font-semibold mb-1">Não consegui carregar</p>
-          <p className="text-xs mb-1">{erro}</p>
-          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-06-30-devocional-popup.sql</code> no Supabase (é ele que cria a tabela missoes_feitas e a função de aprovação).</p>
-        </div>
+        <ErroDeCarga titulo="Não consegui carregar as missões." detalhe={erro} aoTentar={() => setTentativa((n) => n + 1)} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🎉</div>

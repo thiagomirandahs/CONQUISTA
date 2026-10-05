@@ -10,7 +10,7 @@ import EditarNascimento from '../components/EditarNascimento.jsx'
 import { atualizarFotoPerfil, carregarMeuExtrato, carregarMetricasConquistas, meuTotalPontos } from '../lib/dados.js'
 import { somLigado, alternarSom, vitoria as festa } from '../lib/juice.js'
 import { calcularNivel } from '../lib/nivel.js'
-import { Carregando as Esqueleto, mensagemDeErro, Aviso, BotaoUpload } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, Aviso, BotaoUpload, BotaoVoltar } from '../ui/index.jsx'
 
 const CHAVE_NIVEL_VISTO = 'nivelVisto'
 
@@ -90,6 +90,7 @@ export default function Perfil() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/eu" rotulo="o Eu" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">👤 Meu perfil</h2>
         <p className="text-sm text-muted">Sua foto aparece no ranking, nas unidades e nos apontamentos</p>

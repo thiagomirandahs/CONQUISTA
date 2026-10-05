@@ -1,3 +1,4 @@
+import { BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { useClube } from '../context/Clube.jsx'
 import { carregarLancamentos, removerLancamento } from '../lib/dados.js'
@@ -53,6 +54,7 @@ export default function RemoverPontos() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">➖ Remover pontos</h2>
         <p className="text-sm text-muted">Apague lançamentos errados (individual ou de unidade)</p>

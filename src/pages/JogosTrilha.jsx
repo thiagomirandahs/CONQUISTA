@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, ErroDeCarga, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -47,6 +47,7 @@ export default function JogosTrilha() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🎮 Jogos da Trilha</h2>
         <p className="text-sm text-muted">Ligue os jogos que a criançada pode jogar</p>
@@ -57,10 +58,12 @@ export default function JogosTrilha() {
 
       {carregando ? (
         <EsqueletoTela cabecalho={false} cartoes={2} />
-      ) : erro || lista.length === 0 ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
-          <p className="font-semibold mb-1">Nada pra mostrar</p>
-          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-07-09-jogos-trilha.sql</code> no Supabase.</p>
+      ) : erro ? (
+        <ErroDeCarga titulo="Não consegui carregar os jogos." aoTentar={carregar} />
+      ) : lista.length === 0 ? (
+        <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
+          <p className="font-semibold text-ink">Nenhum jogo no catálogo deste clube ainda.</p>
+          <p className="text-sm text-faint">Fale com a administração da plataforma.</p>
         </div>
       ) : (
         <div className="space-y-2">

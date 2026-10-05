@@ -1,3 +1,4 @@
+import { BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { supabase } from '../lib/supabase.js'
@@ -110,6 +111,7 @@ export default function Apontamentos() {
 
   return (
     <div className="pb-4">
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">✍️ Apontamentos</h2>
         <p className="text-sm text-muted">Pontos da reunião, por desbravador</p>

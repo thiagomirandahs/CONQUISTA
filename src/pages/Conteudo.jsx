@@ -3,7 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
 import { carregarConteudo, salvarConteudo, excluirConteudo } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia']
@@ -53,6 +53,7 @@ export default function Conteudo() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">📖 Conteúdo</h2>
         <p className="text-sm text-muted">Versículos e desafios das missões diárias</p>

@@ -1,4 +1,4 @@
-import { mensagemDeErro, Aviso } from '../ui/index.jsx'
+import { mensagemDeErro, Aviso, BotaoVoltar, ErroDeCarga } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -24,10 +24,11 @@ export default function VinculosPais() {
   const [pend, setPend] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [aprovando, setAprovando] = useState(null)
+  const [falha, setFalha] = useState(false)
 
   async function carregar() {
-    setCarregando(true)
-    try { setPend(await carregarVinculosPendentes()) } catch { /* ignora */ }
+    setCarregando(true); setFalha(false)
+    try { setPend(await carregarVinculosPendentes()) } catch { setFalha(true) }
     setCarregando(false)
   }
   useEffect(() => { if (ehAdmin) carregar() }, [ehAdmin])
@@ -46,8 +47,11 @@ export default function VinculosPais() {
     try { await rejeitarVinculo(p.id); carregar() } catch (e) { avisar.erro(e) }
   }
 
+  if (falha) return <ErroDeCarga titulo="Não consegui carregar os pedidos de vínculo." aoTentar={carregar} />
+
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">👨‍👩‍👧 Vínculos dos pais</h2>
         <p className="text-sm text-muted">Confirme quem é filho de quem</p>

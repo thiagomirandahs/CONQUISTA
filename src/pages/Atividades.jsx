@@ -9,7 +9,7 @@ import { registrarEntregaAtividade } from '../services/entregasAtividade.js'
 import Comprovacao from '../components/Comprovacao.jsx'
 import { avisar } from '../ui/avisos.jsx'
 import { membrosDoClube, PAPEIS_DE_UNIDADE } from '../services/membros.js'
-import { Carregando as Esqueleto, mensagemDeErro, ZonaUpload } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, ZonaUpload, BotaoVoltar } from '../ui/index.jsx'
 
 const categorias = [
   { icon: '✨', nome: 'Todas' },
@@ -205,6 +205,7 @@ export default function Atividades() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jornada" rotulo="a Jornada" /></div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">Atividades</h2>

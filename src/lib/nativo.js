@@ -3,6 +3,8 @@
 // continua exatamente igual. Os imports dos plugins são dinâmicos pra não
 // entrar no bundle do web à toa.
 import { Capacitor } from '@capacitor/core'
+import { decidirVoltarFisico } from './voltarFisico.js'
+import { temCamadaAberta, fecharCamadaDoTopo } from './camadas.js'
 
 export function ehNativo() {
   try {
@@ -62,7 +64,9 @@ export async function iniciarNativo() {
     // minimiza o app (não fecha de vez, comportamento esperado no Android).
     try {
       App.addListener('backButton', ({ canGoBack }) => {
-        if (canGoBack) window.history.back()
+        const acao = decidirVoltarFisico({ caminho: window.location.pathname, temCamada: temCamadaAberta(), canGoBack })
+        if (acao === 'fechar-camada') fecharCamadaDoTopo()
+        else if (acao === 'voltar') window.history.back()
         else App.minimizeApp()
       })
     } catch { /* ignora */ }

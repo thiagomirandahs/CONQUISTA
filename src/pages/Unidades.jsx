@@ -13,7 +13,7 @@ import AvisoOffline from '../components/AvisoOffline.jsx'
 import ImagemPrivada from '../components/ImagemPrivada.jsx'
 import CardAniversariantes from '../components/CardAniversariantes.jsx'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto, mensagemDeErro, BotaoUpload } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, BotaoUpload, BotaoVoltar, ErroDeCarga } from '../ui/index.jsx'
 
 const medalhas = ['🥇', '🥈', '🥉']
 const PODE_GERIR = ['instrutor', 'diretoria']
@@ -32,14 +32,17 @@ export default function Unidades() {
   const [editando, setEditando] = useState(false) // formulário de identidade da unidade
   const [erroImagem, setErroImagem] = useState('') // validação do arquivo (tipo/tamanho): mensagem no próprio campo
   const [cargos, setCargos] = useState({}) // { [user_id]: { unidade_id, cargo } } — cargos DA UNIDADE
+  const [falha, setFalha] = useState(false)
 
   async function carregar() {
+    setFalha(false)
     try {
       const { unidades } = await carregarRanking()
       setUnidades(unidades)
       // cargos da unidade são um extra: se falhar, a tela segue sem eles
       carregarCargosDeUnidade().then(setCargos).catch(() => {})
-    } finally {
+    } catch { setFalha(true) }   // erro de rede NÃO é "Nenhuma unidade ainda"
+    finally {
       setCarregando(false) // nunca deixa preso em "Carregando..."
     }
   }
@@ -83,6 +86,7 @@ export default function Unidades() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/meu-clube" rotulo="o Clube" /></div>
       <AvisoOffline />
       <div className="mb-5 flex items-center justify-between">
         <div>
@@ -101,6 +105,8 @@ export default function Unidades() {
 
       {carregando ? (
         <Esqueleto />
+      ) : falha ? (
+        <ErroDeCarga titulo="Não consegui carregar as unidades." aoTentar={() => { setCarregando(true); carregar() }} />
       ) : unidades.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">🏠</div>

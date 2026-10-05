@@ -82,7 +82,7 @@ export default function GestaoInscricoes() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🔗" titulo="Inscrições" descricao="Link e QR Code para novos membros" acao={<BotaoAjuda topico="inscricoes" />} />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="🔗" titulo="Inscrições" descricao="Link e QR Code para novos membros" acao={<BotaoAjuda topico="inscricoes" />} />
       <p className="text-sm text-muted -mt-2 mb-4" data-testid="clube-da-inscricao">Clube: <strong className="text-ink">{marca?.nome}</strong></p>
 
       <Card className="p-4 mb-5" data-testid="codigo-de-entrada">

@@ -1,3 +1,4 @@
+import { BotaoVoltar, ErroDeCarga } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
@@ -19,11 +20,14 @@ export default function RadarFaltas() {
   const [lista, setLista] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [enviados, setEnviados] = useState({})
+  const [falha, setFalha] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
     if (!ehAdmin) { setCarregando(false); return }
-    carregarRadarFaltas().then(setLista).catch(() => {}).finally(() => setCarregando(false))
-  }, [ehAdmin])
+    setCarregando(true); setFalha(false)
+    carregarRadarFaltas().then(setLista).catch(() => setFalha(true)).finally(() => setCarregando(false))
+  }, [ehAdmin, tentativa])
 
   if (!ehAdmin) {
     return (
@@ -48,8 +52,11 @@ export default function RadarFaltas() {
     }
   }
 
+  if (falha) return <ErroDeCarga titulo="Não consegui carregar o radar de faltas." aoTentar={() => setTentativa((n) => n + 1)} />
+
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">📡 Radar de faltas</h2>
         <p className="text-sm text-muted">Quem está sumindo — recupere antes de perder de vez</p>

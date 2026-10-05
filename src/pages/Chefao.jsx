@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect } from 'react'
 import { m as motion, AnimatePresence } from 'framer-motion'
 import { useClube } from '../context/Clube.jsx'
@@ -90,6 +90,7 @@ export default function Chefao() {
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="mb-1"><BotaoVoltar para="/jogos" rotulo="os Jogos" /></div>
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-xl font-extrabold text-ink">⚔️ {est.nome}</h1>
         {ehAdmin && (

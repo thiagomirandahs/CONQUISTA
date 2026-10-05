@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { hojeLocalISO } from '../lib/data.js'
 import { useState, useEffect, useCallback } from 'react'
 import { useClube } from '../context/Clube.jsx'
@@ -50,6 +50,7 @@ export default function Investiduras() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/gestao" rotulo="a Gestão" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🏅 Revisão final e investidura</h2>
         <p className="text-sm text-muted">Conclusões de classe deste clube: revisar, pedir correção ou registrar a investidura</p>

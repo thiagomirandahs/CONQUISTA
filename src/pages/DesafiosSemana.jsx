@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar.jsx'
 import Duelos from '../components/Duelos.jsx'
 import { carregarDesafiosSemana, carregarMinhaCartela, lancarPontosUnidade } from '../lib/dados.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto } from '../ui/index.jsx'
+import { Carregando as Esqueleto, BotaoVoltar, ErroDeCarga } from '../ui/index.jsx'
 
 
 // "Semana de 08/07 a 14/07" — inicio é a segunda; fim = +6 dias.
@@ -27,16 +27,17 @@ export default function DesafiosSemana() {
   const [dados, setDados] = useState({ inicio: null, unidades: [] })
   const [cartela, setCartela] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [falha, setFalha] = useState(false)
   const [premiando, setPremiando] = useState(false)
   const [aba, setAba] = useState('semana') // semana | duelos
 
   async function carregar() {
-    setCarregando(true)
+    setCarregando(true); setFalha(false)
     try {
       const d = await carregarDesafiosSemana()
       setDados(d)
       setCartela(await carregarMinhaCartela(d.inicio, profile?.id))
-    } catch { /* não trava a tela se a busca falhar */ }
+    } catch { setFalha(true) }   // erro de rede não vira "semana sem pontos"
     setCarregando(false)
   }
   useEffect(() => { if (profile?.id) carregar() }, [profile?.id]) // eslint-disable-line
@@ -58,8 +59,11 @@ export default function DesafiosSemana() {
     }
   }
 
+  if (falha) return <ErroDeCarga titulo="Não consegui carregar os desafios da semana." aoTentar={carregar} />
+
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jogos" rotulo="os Jogos" /></div>
       <div className="mb-4">
         <h2 className="text-2xl font-extrabold text-ink">🏁 Desafios</h2>
         <p className="text-sm text-muted">

@@ -1,4 +1,4 @@
-import { mensagemDeErro } from '../ui/index.jsx'
+import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { m as motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Link } from 'react-router-dom'
@@ -215,6 +215,7 @@ export default function Bichinho() {
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="mb-1"><BotaoVoltar para="/jogos" rotulo="os Jogos" /></div>
       <div className="flex items-center justify-between mb-2">
         <div>
           <h1 className="text-xl font-extrabold text-brand">{bicho.nome}</h1>

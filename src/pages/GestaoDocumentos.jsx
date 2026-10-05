@@ -98,7 +98,7 @@ export default function GestaoDocumentos() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Cabecalho icone="📄" titulo="Documentos" descricao="Documentos de classe emitidos neste clube — PDF, assinatura eletrônica e verificação" />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="📄" titulo="Documentos" descricao="Documentos de classe emitidos neste clube — PDF, assinatura eletrônica e verificação" />
 
       <Aviso tom="info">
         Esta tela não corrige requisito, evidência ou aprovação — isso continua em Avaliar

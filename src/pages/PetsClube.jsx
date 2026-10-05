@@ -1,3 +1,4 @@
+import { BotaoVoltar, ErroDeCarga } from '../ui/index.jsx'
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
@@ -25,11 +26,19 @@ function MovelBg({ movel = 'nenhum', className = '' }) {
 export default function PetsClube() {
   const [pets, setPets] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [falha, setFalha] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
 
-  useEffect(() => { petsDoClube().then(setPets).catch(() => {}).finally(() => setCarregando(false)) }, [])
+  useEffect(() => {
+    setCarregando(true); setFalha(false)
+    petsDoClube().then(setPets).catch(() => setFalha(true)).finally(() => setCarregando(false))
+  }, [tentativa])
+
+  if (falha) return <ErroDeCarga titulo="Não consegui carregar os bichinhos do clube." aoTentar={() => setTentativa((n) => n + 1)} />
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/jogos" rotulo="os Jogos" /></div>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-extrabold text-brand">🐾 Pets do clube</h1>

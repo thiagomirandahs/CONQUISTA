@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from 'react'
+import { hojeLocalISO } from '../lib/data.js'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { lerRetorno, limparRetorno, retornoDaUrl } from '../lib/retornoPosLogin.js'
 import { m as motion } from 'framer-motion'
@@ -191,7 +192,7 @@ export default function Cadastro() {
           <Campo label="Senha (mín. 8, com letras e números)" type="password" value={form.senha} onChange={(v) => set('senha', v)} placeholder="••••••••" />
           {!ehPai && !ehCoordenacao && (
             <>
-              <Campo label="Data de nascimento" type="date" value={form.nascimento} onChange={(v) => set('nascimento', v)} />
+              <Campo label="Data de nascimento" type="date" max={hojeLocalISO()} value={form.nascimento} onChange={(v) => set('nascimento', v)} />
               <div>
                 <label htmlFor="cadastro-cargo" className="block text-sm font-medium text-ink mb-1">Função no clube</label>
                 <select id="cadastro-cargo" required className={inputClass} value={form.cargo} onChange={(e) => set('cargo', e.target.value)}>

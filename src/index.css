@@ -198,6 +198,16 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   }
 }
 
+/* iPhone (PWA/Safari): campo de texto com fonte menor que 16px faz o navegador DAR ZOOM ao focar e não voltar sozinho (auditoria de
+   05/10/2026: Chat, Agenda, Avisos, Atividades usam text-sm). Só no toque; o visual muda no máximo 2px de fonte nos campos. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* =============================================================================
    REDE DBV — cores da identidade DesbravaClube (Fase 6): azul-marinho + dourado de destaque.
    Tudo da rede usa ESTAS variáveis (bg-[var(--rede-bg)] …); o tema escuro só troca os valores.

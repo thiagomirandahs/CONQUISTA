@@ -7,7 +7,7 @@ import { FilaDeAvaliacao } from './Gestao.jsx'
 export default function GestaoAvaliar() {
   return (
     <div className="max-w-2xl mx-auto">
-      <Cabecalho icone="🔎" titulo="Avaliar" descricao="Tudo o que espera a sua avaliação, num lugar só" />
+      <Cabecalho voltar={{ para: '/gestao', rotulo: 'a Gestão' }} icone="🔎" titulo="Avaliar" descricao="Tudo o que espera a sua avaliação, num lugar só" />
       <FilaDeAvaliacao />
       {/* Classes + Especialidades numa central de trabalho só, com histórico por tentativa e
           filtros — os cards acima continuam levando cada um pra sua tela própria (e continuam

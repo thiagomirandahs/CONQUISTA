@@ -5,7 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import { carregarEventos, salvarEvento, excluirEvento } from '../lib/dados.js'
 import { curto, contagem, CORES_CONT } from '../lib/eventos.js'
 import { avisar } from '../ui/avisos.jsx'
-import { Carregando as Esqueleto, mensagemDeErro } from '../ui/index.jsx'
+import { Carregando as Esqueleto, mensagemDeErro, ErroDeCarga, BotaoVoltar } from '../ui/index.jsx'
 
 const PODE_GERIR = ['instrutor', 'diretoria']
 const TIPOS = ['Reunião', 'Acampamento', 'Passeio', 'Culto', 'Evento']
@@ -50,6 +50,7 @@ export default function Agenda() {
 
   return (
     <div>
+      <div className="mb-1"><BotaoVoltar para="/meu-clube" rotulo="o Clube" /></div>
       <div className="mb-4 flex items-start justify-between gap-2">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">📅 Agenda</h2>
@@ -64,10 +65,7 @@ export default function Agenda() {
       {carregando ? (
         <Esqueleto />
       ) : erro ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800">
-          <p className="font-semibold mb-1">Não consegui carregar a agenda</p>
-          <p className="text-xs">Se a página é nova, rode <code className="bg-amber-100 rounded px-1">supabase/2026-07-09-agenda.sql</code> no Supabase.</p>
-        </div>
+        <ErroDeCarga titulo="Não consegui carregar a agenda." aoTentar={carregar} />
       ) : lista.length === 0 ? (
         <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
           <div className="text-4xl mb-2">📅</div>

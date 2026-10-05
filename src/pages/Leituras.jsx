@@ -40,7 +40,7 @@ export default function Leituras() {
 
   return (
     <div className="mx-auto max-w-2xl pb-8" data-testid="pagina-leituras">
-      <Cabecalho icone="📚" titulo="Leituras" descricao="Livros da sua Classe e do Curso de Leitura, para ler ou ouvir." />
+      <Cabecalho voltar={{ para: '/jornada', rotulo: 'a Jornada' }} icone="📚" titulo="Leituras" descricao="Livros da sua Classe e do Curso de Leitura, para ler ou ouvir." />
       <div role="group" aria-label="Filtrar leituras" className="mb-4 flex flex-wrap gap-2">
         {FILTROS.map((f) => (
           <button key={f.chave} type="button" onClick={() => setFiltro(f.chave)} aria-pressed={filtro === f.chave}
