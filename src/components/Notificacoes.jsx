@@ -35,6 +35,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
   const { clubeId } = useClube()
   const navigate = useNavigate()
   const [aberto, setAberto] = useState(false)
+  const [detalhe, setDetalhe] = useState(null) // aviso aberto para leitura completa
   const [lista, setLista] = useState([])
   const [vistoEm, setVistoEm] = useState(null)
   const [baseline, setBaseline] = useState(null) // congela as não-lidas no momento de abrir
@@ -104,10 +105,11 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
     }
   }
 
-  const fechar = useCallback(() => setAberto(false), [])
+  const fechar = useCallback(() => { setAberto(false); setDetalhe(null) }, [])
 
-  function abrirItem(n) {
-    setAberto(false)
+  // Tocar no aviso mostra o texto INTEIRO (a lista só mostra 2 linhas); quem tem link vai por um botão.
+  function irParaLink(n) {
+    fechar()
     if (n.link) navigate(n.link)
   }
 
@@ -125,14 +127,30 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
         )}
       </button>
 
-      <Folha aberta={aberto} aoFechar={fechar} titulo="Notificações">
-        {mostradas.length === 0 ? (
+      <Folha aberta={aberto} aoFechar={fechar} titulo={detalhe ? 'Aviso' : 'Notificações'}>
+        {detalhe ? (
+          <div data-testid="aviso-completo">
+            <button type="button" onClick={() => setDetalhe(null)}
+              className="min-h-[44px] -ml-2 px-2 text-sm font-semibold text-brand focus-visible:outline-2 focus-visible:outline-brand">
+              ‹ Voltar para os avisos
+            </button>
+            <div className="flex gap-3 mt-1">
+              <span className="text-2xl shrink-0" aria-hidden="true">{iconePorTipo[detalhe.tipo] || '🔔'}</span>
+              <div className="min-w-0">
+                <h3 className="font-extrabold text-ink break-words">{detalhe.titulo}</h3>
+                <p className="text-xs text-faint mt-0.5">{new Date(detalhe.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}</p>
+              </div>
+            </div>
+            {detalhe.corpo && <p className="mt-3 text-sm text-ink whitespace-pre-line break-words">{detalhe.corpo}</p>}
+            {detalhe.link && <Botao className="w-full mt-4" aoTocar={() => irParaLink(detalhe)}>Abrir</Botao>}
+          </div>
+        ) : mostradas.length === 0 ? (
           <Vazio icone="✅" titulo="Nada por aqui ainda.">Quando o clube avisar algo, aparece aqui.</Vazio>
         ) : (
           <ul className="-mx-5 -mt-5 divide-y divide-line" data-testid="lista-notificacoes">
             {mostradas.map((n) => (
               <li key={n.id}>
-                <button type="button" onClick={() => abrirItem(n)}
+                <button type="button" onClick={() => setDetalhe(n)}
                   className={`w-full flex gap-3 px-5 py-3 min-h-[44px] text-left hover:bg-surface2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${naoLidaNoPainel(n) ? 'bg-brand/5' : ''}`}>
                   <span className="text-xl shrink-0" aria-hidden="true">{iconePorTipo[n.tipo] || '🔔'}</span>
                   <span className="flex-1 min-w-0">
@@ -149,7 +167,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
         )}
 
         {/* Ativar push neste aparelho (Web Push no navegador; FCM no APK) */}
-        <div className="mt-4 pt-4 border-t border-line" data-testid="bloco-push">
+        {!detalhe && <div className="mt-4 pt-4 border-t border-line" data-testid="bloco-push">
           {!suportaPush ? (
             <p className="text-xs text-faint text-center">Avisos no celular não disponíveis neste aparelho.</p>
           ) : pushOn ? (
@@ -164,7 +182,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
               <Aviso tom={pushMsg.tom}>{pushMsg.texto}</Aviso>
             </div>
           )}
-        </div>
+        </div>}
       </Folha>
     </>
   )

@@ -39,6 +39,22 @@ describe('Notificacoes', () => {
     expect(marcarNotificacoesVistas).toHaveBeenCalledWith('u1')
   })
 
+  it('tocar no aviso mostra o texto COMPLETO (sem corte); "Voltar" volta à lista e "Abrir" segue o link', async () => {
+    const longo = 'Linha 1' + String.fromCharCode(10) + 'Linha 2' + String.fromCharCode(10) + 'Linha 3 ... Linha 4 final do aviso'
+    carregarNotificacoes.mockResolvedValue([{ ...AVISO, corpo: longo }])
+    renderT()
+    await userEvent.click(await screen.findByTestId('sino-notificacoes'))
+    await userEvent.click(await screen.findByText('Reunião sábado'))
+    const completo = await screen.findByTestId('aviso-completo')
+    expect(completo).toHaveTextContent('Linha 4 final do aviso')
+    expect(completo.querySelector('p.whitespace-pre-line').className).not.toMatch(/line-clamp/)
+    await userEvent.click(within(completo).getByRole('button', { name: /Voltar para os avisos/ }))
+    expect(await screen.findByTestId('lista-notificacoes')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Reunião sábado'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir' }))
+    expect(screen.getByTestId('sino-notificacoes')).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('fecha no botão ✕ (44px) e no Esc', async () => {
     renderT()
     await userEvent.click(await screen.findByTestId('sino-notificacoes'))
