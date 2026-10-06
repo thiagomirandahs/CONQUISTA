@@ -1,23 +1,37 @@
-import { corDaClasse, ehClasseAvancada } from '../lib/corDaClasse.js'
+import { useState } from 'react'
+import { corDaClasse, ehClasseAvancada, regularDaAvancada } from '../lib/corDaClasse.js'
 
-// Emblema PRÓPRIO do app (SVG simples: escudo na cor da classe, estrela e a inicial). NÃO é a insígnia
-// oficial da DSA — aquelas são marca registrada/direito autoral e não são usadas nem baixadas aqui.
-// Classe Avançada: mesma cor da regular pareada, com detalhe próprio — um segundo contorno por dentro
-// do escudo e três estrelas no lugar de uma (dá para diferenciar de relance, sem depender só de cor).
-//
-// Ponto de troca futuro: se o clube tiver AUTORIZAÇÃO para usar a imagem oficial, basta preencher
-// IMAGENS_AUTORIZADAS (chave = nome da classe em minúsculas, sem acento → URL da imagem) ou passar a
-// prop `imagem`. Com imagem, o componente mostra a imagem no lugar do desenho.
+// Emblema da classe. Desde 06/10/2026 o dono AUTORIZOU o uso das imagens oficiais (mesma fonte dos emblemas das
+// especialidades, mda.wiki.br): public/classes/<classe>.png, 70×70. A Classe Avançada usa a imagem da regular
+// pareada (é o mesmo cartão) e ganha um selo de 3 estrelas para diferenciar de relance.
+// Se a imagem faltar ou falhar, volta o escudo PRÓPRIO do app (SVG na cor da classe, estrela e a inicial).
+// `imagem` (prop) ou IMAGENS_AUTORIZADAS ainda mandam por cima, se um dia for preciso trocar uma classe.
+const CLASSES_COM_IMAGEM = ['amigo', 'companheiro', 'pesquisador', 'pioneiro', 'excursionista', 'guia']
 export const IMAGENS_AUTORIZADAS = {}
 
 const normalizar = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
 const ESTRELA = 'l2.2 4.6 5 .6 -3.7 3.4 1 5 -4.5-2.5 -4.5 2.5 1-5 -3.7-3.4 5-.6 Z'
 
+export const imagemDaClasse = (nome) => {
+  const chave = regularDaAvancada(nome) || normalizar(nome)
+  return CLASSES_COM_IMAGEM.includes(chave) ? `/classes/${chave}.png` : null
+}
+
 export default function EmblemaDaClasse({ nome, tamanho = 48, imagem = null, className = '' }) {
-  const src = imagem || IMAGENS_AUTORIZADAS[normalizar(nome)]
+  const [falhou, setFalhou] = useState(false)
+  const src = imagem || IMAGENS_AUTORIZADAS[normalizar(nome)] || (falhou ? null : imagemDaClasse(nome))
   if (src) {
-    return <img src={src} alt="" aria-hidden="true" width={tamanho} height={tamanho} className={`shrink-0 object-contain ${className}`} />
+    const avancada = ehClasseAvancada(nome)
+    return (
+      <span data-testid="emblema-classe" data-avancada={avancada ? 'true' : 'false'} aria-hidden="true"
+        className={`relative inline-block shrink-0 ${className}`} style={{ width: tamanho, height: tamanho }}>
+        <img src={src} alt="" width={tamanho} height={tamanho} decoding="async" onError={() => setFalhou(true)} className="block h-full w-full object-contain drop-shadow" />
+        {avancada && (
+          <span data-testid="emblema-detalhe-avancada" className="absolute -bottom-1 -right-1 rounded-full bg-amber-400 px-1 text-[9px] font-black leading-4 text-slate-900 ring-2 ring-white">★★★</span>
+        )}
+      </span>
+    )
   }
   const cor = corDaClasse(nome) || { hex: '#64748b', texto: '#ffffff', escuro: '#475569' }
   const avancada = ehClasseAvancada(nome)

@@ -113,7 +113,8 @@ export function cspComHashes({ conectaEm = [] } = {}) {
           // não pode ser hasheado. Estilo não executa código; o risco é exfiltração por seletor,
           // muito abaixo do de script.
           `style-src 'self' 'unsafe-inline' ${[...hashesEstilo].join(' ')}`.trim(),
-          `img-src 'self' data: blob: ${supabase}`.trim(),
+          // o app Android (origem localhost) busca os emblemas das especialidades no site de produção (não vão dentro do APK)
+          `img-src 'self' data: blob: https://app.desbravaclube.com.br ${supabase}`.trim(),
           `media-src 'self' blob: ${supabase}`.trim(),
           `font-src 'self' data:`,
           // Audiolivros das Classes (migration 370): SÓ o player sem cookie do YouTube. Nada de

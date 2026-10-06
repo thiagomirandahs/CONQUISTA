@@ -1,3 +1,4 @@
+import EmblemaEspecialidade from '../components/EmblemaEspecialidade.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { catalogoEspecialidades } from '../services/catalogoEspecialidades.js'
@@ -81,7 +82,8 @@ export default function CatalogoEspecialidades() {
             {lista.slice(0, limite).map((e) => (
               <li key={e.codigo} data-testid="especialidade-item" className="rounded-2xl border border-line bg-surface p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                  <EmblemaEspecialidade codigo={e.codigo} />
+                  <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink">{e.nome}</p>
                     <p className="text-xs text-muted">{e.codigo} · {e.area_nome}{e.nivel ? ` · nível ${e.nivel} ` : ''}<span aria-hidden="true">{rotuloNivel(e.nivel)}</span>{e.ano ? ` · desde ${e.ano}` : ''}</p>
                   </div>
@@ -128,7 +130,7 @@ function Mestrado({ m, porCodigo }) {
           <ul className="grid gap-1">
             {itens.map((e) => (
               <li key={e.codigo}><a href={e.url} target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] items-center justify-between rounded-lg px-2 text-sm text-ink hover:bg-surface2">
-                <span>{e.nome}</span><span className="text-xs text-muted">{e.codigo}</span></a></li>
+                <span className="flex items-center gap-2"><EmblemaEspecialidade codigo={e.codigo} tamanho={32} />{e.nome}</span><span className="text-xs text-muted">{e.codigo}</span></a></li>
             ))}
           </ul>
           <a href={m.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center text-sm font-bold text-brand">Ver regras do mestrado ↗</a>

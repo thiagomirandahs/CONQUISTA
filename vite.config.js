@@ -1,3 +1,5 @@
+import { rmSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -11,6 +13,7 @@ import { versaoOta } from './scripts/versaoOta.mjs'
 // problema que já tivemos no PWA) e SEM o modo legado (a WebView do Android é
 // moderna — corta ~centenas de KB de polyfill à toa).
 const forCap = process.env.CAP_BUILD === '1'
+let pastaEmblemas = null
 
 // ============================================================================
 //  A QUEM A CSP AUTORIZA O APP A SE CONECTAR — e por que isso é FAIL-CLOSED.
@@ -71,6 +74,14 @@ export default defineConfig(({ command, mode }) => ({
   // com a publicada em /ota/versao.json. Ver android/OTA.md.
   define: { __OTA_VERSAO__: JSON.stringify(versaoOta()) },
   plugins: [
+    // Emblemas das especialidades (~19 MB) ficam só no site: nem o APK nem o pacote OTA os levam (o app Android busca
+    // em https://app.desbravaclube.com.br/especialidades/, ver EmblemaEspecialidade.jsx). As 6 imagens de classe (poucos KB) seguem dentro.
+    forCap && {
+      name: 'sem-emblemas-no-apk',
+      apply: 'build',
+      configResolved(c) { pastaEmblemas = resolve(c.root, c.build.outDir, 'especialidades') },   // dist/ ou a pasta temporária do OTA
+      closeBundle() { if (pastaEmblemas) rmSync(pastaEmblemas, { recursive: true, force: true }) },
+    },
     react(),
     tailwindcss(),
     !forCap && VitePWA({
@@ -99,6 +110,17 @@ export default defineConfig(({ command, mode }) => ({
         // IndexedDB com a chave separada por auth.uid() e LIMPAR no logout —
         // nunca voltar a usar cache de service worker pra resposta autenticada.
         runtimeCaching: [
+          {
+            // Emblemas das especialidades (arquivos públicos e estáticos em /especialidades/): uma vez baixado, fica no
+            // aparelho — o 4G fraco não baixa de novo. Sem dado de ninguém, então é seguro compartilhar o cache.
+            urlPattern: /\/especialidades\/[^/]+\.(png|jpg|webp)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'emblemas-especialidades',
+              expiration: { maxEntries: 700, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             // Fotos/avatares do Storage PÚBLICO: guardar pra ver offline +
             // carregar rápido. Seguro porque o bucket é público (mesmo conteúdo
