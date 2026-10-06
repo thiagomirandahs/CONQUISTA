@@ -1,0 +1,3318 @@
+{
+  "fonte": "https://mda.wiki.br/Especialidades/",
+  "emblemas": {
+    "AA-001": {
+      "nome": "Avicultura",
+      "arquivo": "/especialidades/aa-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Avicultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa001.png?20260902074322"
+    },
+    "AA-002": {
+      "nome": "Jardinagem e Horticultura",
+      "arquivo": "/especialidades/aa-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Jardinagem_e_Horticultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa002.png?20260902081453"
+    },
+    "AA-003": {
+      "nome": "Agricultura Familiar de Subsistência",
+      "arquivo": "/especialidades/aa-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Agricultura_Familiar_de_Subsist%C3%AAncia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa003.png?20260901193753"
+    },
+    "AA-004": {
+      "nome": "Apicultura",
+      "arquivo": "/especialidades/aa-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Apicultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa004.png?20260902073959"
+    },
+    "AA-005": {
+      "nome": "Agricultura",
+      "arquivo": "/especialidades/aa-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Agricultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa005.png?20260901192500"
+    },
+    "AA-006": {
+      "nome": "Pescaria",
+      "arquivo": "/especialidades/aa-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pescaria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa006.png?20260902084954"
+    },
+    "AA-007": {
+      "nome": "Criação de Gado Leiteiro",
+      "arquivo": "/especialidades/aa-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_de_Gado_Leiteiro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa007.png?20260902075429"
+    },
+    "AA-008": {
+      "nome": "Pomicultura",
+      "arquivo": "/especialidades/aa-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pomicultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa008.png?20260902094401"
+    },
+    "AA-009": {
+      "nome": "Pomicultura II - Frutas Pequenas",
+      "arquivo": "/especialidades/aa-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pomicultura_II_-_Frutas_Pequenas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa009.png?20260902101411"
+    },
+    "AA-010": {
+      "nome": "Floricultura",
+      "arquivo": "/especialidades/aa-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Floricultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa010.png?20260902080617"
+    },
+    "AA-011": {
+      "nome": "Criação de Cavalos",
+      "arquivo": "/especialidades/aa-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_de_Cavalos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa011.png?20260902075049"
+    },
+    "AA-012": {
+      "nome": "Criação de Pombos",
+      "arquivo": "/especialidades/aa-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_de_Pombos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa012.png?20260902080230"
+    },
+    "AA-013": {
+      "nome": "Criação de Ovelhas",
+      "arquivo": "/especialidades/aa-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_de_Ovelhas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa013.png?20260902075758"
+    },
+    "AA-014": {
+      "nome": "Pecuária",
+      "arquivo": "/especialidades/aa-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pecu%C3%A1ria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa014.png?20260902084237"
+    },
+    "AA-015": {
+      "nome": "Criação de Cabras",
+      "arquivo": "/especialidades/aa-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_de_Cabras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa015.png?20260902074714"
+    },
+    "AA-016": {
+      "nome": "Paisagismo",
+      "arquivo": "/especialidades/aa-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Paisagismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@aa016.png?20260908000021"
+    },
+    "AD-001": {
+      "nome": "Alívio da Fome",
+      "arquivo": "/especialidades/ad-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Al%C3%ADvio_da_Fome",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad001.png?20260831144359"
+    },
+    "AD-002": {
+      "nome": "Avaliação da Comunidade",
+      "arquivo": "/especialidades/ad-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Avalia%C3%A7%C3%A3o_da_Comunidade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad002.png?20260909181705"
+    },
+    "AD-003": {
+      "nome": "Serviço Comunitário",
+      "arquivo": "/especialidades/ad-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Servi%C3%A7o_Comunit%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad003.png?20260924163834"
+    },
+    "AD-004": {
+      "nome": "Resposta a Emergências e Desastres",
+      "arquivo": "/especialidades/ad-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Resposta_a_Emerg%C3%AAncias_e_Desastres",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad004.png?20260831153149"
+    },
+    "AD-005": {
+      "nome": "Resposta a Emergências e Desastres - avançado",
+      "arquivo": "/especialidades/ad-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Resposta_a_Emerg%C3%AAncias_e_Desastres_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad005.png?20260831154030"
+    },
+    "AD-006": {
+      "nome": "Alfabetização",
+      "arquivo": "/especialidades/ad-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Alfabetiza%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad006.png?20260831143546"
+    },
+    "AD-007": {
+      "nome": "Resolução de Conflitos",
+      "arquivo": "/especialidades/ad-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Resolu%C3%A7%C3%A3o_de_Conflitos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad007.png?20261001205825"
+    },
+    "AD-008": {
+      "nome": "Reassentamento de Refugiados",
+      "arquivo": "/especialidades/ad-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Reassentamento_de_Refugiados",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad008.png?20260831150317"
+    },
+    "AD-009": {
+      "nome": "Desenvolvimento Comunitário",
+      "arquivo": "/especialidades/ad-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desenvolvimento_Comunit%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ad009.png?20260831154940"
+    },
+    "AM-001": {
+      "nome": "Arte de Contar Histórias Cristãs",
+      "arquivo": "/especialidades/am-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Contar_Hist%C3%B3rias_Crist%C3%A3s",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am001.png?20260930091101"
+    },
+    "AM-002": {
+      "nome": "Arte em Fantoches",
+      "arquivo": "/especialidades/am-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_em_Fantoches",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am002.png?20260902104833"
+    },
+    "AM-003": {
+      "nome": "Arte em Fantoches - avançado",
+      "arquivo": "/especialidades/am-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_em_Fantoches_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am003.png?20260902104944"
+    },
+    "AM-004": {
+      "nome": "Etnologia Missionária",
+      "arquivo": "/especialidades/am-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Etnologia_Mission%C3%A1ria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am004.png?20260903123542"
+    },
+    "AM-005": {
+      "nome": "Colportagem",
+      "arquivo": "/especialidades/am-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Colportagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am005.png?20260902181005"
+    },
+    "AM-006": {
+      "nome": "Cidadania Cristã",
+      "arquivo": "/especialidades/am-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cidadania_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am006.png?20261002143038"
+    },
+    "AM-007": {
+      "nome": "Estudo de Línguas - Avançado",
+      "arquivo": "/especialidades/am-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Estudo_de_L%C3%ADnguas_-_Avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am007.png?20260830033017"
+    },
+    "AM-008": {
+      "nome": "Evangelismo Pessoal",
+      "arquivo": "/especialidades/am-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Evangelismo_Pessoal",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am008.png?20260903124456"
+    },
+    "AM-009": {
+      "nome": "Liderança Juvenil",
+      "arquivo": "/especialidades/am-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lideran%C3%A7a_Juvenil",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am009.png?20260903160037"
+    },
+    "AM-010": {
+      "nome": "Testemunho Juvenil",
+      "arquivo": "/especialidades/am-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Testemunho_Juvenil",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am010.png?20261003191325"
+    },
+    "AM-011": {
+      "nome": "Asseio e Cortesia Cristã",
+      "arquivo": "/especialidades/am-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Asseio_e_Cortesia_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am011.png?20260924220444"
+    },
+    "AM-012": {
+      "nome": "Vida Familiar",
+      "arquivo": "/especialidades/am-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vida_Familiar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am012.png?20260904103315"
+    },
+    "AM-013": {
+      "nome": "Temperança",
+      "arquivo": "/especialidades/am-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Temperan%C3%A7a",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am013.png?20261004204021"
+    },
+    "AM-014": {
+      "nome": "Língua de Sinais",
+      "arquivo": "/especialidades/am-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_L%C3%ADngua_de_Sinais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am014.png?20260903161450"
+    },
+    "AM-016": {
+      "nome": "Aventuras com Cristo",
+      "arquivo": "/especialidades/am-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aventuras_com_Cristo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am016.png?20261004155912"
+    },
+    "AM-017": {
+      "nome": "Aventuras com Cristo - avançado",
+      "arquivo": "/especialidades/am-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aventuras_com_Cristo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am017.png?20260902113929"
+    },
+    "AM-018": {
+      "nome": "Língua de sinais - avançado",
+      "arquivo": "/especialidades/am-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_L%C3%ADngua_de_sinais_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am018.png?20260903161825"
+    },
+    "AM-019": {
+      "nome": "Marcação Bíblica",
+      "arquivo": "/especialidades/am-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marca%C3%A7%C3%A3o_B%C3%ADblica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am019.png?20260915121216"
+    },
+    "AM-020": {
+      "nome": "Marcação Bíblica - avançado",
+      "arquivo": "/especialidades/am-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marca%C3%A7%C3%A3o_B%C3%ADblica_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am020.png?20260920125027"
+    },
+    "AM-021": {
+      "nome": "Pregador Evangelista",
+      "arquivo": "/especialidades/am-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pregador_Evangelista",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am021.png?20260903170921"
+    },
+    "AM-022": {
+      "nome": "Pregador Evangelista - avançado",
+      "arquivo": "/especialidades/am-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pregador_Evangelista_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am022.png?20260904080307"
+    },
+    "AM-023": {
+      "nome": "Santuário",
+      "arquivo": "/especialidades/am-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Santu%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am023.png?20260926200520"
+    },
+    "AM-024": {
+      "nome": "Dramatização Cristã",
+      "arquivo": "/especialidades/am-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Dramatiza%C3%A7%C3%A3o_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am024.png?20260903111542"
+    },
+    "AM-025": {
+      "nome": "Desfile com Carros Alegóricos",
+      "arquivo": "/especialidades/am-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desfile_com_Carros_Aleg%C3%B3ricos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am025.png?20260903093330"
+    },
+    "AM-026": {
+      "nome": "Desfile com Carros Alegóricos - avançado",
+      "arquivo": "/especialidades/am-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desfile_com_Carros_Aleg%C3%B3ricos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am026.png?20260904151903"
+    },
+    "AM-027": {
+      "nome": "Pacificador",
+      "arquivo": "/especialidades/am-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pacificador",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am027.png?20260922075054"
+    },
+    "AM-028": {
+      "nome": "Pacificador - avançado",
+      "arquivo": "/especialidades/am-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pacificador_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am028.png?20260906151040"
+    },
+    "AM-029": {
+      "nome": "Adoração Cristã",
+      "arquivo": "/especialidades/am-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Adora%C3%A7%C3%A3o_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am029.png?20260902102116"
+    },
+    "AM-030": {
+      "nome": "Arte da Pregação Cristã",
+      "arquivo": "/especialidades/am-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_da_Prega%C3%A7%C3%A3o_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am030.png?20260930090917"
+    },
+    "AM-031": {
+      "nome": "Arte da Pregação Cristã - avançado",
+      "arquivo": "/especialidades/am-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_da_Prega%C3%A7%C3%A3o_Crist%C3%A3_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am031.png?20260902104309"
+    },
+    "AM-032": {
+      "nome": "Arqueologia Bíblica",
+      "arquivo": "/especialidades/am-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arqueologia_B%C3%ADblica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am032.png?20260920094120"
+    },
+    "AM-033": {
+      "nome": "Cerimônias",
+      "arquivo": "/especialidades/am-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cerim%C3%B4nias",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am033.png?20260920210308"
+    },
+    "AM-034": {
+      "nome": "Braile",
+      "arquivo": "/especialidades/am-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Braile",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am034.png?20260902132250"
+    },
+    "AM-035": {
+      "nome": "Criacionismo",
+      "arquivo": "/especialidades/am-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Criacionismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am035.png?20260903084657"
+    },
+    "AM-036": {
+      "nome": "Criacionismo - avançado",
+      "arquivo": "/especialidades/am-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Criacionismo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am036.png?20260903085245"
+    },
+    "AM-037": {
+      "nome": "Espírito de Profecia",
+      "arquivo": "/especialidades/am-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esp%C3%ADrito_de_Profecia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am037.png?20260903122753"
+    },
+    "AM-038": {
+      "nome": "Escatologia",
+      "arquivo": "/especialidades/am-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escatologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am038.png?20260914142955"
+    },
+    "AM-039": {
+      "nome": "Historiador Eclesiástico",
+      "arquivo": "/especialidades/am-039.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Historiador_Eclesi%C3%A1stico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am039.png?20260903131546"
+    },
+    "AM-040": {
+      "nome": "Evangelismo Web",
+      "arquivo": "/especialidades/am-040.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Evangelismo_Web",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am040.png?20260915162959"
+    },
+    "AM-041": {
+      "nome": "Evangelismo Web - avançado",
+      "arquivo": "/especialidades/am-041.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Evangelismo_Web_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am041.png?20260903130413"
+    },
+    "AM-042": {
+      "nome": "Intercessor",
+      "arquivo": "/especialidades/am-042.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Intercessor",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am042.png?20260903132838"
+    },
+    "AM-043": {
+      "nome": "Pioneiros Adventistas",
+      "arquivo": "/especialidades/am-043.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pioneiros_Adventistas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am043.png?20260903170026"
+    },
+    "AM-044": {
+      "nome": "Patriotismo",
+      "arquivo": "/especialidades/am-044.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Patriotismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am044.png?20260903165541"
+    },
+    "AM-045": {
+      "nome": "Sonoplastia",
+      "arquivo": "/especialidades/am-045.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sonoplastia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am045.png?20260907210522"
+    },
+    "AM-046": {
+      "nome": "Sonoplastia - avançado",
+      "arquivo": "/especialidades/am-046.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sonoplastia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am046.png?20260929151700"
+    },
+    "AM-047": {
+      "nome": "Investigador Bíblico I",
+      "arquivo": "/especialidades/am-047.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Investigador_B%C3%ADblico_I",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am047.png?20260903133458"
+    },
+    "AM-048": {
+      "nome": "Boa Conduta Escolar",
+      "arquivo": "/especialidades/am-048.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Boa_Conduta_Escolar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am048.png?20260902130348"
+    },
+    "AM-049": {
+      "nome": "Mensageira de Deus",
+      "arquivo": "/especialidades/am-049.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mensageira_de_Deus",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am049.png?20260925052505"
+    },
+    "AM-050": {
+      "nome": "Estudo de Línguas",
+      "arquivo": "/especialidades/am-050.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Estudo_de_L%C3%ADnguas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am050.png?20260925053735"
+    },
+    "AM-051": {
+      "nome": "Cultura Sul Americana",
+      "arquivo": "/especialidades/am-051.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cultura_Sul_Americana",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am051.png?20260925053847"
+    },
+    "AM-052": {
+      "nome": "Apocalipse",
+      "arquivo": "/especialidades/am-052.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Apocalipse",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am052.png?20260925053944"
+    },
+    "AM-053": {
+      "nome": "Crítico de Mídia",
+      "arquivo": "/especialidades/am-053.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cr%C3%ADtico_de_M%C3%ADdia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am053.png?20260903085956"
+    },
+    "AM-054": {
+      "nome": "Livro de Daniel",
+      "arquivo": "/especialidades/am-054.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Livro_de_Daniel",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am054.png?20260925054526"
+    },
+    "AM-055": {
+      "nome": "Educação Inclusiva",
+      "arquivo": "/especialidades/am-055.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Educa%C3%A7%C3%A3o_Inclusiva",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am055.png?20260903113226"
+    },
+    "AM-056": {
+      "nome": "Inteligência Emocional",
+      "arquivo": "/especialidades/am-056.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Intelig%C3%AAncia_Emocional",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am056.png?20260830032130"
+    },
+    "AM-057": {
+      "nome": "Interpretação Bíblica",
+      "arquivo": "/especialidades/am-057.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Interpreta%C3%A7%C3%A3o_B%C3%ADblica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am057.png?20260922211742"
+    },
+    "AM-058": {
+      "nome": "Lives - Transmissão de Cultos Online",
+      "arquivo": "/especialidades/am-058.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lives_-_Transmiss%C3%A3o_de_Cultos_Online",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am058.png?20260830032630"
+    },
+    "AM-059": {
+      "nome": "Parábolas de Jesus",
+      "arquivo": "/especialidades/am-059.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Par%C3%A1bolas_de_Jesus",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am059.png?20260925180946"
+    },
+    "AM-060": {
+      "nome": "Relacionamentos Saudáveis",
+      "arquivo": "/especialidades/am-060.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Relacionamentos_Saud%C3%A1veis",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@am060.png?20260808165811"
+    },
+    "AM-EB-001": {
+      "nome": "Escrituras Sagradas",
+      "arquivo": "/especialidades/am-eb-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escrituras_Sagradas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb001.png?20260911232558"
+    },
+    "AM-EB-002": {
+      "nome": "Trindade",
+      "arquivo": "/especialidades/am-eb-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trindade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb002.png?20260902141000"
+    },
+    "AM-EB-003": {
+      "nome": "Deus Pai",
+      "arquivo": "/especialidades/am-eb-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Deus_Pai",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb003.png?20260908184144"
+    },
+    "AM-EB-004": {
+      "nome": "Deus Filho",
+      "arquivo": "/especialidades/am-eb-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Deus_Filho",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb004.png?20260915222555"
+    },
+    "AM-EB-005": {
+      "nome": "Deus Espírito Santo",
+      "arquivo": "/especialidades/am-eb-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Deus_Esp%C3%ADrito_Santo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb005.png?20260918214542"
+    },
+    "AM-EB-006": {
+      "nome": "Criação do Mundo",
+      "arquivo": "/especialidades/am-eb-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cria%C3%A7%C3%A3o_do_Mundo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb006.png?20260817085938"
+    },
+    "AM-EB-007": {
+      "nome": "Natureza da Humanidade",
+      "arquivo": "/especialidades/am-eb-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Natureza_da_Humanidade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb007.png?20260917170110"
+    },
+    "AM-EB-008": {
+      "nome": "Grande Conflito",
+      "arquivo": "/especialidades/am-eb-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Grande_Conflito",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb008.png?20260918170513"
+    },
+    "AM-EB-009": {
+      "nome": "Vida, Morte e Ressurreição de Cristo",
+      "arquivo": "/especialidades/am-eb-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vida,_Morte_e_Ressurrei%C3%A7%C3%A3o_de_Cristo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb009.png?20260904205822"
+    },
+    "AM-EB-010": {
+      "nome": "Experiência da Salvação",
+      "arquivo": "/especialidades/am-eb-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Experi%C3%AAncia_da_Salva%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb010.png?20260922154311"
+    },
+    "AM-EB-011": {
+      "nome": "Crescimento em Cristo",
+      "arquivo": "/especialidades/am-eb-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Crescimento_em_Cristo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb011.png?20260815111432"
+    },
+    "AM-EB-012": {
+      "nome": "Igreja",
+      "arquivo": "/especialidades/am-eb-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Igreja",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb012.png?20260814095844"
+    },
+    "AM-EB-013": {
+      "nome": "Remanescente e sua Missão",
+      "arquivo": "/especialidades/am-eb-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Remanescente_e_sua_Miss%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb013.png?20260910120448"
+    },
+    "AM-EB-014": {
+      "nome": "Unidade no Corpo de Cristo",
+      "arquivo": "/especialidades/am-eb-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Unidade_no_Corpo_de_Cristo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb014.png?20260816205241"
+    },
+    "AM-EB-015": {
+      "nome": "Batismo",
+      "arquivo": "/especialidades/am-eb-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Batismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb015.png?20261002160948"
+    },
+    "AM-EB-016": {
+      "nome": "Ceia do Senhor",
+      "arquivo": "/especialidades/am-eb-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ceia_do_Senhor",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb016.png?20260819184803"
+    },
+    "AM-EB-017": {
+      "nome": "Dons e Ministérios Espirituais",
+      "arquivo": "/especialidades/am-eb-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Dons_e_Minist%C3%A9rios_Espirituais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb017.png?20260822160106"
+    },
+    "AM-EB-018": {
+      "nome": "Dom de Profecia",
+      "arquivo": "/especialidades/am-eb-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Dom_de_Profecia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb018.png?20260823103106"
+    },
+    "AM-EB-019": {
+      "nome": "Lei de Deus",
+      "arquivo": "/especialidades/am-eb-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lei_de_Deus",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb019.png?20261003141018"
+    },
+    "AM-EB-020": {
+      "nome": "Sábado",
+      "arquivo": "/especialidades/am-eb-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_S%C3%A1bado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb020.png?20260907104859"
+    },
+    "AM-EB-021": {
+      "nome": "Mordomia",
+      "arquivo": "/especialidades/am-eb-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mordomia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb021.png?20261001163810"
+    },
+    "AM-EB-022": {
+      "nome": "Conduta Cristã",
+      "arquivo": "/especialidades/am-eb-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Conduta_Crist%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb022.png?20260815071708"
+    },
+    "AM-EB-023": {
+      "nome": "Matrimônio e Família",
+      "arquivo": "/especialidades/am-eb-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Matrim%C3%B4nio_e_Fam%C3%ADlia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb023.png?20260929120055"
+    },
+    "AM-EB-024": {
+      "nome": "Ministério de Cristo no Santuário Celestial",
+      "arquivo": "/especialidades/am-eb-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Minist%C3%A9rio_de_Cristo_no_Santu%C3%A1rio_Celestial",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb024.png?20261002095100"
+    },
+    "AM-EB-025": {
+      "nome": "Segunda Vinda de Cristo",
+      "arquivo": "/especialidades/am-eb-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Segunda_Vinda_de_Cristo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb025.png?20260927212242"
+    },
+    "AM-EB-026": {
+      "nome": "Morte e Ressurreição",
+      "arquivo": "/especialidades/am-eb-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Morte_e_Ressurrei%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb026.png?20261004100858"
+    },
+    "AM-EB-027": {
+      "nome": "Milênio e Fim do Pecado",
+      "arquivo": "/especialidades/am-eb-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mil%C3%AAnio_e_Fim_do_Pecado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb027.png?20260830034107"
+    },
+    "AM-EB-028": {
+      "nome": "Nova Terra",
+      "arquivo": "/especialidades/am-eb-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nova_Terra",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ameb028.png?20260806222704"
+    },
+    "AP-001": {
+      "nome": "Conserto de Sapatos",
+      "arquivo": "/especialidades/ap-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Conserto_de_Sapatos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap001.png?20260828184718"
+    },
+    "AP-002": {
+      "nome": "Fotografia",
+      "arquivo": "/especialidades/ap-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fotografia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap002.png?20261004111310"
+    },
+    "AP-003": {
+      "nome": "Mecânica Automotiva",
+      "arquivo": "/especialidades/ap-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mec%C3%A2nica_Automotiva",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap003.png?20260905163159"
+    },
+    "AP-004": {
+      "nome": "Radioamadorismo",
+      "arquivo": "/especialidades/ap-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Radioamadorismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap004.png?20260906151258"
+    },
+    "AP-005": {
+      "nome": "Datilografia",
+      "arquivo": "/especialidades/ap-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Datilografia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap005.png?20260909185909"
+    },
+    "AP-006": {
+      "nome": "Eletricidade",
+      "arquivo": "/especialidades/ap-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Eletricidade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap006.png?20260904150814"
+    },
+    "AP-007": {
+      "nome": "Carpintaria",
+      "arquivo": "/especialidades/ap-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Carpintaria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap007.png?20260926111959"
+    },
+    "AP-008": {
+      "nome": "Corte e Costura",
+      "arquivo": "/especialidades/ap-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Corte_e_Costura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap008.png?20260904142406"
+    },
+    "AP-009": {
+      "nome": "Taquigrafia",
+      "arquivo": "/especialidades/ap-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Taquigrafia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap009.png?20260906155209"
+    },
+    "AP-010": {
+      "nome": "Tipografia",
+      "arquivo": "/especialidades/ap-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tipografia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap010.png?20260906160408"
+    },
+    "AP-011": {
+      "nome": "Marcenaria",
+      "arquivo": "/especialidades/ap-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marcenaria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap011.png?20260905162106"
+    },
+    "AP-012": {
+      "nome": "Encadernação",
+      "arquivo": "/especialidades/ap-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Encaderna%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap012.png?20260818220820"
+    },
+    "AP-013": {
+      "nome": "Alvenaria",
+      "arquivo": "/especialidades/ap-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Alvenaria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap013.png?20260904110612"
+    },
+    "AP-014": {
+      "nome": "Barbearia",
+      "arquivo": "/especialidades/ap-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Barbearia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap014.png?20260904112117"
+    },
+    "AP-015": {
+      "nome": "Colocação de Papel de Parede",
+      "arquivo": "/especialidades/ap-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Coloca%C3%A7%C3%A3o_de_Papel_de_Parede",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap015.png?20260904140143"
+    },
+    "AP-016": {
+      "nome": "Contabilidade",
+      "arquivo": "/especialidades/ap-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Contabilidade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap016.png?20260904142226"
+    },
+    "AP-017": {
+      "nome": "Evangelismo",
+      "arquivo": "/especialidades/ap-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Evangelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap017.png?20260906161740"
+    },
+    "AP-018": {
+      "nome": "Hidráulica",
+      "arquivo": "/especialidades/ap-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Hidr%C3%A1ulica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap018.png?20260905152631"
+    },
+    "AP-019": {
+      "nome": "Jornalismo",
+      "arquivo": "/especialidades/ap-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Jornalismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap019.png?20260905160254"
+    },
+    "AP-020": {
+      "nome": "Ofício de Alfaiate",
+      "arquivo": "/especialidades/ap-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Of%C3%ADcio_de_Alfaiate",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap020.png?20260828215454"
+    },
+    "AP-021": {
+      "nome": "Pintura de Paredes Exteriores",
+      "arquivo": "/especialidades/ap-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pintura_de_Paredes_Exteriores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap021.png?20260909185632"
+    },
+    "AP-022": {
+      "nome": "Pintura de Paredes Interiores",
+      "arquivo": "/especialidades/ap-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pintura_de_Paredes_Interiores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap022.png?20260906144653"
+    },
+    "AP-023": {
+      "nome": "Radioeletrônica",
+      "arquivo": "/especialidades/ap-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Radioeletr%C3%B4nica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap023.png?20260909185844"
+    },
+    "AP-024": {
+      "nome": "Magistério",
+      "arquivo": "/especialidades/ap-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Magist%C3%A9rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap024.png?20260922194209"
+    },
+    "AP-025": {
+      "nome": "Corte e Costura - avançado",
+      "arquivo": "/especialidades/ap-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Corte_e_Costura_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap025.png?20260828185220"
+    },
+    "AP-026": {
+      "nome": "Radioamadorismo - avançado",
+      "arquivo": "/especialidades/ap-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Radioamadorismo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap026.png?20260909185800"
+    },
+    "AP-027": {
+      "nome": "Mecânica Automotiva - avançado",
+      "arquivo": "/especialidades/ap-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mec%C3%A2nica_Automotiva_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap027.png?20260909190129"
+    },
+    "AP-028": {
+      "nome": "Mecânica de Pequenos Motores",
+      "arquivo": "/especialidades/ap-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mec%C3%A2nica_de_Pequenos_Motores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap028.png?20260905163417"
+    },
+    "AP-029": {
+      "nome": "Cães - Cuidado e Treinamento",
+      "arquivo": "/especialidades/ap-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_C%C3%A3es_-_Cuidado_e_Treinamento",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap029.png?20260904113736"
+    },
+    "AP-030": {
+      "nome": "Serviço Rádio do Cidadão",
+      "arquivo": "/especialidades/ap-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Servi%C3%A7o_R%C3%A1dio_do_Cidad%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap030.png?20260909190153"
+    },
+    "AP-031": {
+      "nome": "Soldagem",
+      "arquivo": "/especialidades/ap-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Soldagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap031.png?20260906203435"
+    },
+    "AP-032": {
+      "nome": "Produção de Vídeo",
+      "arquivo": "/especialidades/ap-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Produ%C3%A7%C3%A3o_de_V%C3%ADdeo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap032.png?20260906145842"
+    },
+    "AP-033": {
+      "nome": "Vendas",
+      "arquivo": "/especialidades/ap-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vendas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap033.png?20260906161009"
+    },
+    "AP-034": {
+      "nome": "Internet",
+      "arquivo": "/especialidades/ap-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Internet",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap034.png?20260905154206"
+    },
+    "AP-035": {
+      "nome": "Internet - avançado",
+      "arquivo": "/especialidades/ap-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Internet_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap035.png?20260905154844"
+    },
+    "AP-036": {
+      "nome": "Silvicultura",
+      "arquivo": "/especialidades/ap-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Silvicultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap036.png?20260906154026"
+    },
+    "AP-037": {
+      "nome": "Administração",
+      "arquivo": "/especialidades/ap-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Administra%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap037.png?20260904104235"
+    },
+    "AP-038": {
+      "nome": "Bandeiras Náuticas",
+      "arquivo": "/especialidades/ap-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bandeiras_N%C3%A1uticas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap038.png?20260909190217"
+    },
+    "AP-039": {
+      "nome": "Blogs",
+      "arquivo": "/especialidades/ap-039.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Blogs",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap039.png?20260909190253"
+    },
+    "AP-040": {
+      "nome": "Biblioteconomia",
+      "arquivo": "/especialidades/ap-040.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Biblioteconomia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap040.png?20260904113315"
+    },
+    "AP-041": {
+      "nome": "Computação I - básico",
+      "arquivo": "/especialidades/ap-041.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Computa%C3%A7%C3%A3o_I_-_b%C3%A1sico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap041.png?20260904140439"
+    },
+    "AP-042": {
+      "nome": "Computação II - médio",
+      "arquivo": "/especialidades/ap-042.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Computa%C3%A7%C3%A3o_II_-_m%C3%A9dio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap042.png?20260918163005"
+    },
+    "AP-043": {
+      "nome": "Computação III - regular",
+      "arquivo": "/especialidades/ap-043.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Computa%C3%A7%C3%A3o_III_-_regular",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap043.png?20260918163005"
+    },
+    "AP-044": {
+      "nome": "Computação IV - avançado",
+      "arquivo": "/especialidades/ap-044.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Computa%C3%A7%C3%A3o_IV_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap044.png?20260918163505"
+    },
+    "AP-045": {
+      "nome": "Computação V - especialista",
+      "arquivo": "/especialidades/ap-045.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Computa%C3%A7%C3%A3o_V_-_especialista",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap045.png?20260906150001"
+    },
+    "AP-046": {
+      "nome": "Código Semafórico",
+      "arquivo": "/especialidades/ap-046.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_C%C3%B3digo_Semaf%C3%B3rico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap046.png?20260904115209"
+    },
+    "AP-047": {
+      "nome": "Código Morse",
+      "arquivo": "/especialidades/ap-047.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_C%C3%B3digo_Morse",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap047.png?20260904114603"
+    },
+    "AP-048": {
+      "nome": "Cuidados e Manutenção de Violões",
+      "arquivo": "/especialidades/ap-048.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cuidados_e_Manuten%C3%A7%C3%A3o_de_Viol%C3%B5es",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap048.png?20260904205254"
+    },
+    "AP-049": {
+      "nome": "Desenvolvimento de Software",
+      "arquivo": "/especialidades/ap-049.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desenvolvimento_de_Software",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap049.png?20260904150553"
+    },
+    "AP-050": {
+      "nome": "Eletrônica",
+      "arquivo": "/especialidades/ap-050.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Eletr%C3%B4nica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap050.png?20260904154941"
+    },
+    "AP-051": {
+      "nome": "Intérprete de Língua de Sinais",
+      "arquivo": "/especialidades/ap-051.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Int%C3%A9rprete_de_L%C3%ADngua_de_Sinais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap051.png?20260905155308"
+    },
+    "AP-052": {
+      "nome": "Informática Programável",
+      "arquivo": "/especialidades/ap-052.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Inform%C3%A1tica_Program%C3%A1vel",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap052.png?20260905153159"
+    },
+    "AP-053": {
+      "nome": "Manutenção de Bicicletas",
+      "arquivo": "/especialidades/ap-053.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Manuten%C3%A7%C3%A3o_de_Bicicletas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap053.png?20260905161536"
+    },
+    "AP-054": {
+      "nome": "Marketing",
+      "arquivo": "/especialidades/ap-054.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marketing",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap054.png?20260905162401"
+    },
+    "AP-055": {
+      "nome": "Marketing - avançado",
+      "arquivo": "/especialidades/ap-055.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marketing_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap055.png?20260905162717"
+    },
+    "AP-056": {
+      "nome": "Modelagem Têxtil",
+      "arquivo": "/especialidades/ap-056.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Modelagem_T%C3%AAxtil",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap056.png?20260905163746"
+    },
+    "AP-057": {
+      "nome": "Montagem e Manutenção de Computadores",
+      "arquivo": "/especialidades/ap-057.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Montagem_e_Manuten%C3%A7%C3%A3o_de_Computadores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap057.png?20260909181749"
+    },
+    "AP-058": {
+      "nome": "Noções de Economia",
+      "arquivo": "/especialidades/ap-058.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_No%C3%A7%C3%B5es_de_Economia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap058.png?20260828215453"
+    },
+    "AP-059": {
+      "nome": "Operação e Manutenção de Impressoras",
+      "arquivo": "/especialidades/ap-059.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Opera%C3%A7%C3%A3o_e_Manuten%C3%A7%C3%A3o_de_Impressoras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap059.png?20260906143241"
+    },
+    "AP-060": {
+      "nome": "Restauro e Conservação Documental",
+      "arquivo": "/especialidades/ap-060.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Restauro_e_Conserva%C3%A7%C3%A3o_Documental",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap060.png?20260906152544"
+    },
+    "AP-061": {
+      "nome": "Secretariado",
+      "arquivo": "/especialidades/ap-061.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Secretariado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap061.png?20260906153658"
+    },
+    "AP-062": {
+      "nome": "Torno Mecânico",
+      "arquivo": "/especialidades/ap-062.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Torno_Mec%C3%A2nico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap062.png?20260909190325"
+    },
+    "AP-063": {
+      "nome": "Web designer",
+      "arquivo": "/especialidades/ap-063.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Web_designer",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap063.png?20260926172047"
+    },
+    "AP-064": {
+      "nome": "Web Design - avançado",
+      "arquivo": "/especialidades/ap-064.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Web_designer_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap064.png?20260926172115"
+    },
+    "AP-065": {
+      "nome": "Logística",
+      "arquivo": "/especialidades/ap-065.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Log%C3%ADstica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap065.png?20260903152735"
+    },
+    "AP-066": {
+      "nome": "Noções de Direito",
+      "arquivo": "/especialidades/ap-066.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_No%C3%A7%C3%B5es_de_Direito",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap066.png?20260830034107"
+    },
+    "AP-067": {
+      "nome": "Segurança Nas Redes Sociais",
+      "arquivo": "/especialidades/ap-067.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Seguran%C3%A7a_Nas_Redes_Sociais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap067.png?20260923231708"
+    },
+    "AP-068": {
+      "nome": "Segurança Contra Incêndios",
+      "arquivo": "/especialidades/ap-068.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Seguran%C3%A7a_Contra_Inc%C3%AAndios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ap068.png?20260823170348"
+    },
+    "AR-001": {
+      "nome": "Arte de Acampar",
+      "arquivo": "/especialidades/ar-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Acampar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar001.png?20260928185440"
+    },
+    "AR-003": {
+      "nome": "Natação Principiante I",
+      "arquivo": "/especialidades/ar-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nata%C3%A7%C3%A3o_Principiante_I",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar003.png?20260916144943"
+    },
+    "AR-004": {
+      "nome": "Natação Principiante II",
+      "arquivo": "/especialidades/ar-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nata%C3%A7%C3%A3o_Principiante_II",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar004.png?20261004222026"
+    },
+    "AR-005": {
+      "nome": "Natação Intermediário I",
+      "arquivo": "/especialidades/ar-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nata%C3%A7%C3%A3o_Intermedi%C3%A1rio_I",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar005.png?20260910105805"
+    },
+    "AR-006": {
+      "nome": "Natação Intermediário II",
+      "arquivo": "/especialidades/ar-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nata%C3%A7%C3%A3o_Intermedi%C3%A1rio_II",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar006.png?20260910105943"
+    },
+    "AR-007": {
+      "nome": "Natação - avançado",
+      "arquivo": "/especialidades/ar-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nata%C3%A7%C3%A3o_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar007.png?20260910110212"
+    },
+    "AR-008": {
+      "nome": "Salvamento de Afogados",
+      "arquivo": "/especialidades/ar-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Salvamento_de_Afogados",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar008.png?20260915102309"
+    },
+    "AR-009": {
+      "nome": "Ciclismo",
+      "arquivo": "/especialidades/ar-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ciclismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar009.png?20260914030915"
+    },
+    "AR-010": {
+      "nome": "Excursionismo Pedestre",
+      "arquivo": "/especialidades/ar-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar010.png?20260908093040"
+    },
+    "AR-011": {
+      "nome": "Filatelia",
+      "arquivo": "/especialidades/ar-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Filatelia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar011.png?20260828200754"
+    },
+    "AR-012": {
+      "nome": "Filatelia - avançado",
+      "arquivo": "/especialidades/ar-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Filatelia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar012.png?20260909185042"
+    },
+    "AR-013": {
+      "nome": "Esqui Downhill",
+      "arquivo": "/especialidades/ar-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esqui_Downhill",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar013.png?20260916153743"
+    },
+    "AR-014": {
+      "nome": "Arco e Flecha",
+      "arquivo": "/especialidades/ar-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arco_e_Flecha",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar014.png?20260906190437"
+    },
+    "AR-015": {
+      "nome": "Caiaque",
+      "arquivo": "/especialidades/ar-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Caiaque",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar015.png?20260906202439"
+    },
+    "AR-016": {
+      "nome": "Canoagem",
+      "arquivo": "/especialidades/ar-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Canoagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar016.png?20260908162743"
+    },
+    "AR-017": {
+      "nome": "Numismática",
+      "arquivo": "/especialidades/ar-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Numism%C3%A1tica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar017.png?20260910135646"
+    },
+    "AR-018": {
+      "nome": "Navegação",
+      "arquivo": "/especialidades/ar-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Navega%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar018.png?20260910110709"
+    },
+    "AR-019": {
+      "nome": "Vela",
+      "arquivo": "/especialidades/ar-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vela",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar019.png?20260915122841"
+    },
+    "AR-020": {
+      "nome": "Fogueiras e Cozinha ao Ar Livre",
+      "arquivo": "/especialidades/ar-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fogueiras_e_Cozinha_ao_Ar_Livre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar020.png?20260924165521"
+    },
+    "AR-021": {
+      "nome": "Mapa e Bússola",
+      "arquivo": "/especialidades/ar-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mapa_e_B%C3%BAssola",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar021.png?20260929162941"
+    },
+    "AR-022": {
+      "nome": "Pioneirismo",
+      "arquivo": "/especialidades/ar-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pioneirismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar022.png?20260915084239"
+    },
+    "AR-023": {
+      "nome": "Remo",
+      "arquivo": "/especialidades/ar-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Remo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar023.png?20260915101016"
+    },
+    "AR-024": {
+      "nome": "Vida Silvestre",
+      "arquivo": "/especialidades/ar-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vida_Silvestre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar024.png?20260929182042"
+    },
+    "AR-025": {
+      "nome": "Equitação",
+      "arquivo": "/especialidades/ar-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Equita%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar025.png?20260908073810"
+    },
+    "AR-026": {
+      "nome": "Esqui Aquático",
+      "arquivo": "/especialidades/ar-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esqui_Aqu%C3%A1tico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar026.png?20260908075720"
+    },
+    "AR-027": {
+      "nome": "Esqui Aquático - avançado",
+      "arquivo": "/especialidades/ar-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esqui_Aqu%C3%A1tico_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar027.png?20260909184541"
+    },
+    "AR-028": {
+      "nome": "Mergulho Livre",
+      "arquivo": "/especialidades/ar-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mergulho_Livre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar028.png?20260910103838"
+    },
+    "AR-029": {
+      "nome": "Salvamento de Afogados - avançado",
+      "arquivo": "/especialidades/ar-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Salvamento_de_Afogados_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar029.png?20260915103012"
+    },
+    "AR-030": {
+      "nome": "Saltos Ornamentais",
+      "arquivo": "/especialidades/ar-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Saltos_Ornamentais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar030.png?20260915101609"
+    },
+    "AR-031": {
+      "nome": "Mergulho Autônomo",
+      "arquivo": "/especialidades/ar-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mergulho_Aut%C3%B4nomo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar031.png?20260910103049"
+    },
+    "AR-032": {
+      "nome": "Mergulho Autônomo - avançado",
+      "arquivo": "/especialidades/ar-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mergulho_Aut%C3%B4nomo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar032.png?20260916153727"
+    },
+    "AR-033": {
+      "nome": "Acampamento em Baixas Temperaturas",
+      "arquivo": "/especialidades/ar-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_em_Baixas_Temperaturas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar033.png?20260906170851"
+    },
+    "AR-034": {
+      "nome": "Escalada",
+      "arquivo": "/especialidades/ar-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escalada",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar034.png?20260908074142"
+    },
+    "AR-035": {
+      "nome": "Escalada - avançado",
+      "arquivo": "/especialidades/ar-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escalada_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar035.png?20260908074326"
+    },
+    "AR-036": {
+      "nome": "Escalada em Árvores",
+      "arquivo": "/especialidades/ar-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escalada_em_%C3%81rvores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar036.png?20260908074656"
+    },
+    "AR-037": {
+      "nome": "Exploração de Cavernas",
+      "arquivo": "/especialidades/ar-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Explora%C3%A7%C3%A3o_de_Cavernas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar037.png?20260908162846"
+    },
+    "AR-038": {
+      "nome": "Exploração de Cavernas - avançado",
+      "arquivo": "/especialidades/ar-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Explora%C3%A7%C3%A3o_de_Cavernas_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar038.png?20260908163304"
+    },
+    "AR-039": {
+      "nome": "Barco a Motor",
+      "arquivo": "/especialidades/ar-039.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Barco_a_Motor",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar039.png?20260916153713"
+    },
+    "AR-040": {
+      "nome": "Nós e Amarras",
+      "arquivo": "/especialidades/ar-040.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_N%C3%B3s_e_Amarras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar040.png?20261004080431"
+    },
+    "AR-041": {
+      "nome": "Arco e Flecha - avançado",
+      "arquivo": "/especialidades/ar-041.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arco_e_Flecha_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar041.png?20260916153659"
+    },
+    "AR-042": {
+      "nome": "Ciclismo - avançado",
+      "arquivo": "/especialidades/ar-042.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ciclismo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar042.png?20260906205709"
+    },
+    "AR-043": {
+      "nome": "Ginástica Acrobática",
+      "arquivo": "/especialidades/ar-043.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Gin%C3%A1stica_Acrob%C3%A1tica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar043.png?20260909183934"
+    },
+    "AR-044": {
+      "nome": "Ginástica Acrobática - avançado",
+      "arquivo": "/especialidades/ar-044.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Gin%C3%A1stica_Acrob%C3%A1tica_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar044.png?20260909185643"
+    },
+    "AR-045": {
+      "nome": "Liderança na Selva",
+      "arquivo": "/especialidades/ar-045.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lideran%C3%A7a_na_Selva",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar045.png?20260914171449"
+    },
+    "AR-046": {
+      "nome": "Liderança na Selva - avançado",
+      "arquivo": "/especialidades/ar-046.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lideran%C3%A7a_na_Selva_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar046.png?20260828204806"
+    },
+    "AR-047": {
+      "nome": "Ordem Unida",
+      "arquivo": "/especialidades/ar-047.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ordem_Unida",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar047.png?20260929182004"
+    },
+    "AR-048": {
+      "nome": "Ordem Unida - avançado",
+      "arquivo": "/especialidades/ar-048.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ordem_Unida_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar048.png?20260915210247"
+    },
+    "AR-049": {
+      "nome": "Atletismo",
+      "arquivo": "/especialidades/ar-049.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Atletismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar049.png?20260906200336"
+    },
+    "AR-050": {
+      "nome": "Acampamento I",
+      "arquivo": "/especialidades/ar-050.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_I",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar050.png?20260915141622"
+    },
+    "AR-051": {
+      "nome": "Acampamento II",
+      "arquivo": "/especialidades/ar-051.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_II",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar051.png?20260929130116"
+    },
+    "AR-052": {
+      "nome": "Acampamento III",
+      "arquivo": "/especialidades/ar-052.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_III",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar052.png?20261005125400"
+    },
+    "AR-053": {
+      "nome": "Acampamento IV",
+      "arquivo": "/especialidades/ar-053.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_IV",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar053.png?20260925123048"
+    },
+    "AR-054": {
+      "nome": "Esqui Cross Country",
+      "arquivo": "/especialidades/ar-054.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esqui_Cross_Country",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar054.png?20260928201545"
+    },
+    "AR-055": {
+      "nome": "Excursionismo Pedestre - avançado",
+      "arquivo": "/especialidades/ar-055.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar055.png?20260908101608"
+    },
+    "AR-056": {
+      "nome": "Excursionismo Pedestre com Mochila",
+      "arquivo": "/especialidades/ar-056.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre_com_Mochila",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar056.png?20260930194239"
+    },
+    "AR-057": {
+      "nome": "Liderança Campestre",
+      "arquivo": "/especialidades/ar-057.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lideran%C3%A7a_Campestre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar057.png?20260929181743"
+    },
+    "AR-058": {
+      "nome": "Liderança Campestre - avançado",
+      "arquivo": "/especialidades/ar-058.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lideran%C3%A7a_Campestre_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar058.png?20260828204806"
+    },
+    "AR-060": {
+      "nome": "Skate",
+      "arquivo": "/especialidades/ar-060.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Skate",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar060.png?20260929053838"
+    },
+    "AR-061": {
+      "nome": "Windsurf",
+      "arquivo": "/especialidades/ar-061.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Windsurf",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar061.png?20260929053955"
+    },
+    "AR-062": {
+      "nome": "Numismática - avançado",
+      "arquivo": "/especialidades/ar-062.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Numism%C3%A1tica_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar062.png?20260910140202"
+    },
+    "AR-063": {
+      "nome": "Mountain Biking",
+      "arquivo": "/especialidades/ar-063.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mountain_Biking",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar063.png?20260929054009"
+    },
+    "AR-064": {
+      "nome": "Basquete",
+      "arquivo": "/especialidades/ar-064.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Basquete",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar064.png?20260929054020"
+    },
+    "AR-065": {
+      "nome": "Futebol",
+      "arquivo": "/especialidades/ar-065.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Futebol",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar065.png?20260929054145"
+    },
+    "AR-066": {
+      "nome": "Equitação - avançado",
+      "arquivo": "/especialidades/ar-066.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Equita%C3%A7%C3%A3o_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar066.png?20260916153345"
+    },
+    "AR-067": {
+      "nome": "Geocaching",
+      "arquivo": "/especialidades/ar-067.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Geocaching",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar067.png?20260916144658"
+    },
+    "AR-068": {
+      "nome": "Geocaching - avançado",
+      "arquivo": "/especialidades/ar-068.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Geocaching_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar068.png?20260909183314"
+    },
+    "AR-069": {
+      "nome": "Construção de Canoas",
+      "arquivo": "/especialidades/ar-069.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Constru%C3%A7%C3%A3o_de_Canoas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar069.png?20260929054332"
+    },
+    "AR-070": {
+      "nome": "Cozinha com Forno Holandês",
+      "arquivo": "/especialidades/ar-070.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cozinha_com_Forno_Holand%C3%AAs",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar070.png?20260929054415"
+    },
+    "AR-071": {
+      "nome": "Fanfarra",
+      "arquivo": "/especialidades/ar-071.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fanfarra",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar071.png?20260908165456"
+    },
+    "AR-072": {
+      "nome": "Rapel",
+      "arquivo": "/especialidades/ar-072.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rapel",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar072.png?20260915091311"
+    },
+    "AR-073": {
+      "nome": "Rapel - avançado",
+      "arquivo": "/especialidades/ar-073.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rapel_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar073.png?20260916145511"
+    },
+    "AR-074": {
+      "nome": "Rapel - instrutor",
+      "arquivo": "/especialidades/ar-074.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rapel_-_instrutor",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar074.png?20260915095956"
+    },
+    "AR-075": {
+      "nome": "Triathlon",
+      "arquivo": "/especialidades/ar-075.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Triathlon",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar075.png?20260915122334"
+    },
+    "AR-076": {
+      "nome": "Triathlon - avançado",
+      "arquivo": "/especialidades/ar-076.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Triathlon_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar076.png?20260916153320"
+    },
+    "AR-077": {
+      "nome": "Telecartofilia",
+      "arquivo": "/especialidades/ar-077.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Telecartofilia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar077.png?20260929054602"
+    },
+    "AR-078": {
+      "nome": "Telecartofilia - avançado",
+      "arquivo": "/especialidades/ar-078.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Telecartofilia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar078.png?20260828231529"
+    },
+    "AR-079": {
+      "nome": "Wakeboard",
+      "arquivo": "/especialidades/ar-079.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Wakeboard",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar079.png?20260916153143"
+    },
+    "AR-080": {
+      "nome": "Softbol",
+      "arquivo": "/especialidades/ar-080.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Softbol",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar080.png?20260929054619"
+    },
+    "AR-081": {
+      "nome": "Letterboxing",
+      "arquivo": "/especialidades/ar-081.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Letterboxing",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar081.png?20260916153126"
+    },
+    "AR-082": {
+      "nome": "Letterboxing - avançado",
+      "arquivo": "/especialidades/ar-082.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Letterboxing_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar082.png?20260916153108"
+    },
+    "AR-083": {
+      "nome": "Monociclo",
+      "arquivo": "/especialidades/ar-083.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Monociclo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar083.png?20260916153042"
+    },
+    "AR-084": {
+      "nome": "Acampamento Seguro",
+      "arquivo": "/especialidades/ar-084.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_Seguro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar084.png?20260929054712"
+    },
+    "AR-085": {
+      "nome": "Acampamento Seguro - avançado",
+      "arquivo": "/especialidades/ar-085.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_Seguro_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar085.png?20260906185058"
+    },
+    "AR-086": {
+      "nome": "Viagem e Turismo",
+      "arquivo": "/especialidades/ar-086.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Viagem_e_Turismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar086.png?20260929055019"
+    },
+    "AR-087": {
+      "nome": "Viagem e Turismo - avançado",
+      "arquivo": "/especialidades/ar-087.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Viagem_e_Turismo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar087.png?20260916153353"
+    },
+    "AR-088": {
+      "nome": "Excursionismo Pedestre na Neve",
+      "arquivo": "/especialidades/ar-088.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre_na_Neve",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar088.png?20260908113648"
+    },
+    "AR-089": {
+      "nome": "Excursionismo Pedestre na Neve - avançado",
+      "arquivo": "/especialidades/ar-089.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre_na_Neve_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar089.png?20260916153002"
+    },
+    "AR-090": {
+      "nome": "Segurança Básica na Água",
+      "arquivo": "/especialidades/ar-090.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Seguran%C3%A7a_B%C3%A1sica_na_%C3%81gua",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar090.png?20260929055109"
+    },
+    "AR-091": {
+      "nome": "Boliche",
+      "arquivo": "/especialidades/ar-091.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Boliche",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar091.png?20260929055308"
+    },
+    "AR-092": {
+      "nome": "Carrinho de Rolimã",
+      "arquivo": "/especialidades/ar-092.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Carrinho_de_Rolim%C3%A3",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar092.png?20260906204146"
+    },
+    "AR-093": {
+      "nome": "Colecionador",
+      "arquivo": "/especialidades/ar-093.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Colecionador",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar093.png?20260929055350"
+    },
+    "AR-094": {
+      "nome": "Esportes Adaptados",
+      "arquivo": "/especialidades/ar-094.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esportes_Adaptados",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar094.png?20260929055535"
+    },
+    "AR-095": {
+      "nome": "Excursionismo Pedestre com Mochila - avançado",
+      "arquivo": "/especialidades/ar-095.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Excursionismo_Pedestre_com_Mochila_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar095.png?20260908112827"
+    },
+    "AR-096": {
+      "nome": "Futebol de Botão",
+      "arquivo": "/especialidades/ar-096.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Futebol_de_Bot%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar096.png?20260909181441"
+    },
+    "AR-097": {
+      "nome": "Futsal",
+      "arquivo": "/especialidades/ar-097.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Futsal",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar097.png?20261003111631"
+    },
+    "AR-098": {
+      "nome": "Handebol",
+      "arquivo": "/especialidades/ar-098.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Handebol",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar098.png?20260929060149"
+    },
+    "AR-099": {
+      "nome": "Nós e Amarras - avançado",
+      "arquivo": "/especialidades/ar-099.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_N%C3%B3s_e_Amarras_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar099.png?20260923145721"
+    },
+    "AR-100": {
+      "nome": "Ordem Unida - instrutor",
+      "arquivo": "/especialidades/ar-100.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ordem_Unida_-_instrutor",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar100.png?20260910143026"
+    },
+    "AR-101": {
+      "nome": "Pioneirias",
+      "arquivo": "/especialidades/ar-101.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pioneirias",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar101.png?20260929060251"
+    },
+    "AR-102": {
+      "nome": "Pioneirias - avançado",
+      "arquivo": "/especialidades/ar-102.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pioneirias_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar102.png?20260809174251"
+    },
+    "AR-103": {
+      "nome": "Patins",
+      "arquivo": "/especialidades/ar-103.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Patins",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar103.png?20260929060420"
+    },
+    "AR-104": {
+      "nome": "Orientação com GPS",
+      "arquivo": "/especialidades/ar-104.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Orienta%C3%A7%C3%A3o_com_GPS",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar104.png?20260929060533"
+    },
+    "AR-105": {
+      "nome": "Rafting",
+      "arquivo": "/especialidades/ar-105.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rafting",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar105.png?20260929060632"
+    },
+    "AR-106": {
+      "nome": "Pião",
+      "arquivo": "/especialidades/ar-106.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pi%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar106.png?20260929060704"
+    },
+    "AR-107": {
+      "nome": "Tênis de Mesa",
+      "arquivo": "/especialidades/ar-107.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_T%C3%AAnis_de_Mesa",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar107.png?20260929060812"
+    },
+    "AR-108": {
+      "nome": "Vôlei",
+      "arquivo": "/especialidades/ar-108.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_V%C3%B4lei",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar108.png?20260929060911"
+    },
+    "AR-109": {
+      "nome": "Waveboarding",
+      "arquivo": "/especialidades/ar-109.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Waveboarding",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar109.png?20260828234546"
+    },
+    "AR-110": {
+      "nome": "Evolução em Ordem Unida",
+      "arquivo": "/especialidades/ar-110.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Evolu%C3%A7%C3%A3o_em_Ordem_Unida",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar110.png?20260929061152"
+    },
+    "AR-111": {
+      "nome": "Campori Seguro",
+      "arquivo": "/especialidades/ar-111.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Campori_Seguro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar111.png?20260929061556"
+    },
+    "AR-112": {
+      "nome": "Acampamento Consciente",
+      "arquivo": "/especialidades/ar-112.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Acampamento_Consciente",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar112.png?20260929181153"
+    },
+    "AR-113": {
+      "nome": "Artes Mateiras",
+      "arquivo": "/especialidades/ar-113.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Artes_Mateiras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar113.png?20260929182014"
+    },
+    "AR-114": {
+      "nome": "Bolinha de Gude",
+      "arquivo": "/especialidades/ar-114.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bolinha_de_Gude",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar114.png?20260929182132"
+    },
+    "AR-115": {
+      "nome": "Comida Mateira",
+      "arquivo": "/especialidades/ar-115.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Comida_Mateira",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar115.png?20260929182312"
+    },
+    "AR-116": {
+      "nome": "Construções Rústicas de Grande Porte",
+      "arquivo": "/especialidades/ar-116.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Constru%C3%A7%C3%B5es_R%C3%BAsticas_de_Grande_Porte",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar116.png?20260929182345"
+    },
+    "AR-117": {
+      "nome": "Cozinha Segura",
+      "arquivo": "/especialidades/ar-117.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cozinha_Segura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar117.png?20260908072927"
+    },
+    "AR-118": {
+      "nome": "Cubo Mágico",
+      "arquivo": "/especialidades/ar-118.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cubo_M%C3%A1gico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar118.png?20260929182457"
+    },
+    "AR-119": {
+      "nome": "Slackline",
+      "arquivo": "/especialidades/ar-119.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Slackline",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar119.png?20260830040714"
+    },
+    "AR-120": {
+      "nome": "Trilha de Sinais",
+      "arquivo": "/especialidades/ar-120.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trilha_de_Sinais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar120.png?20260908181658"
+    },
+    "AR-121": {
+      "nome": "Troca de Pins",
+      "arquivo": "/especialidades/ar-121.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Troca_de_Pins",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@ar121.png?20260918175513"
+    },
+    "CS-001": {
+      "nome": "Saúde e Cura",
+      "arquivo": "/especialidades/cs-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sa%C3%BAde_e_Cura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs001.png?20261001193609"
+    },
+    "CS-002": {
+      "nome": "Química",
+      "arquivo": "/especialidades/cs-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Qu%C3%ADmica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs002.png?20261003131957"
+    },
+    "CS-003": {
+      "nome": "Primeiros Socorros - básico",
+      "arquivo": "/especialidades/cs-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Primeiros_Socorros_-_b%C3%A1sico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs003.png?20261003103917"
+    },
+    "CS-004": {
+      "nome": "Primeiros Socorros - intermediário",
+      "arquivo": "/especialidades/cs-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Primeiros_Socorros_-_intermedi%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs004.png?20261003140200"
+    },
+    "CS-005": {
+      "nome": "Primeiros Socorros - avançado",
+      "arquivo": "/especialidades/cs-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Primeiros_Socorros_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs005.png?20261004113446"
+    },
+    "CS-006": {
+      "nome": "Enfermagem Básica",
+      "arquivo": "/especialidades/cs-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Enfermagem_B%C3%A1sica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs006.png?20261002124853"
+    },
+    "CS-007": {
+      "nome": "Ótica",
+      "arquivo": "/especialidades/cs-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_%C3%93tica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs007.png?20261002124910"
+    },
+    "CS-008": {
+      "nome": "Nutrição",
+      "arquivo": "/especialidades/cs-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nutri%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs008.png?20261002124959"
+    },
+    "CS-009": {
+      "nome": "Alerta Vermelho",
+      "arquivo": "/especialidades/cs-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Alerta_Vermelho",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs009.png?20261002125630"
+    },
+    "CS-010": {
+      "nome": "Nutrição - avançado",
+      "arquivo": "/especialidades/cs-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nutri%C3%A7%C3%A3o_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs010.png?20261002130041"
+    },
+    "CS-011": {
+      "nome": "Reanimação Cardiopulmonar",
+      "arquivo": "/especialidades/cs-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Reanima%C3%A7%C3%A3o_Cardiopulmonar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs011.png?20261002191706"
+    },
+    "CS-012": {
+      "nome": "Resgate Básico",
+      "arquivo": "/especialidades/cs-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Resgate_B%C3%A1sico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs012.png?20261003055144"
+    },
+    "CS-013": {
+      "nome": "Física",
+      "arquivo": "/especialidades/cs-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_F%C3%ADsica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs013.png?20261003132053"
+    },
+    "CS-014": {
+      "nome": "Microscopia",
+      "arquivo": "/especialidades/cs-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Microscopia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs014.png?20261003062729"
+    },
+    "CS-015": {
+      "nome": "Digestão",
+      "arquivo": "/especialidades/cs-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Digest%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs015.png?20261003063202"
+    },
+    "CS-016": {
+      "nome": "Ossos Músculos e Articulações",
+      "arquivo": "/especialidades/cs-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ossos_M%C3%BAsculos_e_Articula%C3%A7%C3%B5es",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs016.png?20261004213624"
+    },
+    "CS-017": {
+      "nome": "Sistema Nervoso",
+      "arquivo": "/especialidades/cs-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sistema_Nervoso",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs017.png?20261003064032"
+    },
+    "CS-018": {
+      "nome": "Sangue e Defesas do Corpo",
+      "arquivo": "/especialidades/cs-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sangue_e_Defesas_do_Corpo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs018.png?20261003064519"
+    },
+    "CS-019": {
+      "nome": "Hereditariedade",
+      "arquivo": "/especialidades/cs-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Hereditariedade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs019.png?20261003065129"
+    },
+    "CS-020": {
+      "nome": "Coração e Circulação",
+      "arquivo": "/especialidades/cs-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cora%C3%A7%C3%A3o_e_Circula%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs020.png?20261003065428"
+    },
+    "CS-021": {
+      "nome": "Bioquímica",
+      "arquivo": "/especialidades/cs-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bioqu%C3%ADmica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs021.png?20261003065631"
+    },
+    "CS-022": {
+      "nome": "Bioquímica - avançado",
+      "arquivo": "/especialidades/cs-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bioqu%C3%ADmica_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs022.png?20260922162304"
+    },
+    "CS-023": {
+      "nome": "Higiene Oral",
+      "arquivo": "/especialidades/cs-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Higiene_Oral",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs023.png?20261004190007"
+    },
+    "CS-024": {
+      "nome": "Higiene Oral - avançado",
+      "arquivo": "/especialidades/cs-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Higiene_Oral_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs024.png?20261003065858"
+    },
+    "CS-025": {
+      "nome": "Metodologia de Estudo",
+      "arquivo": "/especialidades/cs-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Metodologia_de_Estudo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs025.png?20261003070412"
+    },
+    "CS-026": {
+      "nome": "Prevenção de Doenças Tropicais",
+      "arquivo": "/especialidades/cs-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Preven%C3%A7%C3%A3o_de_Doen%C3%A7as_Tropicais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs026.png?20261003070701"
+    },
+    "CS-027": {
+      "nome": "Patrimônio Histórico",
+      "arquivo": "/especialidades/cs-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Patrim%C3%B4nio_Hist%C3%B3rico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs027.png?20261003070855"
+    },
+    "CS-028": {
+      "nome": "Saúde Mental",
+      "arquivo": "/especialidades/cs-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sa%C3%BAde_Mental",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs028.png?20261003071038"
+    },
+    "CS-029": {
+      "nome": "Sexualidade Humana",
+      "arquivo": "/especialidades/cs-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sexualidade_Humana",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs029.png?20260927225728"
+    },
+    "CS-030": {
+      "nome": "Sistema Respiratório",
+      "arquivo": "/especialidades/cs-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sistema_Respirat%C3%B3rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs030.png?20261003124152"
+    },
+    "CS-031": {
+      "nome": "Habilidades em Matemática I",
+      "arquivo": "/especialidades/cs-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Habilidades_em_Matem%C3%A1tica_I",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs031.png?20261003125757"
+    },
+    "CS-032": {
+      "nome": "Habilidades em Matemática II",
+      "arquivo": "/especialidades/cs-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Habilidades_em_Matem%C3%A1tica_II",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs032.png?20261003130728"
+    },
+    "CS-033": {
+      "nome": "Habilidades em Matemática III",
+      "arquivo": "/especialidades/cs-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Habilidades_em_Matem%C3%A1tica_III",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs033.png?20260922162229"
+    },
+    "CS-034": {
+      "nome": "Habilidades em Matemática IV",
+      "arquivo": "/especialidades/cs-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Habilidades_em_Matem%C3%A1tica_IV",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs034.png?20260922162730"
+    },
+    "CS-035": {
+      "nome": "Biossegurança",
+      "arquivo": "/especialidades/cs-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Biosseguran%C3%A7a",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs035.png?20261003131052"
+    },
+    "CS-036": {
+      "nome": "Anatomia Humana Básica",
+      "arquivo": "/especialidades/cs-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Anatomia_Humana_B%C3%A1sica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs036.png?20261003131436"
+    },
+    "CS-037": {
+      "nome": "Cientistas Cristãos",
+      "arquivo": "/especialidades/cs-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cientistas_Crist%C3%A3os",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs037.png?20261003132251"
+    },
+    "CS-038": {
+      "nome": "Experimentos Científicos",
+      "arquivo": "/especialidades/cs-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Experimentos_Cient%C3%ADficos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs038.png?20261003132544"
+    },
+    "CS-039": {
+      "nome": "Plantas Medicinais",
+      "arquivo": "/especialidades/cs-039.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Plantas_Medicinais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs039.png?20261003133117"
+    },
+    "CS-040": {
+      "nome": "Remédios da Natureza",
+      "arquivo": "/especialidades/cs-040.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rem%C3%A9dios_da_Natureza",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs040.png?20261003133533"
+    },
+    "CS-041": {
+      "nome": "Trânsito Seguro",
+      "arquivo": "/especialidades/cs-041.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tr%C3%A2nsito_Seguro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs041.png?20261003133755"
+    },
+    "CS-042": {
+      "nome": "Vacinas",
+      "arquivo": "/especialidades/cs-042.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vacinas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs042.png?20261003133849"
+    },
+    "CS-043": {
+      "nome": "Zoonoses",
+      "arquivo": "/especialidades/cs-043.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Zoonoses",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@cs043.png?20261003134124"
+    },
+    "EN-001": {
+      "nome": "Aranhas",
+      "arquivo": "/especialidades/en-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aranhas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en001.png?20261004083326"
+    },
+    "EN-002": {
+      "nome": "Astronomia",
+      "arquivo": "/especialidades/en-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Astronomia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en002.png?20261004135915"
+    },
+    "EN-003": {
+      "nome": "Aves",
+      "arquivo": "/especialidades/en-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aves",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en003.png?20261004140610"
+    },
+    "EN-004": {
+      "nome": "Aves Domésticas",
+      "arquivo": "/especialidades/en-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aves_Dom%C3%A9sticas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en004.png?20261004140731"
+    },
+    "EN-005": {
+      "nome": "Flores",
+      "arquivo": "/especialidades/en-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Flores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en005.png?20261004140824"
+    },
+    "EN-006": {
+      "nome": "Árvores",
+      "arquivo": "/especialidades/en-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_%C3%81rvores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en006.png?20261004214116"
+    },
+    "EN-007": {
+      "nome": "Insetos",
+      "arquivo": "/especialidades/en-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Insetos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en007.png?20261004141115"
+    },
+    "EN-008": {
+      "nome": "Mariposas e Borboletas",
+      "arquivo": "/especialidades/en-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mariposas_e_Borboletas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en008.png?20261004151506"
+    },
+    "EN-009": {
+      "nome": "Fungos",
+      "arquivo": "/especialidades/en-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fungos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en009.png?20261004151827"
+    },
+    "EN-010": {
+      "nome": "Mamíferos",
+      "arquivo": "/especialidades/en-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mam%C3%ADferos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en010.png?20261004152510"
+    },
+    "EN-011": {
+      "nome": "Répteis",
+      "arquivo": "/especialidades/en-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_R%C3%A9pteis",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en011.png?20261004152907"
+    },
+    "EN-012": {
+      "nome": "Rochas e minerais",
+      "arquivo": "/especialidades/en-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rochas_e_minerais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en012.png?20260924165924"
+    },
+    "EN-013": {
+      "nome": "Rochas e Minerais - avançado",
+      "arquivo": "/especialidades/en-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rochas_e_Minerais_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en013.png?20260924170738"
+    },
+    "EN-014": {
+      "nome": "Moluscos",
+      "arquivo": "/especialidades/en-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Moluscos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en014.png?20260924103543"
+    },
+    "EN-015": {
+      "nome": "Cactos",
+      "arquivo": "/especialidades/en-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cactos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en015.png?20261001111713"
+    },
+    "EN-016": {
+      "nome": "Climatologia",
+      "arquivo": "/especialidades/en-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Climatologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en016.png?20260928190713"
+    },
+    "EN-017": {
+      "nome": "Fósseis",
+      "arquivo": "/especialidades/en-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_F%C3%B3sseis",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en017.png?20260923153102"
+    },
+    "EN-018": {
+      "nome": "Samambaias",
+      "arquivo": "/especialidades/en-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Samambaias",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en018.png?20260924184046"
+    },
+    "EN-019": {
+      "nome": "Arbustos",
+      "arquivo": "/especialidades/en-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arbustos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en019.png?20261002193830"
+    },
+    "EN-020": {
+      "nome": "Aves de Estimação",
+      "arquivo": "/especialidades/en-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aves_de_Estima%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en020.png?20260922152540"
+    },
+    "EN-021": {
+      "nome": "Gramíneas",
+      "arquivo": "/especialidades/en-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Gram%C3%ADneas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en021.png?20260923155232"
+    },
+    "EN-022": {
+      "nome": "Peixes",
+      "arquivo": "/especialidades/en-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Peixes",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en022.png?20260930092612"
+    },
+    "EN-023": {
+      "nome": "Anfíbios",
+      "arquivo": "/especialidades/en-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Anf%C3%ADbios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en023.png?20260930171846"
+    },
+    "EN-024": {
+      "nome": "Felinos",
+      "arquivo": "/especialidades/en-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Felinos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en024.png?20261003135346"
+    },
+    "EN-025": {
+      "nome": "Rebanhos Domésticos",
+      "arquivo": "/especialidades/en-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rebanhos_Dom%C3%A9sticos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en025.png?20260924161659"
+    },
+    "EN-026": {
+      "nome": "Astronomia - avançado",
+      "arquivo": "/especialidades/en-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Astronomia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en026.png?20260922133059"
+    },
+    "EN-027": {
+      "nome": "Aves - avançado",
+      "arquivo": "/especialidades/en-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aves_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en027.png?20260922151440"
+    },
+    "EN-028": {
+      "nome": "Climatologia - avançado",
+      "arquivo": "/especialidades/en-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Climatologia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en028.png?20260922164204"
+    },
+    "EN-029": {
+      "nome": "Flores - avançado",
+      "arquivo": "/especialidades/en-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Flores_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en029.png?20260923123828"
+    },
+    "EN-030": {
+      "nome": "Insetos - avançado",
+      "arquivo": "/especialidades/en-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Insetos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en030.png?20260930091436"
+    },
+    "EN-031": {
+      "nome": "Mamíferos - avançado",
+      "arquivo": "/especialidades/en-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mam%C3%ADferos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en031.png?20260924092742"
+    },
+    "EN-032": {
+      "nome": "Moluscos - avançado",
+      "arquivo": "/especialidades/en-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Moluscos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en032.png?20260924104155"
+    },
+    "EN-033": {
+      "nome": "Árvores - avançado",
+      "arquivo": "/especialidades/en-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_%C3%81rvores_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en033.png?20260922130055"
+    },
+    "EN-034": {
+      "nome": "Cães",
+      "arquivo": "/especialidades/en-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_C%C3%A3es",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en034.png?20261003123643"
+    },
+    "EN-035": {
+      "nome": "Areia",
+      "arquivo": "/especialidades/en-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Areia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en035.png?20260922112241"
+    },
+    "EN-036": {
+      "nome": "Algas",
+      "arquivo": "/especialidades/en-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Algas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en036.png?20260921172915"
+    },
+    "EN-037": {
+      "nome": "Cetáceos",
+      "arquivo": "/especialidades/en-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cet%C3%A1ceos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en037.png?20261004133646"
+    },
+    "EN-038": {
+      "nome": "Ervas",
+      "arquivo": "/especialidades/en-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ervas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en038.png?20260828192730"
+    },
+    "EN-039": {
+      "nome": "Eucaliptos",
+      "arquivo": "/especialidades/en-039.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Eucaliptos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en039.png?20260923115237"
+    },
+    "EN-040": {
+      "nome": "Sementes",
+      "arquivo": "/especialidades/en-040.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sementes",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en040.png?20260924184504"
+    },
+    "EN-041": {
+      "nome": "Sementes - avançado",
+      "arquivo": "/especialidades/en-041.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Sementes_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en041.png?20260924185150"
+    },
+    "EN-042": {
+      "nome": "Orquídeas",
+      "arquivo": "/especialidades/en-042.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Orqu%C3%ADdeas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en042.png?20260928110621"
+    },
+    "EN-043": {
+      "nome": "Plantas Silvestres Comestíveis",
+      "arquivo": "/especialidades/en-043.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Plantas_Silvestres_Comest%C3%ADveis",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en043.png?20260924141616"
+    },
+    "EN-045": {
+      "nome": "Ecologia - avançado",
+      "arquivo": "/especialidades/en-045.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ecologia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en045.png?20260923115447"
+    },
+    "EN-046": {
+      "nome": "Conservação Ambiental",
+      "arquivo": "/especialidades/en-046.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Conserva%C3%A7%C3%A3o_Ambiental",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en046.png?20260922170433"
+    },
+    "EN-047": {
+      "nome": "Geologia",
+      "arquivo": "/especialidades/en-047.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Geologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en047.png?20260923154512"
+    },
+    "EN-048": {
+      "nome": "Geologia - avançado",
+      "arquivo": "/especialidades/en-048.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Geologia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en048.png?20261001111741"
+    },
+    "EN-049": {
+      "nome": "Plantas Caseiras",
+      "arquivo": "/especialidades/en-049.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Plantas_Caseiras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en049.png?20260924140323"
+    },
+    "EN-050": {
+      "nome": "Rastreio de Animais",
+      "arquivo": "/especialidades/en-050.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rastreio_de_Animais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en050.png?20261002163822"
+    },
+    "EN-051": {
+      "nome": "Mamíferos Marinhos",
+      "arquivo": "/especialidades/en-051.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mam%C3%ADferos_Marinhos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en051.png?20260924093317"
+    },
+    "EN-052": {
+      "nome": "Pequenos Mamíferos de Estimação",
+      "arquivo": "/especialidades/en-052.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pequenos_Mam%C3%ADferos_de_Estima%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en052.png?20260924115401"
+    },
+    "EN-053": {
+      "nome": "Cactos - avançado",
+      "arquivo": "/especialidades/en-053.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cactos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en053.png?20260922161932"
+    },
+    "EN-054": {
+      "nome": "Anfíbios - avançado",
+      "arquivo": "/especialidades/en-054.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Anf%C3%ADbios_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en054.png?20260921175618"
+    },
+    "EN-055": {
+      "nome": "Felinos - avançado",
+      "arquivo": "/especialidades/en-055.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Felinos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en055.png?20260923122901"
+    },
+    "EN-056": {
+      "nome": "Rastreio de Animais - avançado",
+      "arquivo": "/especialidades/en-056.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Rastreio_de_Animais_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en056.png?20260924154204"
+    },
+    "EN-057": {
+      "nome": "Répteis - avançado",
+      "arquivo": "/especialidades/en-057.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_R%C3%A9pteis_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en057.png?20260924165123"
+    },
+    "EN-058": {
+      "nome": "Animais Ameaçados de Extinção",
+      "arquivo": "/especialidades/en-058.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Animais_Amea%C3%A7ados_de_Extin%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en058.png?20261004085932"
+    },
+    "EN-059": {
+      "nome": "Morcegos",
+      "arquivo": "/especialidades/en-059.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Morcegos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en059.png?20260810175912"
+    },
+    "EN-060": {
+      "nome": "Morcegos - avançado",
+      "arquivo": "/especialidades/en-060.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Morcegos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en060.png?20260904121526"
+    },
+    "EN-061": {
+      "nome": "Marsupiais",
+      "arquivo": "/especialidades/en-061.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Marsupiais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en061.png?20260918162505"
+    },
+    "EN-062": {
+      "nome": "Orquídeas - avançado",
+      "arquivo": "/especialidades/en-062.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Orqu%C3%ADdeas_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en062.png?20260924111027"
+    },
+    "EN-063": {
+      "nome": "Palmeiras",
+      "arquivo": "/especialidades/en-063.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Palmeiras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en063.png?20260924111751"
+    },
+    "EN-064": {
+      "nome": "Solos",
+      "arquivo": "/especialidades/en-064.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Solos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en064.png?20260924185337"
+    },
+    "EN-065": {
+      "nome": "Vermes",
+      "arquivo": "/especialidades/en-065.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vermes",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en065.png?20260924190246"
+    },
+    "EN-066": {
+      "nome": "Vermes - avançado",
+      "arquivo": "/especialidades/en-066.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vermes_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en066.png?20260924190545"
+    },
+    "EN-067": {
+      "nome": "Quedas dágua",
+      "arquivo": "/especialidades/en-067.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Quedas_d%C3%A1gua",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en067.png?20260924150805"
+    },
+    "EN-068": {
+      "nome": "Aquarismo",
+      "arquivo": "/especialidades/en-068.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aquarismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en068.png?20260921192350"
+    },
+    "EN-069": {
+      "nome": "Animais Peçonhentos",
+      "arquivo": "/especialidades/en-069.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Animais_Pe%C3%A7onhentos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en069.png?20260921191802"
+    },
+    "EN-070": {
+      "nome": "Animais Noturnos",
+      "arquivo": "/especialidades/en-070.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Animais_Noturnos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en070.png?20260921191322"
+    },
+    "EN-071": {
+      "nome": "Animais Nocivos",
+      "arquivo": "/especialidades/en-071.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Animais_Nocivos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en071.png?20261004225226"
+    },
+    "EN-072": {
+      "nome": "Arbustos - avançado",
+      "arquivo": "/especialidades/en-072.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arbustos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en072.png?20260922105942"
+    },
+    "EN-073": {
+      "nome": "Araras, Papagaios e Periquitos",
+      "arquivo": "/especialidades/en-073.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Araras,_Papagaios_e_Periquitos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en073.png?20260922075909"
+    },
+    "EN-074": {
+      "nome": "Briófitas",
+      "arquivo": "/especialidades/en-074.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bri%C3%B3fitas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en074.png?20260922160735"
+    },
+    "EN-075": {
+      "nome": "Bactérias",
+      "arquivo": "/especialidades/en-075.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bact%C3%A9rias",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en075.png?20260928141522"
+    },
+    "EN-076": {
+      "nome": "Camelos",
+      "arquivo": "/especialidades/en-076.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Camelos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en076.png?20261004204809"
+    },
+    "EN-077": {
+      "nome": "Citologia",
+      "arquivo": "/especialidades/en-077.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Citologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en077.png?20260922163244"
+    },
+    "EN-078": {
+      "nome": "Crustáceos",
+      "arquivo": "/especialidades/en-078.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Crust%C3%A1ceos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en078.png?20260923072635"
+    },
+    "EN-079": {
+      "nome": "Dinossauros",
+      "arquivo": "/especialidades/en-079.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Dinossauros",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en079.png?20260923074841"
+    },
+    "EN-080": {
+      "nome": "Equinodermos",
+      "arquivo": "/especialidades/en-080.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Equinodermos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en080.png?20260923083359"
+    },
+    "EN-081": {
+      "nome": "Energias Renováveis",
+      "arquivo": "/especialidades/en-081.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Energias_Renov%C3%A1veis",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en081.png?20260923082217"
+    },
+    "EN-082": {
+      "nome": "Estuário",
+      "arquivo": "/especialidades/en-082.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Estu%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en082.png?20260923114644"
+    },
+    "EN-083": {
+      "nome": "Fauna Marinha",
+      "arquivo": "/especialidades/en-083.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fauna_Marinha",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en083.png?20260923122132"
+    },
+    "EN-084": {
+      "nome": "Fisiologia Vegetal",
+      "arquivo": "/especialidades/en-084.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fisiologia_Vegetal",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en084.png?20260923123124"
+    },
+    "EN-085": {
+      "nome": "Formigas",
+      "arquivo": "/especialidades/en-085.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Formigas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en085.png?20260924063547"
+    },
+    "EN-086": {
+      "nome": "Liquens",
+      "arquivo": "/especialidades/en-086.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Liquens",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en086.png?20260924091322"
+    },
+    "EN-087": {
+      "nome": "Odonata",
+      "arquivo": "/especialidades/en-087.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Odonata",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en087.png?20261004163957"
+    },
+    "EN-088": {
+      "nome": "Plantas Carnívoras",
+      "arquivo": "/especialidades/en-088.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Plantas_Carn%C3%ADvoras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en088.png?20260924134602"
+    },
+    "EN-089": {
+      "nome": "Preservação de Recursos Hídricos",
+      "arquivo": "/especialidades/en-089.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Preserva%C3%A7%C3%A3o_de_Recursos_H%C3%ADdricos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en089.png?20260924142703"
+    },
+    "EN-090": {
+      "nome": "Poríferos e Cnidários",
+      "arquivo": "/especialidades/en-090.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Por%C3%ADferos_e_Cnid%C3%A1rios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en090.png?20261004190207"
+    },
+    "EN-091": {
+      "nome": "Protozoários",
+      "arquivo": "/especialidades/en-091.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Protozo%C3%A1rios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en091.png?20260924144655"
+    },
+    "EN-092": {
+      "nome": "Reciclagem e Sustentabilidade",
+      "arquivo": "/especialidades/en-092.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Reciclagem_e_Sustentabilidade",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en092.png?20260926172918"
+    },
+    "EN-093": {
+      "nome": "Reciclagem e Sustentabilidade - avançado",
+      "arquivo": "/especialidades/en-093.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Reciclagem_e_Sustentabilidade_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en093.png?20260924164014"
+    },
+    "EN-094": {
+      "nome": "Tubarões",
+      "arquivo": "/especialidades/en-094.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tubar%C3%B5es",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en094.png?20260924185834"
+    },
+    "EN-095": {
+      "nome": "Vírus",
+      "arquivo": "/especialidades/en-095.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_V%C3%ADrus",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en095.png?20260924190821"
+    },
+    "EN-096": {
+      "nome": "Abelhas e Vespas",
+      "arquivo": "/especialidades/en-096.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Abelhas_e_Vespas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en096.png?20260929123123"
+    },
+    "EN-097": {
+      "nome": "Animais Migratórios",
+      "arquivo": "/especialidades/en-097.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Animais_Migrat%C3%B3rios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en097.png?20260927110837"
+    },
+    "EN-098": {
+      "nome": "Aves de Rapina",
+      "arquivo": "/especialidades/en-098.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aves_de_Rapina",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en098.png?20260922152755"
+    },
+    "EN-099": {
+      "nome": "Ciência Planetária",
+      "arquivo": "/especialidades/en-099.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ci%C3%AAncia_Planet%C3%A1ria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en099.png?20260807215317"
+    },
+    "EN-100": {
+      "nome": "Cigarras",
+      "arquivo": "/especialidades/en-100.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cigarras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en100.png?20260809162455"
+    },
+    "EN-101": {
+      "nome": "Compostagem Doméstica",
+      "arquivo": "/especialidades/en-101.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Compostagem_Dom%C3%A9stica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en101.png?20260830025545"
+    },
+    "EN-102": {
+      "nome": "Mimetismo e Camuflagem",
+      "arquivo": "/especialidades/en-102.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Mimetismo_e_Camuflagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en102.png?20260830025545"
+    },
+    "EN-103": {
+      "nome": "Peixes Ornamentais",
+      "arquivo": "/especialidades/en-103.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Peixes_Ornamentais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en103.png?20260924114516"
+    },
+    "EN-104": {
+      "nome": "Primatas",
+      "arquivo": "/especialidades/en-104.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Primatas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en104.png?20260915154342"
+    },
+    "EN-105": {
+      "nome": "Quelônios",
+      "arquivo": "/especialidades/en-105.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Quel%C3%B4nios",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en105.png?20260927130145"
+    },
+    "EN-106": {
+      "nome": "Vulcões",
+      "arquivo": "/especialidades/en-106.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Vulc%C3%B5es",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en106.png?20260830030047"
+    },
+    "EN-107": {
+      "nome": "Bromélias",
+      "arquivo": "/especialidades/en-107.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Brom%C3%A9lias",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@en107.png?20261001210614"
+    },
+    "HD-001": {
+      "nome": "Arte Culinária",
+      "arquivo": "/especialidades/hd-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_Culin%C3%A1ria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd001.png?20260925144654"
+    },
+    "HD-002": {
+      "nome": "Técnicas de Lavanderia",
+      "arquivo": "/especialidades/hd-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_T%C3%A9cnicas_de_Lavanderia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd002.png?20260930195157"
+    },
+    "HD-003": {
+      "nome": "Cuidado de Bebês",
+      "arquivo": "/especialidades/hd-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cuidado_de_Beb%C3%AAs",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd003.png?20260930195914"
+    },
+    "HD-004": {
+      "nome": "Cuidados da Casa",
+      "arquivo": "/especialidades/hd-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cuidados_da_Casa",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd004.png?20261003204109"
+    },
+    "HD-005": {
+      "nome": "Técnicas de Fazer Conserva",
+      "arquivo": "/especialidades/hd-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_T%C3%A9cnicas_de_Fazer_Conserva",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd005.png?20260930200955"
+    },
+    "HD-006": {
+      "nome": "Orçamento Familiar",
+      "arquivo": "/especialidades/hd-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Or%C3%A7amento_Familiar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd006.png?20261001055507"
+    },
+    "HD-007": {
+      "nome": "Panificação",
+      "arquivo": "/especialidades/hd-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Panifica%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd007.png?20261001055855"
+    },
+    "HD-008": {
+      "nome": "Arte Culinária - avançado",
+      "arquivo": "/especialidades/hd-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_Culin%C3%A1ria_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd008.png?20260925100817"
+    },
+    "HD-009": {
+      "nome": "Costura Básica",
+      "arquivo": "/especialidades/hd-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Costura_B%C3%A1sica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd009.png?20260925125055"
+    },
+    "HD-010": {
+      "nome": "Comidas Típicas",
+      "arquivo": "/especialidades/hd-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Comidas_T%C3%ADpicas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd010.png?20260925101053"
+    },
+    "HD-011": {
+      "nome": "Congelamento de Alimentos",
+      "arquivo": "/especialidades/hd-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Congelamento_de_Alimentos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd011.png?20261001112135"
+    },
+    "HD-012": {
+      "nome": "Desidratação de Alimentos",
+      "arquivo": "/especialidades/hd-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desidrata%C3%A7%C3%A3o_de_Alimentos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd012.png?20261001060427"
+    },
+    "HD-013": {
+      "nome": "Produção de Pizza",
+      "arquivo": "/especialidades/hd-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Produ%C3%A7%C3%A3o_de_Pizza",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hd013.png?20260918071615"
+    },
+    "HM-001": {
+      "nome": "Automodelismo",
+      "arquivo": "/especialidades/hm-001.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Automodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm001.png?20260831193100"
+    },
+    "HM-002": {
+      "nome": "Trabalhos com Agulha",
+      "arquivo": "/especialidades/hm-002.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_com_Agulha",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm002.png?20260831122055"
+    },
+    "HM-003": {
+      "nome": "Desenho e Pintura",
+      "arquivo": "/especialidades/hm-003.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desenho_e_Pintura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm003.png?20260831190703"
+    },
+    "HM-004": {
+      "nome": "Música - básico",
+      "arquivo": "/especialidades/hm-004.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_M%C3%BAsica_-_b%C3%A1sico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm004.png?20260926143044"
+    },
+    "HM-005": {
+      "nome": "Música - intermediário",
+      "arquivo": "/especialidades/hm-005.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_M%C3%BAsica_-_intermedi%C3%A1rio",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm005.png?20260901091233"
+    },
+    "HM-006": {
+      "nome": "Música - avançado",
+      "arquivo": "/especialidades/hm-006.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_M%C3%BAsica_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm006.png?20260905134659"
+    },
+    "HM-007": {
+      "nome": "Letreiros e Cartazes",
+      "arquivo": "/especialidades/hm-007.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Letreiros_e_Cartazes",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm007.png?20260901084504"
+    },
+    "HM-008": {
+      "nome": "Cestaria",
+      "arquivo": "/especialidades/hm-008.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cestaria",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm008.png?20260831182902"
+    },
+    "HM-009": {
+      "nome": "Trabalhos em Metal",
+      "arquivo": "/especialidades/hm-009.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Metal",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm009.png?20260901185912"
+    },
+    "HM-010": {
+      "nome": "Arte de Oleiro",
+      "arquivo": "/especialidades/hm-010.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Oleiro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm010.png?20260828180130"
+    },
+    "HM-011": {
+      "nome": "Entalhe em Madeira",
+      "arquivo": "/especialidades/hm-011.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Entalhe_em_Madeira",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm011.png?20260831191715"
+    },
+    "HM-012": {
+      "nome": "Ornamentação com Flores",
+      "arquivo": "/especialidades/hm-012.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ornamenta%C3%A7%C3%A3o_com_Flores",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm012.png?20260901105341"
+    },
+    "HM-013": {
+      "nome": "Pintura em Vidro",
+      "arquivo": "/especialidades/hm-013.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pintura_em_Vidro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm013.png?20260904140650"
+    },
+    "HM-014": {
+      "nome": "Tecelagem",
+      "arquivo": "/especialidades/hm-014.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tecelagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm014.png?20260901155923"
+    },
+    "HM-015": {
+      "nome": "Trabalhos em Madeira",
+      "arquivo": "/especialidades/hm-015.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Madeira",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm015.png?20260901185610"
+    },
+    "HM-016": {
+      "nome": "Aeromodelismo",
+      "arquivo": "/especialidades/hm-016.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Aeromodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm016.png?20260831181635"
+    },
+    "HM-017": {
+      "nome": "Cultura Indígena",
+      "arquivo": "/especialidades/hm-017.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cultura_Ind%C3%ADgena",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm017.png?20260831184657"
+    },
+    "HM-018": {
+      "nome": "Escultura",
+      "arquivo": "/especialidades/hm-018.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Escultura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm018.png?20260927114755"
+    },
+    "HM-019": {
+      "nome": "Xilogravura",
+      "arquivo": "/especialidades/hm-019.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Xilogravura",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm019.png?20260901191107"
+    },
+    "HM-020": {
+      "nome": "Cerâmica",
+      "arquivo": "/especialidades/hm-020.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cer%C3%A2mica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm020.png?20260909181732"
+    },
+    "HM-021": {
+      "nome": "Pintura em Tecido",
+      "arquivo": "/especialidades/hm-021.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pintura_em_Tecido",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm021.png?20260901141258"
+    },
+    "HM-022": {
+      "nome": "Trabalhos em Feltro",
+      "arquivo": "/especialidades/hm-022.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Feltro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm022.png?20260927152132"
+    },
+    "HM-023": {
+      "nome": "Trabalhos em Acrílico",
+      "arquivo": "/especialidades/hm-023.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Acr%C3%ADlico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm023.png?20260828232029"
+    },
+    "HM-024": {
+      "nome": "Modelagem e Fabricação de Sabão",
+      "arquivo": "/especialidades/hm-024.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Modelagem_e_Fabrica%C3%A7%C3%A3o_de_Sab%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm024.png?20261003133724"
+    },
+    "HM-025": {
+      "nome": "Modelagem e Fabricação de Sabão - avançado",
+      "arquivo": "/especialidades/hm-025.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Modelagem_e_Fabrica%C3%A7%C3%A3o_de_Sab%C3%A3o_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm025.png?20260901085705"
+    },
+    "HM-026": {
+      "nome": "Arte de Fazer Esteiras",
+      "arquivo": "/especialidades/hm-026.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Fazer_Esteiras",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm026.png?20260828180130"
+    },
+    "HM-027": {
+      "nome": "Construção Nativa",
+      "arquivo": "/especialidades/hm-027.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Constru%C3%A7%C3%A3o_Nativa",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm027.png?20260831183155"
+    },
+    "HM-028": {
+      "nome": "Ferreomodelismo",
+      "arquivo": "/especialidades/hm-028.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ferreomodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm028.png?20260913182014"
+    },
+    "HM-029": {
+      "nome": "Herança Cultural",
+      "arquivo": "/especialidades/hm-029.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Heran%C3%A7a_Cultural",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm029.png?20260901133045"
+    },
+    "HM-030": {
+      "nome": "Lapidação",
+      "arquivo": "/especialidades/hm-030.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lapida%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm030.png?20260901084030"
+    },
+    "HM-031": {
+      "nome": "Modelagem em Gesso",
+      "arquivo": "/especialidades/hm-031.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Modelagem_em_Gesso",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm031.png?20260908200021"
+    },
+    "HM-032": {
+      "nome": "Trabalhos em Couro",
+      "arquivo": "/especialidades/hm-032.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Couro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm032.png?20260901161909"
+    },
+    "HM-033": {
+      "nome": "Crochê",
+      "arquivo": "/especialidades/hm-033.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Croch%C3%AA",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm033.png?20260909122829"
+    },
+    "HM-034": {
+      "nome": "Crochê - avançado",
+      "arquivo": "/especialidades/hm-034.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Croch%C3%AA_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm034.png?20260831183951"
+    },
+    "HM-035": {
+      "nome": "Espaçomodelismo",
+      "arquivo": "/especialidades/hm-035.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Espa%C3%A7omodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm035.png?20260831192700"
+    },
+    "HM-036": {
+      "nome": "Espaçomodelismo - avançado",
+      "arquivo": "/especialidades/hm-036.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Espa%C3%A7omodelismo_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm036.png?20260909185619"
+    },
+    "HM-037": {
+      "nome": "Tricô",
+      "arquivo": "/especialidades/hm-037.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tric%C3%B4",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm037.png?20260901190143"
+    },
+    "HM-038": {
+      "nome": "Tricô - avançado",
+      "arquivo": "/especialidades/hm-038.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tric%C3%B4_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm038.png?20260901190322"
+    },
+    "HM-039": {
+      "nome": "Trabalhos em Vidro",
+      "arquivo": "/especialidades/hm-039.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Vidro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm039.jpg?20260828232537"
+    },
+    "HM-040": {
+      "nome": "Arte de Trançar",
+      "arquivo": "/especialidades/hm-040.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Tran%C3%A7ar",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm040.jpg?20260828180130"
+    },
+    "HM-041": {
+      "nome": "Arte de Trançar - avançado",
+      "arquivo": "/especialidades/hm-041.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_de_Tran%C3%A7ar_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm041.jpg?20260831180444"
+    },
+    "HM-042": {
+      "nome": "Decoração de Bolos",
+      "arquivo": "/especialidades/hm-042.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Decora%C3%A7%C3%A3o_de_Bolos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm042.jpg?20260924170123"
+    },
+    "HM-043": {
+      "nome": "Esmaltado em Cobre",
+      "arquivo": "/especialidades/hm-043.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esmaltado_em_Cobre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm043.jpg?20260831192354"
+    },
+    "HM-044": {
+      "nome": "Esmaltado em Cobre - avançado",
+      "arquivo": "/especialidades/hm-044.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Esmaltado_em_Cobre_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm044.jpg?20260909185630"
+    },
+    "HM-045": {
+      "nome": "Estofamento",
+      "arquivo": "/especialidades/hm-045.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Estofamento",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm045.jpg?20260831193016"
+    },
+    "HM-046": {
+      "nome": "Fabricação de Velas",
+      "arquivo": "/especialidades/hm-046.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fabrica%C3%A7%C3%A3o_de_Velas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm046.jpg?20260831193246"
+    },
+    "HM-047": {
+      "nome": "Serigrafia",
+      "arquivo": "/especialidades/hm-047.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Serigrafia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm047.jpg?20260901154501"
+    },
+    "HM-048": {
+      "nome": "Serigrafia - avançado",
+      "arquivo": "/especialidades/hm-048.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Serigrafia_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm048.jpg?20260901155658"
+    },
+    "HM-049": {
+      "nome": "Arte com Barbante",
+      "arquivo": "/especialidades/hm-049.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_com_Barbante",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm049.jpg?20260831161837"
+    },
+    "HM-050": {
+      "nome": "Decoupage",
+      "arquivo": "/especialidades/hm-050.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Decoupage",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm050.jpg?20260929074319"
+    },
+    "HM-051": {
+      "nome": "Macramê",
+      "arquivo": "/especialidades/hm-051.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Macram%C3%AA",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm051.jpg?20260901085203"
+    },
+    "HM-052": {
+      "nome": "Telhados",
+      "arquivo": "/especialidades/hm-052.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Telhados",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm052.jpg?20260901160313"
+    },
+    "HM-053": {
+      "nome": "Cultura Indígena - avançado",
+      "arquivo": "/especialidades/hm-053.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Cultura_Ind%C3%ADgena_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm053.jpg?20260831185501"
+    },
+    "HM-054": {
+      "nome": "Bordado em Ponto Cruz",
+      "arquivo": "/especialidades/hm-054.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bordado_em_Ponto_Cruz",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm054.jpg?20260831182311"
+    },
+    "HM-055": {
+      "nome": "Biscuit",
+      "arquivo": "/especialidades/hm-055.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Biscuit",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm055.jpg?20260831182017"
+    },
+    "HM-056": {
+      "nome": "Patchwork",
+      "arquivo": "/especialidades/hm-056.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Patchwork",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm056.jpg?20260901140101"
+    },
+    "HM-057": {
+      "nome": "Nautimodelismo",
+      "arquivo": "/especialidades/hm-057.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Nautimodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm057.jpg?20260901093006"
+    },
+    "HM-058": {
+      "nome": "Trabalhos em Couro - avançado",
+      "arquivo": "/especialidades/hm-058.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Trabalhos_em_Couro_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm058.jpg?20260828232029"
+    },
+    "HM-059": {
+      "nome": "Gravuras em Vidro",
+      "arquivo": "/especialidades/hm-059.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Gravuras_em_Vidro",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm059.jpg?20260828202803"
+    },
+    "HM-060": {
+      "nome": "Origami",
+      "arquivo": "/especialidades/hm-060.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Origami",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm060.jpg?20260901094953"
+    },
+    "HM-061": {
+      "nome": "Corrida de Carrinhos de Madeira",
+      "arquivo": "/especialidades/hm-061.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Corrida_de_Carrinhos_de_Madeira",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm061.jpg?20260831183524"
+    },
+    "HM-062": {
+      "nome": "Corrida de Carrinhos de Madeira - avançado",
+      "arquivo": "/especialidades/hm-062.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Corrida_de_Carrinhos_de_Madeira_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm062.jpg?20260909185605"
+    },
+    "HM-063": {
+      "nome": "Scrapbooking",
+      "arquivo": "/especialidades/hm-063.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Scrapbooking",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm063.jpg?20260901152028"
+    },
+    "HM-064": {
+      "nome": "Scrapbooking - avançado",
+      "arquivo": "/especialidades/hm-064.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Scrapbooking_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm064.jpg?20260901153705"
+    },
+    "HM-065": {
+      "nome": "Fotografia Digital",
+      "arquivo": "/especialidades/hm-065.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fotografia_Digital",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm065.jpg?20260831195719"
+    },
+    "HM-066": {
+      "nome": "Genealogia",
+      "arquivo": "/especialidades/hm-066.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Genealogia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm066.jpg?20260831200905"
+    },
+    "HM-067": {
+      "nome": "Plástico Canvas",
+      "arquivo": "/especialidades/hm-067.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pl%C3%A1stico_Canvas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm067.jpg?20260901142526"
+    },
+    "HM-068": {
+      "nome": "Quilling",
+      "arquivo": "/especialidades/hm-068.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Quilling",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm068.jpg?20260901151742"
+    },
+    "HM-069": {
+      "nome": "Quilling - avançado",
+      "arquivo": "/especialidades/hm-069.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Quilling_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm069.jpg?20260828222511"
+    },
+    "HM-070": {
+      "nome": "Tie-dye",
+      "arquivo": "/especialidades/hm-070.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Tie-dye",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm070.jpg?20260924072626"
+    },
+    "HM-071": {
+      "nome": "Apitos",
+      "arquivo": "/especialidades/hm-071.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Apitos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm071.jpg?20260831175046"
+    },
+    "HM-072": {
+      "nome": "Apitos - avançado",
+      "arquivo": "/especialidades/hm-072.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Apitos_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm072.jpg?20260909185549"
+    },
+    "HM-073": {
+      "nome": "Faróis",
+      "arquivo": "/especialidades/hm-073.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Far%C3%B3is",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm073.jpg?20261003194050"
+    },
+    "HM-074": {
+      "nome": "Faróis - avançado",
+      "arquivo": "/especialidades/hm-074.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Far%C3%B3is_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm074.jpg?20260909185530"
+    },
+    "HM-075": {
+      "nome": "Balões de Ar Quente",
+      "arquivo": "/especialidades/hm-075.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Bal%C3%B5es_de_Ar_Quente",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm075.jpg?20260909185437"
+    },
+    "HM-076": {
+      "nome": "Origami - avançado",
+      "arquivo": "/especialidades/hm-076.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Origami_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm076.jpg?20260901095440"
+    },
+    "HM-077": {
+      "nome": "Embalagem",
+      "arquivo": "/especialidades/hm-077.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Embalagem",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm077.jpg?20260921164037"
+    },
+    "HM-078": {
+      "nome": "E.V.A.",
+      "arquivo": "/especialidades/hm-078.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_E.V.A.",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm078.jpg?20260921220900"
+    },
+    "HM-079": {
+      "nome": "Desenho vetorial",
+      "arquivo": "/especialidades/hm-079.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Desenho_vetorial",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm079.jpg?20260831191049"
+    },
+    "HM-080": {
+      "nome": "Fuxico",
+      "arquivo": "/especialidades/hm-080.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Fuxico",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm080.jpg?20260831200411"
+    },
+    "HM-081": {
+      "nome": "História em Quadrinhos",
+      "arquivo": "/especialidades/hm-081.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Hist%C3%B3ria_em_Quadrinhos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm081.jpg?20260828203306"
+    },
+    "HM-082": {
+      "nome": "Ornamentação",
+      "arquivo": "/especialidades/hm-082.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Ornamenta%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm082.jpg?20260901133242"
+    },
+    "HM-083": {
+      "nome": "Papercraft",
+      "arquivo": "/especialidades/hm-083.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Papercraft",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm083.jpg?20261003193150"
+    },
+    "HM-084": {
+      "nome": "Papel Machê",
+      "arquivo": "/especialidades/hm-084.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Papel_Mach%C3%AA",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm084.jpg?20260901135240"
+    },
+    "HM-085": {
+      "nome": "Pirografia",
+      "arquivo": "/especialidades/hm-085.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Pirografia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm085.jpg?20260901142224"
+    },
+    "HM-086": {
+      "nome": "Plastimodelismo",
+      "arquivo": "/especialidades/hm-086.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Plastimodelismo",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm086.jpg?20260901145049"
+    },
+    "HM-087": {
+      "nome": "Violão",
+      "arquivo": "/especialidades/hm-087.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Viol%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm087.jpg?20260812110557"
+    },
+    "HM-088": {
+      "nome": "Violão - avançado",
+      "arquivo": "/especialidades/hm-088.jpg",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Viol%C3%A3o_-_avan%C3%A7ado",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm088.jpg?20260901190843"
+    },
+    "HM-089": {
+      "nome": "Amigurumi",
+      "arquivo": "/especialidades/hm-089.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Amigurumi",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm089.png?20260919144441"
+    },
+    "HM-090": {
+      "nome": "Arte Digital",
+      "arquivo": "/especialidades/hm-090.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Arte_Digital",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm090.png?20260830030547"
+    },
+    "HM-091": {
+      "nome": "Lettering",
+      "arquivo": "/especialidades/hm-091.png",
+      "pagina": "https://mda.wiki.br/Especialidade_de_Lettering",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm091.png?20260927103214"
+    }
+  },
+  "faltantes": []
+}
