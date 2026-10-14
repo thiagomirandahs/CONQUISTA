@@ -6,6 +6,8 @@ Allow: /adquirir
 Allow: /clubes
 Allow: /parceiros
 Allow: /ajuda
+Allow: /privacidade
+Allow: /termos
 Allow: /og-desbravaclube.png
 Allow: /logo.png
 Allow: /apple-touch-icon.png

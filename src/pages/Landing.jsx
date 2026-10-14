@@ -502,7 +502,6 @@ function ChamadaFinal() {
 export function Rodape({ naLanding = true }) {
   const ancora = (h) => (naLanding ? h : `/${h}`)
   const WHATSAPP = 'https://wa.me/5581989499469?text=' + encodeURIComponent('Olá! Vim pelo site do DesbravaClube e quero saber mais.')
-  const emBreve = 'text-slate-400 cursor-default'
   const link = 'inline-flex min-h-[44px] items-center hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded'
   return (
     <footer className="bg-[#07122f] text-slate-300">
@@ -538,8 +537,8 @@ export function Rodape({ naLanding = true }) {
         <div>
           <h2 className="text-sm font-bold text-white">Legal</h2>
           <ul className="mt-3 space-y-2 text-sm">
-            <li className={emBreve}>Privacidade (em breve)</li>
-            <li className={emBreve}>Termos (em breve)</li>
+            <li><Link to="/privacidade" className={link}>Privacidade</Link></li>
+            <li><Link to="/termos" className={link}>Termos de Uso</Link></li>
           </ul>
         </div>
       </div>
