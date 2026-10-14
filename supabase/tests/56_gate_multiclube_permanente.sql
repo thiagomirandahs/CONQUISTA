@@ -231,7 +231,9 @@ select t.eq('as únicas funções que ANÔNIMO executa são as públicas por des
   t.txt($q$select coalesce(string_agg(p.proname, ' ' order by p.proname), '')
              from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
             where ns.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico manutencao_estado metrica_registrar parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
+  'convite_hierarquia_abrir documento_verificar entrada_abrir_publico ' ||
+  case when to_regprocedure('public.licenca_promocao_situacao()') is not null then 'licenca_promocao_situacao ' else '' end ||
+  'manutencao_estado metrica_registrar parceiros_publico planos_disponiveis vitrine_clube_publico vitrine_clubes_publico');
 
 select t.ok('...e isso foi medido sobre dezenas de policies, não sobre nenhuma',
   t.n($q$select count(*) from pg_policies p join t.superficie s on s.tabela = p.tablename and s.classe='operacional'

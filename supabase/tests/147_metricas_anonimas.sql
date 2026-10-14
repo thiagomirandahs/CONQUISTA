@@ -47,14 +47,14 @@ select t.bloqueado('nem a liderança de um clube lê a tabela', 'select count(*)
 select t.throws('...nem a leitura agregada do admin', 'select public.admin_metricas()', 'Sem permissão');
 reset role;
 
--- admin lê: agora = 3 (site 1, app 1, apk 1), 2 logados nos apps
+-- admin lê: 3 sessões; declarações de login de anon não autenticam ninguém.
 select t.como('adm147');
 select set_config('t147.m', public.admin_metricas()::text, true);
 reset role;
 select t.eq('agora: total 3', (current_setting('t147.m')::jsonb #>> '{agora,total}')::bigint, 3::bigint);
 select t.eq('agora: 1 no site', (current_setting('t147.m')::jsonb #>> '{agora,site}')::bigint, 1::bigint);
 select t.eq('agora: 1 no app e 1 no apk', (current_setting('t147.m')::jsonb #>> '{agora,app}')::bigint + (current_setting('t147.m')::jsonb #>> '{agora,apk}')::bigint, 2::bigint);
-select t.eq('agora: 2 logados nos apps', (current_setting('t147.m')::jsonb #>> '{agora,app_logados}')::bigint, 2::bigint);
+select t.eq('anon não falsifica sessões logadas', (current_setting('t147.m')::jsonb #>> '{agora,app_logados}')::bigint, 0::bigint);
 select t.eq('visitas hoje: 1 visitante no site (2 páginas)', (current_setting('t147.m')::jsonb #>> '{visitas,hoje,site,visitantes}')::bigint, 1::bigint);
 select t.eq('visitas hoje: 2 sessões de app', (current_setting('t147.m')::jsonb #>> '{visitas,hoje,app,sessoes}')::bigint, 2::bigint);
 select t.eq('série de 14 dias, com dias zerados', jsonb_array_length(current_setting('t147.m')::jsonb -> 'serie')::bigint, 14::bigint);

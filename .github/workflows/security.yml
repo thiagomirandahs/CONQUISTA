@@ -1,0 +1,84 @@
+name: Segurança
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seguranca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Testes sem dependências de privacidade e corpo do webhook
+        run: |
+          node supabase/tests/e2e/json-limitado.test.mjs
+          node supabase/tests/e2e/privacidade-sessao.test.mjs
+          node supabase/tests/e2e/usuario-autenticado.test.mjs
+      - name: Auditoria das dependências travadas, sem executar scripts de instalação
+        run: npm audit --package-lock-only --ignore-scripts --audit-level=moderate
+      - name: Aviso de escopo
+        if: always()
+        run: echo 'Este job não prova RLS, revogação de JWT, restauração de backups nem configuração de produção. Os testes SQL/homologação continuam obrigatórios.'
+
+  banco-isolado:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Iniciar Supabase somente local, sem credenciais de produção
+        run: |
+          if ! npx --yes supabase@2.117.0 start >/tmp/supabase-local-start.log 2>&1; then
+            echo 'Supabase local não iniciou. Nenhum teste SQL foi validado; este job permanece bloqueado.'
+            exit 1
+          fi
+      - name: Suite SQL de isolamento e permissões no banco descartável
+        # Reaplica o pacote que será copiado ao SQL Editor e prova sua idempotência.
+        # Usa exclusivamente o container local iniciado acima.
+        run: |
+          docker exec -i supabase_db_CONQUISTA psql -U postgres -d postgres -X -q -v ON_ERROR_STOP=1 < scripts/seguranca/aplicar-correcoes-548-549.sql
+          docker exec -i supabase_db_CONQUISTA psql -U postgres -d postgres -X -q -v ON_ERROR_STOP=1 < scripts/seguranca/aplicar-correcoes-548-549.sql
+          bash supabase/tests/run-tests.sh --db postgres --no-replay
+      - name: Encerrar ambiente descartável
+        if: always()
+        run: npx --yes supabase@2.117.0 stop --no-backup >/dev/null 2>&1 || true
+
+  ferramentas-android:
+    needs: seguranca
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Instalar lockfile já aprovado pela auditoria
+        run: npm ci
+      - name: Validar UUID transitivo e carregar o parser nativo
+        run: |
+          node -e "const req = require('node:module').createRequire(require.resolve('xcode/package.json')); const {v4} = req('uuid'); if (!/^[0-9a-f-]{36}$/.test(v4())) throw Error('UUID incompatível'); require('xcode');"
+      - name: Compilar bundle nativo e sincronizar projeto Android
+        env:
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-teste-ci
+        run: |
+          npm run build:cap
+          npx --no-install cap sync android

@@ -51,10 +51,10 @@ describe('resolverImagem', () => {
     expect(createSignedUrls).not.toHaveBeenCalled()
   })
 
-  it('assina a URL do bucket (24 h) e devolve a assinada', async () => {
+  it('assina a URL privada por 10 minutos e devolve a assinada', async () => {
     const url = await m.resolverImagem(pub('perfis/u1-1.jpg'))
     expect(url).toBe(`${BASE}/sign/imagens/perfis/u1-1.jpg?token=T-perfis/u1-1.jpg`)
-    expect(createSignedUrls).toHaveBeenCalledWith('imagens', ['perfis/u1-1.jpg'], 24 * 60 * 60)
+    expect(createSignedUrls).toHaveBeenCalledWith('imagens', ['perfis/u1-1.jpg'], 10 * 60)
   })
 
   it('pedidos do mesmo instante viram UMA chamada, sem repetir o mesmo caminho', async () => {
@@ -84,14 +84,14 @@ describe('resolverImagem', () => {
     expect(createSignedUrls.mock.calls.map((c) => c[1].length).sort((x, y) => x - y)).toEqual([30, 100, 100])
   })
 
-  it('URL assinada perto de vencer (menos de 2 h) é pedida de novo', async () => {
+  it('URL assinada perto de vencer (menos de 1 min) é pedida de novo', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-09-21T10:00:00Z'))
     await m.resolverImagem(pub('perfis/u1-1.jpg'))
-    vi.setSystemTime(new Date('2026-09-22T07:00:00Z'))      // 21 h depois: ainda restam 3 h
+    vi.setSystemTime(new Date('2026-09-21T10:08:00Z'))      // 8 min depois: ainda restam 2 min
     await m.resolverImagem(pub('perfis/u1-1.jpg'))
     expect(createSignedUrls).toHaveBeenCalledTimes(1)
-    vi.setSystemTime(new Date('2026-09-22T08:30:00Z'))      // 22h30 depois: restam 1h30 (< 2 h)
+    vi.setSystemTime(new Date('2026-09-21T10:09:30Z'))      // 9min30 depois: restam 30 s (< 1 min)
     await m.resolverImagem(pub('perfis/u1-1.jpg'))
     expect(createSignedUrls).toHaveBeenCalledTimes(2)
   })
@@ -203,4 +203,13 @@ describe('cache POR USUÁRIO: aparelho compartilhado nunca reaproveita a URL de 
     m.definirUsuarioImagens('u1')
     expect(await m.resolverImagem(pub('perfis/u1-1.jpg'))).toContain('/sign/')
   })
+})
+
+// Não pode sobrar um cache antigo se o app abrir sem usuário (dono começa null).
+it('abertura sem sessão apaga cache persistido de usuário anterior', async () => {
+  localStorage.setItem('cq.imagens.v1', JSON.stringify({ uid: 'anterior', itens: { 'perfis/anterior.jpg': ['https://exemplo/privada', Date.now() + 24 * 3600 * 1000] } }))
+  vi.resetModules()
+  const novo = await import('./imagens.js')
+  novo.definirUsuarioImagens(undefined)
+  expect(localStorage.getItem('cq.imagens.v1')).toBeNull()
 })
