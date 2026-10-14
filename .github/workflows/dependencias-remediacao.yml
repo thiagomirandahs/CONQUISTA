@@ -1,0 +1,36 @@
+name: Preparar correções de dependências
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dependencias-remediacao.yml'
+permissions:
+  contents: read
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Gerar proposta de lockfile sem instalar ou executar scripts
+        run: |
+          set +e
+          npm audit fix --package-lock-only --ignore-scripts
+          resultado=$?
+          set -e
+          echo "Resultado da proposta: $resultado; não substitui o gate de segurança."
+          echo 'INICIO_PATCH_LOCKFILE'
+          git diff -- package-lock.json
+          echo 'FIM_PATCH_LOCKFILE'
+      - name: Consultar versões e diagnóstico restante
+        run: |
+          npm view sharp version --json
+          npm view @capacitor/assets version --json
+          npm view @capacitor/cli version --json
+          npm view tar version --json
+          npm view uuid@11 version --json
+          npm audit --package-lock-only --ignore-scripts --json
