@@ -7,7 +7,7 @@
 // Regras deste módulo:
 //  * só mexe em URL do bucket 'imagens' — qualquer outra URL (externa, blob:, data:) passa direto;
 //  * pedidos do mesmo instante viram UMA chamada (createSignedUrls) e o mesmo caminho nunca é pedido duas vezes;
-//  * a URL assinada dura 24 h e fica guardada (memória + localStorage, POR USUÁRIO): a URL estável mantém o cache HTTP do
+//  * a URL assinada dura 10 min e fica guardada (memória + localStorage, POR USUÁRIO): a URL estável mantém o cache HTTP do
 //    navegador funcionando — sem isso todo avatar seria baixado de novo a cada abertura do app (rede móvel!);
 //  * se a assinatura falhar (rede, front novo antes do SQL, arquivo que não existe mais) devolve a URL ORIGINAL: com o bucket
 //    ainda público ela abre; com o bucket privado o <img> falha e o Avatar cai nas iniciais. Falha é lembrada por 1 min
@@ -15,10 +15,10 @@
 //  * sair da conta (ou trocar de usuário) apaga tudo: um aparelho compartilhado nunca reaproveita a URL de outra pessoa.
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { VALIDADE_URL_PRIVADA_S, cachePrivadoValido } from './imagens/politica.js'
 
 const BUCKET = 'imagens'
-const VALIDADE_S = 24 * 60 * 60
-const MARGEM_MS = 2 * 60 * 60 * 1000       // só reaproveita se ainda restarem 2 h de validade
+const VALIDADE_S = VALIDADE_URL_PRIVADA_S
 const FALHA_MS = 60 * 1000
 const LOTE = 100
 const CHAVE_LOCAL = 'cq.imagens.v1'
@@ -49,7 +49,7 @@ function lerLocal(uid) {
     if (o?.uid !== uid || !o.itens) return
     const agora = Date.now()
     for (const [caminho, v] of Object.entries(o.itens)) {
-      if (Array.isArray(v) && typeof v[0] === 'string' && v[1] - agora > MARGEM_MS) cache.set(caminho, { url: v[0], ate: v[1] })
+      if (Array.isArray(v) && typeof v[0] === 'string' && cachePrivadoValido(v[1], agora)) cache.set(caminho, { url: v[0], ate: v[1] })
     }
   } catch { /* storage bloqueado ou corrompido: só perde o cache */ }
 }
@@ -61,7 +61,7 @@ function agendarSalvar() {
     try {
       if (!dono) return
       const agora = Date.now()
-      const validos = [...cache.entries()].filter(([, v]) => v.url && v.ate - agora > MARGEM_MS)
+      const validos = [...cache.entries()].filter(([, v]) => v.url && cachePrivadoValido(v.ate, agora))
       validos.sort((a, b) => b[1].ate - a[1].ate)          // os mais novos primeiro
       const itens = {}
       for (const [caminho, v] of validos.slice(0, MAX_LOCAL)) itens[caminho] = [v.url, v.ate]
@@ -74,7 +74,7 @@ function agendarSalvar() {
 // armazenamento local apagado; a MESMA pessoa voltando reaproveita o que já tinha assinado (dentro da validade).
 export function definirUsuarioImagens(uid) {
   const novo = uid || null
-  if (novo === dono) return
+  if (novo === dono && novo !== null) return
   dono = novo
   cache.clear()
   if (salvando) { clearTimeout(salvando); salvando = null }
@@ -91,7 +91,7 @@ export function definirUsuarioImagens(uid) {
 function valida(entrada) {
   if (!entrada) return false
   if (!entrada.url) return entrada.ate > Date.now()                     // falha lembrada por 1 min
-  return entrada.ate - Date.now() > MARGEM_MS
+  return cachePrivadoValido(entrada.ate)
 }
 
 // URL já pronta (sem rede) ou null. Para o 1º render não piscar.

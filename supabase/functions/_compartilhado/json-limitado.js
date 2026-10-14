@@ -19,7 +19,9 @@ export async function lerJsonLimitado(req, maxBytes = 16384, prazoMs = 5000) {
     const bytes = new Uint8Array(total)
     let posicao = 0
     for (const parte of partes) { bytes.set(parte, posicao); posicao += parte.byteLength }
-    const dado = JSON.parse(new TextDecoder().decode(bytes))
+    let dado
+    try { dado = JSON.parse(new TextDecoder().decode(bytes)) }
+    catch { throw new Error('Pedido inválido.') }
     if (!dado || Array.isArray(dado) || typeof dado !== 'object') throw new Error('Pedido inválido.')
     return dado
   } finally {

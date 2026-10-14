@@ -1,3 +1,5 @@
+import { lerJsonLimitado } from '../_compartilhado/json-limitado.js'
+import { usuarioAutenticado } from '../_compartilhado/usuario-autenticado.js'
 // Edge Function: gerar-documento-pdf-final
 //
 // Monta o H2 — a representação FINAL assinada de um documento de classe: o mesmo conteúdo do H1
@@ -180,12 +182,20 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization') ?? ''
   if (!auth) return erro('Sem sessão.', 401)
 
-  const body = await req.json().catch(() => null)
+  const comoUsuario = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } } })
+  try {
+    if (!(await usuarioAutenticado(req, comoUsuario))) return erro('Sem sessão válida.', 401)
+  } catch { return erro('Não foi possível validar a sessão.', 503) }
+  let body
+  try { body = await lerJsonLimitado(req) }
+  catch (e) {
+    const mensagem = e instanceof Error ? e.message : 'Pedido inválido.'
+    return erro(mensagem, mensagem === 'Pedido muito grande.' ? 413 : 400)
+  }
   const token = typeof body?.token === 'string' ? body.token.trim() : ''
   if (!token) return erro('Informe o token do documento.', 400)
   if (!TOKEN_OK.test(token)) return erro('Token de documento inválido.', 400)
 
-  const comoUsuario = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } } })
   const { data: dados, error: erroDados } = await comoUsuario.rpc('documento_pdf_final_dados', { p_token: token })
   if (erroDados) return erro(erroDados.message, 400)
   if (!dados) return erro('Documento não encontrado ou sem permissão.', 403)

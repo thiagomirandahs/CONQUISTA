@@ -1,3 +1,4 @@
+import { limparSessaoLocal } from '../lib/limparSessaoLocal.js'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { esquecerInicioDaNavegacao } from '../lib/barreiraDeVoltar.js'
 import { limparRascunhosLocais } from '../lib/relatorio/rascunhoLocal.js'
@@ -241,27 +242,27 @@ export function AuthProvider({ children }) {
     return 'sem_perfil'
   }
 
-  async function sair() {
-    // o aparelho deixa de receber os avisos de quem sai (antes do signOut: precisa da sessão)
-    await Promise.allSettled([desassociarPush(), desassociarPushNativo()])
-    await supabase.auth.signOut()
-    limparRascunhosLocais() // rascunhos de relatório (de criança) não ficam no aparelho depois de sair
+  function encerrarLocalmente() {
+    limparSessaoLocal({ chaveSessao: CHAVE_DA_SESSAO,
+      limparImagens: () => definirUsuarioImagens(undefined), limparRascunhos: limparRascunhosLocais })
+    perfilDe.current = null
+    setSession(null)
     setProfile(null)
-    // Sair recomeça a navegação do zero: o login substitui a tela atual e o VOLTAR não reabre
-    // nada da conta que saiu (nem o clube dela).
     esquecerInicioDaNavegacao()
     try { window.location.replace('/login') } catch { /* fora do navegador */ }
   }
 
-  // "Sair" da tela de conexão: sem internet o signOut normal pendura. Aqui só apaga o login DESTE aparelho
-  // (escopo local, sem rede). É escolha explícita da pessoa — a sessão não é descartada por falta de internet.
+  async function sair() {
+    try {
+      await comPrazo(Promise.allSettled([desassociarPush(), desassociarPushNativo()]), 4000, 'desassociar push').catch(() => {})
+      await comPrazo(supabase.auth.signOut(), 4000, 'sair')
+    } catch { /* sem rede: o aparelho sai; revogação remota precisa ser confirmada depois */ }
+    finally { encerrarLocalmente() }
+  }
+
   async function sairSemRede() {
-    try { await comPrazo(supabase.auth.signOut({ scope: 'local' }), 4000, 'sair') } catch { /* apaga na mão abaixo */ }
-    try { localStorage.removeItem(CHAVE_DA_SESSAO) } catch { /* ok */ }
-    limparRascunhosLocais()
-    setProfile(null)
-    esquecerInicioDaNavegacao()
-    try { window.location.replace('/login') } catch { /* fora do navegador */ }
+    try { await comPrazo(supabase.auth.signOut({ scope: 'local' }), 4000, 'sair') } catch { /* encerra abaixo */ }
+    finally { encerrarLocalmente() }
   }
 
   // Recarrega o perfil do banco (ex.: depois de trocar a foto) pra refletir na hora
