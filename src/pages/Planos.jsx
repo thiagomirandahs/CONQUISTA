@@ -1,3 +1,4 @@
+import PromocaoLicenca from '../components/PromocaoLicenca.jsx'
 import { mensagemDeErro, BotaoVoltar } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -67,6 +68,7 @@ export default function Planos() {
       {assinatura && <SituacaoAtual a={assinatura} />}
       {assinatura?.tem_assinatura && assinatura?.plano?.chave === 'anual' && <PagamentoLicenca aoConfirmar={async () => setAssinatura(await carregarAssinaturaDoClube())} />}
 
+      <PromocaoLicenca />
       <h2 className="text-sm font-extrabold text-ink mb-2 mt-6">Planos</h2>
       <ul className="space-y-3">
         {planos.map((p) => (
@@ -156,7 +158,7 @@ function CardPlano({ p, atual }) {
         </div>
       </div>
       {meta.pix_centavos != null && <p className="text-sm text-muted mt-2">{formatarPreco(meta.pix_centavos)} no Pix à vista</p>}
-      {meta.parcelas_cartao > 1 && <p className="text-xs text-muted mt-1">Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao))} sem juros para o clube</p>}
+      {meta.parcelas_cartao > 1 && <p className="text-xs text-muted mt-1">Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao))} conforme condições do checkout</p>}
       <p className="text-xs text-faint mt-2 leading-snug">
         {recursos === null
           ? 'Inclui todos os recursos do DesbravaClube.'

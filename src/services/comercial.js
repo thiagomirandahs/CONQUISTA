@@ -78,3 +78,10 @@ export const ROTULO_STATUS = {
   suspensa: 'Suspensa',
   cancelada: 'Cancelada',
 }
+
+// Somente números agregados da campanha; não expõe nomes, contas ou pedidos.
+export async function carregarPromocaoLicenca() {
+  const { data, error } = await supabase.rpc('licenca_promocao_situacao')
+  if (error) throw new Error(error.message)
+  return data
+}

@@ -40,9 +40,9 @@ Deno.serve(async req => {
       if (body.acao === 'criar') {
         const { data: o, error: e } = await usuario.rpc('licenca_checkout_criar')
         if (e) return responder({ erro: e.message }, 403)
-        if (o.url) return responder({ url: checkoutSeguro(o.url) })
-        // Desconto Pix e taxas assumidas são configurados/homologados no provedor,
-        // NÃO por campos não documentados nesta API. Pedido nasce com preço cheio.
+        if (o.url) return responder({ ...o, url: checkoutSeguro(o.url) })
+        // Pix e cartão têm o mesmo total, congelado no pedido pelo servidor.
+        // Campanha e reserva são decididas pela RPC, nunca pelo navegador.
         const d = await chamarInfinitePay('/links', { handle, order_nsu: o.id,
           items: [{ quantity: 1, price: o.cartao_centavos, description: 'Licença Anual DesbravaClube' }],
           redirect_url: 'https://app.desbravaclube.com.br/planos',
@@ -50,7 +50,7 @@ Deno.serve(async req => {
         const url = checkoutSeguro(d.url)
         const { error: gravar } = await servico.from('licenca_pedidos').update({ onde_pagar: url }).eq('id', o.id).eq('status', 'pendente')
         if (gravar) throw new Error('Não foi possível salvar a cobrança. Tente novamente.')
-        return responder({ url })
+        return responder({ ...o, url })
       }
       if (body.acao !== 'confirmar') return responder({ erro: 'Ação inválida.' }, 400)
     }
