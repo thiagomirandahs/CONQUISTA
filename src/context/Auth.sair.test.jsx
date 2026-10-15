@@ -5,6 +5,7 @@ import { render, screen, act } from '@testing-library/react'
 vi.mock('../lib/pushNativo.js', () => ({ registrarPushNativo: () => {}, desassociarPushNativo: async () => {} }))
 vi.mock('../lib/push.js', () => ({ sincronizarPush: async () => {}, desassociarPush: async () => {} }))
 vi.mock('../lib/imagens.js', () => ({ definirUsuarioImagens: () => {} }))
+vi.mock('../lib/fotosComunidade.js', () => ({ definirUsuarioComunidade: () => {} }))
 vi.mock('../lib/supabase.js', () => ({
   supabase: {
     auth: {

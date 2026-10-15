@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase.js'
 import { registrarPushNativo, desassociarPushNativo } from '../lib/pushNativo.js'
 import { sincronizarPush, desassociarPush } from '../lib/push.js'
 import { definirUsuarioImagens } from '../lib/imagens.js'
+import { definirUsuarioComunidade } from '../lib/fotosComunidade.js'
 import { rpcAusente } from '../services/clubes.js'
 import { sincronizarComPerfil } from '../lib/acessibilidade.js'
 import { CHAVE_DA_SESSAO } from '../lib/chaveDaSessao.js'
@@ -112,6 +113,7 @@ export function AuthProvider({ children }) {
       }
       concluido.current = true
       definirUsuarioImagens(undefined)
+      definirUsuarioComunidade(undefined)
       setSession(null)
       mudarProblema(null)
       setCarregando(false)
@@ -120,6 +122,7 @@ export function AuthProvider({ children }) {
     }
 
     definirUsuarioImagens(sessao.user?.id)   // cache de URLs assinadas das imagens é POR usuário
+    definirUsuarioComunidade(sessao.user?.id)   // idem para as fotos da Rede (bucket 'comunidade')
     setSession(sessao)
     marcar('perfil_inicio')
     const estado = await carregarPerfil(sessao.user.id)
@@ -183,6 +186,7 @@ export function AuthProvider({ children }) {
         return
       }
       definirUsuarioImagens(sess?.user?.id)
+      definirUsuarioComunidade(sess?.user?.id)
       setSession(sess)
       // Renovação de token (a cada ~1 h) da MESMA pessoa também não muda o perfil.
       if (evt === 'INITIAL_SESSION') return
@@ -244,7 +248,7 @@ export function AuthProvider({ children }) {
 
   function encerrarLocalmente() {
     limparSessaoLocal({ chaveSessao: CHAVE_DA_SESSAO,
-      limparImagens: () => definirUsuarioImagens(undefined), limparRascunhos: limparRascunhosLocais })
+      limparImagens: () => { definirUsuarioImagens(undefined); definirUsuarioComunidade(undefined) }, limparRascunhos: limparRascunhosLocais })
     perfilDe.current = null
     setSession(null)
     setProfile(null)

@@ -11,6 +11,7 @@ import { render, screen, act, cleanup } from '@testing-library/react'
 vi.mock('../lib/pushNativo.js', () => ({ registrarPushNativo: () => {}, desassociarPushNativo: async () => {} }))
 vi.mock('../lib/push.js', () => ({ sincronizarPush: async () => {}, desassociarPush: async () => {} }))
 vi.mock('../lib/imagens.js', () => ({ definirUsuarioImagens: () => {} }))
+vi.mock('../lib/fotosComunidade.js', () => ({ definirUsuarioComunidade: () => {} }))
 
 // cliente REAL do Supabase + o fetch com prazo real, falando com `globalThis.__rede` (a rede de cada teste).
 // O cliente é RECRIADO a cada teste (globalThis.__cliente): ele guarda estado (sessão em memória, relógio de

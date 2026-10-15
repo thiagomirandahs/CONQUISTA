@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { useImagem } from '../../lib/imagens.js'
 import AvatarPersonagem from '../../components/AvatarPersonagem.jsx'
 import {
-  curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, urlDaFoto, tempoRelativo,
+  curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, tempoRelativo,
   MOTIVOS_DENUNCIA, CATEGORIAS_CONQUISTA, iniciais,
 } from '../../services/rede.js'
+import { useFotoComunidade } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Folha, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 
@@ -196,14 +197,10 @@ export function EsqueletoLinhas({ quantidade = 4 }) {
 
 // ---------------------------------------------------------------- foto do post (largura total, 4:5)
 function FotoDoPost({ path, alt, aoDuploToque }) {
-  const [url, setUrl] = useState(null)
+  // Cache + assinatura em lote (lib/fotosComunidade): rolar e voltar não reassina a foto.
+  const url = useFotoComunidade(path)
   const [coracao, setCoracao] = useState(0)
   const ultimoToque = useRef(0)
-  useEffect(() => {
-    let vivo = true
-    urlDaFoto(path).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
-    return () => { vivo = false }
-  }, [path])
   useEffect(() => {
     if (!coracao) return undefined
     const t = setTimeout(() => setCoracao(0), 750)
@@ -558,6 +555,18 @@ export function ListaDePosts({ itens, setItens, proximo, carregarMais, maisCarre
   const atualizar = useCallback((p) => setItens((a) => a.map((x) => (x.id === p.id ? p : x))), [setItens])
   const remover = useCallback((id) => setItens((a) => a.filter((x) => x.id !== id)), [setItens])
   const inserir = useCallback((p) => { if (p) setItens((a) => [p, ...a.filter((x) => x.id !== p.id)]) }, [setItens])
+  // Scroll infinito: um sentinela perto do fim chama carregarMais sozinho; o botão "Ver mais" fica de reserva
+  // (sem JS/observer, ou economia de dados). carregarMais já se protege de chamadas repetidas.
+  const sentinela = useRef(null)
+  const carregarRef = useRef(carregarMais)
+  useEffect(() => { carregarRef.current = carregarMais })   // ref sempre com a versão atual (sem mexer em ref durante o render)
+  useEffect(() => {
+    const alvo = sentinela.current
+    if (!alvo || !proximo || typeof IntersectionObserver === 'undefined') return undefined
+    const obs = new IntersectionObserver((e) => { if (e[0]?.isIntersecting) carregarRef.current?.() }, { rootMargin: '600px' })
+    obs.observe(alvo)
+    return () => obs.disconnect()
+  }, [proximo])
   if (!itens.length) return vazio
   return (
     <>
@@ -568,6 +577,7 @@ export function ListaDePosts({ itens, setItens, proximo, carregarMais, maisCarre
       </div>
       {proximo && (
         <div className="py-4 text-center">
+          <div ref={sentinela} aria-hidden="true" className="h-px" />
           <button type="button" onClick={carregarMais} disabled={maisCarregando} className={PILL_CLARA}>{maisCarregando ? 'Carregando…' : 'Ver mais'}</button>
         </div>
       )}
