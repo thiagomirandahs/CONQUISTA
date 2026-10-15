@@ -23,7 +23,7 @@ export function PaginaLegal({ titulo, descricao, caminho, atualizadoEm, resumo, 
             <ol className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2">
               {secoes.map((s, i) => (
                 <li key={s.id}>
-                  <a href={`#${s.id}`} className="inline-flex min-h-[40px] items-center text-sm text-ink hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+                  <a href={`#${s.id}`} className="inline-flex min-h-[44px] items-center text-sm text-ink hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
                     <span className="mr-2 tabular-nums text-faint">{pad(i + 1)}</span>{s.titulo}
                   </a>
                 </li>

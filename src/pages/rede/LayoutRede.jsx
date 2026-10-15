@@ -6,6 +6,7 @@ import { MARCA_PRODUTO } from '../../lib/marca.js'
 import Notificacoes from '../../components/Notificacoes.jsx'
 import BotaoAjuda from '../../components/BotaoAjuda.jsx'
 import TourDaArea from '../../components/TourDaArea.jsx'
+import AvisoOffline from '../../components/AvisoOffline.jsx'
 import { RedeContexto } from './contexto.js'
 import { AvatarRede, Icone, PILL_CLARA, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
 import { Carregando, FilaDePopupsProvider } from '../../ui/index.jsx'
@@ -28,7 +29,9 @@ const SEM_ACESSO = {
   area_sem_rede: ['🌎', 'A Rede DBV ainda não está liberada na sua área', 'Quando um clube da sua coordenação entrar na Rede DBV, ela abre aqui para você.'],
 }
 
-const QUADRADINHO = 'w-11 h-11 rounded-xl bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-ink)]'
+// Anel de foco por teclado (acessibilidade): não aparece no toque/mouse, só com Tab.
+const FOCO_REDE = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rede-acao)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rede-bg)]'
+const QUADRADINHO = `w-11 h-11 rounded-xl bg-[var(--rede-superficie)] grid place-items-center text-[var(--rede-ink)] ${FOCO_REDE}`
 
 // Mesmo tema do app do clube (data-theme no <html> + localStorage "tema"): trocar aqui vale lá também.
 function BotaoTema() {
@@ -70,7 +73,7 @@ function Topo() {
           {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
           <button type="button" onClick={sair} data-testid="rede-sair"
             aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
-            className="min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center justify-center gap-1.5 text-sm font-semibold">
+            className={`min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center justify-center gap-1.5 text-sm font-semibold ${FOCO_REDE}`}>
             <Icone nome="sair" className="w-5 h-5" /><span className="hidden min-[400px]:inline">Sair</span>
           </button>
           {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
@@ -87,7 +90,7 @@ function Topo() {
 const Indicador = () => <span aria-hidden="true" data-testid="indicador-ativo" className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-[var(--rede-destaque)]" />
 function BarraInferior({ eu }) {
   const item = ({ isActive }) =>
-    `relative w-12 h-11 rounded-xl grid place-items-center no-underline ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
+    `relative w-12 h-11 rounded-xl grid place-items-center no-underline ${FOCO_REDE} ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
   const destino = (para, rotulo, icone, extra = {}) => (
     <li className="flex justify-center">
       <NavLink to={para} aria-label={rotulo} className={item} {...extra}>
@@ -104,7 +107,7 @@ function BarraInferior({ eu }) {
         {destino('/rede/publicar', 'Publicar', 'maisQuadrado')}
         {destino('/rede/desafios', 'Desafios', 'trofeu')}
         <li className="flex justify-center">
-          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `relative w-12 h-11 rounded-xl grid place-items-center ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
+          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `relative w-12 h-11 rounded-xl grid place-items-center ${FOCO_REDE} ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
             {({ isActive }) => (
               <>
                 <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[var(--rede-acao)]' : 'bg-transparent'}`}>
@@ -180,7 +183,10 @@ export default function LayoutRede() {
       <RedeContexto.Provider value={{ status, eu: euNaRede, recarregar }}>
         <div className="min-h-screen bg-[var(--rede-bg)] overflow-x-hidden" data-rede>
           <Topo />
-          <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">{conteudo}</main>
+          <main className="max-w-xl mx-auto pb-[calc(6rem+var(--seguro-baixo))]">
+            {podeVer && <div className="px-3 pt-3 empty:hidden"><AvisoOffline /></div>}
+            {conteudo}
+          </main>
           <BarraInferior eu={euNaRede} />
           {podeVer && !erro && <TourDaArea id="rede" uid={profile?.id} />}
         </div>
