@@ -34,7 +34,7 @@ export const HUB_JORNADA = [
   { to: '/jornada/portfolio', label: 'Portfólio', icon: '🗂️', desc: 'O que você já cumpriu e foi aprovado', recurso: 'classes' },
   { to: '/leituras', label: 'Leituras', icon: '📚', desc: 'Livros para ler ou ouvir', recurso: 'classes' },
   { to: '/minhas-especialidades', label: 'Especialidades', icon: '🏅', desc: 'As suas especialidades', recurso: 'especialidades' },
-  { to: '/experiencias', label: 'Experiências', icon: '✨', desc: 'Desafios e campanhas do clube', recurso: 'experiencias' },
+  { to: '/experiencias', label: 'Experiências', icon: '✨', desc: 'Campanhas e experiências do clube', recurso: 'experiencias' },
   { to: '/atividades', label: 'Atividades', icon: '📋', desc: 'Tarefas com entrega', recurso: 'atividades' },
   { to: '/missoes', label: 'Missões', icon: '🎯', desc: 'A missão de hoje', recurso: 'missoes' },
   { to: '/biblia', label: 'Bíblia', icon: '📖', desc: 'Sua leitura e progresso', recurso: 'biblia' },
@@ -52,7 +52,7 @@ export const HUB_CLUBE = [
 
 export const HUB_JOGOS = [
   { to: '/trilha', label: 'Trilha de jogos', icon: '🎮', desc: 'Jogue e suba na trilha', recurso: 'jogos' },
-  { to: '/desafios', label: 'Desafios', icon: '🏁', desc: 'Desafios entre unidades', recurso: 'desafios' },
+  { to: '/desafios', label: 'Duelos de unidades', icon: '🏁', desc: 'Uma unidade desafia a outra', recurso: 'desafios' },
   { to: '/chefao', label: 'Chefão', icon: '⚔️', desc: 'O clube contra o chefão', recurso: 'chefao' },
   { to: '/bichinho', label: 'Bichinho', icon: '🐾', desc: 'Cuide do seu bichinho', recurso: 'bichinho' },
   { to: '/pets-clube', label: 'Bichinhos do clube', icon: '🐶', desc: 'Os bichinhos de todo mundo', recurso: 'bichinho' },

@@ -52,8 +52,9 @@
 
 /* ---- Tema CLARO (padrão) ---- */
 :root {
-  --c-brand:   var(--marca-1, #3b5bfd);
-  --c-brand2:  var(--marca-2, #12c6ff);
+  /* padrão marinho (identidade DesbravaClube, 16/10/2026); o clube com marca própria continua com as cores dele */
+  --c-brand:   var(--marca-1, #0b1f4d);
+  --c-brand2:  var(--marca-2, #1e3a8a);
   --c-ink:     #111a3d;
   /* muted/faint: ≥ 4.5:1 sobre bg, surface, surface2 e o fim do degradê (#e9eefb) — contrato em
      src/lib/tokensDeCor.test.js. O faint antigo (#8a93bb) dava 2.7:1 e sumia no sol. */
@@ -67,9 +68,7 @@
   --c-fun:     #ff5d8f;
   --c-glass:   rgba(255, 255, 255, 0.72);
   --stage:
-    radial-gradient(60rem 30rem at 110% -8%, rgba(18, 198, 255, 0.10), transparent 60%),
-    radial-gradient(52rem 26rem at -18% 108%, rgba(255, 93, 143, 0.08), transparent 60%),
-    linear-gradient(180deg, #f6f8ff 0%, #e9eefb 100%);
+    linear-gradient(180deg, #f6f8ff 0%, #e9eefb 100%);   /* sem brilhos rosa/ciano (visual limpo) */
 }
 
 /* ---- Tema ESCURO (pronto; ativado quando as telas migrarem) ---- */
@@ -87,8 +86,6 @@
   --c-fun:     #ff6fa0;
   --c-glass:   rgba(22, 34, 80, 0.55);
   --stage:
-    radial-gradient(60rem 30rem at 110% -8%, rgba(56, 225, 255, 0.10), transparent 60%),
-    radial-gradient(52rem 26rem at -18% 108%, rgba(255, 111, 160, 0.08), transparent 60%),
     linear-gradient(180deg, #0a1130 0%, #05081a 100%);
 }
 
@@ -122,7 +119,7 @@ body {
   margin: 0;
   background: var(--c-bg);
   background-image: var(--stage);
-  background-attachment: fixed;
+  /* sem background-attachment: fixed — caro para a GPU de celular fraco (trava a rolagem) */
   color: var(--c-ink);
   /* App 100% mobile: toque não dá zoom por toque duplo (pinça-zoom continua). */
   touch-action: manipulation;

@@ -235,8 +235,8 @@ describe('o app não conhece nenhum clube pelo nome', () => {
   })
   it('as cores do tema aceitam a marca do clube (e sem marca ficam as de sempre)', () => {
     const css = ler('index.css')
-    expect(css).toMatch(/--c-brand:\s*var\(--marca-1, #3b5bfd\)/)
-    expect(css).toMatch(/--c-brand2:\s*var\(--marca-2, #12c6ff\)/)
+    expect(css).toMatch(/--c-brand:\s*var\(--marca-1, #0b1f4d\)/)
+    expect(css).toMatch(/--c-brand2:\s*var\(--marca-2, #1e3a8a\)/)
     expect(css).toMatch(/--c-brand:\s*var\(--marca-1-dark, #5f7bff\)/)
   })
 })

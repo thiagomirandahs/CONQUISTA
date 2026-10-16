@@ -51,7 +51,7 @@ export default function AppLayout() {
 
   const linkLateral = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-3 rounded-2xl font-semibold transition-colors ${
-      isActive ? 'bg-gradient-to-r from-brand to-brand2 shadow-glow' : 'text-muted hover:bg-surface2'
+      isActive ? 'bg-gradient-to-r from-brand to-brand2' : 'text-muted hover:bg-surface2'
     }`
   const corDoAtivo = (isActive) => (isActive ? { color: 'var(--marca-1-texto, #fff)' } : undefined)
 
@@ -181,7 +181,7 @@ export default function AppLayout() {
                   <motion.span animate={{ scale: isActive ? 1.16 : 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className="text-xl leading-none" aria-hidden="true"
-                    style={isActive ? { filter: 'drop-shadow(0 4px 10px var(--c-brand))' } : undefined}>{d.icon}</motion.span>
+                    >{d.icon}</motion.span>
                   <span className={`text-xs leading-none ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{d.label}</span>
                 </>
               )}

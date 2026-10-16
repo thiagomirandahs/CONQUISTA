@@ -54,7 +54,7 @@ export default function Comprovacao({ valor, alt = 'comprovação', classImg, cl
             <div className="flex gap-2">
               <a href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                 className="min-h-[48px] rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink">Abrir original</a>
-              <button type="button" onClick={() => setAberta(false)} className="min-h-[48px] rounded-xl bg-[#39ff14] px-5 py-3 text-sm font-extrabold text-emerald-950">✕ Fechar</button>
+              <button type="button" onClick={() => setAberta(false)} className="min-h-[48px] rounded-xl bg-[#e0b84a] px-5 py-3 text-sm font-extrabold text-[#07122f]">✕ Fechar</button>
             </div>
           </div>
         )}

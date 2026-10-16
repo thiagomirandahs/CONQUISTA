@@ -163,7 +163,7 @@ export default function RedeFeed() {
 
           <Link to="/rede/desafios" data-testid="atalho-desafios"
             className="mx-3 mb-2 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 flex items-center gap-2 text-sm font-semibold text-[var(--rede-ink)] no-underline">
-            <Icone nome="trofeu" className="w-5 h-5 text-[var(--rede-acao)]" /> Desafios do clube
+            <Icone nome="trofeu" className="w-5 h-5 text-[var(--rede-acao)]" /> Desafios da Rede
             <Icone nome="seta" className="w-4 h-4 -rotate-90 ml-auto text-[var(--rede-ink-suave)]" />
           </Link>
         </>
