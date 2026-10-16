@@ -22,7 +22,7 @@ vi.mock('../services/hierarquia.js', async (original) => ({
 }))
 // o painel de uso (métricas anônimas) tem teste próprio — aqui nunca vai à rede
 // o cartão da cobrança tem teste próprio — aqui nunca vai à rede
-vi.mock('../services/pagamento.js', () => ({ lerCobranca: () => new Promise(() => {}), definirCobranca: vi.fn() }))
+vi.mock('../services/pagamento.js', () => ({ lerCobranca: () => new Promise(() => {}), definirCobranca: vi.fn(), pagamentosRecebidos: () => new Promise(() => {}) }))
 vi.mock('../services/metricas.js', () => ({ metricasDeUso: () => new Promise(() => {}) }))
 vi.mock('../services/avisoInstitucional.js', () => ({
   alcanceAvisoInstitucional: () => Promise.resolve({ pode: true, clubes: 4, origem: 'DesbravaClube', plataforma: true }),

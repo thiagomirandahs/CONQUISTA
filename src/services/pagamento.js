@@ -31,3 +31,10 @@ export async function confirmarVendaTeste({ order_nsu, transaction_nsu, slug }) 
   const { pagamentoLicenca } = await import('./pagamentoLicenca.js')
   return pagamentoLicenca('confirmar', { order_nsu, transaction_nsu, slug })
 }
+
+// Histórico de pagamentos recebidos (migration 552): licenças e testes confirmados pela InfinitePay, com totais.
+export async function pagamentosRecebidos() {
+  const { data, error } = await supabase.rpc('admin_pagamentos_recebidos', { p_limite: 200 })
+  if (error) throw new Error(error.message)
+  return { itens: data?.itens || [], totais: data?.totais || {} }
+}
