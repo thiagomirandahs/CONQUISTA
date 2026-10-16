@@ -51,6 +51,8 @@ export const FOTO_REDE = { maxLado: 1080, minLado: 720, alvoBytes: 150 * 1024, q
 export const FOTO_AVATAR = { maxLado: 256, minLado: 160, alvoBytes: 30 * 1024, qualidade: 0.7, qualidadeMin: 0.4 }
 // Story (migration 480): retrato 9:16 até 1080×1920 (a caixa limita largura E altura), mesmo alvo de 150 KB.
 export const FOTO_STORY = { ...FOTO_REDE, maxLado: 1920, minLado: 1280, caixa: { largura: 1080, altura: 1920 } }
+// Miniatura da grade do perfil (migration 555): ~30 KB em vez da foto inteira em cada quadradinho
+export const FOTO_MINIATURA = { maxLado: 400, minLado: 300, alvoBytes: 30 * 1024, qualidade: 0.6, qualidadeMin: 0.4 }
 export const LIMITE_BUCKET_REDE = 300 * 1024
 
 const exportar = (canvas, tipo, q) => new Promise((res) => canvas.toBlob(res, tipo, q))

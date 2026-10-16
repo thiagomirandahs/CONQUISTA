@@ -4,9 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-const f = { alcance: vi.fn(), enviar: vi.fn() }
-vi.mock('../services/avisoInstitucional.js', () => ({
-  alcanceAvisoInstitucional: (...a) => f.alcance(...a), enviarAvisoInstitucional: (...a) => f.enviar(...a),
+const f = { alcance: vi.fn(), enviar: vi.fn(), destinos: vi.fn() }
+vi.mock('../services/avisoInstitucional.js', async (orig) => ({
+  ...(await orig()),
+  alcanceAvisoInstitucional: (...a) => f.alcance(...a), enviarAvisoInstitucional: (...a) => f.enviar(...a), destinosAvisoInstitucional: (...a) => f.destinos(...a),
 }))
 const avisos = { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: vi.fn(async () => true) }
 vi.mock('../ui/avisos.jsx', () => ({ avisar: avisos }))
@@ -47,7 +48,7 @@ describe('AvisoInstitucional', () => {
     await u.click(enviar)
     expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Enviar para a liderança de 3 clubes?', rotulo: 'Enviar aviso', cancelar: 'Voltar' }))
     expect(f.enviar).toHaveBeenCalledTimes(1)
-    expect(f.enviar).toHaveBeenCalledWith({ titulo: 'Reunião do distrito', corpo: 'Sábado às 15h', destino: 'lideranca', plataforma: false })
+    expect(f.enviar).toHaveBeenCalledWith({ titulo: 'Reunião do distrito', corpo: 'Sábado às 15h', destino: 'lideranca', plataforma: false, alvos: null })
     expect(avisos.sucesso).toHaveBeenCalledWith('Aviso enviado para 3 clubes.')
     expect(screen.getByLabelText('Título')).toHaveValue('')
   })
@@ -74,7 +75,7 @@ describe('AvisoInstitucional', () => {
     await u.type(screen.getByLabelText('Título'), 'Manutenção geral')
     await u.click(screen.getByRole('button', { name: 'Enviar aviso' }))
     expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Enviar para todos os membros de 4 clubes?' }))
-    expect(f.enviar).toHaveBeenCalledWith({ titulo: 'Manutenção geral', corpo: '', destino: 'todos', plataforma: true })
+    expect(f.enviar).toHaveBeenCalledWith({ titulo: 'Manutenção geral', corpo: '', destino: 'todos', plataforma: true, alvos: null })
   })
 
   it('limite do dia (ok:false): mostra a mensagem do servidor e o botão continua utilizável', async () => {
@@ -110,5 +111,48 @@ describe('AvisoInstitucional', () => {
     await u.dblClick(screen.getByRole('button', { name: 'Enviar aviso' }))
     await waitFor(() => expect(f.enviar).toHaveBeenCalled())
     expect(f.enviar).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('AvisoInstitucional — escolher destinatários (554)', () => {
+  const DESTINOS = {
+    pode: true, origem: 'Região Sul', raiz: 'r',
+    unidades: [
+      { id: 'r', nome: 'Região Sul', tipo: 'regiao', pai: null, clubes: 3 },
+      { id: 'd1', nome: 'Distrito Norte', tipo: 'distrito', pai: 'r', clubes: 2 },
+      { id: 'd2', nome: 'Distrito Leste', tipo: 'distrito', pai: 'r', clubes: 1 },
+      { id: 'c1', nome: 'Águias', tipo: 'clube', pai: 'd1', clubes: 1 },
+      { id: 'c2', nome: 'Falcões', tipo: 'clube', pai: 'd1', clubes: 1 },
+      { id: 'c3', nome: 'Leões', tipo: 'clube', pai: 'd2', clubes: 1 },
+    ],
+  }
+  it('escolher: marca um distrito inteiro (2 clubes) + um clube de outro distrito; envia só os escolhidos', async () => {
+    const u = userEvent.setup()
+    f.alcance.mockResolvedValue({ pode: true, clubes: 3, clubes_area: 3, origem: 'Região Sul', plataforma: false })
+    f.destinos.mockResolvedValue(DESTINOS)
+    f.enviar.mockResolvedValue({ ok: true, clubes: 3, mensagem: 'Aviso enviado para 3 clubes.' })
+    render(<AvisoInstitucional />)
+    await u.click(await screen.findByTestId('aviso-modo-escolher'))
+    expect(await screen.findByTestId('aviso-contagem')).toHaveTextContent('Marque pelo menos um')
+    expect(screen.queryByText('Região Sul', { selector: 'span' })).toBeNull()          // a raiz da área = "Todos", não aparece na lista
+    await u.click(screen.getByRole('checkbox', { name: /Distrito Norte/ }))
+    expect(screen.getByTestId('aviso-contagem')).toHaveTextContent('Vai para 2 clubes')
+    await u.click(screen.getByRole('checkbox', { name: /Leões/ }))
+    expect(screen.getByTestId('aviso-contagem')).toHaveTextContent('Vai para 3 clubes')
+    await u.type(screen.getByLabelText('Título'), 'Campori regional')
+    await u.click(screen.getByRole('button', { name: 'Enviar aviso' }))
+    expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Enviar para a liderança de 3 clubes?' }))
+    expect(f.enviar).toHaveBeenCalledWith(expect.objectContaining({ alvos: ['d1', 'c3'], destino: 'lideranca' }))
+  })
+
+  it('escolher sem marcar nada: não deixa enviar', async () => {
+    const u = userEvent.setup()
+    f.alcance.mockResolvedValue({ pode: true, clubes: 3, clubes_area: 3, origem: 'Região Sul' })
+    f.destinos.mockResolvedValue(DESTINOS)
+    render(<AvisoInstitucional />)
+    await u.click(await screen.findByTestId('aviso-modo-escolher'))
+    await screen.findByTestId('aviso-contagem')
+    await u.type(screen.getByLabelText('Título'), 'Teste')
+    expect(screen.getByRole('button', { name: 'Enviar aviso' })).toBeDisabled()
   })
 })

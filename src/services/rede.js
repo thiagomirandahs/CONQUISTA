@@ -7,7 +7,7 @@ import { solicitarSaneamento } from '../lib/saneamentoImagem.js'
 import { validarImagem } from '../lib/upload.js'
 import { validarImagem as validarImagemReal } from '../lib/imagens/validar.js'
 import { PERFIS } from '../lib/imagens/perfis.js'
-import { otimizarFoto, LIMITE_BUCKET_REDE, FOTO_STORY } from '../lib/imagem.js'
+import { otimizarFoto, LIMITE_BUCKET_REDE, FOTO_STORY, FOTO_MINIATURA } from '../lib/imagem.js'
 
 export {
   meuStatus, carregarComentarios, comentar, compartilhar, denunciar, apagar, curtir, urlDaFoto, tempoRelativo,
@@ -202,7 +202,27 @@ export async function publicarNaRede({ tipo, legenda, foto, alt, desafioId, alca
     throw e
   }
   if (!r?.ok) await apagarArquivo(path)
+  else if (path) subirMiniatura(path, foto.arquivo, r?.post?.id || r?.id)   // sem esperar: se falhar, a grade usa a foto inteira
   return r
+}
+
+// Caminho da miniatura de uma foto da Rede (<mesmo caminho>-min.webp); a grade tenta ela e cai na foto inteira se não houver.
+export const caminhoDaMiniatura = (path) => (typeof path === 'string' && /\.(jpg|webp)$/.test(path) ? path.replace(/\.(jpg|webp)$/, '-min.webp') : null)
+
+// Miniatura (~30 KB) para a grade do perfil (migration 555). Melhor esforço: nada aqui derruba a publicação.
+export async function subirMiniatura(path, arquivo, postId) {
+  if (!path || !arquivo || !postId) return false
+  let min = null
+  try {
+    const m = await otimizarFoto(arquivo, FOTO_MINIATURA)
+    if (m?.arquivo?.type !== 'image/webp') return false        // sem WebP no aparelho: fica só a foto inteira
+    min = caminhoDaMiniatura(path)
+    const { error } = await supabase.storage.from(BUCKET).upload(min, m.arquivo, { upsert: false, contentType: 'image/webp' })
+    if (error) return false
+    const { data, error: e2 } = await supabase.rpc('rede_post_miniatura', { p_post: postId, p_caminho: min })
+    if (e2 || data !== true) { await apagarArquivo(min); return false }
+    return true
+  } catch { if (min) await apagarArquivo(min); return false }
 }
 
 // Conquista NÃO é texto livre (515, D6): o servidor monta o texto a partir do registro real (classe investida /

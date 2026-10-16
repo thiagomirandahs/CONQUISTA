@@ -27,6 +27,8 @@ vi.mock('../services/metricas.js', () => ({ metricasDeUso: () => new Promise(() 
 vi.mock('../services/avisoInstitucional.js', () => ({
   alcanceAvisoInstitucional: () => Promise.resolve({ pode: true, clubes: 4, origem: 'DesbravaClube', plataforma: true }),
   enviarAvisoInstitucional: vi.fn(),
+  destinosAvisoInstitucional: () => Promise.resolve({ pode: true, unidades: [] }),
+  clubesDaEscolha: () => 0,
 }))
 // Decisões destrutivas passam pelo modal de confirmação (avisar.confirmar); sem provider ele responde
 // `false`, então o teste controla a resposta aqui e nunca chega numa RPC sem confirmação explícita.
