@@ -29,11 +29,11 @@ select t.eq('mapeamento classe → livro conforme o catálogo oficial',
   'amigo=Vaso de Barro,companheiro=Um Simples Lanche,pesquisador=Além da Magia,pioneiro=Expedição Galápagos,excursionista=O Fim do Começo,guia=O Livro Amargo');
 select t.eq('Curso de Leitura 2026 = "Servo de Deus e Amigo de Todos", sem áudio cadastrado',
   (select titulo || '|' || ano || '|' || (audiolivro_id is null)::text || '|' || audio_confirmado::text from public.leitura_materiais where tipo = 'curso_leitura'), 'Servo de Deus e Amigo de Todos|2026|true|false');
-select t.eq('áudio CONFIRMADO só nos 4 documentados (Vaso de Barro, Um Simples Lanche, Além da Magia, O Livro Amargo)',
-  (select string_agg(titulo, ',' order by ordem) from public.leitura_materiais where audio_confirmado), 'Vaso de Barro,Um Simples Lanche,Além da Magia,O Livro Amargo');
-select t.eq('Expedição Galápagos e O Fim do Começo: áudio NÃO confirmado', (select count(*) from public.leitura_materiais where chave in ('expedicao-galapagos', 'o-fim-do-comeco') and audio_confirmado), 0);
+select t.eq('áudio CONFIRMADO nos 6 (os 4 documentados + Expedição Galápagos e O Fim do Começo, confirmados pelo dono em 11/10/2026 — 546)',
+  (select string_agg(titulo, ',' order by ordem) from public.leitura_materiais where audio_confirmado), 'Vaso de Barro,Um Simples Lanche,Além da Magia,Expedição Galápagos,O Fim do Começo,O Livro Amargo');
+select t.eq('Expedição Galápagos e O Fim do Começo: áudio CONFIRMADO pela 546 (link confirmado pelo dono)', (select count(*) from public.leitura_materiais where chave in ('expedicao-galapagos', 'o-fim-do-comeco') and audio_confirmado), 2);
 select t.eq('nenhuma URL inventada: nenhum material tem livro/PDF/capa/áudio direto semeado', (select count(*) from public.leitura_materiais where book_url is not null or pdf_url is not null or capa_url is not null or audio_url is not null), 0);
-select t.eq('o áudio dos 4 reaproveita o catálogo de audiolivros (capítulos já existentes)', (select count(*) from public.leitura_materiais m join public.audiolivros a on a.id = m.audiolivro_id where m.audio_confirmado), 4);
+select t.eq('o áudio dos 6 reaproveita o catálogo de audiolivros (capítulos já existentes)', (select count(*) from public.leitura_materiais m join public.audiolivros a on a.id = m.audiolivro_id where m.audio_confirmado), 6);
 select t.throws('PDF sem fonte/licença é recusado pelo banco', $q$update public.leitura_materiais set pdf_url = 'https://exemplo.org/livro.pdf' where chave = 'vaso-de-barro'$q$, 'leitura_pdf_so_com_licenca');
 select t.throws('URL que não é https é recusada', $q$update public.leitura_materiais set book_url = 'http://exemplo.org/x' where chave = 'vaso-de-barro'$q$);
 select t.throws('javascript: é recusado', $q$update public.leitura_materiais set book_url = 'javascript:alert(1)' where chave = 'vaso-de-barro'$q$);
@@ -42,10 +42,10 @@ select t.throws('javascript: é recusado', $q$update public.leitura_materiais se
 select t.como('membro_a'); select t.pedir_clube('clube_a');
 select t.eq('membro vê os 7 materiais ativos', t.nv($q$select json_array_length(public.leituras_catalogo('todos') -> 'itens')$q$), 7);
 select t.eq('filtro "curso": 1', t.nv($q$select json_array_length(public.leituras_catalogo('curso') -> 'itens')$q$), 1);
-select t.eq('filtro "com áudio": só os 4 confirmados', t.nv($q$select json_array_length(public.leituras_catalogo('com_audio') -> 'itens')$q$), 4);
+select t.eq('filtro "com áudio": os 6 confirmados', t.nv($q$select json_array_length(public.leituras_catalogo('com_audio') -> 'itens')$q$), 6);
 select t.eq('filtro "minha classe": 0 enquanto não iniciou classe', t.nv($q$select json_array_length(public.leituras_catalogo('minha_classe') -> 'itens')$q$), 0);
 select t.throws('filtro inválido é recusado', $q$select public.leituras_catalogo('xyz')$q$, 'Filtro inválido');
-select t.eq('áudio não confirmado NÃO aparece como disponível (Galápagos)', t.txt($q$select (x ->> 'tem_audio') || '|' || coalesce(x ->> 'audiolivro_id', 'nulo') from json_array_elements(public.leituras_catalogo('todos') -> 'itens') x where x ->> 'chave' = 'expedicao-galapagos'$q$), 'false|nulo');
+select t.eq('áudio confirmado aparece como disponível, ligado ao audiolivro (Galápagos, 546)', t.txt($q$select (x ->> 'tem_audio') || '|' || (x ->> 'audiolivro_id' is not null)::text from json_array_elements(public.leituras_catalogo('todos') -> 'itens') x where x ->> 'chave' = 'expedicao-galapagos'$q$), 'true|true');
 select t.eq('áudio confirmado aparece (Vaso de Barro)', t.txt($q$select (x ->> 'tem_audio') from json_array_elements(public.leituras_catalogo('todos') -> 'itens') x where x ->> 'chave' = 'vaso-de-barro'$q$), 'true');
 select t.eq('tabelas do catálogo não são lidas direto', t.nv('select count(*) from public.leitura_materiais') + t.nv('select count(*) from public.leitura_progresso') + t.nv('select count(*) from public.leitura_auditoria'), 0);
 select t.como_anon();
@@ -102,7 +102,7 @@ select t.throws('confirmar áudio SEM a fonte do áudio é recusado (Curso de Le
 select t.permitido('desativar um material', format($q$select public.admin_leitura_salvar(%L, '{"ativo": false}'::jsonb)$q$, t.mat('o-livro-amargo')));
 select t.permitido('criar um material novo', $q$select public.admin_leitura_salvar(null, '{"chave":"livro-teste-121","titulo":"Livro de Teste","tipo":"outro"}'::jsonb)$q$);
 reset role;
-select t.eq('os 4 áudios confirmados têm a fonte do áudio registrada', (select count(*) from public.leitura_materiais where audio_confirmado and audio_fonte is not null), 4);
+select t.eq('os 6 áudios confirmados têm a fonte do áudio registrada', (select count(*) from public.leitura_materiais where audio_confirmado and audio_fonte is not null), 6);
 select t.eq('as mudanças ficaram na AUDITORIA (quem, o quê, antes/depois)', (select count(*) from public.leitura_auditoria where ator = t.id('admin121')), 4);
 select t.eq('...com antes/depois da edição da capa', (select (antes ->> 'capa_url' is null and depois ->> 'capa_url' = 'https://exemplo.org/capa.jpg')::text from public.leitura_auditoria where acao = 'editar' and depois ->> 'chave' = 'vaso-de-barro' order by id limit 1), 'true');
 select t.throws('a auditoria é imutável (update)', $q$update public.leitura_auditoria set acao = 'x'$q$, 'imutável');
