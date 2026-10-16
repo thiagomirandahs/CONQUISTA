@@ -143,6 +143,12 @@ select t.eq('nenhuma tentativa a mais foi criada pelos invokes repetidos',
 create table t.duas as select id from public.push_tentativas
  where destinatario_id in (select id from public.push_evento_destinatarios where evento_id = (select id from t.ev))
  order by id limit 2;
+-- Identifica o aparelho que falhará, não só a pessoa: ela pode ter vários aparelhos.
+create table t.aparelho_falhou as
+ select p.destinatario_id, p.dispositivo_id, d.user_id
+ from public.push_tentativas p
+ join public.push_evento_destinatarios d on d.id = p.destinatario_id
+ where p.id = (select max(id) from t.duas);
 \o
 select t.como_service();
 select t.eq('concluir marca as tentativas',
@@ -160,8 +166,9 @@ select t.eq('o retry reserva SÓ a que falhou — a entregue nunca mais é envia
   t.n($q$select count(*) from public.push_reservar((select id from t.ev))$q$), 1);
 reset role;
 select t.eq('...e isso criou uma tentativa NOVA (o histórico da falha é preservado, não sobrescrito)',
-  t.n($q$select count(*) from public.push_tentativas where destinatario_id =
-        (select destinatario_id from public.push_tentativas where id = (select max(id) from t.duas))$q$), 2);
+  t.n($q$select count(*) from public.push_tentativas
+        where (destinatario_id, dispositivo_id) =
+          (select destinatario_id, dispositivo_id from t.aparelho_falhou)$q$), 2);
 
 -- Código fora do vocabulário vira 'desconhecido' — o corpo de erro do provedor pode ecoar o
 -- payload, e o payload fala de criança.
@@ -210,11 +217,13 @@ select t.eq('cada aparelho da pessoa recebe a sua entrega, inclusive o legado se
   t.n($q$select count(distinct dispositivo_id) from public.push_tentativas p
         join public.push_evento_destinatarios d on d.id = p.destinatario_id
        where d.evento_id = (select id from t.ev) and d.user_id = t.id('membro_a')$q$), 3);
-select t.eq('...e o número de entregas dela bate com o número de inscrições dela',
+select t.eq('...e o histórico dela tem uma tentativa por inscrição mais o retry, se ele foi dela',
   t.n($q$select count(*) from public.push_tentativas p
         join public.push_evento_destinatarios d on d.id = p.destinatario_id
        where d.evento_id = (select id from t.ev) and d.user_id = t.id('membro_a')$q$),
-  t.n($q$select count(*) from public.push_subscriptions where user_id = t.id('membro_a')$q$));
+  t.n($q$select
+    (select count(*) from public.push_subscriptions where user_id = t.id('membro_a')) +
+    (select count(*) from t.aparelho_falhou where user_id = t.id('membro_a'))$q$));
 
 -- =============================================================================
 --  CONCORRÊNCIA REAL — a corrida que toda guarda "lê antes de escrever" perde

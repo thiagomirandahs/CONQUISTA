@@ -108,6 +108,8 @@ const AvaliarEspecialidades = lazy(() => import('./pages/AvaliarEspecialidades.j
 const Ajuda = lazy(() => import('./pages/Ajuda.jsx'))
 const SiteAjuda = lazy(() => import('./pages/site/SiteAjuda.jsx'))
 const Conheca = lazy(() => import('./pages/site/Conheca.jsx'))
+const Privacidade = lazy(() => import('./pages/site/Privacidade.jsx'))
+const Termos = lazy(() => import('./pages/site/Termos.jsx'))
 
 // Sessão/clube ainda resolvendo: a mesma abertura do index.html (produto, nunca o clube).
 // Quando o problema é a rede (fase 7), a tela DIZ isso e oferece "Tentar de novo" em vez de girar para sempre.
@@ -196,6 +198,8 @@ function RotasDoSite() {
       <Route path="/parceiros" element={<SiteParceiros />} />
       <Route path="/ajuda" element={<SiteAjuda />} />
       <Route path="/conheca" element={<Conheca />} />
+      <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/termos" element={<Termos />} />
     </Routes>
   )
 }
@@ -269,6 +273,9 @@ export default function App() {
         <Route path="/adquirir" element={<Adquirir />} />
         {/* Apresentação pública do produto em 8 etapas (Fase 6, item 7): sem sessão, como /adquirir */}
         <Route path="/conheca" element={<Conheca />} />
+        {/* Páginas legais PÚBLICAS (sem sessão): acessíveis no site e no app, link no rodapé */}
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/termos" element={<Termos />} />
         {/* Recuperacao de senha: as duas pernas sao PUBLICAS. /nova-senha recebe quem volta pelo
             link do e-mail, e nesse momento a sessao de recuperacao ainda esta sendo montada pelo
             supabase-js — passar por SessaoObrigatoria jogaria a pessoa de volta pro login. */}

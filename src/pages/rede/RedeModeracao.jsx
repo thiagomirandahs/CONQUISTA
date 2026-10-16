@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  filaModeracao, moderar, encerrarSuspensao, urlDaFoto, tempoRelativo, MOTIVOS_DENUNCIA,
+  filaModeracao, moderar, encerrarSuspensao, tempoRelativo, MOTIVOS_DENUNCIA,
   membrosAutorizacaoImagem, marcarAutorizacaoImagem,
 } from '../../services/rede.js'
+import { useFotoComunidade } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Aviso, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 import { CARD, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede } from './componentes.jsx'
@@ -19,12 +20,7 @@ const ROTULO_MOTIVO = Object.fromEntries(MOTIVOS_DENUNCIA)
 const ABAS = [['denuncias', 'Denúncias'], ['fotos', 'Fotos'], ['imagem', 'Imagem'], ['pausados', 'Pausados']]
 
 function Foto({ path }) {
-  const [url, setUrl] = useState(null)
-  useEffect(() => {
-    let vivo = true
-    urlDaFoto(path).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
-    return () => { vivo = false }
-  }, [path])
+  const url = useFotoComunidade(path)
   if (!url) return <div className="mt-3 w-full aspect-[4/5] rounded-2xl bg-[var(--rede-superficie)] animate-pulse" />
   return <img src={url} alt="Foto para revisar" loading="lazy" className="mt-3 w-full h-auto max-h-[60vh] object-contain rounded-2xl bg-[var(--rede-superficie)]" />
 }
@@ -156,12 +152,13 @@ export default function RedeModeracao() {
       <h1 className={`text-xl font-extrabold ${TXT} mb-3`}>Moderação do clube</h1>
       <div role="tablist" aria-label="Filas da moderação" className="grid grid-cols-4 gap-1 p-1 rounded-full bg-[var(--rede-bg)] border border-[var(--rede-linha)] mb-4">
         {ABAS.map(([chave, rotulo]) => (
-          <button key={chave} type="button" role="tab" aria-selected={aba === chave} onClick={() => setAba(chave)}
+          <button key={chave} type="button" role="tab" id={`aba-mod-${chave}`} aria-selected={aba === chave} onClick={() => setAba(chave)}
             className={`min-h-[44px] rounded-full text-xs font-bold ${aba === chave ? 'bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)]' : TXT_SUAVE}`}>
             {rotulo}{contador[chave] > 0 ? ` (${contador[chave]})` : ''}
           </button>
         ))}
       </div>
+      <div role="tabpanel" id={`painel-mod-${aba}`} aria-labelledby={`aba-mod-${aba}`} tabIndex={0} className="focus:outline-none">
       {aba === 'imagem' ? <AutorizacoesDeImagem />
         : erro ? <div className={`${CARD} p-6 text-center`}><p className={TXT}>{mensagemDeErro(erro, 'Não consegui abrir a fila.')}</p>
             <button type="button" onClick={carregar} className={`${PILL_CLARA} mt-3`}>Tentar de novo</button></div>
@@ -188,6 +185,7 @@ export default function RedeModeracao() {
                           <button type="button" onClick={() => encerrar(s)} className={PILL_CLARA}>Encerrar</button>
                         </li>))}</ul>
                     : <VazioRede icone="🙂" titulo="Ninguém pausado" />)}
+      </div>
     </div>
   )
 }

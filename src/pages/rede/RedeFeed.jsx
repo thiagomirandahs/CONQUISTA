@@ -130,6 +130,7 @@ export default function RedeFeed() {
         ))}
       </div>
 
+      <div role="tabpanel" id={`painel-feed-${filtro}`} aria-labelledby={`aba-feed-${filtro}`} tabIndex={0} className="focus:outline-none">
       <p data-testid="subtitulo-aba" className={`px-3 pt-2 text-xs font-semibold ${TXT_SUAVE}`}>{SUBTITULO[filtro]}</p>
 
       {/* três entradas de foto para as duas faixas (câmera de trás, selfie e galeria); o alcance é o da aba em que o "+" foi tocado.
@@ -182,6 +183,7 @@ export default function RedeFeed() {
                 : status?.coordenacao ? 'Seja o primeiro a compartilhar algo bom da sua área!' : 'Seja o primeiro a compartilhar algo bom do seu clube!'}
             </VazioRede>} />
         )}
+      </div>
 
       {aberto !== null && Array.isArray(gruposDoViewer) && gruposDoViewer[aberto.indice] && (
         <ViewerStories key={aberto.alcance} grupos={gruposDoViewer} inicio={aberto.indice} aoFechar={fecharViewer} aoMudar={mudouStory} />

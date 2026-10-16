@@ -1,3 +1,5 @@
+import { lerJsonLimitado } from '../_compartilhado/json-limitado.js'
+import { usuarioAutenticado } from '../_compartilhado/usuario-autenticado.js'
 // Edge Function: admin-comunidade-foto
 //
 // Assina (60 s) a foto de um item da Comunidade para o ADMIN DA PLATAFORMA, de forma MEDIADA (migration 530):
@@ -57,14 +59,22 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization') ?? ''
   if (!auth) return erro('Sem sessão.', 401)
 
-  const body = await req.json().catch(() => null)
+  const comoUsuario = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } } })
+  try {
+    if (!(await usuarioAutenticado(req, comoUsuario))) return erro('Sem sessão válida.', 401)
+  } catch { return erro('Não foi possível validar a sessão.', 503) }
+  let body
+  try { body = await lerJsonLimitado(req) }
+  catch (e) {
+    const mensagem = e instanceof Error ? e.message : 'Pedido inválido.'
+    return erro(mensagem, mensagem === 'Pedido muito grande.' ? 413 : 400)
+  }
   const tipo = typeof body?.tipo === 'string' ? body.tipo : ''
   const id = typeof body?.id === 'string' ? body.id.trim() : ''
   if (tipo !== 'post' && tipo !== 'story') return erro('Tipo inválido.', 400)
   if (!UUID_OK.test(id)) return erro('Identificador inválido.', 400)
 
   // "como o usuário": o banco decide e registra. A função nunca decide autorização sozinha.
-  const comoUsuario = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: auth } } })
   const { data: autorizado, error: erroRpc } = await comoUsuario.rpc('admin_comunidade_foto_assinar', { p_tipo: tipo, p_id: id })
   if (erroRpc || !autorizado?.ok || typeof autorizado.path !== 'string' || autorizado.bucket !== 'comunidade') {
     // mensagens da RPC são curtas e em português de propósito (sem detalhe interno)

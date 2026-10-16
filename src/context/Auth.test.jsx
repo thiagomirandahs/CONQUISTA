@@ -9,6 +9,7 @@ import { render, screen } from '@testing-library/react'
 vi.mock('../lib/pushNativo.js', () => ({ registrarPushNativo: () => {}, desassociarPushNativo: async () => {} }))
 vi.mock('../lib/push.js', () => ({ sincronizarPush: async () => {}, desassociarPush: async () => {} }))
 vi.mock('../lib/imagens.js', () => ({ definirUsuarioImagens: () => {} }))
+vi.mock('../lib/fotosComunidade.js', () => ({ definirUsuarioComunidade: () => {} }))
 
 const rpc = vi.fn()
 const from = vi.fn()

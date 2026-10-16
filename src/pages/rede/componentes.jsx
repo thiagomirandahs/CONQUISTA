@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useImagem } from '../../lib/imagens.js'
 import AvatarPersonagem from '../../components/AvatarPersonagem.jsx'
 import {
-  curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, urlDaFoto, tempoRelativo,
+  curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, tempoRelativo,
   MOTIVOS_DENUNCIA, CATEGORIAS_CONQUISTA, iniciais,
 } from '../../services/rede.js'
+import { useFotoComunidade } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Folha, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 
@@ -196,14 +197,10 @@ export function EsqueletoLinhas({ quantidade = 4 }) {
 
 // ---------------------------------------------------------------- foto do post (largura total, 4:5)
 function FotoDoPost({ path, alt, aoDuploToque }) {
-  const [url, setUrl] = useState(null)
+  // Cache + assinatura em lote (lib/fotosComunidade): rolar e voltar não reassina a foto.
+  const url = useFotoComunidade(path)
   const [coracao, setCoracao] = useState(0)
   const ultimoToque = useRef(0)
-  useEffect(() => {
-    let vivo = true
-    urlDaFoto(path).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
-    return () => { vivo = false }
-  }, [path])
   useEffect(() => {
     if (!coracao) return undefined
     const t = setTimeout(() => setCoracao(0), 750)
@@ -257,6 +254,9 @@ function Legenda({ nome, texto }) {
       {longa && !aberta && (
         <button type="button" onClick={() => setAberta(true)} className={`${TXT_SUAVE} min-h-[44px] -my-3 px-1`}>mais</button>
       )}
+      {longa && aberta && (
+        <button type="button" onClick={() => setAberta(false)} className={`${TXT_SUAVE} min-h-[44px] -my-3 px-1 ml-1`}>menos</button>
+      )}
     </p>
   )
 }
@@ -292,6 +292,8 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
   const [enviando, setEnviando] = useState(false)
   const [recusa, setRecusa] = useState('')
   const [denunciarId, setDenunciarId] = useState(null)
+  const caixaRef = useRef(null)
+  const voltarAltura = () => { if (caixaRef.current) caixaRef.current.style.height = 'auto' }
   // adulto de OUTRO clube não comenta em publicação de criança (o servidor recusa de qualquer jeito).
   // Coordenação (490) pode, se o clube da criança está na área dela — só o servidor sabe a árvore,
   // então aqui não se esconde a caixa; fora da área, o servidor recusa com a explicação.
@@ -314,7 +316,7 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
       const r = await comentar(post.id, texto.trim())
       if (r?.ok) {
         const novos = [r.comentario, ...(itens || [])]
-        setItens(novos); setTexto(''); aoContar(novos.length)
+        setItens(novos); setTexto(''); voltarAltura(); aoContar(novos.length)
       } else setRecusa(r?.mensagem || 'Não foi possível comentar.')
     } catch (err) { setRecusa(textoDoErro(err, 'Não consegui comentar.')) }
     setEnviando(false)
@@ -342,8 +344,9 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
       {podeComentar && (
         <form onSubmit={enviar} className="sticky bottom-0 bg-[var(--rede-bg)] pt-2 flex items-end gap-2 border-t border-[var(--rede-linha)]">
           <label htmlFor={`comentar-${post.id}`} className="sr-only">Escreva um comentário</label>
-          <textarea id={`comentar-${post.id}`} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={300} rows={1}
-            placeholder="Escreva algo gentil…" className="flex-1 min-h-[44px] rounded-2xl bg-[var(--rede-superficie)] px-3 py-2.5 text-sm text-[var(--rede-ink)] resize-none" />
+          <textarea ref={caixaRef} id={`comentar-${post.id}`} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={300} rows={1}
+            onInput={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 120)}px` }}
+            placeholder="Escreva algo gentil…" className="flex-1 min-h-[44px] max-h-[120px] rounded-2xl bg-[var(--rede-superficie)] px-3 py-2.5 text-sm text-[var(--rede-ink)] resize-none" />
           <button type="submit" disabled={!texto.trim() || enviando} className={`${PILL} text-[var(--rede-acao)] disabled:opacity-40`}>{enviando ? '…' : 'Comentar'}</button>
         </form>
       )}
@@ -406,14 +409,14 @@ function Cabeca({ autor, criadoEm, pequeno = false }) {
 function BotaoIcone({ rotulo, pressionado, onClick, children, disabled, className = '' }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={rotulo} aria-pressed={pressionado}
-      className={`min-h-[44px] min-w-[44px] px-1.5 rounded-full inline-flex items-center justify-center gap-1 text-[13px] font-semibold ${TXT} ${className}`}>
+      className={`min-h-[44px] min-w-[44px] px-1.5 rounded-full inline-flex items-center justify-center gap-1 text-[13px] font-semibold ${TXT} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rede-acao)] focus-visible:ring-offset-1 ${className}`}>
       {children}
     </button>
   )
 }
 
 // ---------------------------------------------------------------- o post (de ponta a ponta)
-export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCompartilhado }) {
+export const CartaoPost = memo(function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCompartilhado }) {
   const [comentariosAbertos, setComentariosAbertos] = useState(false)
   const [menuAberto, setMenuAberto] = useState(false)
   const [denunciaAberta, setDenunciaAberta] = useState(false)
@@ -428,19 +431,31 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
     const novo = forcar ?? !post.eu_curti
     if (novo === post.eu_curti) return
     setOcupado(true)
+    // Otimista: o coração reage na hora (rede móvel lenta). Se o servidor recusar, volta como estava.
+    const antes = { curtidas: post.curtidas, eu_curti: post.eu_curti }
+    aoAtualizar({ ...post, eu_curti: novo, curtidas: Math.max(0, (post.curtidas || 0) + (novo ? 1 : -1)) })
     try {
       const r = await curtir(post.id, novo)
       aoAtualizar({ ...post, curtidas: r.curtidas, eu_curti: r.eu_curti })
-    } catch (e) { avisar.info(textoDoErro(e, 'Não consegui curtir.')) }
+    } catch (e) {
+      aoAtualizar({ ...post, ...antes })
+      avisar.info(textoDoErro(e, 'Não consegui curtir.'))
+    }
     setOcupado(false)
   }
 
   async function alternarSalvo() {
+    // Otimista: o marcador muda na hora; se o servidor recusar, desfaz.
+    const novo = !post.eu_salvei
+    aoAtualizar({ ...post, eu_salvei: novo })
     try {
-      const r = await salvar(post.id, !post.eu_salvei)
+      const r = await salvar(post.id, novo)
       aoAtualizar({ ...post, eu_salvei: r.eu_salvei })
       avisar.sucesso(r.eu_salvei ? 'Salvo no seu perfil.' : 'Tirado dos salvos.')
-    } catch (e) { avisar.info(textoDoErro(e, 'Não consegui salvar.')) }
+    } catch (e) {
+      aoAtualizar({ ...post, eu_salvei: !novo })
+      avisar.info(textoDoErro(e, 'Não consegui salvar.'))
+    }
   }
 
   async function repostar() {
@@ -532,13 +547,26 @@ export function CartaoPost({ post, status, clubeId, aoAtualizar, aoRemover, aoCo
         aoOcultar={() => aoRemover(post.id)} />
     </article>
   )
-}
+})
 
 // Lista de posts com "ver mais" (paginação leve: 10 por vez)
 export function ListaDePosts({ itens, setItens, proximo, carregarMais, maisCarregando, status, clubeId, vazio }) {
-  const atualizar = (p) => setItens((a) => a.map((x) => (x.id === p.id ? p : x)))
-  const remover = (id) => setItens((a) => a.filter((x) => x.id !== id))
-  const inserir = (p) => { if (p) setItens((a) => [p, ...a.filter((x) => x.id !== p.id)]) }
+  // Callbacks ESTÁVEIS: com CartaoPost em React.memo, curtir/comentar num post não re-renderiza a lista toda.
+  const atualizar = useCallback((p) => setItens((a) => a.map((x) => (x.id === p.id ? p : x))), [setItens])
+  const remover = useCallback((id) => setItens((a) => a.filter((x) => x.id !== id)), [setItens])
+  const inserir = useCallback((p) => { if (p) setItens((a) => [p, ...a.filter((x) => x.id !== p.id)]) }, [setItens])
+  // Scroll infinito: um sentinela perto do fim chama carregarMais sozinho; o botão "Ver mais" fica de reserva
+  // (sem JS/observer, ou economia de dados). carregarMais já se protege de chamadas repetidas.
+  const sentinela = useRef(null)
+  const carregarRef = useRef(carregarMais)
+  useEffect(() => { carregarRef.current = carregarMais })   // ref sempre com a versão atual (sem mexer em ref durante o render)
+  useEffect(() => {
+    const alvo = sentinela.current
+    if (!alvo || !proximo || typeof IntersectionObserver === 'undefined') return undefined
+    const obs = new IntersectionObserver((e) => { if (e[0]?.isIntersecting) carregarRef.current?.() }, { rootMargin: '600px' })
+    obs.observe(alvo)
+    return () => obs.disconnect()
+  }, [proximo])
   if (!itens.length) return vazio
   return (
     <>
@@ -549,6 +577,7 @@ export function ListaDePosts({ itens, setItens, proximo, carregarMais, maisCarre
       </div>
       {proximo && (
         <div className="py-4 text-center">
+          <div ref={sentinela} aria-hidden="true" className="h-px" />
           <button type="button" onClick={carregarMais} disabled={maisCarregando} className={PILL_CLARA}>{maisCarregando ? 'Carregando…' : 'Ver mais'}</button>
         </div>
       )}

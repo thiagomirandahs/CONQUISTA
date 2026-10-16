@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { carregarPerfil, carregarPostsDoPerfil, urlDaFoto } from '../../services/rede.js'
+import { carregarPerfil, carregarPostsDoPerfil } from '../../services/rede.js'
+import { useFotoComunidade } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando, Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
 import {
-  AvatarRede, CartaoPost, EsqueletoFeed, Icone, ListaDePosts, SELO_DOURADO, SELO_MARINHO, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede,
+  AvatarRede, CartaoPost, EsqueletoFeed, Icone, ListaDePosts, PILL_CLARA, SELO_DOURADO, SELO_MARINHO, SeloCoordenacao, TXT, TXT_SUAVE, VazioRede,
   avatarPersonagemDe, textoDoErro,
 } from './componentes.jsx'
 
@@ -37,12 +38,7 @@ export default function RedePerfil() {
 }
 
 function Miniatura({ post, aoAbrir }) {
-  const [url, setUrl] = useState(null)
-  useEffect(() => {
-    let vivo = true
-    urlDaFoto(post.foto).then((u) => { if (vivo) setUrl(u) }).catch(() => {})
-    return () => { vivo = false }
-  }, [post.foto])
+  const url = useFotoComunidade(post.foto)
   return (
     <button type="button" onClick={() => aoAbrir(post)} aria-label={post.foto_alt || `Foto de ${post.autor?.nome}`}
       className="relative block aspect-square bg-[var(--rede-superficie)] overflow-hidden">
@@ -57,6 +53,7 @@ function Perfil({ id }) {
   const { status } = useRede()
   const [perfil, setPerfil] = useState(null)
   const [erro, setErro] = useState(null)
+  const [tentativa, setTentativa] = useState(0)   // "Tentar de novo" recarrega o perfil
   const [aba, setAba] = useState('fotos')
   const [itens, setItens] = useState(null)
   const [proximo, setProximo] = useState(null)
@@ -67,7 +64,7 @@ function Perfil({ id }) {
     let vivo = true
     carregarPerfil(id || null).then((p) => { if (vivo) setPerfil(p) }).catch((e) => { if (vivo) setErro(e) })
     return () => { vivo = false }
-  }, [id])
+  }, [id, tentativa])
 
   const carregarAba = useCallback(async (a) => {
     setItens(null)
@@ -88,7 +85,12 @@ function Perfil({ id }) {
     setMais(false)
   }
 
-  if (erro) return <div className="p-6 text-center"><p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o perfil.')}</p></div>
+  if (erro) return (
+    <div className="p-6 text-center">
+      <p className={TXT}>{textoDoErro(erro, 'Não consegui abrir o perfil.')}</p>
+      <button type="button" onClick={() => { setErro(null); setTentativa((t) => t + 1) }} className={`${PILL_CLARA} mt-3`}>Tentar de novo</button>
+    </div>
+  )
   if (!perfil) return <div className="p-4"><Carregando /></div>
   const abas = perfil.eu ? [...ABAS, ['salvos', 'Salvos', 'marcador']] : ABAS
   const [icone, titulo, texto] = VAZIO[aba]
@@ -139,13 +141,14 @@ function Perfil({ id }) {
 
       <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[var(--rede-linha)]">
         {abas.map(([chave, rotulo, ic]) => (
-          <button key={chave} type="button" role="tab" aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
+          <button key={chave} type="button" role="tab" id={`aba-perfil-${chave}`} aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
             className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[var(--rede-destaque)] text-[var(--rede-acao)]' : `border-transparent ${TXT_SUAVE}`}`}>
             <Icone nome={ic} className="w-[22px] h-[22px]" />
           </button>
         ))}
       </div>
 
+      <div role="tabpanel" id={`painel-perfil-${aba}`} aria-labelledby={`aba-perfil-${aba}`} tabIndex={0} className="focus:outline-none">
       {lista === null ? <EsqueletoFeed quantidade={1} />
         : aba === 'fotos' ? (
           lista.length === 0 ? <VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede> : (
@@ -161,6 +164,7 @@ function Perfil({ id }) {
             carregarMais={carregarMais} maisCarregando={mais} status={status} clubeId={clubeId}
             vazio={<VazioRede icone={icone} titulo={titulo}>{texto}</VazioRede>} />
         )}
+      </div>
 
       <Folha aberta={!!aberto} aoFechar={() => setAberto(null)} titulo="Publicação">
         {aberto && <div className="-mx-5"><CartaoPost post={aberto} status={status} clubeId={clubeId} aoAtualizar={atualizar} aoRemover={remover} /></div>}

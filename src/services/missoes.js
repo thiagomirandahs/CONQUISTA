@@ -35,12 +35,12 @@ export async function enviarMissao({ foto, resposta, userId }) {
 //  * registro ANTIGO no bucket 'imagens' (URL pública completa, do tempo em que ele era público) → assinada por lib/imagens.js
 //    (o bucket é privado agora: o Storage só assina pra quem TEM acesso — o dono e a liderança do clube);
 //  * outra URL completa (fora do nosso bucket) → devolve como está;
-//  * registro NOVO = caminho no bucket privado 'comprovacoes' → gera signed URL de 1 hora
+//  * registro NOVO = caminho no bucket privado 'comprovacoes' → gera signed URL de 10 minutos
 //    (o Storage só assina pra quem TEM acesso: dono ou liderança).
 export async function urlComprovacao(valor) {
   if (!valor) return null
   if (/^https?:\/\//i.test(valor)) return caminhoDaImagem(valor) ? resolverImagem(valor) : valor
-  const { data, error } = await supabase.storage.from('comprovacoes').createSignedUrl(valor, 3600)
+  const { data, error } = await supabase.storage.from('comprovacoes').createSignedUrl(valor, 600)
   if (error) throw new Error(error.message)
   return data.signedUrl
 }

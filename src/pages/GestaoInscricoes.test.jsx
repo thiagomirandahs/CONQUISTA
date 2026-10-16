@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 
 let clube = { podeAdministrar: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
 vi.mock('../context/Clube.jsx', () => ({ useClube: () => clube }))
@@ -26,6 +27,9 @@ Object.assign(navigator, { clipboard: { writeText: (...a) => escrever(...a) } })
 
 const { default: GestaoInscricoes } = await import('./GestaoInscricoes.jsx')
 
+// A tela usa <Link> (seção "Convites da equipe" → Usuários), então precisa de um Router no teste.
+const renderTela = () => render(<MemoryRouter><GestaoInscricoes /></MemoryRouter>)
+
 beforeEach(() => {
   clube = { podeAdministrar: true, clubeId: 'clube-a', marca: { nome: 'Clube Águia' } }
   codigoAtual.mockReset().mockResolvedValue({ existe: false })
@@ -37,13 +41,13 @@ beforeEach(() => {
 describe('GestaoInscricoes: acesso', () => {
   it('sem podeGerir, mostra "área restrita" e nunca chama o backend de código', async () => {
     clube = { podeAdministrar: false, clubeId: 'clube-a' }
-    render(<GestaoInscricoes />)
+    renderTela()
     expect(screen.getByText('Área restrita')).toBeInTheDocument()
     expect(codigoAtual).not.toHaveBeenCalled()
   })
   it('instrutor (lidera, mas não administra — migration 210) também não abre as inscrições', async () => {
     clube = { podeGerir: true, podeAvaliar: true, podeAdministrar: false, clubeId: 'clube-a' }
-    render(<GestaoInscricoes />)
+    renderTela()
     expect(screen.getByText('Área restrita')).toBeInTheDocument()
     expect(codigoAtual).not.toHaveBeenCalled()
   })
@@ -51,22 +55,30 @@ describe('GestaoInscricoes: acesso', () => {
 
 describe('GestaoInscricoes: código em claro só aparece ao gerar', () => {
   it('sem código ativo, não mostra QR nem botões de copiar', async () => {
-    render(<GestaoInscricoes />)
+    renderTela()
     expect(await screen.findByText('Nenhum código ativo.')).toBeInTheDocument()
     expect(screen.queryByTestId('codigo-novo')).toBeNull()
   })
 
   it('há código ativo salvo (prefixo): mostra a situação, mas NUNCA o código em claro', async () => {
     codigoAtual.mockResolvedValue({ existe: true, prefixo: 'DF4A', criado_em: '2026-09-01', expira_em: null, vencido: false })
-    render(<GestaoInscricoes />)
+    renderTela()
     const situacao = await screen.findByTestId('codigo-situacao')
     expect(situacao).toHaveTextContent('DF4A')
     expect(screen.queryByTestId('codigo-novo')).toBeNull()
   })
 
+  it('código ativo SEM prefixo (dado antigo): mostra a situação sem o "(começa com )" vazio', async () => {
+    codigoAtual.mockResolvedValue({ existe: true, prefixo: '', criado_em: '2026-09-01', expira_em: null, vencido: false })
+    renderTela()
+    const situacao = await screen.findByTestId('codigo-situacao')
+    expect(situacao).toHaveTextContent('Há um código no ar, criado em')
+    expect(situacao).not.toHaveTextContent('começa com')
+  })
+
   it('gerar código: mostra o código em claro, o QR (aponta pro link público) e os botões de copiar', async () => {
     gerarCodigo.mockResolvedValue({ codigo: 'DF4A3BEE' })
-    render(<GestaoInscricoes />)
+    renderTela()
     await userEvent.click(await screen.findByTestId('codigo-gerar'))
 
     const novo = await screen.findByTestId('codigo-novo')
@@ -88,7 +100,7 @@ describe('GestaoInscricoes: código em claro só aparece ao gerar', () => {
   it('revogar limpa o código exibido e some com o QR', async () => {
     codigoAtual.mockResolvedValue({ existe: true, prefixo: 'DF4A', criado_em: '2026-09-01', expira_em: null, vencido: false })
     gerarCodigo.mockResolvedValue({ codigo: 'DF4A3BEE' })
-    render(<GestaoInscricoes />)
+    renderTela()
     await userEvent.click(await screen.findByTestId('codigo-gerar'))
     await screen.findByTestId('codigo-novo')
 
@@ -104,7 +116,7 @@ describe('GestaoInscricoes: nome do clube, link completo e compartilhar', () => 
     const share = vi.fn().mockResolvedValue()
     Object.assign(navigator, { share })
     gerarCodigo.mockResolvedValue({ codigo: 'AB12CD34EF56AB78', prefixo: 'AB12', expira_em: null })
-    render(<GestaoInscricoes />)
+    renderTela()
     expect(await screen.findByTestId('clube-da-inscricao')).toHaveTextContent('Clube Águia')
     await userEvent.click(await screen.findByRole('button', { name: /Gerar código/ }))
     const link = `${window.location.origin}/entrar?codigo=AB12CD34EF56AB78`
@@ -120,7 +132,7 @@ describe('GestaoInscricoes: nome do clube, link completo e compartilhar', () => 
     Object.assign(navigator, { share })
     gerarCodigo.mockResolvedValueOnce({ codigo: 'AB12CD34EF56AB78', prefixo: 'AB12', expira_em: null })
     gerarCodigo.mockResolvedValueOnce({ codigo: 'ZZ99CD34EF56AB78', prefixo: 'ZZ99', expira_em: null })
-    render(<GestaoInscricoes />)
+    renderTela()
     await userEvent.click(await screen.findByRole('button', { name: /Gerar código/ }))
     const l1 = 'https://app.desbravaclube.com.br/entrar?codigo=AB12CD34EF56AB78'
     expect(await screen.findByTestId('link-completo')).toHaveTextContent(l1)

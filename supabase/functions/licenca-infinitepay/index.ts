@@ -1,3 +1,4 @@
+import { lerJsonLimitado } from '../_compartilhado/json-limitado.js'
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.108.2'
 import { chaveServico, chavePublica, urlProjeto } from '../_compartilhado/chaves.ts'
@@ -16,8 +17,12 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return responder({})
   if (req.method !== 'POST') return responder({ erro: 'Método não permitido.' }, 405)
   if (Number(req.headers.get('content-length') || 0) > 16384) return responder({ erro: 'Pedido muito grande.' }, 413)
-  const body = await req.json().catch(() => null)
-  if (!body || JSON.stringify(body).length > 16384) return responder({ erro: 'Pedido inválido.' }, 400)
+  let body
+  try { body = await lerJsonLimitado(req) }
+  catch (e) {
+    const mensagem = e instanceof Error ? e.message : 'Pedido inválido.'
+    return responder({ erro: mensagem }, mensagem === 'Pedido muito grande.' ? 413 : 400)
+  }
   const webhook = new URL(req.url).searchParams.get('webhook') === '1'
   const handle = (Deno.env.get('INFINITEPAY_HANDLE') || '').trim().replace(/^\$/, '')
   const habilitado = Deno.env.get('INFINITEPAY_HABILITADO') === 'true' && /^[a-zA-Z0-9_.-]{1,100}$/.test(handle)

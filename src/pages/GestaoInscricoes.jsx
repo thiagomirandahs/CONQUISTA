@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useClube } from '../context/Clube.jsx'
 import { codigoAtual, gerarCodigo, revogarCodigo } from '../services/entrada.js'
 import { qrSvg } from '../lib/qr.js'
@@ -118,7 +119,9 @@ export default function GestaoInscricoes() {
 
         {estado?.existe ? (
           <p className="text-xs text-muted mb-3" data-testid="codigo-situacao">
-            Há um código no ar (começa com <strong className="font-mono">{estado.prefixo}</strong>),
+            {estado.prefixo
+              ? <>Há um código no ar (começa com <strong className="font-mono">{estado.prefixo}</strong>),</>
+              : 'Há um código no ar,'}{' '}
             criado em {dia(estado.criado_em)}
             {estado.expira_em ? `, válido até ${dia(estado.expira_em)}` : ', sem prazo'}
             {estado.vencido ? ' — vencido.' : '.'}
@@ -154,12 +157,13 @@ export default function GestaoInscricoes() {
       <SolicitacoesPendentes onContagem={setQtdPendentes} />
 
       {/* Convites de equipe (papel privilegiado) são deliberadamente uma seção separada — nunca
-          o mesmo QR/link público, e continuam fora desta tela até terem front-end próprio. */}
+          o mesmo QR/link público. Convidar a equipe mora em Usuários (ConvidarEquipe). */}
       <div className="mt-6 pt-4 border-t border-line">
         <h3 className="text-sm font-extrabold text-ink mb-1">Convites da equipe</h3>
         <p className="text-xs text-faint">
-          Convites individuais para diretoria/instrutor/tesouraria continuam sendo gerados de outra
-          forma — nunca pelo código público acima. Esta seção ainda não tem tela própria.
+          Diretoria, instrutor e tesouraria entram por <strong>convite nominal</strong> — nunca pelo
+          código público acima. Esse convite é feito na tela de{' '}
+          <Link to="/usuarios" className="font-semibold text-brand hover:underline">Usuários</Link>.
         </p>
       </div>
     </div>

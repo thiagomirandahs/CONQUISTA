@@ -14,10 +14,10 @@
 set -uo pipefail
 export MSYS_NO_PATHCONV=1
 N="${1:-}"
-ORDEM=(514 516 515 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 544 545)
+ORDEM=(514 516 515 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 544 545 548 549)
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && (pwd -W 2>/dev/null || pwd))"
 LOGS="$HOME/.desbravaclube-backups/janela-fase8"; mkdir -p "$LOGS"
-[ -n "$N" ] || { echo "uso: aplicar-migration.sh <514|516|515|...|532|533|534|535|536|537|538|539|540|544|545>"; exit 2; }
+[ -n "$N" ] || { echo "uso: aplicar-migration.sh <514|516|515|...|532|533|534|535|536|537|538|539|540|544|545|548|549>"; exit 2; }
 POS=-1; for i in "${!ORDEM[@]}"; do [ "${ORDEM[$i]}" = "$N" ] && POS=$i; done
 [ $POS -ge 0 ] || { echo "migration $N não faz parte da janela (ordem: ${ORDEM[*]})"; exit 2; }
 ARQ="$(ls "$ROOT"/supabase/migrations/20260930000${N}_*.sql 2>/dev/null | head -1)"
@@ -34,7 +34,7 @@ fi
 P() { psql "$DB_URL_PRODUCAO" -X -q -A -t -F' | ' "$@"; }
 
 VER="20260930000$N"; NOME="$(basename "$ARQ" .sql)"; NOME="${NOME#*_}"
-LEDGER="$(P -c "select string_agg(version, ',' order by version) from supabase_migrations.schema_migrations where version between '20260930000514' and '20260930000545'")"
+LEDGER="$(P -c "select string_agg(version, ',' order by version) from supabase_migrations.schema_migrations where version between '20260930000514' and '20260930000549'")"
 MAX="$(P -c "select max(version) from supabase_migrations.schema_migrations")"
 echo "== ledger atual: máximo=$MAX ; já aplicadas da fase 8: ${LEDGER:-nenhuma}"
 # pré-condições de ordem
@@ -58,7 +58,9 @@ fi
 
 echo "== APLICANDO em $ALVO: $NOME ($VER) — UMA transação"
 TMPSQL="$LOGS/$N-migration-com-ledger.sql"; TMPW="$(cd "$LOGS" && (pwd -W 2>/dev/null || pwd))/$N-migration-com-ledger.sql"   # caminho nativo para o psql
-{ echo "set lock_timeout = '5s'; set statement_timeout = '300s';"; cat "$ARQ"; echo; echo "insert into supabase_migrations.schema_migrations(version, name) values ('$VER', '$NOME');"; } > "$TMPSQL"
+# As migrations 548/549 trazem `begin;`/`commit;` PRÓPRIOS. Dentro de --single-transaction o `commit;` deles fecharia a transação
+# antes do insert no ledger (perdendo o "tudo ou nada"): tiramos só essas linhas soltas da cópia temporária; o arquivo no repo não muda.
+{ echo "set lock_timeout = '5s'; set statement_timeout = '300s';"; grep -vxiE '[[:space:]]*(begin|commit);[[:space:]]*' "$ARQ" | tr -d '\r'; echo; echo "insert into supabase_migrations.schema_migrations(version, name) values ('$VER', '$NOME');"; } > "$TMPSQL"
 if ! psql "$DB_URL_PRODUCAO" -X -q -v ON_ERROR_STOP=1 --single-transaction -f "$TMPW" > "$LOGS/$N-aplicacao.txt" 2>&1; then
   echo "FALHOU: a transação foi DESFEITA (ROLLBACK automático). PARE. Últimas linhas:"; tail -5 "$LOGS/$N-aplicacao.txt"; exit 1
 fi

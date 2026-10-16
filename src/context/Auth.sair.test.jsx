@@ -5,6 +5,7 @@ import { render, screen, act } from '@testing-library/react'
 vi.mock('../lib/pushNativo.js', () => ({ registrarPushNativo: () => {}, desassociarPushNativo: async () => {} }))
 vi.mock('../lib/push.js', () => ({ sincronizarPush: async () => {}, desassociarPush: async () => {} }))
 vi.mock('../lib/imagens.js', () => ({ definirUsuarioImagens: () => {} }))
+vi.mock('../lib/fotosComunidade.js', () => ({ definirUsuarioComunidade: () => {} }))
 vi.mock('../lib/supabase.js', () => ({
   supabase: {
     auth: {
@@ -17,6 +18,7 @@ vi.mock('../lib/supabase.js', () => ({
   },
 }))
 const { AuthProvider, useAuth } = await import('./Auth.jsx')
+const { supabase } = await import('../lib/supabase.js')
 
 let api
 function Captura() { api = useAuth(); return api.perfilPronto ? <p data-testid="ok">ok</p> : null }
@@ -42,4 +44,16 @@ describe('Auth: sair limpa os rascunhos locais do relatório', () => {
     await act(async () => { await api.sairSemRede() })
     expect(Object.keys(localStorage).filter((k) => k.startsWith('cq.rel.'))).toEqual([])
   })
+})
+
+it('falha no logout remoto não mantém rascunhos privados no aparelho', async () => {
+  const original = supabase.auth.signOut
+  supabase.auth.signOut = async () => { throw new Error('sem rede') }
+  try {
+    render(<AuthProvider><Captura /></AuthProvider>)
+    await screen.findByTestId('ok')
+    await act(async () => { await api.sair() })
+    expect(Object.keys(localStorage).filter(k => k.startsWith('cq.rel.'))).toEqual([])
+    expect(localStorage.getItem('outra.coisa')).toBe('fica')
+  } finally { supabase.auth.signOut = original }
 })
