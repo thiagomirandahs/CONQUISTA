@@ -31,6 +31,7 @@ describe('Catálogo de especialidades', () => {
   it('mestrados mostram a regra e as especialidades que contam', async () => {
     abrir()
     await userEvent.click(await screen.findByRole('tab', { name: /Mestrados/ }))
+    expect(screen.getByTestId('mestrado-item').querySelector('img')).toHaveAttribute('src', '/especialidades/me-009.png')
     expect(screen.getByText(/Ter 7 das 1 especialidades da lista/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Vida Campestre/ }))
     expect(screen.getByRole('link', { name: /Acampamento I/ })).toBeInTheDocument()

@@ -3312,6 +3312,102 @@
       "arquivo": "/especialidades/hm-091.png",
       "pagina": "https://mda.wiki.br/Especialidade_de_Lettering",
       "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@hm091.png?20260927103214"
+    },
+    "ME-001": {
+      "nome": "Mestrado em ADRA",
+      "arquivo": "/especialidades/me-001.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_ADRA",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me001.png?20260926164122"
+    },
+    "ME-002": {
+      "nome": "Mestrado em Artes e Habilidades Manuais",
+      "arquivo": "/especialidades/me-002.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Artes_e_Habilidades_Manuais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me002.png?20260925181858"
+    },
+    "ME-003": {
+      "nome": "Mestrado em Atividades Agrícolas",
+      "arquivo": "/especialidades/me-003.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Atividades_Agr%C3%ADcolas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me003.png?20260829174145"
+    },
+    "ME-004": {
+      "nome": "Mestrado em Testificação",
+      "arquivo": "/especialidades/me-004.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Testifica%C3%A7%C3%A3o",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me004.png?20261006205217"
+    },
+    "ME-005": {
+      "nome": "Mestrado em Atividades Profissionais",
+      "arquivo": "/especialidades/me-005.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Atividades_Profissionais",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me005.png?20260926171927"
+    },
+    "ME-006": {
+      "nome": "Mestrado em Ciência e Tecnologia",
+      "arquivo": "/especialidades/me-006.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Ci%C3%AAncia_e_Tecnologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me006.png?20261004221324"
+    },
+    "ME-007": {
+      "nome": "Mestrado em Aquática",
+      "arquivo": "/especialidades/me-007.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Aqu%C3%A1tica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me007.png?20260926172918"
+    },
+    "ME-008": {
+      "nome": "Mestrado em Esportes",
+      "arquivo": "/especialidades/me-008.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Esportes",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me008.png?20260926173616"
+    },
+    "ME-009": {
+      "nome": "Mestrado em Vida Campestre",
+      "arquivo": "/especialidades/me-009.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Vida_Campestre",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me009.png?20261007143509"
+    },
+    "ME-010": {
+      "nome": "Mestrado em Atividades Recreativas",
+      "arquivo": "/especialidades/me-010.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Atividades_Recreativas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me010.png?20261001001251"
+    },
+    "ME-011": {
+      "nome": "Mestrado em Saúde",
+      "arquivo": "/especialidades/me-011.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Sa%C3%BAde",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me011.png?20261012165515"
+    },
+    "ME-012": {
+      "nome": "Mestrado em Zoologia",
+      "arquivo": "/especialidades/me-012.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Zoologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me012.png?20261012165609"
+    },
+    "ME-013": {
+      "nome": "Mestrado em Ecologia",
+      "arquivo": "/especialidades/me-013.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Ecologia",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me013.png?20261012165704"
+    },
+    "ME-014": {
+      "nome": "Mestrado em Botânica",
+      "arquivo": "/especialidades/me-014.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Bot%C3%A2nica",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me014.png?20261012170033"
+    },
+    "ME-015": {
+      "nome": "Mestrado em Habilidades Domésticas",
+      "arquivo": "/especialidades/me-015.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Habilidades_Dom%C3%A9sticas",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me015.png?20260930194805"
+    },
+    "ME-016": {
+      "nome": "Mestrado em Ensinos Bíblicos",
+      "arquivo": "/especialidades/me-016.png",
+      "pagina": "https://mda.wiki.br/Mestrado_em_Ensinos_B%C3%ADblicos",
+      "imagem": "https://mda.wiki.br/site/@imgs_wiki/imagem@me016.png?20261001150043"
     }
   },
   "faltantes": []
