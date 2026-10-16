@@ -103,6 +103,28 @@ export function useFotoComunidade(path) {
   return pronta || (resolvido.path === path ? resolvido.url : null)
 }
 
+// Esquece o que se sabia de um caminho (falha lembrada ou URL que venceu): o próximo pedido tenta de novo.
+export function esquecerFotoComunidade(path) { if (path) cache.delete(path) }
+
+// Igual a useFotoComunidade, mas diz quando FALHOU (o servidor não liberou, rede caiu, URL venceu) e oferece tentar de novo —
+// antes a foto ficava num esqueleto piscando para sempre (auditoria 16/10/2026).
+export function useFotoComunidadeComEstado(path) {
+  const [tentativa, setTentativa] = useState(0)
+  const pronta = urlComunidadeEmCache(path)
+  const [r, setR] = useState({ path: null, url: null, tentativa: -1 })
+  useEffect(() => {
+    if (!path || pronta) return undefined
+    let vivo = true
+    resolverFotoComunidade(path).then((u) => { if (vivo) setR({ path, url: u, tentativa }) })
+    return () => { vivo = false }
+  }, [path, pronta, tentativa])
+  const tentarDeNovo = () => { esquecerFotoComunidade(path); setR({ path: null, url: null, tentativa: -1 }); setTentativa((n) => n + 1) }
+  if (!path) return { url: null, falhou: false, tentarDeNovo }
+  if (pronta) return { url: pronta, falhou: false, tentarDeNovo }
+  const terminou = r.path === path && r.tentativa === tentativa
+  return { url: terminou ? r.url : null, falhou: terminou && !r.url, tentarDeNovo }
+}
+
 // Só para teste: volta o módulo ao estado de fábrica.
 export function _reiniciarFotosComunidade() {
   cache.clear(); pendentes.clear(); dono = null; agendado = false

@@ -1,4 +1,5 @@
 import MedidorDeUso from './components/MedidorDeUso.jsx'
+import OrigemDaRede from './components/OrigemDaRede.jsx'
 import { lazy, Suspense, useEffect } from 'react'
 import { voltouAntesDoInicio, carimbarEntradaAtual } from './lib/barreiraDeVoltar.js'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
@@ -263,6 +264,7 @@ export default function App() {
     <Suspense fallback={<Carregando />}>
       <BarreiraDeVoltar />
       <MedidorDeUso />
+      <OrigemDaRede />
       <PrecarregarRotas />
       <Routes>
         <Route path="/login" element={<Login />} />

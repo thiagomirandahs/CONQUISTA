@@ -119,7 +119,8 @@ describe('LayoutRede na coordenação', () => {
     f.meuStatus.mockResolvedValue({ pode_ver: false, motivo: 'area_sem_rede', modo: 'coordenacao' })
     renderLayout()
     expect(await screen.findByText('A Rede DBV ainda não está liberada na sua área')).toBeInTheDocument()
-    await u.click(screen.getByRole('button', { name: 'Voltar ao portal da coordenação' }))
+    // o do topo e o do meio da tela fazem o mesmo; aqui toca o do meio
+    await u.click(screen.getAllByRole('button', { name: 'Voltar ao portal da coordenação' }).at(-1))
     expect(await screen.findByText('portal da coordenação')).toBeInTheDocument()
     expect(modo.redeComoCoordenacao()).toBe(false)
   })
@@ -131,7 +132,7 @@ describe('LayoutRede na coordenação', () => {
     renderLayout()
     await screen.findByText('feed')
     const sair = screen.getByTestId('rede-sair')
-    expect(sair).toHaveAccessibleName('Sair da Rede DBV e voltar ao portal da coordenação')
+    expect(sair).toHaveAccessibleName('Voltar ao portal da coordenação')
     await u.click(sair)
     expect(await screen.findByText('portal da coordenação')).toBeInTheDocument()
   })

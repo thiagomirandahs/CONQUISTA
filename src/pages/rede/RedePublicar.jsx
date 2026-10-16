@@ -22,6 +22,11 @@ const TIPOS_CLUBE = [['foto', 'Foto', 'camera'], ['desafio', 'Desafio', 'trofeu'
 const TIPOS_NOVOS = [['atividade', 'Atividade', 'grade'], ['evento', 'Evento', 'bandeira'], ['aviso', 'Aviso', 'sino'], ['foto_clube', 'Foto do clube', 'camera']]
 const ALCANCES = [['clube', 'Só meu clube'], ['comunidade', 'Comunidade (todos os clubes)']]
 const tiposDoAlcance = (alcance) => (alcance === 'comunidade' ? TIPOS_NOVOS : [...TIPOS_CLUBE, ...TIPOS_NOVOS])
+// Só os tipos que o servidor ACEITA de cada papel (migration 517): Aviso/Evento só da diretoria e dos instrutores (fora do modo
+// coordenação); Atividade de qualquer um, menos do desbravador. Antes o desbravador escolhia Aviso, confirmava e só então era recusado.
+export function tiposPermitidos(alcance, { lideranca, papel }) {
+  return tiposDoAlcance(alcance).filter(([k]) => ((k !== 'aviso' && k !== 'evento') || lideranca) && (k !== 'atividade' || papel !== 'desbravador'))
+}
 const PLACEHOLDER_ALT = { foto_clube: 'Ex.: nosso clube reunido no pátio' }
 const MAX = 300
 
@@ -153,7 +158,7 @@ export default function RedePublicar() {
             ))}
           </div>
           {alcance === 'comunidade' && (
-            <p role="note" className="mt-2 text-xs font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <p role="note" className="mt-2 text-xs font-semibold text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] border border-[var(--rede-alerta-linha)] rounded-xl px-3 py-2">
               Atenção: esta publicação fica visível para todos os clubes da Rede DBV.
             </p>
           )}
@@ -162,7 +167,7 @@ export default function RedePublicar() {
 
       {tipo !== 'conquista' && (
         <div role="tablist" aria-label="Tipo de publicação" className="grid grid-cols-3 gap-2 m-3">
-          {tiposDoAlcance(alcanceEfetivo).map(([chave, rotulo, icone]) => (
+          {tiposPermitidos(alcanceEfetivo, { lideranca: podeComunidade, papel: status?.papel }).map(([chave, rotulo, icone]) => (
             // ícone EM CIMA e nome embaixo, centralizados (lado a lado não cabia em 375 px)
             <button key={chave} type="button" role="tab" aria-selected={tipo === chave} onClick={() => setTipo(chave)}
               className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-xs font-semibold ${tipo === chave ? 'bg-[var(--rede-acao-suave)] text-[var(--rede-acao)] ring-2 ring-[var(--rede-acao)]' : `bg-[var(--rede-superficie)] ${TXT}`}`}>
@@ -249,7 +254,7 @@ export default function RedePublicar() {
           <textarea id="rede-texto" value={texto} onChange={(e) => setTexto(e.target.value.slice(0, MAX))} maxLength={MAX} rows={4}
             placeholder="Conte como foi a reunião, o acampamento, a especialidade…"
             className={`w-full rounded-2xl bg-[var(--rede-superficie)] px-3 py-2.5 text-sm ${TXT}`} />
-          <p className={`text-xs text-right ${texto.length >= MAX ? 'text-amber-700 font-bold' : TXT_SUAVE}`} aria-live="polite">{texto.length}/{MAX}</p>
+          <p className={`text-xs text-right ${texto.length >= MAX ? 'text-[var(--rede-alerta)] font-bold' : TXT_SUAVE}`} aria-live="polite">{texto.length}/{MAX}</p>
         </div>)}
 
         {tipo !== 'conquista' && (
@@ -279,9 +284,9 @@ export default function RedePublicar() {
           </div>
         )}
 
-        <p className="text-sm font-bold text-[var(--rede-sucesso)] bg-[var(--rede-sucesso-suave)] rounded-xl px-3 py-2">✅ Localização removida da foto automaticamente</p>
+        {foto && <p className="text-sm font-bold text-[var(--rede-sucesso)] bg-[var(--rede-sucesso-suave)] rounded-xl px-3 py-2">Localização removida da foto automaticamente</p>}
         <p className={`text-xs ${TXT_SUAVE}`}>Não mostre documento, endereço, escola ou nome completo. Nada de telefone, @ ou links.</p>
-        {recusa && <p role="alert" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3">{recusa}</p>}
+        {recusa && <p role="alert" className="text-sm text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] border border-[var(--rede-alerta-linha)] rounded-2xl p-3">{recusa}</p>}
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import {
   curtir, salvar, compartilhar, denunciar, apagar, carregarComentarios, comentar, tempoRelativo,
   MOTIVOS_DENUNCIA, CATEGORIAS_CONQUISTA, iniciais,
 } from '../../services/rede.js'
-import { useFotoComunidade } from '../../lib/fotosComunidade.js'
+import { useFotoComunidadeComEstado } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Folha, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 
@@ -197,8 +197,9 @@ export function EsqueletoLinhas({ quantidade = 4 }) {
 
 // ---------------------------------------------------------------- foto do post (largura total, 4:5)
 function FotoDoPost({ path, alt, aoDuploToque }) {
-  // Cache + assinatura em lote (lib/fotosComunidade): rolar e voltar não reassina a foto.
-  const url = useFotoComunidade(path)
+  // Cache + assinatura em lote (lib/fotosComunidade): rolar e voltar não reassina a foto. Falhou => aviso + tentar de novo.
+  const { url, falhou, tentarDeNovo } = useFotoComunidadeComEstado(path)
+  const tentouDeNovo = useRef(false)
   const [coracao, setCoracao] = useState(0)
   const ultimoToque = useRef(0)
   useEffect(() => {
@@ -216,11 +217,22 @@ function FotoDoPost({ path, alt, aoDuploToque }) {
     } else ultimoToque.current = agora
   }
 
+  if (falhou) {
+    return (
+      <div className="w-full aspect-[4/5] bg-[var(--rede-superficie)] grid place-items-center px-6 text-center" data-testid="foto-indisponivel">
+        <div>
+          <p className={`text-sm font-semibold ${TXT}`}>Não consegui carregar a foto.</p>
+          <button type="button" onClick={tentarDeNovo} className={`${PILL} mt-3 bg-[var(--rede-acao)] text-[var(--rede-acao-texto,#fff)]`}>Tentar de novo</button>
+        </div>
+      </div>
+    )
+  }
   if (!url) return <div className="w-full aspect-[4/5] bg-[var(--rede-superficie)] animate-pulse" aria-label="Carregando a foto" />
   // sem link de download nem "abrir em nova aba": a foto só vive dentro do app
   return (
     <div className="relative select-none w-full aspect-[4/5] bg-[var(--rede-superficie)] overflow-hidden" onClick={tocar} data-testid="foto-post">
       <img src={url} alt={alt || 'Foto da publicação'} loading="lazy" decoding="async" draggable={false}
+        onError={() => { if (!tentouDeNovo.current) { tentouDeNovo.current = true; tentarDeNovo() } }}
         onContextMenu={(e) => e.preventDefault()} className="block w-full h-full object-cover" />
       {coracao > 0 && (
         <span key={coracao} className="rede-coracao pointer-events-none absolute inset-0 grid place-items-center text-white drop-shadow-lg" data-testid="coracao">
@@ -274,7 +286,7 @@ export function Denuncia({ aberta, aoFechar, tipo, id, aoOcultar }) {
     setEnviando(false)
   }
   return (
-    <Folha aberta={aberta} aoFechar={aoFechar} titulo="Denunciar">
+    <Folha tom="rede" aberta={aberta} aoFechar={aoFechar} titulo="Denunciar">
       <p className={`text-sm ${TXT_SUAVE} mb-3`}>O conteúdo some na hora e a diretoria do clube revisa. Quem publicou não fica sabendo que foi você.</p>
       <div className="grid gap-2">
         {MOTIVOS_DENUNCIA.map(([chave, rotulo]) => (
@@ -288,6 +300,8 @@ export function Denuncia({ aberta, aoFechar, tipo, id, aoOcultar }) {
 // ---------------------------------------------------------------- comentários (folha que sobe de baixo)
 export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar }) {
   const [itens, setItens] = useState(null)
+  const [falhaComentarios, setFalhaComentarios] = useState(false)
+  const [tentativaComentarios, setTentativaComentarios] = useState(0)
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [recusa, setRecusa] = useState('')
@@ -303,10 +317,12 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
   useEffect(() => {
     if (!aberta) return undefined
     let vivo = true
+    setFalhaComentarios(false)
+    // falha NÃO vira "Ninguém comentou ainda" (auditoria 16/10/2026): mostra o aviso e deixa tentar de novo
     carregarComentarios(post.id).then((r) => { if (vivo) setItens(r?.itens || []) })
-      .catch(() => { if (vivo) setItens([]) })
+      .catch(() => { if (vivo) { setItens(null); setFalhaComentarios(true) } })
     return () => { vivo = false }
-  }, [aberta, post.id])
+  }, [aberta, post.id, tentativaComentarios])
 
   async function enviar(e) {
     e.preventDefault()
@@ -323,8 +339,13 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
   }
 
   return (
-    <Folha aberta={aberta} aoFechar={aoFechar} titulo="Comentários">
-      {itens === null ? <Carregando linhas={2} /> : itens.length === 0
+    <Folha tom="rede" aberta={aberta} aoFechar={aoFechar} titulo="Comentários">
+      {falhaComentarios ? (
+        <div className="text-center py-4" role="alert" data-testid="comentarios-falha">
+          <p className={`text-sm ${TXT}`}>Não consegui carregar os comentários.</p>
+          <button type="button" onClick={() => setTentativaComentarios((n) => n + 1)} className={`${PILL} mt-3 bg-[var(--rede-acao)] text-[var(--rede-acao-texto,#fff)]`}>Tentar de novo</button>
+        </div>
+      ) : itens === null ? <Carregando linhas={2} /> : itens.length === 0
         ? <p className={`text-sm ${TXT_SUAVE} text-center py-4`}>Ninguém comentou ainda.</p>
         : (
           <ul className="space-y-4 mb-4">
@@ -350,7 +371,7 @@ export function Comentarios({ aberta, aoFechar, post, status, clubeId, aoContar 
           <button type="submit" disabled={!texto.trim() || enviando} className={`${PILL} text-[var(--rede-acao)] disabled:opacity-40`}>{enviando ? '…' : 'Comentar'}</button>
         </form>
       )}
-      {recusa && <p role="alert" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-2 mt-2">{recusa}</p>}
+      {recusa && <p role="alert" className="text-sm text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] border border-[var(--rede-alerta-linha)] rounded-2xl p-2 mt-2">{recusa}</p>}
       {bloqueadoPorRegra && <p className={`text-xs ${TXT_SUAVE} mt-3`}>Adultos de outro clube não comentam em publicações de desbravadores. Você pode curtir 🙂</p>}
       <Denuncia aberta={!!denunciarId} aoFechar={() => setDenunciarId(null)} tipo="comentario" id={denunciarId}
         aoOcultar={() => { const n = (itens || []).filter((c) => c.id !== denunciarId); setItens(n); aoContar(n.length) }} />
@@ -480,7 +501,7 @@ export const CartaoPost = memo(function CartaoPost({ post, status, clubeId, aoAt
       <header className="flex items-center justify-between gap-1 pl-3 pr-1 py-1.5">
         <Cabeca autor={post.autor} criadoEm={post.criado_em} />
         <div className="flex items-center shrink-0">
-          {post.status === 'em_analise' && <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 rounded-full px-2 py-0.5 mr-1">Em análise</span>}
+          {post.status === 'em_analise' && <span className="text-xs font-semibold text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] rounded-full px-2 py-0.5 mr-1">Em análise</span>}
           {noAr && podePublicar && <BotaoIcone rotulo="Compartilhar na rede" onClick={repostar}><Icone nome="enviar" className="w-[22px] h-[22px]" /></BotaoIcone>}
           <BotaoIcone rotulo="Mais opções" onClick={() => setMenuAberto(true)}><Icone nome="pontos" className="w-5 h-5" /></BotaoIcone>
         </div>
@@ -533,12 +554,12 @@ export const CartaoPost = memo(function CartaoPost({ post, status, clubeId, aoAt
         </button>
       )}
 
-      <Folha aberta={menuAberto} aoFechar={() => setMenuAberto(false)} titulo="Opções">
+      <Folha tom="rede" aberta={menuAberto} aoFechar={() => setMenuAberto(false)} titulo="Opções">
         <div className="grid gap-2">
           {noAr && podePublicar && <button type="button" onClick={repostar} className={`${PILL_CLARA} justify-start w-full`}><Icone nome="repetir" className="w-5 h-5" /> Compartilhar na rede</button>}
           {post.meu
-            ? <button type="button" onClick={apagarMeu} className={`${PILL_CLARA} justify-start w-full text-red-700`}><Icone nome="lixo" className="w-5 h-5" /> Apagar publicação</button>
-            : noAr && <button type="button" onClick={() => { setMenuAberto(false); setDenunciaAberta(true) }} className={`${PILL_CLARA} justify-start w-full text-red-700`}><Icone nome="bandeira" className="w-5 h-5" /> Denunciar</button>}
+            ? <button type="button" onClick={apagarMeu} className={`${PILL_CLARA} justify-start w-full text-[var(--rede-perigo)]`}><Icone nome="lixo" className="w-5 h-5" /> Apagar publicação</button>
+            : noAr && <button type="button" onClick={() => { setMenuAberto(false); setDenunciaAberta(true) }} className={`${PILL_CLARA} justify-start w-full text-[var(--rede-perigo)]`}><Icone nome="bandeira" className="w-5 h-5" /> Denunciar</button>}
         </div>
       </Folha>
       <Comentarios aberta={comentariosAbertos} aoFechar={() => setComentariosAbertos(false)} post={post} status={status} clubeId={clubeId}

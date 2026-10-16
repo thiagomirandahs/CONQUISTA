@@ -108,7 +108,7 @@ export default function RedeFeed() {
   return (
     <div>
       {status?.suspenso_ate && (
-        <div role="status" className="m-3 rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+        <div role="status" className="m-3 rounded-2xl bg-[var(--rede-alerta-suave)] border border-[var(--rede-alerta-linha)] p-3 text-sm text-[var(--rede-alerta)]">
           Sua rede está pausada até {new Date(status.suspenso_ate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}. Dá para olhar, mas não publicar nem comentar.
         </div>
       )}
@@ -142,7 +142,7 @@ export default function RedeFeed() {
             onChange={(e) => { const f = e.target.files?.[0]; if (f) setArquivoStory({ arquivo: f, alcance: escolhaStory || alcanceDaAba }); e.target.value = ''; setEscolhaStory(null) }} />
         </span>
       ))}
-      <Folha aberta={escolhaStory !== null} aoFechar={() => setEscolhaStory(null)} titulo="Novo story">
+      <Folha tom="rede" aberta={escolhaStory !== null} aoFechar={() => setEscolhaStory(null)} titulo="Novo story">
         <div className="space-y-2" data-testid="escolha-story">
           <button type="button" onClick={() => inputCamera.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>📷 Tirar foto agora</button>
           <button type="button" onClick={() => inputSelfie.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>🤳 Tirar selfie</button>

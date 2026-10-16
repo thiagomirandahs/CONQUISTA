@@ -238,6 +238,12 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   --rede-curtido: #d0103a;
   --rede-sucesso: #047857;
   --rede-sucesso-suave: #dcf5ea;
+  /* avisos e erros da Rede (antes âmbar/vermelho fixos, ilegíveis no escuro — auditoria 16/10/2026) */
+  --rede-alerta: #7a4300;
+  --rede-alerta-suave: #fff4e0;
+  --rede-alerta-linha: #f2d3a0;
+  --rede-perigo: #b42318;
+  --rede-perigo-suave: #fdecea;
 }
 :root[data-theme="dark"],
 :root[data-theme="dark"] [data-rede] {
@@ -257,6 +263,11 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   --rede-curtido: #fb7185;
   --rede-sucesso: #6ee7b7;
   --rede-sucesso-suave: #0f2e24;
+  --rede-alerta: #f5c27a;
+  --rede-alerta-suave: #2e2210;
+  --rede-alerta-linha: #5a4317;
+  --rede-perigo: #fca5a5;
+  --rede-perigo-suave: #3a1416;
 }
 :root[data-theme="dark"] [data-rede] { color-scheme: dark; }
 @layer base {

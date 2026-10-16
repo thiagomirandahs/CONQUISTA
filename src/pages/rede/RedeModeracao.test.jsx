@@ -13,7 +13,7 @@ vi.mock('../../services/rede.js', async () => {
   return { ...real, ...Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])) }
 })
 vi.mock('../../lib/imagens.js', () => ({ useImagem: (v) => v }))
-vi.mock('../../lib/fotosComunidade.js', () => ({ useFotoComunidade: (v) => v }))
+vi.mock('../../lib/fotosComunidade.js', () => ({ useFotoComunidade: (v) => v, useFotoComunidadeComEstado: (v) => ({ url: v, falhou: false, tentarDeNovo: () => {} }) }))
 const avisos = { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: vi.fn(async () => true) }
 vi.mock('../../ui/avisos.jsx', () => ({ avisar: avisos }))
 

@@ -23,8 +23,26 @@ export function sairDoModoCoordenacao() {
   transporte(null)
 }
 
-// Para onde o "Sair" da rede leva: o portal, se entrou como coordenação; o app do clube, se não.
-export const destinoDeSaidaDaRede = (coordenacao = redeComoCoordenacao()) => (coordenacao ? '/institucional' : '/inicio')
+// De onde a pessoa veio (última tela do APP antes de abrir a Rede): o "voltar" da Rede leva para lá, não sempre ao Início.
+// Só caminhos internos do app; telas de entrada/conta pública nunca viram destino.
+const CHAVE_ORIGEM = 'rede_origem'
+const FORA_DO_APP = /^\/(login|cadastro|recuperar|nova-senha|verificar|entrar|conheca|adquirir|clubes|parceiros|privacidade|termos)(\/|$|\?)/
+const internoValido = (c) => typeof c === 'string' && c.startsWith('/') && !c.startsWith('//') && !c.startsWith('/rede') && !/[\s\\]/.test(c) && c.length <= 300
+
+export function lembrarOrigemDaRede(caminho) {
+  if (!internoValido(caminho) || caminho === '/' || FORA_DO_APP.test(caminho)) return
+  try { sessionStorage.setItem(CHAVE_ORIGEM, caminho) } catch { /* sem storage: volta ao Início */ }
+}
+
+// Para onde o "voltar" da rede leva: o portal, se entrou como coordenação; senão a tela do app de onde veio (ou o Início).
+export function destinoDeSaidaDaRede(coordenacao = redeComoCoordenacao()) {
+  if (coordenacao) return '/institucional'
+  try {
+    const o = sessionStorage.getItem(CHAVE_ORIGEM)
+    if (internoValido(o) && !FORA_DO_APP.test(o)) return o
+  } catch { /* sem storage */ }
+  return '/inicio'
+}
 
 // recarregar a página no meio da rede mantém o modo desta aba
 transporte(redeComoCoordenacao() ? 'coordenacao' : null)

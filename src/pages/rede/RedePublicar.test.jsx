@@ -29,10 +29,10 @@ beforeEach(() => {
 })
 
 describe('Rede DBV — publicar', () => {
-  it('contador de 300 e o aviso fixo de localização removida', async () => {
+  it('contador de 300; sem foto não fala de localização (o aviso aparece quando há foto)', async () => {
     const u = userEvent.setup()
     renderRede(<RedePublicar />)
-    expect(screen.getByText('✅ Localização removida da foto automaticamente')).toBeInTheDocument()
+    expect(screen.queryByText('Localização removida da foto automaticamente')).toBeNull()
     await u.type(screen.getByLabelText('No que você está pensando?'), 'Oi rede')
     expect(screen.getByText('7/300')).toBeInTheDocument()
     expect(screen.getByLabelText('No que você está pensando?')).toHaveAttribute('maxLength', '300')
@@ -46,6 +46,7 @@ describe('Rede DBV — publicar', () => {
     renderRede(<RedePublicar />)
     await u.upload(screen.getByLabelText(/Adicionar foto/), new File(['y'], 'IMG.jpg', { type: 'image/jpeg' }))
     expect(await screen.findByTestId('tamanho-foto')).toHaveTextContent('Foto otimizada: 3,4 MB → 110 KB')
+    expect(screen.getByText('Localização removida da foto automaticamente')).toBeInTheDocument()
     await u.type(screen.getByLabelText('Descrição da imagem (para quem não consegue ver)'), 'Barraca')
     await u.click(screen.getByRole('button', { name: 'Publicar' }))
     expect(f.publicarNaRede).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'foto', alcance: 'clube', foto: pronta, alt: 'Barraca', clubeId: 'clube-a', userId: 'eu' }))
@@ -135,11 +136,22 @@ describe('Rede DBV — publicar', () => {
     expect(screen.getByRole('radio', { name: 'Comunidade (todos os clubes)' })).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('tipos: Atividade, Evento, Aviso e Foto do clube existem, além dos antigos (clube)', () => {
-    renderRede(<RedePublicar />)
+  it('tipos por papel (o que o servidor aceita, 517): a liderança vê os 6; o desbravador não vê Aviso/Evento/Atividade', () => {
+    const { unmount } = renderRede(<RedePublicar />, { status: LIDER })
     for (const n of ['Foto', 'Desafio', 'Atividade', 'Evento', 'Aviso', 'Foto do clube']) {
       expect(screen.getByRole('tab', { name: n })).toBeInTheDocument()
     }
+    unmount()
+    renderRede(<RedePublicar />)
+    for (const n of ['Foto', 'Desafio', 'Foto do clube']) expect(screen.getByRole('tab', { name: n })).toBeInTheDocument()
+    for (const n of ['Atividade', 'Evento', 'Aviso']) expect(screen.queryByRole('tab', { name: n })).toBeNull()
+  })
+
+  it('conselheiro: publica Atividade, mas Aviso e Evento são só da diretoria e dos instrutores', () => {
+    renderRede(<RedePublicar />, { status: { ...STATUS, papel: 'conselheiro' } })
+    expect(screen.getByRole('tab', { name: 'Atividade' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Aviso' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Evento' })).toBeNull()
   })
 
   it('Comunidade: pede confirmação explícita, só tipos novos, e envia alcance "comunidade"', async () => {
@@ -312,7 +324,7 @@ describe('Rede DBV — publicar', () => {
   it('recusa crua do servidor (RLS) vira português', async () => {
     const u = userEvent.setup()
     f.publicarNaRede.mockRejectedValue(new Error('new row violates row-level security policy'))
-    renderRede(<RedePublicar />)
+    renderRede(<RedePublicar />, { status: LIDER })
     await u.click(screen.getByRole('tab', { name: 'Aviso' }))
     await u.type(screen.getByLabelText('No que você está pensando?'), 'Oi')
     await u.click(screen.getByRole('button', { name: 'Publicar' }))

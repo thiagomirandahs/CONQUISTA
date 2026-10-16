@@ -214,7 +214,10 @@ export function Abas({ abas = [], ativa, aoTrocar, rotulo = 'Seções' }) {
 // No celular sobe de baixo (o polegar alcança); no PC vira um diálogo central.
 // Entra subindo e sai descendo (CSS, 200ms/160ms — sem o motor do framer-motion); com movimento
 // reduzido, a regra global do index.css zera as durações e ela aparece/some na hora.
-export function Folha({ aberta, aoFechar, titulo, children }) {
+// tom="rede": aberta DENTRO da Rede DBV usa as cores da Rede (no tema escuro o fundo do app e o botão da Rede eram quase iguais
+// e os botões da folha sumiam — auditoria 16/10/2026).
+export function Folha({ aberta, aoFechar, titulo, children, tom }) {
+  const rede = tom === 'rede'
   useFechavel(aberta, aoFechar)   // botão físico de voltar do Android fecha a folha (auditoria de navegação 05/10/2026)
   const caixa = useRef(null)
   const [montada, setMontada] = useState(aberta)
@@ -259,14 +262,14 @@ export function Folha({ aberta, aoFechar, titulo, children }) {
   // real caía no overlay do story (o clique via DOM/element.click() ignora a sobreposição e escondia o defeito). Contrato em src/ui/camadas.test.jsx.
     <div className={`fixed inset-0 z-[80] flex items-end sm:items-center sm:justify-center folha${saindo ? ' folha-saindo' : ''}`}>
       <button type="button" aria-label="Fechar" onClick={aoFechar} tabIndex={-1}
-        className="folha-fundo absolute inset-0 bg-black/50 backdrop-blur-sm" />
+        className="folha-fundo absolute inset-0 bg-black/55" />
       <div ref={caixa} tabIndex={-1} role="dialog" aria-modal="true" aria-label={titulo}
-        className="folha-caixa relative w-full sm:max-w-md bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+        className={`folha-caixa relative w-full sm:max-w-md ${rede ? 'bg-[var(--rede-bg)] text-[var(--rede-ink)]' : 'bg-surface'} rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto`}
         style={{ paddingBottom: 'var(--seguro-baixo)' }}>
-        <div className="sticky top-0 bg-surface flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
-          <h2 className="font-extrabold text-ink">{titulo}</h2>
+        <div className={`sticky top-0 flex items-center justify-between gap-3 px-5 py-4 border-b ${rede ? 'bg-[var(--rede-bg)] border-[var(--rede-linha)]' : 'bg-surface border-line'}`}>
+          <h2 className={`font-extrabold ${rede ? 'text-[var(--rede-ink)]' : 'text-ink'}`}>{titulo}</h2>
           <button type="button" onClick={aoFechar} aria-label="Fechar"
-            className="w-11 h-11 -mr-2 rounded-full grid place-items-center text-ink hover:bg-surface2">✕</button>
+            className={`w-11 h-11 -mr-2 rounded-full grid place-items-center ${rede ? 'text-[var(--rede-ink)] hover:bg-[var(--rede-superficie)]' : 'text-ink hover:bg-surface2'}`}>✕</button>
         </div>
         <div className="p-5">{children}</div>
       </div>

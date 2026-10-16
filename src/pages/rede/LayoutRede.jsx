@@ -70,11 +70,11 @@ function Topo() {
           <span className={`font-extrabold text-[17px] min-[400px]:text-[19px] tracking-tight whitespace-nowrap ${TXT}`}>Rede DBV</span>
         </Link>
         <div className="flex items-center gap-1.5 min-[400px]:gap-2 shrink-0">
-          {/* saída SEMPRE visível (antes só em Perfil → ☰ → Mais, e ninguém achava) */}
+          {/* VOLTAR sempre visível, com nome: "Sair" parecia "sair da conta" (auditoria 16/10/2026). Volta à tela de onde veio. */}
           <button type="button" onClick={sair} data-testid="rede-sair"
-            aria-label={coordenacao ? 'Sair da Rede DBV e voltar ao portal da coordenação' : 'Sair da Rede DBV e voltar ao app do clube'}
-            className={`min-h-[44px] min-w-[44px] px-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center justify-center gap-1.5 text-sm font-semibold ${FOCO_REDE}`}>
-            <Icone nome="sair" className="w-5 h-5" /><span className="hidden min-[400px]:inline">Sair</span>
+            aria-label={coordenacao ? 'Voltar ao portal da coordenação' : 'Voltar ao app do clube'}
+            className={`min-h-[44px] min-w-[44px] pl-2 pr-3 rounded-xl bg-[var(--rede-superficie)] text-[var(--rede-ink)] inline-flex items-center justify-center gap-1 text-sm font-semibold ${FOCO_REDE}`}>
+            <Icone nome="voltar" className="w-5 h-5" /><span>{coordenacao ? 'Portal' : 'App'}</span>
           </button>
           {/* o ➕ do topo saiu (29/09, pedido do dono): publicar fica só no botão do meio da barra de baixo */}
           <BotaoTema />
@@ -89,31 +89,34 @@ function Topo() {
 // Destino ativo: ícone marinho sobre fundo suave + um risco DOURADO embaixo (o único dourado da barra).
 const Indicador = () => <span aria-hidden="true" data-testid="indicador-ativo" className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-[var(--rede-destaque)]" />
 function BarraInferior({ eu }) {
+  // ícone + NOME embaixo (auditoria 16/10/2026: só ícone, criança e pais não sabiam o que era o troféu ou o quadrado com +)
   const item = ({ isActive }) =>
-    `relative w-12 h-11 rounded-xl grid place-items-center no-underline ${FOCO_REDE} ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
+    `relative w-[60px] min-h-[52px] rounded-xl flex flex-col items-center justify-center gap-0.5 no-underline ${FOCO_REDE} ${isActive ? 'text-[var(--rede-acao)] bg-[var(--rede-acao-suave)]' : 'text-[var(--rede-ink)]'}`
+  const Rotulo = ({ children }) => <span className="text-xs font-semibold leading-none">{children}</span>
   const destino = (para, rotulo, icone, extra = {}) => (
     <li className="flex justify-center">
       <NavLink to={para} aria-label={rotulo} className={item} {...extra}>
-        {({ isActive }) => (<><Icone nome={icone} className="w-[26px] h-[26px]" />{isActive && <Indicador />}</>)}
+        {({ isActive }) => (<><Icone nome={icone} className="w-6 h-6" /><Rotulo>{rotulo}</Rotulo>{isActive && <Indicador />}</>)}
       </NavLink>
     </li>
   )
   return (
     <nav aria-label="Navegação da Rede DBV" className="fixed bottom-0 inset-x-0 z-30 bg-[var(--rede-bg)] border-t border-[var(--rede-linha)]"
       style={{ paddingBottom: 'var(--seguro-baixo)' }}>
-      <ul className="max-w-xl mx-auto grid grid-cols-5 h-[58px] items-center">
+      <ul className="max-w-xl mx-auto grid grid-cols-5 h-[62px] items-center">
         {destino('/rede', 'Início', 'casa', { end: true })}
         {destino('/rede/buscar', 'Buscar', 'busca')}
         {destino('/rede/publicar', 'Publicar', 'maisQuadrado')}
         {destino('/rede/desafios', 'Desafios', 'trofeu')}
         <li className="flex justify-center">
-          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `relative w-12 h-11 rounded-xl grid place-items-center ${FOCO_REDE} ${isActive ? 'bg-[var(--rede-acao-suave)]' : ''}`}>
+          <NavLink to="/rede/perfil" aria-label="Perfil" className={({ isActive }) => `relative w-[60px] min-h-[52px] rounded-xl flex flex-col items-center justify-center gap-0.5 no-underline ${FOCO_REDE} ${isActive ? 'bg-[var(--rede-acao-suave)] text-[var(--rede-acao)]' : 'text-[var(--rede-ink)]'}`}>
             {({ isActive }) => (
               <>
                 <span className={`rounded-full p-[1.5px] ${isActive ? 'bg-[var(--rede-acao)]' : 'bg-transparent'}`}>
                   {/* `eu` = rede_perfil() gateado (500): a mesma cara que os outros veem, nunca o profile do Auth */}
-                  <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-7 h-7" texto="text-[10px]" />
+                  <AvatarRede nome={eu?.nome} foto={eu?.foto} avatarPersonagem={avatarPersonagemDe(eu)} tamanho="w-6 h-6" texto="text-[10px]" />
                 </span>
+                <Rotulo>Perfil</Rotulo>
                 {isActive && <Indicador />}
               </>
             )}

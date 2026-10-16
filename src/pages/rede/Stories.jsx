@@ -46,8 +46,11 @@ export function FileiraStories({ grupos, eu, podePublicar, aoAbrir, aoNovo, alca
             </button>
             {podePublicar && (
               <button type="button" onClick={aoNovo} aria-label={naComunidade ? 'Adicionar story na Comunidade' : 'Adicionar story'}
-                className="alvo-livre absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] grid place-items-center ring-[3px] ring-[var(--rede-bg)]">
-                <Icone nome="mais" className="w-4 h-4" traco={2.6} />
+                className="absolute -right-3 -bottom-3 w-11 h-11 grid place-items-center">
+                {/* o círculo continua pequeno (28px), mas a área de toque tem 44px */}
+                <span className="w-7 h-7 rounded-full bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)] grid place-items-center ring-[3px] ring-[var(--rede-bg)]">
+                  <Icone nome="mais" className="w-4 h-4" traco={2.6} />
+                </span>
               </button>
             )}
           </div>
@@ -281,7 +284,7 @@ export function NovoStory({ arquivo, clubeId, userId, aoFechar, aoPublicado, alc
         <label htmlFor="story-texto" className="sr-only">Texto do story (opcional)</label>
         <input id="story-texto" value={texto} onChange={(e) => setTexto(e.target.value.slice(0, 120))} maxLength={120}
           placeholder="Escreva algo (opcional)" className="w-full min-h-[44px] rounded-full bg-white/15 px-4 text-sm text-white placeholder:text-white/60" />
-        {erro && <p role="alert" className="text-sm text-amber-900 bg-amber-100 rounded-2xl p-2">{erro}</p>}
+        {erro && <p role="alert" className="text-sm text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] rounded-2xl p-2">{erro}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={aoFechar} className={`${PILL} flex-1 bg-white/15 text-white`}>Voltar</button>
           <button type="button" onClick={publicar} disabled={!foto || enviando} className={`${PILL} flex-1 bg-[var(--rede-destaque)] text-[var(--rede-sobre-destaque)] disabled:opacity-50`}>

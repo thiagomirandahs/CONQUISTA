@@ -14,7 +14,7 @@ vi.mock('../../services/rede.js', async () => {
   return { ...real, ...Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])) }
 })
 vi.mock('../../lib/imagens.js', () => ({ useImagem: (v) => v }))
-vi.mock('../../lib/fotosComunidade.js', () => ({ useFotoComunidade: (v) => v }))
+vi.mock('../../lib/fotosComunidade.js', () => ({ useFotoComunidade: (v) => v, useFotoComunidadeComEstado: (v) => ({ url: v, falhou: false, tentarDeNovo: () => {} }) }))
 const avisos = { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: vi.fn(async () => true) }
 vi.mock('../../ui/avisos.jsx', () => ({ avisar: avisos }))
 vi.mock('../../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'eu', nome: 'Eu Mesmo' } }) }))
@@ -330,7 +330,10 @@ describe('Rede DBV — fileira de stories', () => {
     // nada de azul→roxo do Instagram
     expect(anelAna.className).not.toMatch(/3b5bff|8b5cf6|purple|violet/)
     // o "+" de criar story é marinho (cor de ação), não dourado
-    expect(within(fileira).getByRole('button', { name: 'Adicionar story' }).className).toContain('bg-[var(--rede-acao)]')
+    // o "+" tem área de toque de 44px; o círculo azul (28px) fica dentro dele
+    const mais = within(fileira).getByRole('button', { name: 'Adicionar story' })
+    expect(mais.className).toContain('w-11 h-11')
+    expect(mais.firstElementChild.className).toContain('bg-[var(--rede-acao)]')
   })
 
   it('tocar numa bolinha abre o viewer e marca visto', async () => {

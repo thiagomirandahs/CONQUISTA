@@ -3,7 +3,7 @@ import {
   filaModeracao, moderar, encerrarSuspensao, tempoRelativo, MOTIVOS_DENUNCIA,
   membrosAutorizacaoImagem, marcarAutorizacaoImagem,
 } from '../../services/rede.js'
-import { useFotoComunidade } from '../../lib/fotosComunidade.js'
+import { useFotoComunidadeComEstado } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Aviso, Carregando, mensagemDeErro } from '../../ui/index.jsx'
 import { CARD, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede } from './componentes.jsx'
@@ -20,7 +20,15 @@ const ROTULO_MOTIVO = Object.fromEntries(MOTIVOS_DENUNCIA)
 const ABAS = [['denuncias', 'Denúncias'], ['fotos', 'Fotos'], ['imagem', 'Imagem'], ['pausados', 'Pausados']]
 
 function Foto({ path }) {
-  const url = useFotoComunidade(path)
+  const { url, falhou, tentarDeNovo } = useFotoComunidadeComEstado(path)
+  if (falhou) {
+    return (
+      <div className="mt-3 rounded-2xl bg-[var(--rede-superficie)] p-4 text-center" data-testid="moderacao-foto-falha">
+        <p className="text-sm text-[var(--rede-ink)]">Não consegui carregar a foto.</p>
+        <button type="button" onClick={tentarDeNovo} className="mt-2 min-h-[44px] rounded-full px-4 text-sm font-semibold bg-[var(--rede-acao)] text-[var(--rede-acao-texto,#fff)]">Tentar de novo</button>
+      </div>
+    )
+  }
   if (!url) return <div className="mt-3 w-full aspect-[4/5] rounded-2xl bg-[var(--rede-superficie)] animate-pulse" />
   return <img src={url} alt="Foto para revisar" loading="lazy" className="mt-3 w-full h-auto max-h-[60vh] object-contain rounded-2xl bg-[var(--rede-superficie)]" />
 }
@@ -44,7 +52,7 @@ function CartaoFila({ item, acoes, aoDecidir }) {
         {item.status === 'oculto_denuncia' ? ' · escondido' : item.status === 'publicado' && item.denuncias ? ' · ainda no ar' : ''}</p>
       {item.denuncias > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
-          <span className="text-xs font-bold text-red-800 bg-red-50 rounded-full px-3 py-1">{item.denuncias} {item.denuncias === 1 ? 'denúncia' : 'denúncias'}</span>
+          <span className="text-xs font-bold text-[var(--rede-perigo)] bg-[var(--rede-perigo-suave)] rounded-full px-3 py-1">{item.denuncias} {item.denuncias === 1 ? 'denúncia' : 'denúncias'}</span>
           {(item.motivos || []).map((m) => <span key={m} className={`text-xs font-bold ${TXT} bg-[var(--rede-superficie)] rounded-full px-3 py-1`}>{ROTULO_MOTIVO[m] || m}</span>)}
         </div>
       )}
@@ -63,7 +71,7 @@ const PERIGO = `${PILL} bg-red-600 text-white disabled:opacity-60`
 
 function acoesDaDenuncia(item) {
   const acoes = [['restaurar', 'Manter', PILL_CLARA]]
-  if (item.status === 'publicado') acoes.push(['ocultar', 'Ocultar', `${PILL} bg-amber-100 text-amber-900`])
+  if (item.status === 'publicado') acoes.push(['ocultar', 'Ocultar', `${PILL} bg-[var(--rede-alerta-suave)] text-[var(--rede-alerta)]`])
   acoes.push(['remover', 'Remover', PERIGO])
   return acoes
 }
@@ -150,10 +158,10 @@ export default function RedeModeracao() {
   return (
     <div className="p-3">
       <h1 className={`text-xl font-extrabold ${TXT} mb-3`}>Moderação do clube</h1>
-      <div role="tablist" aria-label="Filas da moderação" className="grid grid-cols-4 gap-1 p-1 rounded-full bg-[var(--rede-bg)] border border-[var(--rede-linha)] mb-4">
+      <div role="tablist" aria-label="Filas da moderação" className="flex gap-1 p-1 rounded-2xl bg-[var(--rede-bg)] border border-[var(--rede-linha)] mb-4 overflow-x-auto">
         {ABAS.map(([chave, rotulo]) => (
           <button key={chave} type="button" role="tab" id={`aba-mod-${chave}`} aria-selected={aba === chave} onClick={() => setAba(chave)}
-            className={`min-h-[44px] rounded-full text-xs font-bold ${aba === chave ? 'bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)]' : TXT_SUAVE}`}>
+            className={`shrink-0 min-h-[44px] px-3 rounded-full text-xs font-bold whitespace-nowrap ${aba === chave ? 'bg-[var(--rede-acao)] text-[var(--rede-sobre-acao)]' : TXT_SUAVE}`}>
             {rotulo}{contador[chave] > 0 ? ` (${contador[chave]})` : ''}
           </button>
         ))}

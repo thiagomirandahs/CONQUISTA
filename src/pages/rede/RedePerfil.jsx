@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { carregarPerfil, carregarPostsDoPerfil } from '../../services/rede.js'
-import { useFotoComunidade } from '../../lib/fotosComunidade.js'
+import { useFotoComunidadeComEstado } from '../../lib/fotosComunidade.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Carregando, Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
@@ -38,12 +38,13 @@ export default function RedePerfil() {
 }
 
 function Miniatura({ post, aoAbrir }) {
-  const url = useFotoComunidade(post.foto)
+  const { url, falhou } = useFotoComunidadeComEstado(post.foto)
   return (
     <button type="button" onClick={() => aoAbrir(post)} aria-label={post.foto_alt || `Foto de ${post.autor?.nome}`}
       className="relative block aspect-square bg-[var(--rede-superficie)] overflow-hidden">
       {url && <img src={url} alt="" loading="lazy" decoding="async" draggable={false} className="w-full h-full object-cover" />}
-      {post.status === 'em_analise' && <span className="absolute left-1 top-1 text-[10px] font-semibold bg-amber-100 text-amber-900 rounded-full px-1.5">Em análise</span>}
+      {falhou && <span className="absolute inset-0 grid place-items-center text-xs font-semibold text-[var(--rede-ink-suave)]" data-testid="miniatura-indisponivel">Foto indisponível</span>}
+      {post.status === 'em_analise' && <span className="absolute left-1 top-1 text-xs font-semibold bg-[var(--rede-alerta-suave)] text-[var(--rede-alerta)] rounded-full px-1.5">Em análise</span>}
     </button>
   )
 }
@@ -166,7 +167,7 @@ function Perfil({ id }) {
         )}
       </div>
 
-      <Folha aberta={!!aberto} aoFechar={() => setAberto(null)} titulo="Publicação">
+      <Folha tom="rede" aberta={!!aberto} aoFechar={() => setAberto(null)} titulo="Publicação">
         {aberto && <div className="-mx-5"><CartaoPost post={aberto} status={status} clubeId={clubeId} aoAtualizar={atualizar} aoRemover={remover} /></div>}
       </Folha>
     </div>
