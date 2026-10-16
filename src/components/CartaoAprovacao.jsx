@@ -28,7 +28,7 @@ function FotoEvidencia({ caminho }) {
   if (erro) return <p className="text-xs text-faint mt-1">🔒 Foto indisponível (sem acesso ou offline).</p>
   if (!url) return <p className="text-xs text-faint mt-1">Carregando foto…</p>
   if (/\.(mp4|mov|m4v|webm|3gp|3gpp)(\?|$)/i.test(caminho)) {
-    return <video src={url} controls playsInline preload="metadata" className="mt-1 w-full max-h-64 rounded-lg bg-black/5" />
+    return <video src={url} controls playsInline preload="none" className="mt-1 w-full max-h-64 rounded-lg bg-black/5" />
   }
   return (
     <>

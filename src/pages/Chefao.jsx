@@ -32,7 +32,8 @@ export default function Chefao() {
 
   // poll leve enquanto a batalha rola (barra "ao vivo") + ao voltar o foco
   useEffect(() => {
-    const t = setInterval(carregar, 15000)
+    // só com a tela visível (em segundo plano não gasta 4G nem cota)
+    const t = setInterval(() => { if (document.visibilityState === 'visible') carregar() }, 15000)
     const foco = () => { if (document.visibilityState === 'visible') carregar() }
     document.addEventListener('visibilitychange', foco)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', foco) }

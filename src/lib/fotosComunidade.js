@@ -9,6 +9,7 @@
 // pessoa. Só memória (sem localStorage): a persistência offline entre sessões entra junto com o trabalho de offline.
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { definirDonoDasFotos, fotoLocal, fotoLocalPronta, guardarFoto } from './cacheDeFotos.js'
 
 const BUCKET = 'comunidade'
 const VALIDADE_S = 600            // 10 min — igual ao que urlDaFoto usava
@@ -23,6 +24,7 @@ let agendado = false
 // Auth chama isto quando a sessão muda (login, logout, troca de conta): zera o cache por segurança.
 export function definirUsuarioComunidade(uid) {
   const novo = uid || null
+  definirDonoDasFotos(novo)     // a FOTO guardada no aparelho também é por pessoa (cacheDeFotos.js)
   if (novo === dono && novo !== null) return
   dono = novo
   cache.clear()
@@ -34,6 +36,8 @@ const valido = (e) => !!e && e.ate > Date.now()
 // URL já pronta (sem rede) ou null — para o 1º render não piscar.
 export function urlComunidadeEmCache(path) {
   if (!path) return null
+  const local = fotoLocalPronta(BUCKET, path)
+  if (local) return local
   const e = cache.get(path)
   return e && e.url && valido(e) ? e.url : null
 }
@@ -75,9 +79,13 @@ function assinar(caminho) {
 
 export async function resolverFotoComunidade(path) {
   if (!path) return null
+  const local = await fotoLocal(BUCKET, path)              // já baixada antes neste aparelho: nem pede ao Storage
+  if (local) return local
   const e = cache.get(path)
-  if (valido(e)) return e.url            // url (válida) ou null (falha lembrada por 1 min)
-  return assinar(path)
+  if (valido(e)) return e.url ? ((await guardarFoto(BUCKET, path, e.url)) || e.url) : null   // null = falha lembrada por 1 min
+  const url = await assinar(path)
+  if (!url) return null
+  return (await guardarFoto(BUCKET, path, url)) || url
 }
 
 // Hook: a URL para usar no <img src>. Enquanto assina (só na 1ª vez de cada caminho) devolve null — o

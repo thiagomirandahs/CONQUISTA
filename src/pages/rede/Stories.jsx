@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  apagarStory, marcarStoryVisto, prepararFotoStory, publicarStory, urlDaFoto, tempoRelativo, confirmacaoDeStory, QUEM_VE_STORY,
+  apagarStory, marcarStoryVisto, prepararFotoStory, publicarStory, tempoRelativo, confirmacaoDeStory, QUEM_VE_STORY,
 } from '../../services/rede.js'
 import { tamanhoLegivel } from '../../lib/imagem.js'
+import { resolverFotoComunidade } from '../../lib/fotosComunidade.js'
 import { useFechavel } from '../../lib/useFechavel.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { AnelStory, AvatarRede, Denuncia, EsqueletoStories, Icone, PILL, SeloCoordenacao, TXT, TXT_SUAVE, avatarPersonagemDe, textoDoErro } from './componentes.jsx'
@@ -101,10 +102,10 @@ export function ViewerStories({ grupos, inicio = 0, aoFechar, aoMudar }) {
     if (gi > 0) { const g = grupos[gi - 1]; setGi(gi - 1); setSi(Math.max(0, (g?.stories?.length || 1) - 1)) }
   }, [si, gi, grupos])
 
-  // foto do story (URL assinada curta), SOB DEMANDA: nada é assinado/baixado antes de o story abrir.
+  // foto do story SOB DEMANDA (nada é baixado antes de o story abrir); usa o mesmo lote e o cache no aparelho das fotos da Rede.
   const assinar = useCallback((caminho) => {
     const mapa = assinadas.current
-    if (!mapa.has(caminho)) mapa.set(caminho, Promise.resolve().then(() => urlDaFoto(caminho)).catch(() => null))
+    if (!mapa.has(caminho)) mapa.set(caminho, Promise.resolve().then(() => resolverFotoComunidade(caminho)).catch(() => null))
     return mapa.get(caminho)
   }, [])
   const fotoAtual = story?.foto

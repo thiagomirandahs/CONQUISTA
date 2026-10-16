@@ -38,7 +38,7 @@ export default function Comprovacao({ valor, alt = 'comprovação', classImg, cl
 
   // vídeo? decide pelo CAMINHO original (a signed URL tem query string)
   if (ehVideo(valor)) {
-    return <video src={url} controls playsInline preload="metadata" className={classVideo} />
+    return <video src={url} controls playsInline preload="none" className={classVideo} />
   }
   if (ampliavel) {
     return (

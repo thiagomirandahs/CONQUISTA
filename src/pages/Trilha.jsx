@@ -81,7 +81,8 @@ export default function Trilha() {
     if (!profile?.id) return
     const carregar = () => ajudasRecebidas().then(setPedidosAjuda).catch(() => {})
     carregar()
-    const t = setInterval(carregar, 20000)
+    // só com a tela visível: no APK o WebView segue rodando em segundo plano e gastaria 4G à toa
+    const t = setInterval(() => { if (document.visibilityState === 'visible') carregar() }, 20000)
     const foco = () => { if (document.visibilityState === 'visible') carregar() }
     window.addEventListener('focus', foco)
     document.addEventListener('visibilitychange', foco)

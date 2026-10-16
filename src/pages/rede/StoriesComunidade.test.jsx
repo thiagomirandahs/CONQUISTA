@@ -20,6 +20,8 @@ vi.mock('../../services/rede.js', async () => {
   return { ...real, ...Object.fromEntries(Object.keys(f).map((k) => [k, (...a) => f[k](...a)])) }
 })
 vi.mock('../../lib/imagens.js', () => ({ useImagem: (v) => v }))
+// a foto do story usa o lote + cache no aparelho das fotos da Rede (lib/fotosComunidade.js); aqui ela responde pelo mesmo dublê
+vi.mock('../../lib/fotosComunidade.js', async (orig) => ({ ...(await orig()), resolverFotoComunidade: (p) => f.urlDaFoto(p) }))
 const avisos = { sucesso: vi.fn(), info: vi.fn(), erro: vi.fn(), confirmar: vi.fn(async () => true) }
 vi.mock('../../ui/avisos.jsx', () => ({ avisar: avisos }))
 vi.mock('../../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'eu', nome: 'Eu Mesmo' } }) }))

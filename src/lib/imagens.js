@@ -16,6 +16,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { VALIDADE_URL_PRIVADA_S, cachePrivadoValido } from './imagens/politica.js'
+import { definirDonoDasFotos, fotoLocal, fotoLocalPronta, guardarFoto } from './cacheDeFotos.js'
 
 const BUCKET = 'imagens'
 const VALIDADE_S = VALIDADE_URL_PRIVADA_S
@@ -74,6 +75,7 @@ function agendarSalvar() {
 // armazenamento local apagado; a MESMA pessoa voltando reaproveita o que já tinha assinado (dentro da validade).
 export function definirUsuarioImagens(uid) {
   const novo = uid || null
+  definirDonoDasFotos(novo)     // a FOTO guardada no aparelho também é por pessoa (cacheDeFotos.js)
   if (novo === dono && novo !== null) return
   dono = novo
   cache.clear()
@@ -98,6 +100,8 @@ function valida(entrada) {
 export function urlAssinadaEmCache(valor) {
   const caminho = caminhoDaImagem(valor)
   if (!caminho) return valor || null
+  const local = fotoLocalPronta(BUCKET, caminho)
+  if (local) return local
   const e = cache.get(caminho)
   return e && e.url && valida(e) ? e.url : null
 }
@@ -143,10 +147,13 @@ export async function resolverImagem(valor) {
   if (!valor) return null
   const caminho = caminhoDaImagem(valor)
   if (!caminho) return valor
+  const local = await fotoLocal(BUCKET, caminho)          // já baixada antes neste aparelho: nem pede ao Storage
+  if (local) return local
   const e = cache.get(caminho)
-  if (valida(e)) return e.url || valor
+  if (valida(e)) return (e.url && (await guardarFoto(BUCKET, caminho, e.url))) || e.url || valor
   const url = await assinar(caminho)
-  return url || valor
+  if (!url) return valor
+  return (await guardarFoto(BUCKET, caminho, url)) || url   // baixa UMA vez e guarda; sem Cache Storage segue com a assinada
 }
 
 // Hook: a URL para usar no <img src>. Enquanto assina (só na 1ª vez) devolve null — o componente mostra o "vazio" (iniciais etc.).
