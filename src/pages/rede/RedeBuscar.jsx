@@ -97,6 +97,10 @@ export default function RedeBuscar() {
           </ul>
         </section>
       )}
+      {/* clube escolhido sem ninguém na rede: antes ficava a tela em branco */}
+      {!carregando && !erro && clube && pessoas.length === 0 && (
+        <p className={`px-6 py-10 text-center text-sm ${TXT_SUAVE}`} data-testid="clube-sem-pessoas">Ninguém deste clube está na Rede DBV ainda.</p>
+      )}
       {!carregando && pessoas.length > 0 && (
         <section aria-label="Pessoas">
           <h2 className={`px-3 pt-2 pb-1 text-[13px] font-semibold ${TXT_SUAVE}`}>Pessoas</h2>

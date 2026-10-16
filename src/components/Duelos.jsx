@@ -96,7 +96,7 @@ export default function Duelos({ onMudou }) {
           <div className="text-4xl mb-2">⚔️</div>
           <p className="font-semibold text-slate-700">Nenhum duelo ainda</p>
           <p className="text-sm text-slate-400">
-            {podeDesafiar ? 'Seja o primeiro a desafiar outra unidade!' : 'Em breve as unidades vão poder se desafiar.'}
+            {podeDesafiar ? 'Seja o primeiro a desafiar outra unidade!' : 'Quando a liderança abrir os duelos, eles aparecem aqui.'}
           </p>
         </div>
       ) : (

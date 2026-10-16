@@ -81,7 +81,7 @@ function Perfil({ id }) {
     setMais(true)
     try {
       const r = await carregarPostsDoPerfil(id || null, ABA_DO_SERVIDOR[aba] || aba, proximo)
-      setItens((x) => [...x, ...(r?.itens || [])]); setProximo(r?.proximo || null)
+      setItens((x) => [...x, ...(r?.itens || []).filter((n) => !x.some((y) => y.id === n.id))]); setProximo(r?.proximo || null)   // sem repetidos
     } catch (e) { avisar.info(textoDoErro(e, 'Não consegui carregar mais.')) }
     setMais(false)
   }
@@ -143,8 +143,10 @@ function Perfil({ id }) {
       <div role="tablist" aria-label="Abas do perfil" className="flex border-y border-[var(--rede-linha)]">
         {abas.map(([chave, rotulo, ic]) => (
           <button key={chave} type="button" role="tab" id={`aba-perfil-${chave}`} aria-selected={aba === chave} aria-label={rotulo} title={rotulo} onClick={() => setAba(chave)}
-            className={`flex-1 min-h-[46px] grid place-items-center border-b-2 ${aba === chave ? 'border-[var(--rede-destaque)] text-[var(--rede-acao)]' : `border-transparent ${TXT_SUAVE}`}`}>
+            className={`flex-1 min-w-0 min-h-[52px] flex flex-col items-center justify-center gap-0.5 border-b-2 ${aba === chave ? 'border-[var(--rede-destaque)] text-[var(--rede-acao)]' : `border-transparent ${TXT_SUAVE}`}`}>
             <Icone nome={ic} className="w-[22px] h-[22px]" />
+            {/* nome embaixo do ícone (o escudo de "Conquistas" ninguém entendia só pelo desenho) */}
+            <span className="text-xs font-semibold leading-none truncate max-w-full px-0.5">{rotulo}</span>
           </button>
         ))}
       </div>
