@@ -10,10 +10,10 @@ describe('índice de emblemas das especialidades', () => {
   })
   it('há emblemas', () => { expect(Object.keys(EMBLEMAS_ESPECIALIDADES).length).toBeGreaterThan(400) })
 
-  it('todas as especialidades do catálogo têm emblema e caminho de origem correspondente', () => {
+  it('todas as especialidades e mestrados têm emblema e caminho de origem correspondente', () => {
     const catalogo = JSON.parse(readFileSync('supabase/especialidades-catalogo/catalogo-mda.json', 'utf8'))
     const fontes = JSON.parse(readFileSync('public/especialidades/fontes.json', 'utf8'))
-    for (const { codigo } of catalogo.especialidades) {
+    for (const { codigo } of [...catalogo.especialidades, ...catalogo.mestrados]) {
       const ext = EMBLEMAS_ESPECIALIDADES[codigo]
       expect(ext, `Emblema ausente: ${codigo}`).toBeDefined()
       expect(fontes.emblemas[codigo]?.arquivo, codigo).toBe(`/especialidades/${codigo.toLowerCase()}.${ext}`)

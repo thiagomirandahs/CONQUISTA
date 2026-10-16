@@ -119,8 +119,9 @@ function Mestrado({ m, porCodigo }) {
   return (
     <li className="rounded-2xl border border-line bg-surface p-3" data-testid="mestrado-item">
       <button type="button" onClick={() => setAberto((v) => !v)} aria-expanded={aberto} className="flex w-full min-h-[44px] items-center justify-between gap-2 text-left">
-        <span className="min-w-0">
-          <span className="block font-bold text-ink">{m.nome.replace(/^Mestrado em /, '🎓 ')}</span>
+        <EmblemaEspecialidade codigo={m.codigo} tamanho={48} />
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold text-ink">{m.nome.replace(/^Mestrado em /, '')}</span>
           <span className="block text-xs text-muted">{m.codigo} · {regra}</span>
         </span>
         <span aria-hidden="true" className="text-muted">{aberto ? '▲' : '▼'}</span>
