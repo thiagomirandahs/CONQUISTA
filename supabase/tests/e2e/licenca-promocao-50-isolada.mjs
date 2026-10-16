@@ -50,17 +50,17 @@ await db.exec(`select set_config('teste.uid','${outra}',false)`)
 assert.equal((await q('select public.licenca_checkout_contexto() d')).d.pode_pagar,false)
 await db.exec(`select set_config('teste.uid','${uid}',false)`)
 const primeiro = (await q('select public.licenca_checkout_criar() d')).d
-assert.equal(primeiro.pix_centavos,20000); assert.equal(primeiro.cartao_centavos,20000)
+assert.equal(primeiro.pix_centavos,22000); assert.equal(primeiro.cartao_centavos,22000)
 assert.equal(primeiro.promocao,true)
 assert.equal((await q('select public.licenca_checkout_criar() d')).d.id,primeiro.id)
 assert.equal((await promo()).reservados,1)
 assert.equal((await promo()).confirmados,0)
 await assert.rejects(db.query(`select public.licenca_infinitepay_confirmar('${primeiro.id}','pix-1','pix',25000,1)`), /divergente/)
 assert.equal((await promo()).confirmados,0)
-await db.exec(`select public.licenca_infinitepay_confirmar('${primeiro.id}','pix-1','pix',20000,1)`)
+await db.exec(`select public.licenca_infinitepay_confirmar('${primeiro.id}','pix-1','pix',22000,1)`)
 const fim = (await q('select periodo_fim from public.subscriptions')).periodo_fim
 assert.equal((await promo()).confirmados,1)
-assert.equal((await q(`select public.licenca_infinitepay_confirmar('${primeiro.id}','pix-1','pix',20000,1) d`)).d.duplicado,true)
+assert.equal((await q(`select public.licenca_infinitepay_confirmar('${primeiro.id}','pix-1','pix',22000,1) d`)).d.duplicado,true)
 assert.deepEqual((await q('select periodo_fim from public.subscriptions')).periodo_fim,fim)
 // Mais 49 clubes: cadastrado não conta, pedido reserva, confirmação efetiva preenche.
 for (let n=2;n<=50;n++) {
@@ -71,8 +71,8 @@ for (let n=2;n<=50;n++) {
     insert into public.subscription_clubs(subscription_id,club_id) select id,'${clube}' from public.subscriptions s where not exists(select 1 from public.subscription_clubs c where c.subscription_id=s.id);
     select set_config('teste.club','${clube}',false);`)
   const o=(await q('select public.licenca_checkout_criar() d')).d
-  assert.equal(o.promocao,true); assert.equal(o.cartao_centavos,20000)
-  await db.exec(`select public.licenca_infinitepay_confirmar('${o.id}','cartao-${n}','credit_card',20000,1)`)
+  assert.equal(o.promocao,true); assert.equal(o.cartao_centavos,22000)
+  await db.exec(`select public.licenca_infinitepay_confirmar('${o.id}','cartao-${n}','credit_card',22000,1)`)
 }
 assert.equal((await promo()).confirmados,50)
 assert.equal((await promo()).disponiveis,0)

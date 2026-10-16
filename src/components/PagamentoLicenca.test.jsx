@@ -38,7 +38,7 @@ it('integração desligada durante o retorno não anuncia pagamento confirmado',
 })
 
 it('checkout usa o preço final reservado pelo servidor, mesmo se a última vaga mudou', async () => {
-  pagamento.mockResolvedValueOnce({ ...situacao, pix_centavos: 20000, cartao_centavos: 20000, promocao: true, renovacao_centavos: 25000 })
+  pagamento.mockResolvedValueOnce({ ...situacao, pix_centavos: 22000, cartao_centavos: 22000, promocao: true, renovacao_centavos: 25000 })
     .mockResolvedValueOnce({ url: 'https://checkout.infinitepay.com.br/pedido', pix_centavos: 25000, cartao_centavos: 25000, parcelas: 12, promocao: false })
   render(<MemoryRouter><PagamentoLicenca aoConfirmar={vi.fn()} /></MemoryRouter>)
   fireEvent.click(await screen.findByRole('button', { name: 'Preparar pagamento' }))

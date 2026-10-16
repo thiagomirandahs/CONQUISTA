@@ -1,4 +1,4 @@
--- 547 — R$ 250/ano em ambos os métodos; R$ 200 no primeiro ano dos 50 clubes.
+-- 547 — R$ 250/ano em ambos os métodos; R$ 220 no primeiro ano dos 50 clubes.
 -- Aprovação do dono nesta conversa em 14/10/2026. Preço é congelado no pedido.
 -- Uma vaga por clube, somente na primeira contratação paga. Cadastro não ocupa vaga.
 -- Link emitido reserva vaga sem expiração automática: não há API homologada de revogação.
@@ -35,7 +35,7 @@ grant select on public.licenca_promocao_vagas to service_role;
 
 create or replace function public.licenca_promocao_situacao() returns jsonb
 language sql stable security definer set search_path='' as $$
-  select jsonb_build_object('limite',50,'valor_centavos',20000,'regular_centavos',25000,
+  select jsonb_build_object('limite',50,'valor_centavos',22000,'regular_centavos',25000,
     'confirmados',count(*) filter (where confirmado_em is not null),
     'reservados',count(*) filter (where confirmado_em is null),
     'disponiveis',50-count(*)) from public.licenca_promocao_vagas;
@@ -75,8 +75,8 @@ begin
   promo := public.licenca_promocao_situacao();
   elegivel := public._licenca_promocao_elegivel(s.id);
   if pedido.id is null and elegivel and (promo ->> 'disponiveis')::int > 0 then
-    p.valor_centavos := 20000;
-    p.metadata := p.metadata || jsonb_build_object('pix_centavos', 20000);
+    p.valor_centavos := 22000;
+    p.metadata := p.metadata || jsonb_build_object('pix_centavos', 22000);
   end if;
   return jsonb_build_object('promocao', case when pedido.id is not null then pedido.promocao else elegivel and (promo ->> 'disponiveis')::int > 0 end,
     'renovacao_centavos', 25000, 'pode_pagar', true, 'subscription_id', s.id, 'price_id', p.id,

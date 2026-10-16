@@ -3,7 +3,7 @@
 ## Condições aprovadas em 14/10/2026
 
 - Licença anual: R$ 250 no Pix e no cartão.
-- Primeira contratação paga dos primeiros 50 clubes: R$ 200 no Pix ou cartão, somente no primeiro ano.
+- Primeira contratação paga dos primeiros 50 clubes: R$ 220 no Pix ou cartão, somente no primeiro ano.
 - Renovação: preço regular vigente (R$ 250 nesta versão). Não há cobrança automática recorrente no cartão.
 - A campanha começa na aplicação da migration 547. Contratações anteriores não consomem retroativamente as vagas; clubes com pagamento anterior não são elegíveis.
 - Contratos e pedidos antigos preservam seus valores congelados. Novos pedidos recebem os novos preços.
@@ -18,17 +18,19 @@ A confirmação pública consulta `payment_check` na InfinitePay; não confia em
 
 ## Implantação
 
-1. Aplicar as migrations 542 e 543 se ainda não aplicadas; depois executar **20260930000547_licenca-250-promocao-50.sql** completa em uma transação. A 546 de audiolivros é independente.
+1. Aplicar as migrations 542 e 543 se ainda não aplicadas; depois executar **20260930000547_licenca-250-promocao-50.sql** e em seguida **20260930000550_pagamento-liga-desliga.sql** (interruptor da cobrança), cada uma completa e em uma transação. A 546 de audiolivros é independente.
 2. Publicar a Edge Function atualizada com os helpers existentes:
 
 ```sh
 supabase functions deploy licenca-infinitepay --no-verify-jwt
-supabase secrets set INFINITEPAY_HANDLE=SUA_INFINITETAG INFINITEPAY_HABILITADO=false
+supabase secrets set INFINITEPAY_HANDLE=SUA_INFINITETAG
 ```
 
-3. Publicar o frontend. Sem a configuração do provedor, a função permanece desabilitada e não oferece cobrança.
-4. Desativar qualquer desconto por método na conta InfinitePay: total do Pix e cartão precisa ser exatamente o total congelado no pedido, R$ 200 ou R$ 250. Não há parâmetro inventado de desconto na API.
-5. Homologar Pix e cartão, webhook, retorno, valor total e parcelamento. Só então definir `INFINITEPAY_HABILITADO=true`. Taxas e parcelas precisam ser confirmadas com o provedor; as telas não prometem juros zero sem homologação.
+3. Publicar o frontend. Sem a InfiniteTag, ou com o interruptor desligado, a função não oferece cobrança. **O interruptor fica em /admin › Assinaturas › "Cobrança online da licença"** e nasce DESLIGADO (o segredo antigo `INFINITEPAY_HABILITADO` não é mais lido).
+4. Desativar qualquer desconto por método na conta InfinitePay: total do Pix e cartão precisa ser exatamente o total congelado no pedido, R$ 220 ou R$ 250. Não há parâmetro inventado de desconto na API.
+5. Homologar Pix e cartão, webhook, retorno, valor total e parcelamento. Só então ligar a cobrança no botão do /admin (o servidor registra quem ligou e quando, na Auditoria). Taxas e parcelas precisam ser confirmadas com o provedor; as telas não prometem juros zero sem homologação.
+
+Desligar a cobrança bloqueia só pagamentos NOVOS (inclusive a reserva de vaga do lançamento, também no banco): a confirmação de um pagamento que já aconteceu continua valendo.
 
 A sessão de implementação não tem acesso ao banco de produção, à configuração InfinitePay ou aos segredos. Reembolso/chargeback e cancelamento de link exigem conciliação administrativa. Mensalidades de membros não são alteradas.
 
