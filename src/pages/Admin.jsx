@@ -22,6 +22,7 @@ import {
 import { Tabela, Paginacao, Filtros, useOrdenacao, usePaginacao, useTelaLarga, contem } from '../components/admin/Tabela.jsx'
 import { SidebarAdmin, GavetaAdmin, BotaoMenuAdmin } from '../components/admin/NavegacaoAdmin.jsx'
 import PainelDeUso from '../components/admin/PainelDeUso.jsx'
+import CobrancaOnline from '../components/admin/CobrancaOnline.jsx'
 import AdminHierarquia from './AdminHierarquia.jsx'
 import AdminCortesias from './AdminCortesias.jsx'
 import AdminVitrine from './AdminVitrine.jsx'
@@ -200,7 +201,7 @@ export default function Admin() {
           {aba === 'hierarquia' && <AdminHierarquia />}
           {aba === 'planos' && <Planos />}
           {aba === 'paineis' && <AdminPaineisPlano />}
-          {aba === 'assinaturas' && <Assinaturas aoAbrirClube={abrirClube} />}
+          {aba === 'assinaturas' && <div className="space-y-3"><CobrancaOnline /><Assinaturas aoAbrirClube={abrirClube} /></div>}
           {aba === 'cortesias' && <AdminCortesias />}
           {aba === 'vitrine' && <AdminVitrine />}
           {aba === 'audiolivros' && <AdminAudiolivros />}

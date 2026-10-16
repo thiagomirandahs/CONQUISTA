@@ -25,10 +25,18 @@ Deno.serve(async req => {
   }
   const webhook = new URL(req.url).searchParams.get('webhook') === '1'
   const handle = (Deno.env.get('INFINITEPAY_HANDLE') || '').trim().replace(/^\$/, '')
-  const habilitado = Deno.env.get('INFINITEPAY_HABILITADO') === 'true' && /^[a-zA-Z0-9_.-]{1,100}$/.test(handle)
-  if (!habilitado) return responder(webhook ? { erro: 'Integração indisponível.' } : { habilitado: false }, webhook ? 503 : 200)
+  // A integração só existe com a InfiniteTag configurada. O INTERRUPTOR de cobrança é do banco (migration 550), ligado
+  // pelo administrador no /admin: o segredo antigo INFINITEPAY_HABILITADO não é mais lido.
+  if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(handle)) return responder(webhook ? { erro: 'Integração indisponível.' } : { habilitado: false }, webhook ? 503 : 200)
   try {
     const servico = createClient(urlProjeto(), chaveServico().valor)
+    // Desligado = nenhum pagamento NOVO (situação/criar). Confirmar um pagamento que já aconteceu (webhook e retorno do
+    // checkout) segue valendo: ele consulta o provedor e só ativa pedido realmente pago. Falha ao ler o interruptor = desligado.
+    const confirmacao = webhook || body.acao === 'confirmar'
+    if (!confirmacao) {
+      const { data: ativo, error: erroAtivo } = await servico.rpc('pagamento_licenca_ativo')
+      if (erroAtivo || ativo !== true) return responder({ habilitado: false })
+    }
     let usuario: SupabaseClient | null = null
     if (!webhook) {
       const auth = req.headers.get('authorization') || ''
@@ -45,9 +53,9 @@ Deno.serve(async req => {
       if (body.acao === 'criar') {
         const { data: o, error: e } = await usuario.rpc('licenca_checkout_criar')
         if (e) return responder({ erro: e.message }, 403)
-        if (o.url) return responder({ url: checkoutSeguro(o.url) })
-        // Desconto Pix e taxas assumidas são configurados/homologados no provedor,
-        // NÃO por campos não documentados nesta API. Pedido nasce com preço cheio.
+        if (o.url) return responder({ ...o, url: checkoutSeguro(o.url) })
+        // Pix e cartão têm o mesmo total, congelado no pedido pelo servidor.
+        // Campanha e reserva são decididas pela RPC, nunca pelo navegador.
         const d = await chamarInfinitePay('/links', { handle, order_nsu: o.id,
           items: [{ quantity: 1, price: o.cartao_centavos, description: 'Licença Anual DesbravaClube' }],
           redirect_url: 'https://app.desbravaclube.com.br/planos',
@@ -55,7 +63,7 @@ Deno.serve(async req => {
         const url = checkoutSeguro(d.url)
         const { error: gravar } = await servico.from('licenca_pedidos').update({ onde_pagar: url }).eq('id', o.id).eq('status', 'pendente')
         if (gravar) throw new Error('Não foi possível salvar a cobrança. Tente novamente.')
-        return responder({ url })
+        return responder({ ...o, url })
       }
       if (body.acao !== 'confirmar') return responder({ erro: 'Ação inválida.' }, 400)
     }

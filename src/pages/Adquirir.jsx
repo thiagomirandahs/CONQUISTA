@@ -1,3 +1,4 @@
+import PromocaoLicenca from '../components/PromocaoLicenca.jsx'
 import { mensagemDeErro } from '../ui/index.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -22,7 +23,7 @@ export default function Adquirir() {
   const [planos, setPlanos] = useState(null)
   const [erro, setErro] = useState('')
   const { pathname } = useLocation()
-  useMetaDaPagina('Planos e licença — DesbravaClube', 'Licença anual para o seu clube de Desbravadores, com teste grátis para começar. Veja o que está incluso e combine o pagamento direto.', pathname === '/planos' ? '/planos' : '/adquirir')
+  useMetaDaPagina('Planos e licença — DesbravaClube', 'Licença anual para o seu clube de Desbravadores, com teste grátis para começar. Veja o que está incluso e as condições de pagamento.', pathname === '/planos' ? '/planos' : '/adquirir')
 
   useEffect(() => {
     let vivo = true
@@ -46,6 +47,7 @@ export default function Adquirir() {
       {erro && <div role="alert" className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 mb-4">{erro}</div>}
       {planos === null && !erro && <EsqueletoTela cabecalho={false} cartoes={2} />}
 
+      <PromocaoLicenca />
       <ul className="space-y-3">
         {(planos || []).map((p) => {
           const preco = (p.precos || [])[0]
@@ -70,7 +72,7 @@ export default function Adquirir() {
               {preco && (meta.parcelas_cartao || meta.pix_centavos) && (
                 <div className="mt-2 bg-surface2 rounded-xl p-3 text-xs text-muted space-y-0.5">
                   {meta.parcelas_cartao > 1 && (
-                    <p>💳 Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao), preco.moeda)} sem juros para o clube</p>
+                    <p>💳 Até {meta.parcelas_cartao}x de aproximadamente {formatarPreco(Math.round(preco.valor_centavos / meta.parcelas_cartao), preco.moeda)} conforme condições do checkout</p>
                   )}
                   {meta.pix_centavos && (
                     <p>💰 {formatarPreco(meta.pix_centavos, preco.moeda)} no Pix</p>

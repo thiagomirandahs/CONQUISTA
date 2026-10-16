@@ -1,59 +1,47 @@
-# Licença anual — InfinitePay
+# Licença anual — InfinitePay e lançamento
 
-Pedido de 03/10/2026: R$ 220 no Pix à vista ou R$ 250 no cartão em até 12x sem juros para o clube.
-Parcelas aproximadas de R$ 20,83; o checkout distribui os centavos para fechar R$ 250.
-Somente a assinatura da plataforma está neste escopo. Mensalidades dos membros continuam como estão.
+## Condições aprovadas em 14/10/2026
 
-## O que foi implementado
+- Licença anual: R$ 250 no Pix e no cartão.
+- Primeira contratação paga dos primeiros 50 clubes: R$ 220 no Pix ou cartão, somente no primeiro ano.
+- Renovação: preço regular vigente (R$ 250 nesta versão). Não há cobrança automática recorrente no cartão.
+- A campanha começa na aplicação da migration 547. Contratações anteriores não consomem retroativamente as vagas; clubes com pagamento anterior não são elegíveis.
+- Contratos e pedidos antigos preservam seus valores congelados. Novos pedidos recebem os novos preços.
 
-- Migration 542 publica nova versão do plano anual copiando recursos e limites vigentes. Não altera contratos anteriores nem o fundador. Reexecutar não publica outra versão.
-- Migration 543 registra pedidos com preços congelados, um pedido pendente por assinatura, permissões limitadas ao titular/financeiro da conta e confirmação exclusiva de serviço.
-- Edge Function `licenca-infinitepay`: cria checkout, recebe webhook e confirma retorno consultando `payment_check` no provedor antes de ativar. Webhook não assinado não é prova de pagamento.
-- Confirmação exige R$ 220 no Pix ou R$ 250 no cartão, 1–12 parcelas conforme pedido. Divergências não ativam a licença e precisam de conciliação: não orientar o cliente a pagar de novo.
-- Renovação soma um ano ao período ativo; contratação começa na confirmação. Transação repetida não renova outra vez. Licença já ativa só pode renovar nos últimos 30 dias; assinatura cancelada exige atendimento.
-- Tela interna mostra anual/Pix/parcelas, sem aviso falso de rascunho quando o catálogo tem preço definitivo. Botão de pagamento só aparece quando a função está habilitada e autoriza a conta.
-- Pagamento ocorre no checkout externo, sem coletar cartão no DesbravaClube. Retorno é no domínio web; no Android, o usuário pode voltar ao app e tocar em atualizar situação.
+## Controle de vagas
 
-## Pendências reais antes de cobrar
+A RPC reserva uma das 50 vagas ao preparar o pagamento, em uma transação com lock da assinatura e da campanha. Cadastro não reserva vaga. A tabela tem uma vaga por clube, assinatura e pedido, e o número da vaga só pode ser 1–50. A confirmação validada pelo provedor preenche a vaga. Repetir pedido ou webhook não ocupa outra vaga nem acrescenta outro ano.
 
-1. Informar a InfiniteTag da conta que recebe pelo DesbravaClube (sem `$`). Não é senha nem chave bancária.
-2. Confirmar com a InfinitePay que o **Checkout Integrado por API** aplica desconto de 12% no Pix (250 → 220) e taxas assumidas até 12x. A API pública consultada documenta `handle`, `items`, `order_nsu`, `redirect_url`, `webhook_url`; não documenta campos para impor desconto por método ou assumir taxas. O artigo de desconto por método fala de Loja Online/Agendamentos. Não presumir que se estende ao checkout integrado.
-3. Homologar uma venda de baixo valor autorizada em cada método, verificando checkout, campos `paid_amount`, recebimento, webhook e ativação. Sem isso, **manter `INFINITEPAY_HABILITADO=false`**. O código está preparado, mas não comprova essas condições comerciais.
-4. Se o integrado não suportar o desconto, ajustar a estratégia com o dono (Pix separado ou outro provedor). Não gerar um checkout de R$ 220 que também aceite cartão enquanto se anuncia R$ 250 no cartão.
+**Limitação de conciliação:** o contrato atual de API não possui cancelamento/expiração homologados do link. Reservas não são automaticamente recicladas. Liberar uma vaga exige confirmar no provedor que o checkout antigo não pode receber pagamentos. Não apagar reservas manualmente enquanto os links estiverem pagáveis. Com todas as vagas reservadas, novas compras usam o preço regular; a vitrine distingue reservas de pagamentos confirmados. Implementar expiração automática depende de uma API homologada para revogar cobranças.
+
+A confirmação pública consulta `payment_check` na InfinitePay; não confia em `paid` enviado pelo navegador/webhook. Confere valor, método, parcelas e referência. Depois, ativa a licença por um ano. A tela consulta o estado a cada 8 segundos. O webhook ativa a licença mesmo que o cliente feche a página.
 
 ## Implantação
 
-Executar, em ordem, os arquivos SQL completos 542 e 543 no Supabase. Aplicar cada arquivo em uma transação no SQL Editor. O ledger deve confirmar ambos. Não depende da migration de comentários 541.
-
-Publicar a função com o helper `_compartilhado/chaves.ts` já usado pelo projeto e o novo `_compartilhado/infinitepay.ts`:
+1. Aplicar as migrations 542 e 543 se ainda não aplicadas; depois executar **20260930000547_licenca-250-promocao-50.sql** e em seguida **20260930000550_pagamento-liga-desliga.sql** (interruptor da cobrança), cada uma completa e em uma transação. A 546 de audiolivros é independente.
+2. Publicar a Edge Function atualizada com os helpers existentes:
 
 ```sh
 supabase functions deploy licenca-infinitepay --no-verify-jwt
-supabase secrets set INFINITEPAY_HANDLE=SUA_INFINITETAG INFINITEPAY_HABILITADO=false
+supabase secrets set INFINITEPAY_HANDLE=SUA_INFINITETAG
 ```
 
-`SUPABASE_URL` e chaves de serviço/pública seguem o mecanismo existente (`SB_SECRET_KEY`/`SB_PUBLISHABLE_KEY`, chaves injetadas ou fallback legacy). Nunca colocar chave de serviço no frontend.
-Após homologação e confirmação das condições comerciais, mudar somente `INFINITEPAY_HABILITADO=true`.
-Desligar essa variável suspende novos checkouts e notificações: durante incidente, conciliar pagamentos recebidos antes de reativar. Não apagar pedidos/faturas.
+3. Publicar o frontend. Sem a InfiniteTag, ou com o interruptor desligado, a função não oferece cobrança. **O interruptor fica em /admin › Assinaturas › "Cobrança online da licença"** e nasce DESLIGADO (o segredo antigo `INFINITEPAY_HABILITADO` não é mais lido).
+4. Desativar qualquer desconto por método na conta InfinitePay: total do Pix e cartão precisa ser exatamente o total congelado no pedido, R$ 220 ou R$ 250. Não há parâmetro inventado de desconto na API.
+5. Homologar Pix e cartão, webhook, retorno, valor total e parcelamento. Só então ligar a cobrança no botão do /admin (o servidor registra quem ligou e quando, na Auditoria). Taxas e parcelas precisam ser confirmadas com o provedor; as telas não prometem juros zero sem homologação.
 
-Webhook: `${SUPABASE_URL}/functions/v1/licenca-infinitepay?webhook=1`. A função configura isso em cada link.
-Quem volta do checkout pode confirmar pelo botão; não confiar nos parâmetros do retorno sem consultar o provedor.
-Casos de reembolso/chargeback exigem conciliação administrativa: a documentação de checkout consultada não publica um contrato de notificação para eles. Não há renovação automática anual de cartão nesta integração.
+Desligar a cobrança bloqueia só pagamentos NOVOS (inclusive a reserva de vaga do lançamento, também no banco): a confirmação de um pagamento que já aconteceu continua valendo.
 
-## Verificação
+A sessão de implementação não tem acesso ao banco de produção, à configuração InfinitePay ou aos segredos. Reembolso/chargeback e cancelamento de link exigem conciliação administrativa. Mensalidades de membros não são alteradas.
 
-Testes de app/validação: `npx vitest run src/lib/infinitepay.test.js src/components/PagamentoLicenca.test.jsx src/pages/Planos.test.jsx src/pages/Adquirir.test.jsx`.
-
-PostgreSQL WASM isolado, sem chaves ou produção:
+## Validação
 
 ```sh
 npm install --prefix /tmp/pagamento-qa @electric-sql/pglite
-PGLITE_MODULO=/tmp/pagamento-qa/node_modules/@electric-sql/pglite/dist/index.js node supabase/tests/e2e/licenca-infinitepay-isolada.mjs
+PGLITE_MODULO=/tmp/pagamento-qa/node_modules/@electric-sql/pglite/dist/index.js node supabase/tests/e2e/licenca-promocao-50-isolada.mjs
+npx vitest run src/components/PromocaoLicenca.test.jsx src/components/PagamentoLicenca.test.jsx
 ```
 
-Esse teste usa tabelas extraídas da fundação comercial e stubs de contexto/transição. Verifica migrations novas, preços, imutabilidade dos contratos antigos, grants, autorização, valores e idempotência. Não substitui replay completo do Supabase nem homologação financeira.
+O teste PostgreSQL WASM usa tabelas reais extraídas da fundação e stubs para contexto/manutenção/transição. Cobre 50 pagamentos, 51º clube, renovação, idempotência e permissões. Não substitui replay completo, testes concorrentes em PostgreSQL real nem homologação financeira.
 
-Referências oficiais consultadas em 03/10/2026:
-- https://www.infinitepay.io/checkout-documentacao
-- https://ajuda.infinitepay.io/pt-BR/articles/15503297-como-oferecer-desconto-por-metodo-de-pagamento
-- https://ajuda.infinitepay.io/pt-BR/articles/11731304-como-assumir-taxas-vendendo-com-o-link-de-pagamento
+Referências: https://www.infinitepay.io/checkout-documentacao

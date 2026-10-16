@@ -1,3 +1,4 @@
+import PromocaoLicenca from '../components/PromocaoLicenca.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link } from 'react-router-dom'
@@ -411,6 +412,7 @@ function Planos() {
   return (
     <Secao id="planos">
       <Titulo sobre="Planos" titulo="Uma licença, tudo incluso" texto="Uma licença anual para o seu clube — não é mensalidade." />
+      <div className="mx-auto max-w-xl"><PromocaoLicenca /></div>
       {planos === null && !erro && <p role="status" className="text-center text-muted">Carregando a oferta vigente…</p>}
       {(erro || (planos && planos.length === 0)) && (
         <div className="text-center">
@@ -424,7 +426,7 @@ function Planos() {
         </ul>
       )}
       <p className="mx-auto mt-6 max-w-xl text-center text-sm text-muted">
-        Você cria a sua conta e o seu clube normalmente, e combina o pagamento direto com a gente.
+        Crie sua conta e seu clube. O responsável financeiro encontra as opções de pagamento na área Plano do clube.
       </p>
     </Secao>
   )
@@ -453,7 +455,7 @@ function CartaoPlano({ plano }) {
           <div className="text-sm text-muted">{preco.ciclo === 'anual' ? 'por ano, no cartão' : 'por mês'}</div>
           {(meta.parcelas_cartao && meta.parcela_centavos) || meta.pix_centavos ? (
             <div className="mt-4 space-y-1 rounded-2xl bg-surface2 p-4 text-sm text-ink">
-              {meta.parcelas_cartao && meta.parcela_centavos && <p>Até {meta.parcelas_cartao}x de {formatarPreco(meta.parcela_centavos, preco.moeda)} sem juros para o clube</p>}
+              {meta.parcelas_cartao && meta.parcela_centavos && <p>Até {meta.parcelas_cartao}x de {formatarPreco(meta.parcela_centavos, preco.moeda)} conforme condições do checkout</p>}
               {meta.pix_centavos && <p>{formatarPreco(meta.pix_centavos, preco.moeda)} no Pix</p>}
             </div>
           ) : null}

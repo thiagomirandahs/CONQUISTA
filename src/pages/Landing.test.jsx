@@ -61,7 +61,7 @@ describe('Landing', () => {
     renderT()
     expect(await screen.findByRole('heading', { name: 'Licença Anual' })).toBeInTheDocument()
     expect(screen.getByText(/R\$\s?229,90/)).toBeInTheDocument()
-    expect(screen.getByText(/12x de R\$\s?19,16 sem juros/)).toBeInTheDocument()
+    expect(screen.getByText(/12x de R\$\s?19,16 conforme condições do checkout/)).toBeInTheDocument()
     expect(screen.getByText(/R\$\s?199,90 no Pix/)).toBeInTheDocument()
     const cta = screen.getAllByRole('link', { name: 'Começar agora' }).find((l) => l.getAttribute('href').startsWith('/criar-clube'))
     expect(cta).toHaveAttribute('href', '/criar-clube?plano=anual&ciclo=anual')

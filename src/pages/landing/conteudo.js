@@ -91,7 +91,7 @@ export const PERGUNTAS = Object.freeze([
   ['Como os membros entram no meu clube?', 'Você compartilha o link ou o QR Code do seu clube; quem acessa pede a entrada e você aprova.'],
   ['O que é a Rede DBV? É uma rede social aberta?', 'Não. É uma comunidade entre Clubes de Desbravadores, com moderação e proteção de menores. Está disponível para clubes habilitados e é liberada aos poucos, clube a clube.'],
   ['Existe acesso para a coordenação?', 'Sim. Coordenação distrital e regional tem um painel próprio, só com números agregados. Os dados privados de cada clube continuam sob a gestão do clube.'],
-  ['Como funciona a licença?', 'É uma licença anual para o seu clube, não uma mensalidade. Você vê os valores em Planos e, por enquanto, combina o pagamento direto com a gente.'],
+  ['Como funciona a licença?', 'É uma licença anual para o seu clube, não uma mensalidade. Você vê os valores e a oferta de lançamento em Planos. O responsável financeiro paga pela área Plano do clube quando o checkout estiver habilitado; a licença é liberada após a confirmação do pagamento.'],
 ])
 
 // Título e descrição da rota "/" (também usados por testes e pelo index.html estático, que repete o resumo)

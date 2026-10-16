@@ -60,10 +60,12 @@ select t.eq('anon não tem privilégio em NENHUMA tabela/view de public',
 -- Só ESCREVE em metricas_sessoes (tabela fechada): código aleatório da sessão, origem, dia, nº de páginas e
 -- "logado sim/não" — sem user_id, IP, clube ou caminho; limite por sessão e teto global; não devolve nada.
 -- Decisão de produto (dono, 05/10/2026).
-select t.eq('anon executa só as 9 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação, vitrine de clubes x2, parceiros, estado da manutenção, contador anônimo de uso)',
+-- licenca_promocao_situacao (migration 547): a vitrine/landing mostra quantas das 50 vagas de lançamento restam.
+-- Só devolve NÚMEROS agregados (limite, valor, confirmadas/reservadas/disponíveis); nenhum clube, pessoa ou pedido. Decisão do dono (16/10/2026).
+select t.eq('anon executa só as 10 RPCs públicas (verificar documento, planos, link do clube, convite de coordenação, vitrine de clubes x2, parceiros, estado da manutenção, contador anônimo de uso, vagas do lançamento)',
   t.txt($q$select string_agg(p.proname, ',' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
           where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')$q$),
-  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,manutencao_estado,metrica_registrar,parceiros_publico,planos_disponiveis,vitrine_clube_publico,vitrine_clubes_publico');
+  'convite_hierarquia_abrir,documento_verificar,entrada_abrir_publico,licenca_promocao_situacao,manutencao_estado,metrica_registrar,parceiros_publico,planos_disponiveis,vitrine_clube_publico,vitrine_clubes_publico');
 select t.eq('nenhuma função SECURITY DEFINER de public sem search_path fixo',
   t.n($q$select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prosecdef
           and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')$q$), 0);

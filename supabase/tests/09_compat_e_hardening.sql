@@ -56,11 +56,13 @@ reset role;
 -- Só ESCREVE em metricas_sessoes (tabela fechada): código aleatório da sessão, origem, dia, nº de páginas e
 -- "logado sim/não" — sem user_id, IP, clube ou caminho; limite por sessão e teto global; não devolve nada.
 -- Decisão de produto (dono, 05/10/2026).
+-- licenca_promocao_situacao (migration 547): a vitrine/landing mostra quantas das 50 vagas de lançamento restam.
+-- Só devolve NÚMEROS agregados (limite, valor, confirmadas/reservadas/disponíveis); nenhum clube, pessoa ou pedido. Decisão do dono (16/10/2026).
 select t.eq('nenhuma função do public é chamável por anon (exceto verificação de documento, catálogo de planos, a inscrição pelo link, a vitrine do site e o estado da manutenção)',
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
       and p.proname not in ('documento_verificar', 'planos_disponiveis', 'entrada_abrir_publico', 'convite_hierarquia_abrir',
-                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico', 'manutencao_estado', 'metrica_registrar')), 0);
+                            'vitrine_clubes_publico', 'vitrine_clube_publico', 'parceiros_publico', 'manutencao_estado', 'metrica_registrar', 'licenca_promocao_situacao')), 0);
 -- Até a fase 9 esta asserção dizia o CONTRÁRIO ("a policy do cadastro precisa"). A policy saiu na
 -- 8.6, quando o cadastro deixou de escolher unidade; o grant ficou, e o red-team da fase 9 o achou
 -- devolvendo o uuid do clube legado a quem nunca entrou. Quem chama a função hoje são 4 funções
