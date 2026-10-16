@@ -152,7 +152,8 @@ export default function LayoutRede() {
     return () => { vivo = false }
   }, [podeVer])
   const euNaRede = eu || (profile ? { id: profile.id, nome: profile.nome } : null)
-  useEffect(() => { window.scrollTo?.(0, 0) }, [pathname])
+  // o feed (/rede) cuida da própria rolagem (volta para onde estava); as outras telas abrem no topo
+  useEffect(() => { if (pathname !== '/rede') window.scrollTo?.(0, 0) }, [pathname])
 
   let conteudo
   if (erro) {

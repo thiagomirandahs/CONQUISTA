@@ -28,15 +28,30 @@ const marcarVisto = (gs, id) => (Array.isArray(gs) ? gs.map((g) => {
   return { ...g, stories, todos_vistos: g.meu || stories.every((s) => s.visto) }
 }) : gs)
 
+// Memória do feed ENTRE TELAS (abrir um perfil e voltar não recarrega nem perde a posição — auditoria 16/10/2026).
+// Só em memória desta sessão, por clube, vale 3 minutos; depois disso (ou trocou de clube) o feed carrega de novo.
+const memoriaDoFeed = { chave: null, filtro: 'meu_clube', itens: [], proximo: null, rolagem: 0, em: 0 }
+export function _esquecerMemoriaDoFeed() { memoriaDoFeed.chave = null }
+
 export default function RedeFeed() {
   const { profile } = useAuth()
   const clubeId = useUnidadeDaRede()   // clube em uso ou unidade de coordenação (490)
   // `eu` = o meu perfil GATEADO pela rede (500): personagem ou foto só com autorização; nunca profile.foto
   const { status, eu } = useRede()
-  const [filtro, setFiltro] = useState('meu_clube')
-  const [itens, setItens] = useState([])
-  const [proximo, setProximo] = useState(null)
-  const [carregando, setCarregando] = useState(true)
+  const [lembrado] = useState(() => (memoriaDoFeed.chave && memoriaDoFeed.chave === clubeId && Date.now() - memoriaDoFeed.em < 180000 ? { ...memoriaDoFeed } : null))
+  const [filtro, setFiltro] = useState(lembrado?.filtro || 'meu_clube')
+  const [itens, setItens] = useState(lembrado?.itens || [])
+  const [proximo, setProximo] = useState(lembrado?.proximo || null)
+  const [carregando, setCarregando] = useState(!lembrado)
+  const pularCarga = useRef(!!lembrado)
+  const atual = useRef({})
+  atual.current = { filtro, itens, proximo }
+  // volta para a mesma altura da rolagem; ao sair, guarda onde estava
+  useEffect(() => {
+    if (lembrado) requestAnimationFrame(() => window.scrollTo?.(0, lembrado.rolagem || 0))
+    else window.scrollTo?.(0, 0)
+    return () => { Object.assign(memoriaDoFeed, { chave: clubeId, ...atual.current, rolagem: window.scrollY || 0, em: Date.now() }) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [mais, setMais] = useState(false)
   const [erro, setErro] = useState(null)
   const [grupos, setGrupos] = useState(null)      // Meu Clube: null = ainda carregando (fileira-esqueleto)
@@ -57,7 +72,10 @@ export default function RedeFeed() {
     } catch (e) { setErro(e) }
     setCarregando(false)
   }, [])
-  useEffect(() => { carregar(filtro) }, [carregar, filtro, clubeId])
+  useEffect(() => {
+    if (pularCarga.current) { pularCarga.current = false; return }   // voltou de outra tela: usa o que já tinha
+    carregar(filtro)
+  }, [carregar, filtro, clubeId])
 
   const recarregarStories = useCallback(async () => {
     try { setGrupos((await carregarStories()) || []) } catch { setGrupos([]) }

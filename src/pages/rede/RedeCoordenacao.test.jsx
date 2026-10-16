@@ -26,7 +26,7 @@ vi.mock('../../context/Clube.jsx', () => ({ useClube: () => ({ clubeId: null, pa
 vi.mock('../../components/Notificacoes.jsx', () => ({ default: () => null }))
 
 const { post, renderRede, STATUS } = await import('./_testeRede.jsx')
-const { default: RedeFeed } = await import('./RedeFeed.jsx')
+const { default: RedeFeed, _esquecerMemoriaDoFeed } = await import('./RedeFeed.jsx')
 const { default: LayoutRede } = await import('./LayoutRede.jsx')
 const modo = await import('../../lib/redeModo.js')
 
@@ -37,6 +37,7 @@ const postCoord = (extra = {}) => post({
 })
 
 beforeEach(() => {
+  _esquecerMemoriaDoFeed()
   for (const fn of Object.values(f)) fn.mockReset()
   transporte.mockClear()
   try { sessionStorage.clear() } catch { /* sem storage */ }

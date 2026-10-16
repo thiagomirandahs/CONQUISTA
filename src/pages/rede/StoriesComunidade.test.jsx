@@ -28,7 +28,7 @@ vi.mock('../../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'eu'
 vi.mock('../../context/Clube.jsx', () => ({ useClube: () => ({ clubeId: 'clube-a', papel: 'desbravador' }) }))
 
 const { renderRede, STATUS } = await import('./_testeRede.jsx')
-const { default: RedeFeed } = await import('./RedeFeed.jsx')
+const { default: RedeFeed, _esquecerMemoriaDoFeed } = await import('./RedeFeed.jsx')
 const { FileiraStories, ViewerStories, NovoStory } = await import('./Stories.jsx')
 const { CONFIRMAR_STORY, CONFIRMAR_STORY_COMUNIDADE, confirmacaoDeStory, QUEM_VE_STORY } = await import('../../services/rede.js')
 
@@ -50,6 +50,7 @@ const porAlcance = (alcance) => (alcance === 'comunidade' ? DA_COMUNIDADE : DO_C
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve() }) }
 
 beforeEach(() => {
+  _esquecerMemoriaDoFeed()
   for (const fn of Object.values(f)) fn.mockReset()
   for (const fn of Object.values(avisos)) fn.mockClear()
   avisos.confirmar.mockImplementation(async () => true)

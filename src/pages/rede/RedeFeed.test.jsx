@@ -21,9 +21,10 @@ vi.mock('../../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'eu'
 vi.mock('../../context/Clube.jsx', () => ({ useClube: () => ({ clubeId: 'clube-a', papel: 'desbravador' }) }))
 
 const { post, renderRede, STATUS } = await import('./_testeRede.jsx')
-const { default: RedeFeed } = await import('./RedeFeed.jsx')
+const { default: RedeFeed, _esquecerMemoriaDoFeed } = await import('./RedeFeed.jsx')
 
 beforeEach(() => {
+  _esquecerMemoriaDoFeed()
   for (const fn of Object.values(f)) fn.mockReset()
   for (const fn of Object.values(avisos)) fn.mockClear()
   f.carregarFeed.mockResolvedValue({ itens: [post()], proximo: null })
@@ -344,5 +345,17 @@ describe('Rede DBV — fileira de stories', () => {
     await u.click(await screen.findByRole('button', { name: 'Story de Ana Souza' }))
     expect(await screen.findByTestId('viewer-story')).toBeInTheDocument()
     expect(f.marcarStoryVisto).toHaveBeenCalledWith('s1')
+  })
+})
+
+describe('Rede DBV — voltar ao feed', () => {
+  it('abrir outra tela e voltar NÃO recarrega o feed (usa o que já tinha) e mantém os posts', async () => {
+    const primeira = renderRede(<RedeFeed />)
+    expect(await screen.findByText('Acampamento incrível!')).toBeInTheDocument()
+    expect(f.carregarFeed).toHaveBeenCalledTimes(1)
+    primeira.unmount()                              // foi para um perfil
+    renderRede(<RedeFeed />)                        // voltou
+    expect(screen.getByText('Acampamento incrível!')).toBeInTheDocument()
+    expect(f.carregarFeed).toHaveBeenCalledTimes(1)
   })
 })
