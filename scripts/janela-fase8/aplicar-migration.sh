@@ -14,10 +14,10 @@
 set -uo pipefail
 export MSYS_NO_PATHCONV=1
 N="${1:-}"
-ORDEM=(514 516 515 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 544 545 548 549 546 547 550)
+ORDEM=(514 516 515 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 544 545 548 549 543 546 547 550)
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && (pwd -W 2>/dev/null || pwd))"
 LOGS="$HOME/.desbravaclube-backups/janela-fase8"; mkdir -p "$LOGS"
-[ -n "$N" ] || { echo "uso: aplicar-migration.sh <514|516|515|...|532|533|534|535|536|537|538|539|540|544|545|548|549|546|547|550>"; exit 2; }
+[ -n "$N" ] || { echo "uso: aplicar-migration.sh <514|516|515|...|532|533|534|535|536|537|538|539|540|544|545|548|549|543|546|547|550>"; exit 2; }
 POS=-1; for i in "${!ORDEM[@]}"; do [ "${ORDEM[$i]}" = "$N" ] && POS=$i; done
 [ $POS -ge 0 ] || { echo "migration $N não faz parte da janela (ordem: ${ORDEM[*]})"; exit 2; }
 ARQ="$(ls "$ROOT"/supabase/migrations/20260930000${N}_*.sql 2>/dev/null | head -1)"
