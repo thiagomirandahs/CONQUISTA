@@ -32,7 +32,8 @@ Deno.serve(async req => {
     const servico = createClient(urlProjeto(), chaveServico().valor)
     // Desligado = nenhum pagamento NOVO (situação/criar). Confirmar um pagamento que já aconteceu (webhook e retorno do
     // checkout) segue valendo: ele consulta o provedor e só ativa pedido realmente pago. Falha ao ler o interruptor = desligado.
-    const confirmacao = webhook || body.acao === 'confirmar'
+    // A venda de TESTE do admin (migration 551) também passa com a cobrança desligada: é assim que se homologa antes de ligar.
+    const confirmacao = webhook || body.acao === 'confirmar' || body.acao === 'teste_criar'
     if (!confirmacao) {
       const { data: ativo, error: erroAtivo } = await servico.rpc('pagamento_licenca_ativo')
       if (erroAtivo || ativo !== true) return responder({ habilitado: false })
@@ -49,6 +50,19 @@ Deno.serve(async req => {
         const { data: ctx, error: e } = await usuario.rpc('licenca_checkout_contexto')
         if (e) return responder({ erro: 'Não foi possível consultar a licença.' }, 400)
         return responder({ habilitado: true, ...ctx })
+      }
+      if (body.acao === 'teste_criar') {
+        // Só o admin da plataforma (a RPC confere). Valor fixo de R$ 1,00; não é licença e não ativa nada.
+        const { data: v, error: e } = await usuario.rpc('admin_licenca_teste_criar', { p_club_id: body.club_id, p_valor_centavos: 100 })
+        if (e) return responder({ erro: e.message }, 403)
+        const d = await chamarInfinitePay('/links', { handle, order_nsu: v.id,
+          items: [{ quantity: 1, price: v.valor_centavos, description: 'Teste DesbravaClube (não é licença)' }],
+          redirect_url: 'https://app.desbravaclube.com.br/admin?aba=assinaturas',
+          webhook_url: `${urlProjeto()}/functions/v1/licenca-infinitepay?webhook=1` })
+        const url = checkoutSeguro(d.url)
+        const { error: gravar } = await servico.from('licenca_vendas_teste').update({ onde_pagar: url }).eq('id', v.id).eq('status', 'pendente')
+        if (gravar) throw new Error('Não foi possível salvar o link de teste.')
+        return responder({ teste: true, id: v.id, valor_centavos: v.valor_centavos, url })
       }
       if (body.acao === 'criar') {
         const { data: o, error: e } = await usuario.rpc('licenca_checkout_criar')
@@ -72,6 +86,21 @@ Deno.serve(async req => {
     const slug = body.invoice_slug || body.slug
     if (!UUID.test(id || '') || typeof transacao !== 'string' || transacao.length < 1 || transacao.length > 120
       || typeof slug !== 'string' || !/^[a-zA-Z0-9_-]{1,200}$/.test(slug)) return responder({ erro: 'Referência inválida.' }, 400)
+    // Venda de TESTE: mesma consulta ao provedor e mesmo valor exato, mas confirma na tabela de testes (não ativa licença).
+    const { data: teste } = await servico.from('licenca_vendas_teste').select('id, status, transaction_nsu, valor_centavos').eq('id', id).maybeSingle()
+    if (teste) {
+      if (usuario) {
+        const { data: admin } = await usuario.rpc('eh_admin_plataforma')
+        if (admin !== true) return responder({ erro: 'Pedido indisponível para esta conta.' }, 403)
+      }
+      if (teste.status === 'pago' && teste.transaction_nsu === transacao) return responder({ ok: true, teste: true, duplicado: true })
+      const confirmadoTeste = await chamarInfinitePay('/payment_check', { handle, order_nsu: id, transaction_nsu: transacao, slug })
+      const pt = validarPagamento(confirmadoTeste, { cartao_centavos: teste.valor_centavos, pix_centavos: teste.valor_centavos, parcelas: 1 })
+      const { data: r, error: falhaTeste } = await servico.rpc('licenca_teste_confirmar', {
+        p_id: id, p_transacao: transacao, p_metodo: pt.metodo, p_valor: pt.valor, p_parcelas: pt.parcelas })
+      if (falhaTeste) return responder({ erro: 'Teste recebido com divergência: confira na InfinitePay.' }, 400)
+      return responder(r)
+    }
     if (usuario) {
       const { error } = await usuario.rpc('licenca_pedido_consultar', { p_pedido: id })
       if (error) return responder({ erro: 'Pedido indisponível para esta conta.' }, 403)

@@ -3,6 +3,7 @@ import { lerCobranca, definirCobranca } from '../../services/pagamento.js'
 import { Card, Botao } from '../../ui/index.jsx'
 import { avisar } from '../../ui/avisos.jsx'
 import { Chip, Nota, LinkAcao, dataHoraBR } from './AdminUI.jsx'
+import VendaDeTeste from './VendaDeTeste.jsx'
 
 // /admin › Assinaturas: interruptor da COBRANÇA da licença (InfinitePay). Nasce DESLIGADO. Desligada, ninguém consegue
 // iniciar um pagamento novo (nem reservar vaga do lançamento); um pagamento que já aconteceu continua sendo confirmado.
@@ -54,6 +55,7 @@ export default function CobrancaOnline() {
       {estado.ativo
         ? <Botao className="w-full" variacao="perigo" carregando={ocupado} desabilitado={ocupado} aoTocar={() => mudar(false)} data-testid="cobranca-desligar">Desligar cobrança</Botao>
         : <Botao className="w-full" carregando={ocupado} desabilitado={ocupado} aoTocar={() => mudar(true)} data-testid="cobranca-ligar">Ligar cobrança</Botao>}
+      <VendaDeTeste />
     </Card>
   )
 }

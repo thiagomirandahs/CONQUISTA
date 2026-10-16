@@ -8,6 +8,7 @@ const confirmar = vi.fn()
 const sucesso = vi.fn()
 vi.mock('../../services/pagamento.js', () => ({ lerCobranca: (...a) => ler(...a), definirCobranca: (...a) => definir(...a) }))
 vi.mock('../../ui/avisos.jsx', () => ({ avisar: { confirmar: (...a) => confirmar(...a), sucesso: (...a) => sucesso(...a), erro: vi.fn(), info: vi.fn() } }))
+vi.mock('./VendaDeTeste.jsx', () => ({ default: () => null }))
 const { default: CobrancaOnline } = await import('./CobrancaOnline.jsx')
 
 beforeEach(() => { vi.clearAllMocks(); confirmar.mockResolvedValue(true) })

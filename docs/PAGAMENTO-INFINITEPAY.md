@@ -28,7 +28,8 @@ supabase secrets set INFINITEPAY_HANDLE=SUA_INFINITETAG
 
 3. Publicar o frontend. Sem a InfiniteTag, ou com o interruptor desligado, a função não oferece cobrança. **O interruptor fica em /admin › Assinaturas › "Cobrança online da licença"** e nasce DESLIGADO (o segredo antigo `INFINITEPAY_HABILITADO` não é mais lido).
 4. Desativar qualquer desconto por método na conta InfinitePay: total do Pix e cartão precisa ser exatamente o total congelado no pedido, R$ 220 ou R$ 250. Não há parâmetro inventado de desconto na API.
-5. Homologar Pix e cartão, webhook, retorno, valor total e parcelamento. Só então ligar a cobrança no botão do /admin (o servidor registra quem ligou e quando, na Auditoria). Taxas e parcelas precisam ser confirmadas com o provedor; as telas não prometem juros zero sem homologação.
+5. **Venda de teste (migration 551):** em /admin › Assinaturas › Cobrança online, escolha um clube e gere um link de **R$ 1,00**. Ele percorre o caminho real (checkout, webhook, `payment_check`, valor exato), funciona com a cobrança desligada e, pago, **não ativa licença nem cria fatura** (fica na tabela `licenca_vendas_teste`). Voltando do checkout, o botão "Confirmar o pagamento de teste" confere na hora.
+6. Homologar Pix e cartão, webhook, retorno, valor total e parcelamento. Só então ligar a cobrança no botão do /admin (o servidor registra quem ligou e quando, na Auditoria). Taxas e parcelas precisam ser confirmadas com o provedor; as telas não prometem juros zero sem homologação.
 
 Desligar a cobrança bloqueia só pagamentos NOVOS (inclusive a reserva de vaga do lançamento, também no banco): a confirmação de um pagamento que já aconteceu continua valendo.
 
