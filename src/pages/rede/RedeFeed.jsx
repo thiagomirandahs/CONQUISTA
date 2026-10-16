@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../context/Auth.jsx'
-import { carregarFeed, carregarStories } from '../../services/rede.js'
+import { carregarFeed, carregarStories, usarAdiantado } from '../../services/rede.js'
 import { avisar } from '../../ui/avisos.jsx'
 import { Folha } from '../../ui/index.jsx'
 import { useRede, useUnidadeDaRede } from './contexto.js'
@@ -64,21 +64,26 @@ export default function RedeFeed() {
   const inputSelfie = useRef(null)
   const inputGaleria = useRef(null)
 
-  const carregar = useCallback(async (f) => {
+  const carregar = useCallback(async (f, chave) => {
     setCarregando(true); setErro(null)
     try {
-      const r = await carregarFeed(f)
+      const pre = f === 'meu_clube' ? usarAdiantado(chave, 'feed') : null    // já pedido em paralelo pelo LayoutRede
+      const r = (pre && (await pre)) || (await carregarFeed(f))
       setItens(r?.itens || []); setProximo(r?.proximo || null)
     } catch (e) { setErro(e) }
     setCarregando(false)
   }, [])
   useEffect(() => {
     if (pularCarga.current) { pularCarga.current = false; return }   // voltou de outra tela: usa o que já tinha
-    carregar(filtro)
+    carregar(filtro, clubeId)
   }, [carregar, filtro, clubeId])
 
   const recarregarStories = useCallback(async () => {
-    try { setGrupos((await carregarStories()) || []) } catch { setGrupos([]) }
+    try {
+      const pre = usarAdiantado(clubeId, 'stories')
+      const r = pre ? await pre : undefined
+      setGrupos((r !== undefined ? r : await carregarStories()) || [])
+    } catch { setGrupos([]) }
   }, [])
   useEffect(() => { recarregarStories() }, [recarregarStories, clubeId])
 

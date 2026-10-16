@@ -35,6 +35,20 @@ export const FILTROS_FEED = Object.freeze(['meu_clube', 'comunidade'])
 export const carregarFeed = (filtro = 'meu_clube', cursor = null, limite = 10) =>
   rpc('rede_feed', { p_filtro: filtro, p_antes: cursor?.antes ?? null, p_antes_id: cursor?.antes_id ?? null, p_limite: limite })
 
+// Feed e stories pedidos JUNTO com o status da rede (em paralelo, não depois): no 4G fraco poupa uma ida e volta inteira
+// antes do 1º post. O servidor continua decidindo o acesso; se falhar ou passar de 15 s, a tela pede de novo como sempre.
+let adiantado = null
+export function adiantarFeed(chave) {
+  if (!chave) return
+  adiantado = { chave, em: Date.now(), feed: carregarFeed('meu_clube').catch(() => undefined), stories: carregarStories().catch(() => undefined) }
+}
+export function usarAdiantado(chave, qual) {
+  if (!adiantado || adiantado.chave !== chave || Date.now() - adiantado.em > 15000) return null
+  const p = adiantado[qual]
+  adiantado[qual] = null
+  return p || null
+}
+
 export const salvar = (postId, salvarOuNao = true) => rpc('rede_salvar', { p_post: postId, p_salvar: salvarOuNao })
 export const carregarDesafios = () => rpc('rede_desafios')
 export const carregarPerfil = (usuarioId = null) => rpc('rede_perfil', { p_usuario: usuarioId })

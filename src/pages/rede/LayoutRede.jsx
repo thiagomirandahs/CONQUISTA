@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/Auth.jsx'
-import { meuStatus, carregarPerfil } from '../../services/rede.js'
+import { meuStatus, carregarPerfil, adiantarFeed } from '../../services/rede.js'
+import { useClube } from '../../context/Clube.jsx'
 import { MARCA_PRODUTO } from '../../lib/marca.js'
 import Notificacoes from '../../components/Notificacoes.jsx'
 import BotaoAjuda from '../../components/BotaoAjuda.jsx'
@@ -139,6 +140,9 @@ export default function LayoutRede() {
     setErro(null)
     try { setStatus(await meuStatus()) } catch (e) { setErro(e) }
   }, [])
+  // feed e stories saem JUNTO com o status (em paralelo): menos espera no 4G antes do 1º post
+  const { clubeId: clubeDaAba } = useClube()
+  useEffect(() => { if (!redeComoCoordenacao()) adiantarFeed(clubeDaAba) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { recarregar() }, [recarregar])
 
   // O MEU perfil da rede, gateado pelo servidor (500): comunidade_meu_status não traz foto/avatar, então
