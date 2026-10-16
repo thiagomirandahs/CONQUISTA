@@ -145,7 +145,8 @@ select t.throws('3) observação nula', t.reg('membro_a', 'pesquisador', '2020-0
 select t.throws('3) observação curta (4 letras)', t.reg('membro_a', 'pesquisador', '2020-01-01', false, 'abcd'), 'pelo menos 5');
 select t.throws('3) observação só com espaços', t.reg('membro_a', 'pesquisador', '2020-01-01', false, '      '), 'pelo menos 5');
 select t.throws('3) observação > 500', t.reg('membro_a', 'pesquisador', '2020-01-01', false, repeat('x', 501)), 'no máximo 500');
-select t.permitido('3) observação de exatamente 500 passa (Pesquisador de membro_a)', t.reg('membro_a', 'pesquisador', current_date::text, false, repeat('x', 500)));
+-- "Hoje" é o de BRASÍLIA (a função recusa data no futuro nesse fuso): current_date é UTC e, das 21h à meia-noite aqui, já é amanhã — o CI falhava nesse horário.
+select t.permitido('3) observação de exatamente 500 passa (Pesquisador de membro_a)', t.reg('membro_a', 'pesquisador', (now() at time zone 'America/Sao_Paulo')::date::text, false, repeat('x', 500)));
 reset role;
 select t.eq('3) hoje é uma data válida; ficou 1 registro a mais', t.nach(), 3);
 -- data desconhecida: nunca vira data
