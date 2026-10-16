@@ -22,16 +22,16 @@ select t.eq('O Fim do Começo: primeiro vídeo é o do capítulo 1',
 select t.eq('Um Simples Lanche termina no Epílogo',
   (select c.titulo from public.audiolivro_capitulos c join public.audiolivros a on a.id = c.audiolivro_id where a.titulo = 'Um Simples Lanche' order by c.ordem desc limit 1), 'Epílogo');
 
--- D9: sem fonte confirmada, sem áudio (nada apagado: só ativo=false)
-select t.eq('Galápagos e O Fim do Começo estão desligados e guardados', (select count(*) from public.audiolivros where titulo in ('Expedição Galápagos','O Fim do Começo') and not ativo), 2);
+-- D9 (516) desligou Galápagos e O Fim do Começo por falta de fonte; a 546 os REATIVOU em 11/10/2026, quando o dono confirmou os links (playlists registradas).
+select t.eq('Galápagos e O Fim do Começo estão ATIVOS de novo (546, link confirmado pelo dono)', (select count(*) from public.audiolivros where titulo in ('Expedição Galápagos','O Fim do Começo') and ativo and playlist_id is not null), 2);
 -- 517: Desejado e Maior Discurso também saem (sem registro verificável de origem); nada é apagado
 select t.eq('O Desejado e O Maior Discurso estão desligados e guardados (517)', (select count(*) from public.audiolivros where titulo in ('O Desejado de Todas as Nações','O Maior Discurso de Cristo') and not ativo), 2);
 select t.eq('...com os capítulos e o playlist_id preservados', (select count(*) from public.audiolivro_capitulos c join public.audiolivros a on a.id = c.audiolivro_id where a.titulo in ('O Desejado de Todas as Nações','O Maior Discurso de Cristo')) > 0, true);
-select t.eq('...e só os 4 livros com canal e playlist registrados seguem ativos', (select count(*) from public.audiolivros where ativo and playlist_id is not null and canal is not null), 4);
+select t.eq('...e os 6 livros com canal e playlist registrados estão ativos (os 4 de sempre + Galápagos e O Fim do Começo)', (select count(*) from public.audiolivros where ativo and playlist_id is not null and canal is not null), 6);
 
 -- ---------- leitura ----------
 select t.como('membro_a');
-select t.eq('desbravador lê os 4 livros com fonte registrada (Galápagos e O Fim do Começo desligados pela 516, D9; Desejado e Maior Discurso pela 517)', json_array_length(public.audiolivros_listar())::bigint, 4);
+select t.eq('desbravador lê os 6 livros com fonte registrada (Desejado e Maior Discurso seguem desligados pela 517)', json_array_length(public.audiolivros_listar())::bigint, 6);
 select t.eq('desbravador não lê a tabela direto', t.nv('select count(*) from public.audiolivros'), 0);
 select t.throws('desbravador não usa a lista do admin', 'select public.admin_audiolivros_listar()');
 select t.como_anon();
@@ -55,7 +55,7 @@ select t.eq('vídeo trocado', (select video_id from public.audiolivro_capitulos 
 select t.eq('troca ficou na auditoria', (select count(*) from public.platform_admin_audit where acao = 'audiolivro_capitulo_trocar'), 1);
 
 select t.como('membro_a');
-select t.eq('livro desativado some para o desbravador', json_array_length(public.audiolivros_listar())::bigint, 3);
+select t.eq('livro desativado some para o desbravador', json_array_length(public.audiolivros_listar())::bigint, 5);
 reset role;
 
 select t.fim();
