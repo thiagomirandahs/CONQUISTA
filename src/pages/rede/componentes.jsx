@@ -502,7 +502,7 @@ export const CartaoPost = memo(function CartaoPost({ post, status, clubeId, aoAt
         <Cabeca autor={post.autor} criadoEm={post.criado_em} />
         <div className="flex items-center shrink-0">
           {post.status === 'em_analise' && <span className="text-xs font-semibold text-[var(--rede-alerta)] bg-[var(--rede-alerta-suave)] rounded-full px-2 py-0.5 mr-1">Em análise</span>}
-          {noAr && podePublicar && <BotaoIcone rotulo="Compartilhar na rede" onClick={repostar}><Icone nome="enviar" className="w-[22px] h-[22px]" /></BotaoIcone>}
+          {noAr && podePublicar && <BotaoIcone rotulo="Compartilhar na rede" onClick={repostar}><Icone nome="repetir" className="w-[22px] h-[22px]" /></BotaoIcone>}
           <BotaoIcone rotulo="Mais opções" onClick={() => setMenuAberto(true)}><Icone nome="pontos" className="w-5 h-5" /></BotaoIcone>
         </div>
       </header>

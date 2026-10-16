@@ -144,9 +144,9 @@ export default function RedeFeed() {
       ))}
       <Folha tom="rede" aberta={escolhaStory !== null} aoFechar={() => setEscolhaStory(null)} titulo="Novo story">
         <div className="space-y-2" data-testid="escolha-story">
-          <button type="button" onClick={() => inputCamera.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>📷 Tirar foto agora</button>
-          <button type="button" onClick={() => inputSelfie.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>🤳 Tirar selfie</button>
-          <button type="button" onClick={() => inputGaleria.current?.click()} className={`${PILL_CLARA} w-full justify-center`}>🖼️ Escolher da galeria</button>
+          <button type="button" onClick={() => inputCamera.current?.click()} className={`${PILL_CLARA} w-full justify-center`}><Icone nome="camera" className="w-5 h-5" /> Tirar foto agora</button>
+          <button type="button" onClick={() => inputSelfie.current?.click()} className={`${PILL_CLARA} w-full justify-center`}><Icone nome="pessoa" className="w-5 h-5" /> Tirar selfie</button>
+          <button type="button" onClick={() => inputGaleria.current?.click()} className={`${PILL_CLARA} w-full justify-center`}><Icone nome="grade" className="w-5 h-5" /> Escolher da galeria</button>
           <p className="text-xs text-muted leading-snug">Na primeira vez, o celular pede a permissão para usar a câmera. A localização da foto é removida antes de publicar.</p>
         </div>
       </Folha>

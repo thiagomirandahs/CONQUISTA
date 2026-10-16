@@ -181,7 +181,7 @@ export default function RedePublicar() {
         <div className="mx-3 mb-1 mt-3">
           <button type="button" aria-pressed={tipo === 'conquista'} onClick={() => setTipo(tipo === 'conquista' ? 'atividade' : 'conquista')}
             className={`${PILL} w-full ${tipo === 'conquista' ? 'bg-[var(--rede-destaque-suave)] text-[var(--rede-destaque-texto)] ring-2 ring-[var(--rede-destaque)]' : `bg-[var(--rede-superficie)] ${TXT}`}`}>
-            <span aria-hidden="true">🎖️</span> Compartilhar conquista
+            <Icone nome="trofeu" className="w-5 h-5" /> Compartilhar conquista
           </button>
         </div>
       )}

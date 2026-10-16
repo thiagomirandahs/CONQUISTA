@@ -128,7 +128,7 @@ describe('Rede DBV — desafios', () => {
     expect(screen.getByText('+50 pontos')).toBeInTheDocument()
     expect(screen.getByText('faltam 4 dias')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Participar' })).toHaveAttribute('href', '/rede/publicar?desafio=d1')
-    expect(screen.getByText('Você participou ✅')).toBeInTheDocument()
+    expect(screen.getByText('Você participou')).toBeInTheDocument()
   })
 
   it('responsável vê, mas sem botão de participar', async () => {

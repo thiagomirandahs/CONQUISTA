@@ -12,7 +12,7 @@ import { CARD, Icone, PILL, PILL_CLARA, PILL_PRIMARIA, TXT, TXT_SUAVE, VazioRede
 const dias = (n) => (n === 0 ? 'último dia' : n === 1 ? 'falta 1 dia' : `faltam ${n} dias`)
 
 function Participar({ d, podePublicar, destaque }) {
-  if (d.participei) return <span className={`${PILL} bg-[var(--rede-sucesso-suave)] text-[var(--rede-sucesso)]`}>Você participou ✅</span>
+  if (d.participei) return <span className={`${PILL} bg-[var(--rede-sucesso-suave)] text-[var(--rede-sucesso)]`}>Você participou</span>
   if (!podePublicar) return null
   return (
     <Link to={`/rede/publicar?desafio=${d.id}`} className={destaque ? PILL_PRIMARIA : PILL_CLARA}>Participar</Link>
