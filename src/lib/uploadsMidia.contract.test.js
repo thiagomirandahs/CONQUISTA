@@ -19,8 +19,8 @@ const com = (re) => arquivos.filter((p) => re.test(readFileSync(p, 'utf8'))).map
 
 // onde VÍDEO entra (cliente): um único ponto
 const PONTOS_DE_VIDEO = {
-  'pages/Atividades.jsx': 'comprovação de atividade: accept image/*,video/* + subirComprovacao({ permitirVideo: true }); vídeo sobe ORIGINAL (máx. 60 MB) para comprovacoes/atividades — SEM saneamento (pendente)',
-  'lib/upload.js': 'define validarMidia/permitirVideo (assinatura mágica; máx. 60 MB) — não é uma tela',
+  'pages/Atividades.jsx': 'comprovação de atividade: accept image/*,video/* + subirComprovacao({ permitirVideo: true }); vídeo sobe ORIGINAL (máx. 20 MB desde 16/10/2026, decisão do dono; bucket também limita — migration 553) para comprovacoes/atividades — SEM saneamento (pendente)',
+  'lib/upload.js': 'define validarMidia/permitirVideo (assinatura mágica; vídeo máx. 20 MB) — não é uma tela',
 }
 // onde HEIC é mencionado (detecção/validação), nunca para subir sem redesenho
 const PONTOS_DE_HEIC = {
@@ -48,7 +48,7 @@ describe('mídia: vídeo e HEIC só entram pelos pontos declarados', () => {
   it('subirComprovacao: o vídeo é o ÚNICO caminho que sobe o arquivo ORIGINAL (imagem sempre passa por comprimirImagem semMetadados)', () => {
     const s = readFileSync(join(RAIZ, 'lib/upload.js'), 'utf8')
     expect(s).toMatch(/let pronta = file[\s\S]*?if \(t\.midia === 'imagem'\) \{[\s\S]*?comprimirImagem\(file, \{ semMetadados: true \}\)/)
-    expect(s).toMatch(/maxVideoMB = 60/)
+    expect(s).toMatch(/maxVideoMB = 20/)
   })
   it('HEIC só é mencionado nos arquivos declarados', () => {
     const usam = com(/heic|heif/i)

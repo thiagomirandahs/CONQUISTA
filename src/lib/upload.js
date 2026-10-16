@@ -51,7 +51,8 @@ export async function validarImagem(file, { maxMB = 15 } = {}) {
   return t // { midia: 'imagem', ext }
 }
 
-export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 60 } = {}) {
+// Vídeo de comprovação até 20 MB (migration 553: o bucket também recusa acima disso) — economiza espaço e o 4G de quem avalia.
+export async function validarMidia(file, { maxImagemMB = 15, maxVideoMB = 20 } = {}) {
   if (!file) throw new Error('Escolha um arquivo primeiro. 🙂')
   const t = tipoReal(await lerCabecalho(file))
   if (!t) throw new Error('Esse arquivo não é uma foto ou vídeo válido.')

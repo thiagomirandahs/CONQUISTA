@@ -84,7 +84,7 @@ export default function Atividades() {
         : vazio,
       ehAdmin
         ? supabase.from('entregas')
-            .select('id, atividade_id, usuario_id, status, texto, foto_url, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
+            .select('id, atividade_id, usuario_id, status, texto, foto_url, foto_apagada_em, created_at, atividade:atividades(titulo,pontos), autor:profiles!usuario_id(nome)')
             .order('created_at', { ascending: false }).limit(200)
         : vazio,
       // Quem PODE entregar: desbravador/conselheiro com vínculo ativo NESTE clube (não o espelho
@@ -474,6 +474,11 @@ function EntregasView({ entregas, onExcluir }) {
                 classVideo="w-full max-h-56 rounded-lg bg-black"
                 classImg="w-full max-h-48 object-cover rounded-lg" />
             </div>
+          )}
+          {!e.foto_url && e.foto_apagada_em && (
+            <p className="mt-2 text-xs text-faint" data-testid="comprovacao-apagada">
+              Comprovação apagada 7 dias depois da avaliação, para economizar espaço. O registro e os pontos continuam.
+            </p>
           )}
           <button onClick={() => onExcluir(e)}
             className="mt-3 w-full rounded-lg bg-red-50 text-red-600 hover:bg-red-100 min-h-[44px] py-2 text-sm font-semibold">
