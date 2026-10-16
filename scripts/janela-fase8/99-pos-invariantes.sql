@@ -19,7 +19,7 @@ with l as (select version from supabase_migrations.schema_migrations)
 select case when ok then 'OK   ' || item else 'FALHOU ' || item end from (
   select '514 leitura_materiais/minha_jornada' as item, to_regclass('public.leitura_materiais') is not null and to_regprocedure('public.minha_jornada()') is not null as ok, '20260930000514' as v
   union all select '515 comunidade_posts.alcance + plataforma_acesso_log', exists (select 1 from information_schema.columns where table_name = 'comunidade_posts' and column_name = 'alcance') and to_regclass('public.plataforma_acesso_log') is not null, '20260930000515'
-  union all select '516 audiolivros sem fonte desligados', not exists (select 1 from public.audiolivros where titulo in ('Expedição Galápagos', 'O Fim do Começo') and ativo), '20260930000516'
+  union all select '516 audiolivros: nenhum ativo sem fonte (playlist). Os dois que a 516 desligou foram reativados pelo dono em 11/10/2026, com link confirmado', not exists (select 1 from public.audiolivros where ativo and coalesce(playlist_id, '') = ''), '20260930000516'
   union all select '517 rede_conquistas_publicaveis', to_regprocedure('public.rede_conquistas_publicaveis(text)') is not null, '20260930000517'
   union all select '518 classes_disponiveis com bloqueio/anterior (função existe)', to_regprocedure('public._classe_eh_anterior(uuid,uuid)') is not null, '20260930000518'
   union all select '519 classes_concluidas_anteriormente', to_regprocedure('public.classes_concluidas_anteriormente()') is not null, '20260930000519'
