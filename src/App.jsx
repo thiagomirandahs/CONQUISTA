@@ -13,6 +13,7 @@ import { modoDoHost, rotaDoSite, rotaSoDoSite, urlDoApp, urlDoSite } from './lib
 import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
+import AdminNovo from './pages/AdminNovo.jsx'
 import { TelaDeAbertura } from './ui/carregamento.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
@@ -77,7 +78,6 @@ const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx')
 const PainelCoordenador = lazy(() => import('./pages/PainelCoordenador.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
-const AdminNovo = lazy(() => import('./pages/AdminNovo.jsx'))
 const ConviteCoordenacao = lazy(() => import('./pages/ConviteCoordenacao.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
 const SiteClubes = lazy(() => import('./pages/site/SiteClubes.jsx'))
