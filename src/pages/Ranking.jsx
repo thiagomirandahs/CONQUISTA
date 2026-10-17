@@ -3,7 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion'
 import Avatar from '../components/Avatar.jsx'
 import Contador from '../components/Contador.jsx'
 import AvisoOffline from '../components/AvisoOffline.jsx'
-import { carregarRanking } from '../lib/dados.js'
+import { carregarRanking, carregarRankingGlobal } from '../lib/dados.js'
 import { vitoria as festa } from '../lib/juice.js'
 import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 
@@ -22,6 +22,9 @@ function tituloDivertido(pos) {
 
 export default function Ranking() {
   const [aba, setAba] = useState('unidades')
+  const [global, setGlobal] = useState([])
+  const [globalCarregando, setGlobalCarregando] = useState(false)
+  const [globalFalha, setGlobalFalha] = useState(false)
   const [card, setCard] = useState(null)
   const [dados, setDados] = useState({ unidades: [], individual: [] })
   const [carregando, setCarregando] = useState(true)
@@ -35,6 +38,15 @@ export default function Ranking() {
       .catch(() => { setFalha(true); setCarregando(false) }) // não trava em "Carregando..." nem vira "vazio"
   }, [tentativa])
 
+  useEffect(() => {
+    if (aba !== 'global') return
+    setGlobalCarregando(true); setGlobalFalha(false)
+    carregarRankingGlobal()
+      .then((d) => { setGlobal(d); setGlobalCarregando(false) })
+      .catch(() => { setGlobalFalha(true); setGlobalCarregando(false) })
+  }, [aba])
+
+  const ehGlobal = aba === 'global'
   const ehUnidade = aba === 'unidades'
   const lista = ehUnidade ? dados.unidades : dados.individual
   const valor = (i) => (ehUnidade ? i.pontos : i.pts)
@@ -66,7 +78,7 @@ export default function Ranking() {
       </div>
 
       <div className="relative bg-surface rounded-xl p-1 flex shadow-soft mb-5 max-w-sm">
-        {[['unidades', '🛡️ Unidades'], ['individual', '🧒 Individual']].map(([key, label]) => (
+        {[['global', '⭐ Global'], ['unidades', '🛡️ Unidades'], ['individual', '🧒 Individual']].map(([key, label]) => (
           <button key={key} onClick={() => setAba(key)} className="relative flex-1 py-2 text-sm font-bold">
             {aba === key && <motion.span layoutId="rank-pill" className="absolute inset-0 bg-gradient-to-r from-brand to-brand2 rounded-lg shadow-glow" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />}
             <span className={`relative z-10 ${aba === key ? 'text-white' : 'text-muted'}`}>{label}</span>
@@ -74,7 +86,36 @@ export default function Ranking() {
         ))}
       </div>
 
-      {carregando ? (
+      {ehGlobal ? (
+        globalCarregando ? <Esqueleto /> : globalFalha ? (
+          <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+            <p className="font-semibold text-amber-900">Não consegui carregar o ranking global.</p>
+            <button type="button" onClick={() => setAba('unidades')} className="mt-3 min-h-[44px] rounded-xl bg-brand px-5 font-bold text-white">Voltar ao ranking do clube</button>
+          </div>
+        ) : global.length === 0 ? (
+          <div className="bg-surface rounded-2xl p-8 text-center shadow-soft">
+            <div className="text-4xl mb-2">⭐</div><p className="font-semibold text-ink">Ranking global ainda vazio</p>
+            <p className="text-sm text-faint">As estrelas aparecerão quando os desafios da temporada forem liberados.</p>
+          </div>
+        ) : (
+          <div className="bg-surface rounded-2xl shadow-soft p-2">
+            <div className="px-3 py-3 mb-1 rounded-xl bg-surface2">
+              <p className="font-extrabold text-ink">Temporada global</p>
+              <p className="text-xs text-muted">Estrelas, aproveitamento e acertos na primeira tentativa.</p>
+            </div>
+            {global.map((item) => (
+              <div key={item.usuario_id} className="w-full flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-surface2">
+                <span className="w-7 text-center font-extrabold text-faint">{item.posicao}º</span>
+                <div className="flex-1 min-w-0"><div className="font-bold text-ink text-sm truncate">{item.nome}</div>
+                  <div className="text-xs text-faint">{item.aproveitamento}% de aproveitamento · {item.primeiras_tentativas} na 1ª tentativa</div></div>
+                <span className="font-extrabold text-brand w-14 text-right">{item.estrelas} ⭐</span>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+
+      carregando ? (
         <Esqueleto />
       ) : falha ? (
         <div role="alert" className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
@@ -143,6 +184,7 @@ export default function Ranking() {
             ))}
           </motion.div>
         </>
+      )
       )}
 
       <AnimatePresence>

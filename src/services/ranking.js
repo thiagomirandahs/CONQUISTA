@@ -88,6 +88,13 @@ export async function carregarRanking() {
   return { unidades, individual }
 }
 
+// Ranking anual global: estrelas dos desafios oficiais, separado dos pontos do clube.
+export async function carregarRankingGlobal(temporadaId = null) {
+  const { data, error } = await supabase.rpc('ranking_global', { p_temporada_id: temporadaId })
+  if (error) throw new Error(error.message)
+  return Array.isArray(data) ? data : []
+}
+
 
 // ------- Desafios da Semana (corrida que zera toda segunda) -------
 // Metas da cartela pessoal: o que a criança faz na semana, contado por origem.
