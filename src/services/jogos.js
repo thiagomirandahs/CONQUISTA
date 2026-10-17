@@ -66,6 +66,30 @@ export async function iniciarPartida(jogo) {
   return _partidas[jogo]
 }
 
+// Desafio global: a partida é aberta pelo servidor e não reutiliza a partida
+// diária do clube. O id retornado deve acompanhar o resultado.
+export async function carregarDesafiosGlobais(temporadaId = null) {
+  const { data, error } = await supabase.rpc('ranking_global_desafios_abertos', { p_temporada_id: temporadaId })
+  if (error) throw new Error(error.message)
+  return Array.isArray(data) ? data : []
+}
+
+export async function iniciarDesafioGlobal(desafioId) {
+  const { data, error } = await supabase.rpc('ranking_global_iniciar', { p_desafio_id: desafioId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function registrarResultadoDesafioGlobal({ desafioId, partidaId, estrelas, aproveitamento }) {
+  const { data, error } = await supabase.rpc('registrar_ranking_global', {
+    p_desafio_id: desafioId, p_partida_id: partidaId,
+    p_estrelas: Math.max(0, Math.min(3, Math.round(Number(estrelas) || 0))),
+    p_aproveitamento: Math.max(0, Math.min(100, Number(aproveitamento) || 0)),
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 
 // Chamada crua ao servidor (usada pelo jogo E pelo reenvio da fila offline).
 async function _rpcJogo(tipo, estrelas, partida) {
