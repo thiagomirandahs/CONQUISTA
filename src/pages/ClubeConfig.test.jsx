@@ -84,14 +84,13 @@ describe('identidade do clube', () => {
     await waitFor(() => expect(gravarMarca).toHaveBeenCalledWith({ lema: null }))
   })
 
-  it('cor clara demais é avisada e NÃO envia (o texto branco ficaria ilegível para o clube todo)', async () => {
+  it('cor clara é aceita e usa tinta legível automaticamente', async () => {
     render(<ClubeConfig />)
     const cor = screen.getAllByPlaceholderText('#rrggbb')[0]
     await userEvent.clear(cor)
     await userEvent.type(cor, '#ffff00')
-    expect(screen.getByRole('alert')).toHaveTextContent(/clara demais/)
-    expect(salvar()).toBeDisabled()
-    expect(gravarMarca).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(salvar()).not.toBeDisabled()
   })
 
   it('cor fora do formato é avisada', async () => {

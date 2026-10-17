@@ -162,11 +162,11 @@ describe('formulário de identidade', () => {
     expect(errosDaMarca({ ...ok, nome: '<b>oi</b>' })).toHaveLength(1)
   })
 
-  it('errosDaMarca: cor fora do formato e cor CLARA demais (texto branco ilegível) são recusadas', () => {
+  it('errosDaMarca: cor fora do formato é recusada, mas cor clara é ajustada pelo tema', () => {
     const ok = formularioDaMarca(atual)
     expect(errosDaMarca({ ...ok, corPrimaria: 'azul' })[0]).toMatch(/#rrggbb/)
-    expect(errosDaMarca({ ...ok, corPrimaria: '#ffff00' })[0]).toMatch(/clara demais/)
-    expect(errosDaMarca({ ...ok, corSecundaria: '#fefefe' })[0]).toMatch(/secundária.*clara demais/)
+    expect(errosDaMarca({ ...ok, corPrimaria: '#ffff00' })).toEqual([])
+    expect(errosDaMarca({ ...ok, corSecundaria: '#fefefe' })).toEqual([])
     expect(errosDaMarca({ ...ok, corPrimaria: '#1e3a8a', corSecundaria: '#3b5bfd' })).toEqual([])
   })
 

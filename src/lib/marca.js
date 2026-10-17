@@ -107,7 +107,7 @@ export function aplicarMarca(marca, doc = typeof document !== 'undefined' ? docu
   // `--marca-1-texto`  = o que escrever EM CIMA da cor (branco ou tinta escura, pelo contraste real);
   // `--marca-1-legivel`= a cor usada COMO texto, escurecida até alcançar 4.5:1 se precisar.
   // Sem cor definida, as duas somem e o tema padrão volta idêntico ao de sempre.
-  const contraste = variaveisDeContraste(p1)
+  const contraste = variaveisDeContraste(p1, p2)
   escolher('--marca-1-texto', contraste['--marca-1-texto'] || null)
   escolher('--marca-1-legivel', contraste['--marca-1-legivel'] || null)
 }
@@ -158,7 +158,7 @@ export function errosDaMarca(form) {
   for (const [k, rotulo] of [['corPrimaria', 'principal'], ['corSecundaria', 'secundária']]) {
     if (!f(k)) continue
     if (!HEX.test(f(k))) erros.push(`A cor ${rotulo} precisa estar no formato #rrggbb.`)
-    else if (contrasteComBranco(f(k)) < CONTRASTE_MINIMO) erros.push(`A cor ${rotulo} é clara demais: o texto branco ficaria ilegível. Escolha uma mais escura.`)
+    // Cores claras também são válidas: o app escolhe tinta escura automaticamente.
   }
   return [...new Set(erros)]
 }

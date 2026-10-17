@@ -67,10 +67,13 @@ export function corDeMarcaLegivel(corMarca, corFundo = BRANCO, alvo = 4.5) {
 
 // Devolve as variáveis de contraste derivadas da cor do clube, prontas para escrever no :root.
 // Sem cor definida (clube usando o tema padrão), devolve {} — nada é sobrescrito.
-export function variaveisDeContraste(corPrimaria) {
+export function variaveisDeContraste(corPrimaria, corSecundaria = null) {
   if (!hexParaRgb(corPrimaria)) return {}
+  const textoPrimaria = corDeTextoSobre(corPrimaria)
+  const textoSecundaria = hexParaRgb(corSecundaria) ? corDeTextoSobre(corSecundaria) : textoPrimaria
+  const textoMarca = textoPrimaria === textoSecundaria ? textoPrimaria : TINTA
   return {
-    '--marca-1-texto': corDeTextoSobre(corPrimaria),        // texto EM CIMA da marca
+    '--marca-1-texto': textoMarca,                          // texto EM CIMA do degradê
     '--marca-1-legivel': corDeMarcaLegivel(corPrimaria),    // a marca usada COMO texto
   }
 }

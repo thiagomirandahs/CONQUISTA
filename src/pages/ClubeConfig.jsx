@@ -5,6 +5,7 @@ import { useClube } from '../context/Clube.jsx'
 import { gravarMarca, definirRecurso, carregarCatalogoRecursos, subirLogoDoClube } from '../services/clubes.js'
 import { formularioDaMarca, diferencasDaMarca, errosDaMarca, COR_TEMA_PADRAO } from '../lib/marca.js'
 import { somenteDaPlataforma } from '../lib/recursos.js'
+import { corDeTextoSobre } from '../ui/contraste.js'
 import ClubeVitrine from './ClubeVitrine.jsx'
 import { EsqueletoTela } from '../ui/carregamento.jsx'
 
@@ -105,6 +106,7 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
   const c1 = /^#[0-9a-f]{6}$/i.test(form.corPrimaria) ? form.corPrimaria : null
   const c2 = /^#[0-9a-f]{6}$/i.test(form.corSecundaria) ? form.corSecundaria : null
   const fundo = c1 ? `linear-gradient(90deg, ${c1}, ${c2 || c1})` : 'linear-gradient(90deg, var(--c-brand), var(--c-brand2))'
+  const tintaMarca = c1 && c2 && corDeTextoSobre(c1) !== corDeTextoSobre(c2) ? '#111a3d' : corDeTextoSobre(c1 || '#1e3a8a')
   const nomePrevia = form.nome.trim() || marca.nome
   const siglaPrevia = form.sigla.trim().toUpperCase() || marca.sigla
 
@@ -157,7 +159,7 @@ function FormIdentidade({ marca, clubeId, aoSalvar }) {
       {ok && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg p-3" role="status">Identidade salva ✅</div>}
 
       <motion.button type="submit" disabled={salvando || enviandoLogo || !mudou || erros.length > 0} whileTap={{ scale: 0.97 }}
-        className="w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow text-white font-semibold py-2.5 disabled:opacity-50">
+        style={{ color: tintaMarca }} className="w-full rounded-lg bg-gradient-to-r from-brand to-brand2 shadow-glow font-semibold py-2.5 disabled:opacity-50">
         {salvando ? 'Salvando…' : 'Salvar identidade'}
       </motion.button>
     </form>
