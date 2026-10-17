@@ -9,6 +9,7 @@ const d = {
   carregarTrilha: vi.fn(), registrarJogo: vi.fn(), carregarRankingTrilha: vi.fn(async () => []), carregarJogosTrilha: vi.fn(async () => []),
   lerJogoDaSemana: vi.fn(async () => null), ajudasRecebidas: vi.fn(async () => []), bonusTodosJogos: vi.fn(async () => ({})),
   statusJogosDoDia: vi.fn(async () => null), liberarJogo: vi.fn(), trancarJogo: vi.fn(), iniciarPartida: vi.fn(async () => ({})),
+  carregarDesafiosGlobais: vi.fn(async () => []), iniciarDesafioGlobal: vi.fn(), registrarResultadoDesafioGlobal: vi.fn(),
 }
 vi.mock('../lib/dados.js', () => d)
 vi.mock('../context/Auth.jsx', () => ({ useAuth: () => ({ profile: { id: 'u1', nome: 'Ana' } }) }))

@@ -4,7 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { CaixaAjuda } from '../components/Ajuda.jsx'
 import FeedbackJogo from '../components/FeedbackJogo.jsx'
-import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos, statusJogosDoDia, liberarJogo, trancarJogo, iniciarPartida } from '../lib/dados.js'
+import { carregarTrilha, registrarJogo, carregarRankingTrilha, carregarJogosTrilha, lerJogoDaSemana, ajudasRecebidas, bonusTodosJogos, statusJogosDoDia, liberarJogo, trancarJogo, iniciarPartida, carregarDesafiosGlobais, iniciarDesafioGlobal, registrarResultadoDesafioGlobal } from '../lib/dados.js'
 import * as juice from '../lib/juice.js'
 import { Carregando as Esqueleto, BotaoVoltar } from '../ui/index.jsx'
 // Registro dos jogos, error boundary e fallback WebGL — agora em features/jogos.
@@ -35,6 +35,8 @@ export default function Trilha() {
   // Rodízio 🥇 Jogos do Dia: { hoje: [chaves], liberados: [chaves], proximos: [{chave,data}] }.
   // null = SQL do rodízio ainda não rodou → todos os jogos abertos (como antes).
   const [rodizio, setRodizio] = useState(null)
+  const [desafiosGlobais, setDesafiosGlobais] = useState([])
+  const [desafioGlobal, setDesafioGlobal] = useState(null)
   // Trava de reentrada do fim de partida. O jogo chama onTerminar de novo quando a criança toca
   // várias vezes em "Concluir" (a rede é lenta e o botão só some depois da resposta) ou quando o
   // evento de fim dispara em duplicidade: o servidor aceita só o primeiro registro (1 por dia) e as
@@ -55,6 +57,7 @@ export default function Trilha() {
     lerJogoDaSemana().then((c) => JOGOS[c] && setJogoSemana(c)).catch(() => {})
     // Rodízio dos Jogos do Dia. Se falhar (SQL não rodado), fica tudo aberto.
     statusJogosDoDia().then(setRodizio).catch(() => {})
+    if (typeof carregarDesafiosGlobais === 'function') carregarDesafiosGlobais().then(setDesafiosGlobais).catch(() => {})
   }, [])
 
   // Abre um jogo e já pede ao servidor a SESSÃO DE PARTIDA (anti-cheat): o
@@ -64,6 +67,14 @@ export default function Trilha() {
     terminando.current = false // partida nova: libera o próximo registro
     setJogoAtual(chave); setJogando(true); setResultado(null)
     iniciarPartida(chave).catch(() => {})
+  }
+
+  async function abrirDesafioGlobal(desafio) {
+    try {
+      const sessao = await iniciarDesafioGlobal(desafio.id)
+      setDesafioGlobal({ ...desafio, partidaId: sessao.partida_id })
+      abrirJogo(desafio.chave)
+    } catch (e) { avisar.erro(e) }
   }
 
   // Liderança: abre/tranca um jogo fora do rodízio (vale só hoje)
@@ -105,6 +116,16 @@ export default function Trilha() {
     if (terminando.current) return
     terminando.current = true
     try {
+      if (desafioGlobal) {
+        const r = await registrarResultadoDesafioGlobal({
+          desafioId: desafioGlobal.id, partidaId: desafioGlobal.partidaId,
+          estrelas, aproveitamento: Math.round((Math.max(0, Math.min(3, estrelas)) / 3) * 100),
+        })
+        juice.vitoria(r.estrelas)
+        setResultado({ estrelas: r.estrelas, pontos: 0, global: true })
+        setDesafioGlobal(null); setJogando(false)
+        return
+      }
       const r = await registrarJogo(jogoAtual || 'memoria', estrelas)
       if (r?.guardado) {
         // sem internet: o resultado ficou no celular e vai quando a conexão voltar
@@ -229,6 +250,22 @@ export default function Trilha() {
             </button>
           )}
           {resultado && <ResultadoCard resultado={resultado} />}
+
+          {desafiosGlobais.length > 0 && (
+            <section className="rounded-2xl border-2 border-gold bg-gold/10 p-3.5 mb-3" aria-label="Desafios globais">
+              <div className="text-xs font-extrabold text-brand uppercase tracking-wide">⭐ Desafios globais</div>
+              <p className="text-sm text-muted mt-1 mb-2">Escolha um desafio da semana. Ele vale estrelas para a classificação global.</p>
+              <div className="grid gap-2">
+                {desafiosGlobais.map((d) => {
+                  const j = JOGOS[d.chave]
+                  if (!j) return null
+                  return <button key={d.id} type="button" onClick={() => abrirDesafioGlobal(d)} className="flex items-center gap-3 rounded-xl bg-surface px-3 py-2.5 text-left shadow-sm">
+                    <span className="text-2xl" aria-hidden="true">{j.emoji}</span><span className="min-w-0 flex-1"><b className="block text-ink text-sm">{j.nome}</b><span className="text-xs text-muted">Até {d.estrelas_max} estrelas · semana {d.semana}</span></span><span className="text-brand font-bold">Jogar →</span>
+                  </button>
+                })}
+              </div>
+            </section>
+          )}
 
           {bonusDia > 0 && (
             <div className="bg-gold/15 border-2 border-gold rounded-2xl p-4 text-center mb-3 relative">
