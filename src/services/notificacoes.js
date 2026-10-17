@@ -18,10 +18,15 @@ export async function enviarAvisoPessoal({ userId, titulo, corpo, criadoPor }) {
 export async function carregarNotificacoes() {
   const { data } = await supabase
     .from('notificacoes')
-    .select('id,titulo,corpo,tipo,link,created_at')
+    .select('id,titulo,corpo,tipo,link,created_at,criado_por,remetente:profiles!notificacoes_criado_por_fkey(nome)')
     .order('created_at', { ascending: false })
     .limit(30)
-  return data || []
+  return (data || []).map((n) => ({
+    ...n,
+    // Avisos sem autor são emitidos pela plataforma; avisos com autor exibem
+    // somente o nome público do perfil, nunca papel, clube ou outros campos.
+    remetente: n.remetente?.nome || (n.criado_por ? 'Equipe responsável' : 'DesbravaClube'),
+  }))
 }
 
 

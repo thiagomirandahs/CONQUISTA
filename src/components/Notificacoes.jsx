@@ -138,7 +138,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
               <span className="text-2xl shrink-0" aria-hidden="true">{iconePorTipo[detalhe.tipo] || '🔔'}</span>
               <div className="min-w-0">
                 <h3 className="font-extrabold text-ink break-words">{detalhe.titulo}</h3>
-                <p className="text-xs text-faint mt-0.5">{new Date(detalhe.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}</p>
+                <p className="text-xs text-faint mt-0.5">{detalhe.remetente || 'DesbravaClube'} · {new Date(detalhe.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}</p>
               </div>
             </div>
             {detalhe.corpo && <p className="mt-3 text-sm text-ink whitespace-pre-line break-words">{detalhe.corpo}</p>}
@@ -158,7 +158,7 @@ export default function Notificacoes({ icone = null, classeBotao = '' } = {}) {
                       {naoLidaNoPainel(n) && <span className="sr-only">Não lida: </span>}{n.titulo}
                     </span>
                     {n.corpo && <span className="block text-xs text-muted line-clamp-2">{n.corpo}</span>}
-                    <span className="block text-xs text-faint mt-0.5">{tempoRel(n.created_at)}</span>
+                    <span className="block text-xs text-faint mt-0.5">{n.remetente || 'DesbravaClube'} · {tempoRel(n.created_at)}</span>
                   </span>
                 </button>
               </li>
