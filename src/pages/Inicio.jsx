@@ -4,6 +4,7 @@ import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
 import { carregarInicio } from '../services/inicio.js'
 import { carregarMinhasClasses } from '../services/classes.js'
+import { carregarDesafiosGlobais } from '../services/jogos.js'
 import { rotaLiberada } from '../lib/navegacao.js'
 import TourDaArea from '../components/TourDaArea.jsx'
 import BotaoAjuda from '../components/BotaoAjuda.jsx'
@@ -44,6 +45,7 @@ export default function Inicio() {
   const temClasses = !!temRecurso?.('classes')
   // null = carregando; [] = sem classe; false = não deu para ler (o cartão some, sem alarde)
   const [classes, setClasses] = useState(temClasses ? null : [])
+  const [desafiosGlobais, setDesafiosGlobais] = useState([])
 
   useEffect(() => {
     let vivo = true
@@ -61,6 +63,16 @@ export default function Inicio() {
       .catch(() => { if (vivo) setClasses(false) })
     return () => { vivo = false }
   }, [temClasses])
+
+  // O desafio global é uma prioridade da semana e precisa ser encontrado já no Início.
+  // A consulta falha silenciosamente quando não há temporada publicada para o clube.
+  useEffect(() => {
+    let vivo = true
+    carregarDesafiosGlobais()
+      .then((r) => { if (vivo) setDesafiosGlobais(Array.isArray(r) ? r : []) })
+      .catch(() => { if (vivo) setDesafiosGlobais([]) })
+    return () => { vivo = false }
+  }, [])
 
   const primeiroNome = (profile?.nome || '').split(' ')[0]
   // Card que leva a uma tela cujo recurso está desligado neste clube não aparece (ex.: especialidade com o recurso
@@ -89,6 +101,21 @@ export default function Inicio() {
 
       {temClasses && classes !== null && classes !== false && (
         <CartaoDaClasse classe={classe} />
+      )}
+
+      {desafiosGlobais.length > 0 && (
+        <Card className="mb-4 border-2 border-brand/20 bg-brand/5" data-testid="card-desafios-globais">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl leading-none" aria-hidden="true">⭐</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-extrabold text-ink text-base leading-tight">Sua semana global</h2>
+              <p className="text-sm text-muted leading-snug">
+                {desafiosGlobais.length} {desafiosGlobais.length === 1 ? 'desafio oficial disponível' : 'desafios oficiais disponíveis'}
+              </p>
+            </div>
+          </div>
+          <Botao para="/jogos" className="w-full mt-3">Ver desafios globais</Botao>
+        </Card>
       )}
 
       {evento && (
