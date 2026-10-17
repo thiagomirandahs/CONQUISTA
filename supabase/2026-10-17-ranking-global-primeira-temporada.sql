@@ -13,15 +13,19 @@ with temporada as (
     fim = greatest(public.ranking_global_temporadas.fim, excluded.fim)
   returning id
 ), t as (
-  select id from temporada
-  union all
-  select id from public.ranking_global_temporadas where codigo = '2026-2027'
-  limit 1
+  select distinct id from (
+    select id from temporada
+    union all
+    select id from public.ranking_global_temporadas where codigo = '2026-2027'
+  ) temporadas
 ), jogos as (
-  select j.chave, row_number() over (order by j.ordem nulls last, j.chave) as ordem
-  from public.jogos_trilha j
-  where j.ativo
-    and j.chave in ('memoria', 'caca', 'desliza')
+  select chave, row_number() over (order by ordem_min nulls last, chave) as ordem
+  from (
+    select j.chave, min(j.ordem) as ordem_min
+    from public.jogos_trilha j
+    where j.ativo and j.chave in ('memoria', 'caca', 'desliza')
+    group by j.chave
+  ) catalogo
   limit 3
 )
 insert into public.ranking_global_desafios
