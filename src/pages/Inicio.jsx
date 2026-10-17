@@ -122,8 +122,8 @@ export default function Inicio() {
                 className="flex min-h-[76px] items-center justify-between gap-2 rounded-xl bg-surface2 px-3 py-2.5 text-left text-ink transition-colors hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 <span className="min-w-0">
                   <span className="mb-1 block text-lg" aria-hidden="true">{iconeDoJogo(desafio.chave)}</span>
-                  <span className="block truncate text-xs font-extrabold">{desafio.nome || desafio.chave}</span>
-                  <span className="block text-[11px] text-muted">{desafio.dificuldade || 'média'} · ⭐ {desafio.estrelas_max || 3}</span>
+                  <span className="block truncate text-xs font-extrabold">{nomeDoJogo(desafio)}</span>
+                  <span className="block text-[11px] text-muted">{capitalizar(desafio.dificuldade || 'média')} · ⭐ {desafio.estrelas_max || 3}</span>
                 </span>
                 <span className="shrink-0 text-lg text-brand" aria-hidden="true">›</span>
               </Link>
@@ -239,4 +239,12 @@ function Atalho({ para, icone, texto }) {
 
 function iconeDoJogo(chave) {
   return ({ memoria: '🧠', caca: '🔎', desliza: '🧩', reflexo: '⚡', dardos: '🎯' })[chave] || '🎮'
+}
+
+function nomeDoJogo(desafio) {
+  return desafio.nome || ({ memoria: 'Jogo da Memória', caca: 'Caça-palavras', desliza: 'Quebra-cabeça', reflexo: 'Reflexo', dardos: 'Dardos' })[desafio.chave] || desafio.chave
+}
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
