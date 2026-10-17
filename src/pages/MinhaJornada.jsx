@@ -19,12 +19,12 @@ function Secao({ titulo, children }) {
 
 function Linha({ nome, percentual, status, data }) {
   return (
-    <li className="rounded-2xl border border-slate-200 bg-white p-4">
+    <li className="rounded-2xl border border-line bg-surface text-ink p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="font-bold text-ink">{nome}</span>
         <StatusRequisito status={statusDe(status)} rotulo={status === 'concluida' ? 'Concluída' : undefined} />
       </div>
-      <BarraProgresso valor={percentual} rotulo={`Progresso em ${nome}`} />
+      <BarraProgresso valor={percentual} texto={`${percentual ?? 0}%`} rotulo={`Progresso em ${nome}`} />
       {data ? <p className="mt-1 text-base text-muted">{data}</p> : null}
     </li>
   )
@@ -46,7 +46,7 @@ export default function MinhaJornada() {
   return (
     <div className="mx-auto max-w-2xl pb-8" data-testid="pagina-minha-jornada">
       <Cabecalho voltar={{ para: '/jornada', rotulo: 'a Jornada' }} icone="🧭" titulo="Minha Jornada" descricao="Tudo o que você já começou e conquistou, em um só lugar." />
-      <Link to="/jornada/portfolio" className="mb-4 inline-flex min-h-[44px] items-center rounded-xl border-2 border-[#0b1f4d] px-4 text-base font-bold text-[#0b1f4d]">Ver meu Portfólio</Link>
+      <Link to="/jornada/portfolio" className="mb-4 inline-flex min-h-[44px] items-center rounded-xl border border-line bg-surface px-4 text-base font-bold text-ink">Ver meu Portfólio</Link>
       {erro ? (
         <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-base text-rose-800">
           <p>{erro}</p>
@@ -69,13 +69,13 @@ export default function MinhaJornada() {
               data={e.concluida_em ? `Concluída em ${fmt(e.concluida_em)}` : e.iniciada_em ? `Iniciada em ${fmt(e.iniciada_em)}` : ''} />)}
           </ul></Secao>}
           {d.investiduras.length > 0 && <Secao titulo="Investiduras"><ul className="space-y-2">
-            {d.investiduras.map((i, n) => <li key={n} className="rounded-2xl border border-slate-200 bg-white p-4 text-base"><span className="font-bold">{i.classe}</span> · {fmt(i.data)}</li>)}
+            {d.investiduras.map((i, n) => <li key={n} className="rounded-2xl border border-line bg-surface text-ink p-4 text-base"><span className="font-bold">{i.classe}</span> · {fmt(i.data)}</li>)}
           </ul></Secao>}
           {d.conquistas.length > 0 && <Secao titulo="Conquistas"><ul className="space-y-2">
-            {d.conquistas.map((c, n) => <li key={n} className="rounded-2xl border border-slate-200 bg-white p-4 text-base"><span aria-hidden="true">🏅 </span><span className="font-bold">{c.nome}</span> · {fmt(c.concluida_em)}</li>)}
+            {d.conquistas.map((c, n) => <li key={n} className="rounded-2xl border border-line bg-surface text-ink p-4 text-base"><span aria-hidden="true">🏅 </span><span className="font-bold">{c.nome}</span> · {fmt(c.concluida_em)}</li>)}
           </ul></Secao>}
           {d.leituras.length > 0 && <Secao titulo="Leituras"><ul className="space-y-2">
-            {d.leituras.map((l, n) => <li key={n} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-base">
+            {d.leituras.map((l, n) => <li key={n} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface text-ink p-4 text-base">
               <span className="font-bold">{l.titulo}</span>
               <StatusRequisito status={l.concluido ? 'aprovado' : 'rascunho'} rotulo={l.concluido ? 'Concluída' : `Capítulo ${l.capitulo || 1}`} />
             </li>)}

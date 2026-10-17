@@ -295,3 +295,39 @@ html.app-nativo *:not(input):not(textarea):not([contenteditable="true"]) {
   padding-right: max(0.75rem, var(--seguro-dir));
 }
 .fixed.inset-0.items-end { padding-left: var(--seguro-esq); padding-right: var(--seguro-dir); }
+
+/* Acabamento visual do aplicativo: identidade e destinos continuam vindo do clube. */
+.app-refinado { letter-spacing: -0.012em; }
+.app-refinado > div > header { box-shadow: none; }
+.app-refinado header button { flex-shrink: 0; }
+.app-refinado nav[aria-label="Destinos"] > div {
+  border-radius: 20px;
+  box-shadow: 0 8px 28px -18px rgba(10, 25, 55, .35);
+}
+.app-refinado nav[aria-label="Destinos"] a { gap: 6px; }
+.inicio-refinado > header { margin-bottom: 24px; }
+.inicio-refinado > header h1 { font-size: clamp(1.5rem, 5vw, 2rem); letter-spacing: -.035em; }
+.inicio-refinado .classe-destaque {
+  --c-ink: #ffffff;
+  --c-muted: #d4e0f4;
+  --c-surface2: #314d78;
+  padding: 24px;
+  border: 1px solid var(--c-line);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #102958, #1c4078);
+  box-shadow: 0 12px 32px -24px rgba(10, 25, 55, .4);
+}
+.inicio-refinado .classe-destaque h2 { font-size: 1.75rem; line-height: 1.25; }
+.inicio-refinado .classe-destaque a {
+  --marca-1-texto: #162b50;
+  background: #efc568;
+  color: #162b50;
+  box-shadow: none;
+  min-height: 48px;
+  margin-top: 20px;
+}
+.inicio-refinado .classe-destaque a:hover { background: #f6d58f; }
+[data-testid="pagina-minha-jornada"] section h2 { margin-bottom: 12px; }
+[data-testid="pagina-minha-jornada"] li { padding: 20px; border-radius: 20px; }
+[data-testid="pagina-minha-jornada"] li > p { margin-top: 10px; font-size: .875rem; }
+.inicio-refinado .classe-destaque [role="progressbar"] > div { background: #efc568; }

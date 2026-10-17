@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { m as motion, MotionConfig } from 'framer-motion'
 import Logo from './Logo.jsx'
+import IconeDestino from './IconeDestino.jsx'
 import Notificacoes from './Notificacoes.jsx'
 import BotaoAcessibilidade from './PreferenciasAcessibilidade.jsx'
 import { FilaDePopupsProvider } from '../ui/popups.jsx'
@@ -59,7 +60,7 @@ export default function AppLayout() {
     <MotionConfig reducedMotion="user">
     {/* Uma fila de popups para todas as telas do app: tour, avisos, próximo evento e devocional, um por vez. */}
     <FilaDePopupsProvider>
-    <div className="min-h-full lg:flex">
+    <div className="app-refinado min-h-full lg:flex">
       <Suspense fallback={null}>
         {!ehPai && <DevocionalPopup />}
         <AvisosPopup />
@@ -68,7 +69,7 @@ export default function AppLayout() {
       </Suspense>
 
       {/* ===== Menu lateral (PC) — tudo, agrupado por hub ===== */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 z-30 glass border-r border-line">
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 z-30 bg-surface border-r border-line">
         <div className="flex items-center gap-3 px-5 py-5 border-b border-line">
           <Logo className="w-11 h-11 rounded-2xl shadow-soft" />
           <div className="leading-tight flex-1 min-w-0">
@@ -181,7 +182,7 @@ export default function AppLayout() {
                   <motion.span animate={{ scale: isActive ? 1.16 : 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className="text-xl leading-none" aria-hidden="true"
-                    >{d.icon}</motion.span>
+                    ><IconeDestino para={d.to} fallback={d.icon} /></motion.span>
                   <span className={`text-xs leading-none ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{d.label}</span>
                 </>
               )}

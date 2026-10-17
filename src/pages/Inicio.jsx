@@ -76,7 +76,7 @@ export default function Inicio() {
   const classeParada = classe && (classe.percentual ?? 0) === 0
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="inicio-refinado max-w-2xl mx-auto">
       {/* Tour de primeiro acesso (uma vez por usuário neste aparelho, pela fila de popups; reabre em Eu → Ajuda) */}
       <TourDaArea id="primeiros-passos" uid={profile?.id} />
       <header className="mb-5 flex items-start justify-between gap-3">
@@ -172,7 +172,7 @@ function CartaoDaClasse({ classe }) {
   }
   const pct = classe.percentual ?? 0
   return (
-    <Card className="mb-4" data-testid="cartao-classe" data-estado="em-andamento" aria-labelledby="cartao-classe-titulo">
+    <Card className="classe-destaque mb-6" data-testid="cartao-classe" data-estado="em-andamento" aria-labelledby="cartao-classe-titulo">
       <div className="flex items-center gap-3 mb-3">
         <EmblemaDaClasse nome={classe.nome} tamanho={44} />
         <div className="min-w-0 flex-1">
