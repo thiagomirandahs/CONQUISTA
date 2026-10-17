@@ -118,7 +118,7 @@ export default function Inicio() {
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             {desafiosGlobais.map((desafio) => (
-              <Link key={desafio.id} to={`/jogos?desafioGlobal=${encodeURIComponent(desafio.id)}`}
+              <Link key={desafio.id} to={`/trilha?desafioGlobal=${encodeURIComponent(desafio.id)}`}
                 className="flex min-h-[76px] items-center justify-between gap-2 rounded-xl bg-white px-3 py-2.5 text-left text-ink transition-colors hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                 <span className="min-w-0">
                   <span className="mb-1 block text-lg" aria-hidden="true">{iconeDoJogo(desafio.chave)}</span>
