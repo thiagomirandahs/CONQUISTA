@@ -63,17 +63,17 @@ export default function Trilha() {
   // Abre um jogo e já pede ao servidor a SESSÃO DE PARTIDA (anti-cheat): o
   // registrar_jogo/recorde levam esse id e o banco valida duração/validade.
   // Se a RPC falhar (offline/SQL antigo), o jogo abre normal mesmo assim.
-  function abrirJogo(chave) {
+  function abrirJogo(chave, pedirPartida = true) {
     terminando.current = false // partida nova: libera o próximo registro
     setJogoAtual(chave); setJogando(true); setResultado(null)
-    iniciarPartida(chave).catch(() => {})
+    if (pedirPartida) iniciarPartida(chave).catch(() => {})
   }
 
   async function abrirDesafioGlobal(desafio) {
     try {
       const sessao = await iniciarDesafioGlobal(desafio.id)
       setDesafioGlobal({ ...desafio, partidaId: sessao.partida_id })
-      abrirJogo(desafio.chave)
+      abrirJogo(desafio.chave, false)
     } catch (e) { avisar.erro(e) }
   }
 
