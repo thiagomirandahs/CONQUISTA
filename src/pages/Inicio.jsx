@@ -242,7 +242,8 @@ function iconeDoJogo(chave) {
 }
 
 function nomeDoJogo(desafio) {
-  return desafio.nome || ({ memoria: 'Jogo da Memória', caca: 'Caça-palavras', desliza: 'Quebra-cabeça', reflexo: 'Reflexo', dardos: 'Dardos' })[desafio.chave] || desafio.chave
+  const nomes = { memoria: 'Jogo da Memória', caca: 'Caça-palavras', desliza: 'Quebra-cabeça', reflexo: 'Reflexo', dardos: 'Dardos' }
+  return nomes[desafio.chave] || (desafio.nome && desafio.nome !== desafio.chave ? desafio.nome : desafio.chave)
 }
 
 function capitalizar(texto) {
