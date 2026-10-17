@@ -13,7 +13,6 @@ import { modoDoHost, rotaDoSite, rotaSoDoSite, urlDoApp, urlDoSite } from './lib
 import Entrar, { InscricaoPublica } from './pages/Entrar.jsx'
 import ClubeGuard from './components/ClubeGuard.jsx'
 import AppLayout from './components/AppLayout.jsx'
-import AdminNovo from './pages/AdminNovo.jsx'
 import { TelaDeAbertura } from './ui/carregamento.jsx'
 import RotaRestrita from './components/RotaRestrita.jsx'
 import RecursoOpcional from './components/RecursoOpcional.jsx'
@@ -307,7 +306,6 @@ export default function App() {
             autoridade de clube. O guard de verdade é dentro de Admin.jsx (eh_admin_plataforma() no
             servidor); não há link nenhum pra esta rota em nenhum menu — quem não é admin nem a vê. */}
         <Route path="/admin" element={<SessaoObrigatoria><Admin /></SessaoObrigatoria>} />
-        <Route path="/admin/novo" element={<SessaoObrigatoria><AdminNovo /></SessaoObrigatoria>} />
 
         {/* Convite de coordenação (link gerado no /admin): exige sessão — sem conta, cria/entra e volta
             pra cá — e não passa pelo ClubeGuard (coordenador não tem clube). */}
