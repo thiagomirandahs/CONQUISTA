@@ -104,14 +104,14 @@ export default function Inicio() {
       )}
 
       {desafiosGlobais.length > 0 && (
-        <Card className="mb-4 overflow-hidden border-0 bg-gradient-to-br from-indigo-600 to-violet-700 text-white shadow-lg" data-testid="card-desafios-globais">
+        <Card className="mb-4 overflow-hidden border border-brand/20 bg-surface shadow-soft" data-testid="card-desafios-globais">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">Ranking global</p>
-              <h2 className="mt-1 text-xl font-extrabold leading-tight">Sua semana global ⭐</h2>
-              <p className="mt-1 text-sm text-indigo-100">Escolha um desafio e conquiste estrelas.</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-brand">Ranking global</p>
+              <h2 className="mt-1 text-xl font-extrabold leading-tight text-ink">Sua semana global ⭐</h2>
+              <p className="mt-1 text-sm text-muted">Escolha um desafio e conquiste estrelas.</p>
             </div>
-            <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold">{desafiosGlobais.length} disponíveis</span>
+            <span className="rounded-full bg-surface2 px-2.5 py-1 text-xs font-bold text-muted">{desafiosGlobais.length} disponíveis</span>
           </div>
           <div className="grid gap-2">
             {desafiosGlobais.map((desafio) => (
