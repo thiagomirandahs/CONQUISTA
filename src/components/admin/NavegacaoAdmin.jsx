@@ -30,7 +30,7 @@ function ItensDaNavegacao({ secoes, ativa, aoTrocar, contadores, escuro = false 
                   : (sel ? 'bg-[#0b1f4d] font-bold text-white dark:bg-white dark:text-[#07122f]' : 'font-semibold text-ink hover:bg-surface2 active:bg-surface2'))}>
               {/* filete dourado = seção ativa (nunca só pela cor: aria-selected + ✓) */}
               {sel && <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#f5c518]" />}
-              <span aria-hidden="true" className="w-6 text-center text-lg">{s.icone}</span>
+              <span aria-hidden="true" className={juntar('grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base', escuro ? 'bg-white/10' : 'bg-surface2')}>{s.icone}</span>
               <span className="flex-1 truncate">{s.rotulo}</span>
               {n > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{n}</span>}
               {sel && <span aria-hidden="true" className={escuro ? 'text-[#f5c518]' : ''}>✓</span>}
@@ -112,7 +112,7 @@ export function GavetaAdmin({ aberta, aoFechar, secoes, ativa, aoTrocar, contado
     <div className="fixed inset-0 z-[80] flex" data-testid="admin-gaveta-fundo">
       <button type="button" aria-label="Fechar menu" tabIndex={-1} onClick={aoFechar} className="absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px]" />
       <div ref={caixa} id="admin-gaveta" role="dialog" aria-modal="true" aria-label="Seções da administração" tabIndex={-1}
-        className="relative flex h-full w-[min(20rem,85vw)] flex-col bg-surface text-ink shadow-2xl"
+        className="relative flex h-full w-[min(22rem,88vw)] flex-col bg-surface text-ink shadow-2xl"
         style={{ paddingTop: 'var(--seguro-topo)', paddingLeft: 'var(--seguro-esq)', paddingBottom: 'var(--seguro-baixo)' }}>
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <img src={MARCA_PRODUTO.logoUrl} alt="" width="36" height="36" className="h-9 w-9 shrink-0 rounded-xl ring-1 ring-line" />
