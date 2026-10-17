@@ -113,6 +113,7 @@ export default function CatalogoEspecialidades() {
 function Mestrado({ m, porCodigo }) {
   const [aberto, setAberto] = useState(false)
   const itens = m.especialidades.map((c) => porCodigo.get(c)).filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome))
+  const visiveis = aberto ? itens : itens.slice(0, 3)
   const regra = m.area
     ? `Ter ${m.minimo || 'as'} especialidades da área ${itens[0]?.area_nome || m.area}`
     : `Ter ${m.minimo || 'as pedidas'} das ${itens.length} especialidades da lista`
@@ -126,17 +127,20 @@ function Mestrado({ m, porCodigo }) {
         </span>
         <span aria-hidden="true" className="text-muted">{aberto ? '▲' : '▼'}</span>
       </button>
-      {aberto && (
-        <div className="mt-2 space-y-2">
-          <ul className="grid gap-1">
-            {itens.map((e) => (
-              <li key={e.codigo}><a href={e.url} target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] items-center justify-between rounded-lg px-2 text-sm text-ink hover:bg-surface2">
-                <span className="flex items-center gap-2"><EmblemaEspecialidade codigo={e.codigo} tamanho={32} />{e.nome}</span><span className="text-xs text-muted">{e.codigo}</span></a></li>
-            ))}
-          </ul>
-          <a href={m.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center text-sm font-bold text-brand">Ver regras do mestrado ↗</a>
-        </div>
-      )}
+      <div className="mt-2 space-y-2">
+        <p className="text-xs font-semibold text-muted">Requisitos principais</p>
+        <ul className="grid gap-1">
+          {visiveis.map((e) => (
+            <li key={e.codigo}><a href={e.url} target="_blank" rel="noopener noreferrer" className="flex min-h-[40px] items-center justify-between rounded-lg px-2 text-sm text-ink hover:bg-surface2">
+              <span className="flex min-w-0 items-center gap-2"><EmblemaEspecialidade codigo={e.codigo} tamanho={28} /><span className="truncate">{e.nome}</span></span><span className="text-xs text-muted">{e.codigo}</span>
+            </a></li>
+          ))}
+        </ul>
+        {itens.length > 3 && <button type="button" onClick={() => setAberto((v) => !v)} className="min-h-[40px] text-sm font-bold text-brand">
+          {aberto ? 'Mostrar menos' : `Ver lista completa (${itens.length})`}
+        </button>}
+        <a href={m.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[40px] items-center text-sm font-bold text-brand">Ver regras do mestrado ↗</a>
+      </div>
     </li>
   )
 }
