@@ -39,7 +39,7 @@ export default function CatalogoEspecialidades() {
   if (erro) return <p role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">Não deu para carregar o catálogo: {erro}</p>
   if (!dados) return <EsqueletoTela />
 
-  const aberta = (x) => `rounded-xl px-3 min-h-[44px] text-sm font-bold ${x ? 'bg-brand text-white' : 'bg-surface2 text-ink'}`
+  const aberta = (x) => `rounded-xl px-3 min-h-[44px] text-sm font-bold border-2 transition-colors ${x ? 'border-brand bg-brand text-white shadow-sm' : 'border-line bg-surface2 text-muted hover:bg-surface hover:text-ink'}`
   return (
     <div className="space-y-4" data-testid="catalogo-especialidades">
       <div>
