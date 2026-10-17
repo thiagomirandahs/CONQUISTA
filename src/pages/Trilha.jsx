@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { m as motion } from 'framer-motion'
 import { useAuth } from '../context/Auth.jsx'
 import { useClube } from '../context/Clube.jsx'
@@ -16,6 +17,7 @@ import { avisar } from '../ui/avisos.jsx'
 const festa = juice.festa
 
 export default function Trilha() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { profile } = useAuth()
   const { papel: meuPapel } = useClube()
   const [carregando, setCarregando] = useState(true)
@@ -76,6 +78,16 @@ export default function Trilha() {
       abrirJogo(desafio.chave, false)
     } catch (e) { avisar.erro(e) }
   }
+
+  // A tela inicial pode apontar diretamente para um desafio específico.
+  useEffect(() => {
+    const id = searchParams.get('desafioGlobal')
+    if (!id || !desafiosGlobais.length || jogando || desafioGlobal) return
+    const desafio = desafiosGlobais.find((item) => item.id === id)
+    if (!desafio) return
+    setSearchParams({}, { replace: true })
+    abrirDesafioGlobal(desafio)
+  }, [desafiosGlobais, searchParams, jogando, desafioGlobal, setSearchParams])
 
   // Liderança: abre/tranca um jogo fora do rodízio (vale só hoje)
   async function alternarLiberacao(chave, liberar) {

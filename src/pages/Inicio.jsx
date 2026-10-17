@@ -104,17 +104,27 @@ export default function Inicio() {
       )}
 
       {desafiosGlobais.length > 0 && (
-        <Card className="mb-4 border-2 border-brand/20 bg-brand/5" data-testid="card-desafios-globais">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl leading-none" aria-hidden="true">⭐</span>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-extrabold text-ink text-base leading-tight">Sua semana global</h2>
-              <p className="text-sm text-muted leading-snug">
-                {desafiosGlobais.length} {desafiosGlobais.length === 1 ? 'desafio oficial disponível' : 'desafios oficiais disponíveis'}
-              </p>
+        <Card className="mb-4 overflow-hidden border-0 bg-gradient-to-br from-indigo-600 to-violet-700 text-white shadow-lg" data-testid="card-desafios-globais">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">Ranking global</p>
+              <h2 className="mt-1 text-xl font-extrabold leading-tight">Sua semana global ⭐</h2>
+              <p className="mt-1 text-sm text-indigo-100">Escolha um desafio e conquiste estrelas.</p>
             </div>
+            <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold">{desafiosGlobais.length} disponíveis</span>
           </div>
-          <Botao para="/jogos" className="w-full mt-3">Ver desafios globais</Botao>
+          <div className="grid gap-2">
+            {desafiosGlobais.map((desafio) => (
+              <Link key={desafio.id} to={`/jogos?desafioGlobal=${encodeURIComponent(desafio.id)}`}
+                className="flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-left text-ink shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-extrabold">{desafio.nome || desafio.chave}</span>
+                  <span className="block text-xs text-muted">{desafio.dificuldade || 'média'} · até {desafio.estrelas_max || 3} estrelas</span>
+                </span>
+                <span className="shrink-0 text-lg" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </div>
         </Card>
       )}
 
