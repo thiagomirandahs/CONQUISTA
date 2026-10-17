@@ -113,15 +113,19 @@ export default function Inicio() {
             </div>
             <span className="rounded-full bg-surface2 px-2.5 py-1 text-xs font-bold text-muted">{desafiosGlobais.length} disponíveis</span>
           </div>
-          <div className="grid gap-2">
+          <div className="mb-3 h-2 overflow-hidden rounded-full bg-surface2" aria-label="Desafios globais da semana">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (desafiosGlobais.length / 3) * 100)}%` }} />
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
             {desafiosGlobais.map((desafio) => (
               <Link key={desafio.id} to={`/jogos?desafioGlobal=${encodeURIComponent(desafio.id)}`}
-                className="flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-left text-ink shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                className="flex min-h-[76px] items-center justify-between gap-2 rounded-xl bg-surface2 px-3 py-2.5 text-left text-ink transition-colors hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-extrabold">{desafio.nome || desafio.chave}</span>
-                  <span className="block text-xs text-muted">{desafio.dificuldade || 'média'} · até {desafio.estrelas_max || 3} estrelas</span>
+                  <span className="mb-1 block text-lg" aria-hidden="true">{iconeDoJogo(desafio.chave)}</span>
+                  <span className="block truncate text-xs font-extrabold">{desafio.nome || desafio.chave}</span>
+                  <span className="block text-[11px] text-muted">{desafio.dificuldade || 'média'} · ⭐ {desafio.estrelas_max || 3}</span>
                 </span>
-                <span className="shrink-0 text-lg" aria-hidden="true">›</span>
+                <span className="shrink-0 text-lg text-brand" aria-hidden="true">›</span>
               </Link>
             ))}
           </div>
@@ -231,4 +235,8 @@ function Atalho({ para, icone, texto }) {
       <span aria-hidden="true">{icone}</span>{texto}
     </Link>
   )
+}
+
+function iconeDoJogo(chave) {
+  return ({ memoria: '🧠', caca: '🔎', desliza: '🧩', reflexo: '⚡', dardos: '🎯' })[chave] || '🎮'
 }
