@@ -36,6 +36,7 @@ import AdminComunidade from './AdminComunidade.jsx'
 import AdminRecursosPlataforma from './AdminRecursosPlataforma.jsx'
 import { LimiteMembrosClube, PacotesGuardados } from './AdminMembrosLixeira.jsx'
 import AdminChamados from './AdminChamados.jsx'
+import AdminDesafiosGlobais from './AdminDesafiosGlobais.jsx'
 import { adminChamadosContagem } from '../services/suporte.js'
 import { ZonaDePerigoClube, LixeiraDeClubes } from './AdminExcluirClube.jsx'
 
@@ -86,6 +87,7 @@ export const SECOES = [
   { chave: 'suporte', rotulo: 'Suporte', icone: '🛟', abas: ['chamados', 'suporte'], descricao: 'Central de chamados e acessos de suporte autorizados pelos clubes.' },
   { chave: 'auditoria', rotulo: 'Auditoria', icone: '📜', abas: ['auditoria'], descricao: 'Trilha imutável de tudo que a administração fez.' },
   { chave: 'avisos', rotulo: 'Aviso geral', icone: '📣', abas: ['avisos'], descricao: 'Aviso para a liderança ou para todos os membros de todos os clubes.' },
+  { chave: 'desafios-globais', rotulo: 'Desafios globais', icone: '🏆', abas: ['desafios-globais'], descricao: 'Publique e oculte desafios do ranking global.' },
   { chave: 'manutencao', rotulo: 'Manutenção', icone: '🛠️', abas: ['manutencao'], descricao: 'Modo manutenção da plataforma.' },
   { chave: 'lixeira-clubes', rotulo: 'Lixeira', icone: '🗑️', abas: ['lixeira-clubes'], descricao: 'Clubes excluídos, à espera do expurgo.' },
 ]
@@ -214,6 +216,7 @@ export default function Admin() {
           {aba === 'chamados' && <AdminChamados inicial={params.get('chamado')} aoMudarContagem={atualizarChamados} />}
           {aba === 'suporte' && <Suporte />}
           {aba === 'avisos' && <AvisoInstitucional plataforma />}
+          {aba === 'desafios-globais' && <AdminDesafiosGlobais />}
           {aba === 'manutencao' && <AdminManutencao />}
           {aba === 'auditoria' && <Auditoria />}
           {aba === 'lixeira-clubes' && <LixeiraDeClubes />}

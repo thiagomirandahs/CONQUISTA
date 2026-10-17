@@ -74,6 +74,12 @@ export async function carregarDesafiosGlobais(temporadaId = null) {
   return Array.isArray(data) ? data : []
 }
 
+export async function ocultarDesafioGlobal(desafioId) {
+  const { data, error } = await supabase.rpc('ranking_global_desafio_ocultar', { p_desafio_id: desafioId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function iniciarDesafioGlobal(desafioId) {
   const { data, error } = await supabase.rpc('ranking_global_iniciar', { p_desafio_id: desafioId })
   if (error) throw new Error(error.message)
