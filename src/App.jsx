@@ -77,6 +77,7 @@ const PortalInstitucional = lazy(() => import('./pages/PortalInstitucional.jsx')
 const PainelCoordenador = lazy(() => import('./pages/PainelCoordenador.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const Admin = lazy(() => import('./pages/Admin.jsx'))
+const AdminNovo = lazy(() => import('./pages/AdminNovo.jsx'))
 const ConviteCoordenacao = lazy(() => import('./pages/ConviteCoordenacao.jsx'))
 const Planos = lazy(() => import('./pages/Planos.jsx'))
 const SiteClubes = lazy(() => import('./pages/site/SiteClubes.jsx'))
@@ -306,6 +307,7 @@ export default function App() {
             autoridade de clube. O guard de verdade é dentro de Admin.jsx (eh_admin_plataforma() no
             servidor); não há link nenhum pra esta rota em nenhum menu — quem não é admin nem a vê. */}
         <Route path="/admin" element={<SessaoObrigatoria><Admin /></SessaoObrigatoria>} />
+        <Route path="/admin/novo" element={<SessaoObrigatoria><AdminNovo /></SessaoObrigatoria>} />
 
         {/* Convite de coordenação (link gerado no /admin): exige sessão — sem conta, cria/entra e volta
             pra cá — e não passa pelo ClubeGuard (coordenador não tem clube). */}
